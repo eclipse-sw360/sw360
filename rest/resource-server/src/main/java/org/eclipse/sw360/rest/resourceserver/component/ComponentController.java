@@ -15,6 +15,7 @@ package org.eclipse.sw360.rest.resourceserver.component;
 import com.google.common.collect.Sets;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.StringToClassMapItem;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -1088,43 +1089,64 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @Operation(
             summary = "Split two components.",
             description = "Split source component into target component.",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Source and target components.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = {@ExampleObject(
-                                    value = "{\n" +
-                                            "  \"srcComponent\": {\n" +
-                                            "    ...\n" +
-                                            "  },\n" +
-                                            "  \"targetComponent\": {\n" +
-                                            "    ...\n" +
-                                            "  }\n" +
-                                            "}"
-                            )}
-                    )
-            ),
             tags = {"Components"}
     )
     @RequestMapping(value = COMPONENTS_URL + "/splitComponents", method = RequestMethod.PATCH)
     public ResponseEntity<RequestStatus> splitComponents(
-            @Parameter(
-                    description = "Source and target components.",
-                    example = "{\n" +
-                            "  \"srcComponent\": {\n" +
-                            "    ...\n" +
-                            "  },\n" +
-                            "  \"targetComponent\": {\n" +
-                            "    ...\n" +
-                            "  }\n" +
-                            "}"
+            @Parameter(description = "Source and target components.",
+                    schema = @Schema(
+                            type = "object",
+                            properties = {
+                                    @StringToClassMapItem(key = "srcComponent", value = ComponentDTO.class),
+                                    @StringToClassMapItem(key = "targetComponent", value = ComponentDTO.class),
+                            },
+                            example = """
+                                    {
+                                      "srcComponent": {
+                                        "id": "comp1",
+                                        "name": "Component1",
+                                        "releaseIds": [
+                                          "rel1",
+                                          "rel2"
+                                        ],
+                                        "attachments": [
+                                          {
+                                            "attachmentContentId": "att1",
+                                            "filename": "f1"
+                                          }
+                                        ]
+                                      },
+                                      "targetComponent": {
+                                        "id": "comp2",
+                                        "name": "Component2",
+                                        "releaseIds": [
+                                          "rel3",
+                                          "rel4"
+                                        ],
+                                        "attachments": [
+                                          {
+                                            "attachmentContentId": "att2",
+                                            "filename": "f2"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                    """,
+                            requiredProperties = {"srcComponent", "targetComponent"}
+                    )
             )
-            @RequestBody Map<String, Component> componentMap
+            @RequestBody Map<String, ComponentDTO> componentMap
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        Component srcComponent = componentMap.get("srcComponent");
-        Component targetComponent = componentMap.get("targetComponent");
+        ComponentDTO srcComponentDTO = componentMap.get("srcComponent");
+        ComponentDTO targetComponentDTO = componentMap.get("targetComponent");
+
+        Component srcComponent = restControllerHelper.convertToComponent(srcComponentDTO);
+        Component targetComponent = restControllerHelper.convertToComponent(targetComponentDTO);
+
+        srcComponent.setReleases(componentService.getReleasesFromDto(srcComponentDTO, sw360User));
+        targetComponent.setReleases(componentService.getReleasesFromDto(targetComponentDTO, sw360User));
 
         // perform the real merge, update merge target and delete merge source
         RequestStatus requestStatus = componentService.splitComponents(srcComponent, targetComponent, sw360User);
