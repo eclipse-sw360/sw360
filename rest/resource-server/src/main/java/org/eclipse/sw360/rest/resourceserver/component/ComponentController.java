@@ -1073,7 +1073,26 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
             @Parameter(description = "The id of the merge source component.")
             @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
-            @Parameter(description = "The merge selection.")
+            @Parameter(description = "The merge selection.",
+                    schema = @Schema(
+                            implementation = ComponentMergeSelector.class,
+                            type = "object",
+                            example = """
+                                    {
+                                      "name": "Final Component Name",
+                                      "createdOn": "Final created date",
+                                      "createdBy": "Final creator name",
+                                      "attachments": [
+                                        {
+                                          "attachmentContentId": "att1",
+                                          "filename": "saveme.txt"
+                                        }
+                                      ]
+                                    }
+                                    """,
+                            requiredProperties = {"name", "createdOn", "createdBy"}
+                    )
+            )
             @RequestBody ComponentMergeSelector mergeSelection
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
