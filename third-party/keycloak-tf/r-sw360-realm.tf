@@ -183,6 +183,6 @@ resource "keycloak_realm_user_profile" "sw360_profiles" {
 resource "keycloak_default_groups" "default" {
   realm_id = keycloak_realm.sw360.id
   group_ids = [
-    keycloak_group.sw360_groups[local.sw360_groups[0]].id
+    keycloak_group.sw360_groups["USER"].id
   ]
 }
