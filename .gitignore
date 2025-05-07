@@ -76,5 +76,6 @@ output
 # KeyCloak terraform
 /third-party/keycloak-tf/.terraform/
 /third-party/keycloak-tf/*.tfstate
-/third-party/keycloak-tf/*.tfstate.backup
+/third-party/keycloak-tf/*.backup
 /third-party/keycloak-tf/*.auto.tfvars
+/third-party/keycloak-tf/plan.out
