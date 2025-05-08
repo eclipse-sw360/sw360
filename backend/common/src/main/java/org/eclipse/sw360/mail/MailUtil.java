@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -84,7 +85,7 @@ public class MailUtil extends BackendUtils {
     private static ExecutorService fixedThreadPoolWithQueueSize(int nThreads, int queueSize) {
         // ThreadPoolExecutor.AbortPolicy is used as default which throws RejectedExecutionException
         return new ThreadPoolExecutor(nThreads, nThreads, 60L, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(queueSize, true));
+            new ArrayBlockingQueue<>(queueSize, true));
     }
 
     private void setBasicProperties() {
@@ -117,7 +118,6 @@ public class MailUtil extends BackendUtils {
         properties.setProperty("mail.debug", enableDebug);
         properties.setProperty("mail.smtp.ssl.protocols", smtpSSLProtocol);
 
-
         if (!"false".equals(isAuthenticationNecessary)) {
             Authenticator auth = new SMTPAuthenticator(login, password);
             session = Session.getInstance(properties, auth);
@@ -143,6 +143,7 @@ public class MailUtil extends BackendUtils {
     public void sendMail(String recipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, String ... textParameters) {
         sendMail(recipient, subjectNameInPropertiesFile, textNameInPropertiesFile, notificationClass, roleName, true, textParameters);
     }
+
     public void sendMail(String recipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, boolean checkWantsNotifications, String ... textParameters) {
         sendMail(Sets.newHashSet(recipient), null, subjectNameInPropertiesFile, textNameInPropertiesFile, notificationClass, roleName, checkWantsNotifications, textParameters);
     }
@@ -155,10 +156,18 @@ public class MailUtil extends BackendUtils {
         MimeMessage messageWithSubjectAndText = makeMessageWithSubjectAndText(subjectNameInPropertiesFile, textNameInPropertiesFile, textParameters);
         for (String recipient : nullToEmptySet(recipients)) {
             if(!isNullEmptyOrWhitespace(recipient)
-                    && !recipient.equals(excludedRecipient)
-                    && (!checkWantsNotifications || isMailWantedBy(recipient, SW360Utils.notificationPreferenceKey(notificationClass, roleName)))) {
+                && !recipient.equals(excludedRecipient)
+                && (!checkWantsNotifications || isMailWantedBy(recipient, SW360Utils.notificationPreferenceKey(notificationClass, roleName)))) {
                 sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
             }
+        }
+    }
+
+    // New sendMail overload for ModerationRequest
+    public void sendMail(String recipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, ModerationRequest moderationRequest) {
+        MimeMessage messageWithSubjectAndText = makeMessageWithSubjectAndText(subjectNameInPropertiesFile, textNameInPropertiesFile, moderationRequest);
+        if (!isNullEmptyOrWhitespace(recipient) && isMailWantedBy(recipient, SW360Utils.notificationPreferenceKey(notificationClass, roleName))) {
+            sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
         }
     }
 
@@ -193,34 +202,34 @@ public class MailUtil extends BackendUtils {
         String mainContentFormat = "";
         String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
         switch (template) {
-        case UPDATED:
-            mainContentFormat = UPDATE_CR_EMAIL_HTML_TEMPLATE;
-            subject = String.format(subject, textParameters[1], textParameters[3]);
-            break;
+            case UPDATED:
+                mainContentFormat = UPDATE_CR_EMAIL_HTML_TEMPLATE;
+                subject = String.format(subject, textParameters[1], textParameters[3]);
+                break;
 
-        case PROJECT_UPDATED:
-            mainContentFormat = UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE;
-            subject = String.format(subject, textParameters[1], textParameters[2]);
-            break;
+            case PROJECT_UPDATED:
+                mainContentFormat = UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE;
+                subject = String.format(subject, textParameters[1], textParameters[2]);
+                break;
 
-        case NEW_COMMENT:
-            mainContentFormat = NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE;
-            subject = String.format(subject, textParameters[1], textParameters[2]);
-            break;
+            case NEW_COMMENT:
+                mainContentFormat = NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE;
+                subject = String.format(subject, textParameters[1], textParameters[2]);
+                break;
 
-        case REJECTED:
-        case CLOSED:
-            mainContentFormat = CLOSED_OR_REJECTED_CR_EMAIL_HTML_TEMPLATE;
-            subject = String.format(subject, textParameters[0], textParameters[1], textParameters[2]);
-            break;
+            case REJECTED:
+            case CLOSED:
+                mainContentFormat = CLOSED_OR_REJECTED_CR_EMAIL_HTML_TEMPLATE;
+                subject = String.format(subject, textParameters[0], textParameters[1], textParameters[2]);
+                break;
 
-        case NEW:
-            mainContentFormat = NEW_CR_EMAIL_HTML_TEMPLATE;
-            subject = String.format(subject, textParameters[1], textParameters[3]);
-            break;
+            case NEW:
+                mainContentFormat = NEW_CR_EMAIL_HTML_TEMPLATE;
+                subject = String.format(subject, textParameters[1], textParameters[3]);
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
 
         StringBuilder text = new StringBuilder();
@@ -273,6 +282,40 @@ public class MailUtil extends BackendUtils {
         return message;
     }
 
+    private MimeMessage makeMessageWithSubjectAndText(String subjectKeyInPropertiesFile, String textKeyInPropertiesFile, ModerationRequest moderationRequest) {
+        MimeMessage message = new MimeMessage(session);
+        String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
+
+        StringBuilder text = new StringBuilder();
+        text.append(loadedProperties.getProperty("defaultBegin", ""));
+
+        if ("textForUpdateModerationRequest".equals(textKeyInPropertiesFile) && moderationRequest != null) {
+            String docType = moderationRequest.getDocumentType() != null ? moderationRequest.getDocumentType().toString() : "Unknown";
+            String docName = moderationRequest.getDocumentName() != null ? moderationRequest.getDocumentName() : "Unnamed";
+            text.append(String.format("The moderation request for the [Type: %s] named \"%s\" previously added to your SW360-account has been updated.\n\n", docType, docName));
+        } else {
+            String mainContentFormat = loadedProperties.getProperty(textKeyInPropertiesFile, "");
+            text.append(mainContentFormat); // Fallback for other email types
+        }
+
+        text.append(loadedProperties.getProperty("defaultEnd", ""));
+        if (!supportMailAddress.equals("")) {
+            text.append(loadedProperties.getProperty("unsubscribeNoticeBefore", ""));
+            text.append(" ");
+            text.append(supportMailAddress);
+            text.append(loadedProperties.getProperty("unsubscribeNoticeAfter", ""));
+        }
+
+        try {
+            message.setSubject(subject);
+            message.setText(text.toString());
+        } catch (MessagingException mex) {
+            log.error(mex.getMessage());
+        }
+
+        return message;
+    }
+
     private void sendMailWithSubjectAndText(String recipient, MimeMessage message) {
         try {
             message.setFrom(new InternetAddress(from));
@@ -294,14 +337,14 @@ public class MailUtil extends BackendUtils {
     private void writeMessageToLog(MimeMessage message) {
         try {
             log.info(String.format("E-Mail message dumped to log, because mailing is not configured [correctly]:\n"+
-                            "From: %s\n"+
-                            "To: %s\n"+
-                            "Subject: %s\n"+
-                            "Text: %s\n",
-                    Arrays.toString(message.getFrom()),
-                    Arrays.toString(message.getRecipients(Message.RecipientType.TO)),
-                    message.getSubject(),
-                    message.getContent()
+                    "From: %s\n"+
+                    "To: %s\n"+
+                    "Subject: %s\n"+
+                    "Text: %s\n",
+                Arrays.toString(message.getFrom()),
+                Arrays.toString(message.getRecipients(Message.RecipientType.TO)),
+                message.getSubject(),
+                message.getContent()
             ));
         } catch (MessagingException | IOException e) {
             log.error("Cannot dump E-mail message to log", e);
