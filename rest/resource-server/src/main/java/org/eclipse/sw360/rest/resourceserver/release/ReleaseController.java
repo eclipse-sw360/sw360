@@ -1767,4 +1767,71 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<BulkOperationNode>(result, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get license data.",
+            description = "Get license data from release attachment.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "License Data for the attachment.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                            {[
+                                                              "name": "License1",
+                                                              "text": "License text 1"
+                                                            ]}
+                                                            """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400", description = "attachContentId cannot be parsed.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                            {[
+                                                              "error": "No applicable parser has been found for the attachment",
+                                                              "file": "source.zip"
+                                                            ]}
+                                                           """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404", description = "Provided attachContentId not found."
+                    )
+            }
+    )
+    @GetMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}" )
+    public ResponseEntity<List<Map<String,String>>> getReleaseLicenseInfo(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String relId,
+            @Parameter(description = "The ID of the attachment.")
+            @PathVariable("attachContentId") String attachContentId
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release sw360Release = releaseService.getReleaseForUserById(relId, user);
+        List<Map<String,String>> results = new ArrayList<>();
+        boolean found = false;
+        boolean type = true;
+        for (Attachment attachment : sw360Release.getAttachments()) {
+            if (attachContentId.equals(attachment.getAttachmentContentId())) {
+                found =true;
+                type = attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML
+                        || attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_COMBINED;
+                break;
+            }
+        }
+        if (!found) {
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Attachment not found");
+        }
+        results = releaseService.getReleaseLicenseInfo(sw360Release, user, attachContentId);
+        if (!type) {
+            return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(results, HttpStatus.OK);
+    }
 }

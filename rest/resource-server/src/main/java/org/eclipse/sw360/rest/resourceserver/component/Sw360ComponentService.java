@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingReport;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -36,10 +37,14 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -299,15 +304,28 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public RequestStatus splitComponents(Component srcComponent, Component targetComponent, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        RequestStatus requestStatus;
-        requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, sw360User);
+
+        boolean found = false;
+        try {
+            if (sw360ComponentClient.getComponentById(srcComponent.getId(), sw360User) != null
+                    && sw360ComponentClient.getComponentById(targetComponent.getId(), sw360User) != null) {
+                found = true;
+            }
+        } catch (TException ignored) {
+        }
+
+        if (!found) {
+            throw new ResourceNotFoundException("Source or target component not found");
+        }
+
+        RequestStatus requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, sw360User);
 
         if (requestStatus == RequestStatus.IN_USE) {
-            throw new BadRequestClientException("Component already in use.");
+            throw new HttpClientErrorException(HttpStatus.CONFLICT, "Component has Moderation Request Open");
         } else if (requestStatus == RequestStatus.FAILURE) {
-            throw new BadRequestClientException("Cannot split these components");
+            throw new SW360Exception("Cannot split these components");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
-            throw new RuntimeException("Access denied...!");
+            throw new AccessDeniedException("Access denied!");
         }
 
         return requestStatus;
@@ -352,5 +370,32 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 throw new BadRequestClientException("Merge body is missing field " + field.getFieldName());
             }
         }
+    }
+
+    /**
+     * Get the list of releases from ComponentDTO's releaseIds set of string.
+     * @param componentDTO Object to get release IDs from
+     * @return List of Release
+     */
+    public List<Release> getReleasesFromDto(@NotNull ComponentDTO componentDTO, User user) throws TTransportException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+
+        List<Release> releases = new ArrayList<>();
+
+        if (!componentDTO.isSetReleaseIds() || componentDTO.getReleaseIds().isEmpty()) {
+            return releases;
+        }
+
+        for (String releaseId : componentDTO.getReleaseIds()) {
+            Release release;
+            try {
+                release = sw360ComponentClient.getReleaseById(releaseId, user);
+            } catch (TException e) {
+                continue;
+            }
+            releases.add(release);
+        }
+
+        return releases;
     }
 }

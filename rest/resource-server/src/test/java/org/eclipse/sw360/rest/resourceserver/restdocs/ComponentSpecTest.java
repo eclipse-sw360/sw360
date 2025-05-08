@@ -993,6 +993,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
                                 subsectionWithPath("externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                subsectionWithPath("attachments").description("Attachments to be carried over"),
                                 fieldWithPath("mainLicenseIds").description("The Main License Ids of component"),
                                 fieldWithPath("languages").description("The language of the component"),
                                 fieldWithPath("softwarePlatforms").description("The Software Platforms of component"),
