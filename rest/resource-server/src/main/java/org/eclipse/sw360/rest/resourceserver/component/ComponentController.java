@@ -53,6 +53,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -1108,7 +1109,40 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @Operation(
             summary = "Split two components.",
             description = "Split source component into target component.",
-            tags = {"Components"}
+            tags = {"Components"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Request completed successfully."
+                    ),
+                    @ApiResponse(
+                            responseCode = "404", description = "Source or target component not found.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "403", description = "Don't have permission to perform the action.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "409", description = "Source or target component has a Moderation Request open.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Internal server error.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                            }
+                    )
+            }
     )
     @RequestMapping(value = COMPONENTS_URL + "/splitComponents", method = RequestMethod.PATCH)
     public ResponseEntity<RequestStatus> splitComponents(
