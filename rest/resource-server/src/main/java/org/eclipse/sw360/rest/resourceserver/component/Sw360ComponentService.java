@@ -40,8 +40,11 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -301,15 +304,28 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public RequestStatus splitComponents(Component srcComponent, Component targetComponent, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        RequestStatus requestStatus;
-        requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, sw360User);
+
+        boolean found = false;
+        try {
+            if (sw360ComponentClient.getComponentById(srcComponent.getId(), sw360User) != null
+                    && sw360ComponentClient.getComponentById(targetComponent.getId(), sw360User) != null) {
+                found = true;
+            }
+        } catch (TException ignored) {
+        }
+
+        if (!found) {
+            throw new ResourceNotFoundException("Source or target component not found");
+        }
+
+        RequestStatus requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, sw360User);
 
         if (requestStatus == RequestStatus.IN_USE) {
-            throw new BadRequestClientException("Component already in use.");
+            throw new HttpClientErrorException(HttpStatus.CONFLICT, "Component has Moderation Request Open");
         } else if (requestStatus == RequestStatus.FAILURE) {
-            throw new BadRequestClientException("Cannot split these components");
+            throw new SW360Exception("Cannot split these components");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
-            throw new RuntimeException("Access denied...!");
+            throw new AccessDeniedException("Access denied!");
         }
 
         return requestStatus;
