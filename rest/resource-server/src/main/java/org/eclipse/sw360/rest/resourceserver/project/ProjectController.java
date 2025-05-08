@@ -2627,6 +2627,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
 		sw360.setReleaseIdToUsage(sw360Project.getReleaseIdToUsage());
 		sw360.setLinkedProjects(sw360Project.getLinkedProjects());
+        sw360.setId(sw360Project.getId());
 		sw360.unsetState();
 		sw360.unsetProjectType();
 		sw360.unsetVisbility();
