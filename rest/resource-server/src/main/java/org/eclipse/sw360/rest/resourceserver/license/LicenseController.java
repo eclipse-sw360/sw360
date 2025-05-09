@@ -540,4 +540,21 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestStatus, status);
     }
+
+    @Operation(
+            summary = "Delete a specific license type.",
+            description = "Delete a specific license type.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSE_TYPES_URL + "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteLicenseType(
+            @Parameter(description = "The id of the license type.")
+            @PathVariable("id") String id
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus status = licenseService.deleteLicenseType(id, sw360User);
+
+        return ResponseEntity.ok("License type deleted successfully: " + status.name());
+    }
 }
