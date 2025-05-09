@@ -52,6 +52,10 @@ db-password=password
 
 # The full database JDBC URL. If not provided, a default URL is set based on the selected database vendor.
 db-url=jdbc:postgresql://localhost/keycloak
+
+# If thrift/backend is running on a different host, set these URL
+spi-events-listener-sw360-add-user-to-couchdb-thrift=http://localhost:8080
+spi-storage-sw360-user-storage-jpa-thrift=http://localhost:8080
 ```
 * Set environment variables for Keycloak administration:
 ```
