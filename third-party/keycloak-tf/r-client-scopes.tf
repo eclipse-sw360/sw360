@@ -33,3 +33,14 @@ resource "keycloak_openid_client_default_scopes" "client_read" {
     keycloak_openid_client_scope.sw360_write.name,
   ]
 }
+
+# 4. Assign scopes for grafana client
+resource "keycloak_openid_client_default_scopes" "grafana" {
+  realm_id = keycloak_realm.sw360.id
+  client_id = keycloak_openid_client.grafana.id
+  default_scopes = [
+    "email",
+    "profile",
+    "roles",
+  ]
+}

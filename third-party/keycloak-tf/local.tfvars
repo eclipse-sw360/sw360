@@ -20,3 +20,5 @@ azure_client_secret = "azure-idp-client-secret"
 # smtp_from     = "sw360.server.in@siemens.com"
 # smtp_username = "my-smtp-user"
 # smtp_password = "my-smtp-password"
+# Grafana dashboard URL
+dashboard_base_url = "http://localhost:3000/dashboard"

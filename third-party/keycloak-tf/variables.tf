@@ -66,3 +66,9 @@ variable "frontend_base_url" {
   type        = string
   default     = null
 }
+
+variable "dashboard_base_url" {
+  description = "Home URL for grafana dashboard"
+  type        = string
+  default     = null
+}
