@@ -24,7 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jboss.logging.Logger;
 
 public class Sw360UserService {
-    private String thriftServerUrl = "http://localhost:8080";
+    public static String thriftServerUrl = "http://localhost:8080";
     private static final Logger logger = Logger.getLogger(Sw360UserService.class);
 
     public List<User> getAllUsers() {
