@@ -315,4 +315,13 @@ public class Sw360LicenseService {
          }
          return RequestStatus.SUCCESS;
      }
+
+     public RequestStatus deleteLicenseType(String id, User sw360User) throws TException {
+         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+             return sw360LicenseClient.deleteLicenseType(id, sw360User);
+         } else {
+             throw new BadRequestClientException("Unable to delete license type. User is not admin");
+         }
+     }
 }
