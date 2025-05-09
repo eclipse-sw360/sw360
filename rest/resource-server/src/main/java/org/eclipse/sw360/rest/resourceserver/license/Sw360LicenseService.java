@@ -39,10 +39,12 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
@@ -339,5 +341,26 @@ public class Sw360LicenseService {
          } catch (TException e) {
              throw new RuntimeException("Error performing licenseType search", e);
          }
+     }
+
+     public RequestStatus deleteLicenseType(String id, User sw360User) throws TException {
+         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+
+         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+             throw new AccessDeniedException("Unable to delete license type. User is not admin");
+         }
+
+         try {
+             sw360LicenseClient.getLicenseTypeById(id);
+         } catch (TException e) {
+             throw new ResourceNotFoundException("License type not found with ID: " + id);
+         }
+
+         RequestStatus status = sw360LicenseClient.deleteLicenseType(id, sw360User);
+         if (status == RequestStatus.FAILURE) {
+             throw new SW360Exception("License type could not be deleted.");
+         }
+
+         return status;
      }
 }

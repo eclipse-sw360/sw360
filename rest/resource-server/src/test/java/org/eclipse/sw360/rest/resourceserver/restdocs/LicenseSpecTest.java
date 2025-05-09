@@ -121,6 +121,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
         Mockito.doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
         Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
+        given(this.licenseServiceMock.deleteLicenseType(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(requestSummary);
         given(this.licenseServiceMock.addLicenseType(any(),any() , any())).willReturn(RequestStatus.SUCCESS);
         given(this.sw360ReportServiceMock.getLicenseBuffer()).willReturn(ByteBuffer.allocate(10000));
@@ -454,5 +455,13 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                     queryParameters(
                             parameterWithName("module").description("module represent the licenses. Possible values are `<licenses>`")
                     )));
+    }
+
+    @Test
+    public void should_document_delete_license_type() throws Exception {
+        mockMvc.perform(delete("/api/licenseTypes/" + license.getId())
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+        .andExpect(status().isOk());
     }
 }
