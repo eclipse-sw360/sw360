@@ -9,6 +9,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.keycloak.spi.service.Sw360UserService;
 
+import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -49,8 +50,17 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
 	@Override
 	public void close() {
 		logger.debug("<<<<<< Closing factory");
-
 	}
+
+	@Override
+    public void init(Config.Scope config) {
+        logger.info("Initializing Sw360UserStorageProviderFactory with config: {}", config);
+        if (config.get("thrift") != null && !config.get("thrift").isEmpty()) {
+			logger.info("In SPI {}, setting thrift server URL to: '{}'",
+					PROVIDER_ID, config.get("thrift"));
+            Sw360UserService.thriftServerUrl = config.get("thrift");
+        }
+    }
 
 	/**
 	 * Synchronizes users from an external service with Keycloak.

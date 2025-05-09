@@ -4,12 +4,14 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.event.listener;
 
+import org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService;
 import org.jboss.logging.Logger;
-import org.keycloak.Config.Scope;
+import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+
 /**
  * Factory class for creating instances of Sw360CustomEventListenerProvider.
  *
@@ -27,8 +29,13 @@ public class Sw360CustomEventListenerProviderFactory implements EventListenerPro
     }
 
     @Override
-    public void init(Scope config) {
+    public void init(Config.Scope config) {
         logger.info("Initializing Sw360CustomEventListenerProviderFactory with config: " + config);
+        if (config.get("thrift") != null && !config.get("thrift").isEmpty()) {
+            logger.infof("In SPI %s, setting thrift server URL to: '%s'",
+                    SW360_ADD_USER_TO_COUCHDB, config.get("thrift"));
+            Sw360UserService.thriftServerUrl = config.get("thrift");
+        }
     }
 
     @Override
