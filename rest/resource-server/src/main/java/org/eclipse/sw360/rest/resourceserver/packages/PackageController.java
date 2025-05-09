@@ -16,8 +16,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Sets;
 import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +44,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -239,48 +243,69 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "fields", required = false) List<String> fields,
             @Parameter(description = "Get all details of the package.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "Package which are not linked with any releases.")
+            @RequestParam(value = "orphanPackage", required = false) boolean orphanPackage,
             @Parameter(description = "Use lucenesearch to filter the packages.")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        String queryString = request.getQueryString();
-        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
-        boolean isSearchByName = CommonUtils.isNotNullEmptyOrWhitespace(name);
-        boolean isSearchByPackageManager = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
-        boolean isSearchByVersion = CommonUtils.isNotNullEmptyOrWhitespace(version);
-        boolean isSearchByPurl = CommonUtils.isNotNullEmptyOrWhitespace(purl);
         List<Package> sw360Packages = new ArrayList<>();
-
+        Map<String, Set<String>> restrictions = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
         if (luceneSearch) {
-            Map<String, Set<String>> filterMap = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
                 values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
-                filterMap.put(Package._Fields.NAME.getFieldName(), values);
+                restrictions.put(Package._Fields.NAME.getFieldName(), values);
             }
-            sw360Packages.addAll(packageService.refineSearch(filterMap, sw360User));
+            sw360Packages.addAll(packageService.refineSearch(restrictions, sw360User));
         } else {
-            if (isSearchByName) {
-                sw360Packages.addAll(packageService.searchPackageByName(params.get("name")));
-            } else if (isSearchByPackageManager) {
-                packageManager = packageManager.toUpperCase();
-
-                if (!EnumUtils.isValidEnum(PackageManager.class, packageManager)) {
-                    throw new BadRequestClientException("Invalid package manager type. Possible values are "
-                            + Arrays.asList(PackageManager.values()));
-                }
-                sw360Packages.addAll(packageService.searchByPackageManager(packageManager));
-            } else if (isSearchByVersion) {
-                sw360Packages.addAll(packageService.searchPackageByVersion(params.get("version")));
-            } else if (isSearchByPurl) {
-                sw360Packages.addAll(packageService.searchPackageByPurl(params.get("purl")));
-            } else {
-                sw360Packages.addAll(packageService.getPackagesForUser());
+            sw360Packages = packageService.getPackagesForUser();
+            if (!restrictions.isEmpty()) {
+                sw360Packages = new ArrayList<>(sw360Packages.stream()
+                        .filter(filterPackageMap(restrictions, orphanPackage)).toList());
             }
         }
         return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
+    }
+
+    /**
+     * Create a filter predicate to remove all packages which do not satisfy the restriction set.
+     * @param restrictions Restrictions set to filter packages on
+     * @return Filter predicate for stream.
+     */
+    private static @NonNull Predicate<Package> filterPackageMap(Map<String, Set<String>> restrictions, boolean orphanPackage) {
+        return packages -> {
+            for (Map.Entry<String, Set<String>> restriction : restrictions.entrySet()) {
+                final Set<String> filterSet = restriction.getValue();
+                Package._Fields field = Package._Fields.findByName(restriction.getKey());
+                Object fieldValue = packages.getFieldValue(field);
+                if (fieldValue == null) {
+                    return false;
+                }
+                if (field == Package._Fields.NAME && !filterSet.contains(packages.name)) {
+                    return false;
+                } else if (field == Package._Fields.VERSION && !filterSet.contains(packages.version)) {
+                    return false;
+                } else if ((field == Package._Fields.CREATED_BY || field == Package._Fields.CREATED_ON)
+                        && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
+                    return false;
+                } else if (fieldValue instanceof Set) {
+                    if (Sets.intersection(filterSet, (Set<String>) fieldValue).isEmpty()) {
+                        return false;
+                    }
+                } else if (fieldValue instanceof Enum) {
+                    if (!filterSet.contains(fieldValue.toString())) {
+                        return false;
+                    }
+                }
+            }
+            if (orphanPackage) {
+                return packages.getReleaseId() == null || packages.getReleaseId().isEmpty();
+            }
+            return true;
+        };
     }
 
     private Package convertToPackage(Map<String, Object> requestBody) {
@@ -379,7 +404,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             filterMap.put(Package._Fields.PURL.getFieldName(), CommonUtils.splitToSet(purl));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(packageManager)) {
-            filterMap.put(Package._Fields.PACKAGE_MANAGER.getFieldName(), CommonUtils.splitToSet(packageManager));
+            filterMap.put(Package._Fields.PACKAGE_MANAGER.getFieldName(), CommonUtils.splitToSet(packageManager.toUpperCase()));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(licenses)) {
             filterMap.put(Package._Fields.LICENSE_IDS.getFieldName(), CommonUtils.splitToSet(licenses));
