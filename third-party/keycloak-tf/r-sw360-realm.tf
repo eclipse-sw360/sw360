@@ -12,8 +12,8 @@ resource "keycloak_realm" "sw360" {
   # Login tab
   registration_allowed           = false
   edit_username_allowed          = false
-  registration_email_as_username = true
-  login_with_email_allowed       = true
+  registration_email_as_username = false
+  login_with_email_allowed       = false
   duplicate_emails_allowed       = false
 
   # Email tab if smtp_password is configured
