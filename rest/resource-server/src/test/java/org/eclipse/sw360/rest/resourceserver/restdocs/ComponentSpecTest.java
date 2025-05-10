@@ -1346,6 +1346,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_import_sbom_for_component() throws Exception {
+        given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
         MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
 
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/components/import/SBOM")
@@ -1358,6 +1359,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_prepare_import_sbom_for_component() throws Exception {
+        given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
         MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
 
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/components/prepareImport/SBOM")

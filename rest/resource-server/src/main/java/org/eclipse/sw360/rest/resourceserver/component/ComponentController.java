@@ -980,8 +980,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Attachment attachment;
         final RequestSummary requestSummary;
-        if(!type.equalsIgnoreCase("SPDX")) {
-            throw new IllegalArgumentException("SBOM file type is not valid. It currently only supports SPDX(.rdf/.spdx) files.");
+        if(!type.equalsIgnoreCase("SPDX") || !attachmentService.isValidSbomFile(file, type)) {
+            throw new IllegalArgumentException("SBOM file is not valid. It currently only supports SPDX(.rdf/.spdx) files.");
         }
         try {
             attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
@@ -1034,8 +1034,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Attachment attachment;
         final ImportBomRequestPreparation importBomRequestPreparation;
-        if(!type.equalsIgnoreCase("SPDX")) {
-            throw new IllegalArgumentException("SBOM file type is not valid. It currently only supports SPDX(.rdf/.spdx) files.");
+        if(!type.equalsIgnoreCase("SPDX") || !attachmentService.isValidSbomFile(file, type)) {
+            throw new IllegalArgumentException("SBOM file is not valid. It currently only supports SPDX(.rdf/.spdx) files.");
         }
         try {
             attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);

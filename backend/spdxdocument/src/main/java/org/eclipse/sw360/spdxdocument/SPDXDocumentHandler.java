@@ -22,6 +22,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -88,4 +89,12 @@ public class SPDXDocumentHandler implements SPDXDocumentService.Iface {
         return handler.deleteSPDXDocument(id, user);
     }
 
+    @Override
+    public boolean isValidSbomFile(ByteBuffer file, String type, String extension) throws TException {
+        assertNotNull(file);
+        assertNotEmpty(type);
+        assertNotEmpty(extension);
+
+        return handler.isValidSbomFile(file, type, extension);
+    }
 }

@@ -2373,8 +2373,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         String projectId = null;
         Map<String, String> messageMap = new HashMap<>();
 
-        if (!(type.equalsIgnoreCase("SPDX") || type.equalsIgnoreCase("CycloneDX"))) {
-            throw new BadRequestClientException("Invalid SBOM file type. Only SPDX(.rdf/.xml) and CycloneDX(.json/.xml) files are supported.");
+        if (!(type.equalsIgnoreCase("SPDX") || type.equalsIgnoreCase("CycloneDX")) || !attachmentService.isValidSbomFile(file, type)) {
+            throw new BadRequestClientException("Invalid SBOM file. Only SPDX(.rdf/.xml) and CycloneDX(.json/.xml) files are supported.");
         }
 
         try {
