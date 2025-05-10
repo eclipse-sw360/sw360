@@ -204,6 +204,14 @@
             <artifactId>springdoc-openapi-starter-common</artifactId>
             <version>${springdoc-openapi-stater-common.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.spdx</groupId>
+            <artifactId>tools-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.cyclonedx</groupId>
+            <artifactId>cyclonedx-core-java</artifactId>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
