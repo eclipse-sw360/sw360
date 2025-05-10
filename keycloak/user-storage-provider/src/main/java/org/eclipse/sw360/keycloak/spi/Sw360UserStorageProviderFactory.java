@@ -179,12 +179,13 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
 						() -> logger.warn("Last name is null or empty for user: {}", externalUser.getEmail())
 				);
 
-
 		Optional.ofNullable(externalUser.getDepartment())
 				.ifPresentOrElse(
 						department -> user.setSingleAttribute(CUSTOM_ATTR_DEPARTMENT, department),
 						() -> logger.warn("Department is null or empty for user: {}", externalUser.getEmail())
 				);
+
+		user.setEmail(externalUser.getEmail());
 		// Use the name of the externalUserUserGroup directly
 		assignGroupToUser(user, realm, externalUserUserGroup);
 	}
