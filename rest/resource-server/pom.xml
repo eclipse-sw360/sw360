@@ -207,12 +207,10 @@
         <dependency>
             <groupId>org.spdx</groupId>
             <artifactId>tools-java</artifactId>
-            <version>${org.spdx.tools.java.version}</version>
         </dependency>
         <dependency>
             <groupId>org.cyclonedx</groupId>
             <artifactId>cyclonedx-core-java</artifactId>
-            <version>10.2.1</version>
         </dependency>
     </dependencies>
     <dependencyManagement>

@@ -2386,7 +2386,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_import_spdx() throws Exception {
-        given(this.attachmentServiceMock.isValidSbomFile(any())).willReturn(true);
+        given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
 
         MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
@@ -2554,7 +2554,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_import_cyclonedx() throws Exception {
-        given(this.attachmentServiceMock.isValidSbomFile(any())).willReturn(true);
+        given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
 
         MockMultipartFile file = new MockMultipartFile("file","file=@/sampleBOM.xml".getBytes());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
