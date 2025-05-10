@@ -44,3 +44,11 @@ resource "keycloak_openid_client_default_scopes" "grafana" {
     "roles",
   ]
 }
+
+# 4.1. Add group mapper for grafana client
+resource "keycloak_openid_group_membership_protocol_mapper" "grafana_group_mapper" {
+  realm_id  = keycloak_realm.sw360.id
+  client_id = keycloak_openid_client.grafana.id
+  name      = "group-mapper"
+  claim_name = "groups"
+}
