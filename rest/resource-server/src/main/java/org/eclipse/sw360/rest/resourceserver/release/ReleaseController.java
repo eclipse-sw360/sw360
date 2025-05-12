@@ -1807,7 +1807,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}" )
+    @RequestMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}", method = RequestMethod.GET)
     public ResponseEntity<List<Map<String,String>>> getReleaseLicenseInfo(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String relId,
@@ -1828,12 +1828,66 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             }
         }
         if (!found) {
-            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Attachment not found");
+            throw new ResourceNotFoundException("Attachment not found");
         }
         results = releaseService.getReleaseLicenseInfo(sw360Release, user, attachContentId);
         if (!type) {
             return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
         }
+        return new ResponseEntity<>(results, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get license data.",
+            description = "Get license source files list and other license data from release attachment.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "License Data for the attachment.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                        {
+                                                          "relId": "54321",
+                                                          "relName": "releaseName",
+                                                          "data": [
+                                                            {
+                                                              "licName": "MIT",
+                                                              "licType": "Global",
+                                                              "srcFiles": [ "dir1/file1", "dir2/file2" ],
+                                                              "licSpdxId": "MIT"
+                                                            }
+                                                          ],
+                                                          "attName": "filename.xml"
+                                                        }
+                                                        """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400", description = "source file information not found in cli attachment"
+                    ),
+                    @ApiResponse(
+                            responseCode = "409", description = "multiple approved cli are found in the release"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404", description = "cli attachment not found in the release"
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Internal server error, while processing the request."
+                    )
+
+            }
+    )
+    @RequestMapping(value = RELEASES_URL + "/{id}/licenseFileList", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String relId
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release sw360Release = releaseService.getReleaseForUserById(relId, user);
+        Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user);
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
 }
