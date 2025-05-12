@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -314,5 +315,29 @@ public class Sw360LicenseService {
                  throw new TException(e.getMessage());
          }
          return RequestStatus.SUCCESS;
+     }
+
+     public List<LicenseType> quickSearchLicenseType(String searchElem) {
+         try {
+             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+             List<LicenseType> rawResults = sw360LicenseClient.searchByLicenseType(searchElem);
+
+             Map<String, LicenseType> uniqueResults = new LinkedHashMap<>();
+
+             for (LicenseType license : rawResults) {
+                 String id = license.getId();
+                 if (id != null && !id.isEmpty()) {
+                     uniqueResults.put(id, license);
+                 }
+             }
+
+             List<LicenseType> sortedResults = new ArrayList<>(uniqueResults.values());
+             sortedResults.sort(Comparator.comparing(LicenseType::getLicenseType, String.CASE_INSENSITIVE_ORDER));
+
+             return sortedResults;
+
+         } catch (TException e) {
+             throw new RuntimeException("Error performing licenseType search", e);
+         }
      }
 }
