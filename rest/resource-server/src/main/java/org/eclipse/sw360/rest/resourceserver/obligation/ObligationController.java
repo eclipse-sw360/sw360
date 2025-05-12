@@ -80,7 +80,8 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request,
-            @RequestParam(value = "obligationLevel", required = false) String obligationLevel
+            @RequestParam(value = "obligationLevel", required = false) String obligationLevel,
+            @RequestParam(value = "search", required = false) String searchKeyWord
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
 
         List<Obligation> obligations;
@@ -91,7 +92,9 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         } else {
             obligations = obligationService.getObligations();
         }
-
+        if(!CommonUtils.isNullEmptyOrWhitespace(searchKeyWord)){
+            filterObligationBasedOnSearchKey(searchKeyWord, obligations);
+        }
         PaginationResult<Obligation> paginationResult = restControllerHelper.createPaginationResult(request, pageable, obligations, SW360Constants.TYPE_OBLIGATION);
         List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
         paginationResult.getResources().stream()
@@ -107,6 +110,13 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             resources = restControllerHelper.generatePagesResource(paginationResult, obligationResources);
         }
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    private void filterObligationBasedOnSearchKey(String searchKeyWord, List<Obligation> obligations) {
+        obligations.removeIf(obligation ->
+                !obligation.getTitle().toLowerCase().contains(searchKeyWord.toLowerCase()) &&
+                !obligation.getText().toLowerCase().contains(searchKeyWord.toLowerCase())
+        );
     }
 
     @Operation(
