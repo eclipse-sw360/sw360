@@ -1288,4 +1288,8 @@ public class LicenseDatabaseHandler {
         }
         return obligationText.replaceFirst("\n","");
     }
+
+    public List<LicenseType> searchByLicenseType(String licenseType) {
+        return licenseTypeRepository.searchByLicenseType(licenseType);
+    }
 }
