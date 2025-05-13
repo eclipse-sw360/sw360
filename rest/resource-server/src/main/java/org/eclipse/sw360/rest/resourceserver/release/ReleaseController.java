@@ -96,6 +96,7 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -1897,5 +1898,49 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Release sw360Release = releaseService.getReleaseForUserById(relId, user);
         Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user);
         return new ResponseEntity<>(results, HttpStatus.OK);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Merge two releases.",
+            description = "Merge source release into target release.",
+            tags = {"Releases"}
+    )
+    @RequestMapping(value = RELEASES_URL + "/mergereleases", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> mergeReleases(
+            @Parameter(description = "The id of the merge target release.")
+            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @Parameter(description = "The id of the merge source release.")
+            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+            @Parameter(description = "The merge selection.",
+                    schema = @Schema(
+                            implementation = ReleaseMergeSelector.class,
+                            type = "object",
+                            example = """
+                                    {
+                                      "name": "Final Release Name",
+                                      "createdOn": "Final created date",
+                                      "createdBy": "Final creator name",
+                                      "version": "1.0.0",
+                                      "componentId": "1234",
+                                      "attachments": [
+                                        {
+                                          "attachmentContentId": "att1",
+                                          "filename": "saveme.txt"
+                                        }
+                                      ]
+                                    }
+                                    """,
+                            requiredProperties = {"name", "createdOn", "createdBy"}
+                    )
+            )
+            @RequestBody ReleaseMergeSelector mergeSelection
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        // perform the real merge, update merge target and delete merge sources
+        RequestStatus requestStatus = releaseService.mergeRelease(mergeTargetId, mergeSourceId, mergeSelection,
+                sw360User);
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
     }
 }
