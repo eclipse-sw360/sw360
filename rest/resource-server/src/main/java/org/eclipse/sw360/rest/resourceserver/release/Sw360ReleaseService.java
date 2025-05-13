@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.release;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.NonNull;
@@ -62,6 +63,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -71,6 +73,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
@@ -1417,6 +1420,40 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                 break;
             default:
                 throw new IllegalArgumentException("Unknown LicenseInfoRequestStatus: " + licenseInfoResult.getStatus());
+        }
+    }
+
+    public RequestStatus mergeRelease(String mergeTargetId, String mergeSourceId, ReleaseMergeSelector releaseSelection,
+            User sw360User) throws TException {
+
+        validateReleaseMergeSelection(releaseSelection);
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        RequestStatus requestStatus = sw360ComponentClient.mergeReleases(mergeTargetId, mergeSourceId, releaseSelection,
+                sw360User);
+
+        if (requestStatus == RequestStatus.IN_USE) {
+            throw new SW360Exception("Release already in use.");
+        } else if (requestStatus == RequestStatus.FAILURE) {
+            throw new SW360Exception("Cannot merge these releases.");
+        } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return requestStatus;
+    }
+
+    private void validateReleaseMergeSelection(ReleaseMergeSelector releaseSelection) throws SW360Exception {
+        if (releaseSelection == null) {
+            throw new SW360Exception("Body for merge cannot be null");
+        }
+        Set<Release._Fields> requiredFields = ImmutableSet.<Release._Fields>builder().add(Release._Fields.NAME)
+                .add(Release._Fields.CREATED_ON).add(Release._Fields.CREATED_BY).build();
+
+        for (Release._Fields field : requiredFields) {
+            if (!releaseSelection.isSet(field)
+                    || isNullEmptyOrWhitespace((String) releaseSelection.getFieldValue(field))) {
+                throw new SW360Exception("Merge body is missing field " + field.getFieldName());
+            }
         }
     }
 }
