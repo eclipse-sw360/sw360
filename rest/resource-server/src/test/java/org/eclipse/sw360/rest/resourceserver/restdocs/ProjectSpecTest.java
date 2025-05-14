@@ -1435,6 +1435,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("sort").description("Defines order of the releases")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the project"),
                                 fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
                                 fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
                                 fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
