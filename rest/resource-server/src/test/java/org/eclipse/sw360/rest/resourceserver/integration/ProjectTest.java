@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
+
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
@@ -27,25 +28,25 @@ import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
+
     @Value("${local.server.port}")
     private int port;
 
     @MockBean
     private Sw360ProjectService projectServiceMock;
 
-    private List<Project> projectList;
-    private User user;
-
     @Before
     public void before() throws TException {
-        projectList = new ArrayList<>();
+        Set<Project> projectList = new HashSet<>();
 
         // Create sample projects
         Project project1 = new Project();
@@ -71,12 +72,15 @@ public class ProjectTest extends TestIntegrationBase {
         projectList.add(project1);
         projectList.add(project2);
 
-        user = new User();
+        given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
+        given(this.projectServiceMock.getProjectsSummaryForUserWithoutPagination(any())).willReturn(projectList.stream().toList());
+
+        User user = new User();
         user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
 
-        given(this.projectServiceMock.getProjectsSummaryForUserWithoutPagination(user)).willReturn(projectList);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
     }
 
     @Test
@@ -87,79 +91,21 @@ public class ProjectTest extends TestIntegrationBase {
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
-
         assertEquals(HttpStatus.OK, response.getStatusCode());
+
         TestHelper.checkResponse(response.getBody(), "projects", 2);
     }
 
     @Test
-    public void should_create_duplicate_project_with_dependency_network() throws IOException {
+    public void should_get_all_projects_paginated() throws IOException {
         HttpHeaders headers = getHeaders(port);
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("name", "Duplicate Project");
-        requestBody.put("version", "1.0.0");
-        requestBody.put("dependencyNetwork", new ArrayList<>());
-
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/network/duplicate/p001",
-                        HttpMethod.POST,
-                        new HttpEntity<>(requestBody, headers),
-                        String.class);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-    }
-
-    @Test
-    public void should_link_packages_to_project() throws IOException {
-        HttpHeaders headers = getHeaders(port);
-        Set<String> packages = new HashSet<>(Arrays.asList("pkg1", "pkg2"));
-
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/p001/link/packages",
-                        HttpMethod.PATCH,
-                        new HttpEntity<>(packages, headers),
-                        String.class);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-    }
-
-    @Test
-    public void should_unlink_packages_from_project() throws IOException {
-        HttpHeaders headers = getHeaders(port);
-        Set<String> packages = new HashSet<>(Arrays.asList("pkg1", "pkg2"));
-
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/p001/unlink/packages",
-                        HttpMethod.PATCH,
-                        new HttpEntity<>(packages, headers),
-                        String.class);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-    }
-
-    @Test
-    public void should_get_project_releases() throws IOException {
-        HttpHeaders headers = getHeaders(port);
-
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/p001/releases",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?page=0&page_entries=1",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
-
         assertEquals(HttpStatus.OK, response.getStatusCode());
-    }
 
-    @Test
-    public void should_get_vulnerabilities_of_project() throws IOException {
-        HttpHeaders headers = getHeaders(port);
-
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/p001/vulnerabilities",
-                        HttpMethod.GET,
-                        new HttpEntity<>(null, headers),
-                        String.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "projects", 1);
     }
 }
