@@ -98,6 +98,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
@@ -244,6 +245,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsForUser(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "The name of the project")
             @RequestParam(value = "name", required = false) String name,
@@ -269,15 +271,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
-
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Map<String, Project> mapOfProjects = new HashMap<>();
         boolean isSearchByName = name != null && !name.isEmpty();
-        boolean isNoFilter = false;
-        boolean isAllProjectAdded = false;
-
-        String queryString = request.getQueryString();
-        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
         List<Project> sw360Projects = new ArrayList<>();
 
         if (luceneSearch) {
@@ -294,70 +289,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             sw360Projects.addAll(projectService.refineSearch(filterMap, sw360User));
         } else {
             if (isSearchByName) {
-                sw360Projects.addAll(projectService.searchProjectByName(params.get("name"), sw360User));
+                sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
             } else {
-                isAllProjectAdded = true;
                 sw360Projects.addAll(projectService.getProjectsSummaryForUserWithoutPagination(sw360User));
             }
-
             Map<String, Set<String>> restrictions = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
                     additionalData);
-
             if (!restrictions.isEmpty()) {
                 sw360Projects = new ArrayList<>(sw360Projects.stream()
                         .filter(filterProjectMap(restrictions)).toList());
-            } else if (isAllProjectAdded) {
-                isNoFilter = true;
             }
         }
-
-        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(
-                request,
-                pageable,
-                sw360Projects,
-                SW360Constants.TYPE_PROJECT
-        );
-
-        CollectionModel<EntityModel<Project>> projectResources = getFilteredProjectResources(
-                allDetails, sw360User, paginationResult);
-
-        return new ResponseEntity<>(projectResources, HttpStatus.OK);
-    }
-
-    private CollectionModel<EntityModel<Project>> getFilteredProjectResources(
-        boolean allDetails,
-        User sw360User,
-        PaginationResult<Project> paginationResult
-    ) throws URISyntaxException {
-        List<EntityModel<Project>> projectResources = new ArrayList<>();
-
-        Consumer<Project> consumer = p -> {
-            EntityModel<Project> embeddedProjectResource = null;
-            if (!allDetails) {
-                Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-                embeddedProjectResource = EntityModel.of(embeddedProject);
-            } else {
-                try {
-                    embeddedProjectResource = createHalProject(p, sw360User);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-                if (embeddedProjectResource == null) {
-                    return;
-                }
-            }
-            projectResources.add(embeddedProjectResource);
-        };
-
-        paginationResult.getResources().forEach(consumer);
-
-        CollectionModel<EntityModel<Project>> resources;
-        if (projectResources.isEmpty()) {
-            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
-        } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
-        }
-        return resources;
+        return getProjectResponse(pageable, allDetails, request, sw360User,
+                sw360Projects);
     }
 
     private Map<String, Set<String>> getFilterMap(String tag, String projectType, String group, String version, String projectResponsible,
@@ -392,20 +336,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(
-            Pageable pageable, boolean allDetails, boolean luceneSearch,
-            HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects,
-            boolean isSearchByName, List<Project> sw360Projects, boolean isNoFilter
-    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
-        sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
-        PaginationResult<Project> paginationResult;
-        if (isNoFilter) {
-            int totalCount = projectService.getMyAccessibleProjectCounts(sw360User);
-            paginationResult = restControllerHelper.paginationResultFromPaginatedList(request, pageable,
-                    sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
-        } else {
-            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                    sw360Projects, SW360Constants.TYPE_PROJECT);
-        }
+            Pageable pageable, boolean allDetails, HttpServletRequest request, User sw360User,
+            List<Project> sw360Projects
+    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                sw360Projects, SW360Constants.TYPE_PROJECT);
 
         List<EntityModel<Project>> projectResources = new ArrayList<>();
         Consumer<Project> consumer = p -> {
@@ -422,14 +357,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             projectResources.add(embeddedProjectResource);
         };
 
-        if (luceneSearch) {
-            paginationResult.getResources().stream().forEach(consumer);
-        } else {
-            paginationResult.getResources().stream().forEach(consumer);
-        }
+        paginationResult.getResources().stream().forEach(consumer);
 
         CollectionModel resources;
-        if (projectResources.size() == 0) {
+        if (projectResources.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
@@ -471,7 +402,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Map<String, Project> mapOfProjects = new HashMap<>();
 
         ImmutableMap<String, Boolean> userRoles = ImmutableMap.<String, Boolean>builder()
                 .put(Project._Fields.CREATED_BY.toString(), createdBy)
@@ -492,8 +422,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Project> sw360Projects = projectService.getMyProjects(sw360User, userRoles);
         sw360Projects = projectService.getWithFilledClearingStatus(sw360Projects, clearingState);
 
-        return getProjectResponse(pageable, allDetails, true, request, sw360User,
-                mapOfProjects, true, sw360Projects, false);
+        return getProjectResponse(pageable, allDetails, request, sw360User,
+                sw360Projects);
     }
 
     @Operation(
