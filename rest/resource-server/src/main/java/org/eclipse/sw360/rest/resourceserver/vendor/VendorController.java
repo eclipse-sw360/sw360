@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -84,6 +86,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors(
             @Parameter(description = "Search text")
             @RequestParam(value = "searchText", required = false) String searchText,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request
     ) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {

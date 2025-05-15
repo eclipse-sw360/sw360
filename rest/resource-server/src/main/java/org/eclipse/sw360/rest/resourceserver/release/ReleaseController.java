@@ -77,6 +77,7 @@ import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
@@ -164,6 +165,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     )
     @GetMapping(value = RELEASES_URL)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "sha1 of the release attachment")
             @RequestParam(value = "sha1", required = false) String sha1,

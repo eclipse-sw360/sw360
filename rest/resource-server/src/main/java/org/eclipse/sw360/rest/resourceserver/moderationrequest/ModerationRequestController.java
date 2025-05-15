@@ -45,6 +45,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
@@ -117,7 +118,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
     )
     @RequestMapping(value = MODERATION_REQUEST_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequests(
-            Pageable pageable, HttpServletRequest request,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            HttpServletRequest request,
             @Parameter(description = "Fetch all details of the moderation request")
             @RequestParam(value = "allDetails", required = false) boolean allDetails
     ) throws TException, ResourceClassNotFoundException, URISyntaxException {
@@ -174,7 +177,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
     )
     @RequestMapping(value = MODERATION_REQUEST_URL + "/byState", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequestsByState(
-            Pageable pageable, HttpServletRequest request,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            HttpServletRequest request,
             @Parameter(
                     description = "The moderation request state of the request.",
                     schema = @Schema(allowableValues = {"open", "closed"})
@@ -336,7 +341,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
     )
     @GetMapping(value = MODERATION_REQUEST_URL + "/mySubmissions")
     public ResponseEntity<CollectionModel<ModerationRequest>> getSubmissions(
-            Pageable pageable, HttpServletRequest request
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            HttpServletRequest request
     ) throws TException, URISyntaxException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
