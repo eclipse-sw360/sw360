@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,7 +103,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @Operation(summary = "List all of the service's users.",
             description = "List all of the service's users.", tags = {"Users"})
     @RequestMapping(value = USERS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(Pageable pageable,
+    public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
             HttpServletRequest request,
             @Parameter(description = "fullName of the users") @RequestParam(value = "givenname",
                     required = false) String givenname,

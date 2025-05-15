@@ -376,6 +376,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/myprojects", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsFilteredForUser(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Projects with current user as creator.")
             @RequestParam(value = CREATED_BY, required = false, defaultValue = "true") boolean createdBy,
@@ -558,6 +559,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/linkedProjects", method = RequestMethod.GET)
 	public ResponseEntity<CollectionModel<EntityModel>> getLinkedProject(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
 			@Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -611,6 +613,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
             HttpServletRequest request,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
@@ -1025,6 +1028,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleases(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1073,6 +1077,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectsReleases(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "List of project IDs to get release for.", example = "[\"376576\",\"376570\"]")
             @RequestBody List<String> projectIds,
@@ -1123,6 +1128,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases/ecc", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request,
             @Parameter(description = "Project ID.")
@@ -1166,6 +1172,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilitySummary", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilitySummary>>> getAllVulnerabilities(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request,
             @PathVariable("id") String id
@@ -1258,6 +1265,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2879,6 +2887,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
 	public ResponseEntity<?> getLicObligations(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id
@@ -2971,6 +2980,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
 	public ResponseEntity<Object> getLicenseObligations(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -3034,6 +3044,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/obligation", method = RequestMethod.GET)
     public ResponseEntity<HalResource> getObligations(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,

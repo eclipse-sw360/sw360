@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.obligation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -74,8 +76,12 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel> getObligations(Pageable pageable, HttpServletRequest request,
-                                                          @RequestParam(value = "obligationLevel", required = false) String obligationLevel) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+    public ResponseEntity<CollectionModel> getObligations(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            HttpServletRequest request,
+            @RequestParam(value = "obligationLevel", required = false) String obligationLevel
+    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
 
         List<Obligation> obligations;
         if (!CommonUtils.isNullEmptyOrWhitespace(obligationLevel)) {

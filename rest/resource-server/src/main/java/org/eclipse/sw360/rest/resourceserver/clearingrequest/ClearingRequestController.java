@@ -48,6 +48,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
@@ -104,7 +105,6 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     )
     @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(
-            Pageable pageable,
             @Parameter(description = "id of the clearing request")
             @PathVariable("id") String docId
     ) throws TException {
@@ -122,7 +122,6 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     )
     @RequestMapping(value = CLEARING_REQUEST_URL + "/project/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(
-            Pageable pageable,
             @Parameter(description = "id of the project")
             @PathVariable("id") String projectId
     ) throws TException {
@@ -171,6 +170,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     )
     @RequestMapping(value = CLEARING_REQUESTS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<?>> getMyClearingRequests(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "The clearing request state of the request.",
                     schema = @Schema(
@@ -232,6 +232,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     public ResponseEntity<CollectionModel<?>> getCommentsByClearingRequestId(
             @PathVariable("id") String crId,
             HttpServletRequest request,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable
     ) throws SW360Exception {
         try {
