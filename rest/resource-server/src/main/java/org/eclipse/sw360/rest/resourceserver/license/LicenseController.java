@@ -40,6 +40,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -94,7 +95,11 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel> getLicenses(Pageable pageable, HttpServletRequest request) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+    public ResponseEntity<CollectionModel> getLicenses(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            HttpServletRequest request
+    ) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         List<License> sw360Licenses = licenseService.getLicenses();
         PaginationResult<License> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE);
         List<EntityModel<License>> licenseResources = new ArrayList<>();

@@ -124,9 +124,9 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         versionInfo.putAll(properties);
 
         SpringDocUtils.getConfig()
-                .replaceWithClass(org.springframework.data.domain.Pageable.class,
+                .replaceParameterObjectWithClass(org.springframework.data.domain.Pageable.class,
                         OpenAPIPaginationHelper.class)
-                .replaceWithClass(org.springframework.data.domain.PageRequest.class,
+                .replaceParameterObjectWithClass(org.springframework.data.domain.PageRequest.class,
                         OpenAPIPaginationHelper.class);
     }
 

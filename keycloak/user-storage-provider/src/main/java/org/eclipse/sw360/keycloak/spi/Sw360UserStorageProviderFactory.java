@@ -4,22 +4,19 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.spi;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.keycloak.spi.service.Sw360UserService;
 
-import org.apache.commons.lang3.StringUtils;
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,14 +38,6 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
 	}
 
 	@Override
-	public void init(Config.Scope config) {
-        logger.info("Initializing Sw360UserStorageProviderFactory with config: {}", config.getPropertyNames().toString());
-		if (config.get("THRIFT") != null && !config.get("THRIFT").isEmpty()) {
-			Sw360UserService.thriftServerUrl = config.get("THRIFT");
-		}
-	}
-
-	@Override
 	public String getId() {
 		return PROVIDER_ID;
 	}
@@ -61,8 +50,17 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
 	@Override
 	public void close() {
 		logger.debug("<<<<<< Closing factory");
-
 	}
+
+	@Override
+    public void init(Config.Scope config) {
+        logger.info("Initializing Sw360UserStorageProviderFactory with config: {}", config);
+        if (config.get("thrift") != null && !config.get("thrift").isEmpty()) {
+			logger.info("In SPI {}, setting thrift server URL to: '{}'",
+					PROVIDER_ID, config.get("thrift"));
+            Sw360UserService.thriftServerUrl = config.get("thrift");
+        }
+    }
 
 	/**
 	 * Synchronizes users from an external service with Keycloak.
@@ -178,6 +176,7 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
 						user::setLastName,
 						() -> logger.warn("Last name is null or empty for user: {}", externalUser.getEmail())
 				);
+
 
 		Optional.ofNullable(externalUser.getDepartment())
 				.ifPresentOrElse(

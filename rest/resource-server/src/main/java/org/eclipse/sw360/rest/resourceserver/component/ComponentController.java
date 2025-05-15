@@ -52,6 +52,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -143,6 +144,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     )
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getComponents(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Name of the component to filter")
             @RequestParam(value = "name", required = false) String name,
@@ -783,6 +785,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     )
     @RequestMapping(value = COMPONENTS_URL + "/mycomponents", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getMyComponents(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {

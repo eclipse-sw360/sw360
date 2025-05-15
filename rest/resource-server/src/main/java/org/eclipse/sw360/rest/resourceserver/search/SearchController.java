@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -78,6 +79,7 @@ public class SearchController implements RepresentationModelProcessor<Repository
     )
     @RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "The search text.")
             @RequestParam(value = "searchText") String searchText,

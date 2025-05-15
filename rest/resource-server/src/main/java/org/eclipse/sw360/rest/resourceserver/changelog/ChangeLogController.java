@@ -36,6 +36,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -97,6 +98,7 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
     )
     @RequestMapping(value = CHANGE_LOG_URL + "/document/{id}", method = RequestMethod.GET)
     public ResponseEntity getChangeLogForDocument(
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "id of the document")
             @PathVariable("id") String docId,

@@ -10,8 +10,8 @@ import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
-
 import org.keycloak.models.KeycloakSessionFactory;
+
 /**
  * Factory class for creating instances of Sw360CustomEventListenerProvider.
  *
@@ -30,9 +30,11 @@ public class Sw360CustomEventListenerProviderFactory implements EventListenerPro
 
     @Override
     public void init(Config.Scope config) {
-        logger.info("Initializing Sw360CustomEventListenerProviderFactory with config: " + config.getPropertyNames().toString());
-        if (config.get("THRIFT") != null && !config.get("THRIFT").isEmpty()) {
-            Sw360UserService.thriftServerUrl = config.get("THRIFT");
+        logger.info("Initializing Sw360CustomEventListenerProviderFactory with config: " + config);
+        if (config.get("thrift") != null && !config.get("thrift").isEmpty()) {
+            logger.infof("In SPI %s, setting thrift server URL to: '%s'",
+                    SW360_ADD_USER_TO_COUCHDB, config.get("thrift"));
+            Sw360UserService.thriftServerUrl = config.get("thrift");
         }
     }
 

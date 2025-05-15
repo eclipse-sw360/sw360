@@ -102,7 +102,7 @@ public class Sw360UserService {
         }
         return null;
     }
-    
+
     public RequestStatus updateUser(User user) throws Exception{
         UserService.Iface sw360UserClient = getThriftUserClient();
         RequestStatus requestStatus = sw360UserClient.updateUser(user);
