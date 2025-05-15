@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.licenses.db;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author johannes.najjar@tngtech.com
@@ -37,7 +39,13 @@ public class LicenseTypeRepository extends DatabaseRepositoryCloudantClient<Lice
     }
 
     public List<LicenseType> searchByLicenseType(String name) {
-        return queryByPrefix("bylicensetype", name);
+        if (name == null || name.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        String searchLower = name.trim().toLowerCase();
+        List<LicenseType> all = queryView("all");
+        return all.stream()
+                .filter(lt -> lt.getLicenseType() != null && lt.getLicenseType().toLowerCase().contains(searchLower))
+                .collect(Collectors.toList());
     }
-
 }

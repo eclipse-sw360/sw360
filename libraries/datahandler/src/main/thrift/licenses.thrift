@@ -371,4 +371,9 @@ service LicenseService {
      * convert Text to Node in obligation
      **/
     string convertTextToNode(1:Obligation Obligation, 2: User user);
+
+     /**
+     * Search licenses by partial or full licenseType match (case-insensitive).
+     */
+    list<LicenseType> searchByLicenseType(1: string licenseType);
 }
