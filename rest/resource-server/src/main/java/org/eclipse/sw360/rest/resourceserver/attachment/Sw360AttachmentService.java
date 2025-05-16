@@ -34,10 +34,12 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
@@ -53,6 +55,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.MalformedURLException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -504,6 +507,11 @@ public class Sw360AttachmentService {
         return new ProjectService.Client(protocol);
     }
 
+    private SPDXDocumentService.Iface getThriftSpdxDocumentClient() {
+        ThriftClients thriftClients = new ThriftClients();
+        return thriftClients.makeSPDXClient();
+    }
+
     private Stream<String> distinctProjectIdsFromAttachmentUsages (List<AttachmentUsage> usages){
         return nullToEmptyList(usages).stream()
                 .map(AttachmentUsage::getUsedBy)
@@ -567,6 +575,26 @@ public class Sw360AttachmentService {
             attachment.unsetCheckedTeam();
             attachment.setCheckedComment("");
             attachment.unsetCheckedOn();
+        }
+    }
+
+    public boolean isValidSbomFile(MultipartFile file, String type) throws TException {
+        if (file == null || file.isEmpty()) {
+            return false;
+        }
+
+        String fileExtension = getFileType(file.getOriginalFilename());
+        if (isNullEmptyOrWhitespace(fileExtension)) {
+            return false;
+        }
+
+        SPDXDocumentService.Iface spdxClient = getThriftSpdxDocumentClient();
+        try (InputStream inputStream = file.getInputStream()) {
+            ByteBuffer fileBuffer = ByteBuffer.wrap(inputStream.readAllBytes());
+            return spdxClient.isValidSbomFile(fileBuffer, type, fileExtension);
+        } catch (IOException e) {
+            log.error("Error reading file", e);
+            return false;
         }
     }
 }

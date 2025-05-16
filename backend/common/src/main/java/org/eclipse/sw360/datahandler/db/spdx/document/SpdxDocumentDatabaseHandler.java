@@ -12,7 +12,11 @@ package org.eclipse.sw360.datahandler.db.spdx.document;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
+import org.apache.logging.log4j.core.util.UuidUtil;
 import org.apache.thrift.TException;
+import org.cyclonedx.exception.ParseException;
+import org.cyclonedx.parsers.JsonParser;
+import org.cyclonedx.parsers.XmlParser;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -41,14 +45,24 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.google.common.collect.Lists;
+import org.spdx.library.model.v2.SpdxDocument;
+import org.spdx.tools.SpdxToolsHelper;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.JSON_FILE_EXTENSION;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.RDF_FILE_EXTENSION;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.SPDX_FILE_EXTENSION;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTENSION;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSPDXDocument;
 
@@ -338,4 +352,78 @@ public class SpdxDocumentDatabaseHandler {
         }
     }
 
+    public boolean isValidSbomFile(ByteBuffer file, String type, String extension) {
+        final File tempFile;
+        try {
+            tempFile = File.createTempFile(UuidUtil.getTimeBasedUuid().toString(), "." + extension);
+            tempFile.deleteOnExit();
+            // Set append to false, overwrite if file existed
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile, false)) {
+                outputStream.write(file.array());
+            }
+        } catch (IOException e) {
+            log.error("Error creating temporary file: {}", e.getMessage());
+            return false;
+        }
+
+        try {
+            // SPDX formats
+            if (type.equalsIgnoreCase("SPDX")) {
+
+                if (extension.equalsIgnoreCase(SPDX_FILE_EXTENSION) || extension.equalsIgnoreCase(RDF_FILE_EXTENSION)) {
+
+                    try {
+                        SpdxDocument doc = SpdxToolsHelper.deserializeDocumentCompatV2(tempFile);
+
+                        String specVersion = doc.getSpecVersion();
+                        if (specVersion == null || specVersion.isEmpty()) {
+                            log.debug("SPDX document missing SPDX specification version");
+                            return false;
+                        }
+
+                        String documentUri = doc.getDocumentUri();
+                        if (documentUri == null || documentUri.isEmpty()) {
+                            log.debug("SPDX document missing required Document URI/namespace");
+                            return false;
+                        }
+
+                        return true;
+
+                    } catch (Exception e) {
+                        log.debug("Not a valid SPDX file: {}", e.getMessage());
+                        return false;
+                    }
+                }
+            }
+            // CycloneDX formats
+            else if (type.equalsIgnoreCase("CycloneDX")) {
+
+                if (extension.equalsIgnoreCase(XML_FILE_EXTENSION)) {
+                    try {
+                        XmlParser xmlParser = new XmlParser();
+                        List<ParseException> xmlErrors = xmlParser.validate(tempFile);
+                        return xmlErrors == null || xmlErrors.isEmpty();
+                    } catch (Exception e) {
+                        log.debug("Not a valid CycloneDX XML file: {}", e.getMessage());
+                        return false;
+                    }
+                } else if (extension.equalsIgnoreCase(JSON_FILE_EXTENSION)) {
+                    try {
+                        JsonParser jsonParser = new JsonParser();
+                        List<ParseException> jsonErrors = jsonParser.validate(tempFile);
+                        return jsonErrors == null || jsonErrors.isEmpty();
+                    } catch (Exception e) {
+                        log.debug("Not a valid CycloneDX JSON file: {}", e.getMessage());
+                        return false;
+                    }
+                }
+            }
+
+            return false;
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
 }
