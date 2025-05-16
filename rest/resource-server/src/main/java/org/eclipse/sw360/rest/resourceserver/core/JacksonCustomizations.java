@@ -68,7 +68,7 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModeratio
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
-
+import org.eclipse.sw360.rest.resourceserver.release.ReleaseMergeSelector;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -153,6 +153,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(RestApiToken.class, Sw360Module.RestApiTokenMixin.class);
             setMixInAnnotation(ProjectLink.class, Sw360Module.ProjectLinkMixin.class);
             setMixInAnnotation(BulkOperationNode.class, Sw360Module.BulkOperationNodeMixin.class);
+            setMixInAnnotation(ReleaseMergeSelector.class, Sw360Module.ReleaseMergeSelectorMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -162,6 +163,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(Component.class, ComponentMixin.class)
                     .replaceWithClass(ComponentDTO.class, ComponentDTOMixin.class)
                     .replaceWithClass(ComponentMergeSelector.class, ComponentMergeSelectorMixin.class)
+                    .replaceWithClass(ReleaseMergeSelector.class, ReleaseMergeSelectorMixin.class)
                     .replaceWithClass(Package.class, PackageMixin.class)
                     .replaceWithClass(Release.class, ReleaseMixin.class)
                     .replaceWithClass(ReleaseLink.class, ReleaseLinkMixin.class)
@@ -1075,6 +1077,131 @@ public class JacksonCustomizations {
                 "nameIsSet"
         })
         static abstract class ReleaseMixin extends Release {
+            @Override
+            @JsonProperty("eccInformation")
+            abstract public EccInformation getEccInformation();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "revision",
+                "permissions",
+                "subscribers",
+                "setAttachments",
+                "setCreatedOn",
+                "setRepository",
+                "setCreatedBy",
+                "setModerators",
+                "setSubscribers",
+                "setVendor",
+                "setVendorId",
+                "languagesSize",
+                "setLanguages",
+                "setCotsDetails",
+                "setSourceCodeDownloadurl",
+                "setPermissions",
+                "externalIdsSize",
+                "attachmentsIterator",
+                "attachmentsSize",
+                "setMainlineState",
+                "setClearingState",
+                "contributorsSize",
+                "setContributors",
+                "moderatorsSize",
+                "moderatorsIterator",
+                "subscribersSize",
+                "setClearingInformation",
+                "operatingSystemsSize",
+                "setOperatingSystems",
+                "mainLicenseIdsSize",
+                "setMainLicenseIds",
+                "releaseIdToRelationshipSize",
+                "setReleaseIdToRelationship",
+                "setDocumentState",
+                "permissionsSize",
+                "setId",
+                "setRevision",
+                "setType",
+                "setCpeid",
+                "setName",
+                "setVersion",
+                "setComponentId",
+                "setReleaseDate",
+                "setExternalIds",
+                "setSpdxId",
+                "externalToolProcessesSize",
+                "setExternalToolProcesses",
+                "setEccInformation",
+                "languagesIterator",
+                "operatingSystemsIterator",
+                "documentState",
+                "contributorsIterator",
+                "rolesSize",
+                "setRoles",
+                "setCreatorDepartment",
+                "setSoftwarePlatforms",
+                "softwarePlatformsSize",
+                "softwarePlatformsIterator",
+                "additionalDataSize",
+                "setAdditionalData",
+                "mainLicenseIdsIterator",
+                "setBinaryDownloadurl",
+                "subscribersIterator",
+                "otherLicenseIdsIterator",
+                "otherLicenseIdsSize",
+                "setOtherLicenseIds",
+                "setModifiedOn",
+                "setModifiedBy",
+                "modifiedBy",
+                "setComponentType",
+                "packageIdsSize",
+                "setPackageIds",
+                "packageIdsIterator",
+                "createdByIsSet",
+                "createdOnIsSet",
+                "releaseDateIsSet",
+                "cpeidIsSet",
+                "versionIsSet",
+                "componentIdIsSet",
+                "componentTypeIsSet",
+                "externalIdsIsSet",
+                "additionalDataIsSet",
+                "attachmentsIsSet",
+                "repositoryIsSet",
+                "mainlineStateIsSet",
+                "clearingStateIsSet",
+                "externalToolProcessesIterator",
+                "externalToolProcessesIsSet",
+                "creatorDepartmentIsSet",
+                "contributorsIsSet",
+                "subscribersIsSet",
+                "rolesIsSet",
+                "mainLicenseIdsIsSet",
+                "otherLicenseIdsIsSet",
+                "vendorIsSet",
+                "vendorIdIsSet",
+                "clearingInformationIsSet",
+                "languagesIsSet",
+                "operatingSystemsIsSet",
+                "cotsDetailsIsSet",
+                "eccInformationIsSet",
+                "softwarePlatformsIsSet",
+                "sourceCodeDownloadurlIsSet",
+                "binaryDownloadurlIsSet",
+                "releaseIdToRelationshipIsSet",
+                "packageIdsIsSet",
+                "spdxIdIsSet",
+                "modifiedByIsSet",
+                "modifiedOnIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "documentStateIsSet",
+                "permissionsIsSet",
+                "moderatorsIsSet",
+                "nameIsSet"
+        })
+        static abstract class ReleaseMergeSelectorMixin extends ReleaseMergeSelector {
             @Override
             @JsonProperty("eccInformation")
             abstract public EccInformation getEccInformation();
