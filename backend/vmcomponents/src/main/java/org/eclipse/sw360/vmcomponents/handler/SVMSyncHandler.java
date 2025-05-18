@@ -601,30 +601,40 @@ public class SVMSyncHandler<T extends TBase> {
         if (matches == null || matches.isEmpty()){
             return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 1, 0, "no known matches for component: " + component.toString()));
         }
+        // Counters for result
+        Set<String> vulIds = new HashSet<>();
+
         for (VMMatch match: matches) {
             if (VMMatchState.ACCEPTED.equals(match.getState())){
                 Set<String> vulVmIds = getVulIdsPerComponentVmId(component.getVmid(), url);
-                if (vulVmIds == null || vulVmIds.isEmpty()){
-                    return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 1, 0, "got no vulnerabilities for component: " + component.toString()));
-                } else {
-                    List<String> vulIds = new ArrayList<>();
-                    for (String vulVmId: vulVmIds) {
-                        Vulnerability vulnerability = dbHandler.getByExternalId(Vulnerability.class, vulVmId);
-                        if (vulnerability == null){
-                            vulnerability = new Vulnerability(vulVmId);
-                            dbHandler.add(vulnerability);
-                        }
-                        vulIds.add(vulnerability.getId());
-                        ReleaseVulnerabilityRelation relation = dbHandler.getRelationByIds(match.getReleaseId(), vulnerability.getId());
-                        if (relation == null){
-                            relation = new ReleaseVulnerabilityRelation(match.releaseId, vulnerability.getId());
-                            dbHandler.add(relation);
-                        }
+                if (vulVmIds == null || vulVmIds.isEmpty()) {
+                    continue;
+                }
+                for (String vulVmId: vulVmIds) {
+                    Vulnerability vulnerability = dbHandler.getByExternalId(Vulnerability.class, vulVmId);
+                    if (vulnerability == null) {
+                        vulnerability = new Vulnerability(vulVmId);
+                        dbHandler.add(vulnerability);
                     }
-                    return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 1, vulIds.size(), null), vulIds);
+                    vulIds.add(vulnerability.getId());
+                    ReleaseVulnerabilityRelation relation = dbHandler.getRelationByIds(match.getReleaseId(), vulnerability.getId());
+                    if (relation == null) {
+                        relation = new ReleaseVulnerabilityRelation(match.releaseId, vulnerability.getId());
+                        dbHandler.add(relation);
+                    }
                 }
             }
         }
+
+        if (!matches.isEmpty() && vulIds.isEmpty()) {
+            // Found matches but no vulns from SVM
+            return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 1, 0, "got no vulnerabilities for component: " + component.toString()));
+        }
+
+        if (!vulIds.isEmpty()) {
+            return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 1, vulIds.size(), null), new ArrayList<>(vulIds));
+        }
+
         return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 1, 0, "no accepted matches found for component: " + component.toString()));
     }
 
