@@ -37,7 +37,7 @@ public class Sw360ScheduleService {
     }
 
     private static void throwIfNotAdmin(User sw360User) throws AccessDeniedException {
-        if (PermissionUtils.isAdmin(sw360User)) {
+        if (!PermissionUtils.isAdmin(sw360User)) {
             throw new AccessDeniedException("User does not have admin access");
         }
     }
