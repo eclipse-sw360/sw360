@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -163,14 +162,6 @@ public class MailUtil extends BackendUtils {
         }
     }
 
-    // New sendMail overload for ModerationRequest
-    public void sendMail(String recipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, ModerationRequest moderationRequest) {
-        MimeMessage messageWithSubjectAndText = makeMessageWithSubjectAndText(subjectNameInPropertiesFile, textNameInPropertiesFile, moderationRequest);
-        if (!isNullEmptyOrWhitespace(recipient) && isMailWantedBy(recipient, SW360Utils.notificationPreferenceKey(notificationClass, roleName))) {
-            sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
-        }
-    }
-
     private boolean isMailWantedBy(String userEmail, String notificationPreferenceKey){
         User user;
         try {
@@ -272,40 +263,6 @@ public class MailUtil extends BackendUtils {
             text.append(supportMailAddress);
             text.append(loadedProperties.getProperty("unsubscribeNoticeAfter", ""));
         }
-        try {
-            message.setSubject(subject);
-            message.setText(text.toString());
-        } catch (MessagingException mex) {
-            log.error(mex.getMessage());
-        }
-
-        return message;
-    }
-
-    private MimeMessage makeMessageWithSubjectAndText(String subjectKeyInPropertiesFile, String textKeyInPropertiesFile, ModerationRequest moderationRequest) {
-        MimeMessage message = new MimeMessage(session);
-        String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
-
-        StringBuilder text = new StringBuilder();
-        text.append(loadedProperties.getProperty("defaultBegin", ""));
-
-        if ("textForUpdateModerationRequest".equals(textKeyInPropertiesFile) && moderationRequest != null) {
-            String docType = moderationRequest.getDocumentType() != null ? moderationRequest.getDocumentType().toString() : "Unknown";
-            String docName = moderationRequest.getDocumentName() != null ? moderationRequest.getDocumentName() : "Unnamed";
-            text.append(String.format("The moderation request for the [Type: %s] named \"%s\" previously added to your SW360-account has been updated.\n\n", docType, docName));
-        } else {
-            String mainContentFormat = loadedProperties.getProperty(textKeyInPropertiesFile, "");
-            text.append(mainContentFormat); // Fallback for other email types
-        }
-
-        text.append(loadedProperties.getProperty("defaultEnd", ""));
-        if (!supportMailAddress.equals("")) {
-            text.append(loadedProperties.getProperty("unsubscribeNoticeBefore", ""));
-            text.append(" ");
-            text.append(supportMailAddress);
-            text.append(loadedProperties.getProperty("unsubscribeNoticeAfter", ""));
-        }
-
         try {
             message.setSubject(subject);
             message.setText(text.toString());
