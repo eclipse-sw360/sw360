@@ -270,3 +270,14 @@ include::{snippets}/should_document_get_license_report/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_license_report/http-response.adoc[]
+
+[[resources-license-type-delete]]
+==== Delete a single license type
+
+A `DELETE` request will delete a single license type.
+
+===== Example request
+include::{snippets}/should_document_delete_license_type/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_license_type/http-response.adoc[]

@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -143,8 +144,16 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @RequestMapping(value = LICENSE_TYPES_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<LicenseType>>> getLicenseTypes() throws TException {
-        List<LicenseType> sw360LicenseTypes = licenseService.getLicenseTypes();
+    public ResponseEntity<CollectionModel<EntityModel<LicenseType>>> getLicenseTypes(
+            @Parameter(description = "The search license type text.")
+            @RequestParam(value = "search", required = false) String searchElem) throws TException {
+        List<LicenseType> sw360LicenseTypes;
+
+        if (searchElem != null && !searchElem.isEmpty()) {
+            sw360LicenseTypes = licenseService.quickSearchLicenseType(searchElem);
+        } else {
+            sw360LicenseTypes = licenseService.getLicenseTypes();
+        }
 
         List<EntityModel<LicenseType>> licenseTypeResources = new ArrayList<>();
         for (LicenseType sw360LicenseType : sw360LicenseTypes) {
@@ -530,5 +539,22 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         RequestStatus requestStatus = licenseService.addLicenseType(sw360User, licenseType, request);
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @Operation(
+            summary = "Delete a specific license type.",
+            description = "Delete a specific license type.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSE_TYPES_URL + "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteLicenseType(
+            @Parameter(description = "The id of the license type.")
+            @PathVariable("id") String id
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus status = licenseService.deleteLicenseType(id, sw360User);
+
+        return ResponseEntity.ok("License type deleted successfully: " + status.name());
     }
 }

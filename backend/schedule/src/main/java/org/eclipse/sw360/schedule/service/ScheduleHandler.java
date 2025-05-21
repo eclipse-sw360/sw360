@@ -80,6 +80,7 @@ public class ScheduleHandler implements ScheduleService.Iface {
                 break;
             case ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE:
                 successSync = wrapSupplierException(() -> thriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
+                break;
             case ThriftClients.DELETE_ATTACHMENT_SERVICE:
                 successSync = wrapSupplierException(() -> thriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
                 break;
