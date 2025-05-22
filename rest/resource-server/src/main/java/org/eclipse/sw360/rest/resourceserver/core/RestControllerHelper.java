@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -97,6 +98,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -1658,5 +1660,12 @@ public class RestControllerHelper<T> {
 
     public boolean isWriteActionAllowed(Object object, User user) {
         return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);
+    }
+
+    public void throwIfSecurityUser(User user) {
+        if (PermissionUtils.isSecurityUser(user)) {
+            throw new HttpClientErrorException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "User is not allowed to access this resource.");
+        }
     }
 }

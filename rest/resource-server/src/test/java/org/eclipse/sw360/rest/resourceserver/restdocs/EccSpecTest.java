@@ -10,6 +10,8 @@ import static org.mockito.ArgumentMatchers.any;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -71,6 +73,8 @@ public class EccSpecTest extends TestRestDocsSpecBase {
         releaseList.add(rel2);
         
         given(this.releaseService.getReleasesForUser(any())).willReturn(releaseList);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
     }
 
     @Test

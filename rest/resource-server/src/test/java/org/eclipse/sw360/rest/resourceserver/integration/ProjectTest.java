@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.junit.Before;
@@ -79,6 +80,7 @@ public class ProjectTest extends TestIntegrationBase {
         user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
+        user.setUserGroup(UserGroup.ADMIN);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
     }

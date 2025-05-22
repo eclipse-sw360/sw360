@@ -14,6 +14,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -83,6 +85,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
         given(this.obligationServiceMock.getObligations()).willReturn(obligationList);
         given(this.obligationServiceMock.getObligationById(eq(obligation.getId()))).willReturn(obligation);
         given(this.obligationServiceMock.deleteObligation(eq(obligation.getId()), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
 
         when(this.obligationServiceMock.createObligation(any(), any())).then(invocation ->
         new Obligation("This is the text of my Test Obligation")
