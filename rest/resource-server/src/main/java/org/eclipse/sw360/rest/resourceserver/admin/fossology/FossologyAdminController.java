@@ -13,14 +13,19 @@ package org.eclipse.sw360.rest.resourceserver.admin.fossology;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -28,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
@@ -125,5 +131,42 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
         }
         return ResponseEntity.ok(Series.SUCCESSFUL);
 
+    }
+
+    @Operation(
+            summary = "FOSSology connection configuration data.",
+            description = "Get the FOSSology connection configuration data.",
+            tags = {"Admin"},
+            responses = {
+            @ApiResponse(
+                    responseCode = "200", description = "Connection Configuration data",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = """
+                                                    {
+                                                        "isTokenSet": true,
+                                                        "url": "http://localhost:8000/url",
+                                                        "folderId": "1"
+                                                    }
+                                                    """
+                                    ))
+                    }
+            ),
+            @ApiResponse(
+                    responseCode = "403", description = "Don't have permission to perform the action. User is not an admin"
+            )
+    }
+    )
+    @RequestMapping(value = FOSSOLOGY_URL + "/configData", method = RequestMethod.GET)
+    public ResponseEntity<?> getConnectionConfigurationData()throws TException {
+        Map<String, Object> configData = new HashMap<>();
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            configData = sw360FossologyAdminServices.getConfig(sw360User);
+        } catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+        return new ResponseEntity<>(configData, HttpStatus.OK);
     }
 }
