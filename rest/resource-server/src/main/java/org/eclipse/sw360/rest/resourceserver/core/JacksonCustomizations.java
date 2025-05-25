@@ -1376,7 +1376,9 @@ public class JacksonCustomizations {
                 "setDefaultValue",
                 "setProjectId",
                 "setReleaseMainLineState",
-                "setComponentId"
+                "setComponentId",
+                "setCreatedBy",
+                "createdByIsSet"
         })
         static abstract class ReleaseLinkMixin extends ReleaseLink {
 
