@@ -410,7 +410,16 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateCommentComparatorWithFields(type, commentFields);
-                default:
+            case SW360Constants.TYPE_OBLIGATION:
+                List<Obligation._Fields> obligationFields = new ArrayList<>();
+                for (String property : properties) {
+                    Obligation._Fields field = Obligation._Fields.findByName(property);
+                    if (field != null) {
+                        obligationFields.add(field);
+                    }
+                }
+                return generateObligationComparatorWithFields(type, obligationFields);
+            default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
     }
@@ -554,6 +563,13 @@ public class ResourceComparatorGenerator<T> {
         }
     }
 
+    public Comparator<T> generateObligationComparatorWithFields(
+            String type, List<Obligation._Fields> fields) throws ResourceClassNotFoundException {
+        if (type.equals(SW360Constants.TYPE_OBLIGATION)) {
+            return (Comparator<T>) obligationComparator(fields);
+        }
+        throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+    }
 
     private Comparator<Component> componentComparator(List<Component._Fields> fields) {
         Comparator<Component> comparator = Comparator.comparing(x -> true);
@@ -747,6 +763,18 @@ public class ResourceComparatorGenerator<T> {
             }
         }
         comparator = comparator.thenComparing(defaultClearingRequestComparator());
+        return comparator;
+    }
+
+    private Comparator<Obligation> obligationComparator(List<Obligation._Fields> fields) {
+        Comparator<Obligation> comparator = Comparator.comparing(x -> true);
+        for (Obligation._Fields field : fields) {
+            Comparator<Obligation> fieldComparator = obligationMap.get(field);
+            if (fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultObligationComparator());
         return comparator;
     }
 
