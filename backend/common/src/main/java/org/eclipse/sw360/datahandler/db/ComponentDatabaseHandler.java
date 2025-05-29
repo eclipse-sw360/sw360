@@ -1236,16 +1236,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return true; // If empty or null, considered valid
         }
         try {
-            // Reject if the URL contains skipped domains
+            // Don't check if the URL contains skipped domains
             String invalidUrlPattern = SW360Utils.readConfig(SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, null);
             if (StringUtils.isNotBlank(invalidUrlPattern)) {
                 Pattern pattern = Pattern.compile(invalidUrlPattern);
                 if (pattern.matcher(sourceCodeUrl).find()) {
-                    return false;
+                    return true;
                 }
             }
         } catch (PatternSyntaxException e) {
-            log.error("Invalid regex pattern for SKIP_DOMAINS_FOR_VALID_SOURCE_CODE: " + e.getMessage(), e);
+            log.error("Invalid regex pattern for SKIP_DOMAINS_FOR_VALID_SOURCE_CODE: {}", e.getMessage(), e);
             return false; // Consider invalid if the regex is malformed
         }
 
