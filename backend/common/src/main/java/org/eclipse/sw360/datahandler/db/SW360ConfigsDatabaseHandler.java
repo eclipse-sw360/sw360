@@ -71,6 +71,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(IS_PACKAGE_PORTLET_ENABLED, getOrDefault(configContainer, IS_PACKAGE_PORTLET_ENABLED, "true"))
             .put(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, getOrDefault(configContainer, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER.name()))
             .put(IS_ADMIN_PRIVATE_ACCESS_ENABLED, getOrDefault(configContainer, IS_ADMIN_PRIVATE_ACCESS_ENABLED, "false"))
+            .put(SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, getOrDefault(configContainer, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, SW360Constants.DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE))
             .build();
         configsMapInMem.putAll(configMap);
     }
@@ -130,7 +131,8 @@ public class SW360ConfigsDatabaseHandler {
             // Validate string value
             case ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
                  TOOL_NAME,
-                 TOOL_VENDOR
+                 TOOL_VENDOR,
+                 SKIP_DOMAINS_FOR_VALID_SOURCE_CODE
                     -> configValue != null;
 
             // validate int value

@@ -440,7 +440,8 @@ struct ReleaseLink{
     107: optional i32 index,
     108: optional string defaultValue,
     109: optional string projectId,
-    110: optional MainlineState releaseMainLineState
+    110: optional MainlineState releaseMainLineState,
+    112: optional string createdBy // person who created the release
 }
 
 struct ReleaseClearingStatusData {

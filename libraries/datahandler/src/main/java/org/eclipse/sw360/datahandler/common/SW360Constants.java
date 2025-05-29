@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 import java.util.*;
 import java.util.function.Function;
@@ -141,7 +140,7 @@ public class SW360Constants {
     public static final int DEFAULT_ATTACHMENT_DELETE_NO_DAY = 30;
     public static final String DEFAULT_SBOM_TOOL_NAME = "SW360";
     public static final String DEFAULT_SBOM_TOOL_VENDOR = "Eclipse Foundation";
-
+    public static final String DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE ="(?i)\\btrusted\\.(com|de|net)\\b" ;
     /**
      * Hashmap containing the name field for each type.
      * Used by the search service to fill the search results
@@ -212,6 +211,7 @@ public class SW360Constants {
                     .map(roleEntry -> SW360Utils.notificationPreferenceKey(notificationClassEntry.getKey(), roleEntry.getKey())))
             .flatMap(Function.identity())
             .collect(Collectors.toList());
+
 
     static final Map<String, Boolean> DEFAULT_NOTIFICATION_PREFERENCES = NOTIFICATION_EVENTS_KEYS.stream().collect(Collectors.toMap(s -> s, s -> Boolean.FALSE));
 

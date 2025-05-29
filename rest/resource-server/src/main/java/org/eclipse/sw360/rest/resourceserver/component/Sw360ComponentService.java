@@ -204,6 +204,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             releaseLink.setVersion(release.getVersion());
             releaseLink.setClearingState(release.getClearingState());
 
+            //  Added as part of https://github.com/eclipse-sw360/sw360/issues/3161
+            releaseLink.setCreatedBy(release.getCreatedBy());
+
             ClearingReport clearingReport = new ClearingReport();
             Set<Attachment> attachments = getAttachmentForClearingReport(release);
             if (!attachments.equals(Collections.emptySet())) {

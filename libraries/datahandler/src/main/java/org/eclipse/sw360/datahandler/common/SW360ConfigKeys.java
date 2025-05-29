@@ -56,6 +56,8 @@ public class SW360ConfigKeys {
 
     public static final String IS_ADMIN_PRIVATE_ACCESS_ENABLED = "admin.private.project.access.enabled";
 
+    public static final String SKIP_DOMAINS_FOR_VALID_SOURCE_CODE = "release.sourcecodeurl.skip.domains";
+
     private SW360ConfigKeys() {
     }
 }

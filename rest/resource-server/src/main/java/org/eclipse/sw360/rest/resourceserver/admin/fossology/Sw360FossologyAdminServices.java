@@ -126,4 +126,32 @@ public class Sw360FossologyAdminServices {
             throw new RuntimeException("Connection to Fossology server Failed.");
         }
     }
+
+    public Map<String, Object> getConfig(User sw360User) throws TException {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new AccessDeniedException("Don't have permission to perform the action. User is not an admin");
+        }
+        FossologyService.Iface client = getThriftFossologyClient();
+        ConfigContainer fossologyConfig = client.getFossologyConfig();
+        Map<String, Set<String>> configKeyToValues = fossologyConfig.getConfigKeyToValues();
+        Map<String, Object> filteredMap = new HashMap<>();
+
+        // Add url and id if present
+        if (configKeyToValues.containsKey("url")) {
+            filteredMap.put("url", configKeyToValues.get("url").iterator().next());
+        }
+
+        if (configKeyToValues.containsKey("folderId")) {
+            filteredMap.put("folderId", configKeyToValues.get("folderId").iterator().next());
+        }
+
+        // Handle token presence without exposing value
+        Set<String> tokenValues = configKeyToValues.get("token");
+        boolean isTokenSet = tokenValues != null && !tokenValues.isEmpty() &&
+                tokenValues.iterator().next() != null &&
+                !tokenValues.iterator().next().isBlank();
+
+        filteredMap.put("isTokenSet", isTokenSet);
+        return filteredMap;
+    }
 }
