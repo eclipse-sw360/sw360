@@ -12,6 +12,8 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -41,6 +43,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class VendorSpecTest extends TestRestDocsSpecBase {
@@ -104,6 +107,8 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
         given(this.vendorServiceMock.deleteVendorByid(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.exportExcel()).willReturn(ByteBuffer.allocate(10000));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
 
         when(this.vendorServiceMock.createVendor(any())).then(invocation ->
         new Vendor ("Apache", "Apache Software Foundation", "https://www.apache.org/").setId("987567468"));
