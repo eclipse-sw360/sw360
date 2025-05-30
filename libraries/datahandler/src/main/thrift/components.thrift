@@ -616,7 +616,7 @@ service ComponentService {
     /**
      * get component from database filled with releases and permissions for user
      **/
-    Component getComponentById(1: string id, 2: User user);
+    Component getComponentById(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * get component from database filled with releases and permissions for user
