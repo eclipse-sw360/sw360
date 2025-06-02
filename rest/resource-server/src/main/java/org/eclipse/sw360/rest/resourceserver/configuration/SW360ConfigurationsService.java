@@ -14,8 +14,8 @@ package org.eclipse.sw360.rest.resourceserver.configuration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -57,6 +57,20 @@ public class SW360ConfigurationsService {
         try {
             SW360ConfigsService.Iface configsService = getThriftConfigsClient();
             return configsService.updateSW360Configs(updatedConfig, user);
+        } catch (SW360Exception sw360Exception) {
+            throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
+        }
+    }
+
+    public Map<String, String> getConfigForContainer(ConfigFor configFor) throws TException {
+        SW360ConfigsService.Iface configsService = getThriftConfigsClient();
+        return configsService.getConfigForContainer(configFor);
+    }
+
+    public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfig, User user) throws TException, InvalidPropertiesFormatException {
+        try {
+            SW360ConfigsService.Iface configsService = getThriftConfigsClient();
+            return configsService.updateSW360ConfigForContainer(configFor, updatedConfig, user);
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }

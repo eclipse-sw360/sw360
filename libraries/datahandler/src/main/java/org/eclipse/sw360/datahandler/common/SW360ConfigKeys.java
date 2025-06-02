@@ -27,6 +27,9 @@ public class SW360ConfigKeys {
     public static final String ATTACHMENT_DELETE_NO_OF_DAYS = "attachment.delete.no.of.days";
     public static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION = "attachment.store.file.system.location";
 
+    // This property is used to find correlation key for combined CLI
+    public static final String COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY = "combined.cli.parser.external.id.correlation.key";
+
     // Enable auto set ECC status
     public static final String AUTO_SET_ECC_STATUS = "auto.set.ecc.status";
 
@@ -53,10 +56,34 @@ public class SW360ConfigKeys {
     public static final String IS_PACKAGE_PORTLET_ENABLED = "package.portlet.enabled";
     // This property is used to control the write access user role for Packages.
     public static final String PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE = "package.portlet.write.access.usergroup";
+    // This property is used to create URLs in Doc reports
+    public static final String RELEASE_FRIENDLY_URL = "release.friendly.url";
 
     public static final String IS_ADMIN_PRIVATE_ACCESS_ENABLED = "admin.private.project.access.enabled";
 
     public static final String SKIP_DOMAINS_FOR_VALID_SOURCE_CODE = "release.sourcecodeurl.skip.domains";
+
+    // Properties for the Schedule services
+    public static final String AUTOSTART_PROPERTY_NAME = "autostart";
+    public static final String CVESEARCH_OFFSET_PROPERTY_NAME = "schedule.cvesearch.firstOffset.seconds";
+    public static final String CVESEARCH_INTERVAL_PROPERTY_NAME = "schedule.cvesearch.interval.seconds";
+    public static final String SVMSYNC_OFFSET_PROPERTY_NAME = "schedule.svmsync.firstOffset.seconds";
+    public static final String SVMSYNC_INTERVAL_PROPERTY_NAME = "schedule.svmsync.interval.seconds";
+    public static final String SVMMATCH_OFFSET_PROPERTY_NAME = "schedule.svmmatch.firstOffset.seconds";
+    public static final String SVMMATCH_INTERVAL_PROPERTY_NAME = "schedule.svmmatch.interval.seconds";
+    public static final String SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME = "schedule.svmlistupdate.firstOffset.seconds";
+    public static final String SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME = "schedule.svmlistupdate.interval.seconds";
+    public static final String SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME = "schedule.trackingfeedback.firstOffset.seconds";
+    public static final String SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME = "schedule.trackingfeedback.interval.seconds";
+    public static final String SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME = "schedule.srcupload.firstOffset.seconds";
+    public static final String SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME = "schedule.srcupload.interval.seconds";
+    public static final String DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME = "schedule.delete.attachment.firstOffset.seconds";
+    public static final String DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME = "schedule.delete.attachment.interval.seconds";
+    public static final String DEPARTMENT_OFFSET_PROPERTY_NAME = "schedule.department.firstOffset.seconds";
+    public static final String DEPARTMENT_INTERVAL_PROPERTY_NAME = "schedule.department.interval.seconds";
+
+    // Properties purely used by UI
+    public static final String UI_DOMAINS = "ui.domains";
 
     private SW360ConfigKeys() {
     }

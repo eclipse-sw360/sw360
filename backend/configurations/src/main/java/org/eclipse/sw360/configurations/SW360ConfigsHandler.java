@@ -14,6 +14,7 @@ package org.eclipse.sw360.configurations;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.SW360ConfigsDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
@@ -45,5 +46,17 @@ public class SW360ConfigsHandler implements SW360ConfigsService.Iface {
     @Override
     public String getConfigByKey(String key) {
         return sw360ConfigsDatabaseHandler.getConfigByKey(key);
+    }
+
+    @Override
+    public Map<String, String> getConfigForContainer(ConfigFor configFor) {
+        return sw360ConfigsDatabaseHandler.getConfigForContainer(configFor);
+    }
+
+    @Override
+    public RequestStatus updateSW360ConfigForContainer(
+            ConfigFor configFor, Map<String, String> updatedConfigs, User user
+    ) throws SW360Exception {
+        return sw360ConfigsDatabaseHandler.updateSW360ConfigForContainer(configFor, updatedConfigs, user);
     }
 }
