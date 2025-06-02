@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -32,7 +31,6 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.*;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
 
 
@@ -158,7 +156,7 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
         finalDepartments.add(departmentIfUserInBU);
         return departmentIfUserInBU == null ? null : finalDepartments;
     }
-    
+
     private static String getDepartmentIfUserInBU(Component document, Set<String> BUs) {
         for (String bu:BUs) {
             String buFromOrganisation = getBUFromOrganisation(bu);

@@ -18,6 +18,7 @@ typedef sw360.SW360Exception SW360Exception
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.ConfigContainer ConfigContainer
 typedef users.User User
+typedef sw360.ConfigFor ConfigFor
 
 service SW360ConfigsService {
 
@@ -28,15 +29,26 @@ service SW360ConfigsService {
     RequestStatus createSW360Configs(1: ConfigContainer newConfig);
 
     /**
-     * Update config in database with configFor SW360_CONFIGURATION.
+     * Update config in database finding correct configFor.
      * Only users have role ADMIN are allowed
      **/
     RequestStatus updateSW360Configs(1: map<string, string> updatedConfigs, 2: User user) throws (1: SW360Exception exp);
 
     /**
+     * Update config in database for configFor.
+     * Only users have role ADMIN are allowed
+     **/
+    RequestStatus updateSW360ConfigForContainer(1: ConfigFor configFor, 2: map<string, string> updatedConfigs, 3: User user) throws (1: SW360Exception exp);
+
+    /**
      * gets the current sw360 config map for configFor SW360_CONFIGURATION.
      **/
     map<string, string> getSW360Configs();
+
+    /**
+     * get config value by config key name for configFor.
+     **/
+    map<string, string> getConfigForContainer(ConfigFor configFor);
 
     /**
      * get config value by config key name.

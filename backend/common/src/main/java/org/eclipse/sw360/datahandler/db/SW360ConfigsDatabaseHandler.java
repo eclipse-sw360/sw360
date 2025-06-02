@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.ScheduleConstants;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
@@ -36,21 +37,32 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 public class SW360ConfigsDatabaseHandler {
     private final Logger log = LogManager.getLogger(this.getClass());
     private final ConfigContainerRepository repository;
-    private static final Map<String, String> configsMapInMem = new HashMap<>();
+    private static final Map<ConfigFor, Map<String, String>> configsMapInMem = new HashMap<>();
     private static boolean updating = false;
 
     public SW360ConfigsDatabaseHandler(Cloudant httpClient, String dbName) {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
         repository = new ConfigContainerRepository(db);
         try {
-            loadToConfigsMapInMem(repository.getByConfigFor(ConfigFor.SW360_CONFIGURATION));
+            loadToConfigsInMemForSw360(repository.getByConfigFor(ConfigFor.SW360_CONFIGURATION));
         } catch (IllegalStateException exception) {
             log.error(exception.getMessage());
-            loadToConfigsMapInMem(null);
+            loadToConfigsInMemForSw360(null);
+        }
+        try {
+            loadToConfigsInMemForSchedule(repository.getByConfigFor(ConfigFor.SW360_SCHEDULER));
+        } catch (IllegalStateException exception) {
+            log.error(exception.getMessage());
+            loadToConfigsInMemForSchedule(null);
         }
     }
 
-    private void loadToConfigsMapInMem(ConfigContainer configContainer) {
+    private void putInMemory(ConfigFor configFor, Map<String, String> configMap) {
+        configsMapInMem.putIfAbsent(configFor, new HashMap<>());
+        configsMapInMem.get(configFor).putAll(configMap);
+    }
+
+    private void loadToConfigsInMemForSw360(ConfigContainer configContainer) {
         ImmutableMap<String, String> configMap = ImmutableMap.<String, String>builder()
             .put(SPDX_DOCUMENT_ENABLED, getOrDefault(configContainer, SPDX_DOCUMENT_ENABLED, "false"))
             .put(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, getOrDefault(configContainer, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, "false"))
@@ -72,8 +84,33 @@ public class SW360ConfigsDatabaseHandler {
             .put(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, getOrDefault(configContainer, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER.name()))
             .put(IS_ADMIN_PRIVATE_ACCESS_ENABLED, getOrDefault(configContainer, IS_ADMIN_PRIVATE_ACCESS_ENABLED, "false"))
             .put(SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, getOrDefault(configContainer, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, SW360Constants.DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE))
+            .put(RELEASE_FRIENDLY_URL, getOrDefault(configContainer, RELEASE_FRIENDLY_URL, "http://localhost:3000/components/releases/detail/releaseId"))
+            .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
             .build();
-        configsMapInMem.putAll(configMap);
+        putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
+    }
+
+    private void loadToConfigsInMemForSchedule(ConfigContainer configContainer) {
+        ImmutableMap<String, String> configMap = ImmutableMap.<String, String>builder()
+            .put(AUTOSTART_PROPERTY_NAME, getOrDefault(configContainer, AUTOSTART_PROPERTY_NAME, ""))
+            .put(CVESEARCH_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, CVESEARCH_OFFSET_PROPERTY_NAME, ScheduleConstants.CVESEARCH_OFFSET_DEFAULT))
+            .put(CVESEARCH_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, CVESEARCH_INTERVAL_PROPERTY_NAME, ScheduleConstants.CVESEARCH_INTERVAL_DEFAULT))
+            .put(SVMSYNC_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, SVMSYNC_OFFSET_PROPERTY_NAME, ScheduleConstants.SVMSYNC_OFFSET_DEFAULT))
+            .put(SVMSYNC_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, SVMSYNC_INTERVAL_PROPERTY_NAME, ScheduleConstants.SVMSYNC_INTERVAL_DEFAULT))
+            .put(SVMMATCH_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, SVMMATCH_OFFSET_PROPERTY_NAME, ScheduleConstants.SVMMATCH_OFFSET_DEFAULT))
+            .put(SVMMATCH_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, SVMMATCH_INTERVAL_PROPERTY_NAME, ScheduleConstants.SVMMATCH_INTERVAL_DEFAULT))
+            .put(SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME, ScheduleConstants.SVM_LIST_UPDATE_OFFSET_DEFAULT))
+            .put(SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME, ScheduleConstants.SVM_LIST_UPDATE_INTERVAL_DEFAULT))
+            .put(SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME, ScheduleConstants.SVM_TRACKING_FEEDBACK_OFFSET_DEFAULT))
+            .put(SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME, ScheduleConstants.SVM_TRACKING_FEEDBACK_INTERVAL_DEFAULT))
+            .put(SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME, ScheduleConstants.SRC_UPLOAD_SERVICE_OFFSET_DEFAULT))
+            .put(SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME, ScheduleConstants.SRC_UPLOAD_SERVICE_INTERVAL_DEFAULT))
+            .put(DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME, ScheduleConstants.DELETE_ATTACHMENT_OFFSET_DEFAULT))
+            .put(DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME, ScheduleConstants.DELETE_ATTACHMENT_INTERVAL_DEFAULT))
+            .put(DEPARTMENT_OFFSET_PROPERTY_NAME, getOrDefault(configContainer, DEPARTMENT_OFFSET_PROPERTY_NAME, ScheduleConstants.DEPARTMENT_OFFSET_DEFAULT))
+            .put(DEPARTMENT_INTERVAL_PROPERTY_NAME, getOrDefault(configContainer, DEPARTMENT_INTERVAL_PROPERTY_NAME, ScheduleConstants.DEPARTMENT_INTERVAL_DEFAULT))
+            .build();
+        putInMemory(ConfigFor.SW360_SCHEDULER, configMap);
     }
 
     private String getOrDefault(ConfigContainer configContainer, String configKey, String defaultValue) {
@@ -132,11 +169,30 @@ public class SW360ConfigsDatabaseHandler {
             case ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
                  TOOL_NAME,
                  TOOL_VENDOR,
-                 SKIP_DOMAINS_FOR_VALID_SOURCE_CODE
+                 SKIP_DOMAINS_FOR_VALID_SOURCE_CODE,
+                 AUTOSTART_PROPERTY_NAME,
+                 RELEASE_FRIENDLY_URL,
+                 COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY
                     -> configValue != null;
 
             // validate int value
-            case ATTACHMENT_DELETE_NO_OF_DAYS
+            case ATTACHMENT_DELETE_NO_OF_DAYS,
+                 CVESEARCH_OFFSET_PROPERTY_NAME,
+                 CVESEARCH_INTERVAL_PROPERTY_NAME,
+                 SVMSYNC_OFFSET_PROPERTY_NAME,
+                 SVMSYNC_INTERVAL_PROPERTY_NAME,
+                 SVMMATCH_OFFSET_PROPERTY_NAME,
+                 SVMMATCH_INTERVAL_PROPERTY_NAME,
+                 SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME,
+                 SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME,
+                 SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME,
+                 SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME,
+                 SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME,
+                 SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME,
+                 DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME,
+                 DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME,
+                 DEPARTMENT_OFFSET_PROPERTY_NAME,
+                 DEPARTMENT_INTERVAL_PROPERTY_NAME
                     -> isIntegerValue(configValue);
 
             // validate string in enum
@@ -158,6 +214,31 @@ public class SW360ConfigsDatabaseHandler {
     }
 
     public RequestStatus updateSW360Configs(Map<String, String> updatedConfigs, User user) throws SW360Exception {
+        ConfigFor configFor = null;
+        Map<String, String> sw360Configs = configsMapInMem.getOrDefault(ConfigFor.SW360_SCHEDULER, Collections.emptyMap());
+        Map<String, String> sw360SchedulerConfigs = configsMapInMem.getOrDefault(ConfigFor.SW360_CONFIGURATION, Collections.emptyMap());
+
+        // Guess the ConfigFor based on the keys in updatedConfigs
+        for (String key : updatedConfigs.keySet()) {
+            if (sw360Configs.containsKey(key)) {
+                configFor = ConfigFor.SW360_SCHEDULER;
+                break;
+            }
+            if (sw360SchedulerConfigs.containsKey(key)) {
+                configFor = ConfigFor.SW360_CONFIGURATION;
+                break;
+            }
+        }
+
+        if (configFor == null) {
+            log.warn("No valid config found for the updated configs: {}", updatedConfigs);
+            return RequestStatus.INVALID_INPUT;
+        }
+
+        return updateSW360ConfigForContainer(configFor, updatedConfigs, user);
+    }
+
+    public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfigs, User user) throws SW360Exception {
         if (!PermissionUtils.isAdmin(user))
             return RequestStatus.ACCESS_DENIED;
 
@@ -174,10 +255,10 @@ public class SW360ConfigsDatabaseHandler {
 
         ConfigContainer configContainer;
         try {
-            configContainer = repository.getByConfigFor(ConfigFor.SW360_CONFIGURATION);
+            configContainer = repository.getByConfigFor(configFor);
         } catch (IllegalStateException exception) {
             log.error(exception.getMessage());
-            configContainer = new ConfigContainer(ConfigFor.SW360_CONFIGURATION, new HashMap<>());
+            configContainer = new ConfigContainer(configFor, new HashMap<>());
         }
         updateExistingConfigs(configContainer.getConfigKeyToValues(), updatedConfigs);
 
@@ -187,16 +268,42 @@ public class SW360ConfigsDatabaseHandler {
             repository.add(configContainer);
         }
 
-        loadToConfigsMapInMem(configContainer);
+        if (configFor == ConfigFor.SW360_CONFIGURATION) {
+            loadToConfigsInMemForSw360(configContainer);
+        } else if (configFor == ConfigFor.SW360_SCHEDULER) {
+            loadToConfigsInMemForSchedule(configContainer);
+        } else {
+            log.warn("Unknown ConfigFor: {}", configFor);
+        }
+
         updating = false;
         return RequestStatus.SUCCESS;
     }
 
     public Map<String, String> getSW360Configs() {
-        return configsMapInMem;
+        Map<String, String> result = new HashMap<>();
+        for (Map<String, String> innerMap : configsMapInMem.values()) {
+            result.putAll(innerMap);
+        }
+        return Collections.unmodifiableMap(result);
     }
 
-    public String getConfigByKey(String key) {
-        return configsMapInMem.get(key);
+    public final String getConfigByKey(String key) {
+        String value = "";
+        for (Map<String, String> configMap : configsMapInMem.values()) {
+            if (configMap.containsKey(key)) {
+                value = configMap.get(key);
+                break;
+            }
+        }
+        return value;
+    }
+
+    public Map<String, String> getConfigForContainer(ConfigFor configFor) {
+        if (configsMapInMem.containsKey(configFor)) {
+            return Collections.unmodifiableMap(configsMapInMem.get(configFor));
+        } else {
+            return Collections.emptyMap();
+        }
     }
 }
