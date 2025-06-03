@@ -186,7 +186,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             @Parameter(description = "The container for which the configuration is requested.",
                     required = true, schema = @Schema(
                             type = "string",
-                            allowableValues = {"SW360_CONFIGURATION", "SW360_SCHEDULER"}
+                            allowableValues = {"SW360_CONFIGURATION", "SW360_SCHEDULER", "UI_CONFIGURATION"}
                     )
             )
             @PathVariable(name = "configFor") ConfigFor configFor
@@ -245,7 +245,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             @Parameter(description = "The container for which the configuration is requested.",
                     required = true, schema = @Schema(
                        type = "string",
-                        allowableValues = {"SW360_CONFIGURATION", "SW360_SCHEDULER"}
+                        allowableValues = {"SW360_CONFIGURATION", "SW360_SCHEDULER", "UI_CONFIGURATION"}
                     )
             )
             @PathVariable(name = "configFor") ConfigFor configFor,
