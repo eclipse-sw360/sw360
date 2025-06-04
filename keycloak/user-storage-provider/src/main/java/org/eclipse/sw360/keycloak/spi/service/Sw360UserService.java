@@ -24,7 +24,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jboss.logging.Logger;
 
 public class Sw360UserService {
-    public static String thriftServerUrl = "http://localhost:8080";
+    // This should be set via Keycloak SPI config (see Sw360UserStorageProviderFactory.init)
+    public static String thriftServerUrl = "http://localhost:8080"; // fallback default, can be removed if not desired
     private static final Logger logger = Logger.getLogger(Sw360UserService.class);
 
     public List<User> getAllUsers() {
