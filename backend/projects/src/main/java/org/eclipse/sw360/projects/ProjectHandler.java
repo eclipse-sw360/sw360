@@ -94,6 +94,11 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<Project>> refineSearchPageable(String text, Map<String, Set<String>> subQueryRestrictions, User user, PaginationData paginationData) throws TException {
+        return searchHandler.search(text, subQueryRestrictions, user, paginationData);
+    }
+
+    @Override
     public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
         assertNotNull(user);
         assertNotEmpty(user.getEmail());
@@ -127,6 +132,29 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.searchByName(name, user);
+    }
+
+    @Override
+    public Map<PaginationData, List<Project>> searchProjectByNamePrefixPaginated(User user, String name, PaginationData pageData) throws TException {
+        assertNotEmpty(name);
+        assertUser(user);
+
+        return handler.searchProjectByNamePrefixPaginated(user, name, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(User user, String name, PaginationData pageData) throws TException {
+        assertNotEmpty(name);
+        assertUser(user);
+
+        return handler.searchProjectByExactNamePaginated(user, name, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Project>> searchAccessibleProjectByExactValues(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
+        assertUser(user);
+
+        return handler.searchAccessibleProjectByExactValues(subQueryRestrictions, user, pageData);
     }
 
     @Override
@@ -216,7 +244,7 @@ public class ProjectHandler implements ProjectService.Iface {
         assertId(id);
 
         Project project = handler.getProjectById(id, user);
-        handler.addSelectLogs(project, user); 
+        handler.addSelectLogs(project, user);
         assertNotNull(project);
 
         return project;
@@ -328,7 +356,7 @@ public class ProjectHandler implements ProjectService.Iface {
 
         return handler.updateProject(project, user, forceUpdate);
     }
-    
+
     public RequestStatus updateProjectFromModerationRequest(Project projectAdditions, Project projectDeletions, User user) {
         return handler.updateProjectFromAdditionsAndDeletions(projectAdditions, projectDeletions, user);
     }
@@ -344,7 +372,7 @@ public class ProjectHandler implements ProjectService.Iface {
 
         return handler.deleteProject(id, user);
     }
-    
+
     @Override
     public RequestStatus deleteProjectWithForceFlag(String id, User user, boolean forceDelete) throws TException {
         assertId(id);
@@ -396,7 +424,7 @@ public class ProjectHandler implements ProjectService.Iface {
             throws TException {
         return handler.fillClearingStateSummaryIncludingSubprojects(projects, user);
     }
-    
+
     @Override
     public Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(Project project, User user)
             throws TException {
@@ -505,7 +533,7 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(projectId);
         return handler.getClearingStateInformationForListView(projectId,user,false);
     }
-    
+
     @Override
     public List<Map<String, String>> getAccessibleClearingStateInformationForListView(String projectId,User user) throws SW360Exception {
         assertNotNull(projectId);

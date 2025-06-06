@@ -95,6 +95,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String REPORT_FILENAME_MAPPING;
     public static final String JWKS_ISSUER_URL;
     public static final String JWKS_ENDPOINT_URL;
+    public static final String JWT_CLAIM_AUD;
     public static final Boolean IS_JWKS_VALIDATION_ENABLED;
     public static final UserGroup CONFIG_WRITE_ACCESS_USERGROUP;
     public static final UserGroup CONFIG_ADMIN_ACCESS_USERGROUP;
@@ -115,6 +116,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
         JWKS_ISSUER_URL = props.getProperty("jwks.issuer.url", null);
         JWKS_ENDPOINT_URL = props.getProperty("jwks.endpoint.url", null);
+        JWT_CLAIM_AUD = props.getProperty("jwt.claim.aud", "");
         IS_JWKS_VALIDATION_ENABLED = Boolean.parseBoolean(props.getProperty("jwks.validation.enabled", "false"));
         CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
         CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
