@@ -18,6 +18,7 @@ import org.apache.thrift.TException;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -43,19 +44,16 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STUnderline;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.licenseinfo.outputGenerators.DocxUtils.*;
 
 public class DocxGenerator extends OutputGenerator<byte[]> {
@@ -90,13 +88,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
     private static final String EXT_ID_TABLE_HEADER_COL1 = "Identifier Name";
     private static final String EXT_ID_TABLE_HEADER_COL2 = "Identifier Value";
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    public static String FRIENDLY_RELEASE_URL;
 
     public DocxGenerator(OutputFormatVariant outputFormatVariant, String description) {
         super(DOCX_OUTPUT_TYPE, description, true, DOCX_MIME_TYPE, outputFormatVariant);
-        Properties props = CommonUtils.loadProperties(DocxGenerator.class, PROPERTIES_FILE_PATH);
-        FRIENDLY_RELEASE_URL = props.getProperty("release.friendly.url", "");
     }
 
     @Override
@@ -453,8 +447,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private static void addHyperlink(XWPFParagraph paragraph, String releaseVersion, String releaseId) {
+        String friendlyReleaseUrl = SW360Utils.readConfig(SW360ConfigKeys.RELEASE_FRIENDLY_URL, "http://localhost:3000/release/releaseId");
         String id = paragraph.getDocument().getPackagePart().addExternalRelationship(
-                FRIENDLY_RELEASE_URL.replace("releaseId", releaseId), XWPFRelation.HYPERLINK.getRelation()).getId();
+                friendlyReleaseUrl.replace("releaseId", releaseId), XWPFRelation.HYPERLINK.getRelation()).getId();
 
         CTHyperlink newHyperLink = paragraph.getCTP().addNewHyperlink();
         newHyperLink.setId(id);

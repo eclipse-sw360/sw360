@@ -137,6 +137,8 @@ enum MainlineState {
 enum ConfigFor {
     FOSSOLOGY_REST = 0,
     SW360_CONFIGURATION = 1,
+    SW360_SCHEDULER = 2,
+    UI_CONFIGURATION = 3,
 }
 
 enum ObligationStatus {
