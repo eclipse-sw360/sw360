@@ -25,7 +25,6 @@ import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
@@ -49,6 +48,7 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -878,21 +878,56 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
     }
 
-    protected Collection<LicenseInfoParsingResult> getAllReleaseLicenseInfos(Map<Release, Map<String,Boolean>> releaseToSelectedAttachmentIds,
+    protected Collection<LicenseInfoParsingResult> getAllReleaseLicenseInfos(
+            Map<Release, Map<String, Boolean>> releaseToSelectedAttachmentIds,
             User user, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment) throws TException {
         List<LicenseInfoParsingResult> results = Lists.newArrayList();
+        Set<String> globalSeenLicenseNameText = new HashSet<>(); // Track globally seen licenses
 
-        for (Entry<Release, Map<String,Boolean>> entry : releaseToSelectedAttachmentIds.entrySet()) {
+        for (Entry<Release, Map<String, Boolean>> entry : releaseToSelectedAttachmentIds.entrySet()) {
             for (Entry<String, Boolean> attachmentIdUseLicenseInfoFromFileEntry : entry.getValue().entrySet()) {
                 String attachmentContentId = attachmentIdUseLicenseInfoFromFileEntry.getKey();
                 if (attachmentContentId != null) {
-                    Set<LicenseNameWithText> licencesToExclude = excludedLicensesPerAttachment.getOrDefault(attachmentContentId,
-                            Sets.newHashSet());
-                    List<LicenseInfoParsingResult> parsedLicenses = getLicenseInfoForAttachment(entry.getKey(),
-                            attachmentContentId, attachmentIdUseLicenseInfoFromFileEntry.getValue(), user);
+                    Set<LicenseNameWithText> licencesToExclude = excludedLicensesPerAttachment.getOrDefault(
+                            attachmentContentId, Sets.newHashSet());
+                    List<LicenseInfoParsingResult> parsedLicenses = getLicenseInfoForAttachment(
+                            entry.getKey(), attachmentContentId, attachmentIdUseLicenseInfoFromFileEntry.getValue(), user);
 
-                    results.addAll(
-                            parsedLicenses.stream().map(result -> filterLicenses(result, licencesToExclude)).collect(Collectors.toList()));
+                    for (LicenseInfoParsingResult result : parsedLicenses) {
+                        AtomicInteger ackCount= new AtomicInteger();
+                        LicenseInfo licenseInfo = result.getLicenseInfo();
+                        if (licenseInfo != null && licenseInfo.isSetLicenseNamesWithTexts()) {
+                            Set<LicenseNameWithText> filteredLicenses = licenseInfo.getLicenseNamesWithTexts().stream()
+                                    .filter(lnt -> {
+                                        String key = lnt.getLicenseName() + "::" + lnt.getLicenseText();
+                                        if (!globalSeenLicenseNameText.contains(key)) {
+                                            globalSeenLicenseNameText.add(key);
+                                            return true; // Retain unique licenses
+                                        }
+                                        return false; // Exclude duplicates
+                                    })
+                                    .collect(Collectors.toSet());
+
+                            // If filteredLicenses is empty, retain licenses with empty licenseText
+                            List<LicenseNameWithText> filteredLicensesList = null;
+                            if (filteredLicenses.isEmpty()) {
+                                filteredLicensesList = licenseInfo.getLicenseNamesWithTexts().stream()
+                                        .map(lnt -> new LicenseNameWithText()
+                                                .setLicenseName(lnt.getLicenseName())
+                                                .setLicenseSpdxId(lnt.getLicenseSpdxId())
+                                                .setType(lnt.getType())
+                                                .setLicenseText("") // Set licenseText to empty
+                                                .setAcknowledgements("skip$"+(ackCount.incrementAndGet())) // added to differentiate duplicate licenses.
+                                                .setSourceFilesHash(lnt.getSourceFilesHash()))
+                                        .collect(Collectors.toList());
+                            }
+                            if (filteredLicensesList != null) {
+                                filteredLicenses = Sets.newHashSet(filteredLicensesList);
+                            }
+                            licenseInfo.setLicenseNamesWithTexts(filteredLicenses); // Update with filtered licenses
+                        }
+                        results.add(result); // Add the result for the release
+                    }
                 }
             }
         }

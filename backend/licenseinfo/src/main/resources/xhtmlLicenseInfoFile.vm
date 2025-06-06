@@ -139,11 +139,14 @@
 #foreach($ack in ${acks})
     #set($containsLink = $ack.matches($anchorRegEx))
     #set($containsScript = $ack.matches($scriptRegEx))
-    #set($ackAsHtml = $esc.xml($ack))
+    #set($isSkipValue = $ack.matches("skip\\$\\d+")) ## Check if the value matches skip$1, skip$2, etc.
+    #if(!$isSkipValue) ## Only process if it is not a skip value
+        #set($ackAsHtml = $esc.xml($ack))
     #if($containsLink && !$containsScript)
         #set($ackAsHtml = $ack)
     #end
 $ackAsHtml
+    #end
 #end
     </pre>
                     #end
@@ -212,13 +215,15 @@ $copyrightAsHtml
                 #end
             #end
 
-            #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
-            <li id="licenseTextItem$licenseId">
-                <h3>$licenseId: $licenseName<a class="top" href="#releaseHeader">&#8679;</a></h3>
-    <pre class="licenseText" id="licenseText$licenseId">
-$licenseTextAsHtml
-    </pre>
-            </li>
+            #if($licenseTextAsHtml != "&lt;no license text available&gt;")
+                #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
+                <li id="licenseTextItem$licenseId">
+                    <h3>$licenseId: $licenseName<a class="top" href="#releaseHeader">&#8679;</a></h3>
+                    <pre class="licenseText" id="licenseText$licenseId">
+                        $licenseTextAsHtml
+                    </pre>
+                </li>
+            #end
         #end
         </ul>
     #end
