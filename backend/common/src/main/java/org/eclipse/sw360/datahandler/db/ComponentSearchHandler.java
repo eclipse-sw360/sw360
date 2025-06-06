@@ -14,19 +14,27 @@ import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -93,17 +101,42 @@ public class ComponentSearchHandler {
                 text, subQueryRestrictions);
     }
 
-    public List<Component> searchAccessibleComponents(String text, final Map<String,
-            Set<String>> subQueryRestrictions, User user ){
-        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class,
-                luceneSearchView.getIndexName(), text, subQueryRestrictions);
-        List<Component> componentList = new ArrayList<Component>();
-        for (Component component : resultComponentList) {
-            if (makePermission(component, user).isActionAllowed(RequestedAction.READ)) {
-                componentList.add(component);
-            }
+    public Map<PaginationData, List<Component>> searchAccessibleComponents(String text, final Map<String,
+            Set<String>> subQueryRestrictions, User user, @Nonnull PaginationData pageData) {
+        ResourceComparatorGenerator<Component> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
+        ComponentSortColumn sortBy = ComponentSortColumn.findByValue(pageData.getSortColumnNumber());
+        Comparator<Component> comparator;
+
+        try {
+            comparator = switch (sortBy) {
+                case ComponentSortColumn.BY_NAME ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "name");
+                case ComponentSortColumn.BY_CREATEDON ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "createdOn");
+                case ComponentSortColumn.BY_TYPE ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "componentType");
+                case null, default -> null; // only two sortable fields, sort by score
+            };
+        } catch (ResourceClassNotFoundException e) {
+            comparator = null;
         }
-        return componentList;
+
+        Map<PaginationData, List<Component>> resultComponentList = connector
+                .searchViewWithRestrictions(Component.class,
+                        luceneSearchView.getIndexName(), text, subQueryRestrictions,
+                        pageData, null, pageData.isAscending());
+
+        PaginationData respPageData = resultComponentList.keySet().iterator().next();
+        List<Component> componentList = resultComponentList.values().iterator().next();
+
+        componentList = componentList.stream().filter(component ->
+                makePermission(component, user).isActionAllowed(RequestedAction.READ))
+                .collect(Collectors.toList());
+        if (comparator != null) {
+            componentList.sort(comparator);
+        }
+
+        return Collections.singletonMap(respPageData, componentList);
     }
 
     public List<Component> searchWithAccessibility(String text, final Map<String, Set<String>> subQueryRestrictions,

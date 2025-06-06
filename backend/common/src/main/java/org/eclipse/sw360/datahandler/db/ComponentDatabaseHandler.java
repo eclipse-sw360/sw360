@@ -785,6 +785,23 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
+    public Map<PaginationData, List<Component>> searchComponentByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        return componentRepository.searchComponentByNamePrefixPaginated(user, name, pageData);
+    }
+
+    public Map<PaginationData, List<Component>> searchComponentByExactNamePaginated(User user, String name, PaginationData pageData) {
+        return componentRepository.searchComponentByExactNamePaginated(user, name, pageData);
+    }
+
+    public Map<PaginationData, List<Component>> searchComponentByExactValues(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        Map<PaginationData, List<Component>> resultMap = componentRepository.searchComponentByExactValues(subQueryRestrictions, user, pageData);
+        List<Component> resultComponentList = resultMap.get(pageData);
+        for (Component component : resultComponentList) {
+            makePermission(component, user).fillPermissionsInOther(component);
+        }
+        return Collections.singletonMap(pageData, resultComponentList);
+    }
+
     private boolean isDependenciesExistInComponent(Component component) {
         boolean isValidDependentIds = true;
         if (component.isSetReleaseIds()) {
