@@ -162,6 +162,28 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public List<T> queryViewPaginated(
+            String viewName, String key, PaginationData pageData, boolean isReduced
+    ) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
+                .descending(!ascending)
+                .keys(Collections.singletonList(key))
+                .reduce(false)
+                .includeDocs(true);
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        paginationSetTotalRowCount(pageData, isReduced, query.build());
+
+        return queryView(query.build());
+    }
+
+    public List<T> queryViewPaginated(
             String viewName, String startKey, String endKey, PaginationData pageData, boolean isReduced
     ) {
         final int rowsPerPage = pageData.getRowsPerPage();
@@ -180,28 +202,6 @@ public class DatabaseRepositoryCloudantClient<T> {
             query.startKey(endKey)
                     .endKey(startKey);
         }
-
-        if (rowsPerPage != -1) {
-            query.limit(rowsPerPage).skip(offset);
-        }
-
-        paginationSetTotalRowCount(pageData, isReduced, query.build());
-
-        return queryView(query.build());
-    }
-
-    public List<T> queryViewPaginated(
-            String viewName, String key, PaginationData pageData, boolean isReduced
-    ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
-        final boolean ascending = pageData.isAscending();
-
-        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
-                .descending(!ascending)
-                .keys(Collections.singletonList(key))
-                .reduce(false)
-                .includeDocs(true);
 
         if (rowsPerPage != -1) {
             query.limit(rowsPerPage).skip(offset);

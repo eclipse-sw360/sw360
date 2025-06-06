@@ -11,6 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
@@ -29,6 +30,7 @@ import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,10 +47,10 @@ public class ProjectTest extends TestIntegrationBase {
     @MockBean
     private Sw360ProjectService projectServiceMock;
 
+    private final Set<Project> projectList = new HashSet<>();
+
     @Before
     public void before() throws TException {
-        Set<Project> projectList = new HashSet<>();
-
         // Create sample projects
         Project project1 = new Project();
         project1.setId("p001");
@@ -73,8 +75,18 @@ public class ProjectTest extends TestIntegrationBase {
         projectList.add(project1);
         projectList.add(project2);
 
-        given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
-        given(this.projectServiceMock.getProjectsSummaryForUserWithoutPagination(any())).willReturn(projectList.stream().toList());
+        given(this.projectServiceMock.searchAccessibleProjectByExactValues(any(), any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(projectList.size()).setDisplayStart(0).setTotalRowCount(projectList.size()),
+                        projectList.stream().toList()
+                )
+        );
+        given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(projectList.size()).setDisplayStart(0).setTotalRowCount(projectList.size()),
+                        projectList.stream().toList()
+                )
+        );
 
         User user = new User();
         user.setId("123456789");
@@ -99,7 +111,13 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_get_all_projects_paginated() throws IOException {
+    public void should_get_all_projects_paginated() throws IOException, TException {
+        given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(projectList.size()),
+                        Collections.singletonList(projectList.iterator().next())
+                )
+        );
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?page=0&page_entries=1",

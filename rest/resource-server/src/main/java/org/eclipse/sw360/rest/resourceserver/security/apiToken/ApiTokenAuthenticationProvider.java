@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -32,7 +31,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -60,7 +58,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     @NotNull
     private final Sw360UserService userService;
-    
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         log.info("Authenticating for the user with authentication {}", authentication);
@@ -74,7 +72,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && authentication instanceof ApiTokenAuthentication
                 && ((ApiTokenAuthentication) authentication).getType() == AuthType.JWKS) {
             JWTValidator validator = new JWTValidator(Sw360ResourceServer.JWKS_ISSUER_URL,
-                    Sw360ResourceServer.JWKS_ENDPOINT_URL);
+                    Sw360ResourceServer.JWKS_ENDPOINT_URL, Sw360ResourceServer.JWT_CLAIM_AUD);
             JwtClaims jwtClaims = null;
             try {
                 jwtClaims = validator.validateJWT(tokenFromAuthentication);
@@ -130,7 +128,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
                     "Your entered OIDC token is not associated with any user for authorization.");
         }
     }
-    
+
     private Optional<RestApiToken> getApiTokenFromUser(String tokenHash, User sw360User) {
         return sw360User.getRestApiTokens()
                 .stream()
@@ -153,7 +151,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
     }
-    
+
     private Set<GrantedAuthority> getGrantedAuthoritiesFromUserAccess(UserAccess userAccess) {
         return Stream.of(userAccess.name().split("_"))
                 .map(SimpleGrantedAuthority::new)
