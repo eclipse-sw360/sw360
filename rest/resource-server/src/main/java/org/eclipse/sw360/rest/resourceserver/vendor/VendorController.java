@@ -145,6 +145,8 @@ public class VendorController implements RepresentationModelProcessor<Repository
             @Parameter(description = "The id of the vendor to get.")
             @PathVariable("id") String id
     ) throws SW360Exception {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         try {
             Set<Release> releases = vendorService.getAllReleaseList(id);
             List<EntityModel<Release>> resources = new ArrayList<>();
@@ -282,6 +284,8 @@ public class VendorController implements RepresentationModelProcessor<Repository
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = VENDORS_URL + "/exportVendorDetails")
     public ResponseEntity<?> exportVendor(HttpServletResponse response) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         try {
             ByteBuffer buffer = vendorService.exportExcel();
             String filename = String.format("vendors-%s.xlsx", SW360Utils.getCreatedOn());

@@ -86,8 +86,8 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             @Parameter(description = "id of the attachment")
             @PathVariable("id") String id
     ) throws TException {
-
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         AttachmentInfo attachmentInfo = attachmentService.getAttachmentById(id);
         HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
@@ -104,6 +104,7 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             @RequestParam String sha1
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
 
         List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
