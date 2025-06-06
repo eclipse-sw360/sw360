@@ -878,21 +878,38 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
     }
 
-    protected Collection<LicenseInfoParsingResult> getAllReleaseLicenseInfos(Map<Release, Map<String,Boolean>> releaseToSelectedAttachmentIds,
+    protected Collection<LicenseInfoParsingResult> getAllReleaseLicenseInfos(
+            Map<Release, Map<String, Boolean>> releaseToSelectedAttachmentIds,
             User user, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment) throws TException {
         List<LicenseInfoParsingResult> results = Lists.newArrayList();
+        Set<String> globalSeenLicenseNameText = new HashSet<>(); // Track globally seen licenses
 
-        for (Entry<Release, Map<String,Boolean>> entry : releaseToSelectedAttachmentIds.entrySet()) {
+        for (Entry<Release, Map<String, Boolean>> entry : releaseToSelectedAttachmentIds.entrySet()) {
             for (Entry<String, Boolean> attachmentIdUseLicenseInfoFromFileEntry : entry.getValue().entrySet()) {
                 String attachmentContentId = attachmentIdUseLicenseInfoFromFileEntry.getKey();
                 if (attachmentContentId != null) {
-                    Set<LicenseNameWithText> licencesToExclude = excludedLicensesPerAttachment.getOrDefault(attachmentContentId,
-                            Sets.newHashSet());
-                    List<LicenseInfoParsingResult> parsedLicenses = getLicenseInfoForAttachment(entry.getKey(),
-                            attachmentContentId, attachmentIdUseLicenseInfoFromFileEntry.getValue(), user);
+                    Set<LicenseNameWithText> licencesToExclude = excludedLicensesPerAttachment.getOrDefault(
+                            attachmentContentId, Sets.newHashSet());
+                    List<LicenseInfoParsingResult> parsedLicenses = getLicenseInfoForAttachment(
+                            entry.getKey(), attachmentContentId, attachmentIdUseLicenseInfoFromFileEntry.getValue(), user);
 
-                    results.addAll(
-                            parsedLicenses.stream().map(result -> filterLicenses(result, licencesToExclude)).collect(Collectors.toList()));
+                    for (LicenseInfoParsingResult result : parsedLicenses) {
+                        LicenseInfo licenseInfo = result.getLicenseInfo();
+                        if (licenseInfo != null && licenseInfo.isSetLicenseNamesWithTexts()) {
+                            Set<LicenseNameWithText> filteredLicenses = licenseInfo.getLicenseNamesWithTexts().stream()
+                                    .filter(lnt -> {
+                                        String key = lnt.getLicenseName() + "::" + lnt.getLicenseText();
+                                        if (!globalSeenLicenseNameText.contains(key)) {
+                                            globalSeenLicenseNameText.add(key);
+                                            return true; // Retain unique licenses
+                                        }
+                                        return true; // Retain all licenses, even duplicates
+                                    })
+                                    .collect(Collectors.toSet());
+                            licenseInfo.setLicenseNamesWithTexts(filteredLicenses); // Update with filtered licenses
+                        }
+                        results.add(result); // Add the result for the release
+                    }
                 }
             }
         }
