@@ -12,8 +12,6 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -40,7 +38,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -428,17 +425,22 @@ public class DatabaseConnectorCloudant {
     }
 
     public <T> PostViewOptions.Builder getPostViewQueryBuilder(
-            @NotNull Class<T> type, String queryName) {
+            @NotNull Class<T> type, String viewName) {
         return new PostViewOptions.Builder()
                 .db(this.dbName)
                 .ddoc(type.getSimpleName())
-                .view(queryName);
+                .view(viewName);
     }
 
     public ViewResult getPostViewQueryResponse(PostViewOptions options) {
-        return this.instance.getClient().postView(options)
-                .execute()
-                .getResult();
+        try {
+            return this.instance.getClient().postView(options)
+                    .execute()
+                    .getResult();
+        } catch (ServiceResponseException e) {
+            log.error("Unable to run query on view {}. Check response: {}", options.view(), e.getMessage());
+            throw new RuntimeException("Something went wrong. Please try again later.", e);
+        }
     }
 
     public InputStream getAttachment(String docId, String attachmentName) {
@@ -754,7 +756,7 @@ public class DatabaseConnectorCloudant {
         }
     }
 
-    private <T> boolean isInstanceOfOAuthClientEntity(T doc) {    
+    private <T> boolean isInstanceOfOAuthClientEntity(T doc) {
         return doc.getClass().getSimpleName().equals("OAuthClientEntity");
     }
 

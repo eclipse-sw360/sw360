@@ -16,14 +16,14 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
-import com.ibm.cloud.cloudant.v1.model.ViewResult;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
@@ -274,53 +274,36 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     public Map<PaginationData, List<Component>> getRecentComponentsSummary(User user, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
         Map<PaginationData, List<Component>> result = Maps.newHashMap();
-        List<Component> components = Lists.newArrayList();
-        final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
+        List<Component> components = queryViewPaginated(getViewFromPagination(pageData), pageData);
 
-        PostViewOptions.Builder query;
-        switch (sortColumnNo) {
-            case -1:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "byCreatedOn");
-                break;
-            case 0:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "byvendor");
-                break;
-            case 1:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "byname");
-                break;
-            case 2:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "bymainlicense");
-                break;
-            case 3:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "bycomponenttype");
-                break;
-            default:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "all");
-                break;
-        }
-
-        PostViewOptions request;
-        if (rowsPerPage == -1) {
-            request = query.descending(!ascending).includeDocs(true).build();
-        } else {
-            request = query.limit(rowsPerPage).skip(offset)
-                    .descending(!ascending).includeDocs(true).build();
-        }
-
-        try {
-            ViewResult response = getConnector().getPostViewQueryResponse(request);
-            components = getPojoFromViewResponse(response);
-            pageData.setTotalRowCount(response.getTotalRows());
-        } catch (ServiceConfigurationError e) {
-            log.error("Error getting recent components", e);
-        }
-        components = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user);
-        result.put(pageData, components);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user));
         return result;
+    }
+
+    public Map<PaginationData, List<Component>> searchComponentByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Component>> result = Maps.newHashMap();
+        List<Component> components = queryByPrefixPaginated("bynamelowercase", name, pageData);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user));
+        return result;
+    }
+
+    public Map<PaginationData, List<Component>> searchComponentByExactNamePaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Component>> result = Maps.newHashMap();
+        List<Component> components = queryViewPaginated("bynamelowercase", name, pageData);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user));
+        return result;
+    }
+
+    private static @Nonnull String getViewFromPagination(PaginationData pageData) {
+        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ComponentSortColumn.BY_CREATEDON -> "byCreatedOn";
+            case ComponentSortColumn.BY_VENDOR -> "byvendor";
+            case ComponentSortColumn.BY_NAME -> "byname";
+            case ComponentSortColumn.BY_MAINLICENSE -> "bymainlicense";
+            case ComponentSortColumn.BY_TYPE -> "bycomponenttype";
+            case null -> "all";
+        };
     }
 
     public List<Component> getComponentsByVCS() {
