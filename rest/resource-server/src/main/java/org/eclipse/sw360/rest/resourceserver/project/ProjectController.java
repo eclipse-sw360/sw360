@@ -56,6 +56,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -273,36 +274,34 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        boolean isSearchByName = name != null && !name.isEmpty();
         List<Project> sw360Projects = new ArrayList<>();
+        Map<PaginationData, List<Project>> paginatedProjects = null;
+
+        Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
+                additionalData);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            Set<String> values = Collections.singleton(name);
+            filterMap.put(Project._Fields.NAME.getFieldName(), values);
+        }
 
         if (luceneSearch) {
-            Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
-                    additionalData);
-
-            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-                Set<String> values = CommonUtils.splitToSet(name);
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
+                Set<String> values = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(Project._Fields.NAME.getFieldName(), values);
             }
 
-            sw360Projects.addAll(projectService.refineSearch(filterMap, sw360User));
+            paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);
         } else {
-            if (isSearchByName) {
-                sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
+            if (filterMap.isEmpty()) {
+                paginatedProjects = projectService.getProjectsForUser(sw360User, pageable);
             } else {
-                sw360Projects.addAll(projectService.getProjectsSummaryForUserWithoutPagination(sw360User));
-            }
-            Map<String, Set<String>> restrictions = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
-                    additionalData);
-            if (!restrictions.isEmpty()) {
-                sw360Projects = new ArrayList<>(sw360Projects.stream()
-                        .filter(filterProjectMap(restrictions)).toList());
+                paginatedProjects = projectService.searchAccessibleProjectByExactValues(filterMap, sw360User, pageable);
             }
         }
         return getProjectResponse(pageable, allDetails, request, sw360User,
-                sw360Projects);
+                sw360Projects, paginatedProjects);
     }
 
     private Map<String, Set<String>> getFilterMap(String tag, String projectType, String group, String version, String projectResponsible,
@@ -338,10 +337,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(
             Pageable pageable, boolean allDetails, HttpServletRequest request, User sw360User,
-            List<Project> sw360Projects
+            List<Project> sw360Projects, Map<PaginationData, List<Project>> paginatedProjects
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
-        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                sw360Projects, SW360Constants.TYPE_PROJECT);
+        PaginationResult<Project> paginationResult;
+        if (paginatedProjects != null) {
+            sw360Projects.addAll(paginatedProjects.values().iterator().next());
+            int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
+                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
+        } else {
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    sw360Projects, SW360Constants.TYPE_PROJECT);
+        }
 
         List<EntityModel<Project>> projectResources = new ArrayList<>();
         Consumer<Project> consumer = p -> {
@@ -358,7 +366,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             projectResources.add(embeddedProjectResource);
         };
 
-        paginationResult.getResources().stream().forEach(consumer);
+        paginationResult.getResources().forEach(consumer);
 
         CollectionModel resources;
         if (projectResources.isEmpty()) {
@@ -425,7 +433,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Projects = projectService.getWithFilledClearingStatus(sw360Projects, clearingState);
 
         return getProjectResponse(pageable, allDetails, request, sw360User,
-                sw360Projects);
+                sw360Projects, null);
     }
 
     @Operation(
@@ -3682,56 +3690,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(createdProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(projectDTOHalResource);
-    }
-
-    /**
-     * Create a filter predicate to remove all projects which do not satisfy the restriction set.
-     * @param restrictions Restrictions set to filter projects on
-     * @return Filter predicate for stream.
-     */
-    private static @NonNull Predicate<Project> filterProjectMap(Map<String, Set<String>> restrictions) {
-        return project -> {
-            for (Map.Entry<String, Set<String>> restriction : restrictions.entrySet()) {
-                final Set<String> filterSet = restriction.getValue();
-                Project._Fields field = Project._Fields.findByName(restriction.getKey());
-                Object fieldValue = project.getFieldValue(field);
-                if (fieldValue == null) {
-                    return false;
-                }
-                if (field == Project._Fields.PROJECT_TYPE && !filterSet.contains(project.projectType.name())) {
-                    return false;
-                } else if (field == Project._Fields.VERSION && !filterSet.contains(project.version)) {
-                    return false;
-                } else if (field == Project._Fields.PROJECT_RESPONSIBLE && !filterSet.contains(project.projectResponsible)) {
-                    return false;
-                } else if (field == Project._Fields.STATE && !filterSet.contains(project.state.name())) {
-                    return false;
-                } else if (field == Project._Fields.CLEARING_STATE && !filterSet.contains(project.clearingState.name())) {
-                    return false;
-                } else if ((field == Project._Fields.CREATED_BY || field == Project._Fields.CREATED_ON)
-                        && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
-                    return false;
-                } else if (fieldValue instanceof Set) {
-                    if (Sets.intersection(filterSet, (Set<String>) fieldValue).isEmpty()) {
-                        return false;
-                    }
-                } else if (fieldValue instanceof Map<?,?>) {
-                    Map<?, ?> fieldValueMap = (Map<?, ?>) fieldValue;
-                    boolean hasIntersection = false;
-                    if(field == Project._Fields.ADDITIONAL_DATA){
-                        hasIntersection = fieldValueMap.values().stream()
-                                .anyMatch(filterSet::contains);
-                    }else{
-                        hasIntersection = fieldValueMap.keySet().stream()
-                                .anyMatch(filterSet::contains);
-                    }
-                    if (!hasIntersection) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        };
     }
 
     @Operation(
