@@ -56,6 +56,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -274,11 +275,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         boolean isSearchByName = name != null && !name.isEmpty();
         List<Project> sw360Projects = new ArrayList<>();
+        Map<PaginationData, List<Project>> paginatedProjects = null;
 
+        Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
+                additionalData);
         if (luceneSearch) {
-            Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
-                    additionalData);
-
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
                 values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
@@ -286,22 +287,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 filterMap.put(Project._Fields.NAME.getFieldName(), values);
             }
 
-            sw360Projects.addAll(projectService.refineSearch(filterMap, sw360User));
+            paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);
         } else {
-            if (isSearchByName) {
-                sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
+            if (isSearchByName && filterMap.isEmpty()) {
+                paginatedProjects = projectService.searchProjectByExactNamePaginated(sw360User, name, pageable);
+            } else if (filterMap.isEmpty()) {
+                paginatedProjects = projectService.getProjectsForUser(sw360User, pageable);
             } else {
                 sw360Projects.addAll(projectService.getProjectsSummaryForUserWithoutPagination(sw360User));
-            }
-            Map<String, Set<String>> restrictions = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
-                    additionalData);
-            if (!restrictions.isEmpty()) {
                 sw360Projects = new ArrayList<>(sw360Projects.stream()
-                        .filter(filterProjectMap(restrictions)).toList());
+                        .filter(filterProjectMap(filterMap)).toList());
             }
         }
         return getProjectResponse(pageable, allDetails, request, sw360User,
-                sw360Projects);
+                sw360Projects, paginatedProjects);
     }
 
     private Map<String, Set<String>> getFilterMap(String tag, String projectType, String group, String version, String projectResponsible,
@@ -337,10 +336,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(
             Pageable pageable, boolean allDetails, HttpServletRequest request, User sw360User,
-            List<Project> sw360Projects
+            List<Project> sw360Projects, Map<PaginationData, List<Project>> paginatedProjects
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
-        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                sw360Projects, SW360Constants.TYPE_PROJECT);
+        PaginationResult<Project> paginationResult;
+        if (paginatedProjects != null) {
+            sw360Projects.addAll(paginatedProjects.values().iterator().next());
+            int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
+                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
+        } else {
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    sw360Projects, SW360Constants.TYPE_PROJECT);
+        }
 
         List<EntityModel<Project>> projectResources = new ArrayList<>();
         Consumer<Project> consumer = p -> {
@@ -357,7 +365,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             projectResources.add(embeddedProjectResource);
         };
 
-        paginationResult.getResources().stream().forEach(consumer);
+        paginationResult.getResources().forEach(consumer);
 
         CollectionModel resources;
         if (projectResources.isEmpty()) {
@@ -424,7 +432,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Projects = projectService.getWithFilledClearingStatus(sw360Projects, clearingState);
 
         return getProjectResponse(pageable, allDetails, request, sw360User,
-                sw360Projects);
+                sw360Projects, null);
     }
 
     @Operation(

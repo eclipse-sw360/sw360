@@ -26,6 +26,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -123,7 +124,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             HttpServletRequest request,
             @Parameter(description = "Fetch all details of the moderation request")
             @RequestParam(value = "allDetails", required = false) boolean allDetails
-    ) throws TException, ResourceClassNotFoundException, URISyntaxException {
+    ) throws TException, ResourceClassNotFoundException, URISyntaxException, PaginationParameterException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<ModerationRequest> moderationRequests = sw360ModerationRequestService.getRequestsByModerator(sw360User, pageable);
 
@@ -187,7 +188,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             @RequestParam(value = "state", defaultValue = "open", required = true) String state,
             @Parameter(description = "Fetch all details of the moderation request.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails
-    ) throws TException, URISyntaxException, ResourceClassNotFoundException {
+    ) throws TException, URISyntaxException, ResourceClassNotFoundException, PaginationParameterException {
         List<String> stateOptions = new ArrayList<>();
         stateOptions.add("open");
         stateOptions.add("closed");
@@ -344,7 +345,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request
-    ) throws TException, URISyntaxException, ResourceClassNotFoundException {
+    ) throws TException, URISyntaxException, ResourceClassNotFoundException, PaginationParameterException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
                 sw360ModerationRequestService.getRequestsByRequestingUser(sw360User, pageable);
@@ -363,7 +364,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
     private ResponseEntity<CollectionModel<ModerationRequest>> getModerationResponseEntity(
             Pageable pageable, HttpServletRequest request, boolean allDetails,
             Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData
-    ) throws ResourceClassNotFoundException, URISyntaxException {
+    ) throws ResourceClassNotFoundException, URISyntaxException, PaginationParameterException {
         List<ModerationRequest> moderationRequests = new ArrayList<>();
         int totalCount = 0;
         if (!CommonUtils.isNullOrEmptyMap(modRequestsWithPageData)) {

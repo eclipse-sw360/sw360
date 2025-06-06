@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.annotations.VisibleForTesting;
@@ -24,7 +23,6 @@ import com.google.gson.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMExporter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
@@ -232,6 +230,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return repository.searchByName(name, user);
     }
 
+    public Map<PaginationData, List<Project>> searchProjectByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        return repository.searchProjectByNamePrefixPaginated(user, name, pageData);
+    }
+
+    public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(User user, String name, PaginationData pageData) {
+        return repository.searchProjectByExactNamePaginated(user, name, pageData);
+    }
+
     /////////////////////////////
     // CREATE CLEARING REQUEST //
     /////////////////////////////
@@ -346,7 +352,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Boolean projectResponsible = userRoles.get(Project._Fields.PROJECT_RESPONSIBLE.toString());
             Boolean securityResponsible = userRoles.get(Project._Fields.SECURITY_RESPONSIBLES.toString());
 
-            myProjectsFull = myProjectsFull.stream().filter(ProjectPermissions.isVisible(user)::test)
+            myProjectsFull = myProjectsFull.stream().filter(ProjectPermissions.isVisible(user))
                     .filter(project -> {
                         if (creator != null && creator && project.getCreatedBy().equals(userEmail)) {
                             return true;
