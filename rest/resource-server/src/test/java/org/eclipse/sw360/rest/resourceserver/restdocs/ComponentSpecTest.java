@@ -306,17 +306,30 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .setCreatedBy("admin@sw360.org")
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
-        given(this.componentServiceMock.getComponentsForUser(any())).willReturn(componentList);
+        given(this.componentServiceMock.getRecentComponentsSummaryWithPagination(any(), any()))
+                .willReturn(Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(componentList.size()).setDisplayStart(0).setTotalRowCount(componentList.size()),
+                        componentList)
+                );
         given(this.sw360ReportServiceMock.getComponentBuffer(any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.componentServiceMock.getRecentComponents(any())).willReturn(componentList);
-        given(this.componentServiceMock.refineSearch(any(), any())).willReturn(componentList);
+        given(this.componentServiceMock.refineSearch(any(), any(), any()))
+                .willReturn(Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(componentList.size()).setDisplayStart(0).setTotalRowCount(componentList.size()),
+                        componentList)
+                );
         given(this.componentServiceMock.getComponentSubscriptions(any())).willReturn(componentList);
         given(this.componentServiceMock.getMyComponentsForUser(any())).willReturn(componentList);
         given(this.componentServiceMock.getComponentForUserById(eq("17653524"), any())).willReturn(angularComponent);
         given(this.componentServiceMock.getComponentForUserById(eq("98745"), any())).willReturn(testComponent);
         given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), any())).willReturn(projectList);
         given(this.componentServiceMock.getUsingComponentsForComponent(eq("17653524"), any())).willReturn(usedByComponent);
-        given(this.componentServiceMock.searchComponentByName(eq(angularComponent.getName()))).willReturn(componentListByName);
+        given(this.componentServiceMock.searchComponentByExactValues(any(), any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(componentListByName.size()).setDisplayStart(0).setTotalRowCount(componentListByName.size()),
+                        componentListByName.stream().toList()
+                )
+        );
         given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.componentServiceMock.searchByExternalIds(eq(externalIds), any())).willReturn((new HashSet<>(componentList)));
         given(this.componentServiceMock.convertToEmbeddedWithExternalIds(eq(angularComponent))).willReturn(
@@ -718,13 +731,20 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
                                 subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of components per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing components"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
