@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -25,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -49,7 +49,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class DatabaseRepositoryCloudantClient<T> {
 
-    protected final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
+    protected final Logger log = LogManager.getLogger(DatabaseRepositoryCloudantClient.class);
     private static final char HIGH_VALUE_UNICODE_CHARACTER = '\uFFF0';
 
     private final Class<T> type;
@@ -156,6 +156,47 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryView(query);
     }
 
+    public List<T> queryViewPaginated(String viewName, String startKey, String endKey, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
+                .descending(!ascending)
+                .includeDocs(true);
+
+        if (ascending) {
+            query.startKey(startKey)
+                    .endKey(endKey);
+        } else {
+            query.startKey(endKey)
+                    .endKey(startKey);
+        }
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        return queryViewPaginated(query.build(), pageData);
+    }
+
+    public List<T> queryViewPaginated(String viewName, String key, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
+                .descending(!ascending)
+                .keys(Collections.singletonList(key))
+                .includeDocs(true);
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        return queryViewPaginated(query.build(), pageData);
+    }
+
     public List<T> queryView(String viewName, String key) {
         PostViewOptions query = connector.getPostViewQueryBuilder(type, viewName)
                 .keys(Collections.singletonList(key))
@@ -169,12 +210,38 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryView(query);
     }
 
+    public List<T> queryViewPaginated(String viewName, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
+                .descending(!ascending)
+                .includeDocs(true);
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        return queryViewPaginated(query.build(), pageData);
+    }
+
     public Set<String> queryForIds(PostViewOptions query) {
         ViewResult response = this.connector.getPostViewQueryResponse(query);
         HashSet<String> ids = new HashSet<>();
         for (ViewResultRow row : response.getRows()) {
             ids.add(row.getId());
         }
+        return ids;
+    }
+
+    public Set<String> queryForIdsPaginated(PostViewOptions query, PaginationData pageData) {
+        ViewResult response = this.connector.getPostViewQueryResponse(query);
+        HashSet<String> ids = new HashSet<>();
+        for (ViewResultRow row : response.getRows()) {
+            ids.add(row.getId());
+        }
+        pageData.setTotalRowCount(response.getTotalRows());
         return ids;
     }
 
@@ -200,8 +267,16 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryView(viewName, key, key + HIGH_VALUE_UNICODE_CHARACTER);
     }
 
+    public List<T> queryByPrefixPaginated(String viewName, String key, PaginationData pageData) {
+        return queryViewPaginated(viewName, key, key + HIGH_VALUE_UNICODE_CHARACTER, pageData);
+    }
+
     public Set<String> queryForIdsByPrefix(String viewName, String prefix) {
         return queryForIds(viewName, prefix, prefix + HIGH_VALUE_UNICODE_CHARACTER);
+    }
+
+    public Set<String> queryForIdsByPrefixPaginated(String viewName, String prefix, PaginationData pageData) {
+        return queryForIdsPaginated(viewName, prefix, prefix + HIGH_VALUE_UNICODE_CHARACTER, pageData);
     }
 
     public Set<String> queryForIdsAsValueByPrefix(String viewName, String prefix) {
@@ -216,6 +291,29 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryForIds(query);
     }
 
+    public Set<String> queryForIdsPaginated(String queryName, String startKey, String endKey, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName)
+                .descending(!ascending);
+
+        if (ascending) {
+            query.startKey(startKey)
+                    .endKey(endKey);
+        } else {
+            query.startKey(endKey)
+                    .endKey(startKey);
+        }
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        return queryForIdsPaginated(query.build(), pageData);
+    }
+
     public Set<String> queryForIdsAsValue(String queryName, String startKey, String endKey) {
         PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
                 .startKey(startKey)
@@ -228,6 +326,22 @@ public class DatabaseRepositoryCloudantClient<T> {
         PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
                 .keys(Collections.singletonList(key)).build();
         return queryForIds(query);
+    }
+
+    public Set<String> queryForIdsPaginated(String queryName, String key, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName)
+                .keys(Collections.singletonList(key))
+                .descending(!ascending);
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        return queryForIdsPaginated(query.build(), pageData);
     }
 
     public Set<String> queryForIdsAsComplexValue(String queryName, String... keys) {
@@ -279,6 +393,18 @@ public class DatabaseRepositoryCloudantClient<T> {
         try {
             ViewResult response = getConnector().getPostViewQueryResponse(req);
             docList = getPojoFromViewResponse(response);
+        } catch (ServiceResponseException e) {
+            log.warn("Error in getting documents", e);
+        }
+        return docList;
+    }
+
+    public List<T> queryViewPaginated(PostViewOptions req, PaginationData pageData) {
+        List<T> docList = Lists.newArrayList();
+        try {
+            ViewResult response = getConnector().getPostViewQueryResponse(req);
+            docList = getPojoFromViewResponse(response);
+            pageData.setTotalRowCount(response.getTotalRows());
         } catch (ServiceResponseException e) {
             log.warn("Error in getting documents", e);
         }
