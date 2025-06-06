@@ -21,15 +21,13 @@ import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
-import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
-import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 
@@ -162,6 +160,13 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "  }" +
                     "}";
 
+    private static final String BY_NAME_LOWER_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'project') {" +
+                    "    emit(doc.name.toLowerCase(), doc._id);" +
+                    "  }" +
+                    "}";
+
     private static final String BY_TAG_VIEW =
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
@@ -261,6 +266,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         super(Project.class, db, new ProjectSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byname", createMapReduce(BY_NAME_VIEW, null));
+        views.put("bynamelower", createMapReduce(BY_NAME_LOWER_VIEW, null));
         views.put("bygroup", createMapReduce(BY_GROUP_VIEW, null));
         views.put("bytag", createMapReduce(BY_TAG_VIEW, null));
         views.put("bytype", createMapReduce(BY_TYPE_VIEW, null));
@@ -279,6 +285,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         createIndex("byName", new String[] {"name"}, db);
         createIndex("byDesc", new String[] {"description"}, db);
         createIndex("byProjectResponsible", new String[] {"projectResponsible"}, db);
+        createIndex("byCreatedOn", new String[] {"createdOn"}, db);
     }
 
     public List<Project> searchByName(String name, User user, SummaryType summaryType) {
@@ -383,7 +390,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
         final int rowsPerPage = pageData.getRowsPerPage();
         final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
+        final ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.getSortColumnNumber());
         final String requestingUserEmail = user.getEmail();
         final String userBU = getBUFromOrganisation(user.getDepartment());
         List<Project> projects = new ArrayList<>();
@@ -443,38 +450,36 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             qb.limit(rowsPerPage);
         }
         qb.skip(pageData.getDisplayStart());
-        PostViewOptions.Builder queryView = null;
-        switch (sortColumnNo) {
-            case 0:
-                qb.useIndex(Collections.singletonList("byName"))
-                        .addSort(Collections.singletonMap("name", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 1:
+        String queryViewName = null;
+
+        switch (sortBy) {
+            case ProjectSortColumn.BY_DESCRIPTION:
                 qb.useIndex(Collections.singletonList("byDesc"))
                         .addSort(Collections.singletonMap("description", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
-            case 2:
+            case ProjectSortColumn.BY_RESPONSIBLE:
                 qb.useIndex(Collections.singletonList("byProjectResponsible"))
                         .addSort(Collections.singletonMap("projectResponsible", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
-            case 3:
-            case 4:
-                queryView = getConnector().getPostViewQueryBuilder(Project.class, "byState");
+            case ProjectSortColumn.BY_CREATEDON:
+                qb.useIndex(Collections.singletonList("byCreatedOn"))
+                        .addSort(Collections.singletonMap("createdOn", ascending ? "asc" : "desc"));
+                query = qb.build();
+            case ProjectSortColumn.BY_STATE:
+                queryViewName = "byState";
                 break;
-            default:
+            case null:
+            default: // By default, sort by name
+                qb.useIndex(Collections.singletonList("byName"))
+                        .addSort(Collections.singletonMap("name", ascending ? "asc" : "desc"));
+                query = qb.build();
                 break;
         }
         try {
-            if (queryView != null) {
-                PostViewOptions request = queryView.limit(rowsPerPage).skip(pageData.getDisplayStart())
-                        .descending(!ascending).includeDocs(true).build();
-                ViewResult response = getConnector().getPostViewQueryResponse(request);
-                if (response != null) {
-                    projects = getPojoFromViewResponse(response);
-                }
+            if (queryViewName != null) {
+                projects = queryViewPaginated(queryViewName, pageData);
             } else {
                 projects = getConnector().getQueryResult(query, Project.class);
             }
@@ -505,6 +510,20 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     public List<Project> searchByName(String name, User user) {
         return searchByName(name, user, SummaryType.SUMMARY);
+    }
+
+    public Map<PaginationData, List<Project>> searchProjectByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Project>> result = Maps.newHashMap();
+        Set<String> searchIds = queryForIdsByPrefixPaginated("byname", name, pageData);
+        result.put(pageData, makeSummaryFromFullDocs(SummaryType.SUMMARY, filterAccessibleProjectsByIds(user, searchIds)));
+        return result;
+    }
+
+    public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Project>> result = Maps.newHashMap();
+        List<Project> projects = queryViewPaginated("bynamelower", name, pageData);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, projects, user));
+        return result;
     }
 
     public Set<String> getGroups() {
@@ -587,7 +606,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         Set<Project> accessibleProjects = filterAccessibleProjectsByIds(user, searchIds);
         return getProjectData(accessibleProjects);
     }
-    
+
     private ProjectData getProjectData(Set<Project> accessibleProjects) {
         int totalSize = accessibleProjects.size();
         ProjectData projectData = new ProjectData();
