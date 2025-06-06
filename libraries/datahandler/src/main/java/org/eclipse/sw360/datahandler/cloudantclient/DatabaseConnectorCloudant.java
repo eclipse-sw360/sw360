@@ -12,8 +12,6 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -28,8 +26,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
@@ -40,7 +40,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -428,17 +427,22 @@ public class DatabaseConnectorCloudant {
     }
 
     public <T> PostViewOptions.Builder getPostViewQueryBuilder(
-            @NotNull Class<T> type, String queryName) {
+            @NotNull Class<T> type, String viewName) {
         return new PostViewOptions.Builder()
                 .db(this.dbName)
                 .ddoc(type.getSimpleName())
-                .view(queryName);
+                .view(viewName);
     }
 
     public ViewResult getPostViewQueryResponse(PostViewOptions options) {
-        return this.instance.getClient().postView(options)
-                .execute()
-                .getResult();
+        try {
+            return this.instance.getClient().postView(options)
+                    .execute()
+                    .getResult();
+        } catch (ServiceResponseException e) {
+            log.error("Unable to run query on view {}. Check response: {}", options.view(), e.getMessage());
+            throw new RuntimeException("Something went wrong. Please try again later.", e);
+        }
     }
 
     public InputStream getAttachment(String docId, String attachmentName) {
@@ -629,6 +633,35 @@ public class DatabaseConnectorCloudant {
         return results;
     }
 
+    public <T> List<T> getQueryResultPaginated(
+            PostFindOptions.Builder qb, Class<T> type, PaginationData pageData,
+            Map<String, String> sortSelector
+    ) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int skip = pageData.getDisplayStart();
+
+        PostFindOptions countQuery = qb.build().newBuilder()
+                .fields(Collections.singletonList("_id"))
+                .build();
+
+        try {
+            FindResult result = this.instance.getClient().postFind(countQuery).execute().getResult();
+            if (result != null) {
+                pageData.setTotalRowCount(result.getDocs().size());
+            }
+        } catch (ServiceResponseException e) {
+            log.error("Error getting query result", e);
+        }
+
+        PostFindOptions query = qb
+                .limit(rowsPerPage)
+                .skip(skip)
+                .addSort(sortSelector)
+                .build();
+
+        return getQueryResult(query, type);
+    }
+
     public <T> Set<String> getDistinctSortedStringKeys(@NotNull Class<T> type, String viewName) {
         PostViewOptions viewOptions = new PostViewOptions.Builder()
                 .db(this.dbName)
@@ -754,7 +787,7 @@ public class DatabaseConnectorCloudant {
         }
     }
 
-    private <T> boolean isInstanceOfOAuthClientEntity(T doc) {    
+    private <T> boolean isInstanceOfOAuthClientEntity(T doc) {
         return doc.getClass().getSimpleName().equals("OAuthClientEntity");
     }
 
@@ -777,14 +810,53 @@ public class DatabaseConnectorCloudant {
     }
 
     /**
+     * Replace the first `$` in field name with `\$` as described in couchdb doc
+     * @param field Field name to check
+     * @return Sanitized field name
+     */
+    private static @NotNull String replaceFirstSymbol(String field) {
+        if (field.startsWith("$")) {
+            field = "\\$" + field.substring(1);
+        }
+        return field;
+    }
+
+    /**
      * Generates an $eq selector for given field with given value.
      * @param field Field name
      * @param value Value to match
      * @return New selector
      */
     public static @NotNull Map<String, Object> eq(String field, String value) {
+        field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
                 Collections.singletonMap("$eq", value));
+    }
+
+    /**
+     * Generates an $in selector for given field with given value.
+     * @param field Field name
+     * @param value Values to match
+     * @return New selector
+     */
+    @Contract("_, _ -> new")
+    public static @NotNull Map<String, Object> in(String field, List<String> value) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap("$in", value));
+    }
+
+    /**
+     * Generates an $all selector for given field with given value.
+     * @param field Field name
+     * @param value Values to match
+     * @return New selector
+     */
+    @Contract("_, _ -> new")
+    public static @NotNull Map<String, Object> all(String field, List<String> value) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap("$all", value));
     }
 
     /**
@@ -794,6 +866,7 @@ public class DatabaseConnectorCloudant {
      * @return New selector
      */
     public static @NotNull Map<String, Object> exists(String field, boolean value) {
+        field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
                 Collections.singletonMap("$exists", value));
     }
@@ -825,6 +898,7 @@ public class DatabaseConnectorCloudant {
      * @return New selector
      */
     public static @NotNull Map<String, Object> elemMatch(String field, String value) {
+        field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
                 eq("$elemMatch", value));
     }
