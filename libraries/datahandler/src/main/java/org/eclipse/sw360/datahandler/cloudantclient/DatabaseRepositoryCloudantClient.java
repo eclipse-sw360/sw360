@@ -162,6 +162,28 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public List<T> queryViewPaginated(
+            String viewName, String key, PaginationData pageData, boolean isReduced
+    ) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
+                .descending(!ascending)
+                .keys(Collections.singletonList(key))
+                .reduce(false)
+                .includeDocs(true);
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        paginationSetTotalRowCount(pageData, isReduced, query.build());
+
+        return queryView(query.build());
+    }
+
+    public List<T> queryViewPaginated(
             String viewName, String startKey, String endKey, PaginationData pageData, boolean isReduced
     ) {
         final int rowsPerPage = pageData.getRowsPerPage();
@@ -187,28 +209,6 @@ public class DatabaseRepositoryCloudantClient<T> {
 
         paginationSetTotalRowCount(pageData, isReduced, query.build());
 
-        return queryViewPaginated(query.build(), pageData);
-    }
-
-    public List<T> queryViewPaginated(
-            String viewName, String key, PaginationData pageData, boolean isReduced
-    ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
-        final boolean ascending = pageData.isAscending();
-
-        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
-                .descending(!ascending)
-                .keys(Collections.singletonList(key))
-                .reduce(false)
-                .includeDocs(true);
-
-        if (rowsPerPage != -1) {
-            query.limit(rowsPerPage).skip(offset);
-        }
-
-        paginationSetTotalRowCount(pageData, isReduced, query.build());
-
         return queryView(query.build());
     }
 
@@ -225,7 +225,7 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryView(query);
     }
 
-    public List<T> queryViewPaginated(String viewName, PaginationData pageData) {
+    public List<T> queryViewPaginated(String viewName, PaginationData pageData, boolean isReduced) {
         final int rowsPerPage = pageData.getRowsPerPage();
         final int offset = pageData.getDisplayStart();
         final boolean ascending = pageData.isAscending();
@@ -239,7 +239,9 @@ public class DatabaseRepositoryCloudantClient<T> {
             query.limit(rowsPerPage).skip(offset);
         }
 
-        return queryViewPaginated(query.build(), pageData);
+        paginationSetTotalRowCount(pageData, isReduced, query.build());
+
+        return queryView(query.build());
     }
 
     public Set<String> queryForIds(PostViewOptions query) {
@@ -248,16 +250,6 @@ public class DatabaseRepositoryCloudantClient<T> {
         for (ViewResultRow row : response.getRows()) {
             ids.add(row.getId());
         }
-        return ids;
-    }
-
-    public Set<String> queryForIdsPaginated(PostViewOptions query, PaginationData pageData) {
-        ViewResult response = this.connector.getPostViewQueryResponse(query);
-        HashSet<String> ids = new HashSet<>();
-        for (ViewResultRow row : response.getRows()) {
-            ids.add(row.getId());
-        }
-        pageData.setTotalRowCount(response.getTotalRows());
         return ids;
     }
 
@@ -291,8 +283,8 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryForIds(viewName, prefix, prefix + HIGH_VALUE_UNICODE_CHARACTER);
     }
 
-    public Set<String> queryForIdsByPrefixPaginated(String viewName, String prefix, PaginationData pageData) {
-        return queryForIdsPaginated(viewName, prefix, prefix + HIGH_VALUE_UNICODE_CHARACTER, pageData);
+    public Set<String> queryForIdsByPrefixPaginated(String viewName, String prefix, PaginationData pageData, boolean isReduced) {
+        return queryForIdsPaginated(viewName, prefix, prefix + HIGH_VALUE_UNICODE_CHARACTER, pageData, isReduced);
     }
 
     public Set<String> queryForIdsAsValueByPrefix(String viewName, String prefix) {
@@ -307,7 +299,9 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryForIds(query);
     }
 
-    public Set<String> queryForIdsPaginated(String queryName, String startKey, String endKey, PaginationData pageData) {
+    public Set<String> queryForIdsPaginated(
+            String queryName, String startKey, String endKey, PaginationData pageData, boolean isReduced
+    ) {
         final int rowsPerPage = pageData.getRowsPerPage();
         final int offset = pageData.getDisplayStart();
         final boolean ascending = pageData.isAscending();
@@ -328,7 +322,9 @@ public class DatabaseRepositoryCloudantClient<T> {
             query.limit(rowsPerPage).skip(offset);
         }
 
-        return queryForIdsPaginated(query.build(), pageData);
+        paginationSetTotalRowCount(pageData, isReduced, query.build());
+
+        return queryForIds(query.build());
     }
 
     public Set<String> queryForIdsAsValue(String queryName, String startKey, String endKey) {
@@ -343,23 +339,6 @@ public class DatabaseRepositoryCloudantClient<T> {
         PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
                 .keys(Collections.singletonList(key)).build();
         return queryForIds(query);
-    }
-
-    public Set<String> queryForIdsPaginated(String queryName, String key, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
-        final boolean ascending = pageData.isAscending();
-
-        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName)
-                .keys(Collections.singletonList(key))
-                .reduce(false)
-                .descending(!ascending);
-
-        if (rowsPerPage != -1) {
-            query.limit(rowsPerPage).skip(offset);
-        }
-
-        return queryForIdsPaginated(query.build(), pageData);
     }
 
     public Set<String> queryForIdsAsComplexValue(String queryName, String... keys) {
@@ -411,18 +390,6 @@ public class DatabaseRepositoryCloudantClient<T> {
         try {
             ViewResult response = getConnector().getPostViewQueryResponse(req);
             docList = getPojoFromViewResponse(response);
-        } catch (ServiceResponseException e) {
-            log.warn("Error in getting documents", e);
-        }
-        return docList;
-    }
-
-    public List<T> queryViewPaginated(PostViewOptions req, PaginationData pageData) {
-        List<T> docList = Lists.newArrayList();
-        try {
-            ViewResult response = getConnector().getPostViewQueryResponse(req);
-            docList = getPojoFromViewResponse(response);
-            pageData.setTotalRowCount(response.getTotalRows());
         } catch (ServiceResponseException e) {
             log.warn("Error in getting documents", e);
         }
