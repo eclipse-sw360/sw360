@@ -565,14 +565,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Pageable pageable,
 			@Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
-            @RequestParam(value = "transitive", required = false) String transitive,
+            @RequestParam(value = "transitive", required = false) boolean isTransitive,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
 		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 		Project sw360Proj = projectService.getProjectForUserById(id, sw360User);
 		final Set<String> projectIdsInBranch = new HashSet<>();
-		boolean isTransitive = Boolean.parseBoolean(transitive);
 
 		Map<String, ProjectProjectRelationship> linkedProjects = sw360Proj.getLinkedProjects();
         List<String> keys = linkedProjects != null ? new ArrayList<>(linkedProjects.keySet()) : new ArrayList<>();

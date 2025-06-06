@@ -181,19 +181,20 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @RequestParam(value = "state", required = false) String state,
             HttpServletRequest request
     ) throws SW360Exception {
-        try {
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            List<ClearingRequest> clearingRequestList = new ArrayList<>();
-            ClearingRequestState crState = null;
-            if (StringUtils.hasText(state)) {
-                try {
-                    crState = ClearingRequestState.valueOf(state.toUpperCase());
-                } catch (IllegalArgumentException exp) {
-                    throw new BadRequestClientException(
-                            String.format("Invalid ClearingRequest state '%s', possible values are: %s", state, Arrays.asList(ClearingRequestState.values())),
-                            exp);
-                }
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
+        List<ClearingRequest> clearingRequestList = new ArrayList<>();
+        ClearingRequestState crState = null;
+        if (StringUtils.hasText(state)) {
+            try {
+                crState = ClearingRequestState.valueOf(state.toUpperCase());
+            } catch (IllegalArgumentException exp) {
+                throw new BadRequestClientException(
+                        String.format("Invalid ClearingRequest state '%s', possible values are: %s", state, Arrays.asList(ClearingRequestState.values())),
+                        exp);
             }
+        }
+        try {
             clearingRequestList.addAll(sw360ClearingRequestService.getMyClearingRequests(sw360User, crState));
             clearingRequestList.sort(Comparator.comparingLong(ClearingRequest::getTimestamp));
             PaginationResult<ClearingRequest> paginationResult = restControllerHelper.createPaginationResult(request, pageable, clearingRequestList, SW360Constants.TYPE_CLEARING);
@@ -236,8 +237,9 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable
     ) throws SW360Exception {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         try {
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(crId, sw360User);
 
             List<Comment> commentList = clearingRequest.getComments().stream().sorted((c1, c2) -> Long.compare(c2.getCommentedOn(), c1.getCommentedOn()))

@@ -52,6 +52,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class ImportExportController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImportExportController.class);

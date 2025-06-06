@@ -1664,8 +1664,7 @@ public class RestControllerHelper<T> {
 
     public void throwIfSecurityUser(User user) {
         if (PermissionUtils.isSecurityUser(user)) {
-            throw new HttpClientErrorException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "User is not allowed to access this resource.");
+            throw new AccessDeniedException("User is not allowed to access this resource.");
         }
     }
 }
