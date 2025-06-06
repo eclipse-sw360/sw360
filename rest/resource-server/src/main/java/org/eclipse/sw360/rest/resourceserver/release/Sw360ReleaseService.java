@@ -1489,19 +1489,23 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return successResponse;
     }
 
-    public RequestStatus mergeRelease(String mergeTargetId, String mergeSourceId, ReleaseMergeSelector releaseSelection,
-            User sw360User) throws TException {
+    public RequestStatus mergeRelease(
+            String mergeTargetId, String mergeSourceId, ReleaseMergeSelector releaseSelection,
+            User sw360User
+    ) throws TException {
 
         validateReleaseMergeSelection(releaseSelection);
         if (isReleaseMissing(mergeTargetId, sw360User) || isReleaseMissing(mergeSourceId, sw360User)) {
-            throw new SW360Exception("Source or Target Release ID does not exist.");
+            throw new ResourceNotFoundException("Source or Target Release ID does not exist.");
         }
+        String componentId = getMergeReleaseComponentId(mergeTargetId, mergeSourceId, sw360User);
+        releaseSelection.setComponentId(componentId);
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus requestStatus = sw360ComponentClient.mergeReleases(mergeTargetId, mergeSourceId, releaseSelection,
                 sw360User);
 
         if (requestStatus == RequestStatus.IN_USE) {
-            throw new SW360Exception("Release already in use.");
+            throw new BadRequestClientException("Release already in use.");
         } else if (requestStatus == RequestStatus.FAILURE) {
             throw new SW360Exception("Cannot merge these releases.");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
@@ -1513,16 +1517,16 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     private void validateReleaseMergeSelection(ReleaseMergeSelector releaseSelection) throws SW360Exception {
         if (releaseSelection == null) {
-            throw new SW360Exception("Body for merge cannot be null");
+            throw new BadRequestClientException("Body for merge cannot be null");
         }
         Set<Release._Fields> requiredFields = ImmutableSet.<Release._Fields>builder().add(Release._Fields.NAME)
                 .add(Release._Fields.CREATED_ON).add(Release._Fields.CREATED_BY).add(Release._Fields.VERSION)
-                .add(Release._Fields.COMPONENT_ID).build();
+                .add(Release._Fields.ATTACHMENTS).build();
 
         for (Release._Fields field : requiredFields) {
             if (!releaseSelection.isSet(field)
                     || isNullEmptyOrWhitespace((String) releaseSelection.getFieldValue(field))) {
-                throw new SW360Exception("Merge body is missing field " + field.getFieldName());
+                throw new BadRequestClientException("Merge body is missing field " + field.getFieldName());
             }
         }
     }
@@ -1536,5 +1540,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             log.info("Error fetching release with ID: {}", releaseId, e);
             return true;
         }
+    }
+
+    private String getMergeReleaseComponentId(String targetReleaseId, String sourceReleaseId, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Release targetRelease = sw360ComponentClient.getReleaseById(targetReleaseId, sw360User);
+        Release sourceRelease = sw360ComponentClient.getReleaseById(sourceReleaseId, sw360User);
+        if (targetRelease.getComponentId() == null || sourceRelease.getComponentId() == null ||
+                !targetRelease.getComponentId().equals(sourceRelease.getComponentId())
+        ) {
+            throw new BadRequestClientException("Source and Target Releases must belong to the same component.");
+        }
+        return targetRelease.getComponentId();
     }
 }

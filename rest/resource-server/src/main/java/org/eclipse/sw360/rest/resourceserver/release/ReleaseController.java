@@ -1892,7 +1892,6 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Merge two releases.",
@@ -1915,7 +1914,6 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                                       "createdOn": "Final created date",
                                       "createdBy": "Final creator name",
                                       "version": "1.0.0",
-                                      "componentId": "1234",
                                       "attachments": [
                                         {
                                           "attachmentContentId": "att1",

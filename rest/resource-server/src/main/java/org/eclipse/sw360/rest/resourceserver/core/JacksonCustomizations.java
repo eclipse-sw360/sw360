@@ -1196,6 +1196,7 @@ public class JacksonCustomizations {
                 "idIsSet",
                 "revisionIsSet",
                 "typeIsSet",
+                "componentId",
                 "documentStateIsSet",
                 "permissionsIsSet",
                 "moderatorsIsSet",
