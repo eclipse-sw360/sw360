@@ -140,6 +140,9 @@ public class VendorController implements RepresentationModelProcessor<Repository
             @Parameter(description = "The id of the vendor to get.")
             @PathVariable("id") String id
     ) throws SW360Exception {
+        if(vendorService.getVendorById(id) == null){
+            throw new ResourceNotFoundException("Vendor with id " + id + " not found.");
+        }
         try {
             Set<Release> releases = vendorService.getAllReleaseList(id);
             List<EntityModel<Release>> resources = new ArrayList<>();
