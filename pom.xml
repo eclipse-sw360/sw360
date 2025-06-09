@@ -72,7 +72,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Plugin version properties -->
-    <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
+    <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
     <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
