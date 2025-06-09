@@ -52,7 +52,7 @@ struct Obligation {
     1: optional string id,
     2: optional string revision,
     3: optional string type = "obligation",
-    4: required string text,
+    4: optional string text,
     5: optional set<string> whitelist,
     6: optional bool development,
     7: optional bool distribution,
@@ -70,6 +70,7 @@ struct Obligation {
     23: optional ObligationType obligationType,
     300: optional map<string, string> additionalData,
     97: optional string node,
+    98: optional list<string> textNodes,
 
 }
 

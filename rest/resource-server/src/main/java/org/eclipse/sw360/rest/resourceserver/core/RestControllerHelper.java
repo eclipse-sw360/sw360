@@ -116,6 +116,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1103,12 +1105,22 @@ public class RestControllerHelper<T> {
 
     public Obligation convertToEmbeddedObligation(Obligation obligation) {
         Obligation embeddedObligation = new Obligation();
+        embeddedObligation.setId(obligation.getId());
         embeddedObligation.setTitle(obligation.getTitle());
+        embeddedObligation.setText(obligation.getText());
+    
+    if (obligation.isSetTextNodes() && !CommonUtils.isNullOrEmptyCollection(obligation.getTextNodes())) {
+        embeddedObligation.setTextNodes(obligation.getTextNodes());
+    } else if (obligation.isSetText() && !CommonUtils.isNullEmptyOrWhitespace(obligation.getText())) {
+        List<String> textNodes = Arrays.stream(obligation.getText().split("\n"))
+                                      .map(String::trim)
+                                      .filter(node -> !CommonUtils.isNullEmptyOrWhitespace(node))
+                                      .collect(Collectors.toList());
+        embeddedObligation.setTextNodes(textNodes);
+    }
         embeddedObligation.setObligationType(obligation.getObligationType());
         embeddedObligation.setObligationLevel(obligation.getObligationLevel());
-        embeddedObligation.setId(obligation.getId());
         embeddedObligation.setWhitelist(obligation.getWhitelist());
-        embeddedObligation.setText(obligation.getText());
         embeddedObligation.setType(null);
         return embeddedObligation;
     }

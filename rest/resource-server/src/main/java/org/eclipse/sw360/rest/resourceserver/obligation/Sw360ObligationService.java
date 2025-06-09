@@ -57,14 +57,14 @@ public class Sw360ObligationService {
     public Obligation createObligation(Obligation obligation, User sw360User) {
         try {
             if (obligation.getTitle() != null && !obligation.getTitle().trim().isEmpty()
-            && obligation.getText() != null && !obligation.getText().trim().isEmpty()
+            && hasValidText(obligation)
             && obligation.getObligationLevel() != null) {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                 String obligationId = sw360LicenseClient.addObligations(obligation, sw360User);
                 obligation.setId(obligationId);
                 return obligation;
             } else {
-                throw new BadRequestClientException("Obligation Title, Text, Level are required. Obligation Title, Text cannot contain only space character.");
+                throw new BadRequestClientException("Obligation Title, Text or TextNodes, Level are required. Obligation Title, Text cannot contain only space character.");
             }
         } catch (TException e) {
             throw new RuntimeException(e);
@@ -84,7 +84,7 @@ public class Sw360ObligationService {
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {
         if (CommonUtils.isNotNullEmptyOrWhitespace(obligation.getTitle())
-                || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
+                || hasValidText(obligation)) {
             try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                 sw360LicenseClient.updateObligation(obligation, sw360User);
@@ -93,8 +93,15 @@ public class Sw360ObligationService {
                 throw new RuntimeException("Error updating obligation", e);
             }
         } else {
-            throw new BadRequestClientException("Obligation Title, Text are required. Obligation Title, Text cannot contain only space character.");
+            throw new BadRequestClientException("Obligation Title, Text or TextNodes are required. Obligation Title, Text cannot contain only space character.");
         }
+    }
+    private boolean hasValidText(Obligation obligation) {
+        boolean hasText = CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText());
+        boolean hasTextNodes = obligation.getTextNodes() != null && 
+                              !obligation.getTextNodes().isEmpty() && 
+                              obligation.getTextNodes().stream().anyMatch(node -> !node.trim().isEmpty());
+        return hasText || hasTextNodes;
     }
 
 }
