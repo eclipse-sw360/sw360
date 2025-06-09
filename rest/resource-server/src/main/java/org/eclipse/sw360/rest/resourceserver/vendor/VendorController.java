@@ -147,6 +147,9 @@ public class VendorController implements RepresentationModelProcessor<Repository
     ) throws SW360Exception {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
+        if(vendorService.getVendorById(id) == null){
+            throw new ResourceNotFoundException("Vendor with id " + id + " not found.");
+        }
         try {
             Set<Release> releases = vendorService.getAllReleaseList(id);
             List<EntityModel<Release>> resources = new ArrayList<>();
