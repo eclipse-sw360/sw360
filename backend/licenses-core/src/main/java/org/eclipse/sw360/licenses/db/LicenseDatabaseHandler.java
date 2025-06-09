@@ -282,6 +282,7 @@ public class LicenseDatabaseHandler {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
+        handleObligationTextCompatibility(obligs);
         prepareTodo(obligs);
         List<Obligation> obligations = getObligations();
         for (Obligation obligation : obligations) {
@@ -316,6 +317,7 @@ public class LicenseDatabaseHandler {
         if (! oblig.isSetObligationLevel() || oblig.getObligationLevel() == null) {
             oblig.setObligationLevel(oldObligation.getObligationLevel());
         }
+        handleObligationTextCompatibility(oblig);
         prepareTodo(oblig);
         obligRepository.update(oblig);
         oblig.setNode(null);
@@ -785,6 +787,7 @@ public class LicenseDatabaseHandler {
             return null;
         }
         for (Obligation Oblig : listOfObligations) {
+            handleObligationTextCompatibility(Oblig);
             prepareTodo(Oblig);
         }
 
@@ -1320,5 +1323,21 @@ public class LicenseDatabaseHandler {
         results.addAll(licenseRepository.searchByName(searchText));
         results.addAll(licenseRepository.searchByShortName(searchText));
         return convertToLicenseSummary(results.stream().toList());
+    }
+
+    // Helper method to handle textNodes to text conversion for backward compatibility
+    private void handleObligationTextCompatibility(Obligation obligation) {
+        if (obligation.isSetTextNodes() && !CommonUtils.isNullOrEmptyCollection(obligation.getTextNodes())) {
+            String combinedText = String.join("\n", obligation.getTextNodes());
+            obligation.setText(combinedText);
+        }
+        else if (obligation.isSetText() && !CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
+                 && (!obligation.isSetTextNodes() || CommonUtils.isNullOrEmptyCollection(obligation.getTextNodes()))) {
+            List<String> textNodes = Arrays.asList(obligation.getText().split("\n"));
+            textNodes = textNodes.stream()
+                               .filter(node -> !CommonUtils.isNullEmptyOrWhitespace(node.trim()))
+                               .collect(Collectors.toList());
+            obligation.setTextNodes(textNodes);
+        }
     }
 }
