@@ -101,6 +101,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             Pageable pageable,
             HttpServletRequest request
     ) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         List<License> sw360Licenses = licenseService.getLicenses();
         PaginationResult<License> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE);
         List<EntityModel<License>> licenseResources = new ArrayList<>();
@@ -128,6 +130,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligationsByLicenseId(
             @PathVariable("id") String id
     ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         List<Obligation> obligations = licenseService.getObligationsByLicenseId(id);
         List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
         obligations.forEach(o -> {
@@ -175,6 +179,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id
     ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         License sw360License = licenseService.getLicenseById(id);
         HalResource<License> licenseHalResource = createHalLicense(sw360License);
         return new ResponseEntity<>(licenseHalResource, HttpStatus.OK);
@@ -468,6 +474,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             HttpServletResponse response
     ) throws TException, IOException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         licenseService.getDownloadLicenseArchive(sw360User,request,response);
 
     }

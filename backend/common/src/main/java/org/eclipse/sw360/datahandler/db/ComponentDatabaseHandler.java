@@ -372,7 +372,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Component component = componentRepository.get(id);
 
         if (component == null) {
-            throw fail("Could not fetch component from database! id=" + id);
+            throw fail(404, "Could not fetch component from database! id=" + id);
         }
 
         // Convert Ids to release summary

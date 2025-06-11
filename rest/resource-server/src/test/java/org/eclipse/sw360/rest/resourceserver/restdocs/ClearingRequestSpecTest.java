@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
@@ -185,6 +186,8 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         given(this.userServiceMock.getUserByEmail(cr1.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmail(cr1.getClearingTeam())).willReturn(new User("clearing.team@sw60.org", "XYZ").setId("67890"));
         given(this.projectServiceMock.getClearingInfo(eq(project1), any())).willReturn(project1);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
 
         given(this.projectServiceMock.getProjectForUserById(eq(cr2.getProjectId()), any())).willReturn(project2);
         given(this.userServiceMock.getUserByEmail(cr2.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));

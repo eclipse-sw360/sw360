@@ -78,6 +78,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -498,6 +499,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("id") String id
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
         final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360User, sw360Component.getAttachments(), Source.componentId(id));
         return new ResponseEntity<>(resources, HttpStatus.OK);
@@ -632,6 +634,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             HttpServletResponse response
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         attachmentService.downloadAttachmentWithContext(component, attachmentId, response, sw360User);
     }
@@ -651,6 +654,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             HttpServletResponse response
     ) throws TException, IOException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         final Component component = componentService.getComponentForUserById(componentId, user);
         Set<Attachment> attachments = component.getAttachments();
         attachmentService.downloadAttachmentBundleWithContext(component, attachments, user, response);

@@ -122,15 +122,10 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             tags = {"Admin"}
     )
     @RequestMapping(value = FOSSOLOGY_URL + "/reServerConnection", method = RequestMethod.GET)
-    public ResponseEntity<?> checkServerConnection() throws SW360Exception {
-        try {
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            sw360FossologyAdminServices.serverConnection(sw360User);
-        } catch (Exception e) {
-            throw new SW360Exception(e.getMessage());
-        }
+    public ResponseEntity<?> checkServerConnection() {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        sw360FossologyAdminServices.serverConnection(sw360User);
         return ResponseEntity.ok(Series.SUCCESSFUL);
-
     }
 
     @Operation(

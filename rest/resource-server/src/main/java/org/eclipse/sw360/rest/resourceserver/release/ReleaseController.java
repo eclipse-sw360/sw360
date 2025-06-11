@@ -96,6 +96,7 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -697,6 +698,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360User, sw360Release.getAttachments(), Source.releaseId(id));
         return new ResponseEntity<>(resources, HttpStatus.OK);
@@ -723,6 +725,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             HttpServletResponse response
     ) throws TException, IOException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         final Release release = releaseService.getReleaseForUserById(releaseId, user);
         final Set<Attachment> attachments = release.getAttachments();
         attachmentService.downloadAttachmentBundleWithContext(release, attachments, user, response);
@@ -811,6 +814,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             HttpServletResponse response
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
     }
@@ -867,6 +871,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String releaseId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         Release release = releaseService.getReleaseForUserById(releaseId, user);
         Map<String, Object> responseMap = new HashMap<>();
         ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
@@ -937,8 +942,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Upload description to FOSSology")
             @RequestParam(value = "uploadDescription", required = false) String uploadDescription
     ) throws TException, IOException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         releaseService.checkFossologyConnection();
-
         ReentrantLock lock = mapOfLocks.get(releaseId);
         Map<String, String> responseMap = new HashMap<>();
         HttpStatus status = null;
@@ -948,7 +954,6 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                         "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
                 status = HttpStatus.TOO_MANY_REQUESTS;
             } else {
-                User user = restControllerHelper.getSw360UserFromAuthentication();
                 releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
                         markFossologyProcessOutdated, uploadDescription);
                 responseMap.put("message", "FOSSology Process for Release Id : " + releaseId + " has been triggered.");
@@ -1023,8 +1028,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId
     ) throws TException {
-        releaseService.checkFossologyConnection();
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
+        releaseService.checkFossologyConnection();
         Map<String, String> responseMap = new HashMap<>();
         String errorMsg = "Could not trigger report generation for this release";
         HttpStatus status = null;
@@ -1508,6 +1514,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         Release release = releaseService.getReleaseForUserById(id, user);
         final boolean INCLUDE_CONCLUDED_LICENSE = true;
 
@@ -1815,6 +1822,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("attachContentId") String attachContentId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         Release sw360Release = releaseService.getReleaseForUserById(relId, user);
         List<Map<String,String>> results = new ArrayList<>();
         boolean found = false;
@@ -1886,8 +1894,51 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String relId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         Release sw360Release = releaseService.getReleaseForUserById(relId, user);
         Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user);
         return new ResponseEntity<>(results, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Merge two releases.",
+            description = "Merge source release into target release.",
+            tags = {"Releases"}
+    )
+    @RequestMapping(value = RELEASES_URL + "/mergereleases", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> mergeReleases(
+            @Parameter(description = "The id of the merge target release.")
+            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @Parameter(description = "The id of the merge source release.")
+            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+            @Parameter(description = "The merge selection.",
+                    schema = @Schema(
+                            implementation = ReleaseMergeSelector.class,
+                            type = "object",
+                            example = """
+                                    {
+                                      "name": "Final Release Name",
+                                      "createdOn": "Final created date",
+                                      "createdBy": "Final creator name",
+                                      "version": "1.0.0",
+                                      "attachments": [
+                                        {
+                                          "attachmentContentId": "att1",
+                                          "filename": "saveme.txt"
+                                        }
+                                      ]
+                                    }
+                                    """,
+                            requiredProperties = {"name", "createdOn", "createdBy"}
+                    )
+            )
+            @RequestBody ReleaseMergeSelector mergeSelection
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        // perform the real merge, update merge target and delete merge sources
+        RequestStatus requestStatus = releaseService.mergeRelease(mergeTargetId, mergeSourceId, mergeSelection,
+                sw360User);
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
     }
 }

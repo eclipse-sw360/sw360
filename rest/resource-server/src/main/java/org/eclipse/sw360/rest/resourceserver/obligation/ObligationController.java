@@ -46,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -88,6 +89,8 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             @RequestParam(value = "search", required = false) String searchKeyWord
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
 
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         List<Obligation> obligations;
         if (!CommonUtils.isNullEmptyOrWhitespace(obligationLevel)) {
             obligations = obligationService.getObligations().stream()
@@ -133,6 +136,8 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             @Parameter(description = "The id of the obligation to be retrieved.")
             @PathVariable("id") String id
     ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         try {
             Obligation sw360Obligation = obligationService.getObligationById(id);
             HalResource<Obligation> halResource = createHalObligation(sw360Obligation);

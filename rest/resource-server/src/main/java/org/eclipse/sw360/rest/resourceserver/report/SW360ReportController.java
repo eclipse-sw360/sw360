@@ -119,12 +119,13 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletRequest request,
             HttpServletResponse response
     ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }
         SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
                 template, externalIds, withSubProject, bomType, selectedRelRelationship);
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         String baseUrl = getBaseUrl(request);
         switch (module) {
             case SW360Constants.PROJECTS:

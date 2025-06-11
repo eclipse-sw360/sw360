@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -56,6 +57,7 @@ public class AttachmentTest extends TestIntegrationBase {
         user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
+        user.setUserGroup(UserGroup.ADMIN);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
