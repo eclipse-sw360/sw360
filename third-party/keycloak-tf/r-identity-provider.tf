@@ -38,3 +38,16 @@ resource "keycloak_attribute_importer_identity_provider_mapper" "department" {
     syncMode = "INHERIT"
   }
 }
+
+# 3. Map `gid` from EntraID to `externalId` of user
+resource "keycloak_attribute_importer_identity_provider_mapper" "gid" {
+  realm                   = keycloak_realm.sw360.id
+  name                    = "GidToExternalIdMapper"
+  identity_provider_alias = keycloak_oidc_identity_provider.entra_id.alias
+  user_attribute          = "externalId"
+  claim_name              = "gid"
+
+  extra_config = {
+    syncMode = "INHERIT"
+  }
+}

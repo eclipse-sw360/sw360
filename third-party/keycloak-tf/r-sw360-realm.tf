@@ -87,8 +87,8 @@ resource "keycloak_realm_events" "sw360_events" {
   ]
 }
 
-# 3. User profiles with attributes username, email, firstName, lastName and
-# Department
+# 3. User profiles with attributes username, email, firstName, lastName,
+# Department and externalId
 resource "keycloak_realm_user_profile" "sw360_profiles" {
   realm_id = keycloak_realm.sw360.id
 
@@ -172,6 +172,15 @@ resource "keycloak_realm_user_profile" "sw360_profiles" {
   attribute {
     name         = "Department"
     display_name = "Department"
+    permissions {
+      edit = ["admin", "user"]
+      view = ["admin", "user"]
+    }
+  }
+
+  attribute {
+    name         = "externalId"
+    display_name = "externalId"
     permissions {
       edit = ["admin", "user"]
       view = ["admin", "user"]
