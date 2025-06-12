@@ -1086,12 +1086,24 @@ public class RestControllerHelper<T> {
 
     public Obligation convertToEmbeddedObligation(Obligation obligation) {
         Obligation embeddedObligation = new Obligation();
+        embeddedObligation.setId(obligation.getId());
         embeddedObligation.setTitle(obligation.getTitle());
+        embeddedObligation.setText(obligation.getText());
+    
+    if (obligation.isSetTextNodes() && !CommonUtils.isNullOrEmptyCollection(obligation.getTextNodes())) {
+        embeddedObligation.setTextNodes(obligation.getTextNodes());
+    } else if (obligation.isSetText() && !CommonUtils.isNullEmptyOrWhitespace(obligation.getText())) {
+        
+        List<String> textNodes = Arrays.asList(obligation.getText().split("\n"))
+                                       .stream()
+                                       .filter(node -> !CommonUtils.isNullEmptyOrWhitespace(node.trim()))
+                                       .map(String::trim)
+                                       .collect(Collectors.toList());
+        embeddedObligation.setTextNodes(textNodes);
+    }
         embeddedObligation.setObligationType(obligation.getObligationType());
         embeddedObligation.setObligationLevel(obligation.getObligationLevel());
-        embeddedObligation.setId(obligation.getId());
         embeddedObligation.setWhitelist(obligation.getWhitelist());
-        embeddedObligation.setText(obligation.getText());
         embeddedObligation.setType(null);
         return embeddedObligation;
     }

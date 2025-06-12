@@ -120,10 +120,15 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
     }
 
     private void filterObligationBasedOnSearchKey(String searchKeyWord, List<Obligation> obligations) {
-        obligations.removeIf(obligation ->
-                !obligation.getTitle().toLowerCase().contains(searchKeyWord.toLowerCase()) &&
-                !obligation.getText().toLowerCase().contains(searchKeyWord.toLowerCase())
-        );
+        obligations.removeIf(obligation -> {
+            boolean titleMatch = obligation.getTitle().toLowerCase().contains(searchKeyWord.toLowerCase());
+            boolean textMatch = obligation.getText() != null && 
+                               obligation.getText().toLowerCase().contains(searchKeyWord.toLowerCase());
+            boolean textNodesMatch = obligation.getTextNodes() != null && 
+                                   obligation.getTextNodes().stream()
+                                           .anyMatch(node -> node.toLowerCase().contains(searchKeyWord.toLowerCase()));
+            return !(titleMatch || textMatch || textNodesMatch);
+        });
     }
 
     @Operation(
@@ -226,7 +231,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             @RequestBody Obligation obligation
     ) throws SW360Exception {
         if (CommonUtils.isNullEmptyOrWhitespace(obligation.getTitle())
-                || CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
+                || (!hasValidObligationText(obligation))
         ) {
             log.error("Obligation title or text is empty");
             throw new BadRequestClientException("Obligation title or text is empty");
@@ -252,6 +257,13 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             log.error("Error getting obligation with id {}", id, e);
             throw new ResourceNotFoundException("Obligation not found");
         }
+    }
+    private boolean hasValidObligationText(Obligation obligation) {
+        boolean hasText = !CommonUtils.isNullEmptyOrWhitespace(obligation.getText());
+        boolean hasTextNodes = obligation.getTextNodes() != null && 
+                              !obligation.getTextNodes().isEmpty() && 
+                              obligation.getTextNodes().stream().anyMatch(node -> !node.trim().isEmpty());
+        return hasText || hasTextNodes;
     }
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
