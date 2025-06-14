@@ -89,8 +89,9 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
 
         when(this.obligationServiceMock.createObligation(any(), any())).then(invocation ->
-        new Obligation("This is the text of my Test Obligation")
+        new Obligation()
                 .setId("1234567890")
+                .setText("This is the text of my Test Obligation")
                 .setTitle("Test Obligation")
                 .setObligationLevel(ObligationLevel.LICENSE_OBLIGATION)
                 .setObligationType(ObligationType.PERMISSION));
