@@ -1164,21 +1164,29 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    public RequestStatus deleteLicenseType(String id, User user) throws SW360Exception {
+    public RequestStatus deleteLicenseType(String id, User user) {
         LicenseType licenseType = licenseTypeRepository.get(id);
-        assertNotNull(licenseType);
 
-        // Remove the license type if the user is allowed to do it by himself
-        if (PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user)) {
-            if (checkLicenseTypeInUse(id) > 0) {
-                return RequestStatus.IN_USE;
-            }
-            licenseTypeRepository.remove(licenseType);
-            return RequestStatus.SUCCESS;
-        } else {
-            log.error(user + " does not have the permission to delete license type.");
+        if (licenseType == null) {
+            log.warn("License type not found with ID: {}", id);
+            return RequestStatus.INVALID_INPUT;
+        }
+
+        if (!PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user)) {
+            log.error("User {} does not have permission to delete license type.", user.getEmail());
             return RequestStatus.ACCESS_DENIED;
         }
+
+        int usageCount = checkLicenseTypeInUse(id);
+        if (usageCount > 0) {
+            String typeName = licenseType.getLicenseType();
+            log.warn("The license type {} cannot be deleted, since it is being used in {} license(s).", typeName,
+                    usageCount);
+            return RequestStatus.IN_USE;
+        }
+
+        licenseTypeRepository.remove(licenseType);
+        return RequestStatus.SUCCESS;
     }
 
     public int checkLicenseTypeInUse(String id) {
