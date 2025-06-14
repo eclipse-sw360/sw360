@@ -41,7 +41,14 @@ public class ResourceListController<T> {
 
     public PaginationResult<T> getPaginationResultFromPaginatedList(List<T> resources,
                                                                     PaginationOptions<T> paginationOptions,
-                                                                    int totalCount) {
+                                                                    int totalCount) throws PaginationParameterException {
+        if (resources.isEmpty()) {
+            if (paginationOptions.getPageNumber() == 0) {
+                return new PaginationResult<>(resources, 0, paginationOptions);
+            } else {
+                throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
+            }
+        }
         return new PaginationResult<>(this.sortList(resources, paginationOptions.getSortComparator()),
                 totalCount, paginationOptions);
     }
