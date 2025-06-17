@@ -56,6 +56,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -76,6 +77,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
@@ -136,7 +138,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -273,36 +274,34 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        boolean isSearchByName = name != null && !name.isEmpty();
         List<Project> sw360Projects = new ArrayList<>();
+        Map<PaginationData, List<Project>> paginatedProjects = null;
+
+        Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
+                additionalData);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            Set<String> values = Collections.singleton(name);
+            filterMap.put(Project._Fields.NAME.getFieldName(), values);
+        }
 
         if (luceneSearch) {
-            Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
-                    additionalData);
-
-            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-                Set<String> values = CommonUtils.splitToSet(name);
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
+                Set<String> values = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(Project._Fields.NAME.getFieldName(), values);
             }
 
-            sw360Projects.addAll(projectService.refineSearch(filterMap, sw360User));
+            paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);
         } else {
-            if (isSearchByName) {
-                sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
+            if (filterMap.isEmpty()) {
+                paginatedProjects = projectService.getProjectsForUser(sw360User, pageable);
             } else {
-                sw360Projects.addAll(projectService.getProjectsSummaryForUserWithoutPagination(sw360User));
-            }
-            Map<String, Set<String>> restrictions = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
-                    additionalData);
-            if (!restrictions.isEmpty()) {
-                sw360Projects = new ArrayList<>(sw360Projects.stream()
-                        .filter(filterProjectMap(restrictions)).toList());
+                paginatedProjects = projectService.searchAccessibleProjectByExactValues(filterMap, sw360User, pageable);
             }
         }
         return getProjectResponse(pageable, allDetails, request, sw360User,
-                sw360Projects);
+                sw360Projects, paginatedProjects);
     }
 
     private Map<String, Set<String>> getFilterMap(String tag, String projectType, String group, String version, String projectResponsible,
@@ -338,10 +337,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(
             Pageable pageable, boolean allDetails, HttpServletRequest request, User sw360User,
-            List<Project> sw360Projects
+            List<Project> sw360Projects, Map<PaginationData, List<Project>> paginatedProjects
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
-        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                sw360Projects, SW360Constants.TYPE_PROJECT);
+        PaginationResult<Project> paginationResult;
+        if (paginatedProjects != null) {
+            sw360Projects.addAll(paginatedProjects.values().iterator().next());
+            int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
+                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
+        } else {
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    sw360Projects, SW360Constants.TYPE_PROJECT);
+        }
 
         List<EntityModel<Project>> projectResources = new ArrayList<>();
         Consumer<Project> consumer = p -> {
@@ -358,7 +366,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             projectResources.add(embeddedProjectResource);
         };
 
-        paginationResult.getResources().stream().forEach(consumer);
+        paginationResult.getResources().forEach(consumer);
 
         CollectionModel resources;
         if (projectResources.isEmpty()) {
@@ -425,7 +433,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Projects = projectService.getWithFilledClearingStatus(sw360Projects, clearingState);
 
         return getProjectResponse(pageable, allDetails, request, sw360User,
-                sw360Projects);
+                sw360Projects, null);
     }
 
     @Operation(
@@ -3179,38 +3187,228 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation", method = RequestMethod.PATCH)
     public ResponseEntity<?> patchLicenseObligations(
-            @Parameter(description = "Project ID.")
-            @PathVariable("id") String id,
-            @Parameter(description = "Map of obligation status info.")
+            @Parameter(description = "Project ID") @PathVariable("id") String id,
+            @Parameter(description = "Map of obligation status info")
             @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        ObligationList obligation = new ObligationList();
-        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
-        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
-            obligation = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
-            obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+        Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
+        try {
+            ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            obligationStatusMap = processLicenseObligations(sw360Project, sw360User, requestBodyObligationStatusInfo,obligationList);
+            Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
+                    .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
+
+            RequestStatus updateStatus = projectService
+                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList);
+            if (updateStatus == RequestStatus.SUCCESS) {
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body("License Obligation Updated Successfully");
+            }
+
+            throw new DataIntegrityViolationException("Cannot update License Obligation");
+        } catch (Exception e) {
+            log.error("Error updating license obligations: ", e);
+            throw new DataIntegrityViolationException("Failed to update License Obligation: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Processes the obligations for a project based on whether it has linked obligations or not.
+     * If linked obligations exist, it processes them; otherwise, it updates the project obligations.
+     *
+     * @param sw360Project The SW360 project to process obligations for.
+     * @param sw360User The user performing the operation.
+     * @param requestBodyObligationStatusInfo The obligation status information from the request body.
+     * @param obligationList The obligation list to be processed.
+     * @return A map of obligation status information after processing.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private Map<String, ObligationStatusInfo> processLicenseObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo,
+            ObligationList obligationList
+    ) throws TException {
+        if (hasLinkedObligations(sw360Project)) {
+            return processExistingLicenseObligations(sw360Project, sw360User, requestBodyObligationStatusInfo , obligationList);
+        }
+        return updateProjectLicenseObligations(sw360Project, sw360User, new HashMap<>());
+    }
+
+    private boolean hasLinkedObligations(Project project) {
+        return CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
+    }
+
+    /**
+     * Processes existing obligations for a project.
+     * If the project has linked obligations, it retrieves them and checks if all obligations from the request body are present.
+     * If not all obligations are present, it updates the project obligations with the existing ones.
+     * If all obligations are present, it returns the existing obligation status map.
+     *
+     * @param sw360Project The SW360 project to process obligations for.
+     * @param sw360User The user performing the operation.
+     * @param requestBodyObligationStatusInfo The obligation status information from the request body.
+     * @param obligationList The obligation list to be processed.
+     * @return A map of obligation status information after processing.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private Map<String, ObligationStatusInfo> processExistingLicenseObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,ObligationList obligationList
+    ) throws TException {
+        obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+        Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
+
+        boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
+                .stream()
+                .allMatch(obligationStatusMap::containsKey);
+
+        if (!allObligationsPresent) {
+            return updateProjectLicenseObligations(sw360Project, sw360User, obligationStatusMap);
         }
 
-        // Accept STATUS and COMMENT in the request body
-        for (Map.Entry<String, ObligationStatusInfo> entry : requestBodyObligationStatusInfo.entrySet()) {
-            ObligationStatusInfo updatedInfo = entry.getValue();
-            if (updatedInfo.getStatus() != null) {
-                obligationStatusMap.get(entry.getKey()).setStatus(updatedInfo.getStatus());
+        return obligationStatusMap;
+    }
+
+    /**
+     * Updates the project obligations by retrieving the releases and setting the license information with obligations.
+     * It also adds linked obligations to the project.
+     * This method is called when the project has no linked obligations or when the existing obligations need to be updated.
+     *
+     * @param sw360Project The SW360 project to update obligations for.
+     * @param sw360User The user performing the operation.
+     * @param existingObligationStatusMap The existing obligation status map to be updated.
+     * @return A map of updated obligation status information.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private Map<String, ObligationStatusInfo> updateProjectLicenseObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> existingObligationStatusMap
+    ) throws TException {
+        Map<String, String> releaseIdToAcceptedCLI = new HashMap<>();
+        List<Release> releases = getReleasesWithAttachments(sw360Project, sw360User);
+
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService.setLicenseInfoWithObligations(
+                existingObligationStatusMap,
+                releaseIdToAcceptedCLI,
+                releases,
+                sw360User
+        );
+
+        projectService.addLinkedObligations(sw360Project, sw360User, updatedObligationStatusMap);
+        return updatedObligationStatusMap;
+    }
+
+    /**
+     * Retrieves releases with attachments for a given project and user.
+     * It filters out releases that do not have any attachments.
+     * This method is used to ensure that only relevant releases are processed, especially when dealing with license obligations.
+     *
+     *
+     * @param project The project to retrieve releases from.
+     * @param user The user for whom the releases are being retrieved.
+     * @return A list of releases that have attachments.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private List<Release> getReleasesWithAttachments(Project project, User user) throws TException {
+        return project.getReleaseIdToUsage().keySet().stream()
+                .map(releaseId -> {
+                    try {
+                        Release release = releaseService.getReleaseForUserById(releaseId, user);
+                        return release.getAttachmentsSize() > 0 ? release : null;
+                    } catch (TException e) {
+                        log.error("Error fetching release: " + releaseId, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update Component  Obligations ",
+            description = "Pass a map of obligations in request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/updateProjectObligation", method = RequestMethod.PATCH)
+    public ResponseEntity<?> patchComponentObligations(
+            @Parameter(description = "Project ID") @PathVariable("id") String id,
+            @Parameter(description = "Map of obligation status info")
+            @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,
+            @Parameter(description = "Obligation Level",
+                    schema = @Schema(allowableValues = {"project", "organization", "component"}))
+            @RequestParam(value = "obligationLevel", required = true) String oblLevel
+    ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
+        try {
+            ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            obligationStatusMap = processObligations(sw360Project, sw360User, requestBodyObligationStatusInfo,obligationList , oblLevel);
+            Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
+                    .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
+
+            RequestStatus updateStatus = projectService
+                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList);
+            if (updateStatus == RequestStatus.SUCCESS) {
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(oblLevel + " Obligation Updated Successfully");
             }
-            if (updatedInfo.getComment() != null) {
-                obligationStatusMap.get(entry.getKey()).setComment(updatedInfo.getComment());
-            }
+
+            throw new DataIntegrityViolationException("Cannot update "+oblLevel+" Obligation");
+        } catch (Exception e) {
+            log.error("Error updating {0} obligations: ", oblLevel ,e);
+            throw new DataIntegrityViolationException("Failed to update "+oblLevel+"  Obligation: " + e.getMessage());
+        }
+    }
+
+    private Map<String, ObligationStatusInfo> processObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo, ObligationList obligationList,
+            String oblLevel) throws TException {
+        if (hasLinkedObligations(sw360Project)) {
+            return processExistingObligations(sw360Project, sw360User, requestBodyObligationStatusInfo , obligationList ,oblLevel);
+        }
+        return updateProjectObligations(sw360Project, sw360User, new HashMap<>(), oblLevel);
+    }
+
+     private Map<String, ObligationStatusInfo> processExistingObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,ObligationList obligationList,
+            String oblLevel) throws TException {
+        obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+        Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
+
+        boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
+                .stream()
+                .allMatch(obligationStatusMap::containsKey);
+
+        if (!allObligationsPresent) {
+            return updateProjectObligations(sw360Project, sw360User, obligationStatusMap , oblLevel);
         }
 
-        Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
-                .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
-        RequestStatus updateObligationStatus = projectService.patchLinkedObligations(sw360User, updatedObligationStatusMap, obligation);
-        if (updateObligationStatus == RequestStatus.SUCCESS) {
-            return new ResponseEntity<>("License Obligation Updated Successfully", HttpStatus.CREATED);
-        }
-        throw new DataIntegrityViolationException("Cannot update License Obligation");
+        return obligationStatusMap;
+    }
+
+    private Map<String, ObligationStatusInfo> updateProjectObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> existingObligationStatusMap,
+            String oblLevel) throws TException {
+
+          Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService.setObligationsFromAdminSection(
+                sw360User, existingObligationStatusMap, sw360Project, oblLevel);
+
+        projectService.addLinkedObligations(sw360Project, sw360User, updatedObligationStatusMap);
+        return updatedObligationStatusMap;
     }
 
     @Operation(
@@ -3696,56 +3894,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(createdProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(projectDTOHalResource);
-    }
-
-    /**
-     * Create a filter predicate to remove all projects which do not satisfy the restriction set.
-     * @param restrictions Restrictions set to filter projects on
-     * @return Filter predicate for stream.
-     */
-    private static @NonNull Predicate<Project> filterProjectMap(Map<String, Set<String>> restrictions) {
-        return project -> {
-            for (Map.Entry<String, Set<String>> restriction : restrictions.entrySet()) {
-                final Set<String> filterSet = restriction.getValue();
-                Project._Fields field = Project._Fields.findByName(restriction.getKey());
-                Object fieldValue = project.getFieldValue(field);
-                if (fieldValue == null) {
-                    return false;
-                }
-                if (field == Project._Fields.PROJECT_TYPE && !filterSet.contains(project.projectType.name())) {
-                    return false;
-                } else if (field == Project._Fields.VERSION && !filterSet.contains(project.version)) {
-                    return false;
-                } else if (field == Project._Fields.PROJECT_RESPONSIBLE && !filterSet.contains(project.projectResponsible)) {
-                    return false;
-                } else if (field == Project._Fields.STATE && !filterSet.contains(project.state.name())) {
-                    return false;
-                } else if (field == Project._Fields.CLEARING_STATE && !filterSet.contains(project.clearingState.name())) {
-                    return false;
-                } else if ((field == Project._Fields.CREATED_BY || field == Project._Fields.CREATED_ON)
-                        && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
-                    return false;
-                } else if (fieldValue instanceof Set) {
-                    if (Sets.intersection(filterSet, (Set<String>) fieldValue).isEmpty()) {
-                        return false;
-                    }
-                } else if (fieldValue instanceof Map<?,?>) {
-                    Map<?, ?> fieldValueMap = (Map<?, ?>) fieldValue;
-                    boolean hasIntersection = false;
-                    if(field == Project._Fields.ADDITIONAL_DATA){
-                        hasIntersection = fieldValueMap.values().stream()
-                                .anyMatch(filterSet::contains);
-                    }else{
-                        hasIntersection = fieldValueMap.keySet().stream()
-                                .anyMatch(filterSet::contains);
-                    }
-                    if (!hasIntersection) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        };
     }
 
     @Operation(
