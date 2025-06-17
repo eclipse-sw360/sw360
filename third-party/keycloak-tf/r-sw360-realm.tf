@@ -12,7 +12,7 @@ resource "keycloak_realm" "sw360" {
   # Login tab
   registration_allowed           = false
   edit_username_allowed          = false
-  registration_email_as_username = false
+  registration_email_as_username = true
   login_with_email_allowed       = false
   duplicate_emails_allowed       = false
 
@@ -25,7 +25,7 @@ resource "keycloak_realm" "sw360" {
       from              = var.smtp_from
       from_display_name = "SW360 - Keycloak"
       starttls          = true
-      ssl               = true
+      ssl               = false
 
       auth {
         username = var.smtp_username

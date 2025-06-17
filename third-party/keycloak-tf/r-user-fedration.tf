@@ -6,7 +6,7 @@ resource "keycloak_custom_user_federation" "sw360_user_jpa" {
   name        = "sw360-user-storage-jpa"
   provider_id = "sw360-user-storage-jpa"
 
-  enabled = true
+  enabled = false
 
   changed_sync_period = "-1"
   full_sync_period    = "-1"
