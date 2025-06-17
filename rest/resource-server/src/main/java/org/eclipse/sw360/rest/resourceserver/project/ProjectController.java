@@ -78,6 +78,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
@@ -138,7 +139,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -3044,7 +3044,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
             obligation = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
-            obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+            obligationStatusMap = filterObligationsByLevel(CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus()), null);
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         }
 
@@ -3120,27 +3120,49 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (oblLevel.equalsIgnoreCase("License")) {
-            for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
-                String key = entry.getKey();
-                if (!key.equals("compObl") && !key.equals("projectObl") && !key.equals("orgObl")) {
-                    filterData.put(key, entry.getValue());
-                }
-            }
+            filterData = filterObligationsByLevel(obligationStatusMap, null);
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(filterData));
             oblData = projectService.setLicenseInfoWithObligations(filterData, releaseIdToAcceptedCLI, releases, sw360User);
+
             for (Map.Entry<String, ObligationStatusInfo> entry : oblData.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
                 Set<Release> limitedSet = releaseService.getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
                 statusInfo.setReleases(limitedSet);
                 statusInfo.setId(entry.getKey());
             }
+        } else {
+            ObligationLevel targetLevel;
+            switch (oblLevel.toLowerCase()) {
+                case "project":
+                    targetLevel = ObligationLevel.PROJECT_OBLIGATION;
+                    break;
+                case "organization":
+                    targetLevel = ObligationLevel.ORGANISATION_OBLIGATION;
+                    break;
+                case "component":
+                    targetLevel = ObligationLevel.COMPONENT_OBLIGATION;
+                    break;
+                default:
+                    throw new BadRequestClientException("Invalid Obligation Level");
+            }
+            oblData = filterObligationsByLevel(oblData, targetLevel);
         }
+
 
         Map<String, Object> responseBody = createPaginationMetadata(pageable, oblData);
         HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
         return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
 
+    private Map<String, ObligationStatusInfo> filterObligationsByLevel(
+            Map<String, ObligationStatusInfo> obligationStatusMap, ObligationLevel targetLevel) {
+        return obligationStatusMap.entrySet().stream()
+                .filter(entry -> {
+                    ObligationLevel obligationLevel = entry.getValue().getObligationLevel();
+                    return obligationLevel == null || obligationLevel == targetLevel;
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Add licenseObligations from license DB",
@@ -3209,38 +3231,240 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation", method = RequestMethod.PATCH)
     public ResponseEntity<?> patchLicenseObligations(
-            @Parameter(description = "Project ID.")
-            @PathVariable("id") String id,
-            @Parameter(description = "Map of obligation status info.")
+            @Parameter(description = "Project ID") @PathVariable("id") String id,
+            @Parameter(description = "Map of obligation status info")
             @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        ObligationList obligation = new ObligationList();
-        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
-        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
-            obligation = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
-            obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+        restControllerHelper.throwIfSecurityUser(sw360User);
+        Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
+        try {
+            obligationStatusMap = processLicenseObligations(id, sw360User, requestBodyObligationStatusInfo);
+            Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
+                    .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
+            Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+            ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            RequestStatus updateStatus = projectService
+                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList);
+            if (updateStatus == RequestStatus.SUCCESS) {
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body("License Obligation Updated Successfully");
+            }
+
+            throw new DataIntegrityViolationException("Cannot update License Obligation");
+        } catch (Exception e) {
+            log.error("Error updating license obligations: ", e);
+            throw new DataIntegrityViolationException("Failed to update License Obligation: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Processes the obligations for a project based on whether it has linked obligations or not.
+     * If linked obligations exist, it processes them; otherwise, it updates the project obligations.
+     *
+     * @param sw360Project The SW360 project to process obligations for.
+     * @param sw360User The user performing the operation.
+     * @param requestBodyObligationStatusInfo The obligation status information from the request body.
+     * @param obligationList The obligation list to be processed.
+     * @return A map of obligation status information after processing.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private Map<String, ObligationStatusInfo> processLicenseObligations(
+            String projectId,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo
+
+    ) throws TException {
+        Project sw360Project = projectService.getProjectForUserById(projectId, sw360User);
+        if (hasLinkedObligations(sw360Project)) {
+            return processExistingLicenseObligations(sw360Project, sw360User, requestBodyObligationStatusInfo);
+        }
+        return updateProjectLicenseObligations(sw360Project, sw360User, new HashMap<>());
+    }
+
+    private boolean hasLinkedObligations(Project project) {
+        return CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
+    }
+
+    /**
+     * Processes existing obligations for a project.
+     * If the project has linked obligations, it retrieves them and checks if all obligations from the request body are present.
+     * If not all obligations are present, it updates the project obligations with the existing ones.
+     * If all obligations are present, it returns the existing obligation status map.
+     *
+     * @param sw360Project The SW360 project to process obligations for.
+     * @param sw360User The user performing the operation.
+     * @param requestBodyObligationStatusInfo The obligation status information from the request body.
+     * @param obligationList The obligation list to be processed.
+     * @return A map of obligation status information after processing.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private Map<String, ObligationStatusInfo> processExistingLicenseObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo
+    ) throws TException {
+        ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+        Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
+
+        boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
+                .stream()
+                .allMatch(obligationStatusMap::containsKey);
+
+        if (!allObligationsPresent) {
+            return updateProjectLicenseObligations(sw360Project, sw360User, obligationStatusMap);
         }
 
-        // Accept STATUS and COMMENT in the request body
-        for (Map.Entry<String, ObligationStatusInfo> entry : requestBodyObligationStatusInfo.entrySet()) {
-            ObligationStatusInfo updatedInfo = entry.getValue();
-            if (updatedInfo.getStatus() != null) {
-                obligationStatusMap.get(entry.getKey()).setStatus(updatedInfo.getStatus());
+        return obligationStatusMap;
+    }
+
+    /**
+     * Updates the project obligations by retrieving the releases and setting the license information with obligations.
+     * It also adds linked obligations to the project.
+     * This method is called when the project has no linked obligations or when the existing obligations need to be updated.
+     *
+     * @param sw360Project The SW360 project to update obligations for.
+     * @param sw360User The user performing the operation.
+     * @param existingObligationStatusMap The existing obligation status map to be updated.
+     * @return A map of updated obligation status information.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private Map<String, ObligationStatusInfo> updateProjectLicenseObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> existingObligationStatusMap
+    ) throws TException {
+        Map<String, String> releaseIdToAcceptedCLI = new HashMap<>();
+        List<Release> releases = getReleasesWithAttachments(sw360Project, sw360User);
+
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService.setLicenseInfoWithObligations(
+                existingObligationStatusMap,
+                releaseIdToAcceptedCLI,
+                releases,
+                sw360User
+        );
+
+
+        projectService.addLinkedObligations(sw360Project, sw360User, updatedObligationStatusMap);
+        return updatedObligationStatusMap;
+    }
+
+    /**
+     * Retrieves releases with attachments for a given project and user.
+     * It filters out releases that do not have any attachments.
+     * This method is used to ensure that only relevant releases are processed, especially when dealing with license obligations.
+     *
+     *
+     * @param project The project to retrieve releases from.
+     * @param user The user for whom the releases are being retrieved.
+     * @return A list of releases that have attachments.
+     * @throws TException If there is an error during the Thrift operation.
+     */
+    private List<Release> getReleasesWithAttachments(Project project, User user) throws TException {
+        return project.getReleaseIdToUsage().keySet().stream()
+                .map(releaseId -> {
+                    try {
+                        Release release = releaseService.getReleaseForUserById(releaseId, user);
+                        return release.getAttachmentsSize() > 0 ? release : null;
+                    } catch (TException e) {
+                        log.error("Error fetching release: " + releaseId, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update project Obligations other than License Obligations",
+            description = "Pass a map of obligations in request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/updateObligation", method = RequestMethod.PATCH)
+    public ResponseEntity<?> patchObligations(
+            @Parameter(description = "Project ID") @PathVariable("id") String id,
+            @Parameter(description = "Map of obligation status info")
+            @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,
+            @Parameter(description = "Obligation Level",
+                    schema = @Schema(allowableValues = {"project", "organization", "component"}))
+            @RequestParam(value = "obligationLevel", required = true) String oblLevel
+    ) throws TException {
+
+        Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
+        try {
+            final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            restControllerHelper.throwIfSecurityUser(sw360User);
+
+            obligationStatusMap = processObligations(id, sw360User, requestBodyObligationStatusInfo, oblLevel);
+            Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
+                    .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
+            Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+            ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            RequestStatus updateStatus = projectService
+                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList);
+            if (updateStatus == RequestStatus.SUCCESS) {
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(oblLevel + " Obligation Updated Successfully");
             }
-            if (updatedInfo.getComment() != null) {
-                obligationStatusMap.get(entry.getKey()).setComment(updatedInfo.getComment());
-            }
+
+            throw new DataIntegrityViolationException("Cannot update "+oblLevel+" Obligation");
+        } catch (Exception e) {
+            log.error("Error updating {0} obligations: ", oblLevel ,e);
+            throw new DataIntegrityViolationException("Failed to update "+oblLevel+"  Obligation: " + e.getMessage());
+        }
+    }
+
+    private Map<String, ObligationStatusInfo> processObligations(
+            String projectId,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo,
+            String oblLevel) throws TException {
+        Project sw360Project = projectService.getProjectForUserById(projectId, sw360User);
+        if (hasLinkedObligations(sw360Project)) {
+            return processExistingObligations(sw360Project, sw360User, requestBodyObligationStatusInfo ,oblLevel);
+        }
+        return updateProjectObligations(sw360Project, sw360User, new HashMap<>(), oblLevel);
+    }
+
+     private Map<String, ObligationStatusInfo> processExistingObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo,
+            String oblLevel) throws TException {
+        ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+        Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
+
+        boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
+                .stream()
+                .filter(entry -> {
+                    ObligationStatusInfo statusInfo = requestBodyObligationStatusInfo.get(entry);
+                    return statusInfo.getObligationLevel() == null || statusInfo.getObligationLevel().toString().equalsIgnoreCase(oblLevel);
+                })
+                .distinct()
+                .collect(Collectors.toSet())
+                .stream()
+                .allMatch(obligationStatusMap::containsKey);
+
+        if (!allObligationsPresent) {
+            return updateProjectObligations(sw360Project, sw360User, obligationStatusMap , oblLevel);
         }
 
-        Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
-                .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
-        RequestStatus updateObligationStatus = projectService.patchLinkedObligations(sw360User, updatedObligationStatusMap, obligation);
-        if (updateObligationStatus == RequestStatus.SUCCESS) {
-            return new ResponseEntity<>("License Obligation Updated Successfully", HttpStatus.CREATED);
-        }
-        throw new DataIntegrityViolationException("Cannot update License Obligation");
+        return obligationStatusMap;
+    }
+
+    private Map<String, ObligationStatusInfo> updateProjectObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> existingObligationStatusMap,
+            String oblLevel) throws TException {
+
+          Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService.setObligationsFromAdminSection(
+                sw360User, existingObligationStatusMap, sw360Project, oblLevel);
+
+        projectService.addLinkedObligations(sw360Project, sw360User, updatedObligationStatusMap);
+        return updatedObligationStatusMap;
     }
 
     @Operation(
