@@ -92,7 +92,7 @@
     <json-path.version>2.9.0</json-path.version>
     <json-smart.version>2.5.2</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
-    <jackson.version>2.19.0</jackson.version>
+    <jackson.version>2.19.1</jackson.version>
 
     <!-- Dependencies version properties -->
     <assertj.version>3.27.3</assertj.version>
@@ -109,7 +109,7 @@
     <commons-text.version>1.13.1</commons-text.version>
     <sun.mail.version>2.0.1</sun.mail.version>
     <dom4j.version>2.1.4</dom4j.version>
-    <equalsverifier.version>4.0</equalsverifier.version>
+    <equalsverifier.version>4.0.2</equalsverifier.version>
     <failureaccess.version>1.0.3</failureaccess.version>
     <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
     <git-commit-id.version>9.0.2</git-commit-id.version>
@@ -154,11 +154,11 @@
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2-authorization-server.version>1.4.3</spring-security-oauth2-authorization-server.version>
     <spring-security.version>6.5.0</spring-security.version>
-    <springdoc-openapi-stater-common.version>2.8.8</springdoc-openapi-stater-common.version>
-    <springframework.version>6.2.7</springframework.version>
+    <springdoc-openapi-stater-common.version>2.8.9</springdoc-openapi-stater-common.version>
+    <springframework.version>6.2.8</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <tika.version>1.28.5</tika.version>
-    <wiremock.version>3.13.0</wiremock.version>
+    <wiremock.version>3.13.1</wiremock.version>
     <version.hibernate.javax.persistence>1.0.0.Final</version.hibernate.javax.persistence>
     <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
     <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
