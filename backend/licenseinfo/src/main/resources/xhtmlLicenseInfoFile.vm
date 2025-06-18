@@ -195,7 +195,9 @@ $copyrightAsHtml
 
     #if($allLicenseNamesWithTexts.size() > 0)
         <ul id="licenseTexts" style="list-style-type:none">
-        #foreach($license in $allLicenseNamesWithTexts)
+        #foreach($entry in $allLicenseNamesWithTexts.entrySet())
+            #set($license = $entry.value)
+            #set($licenseIds = $entry.getKey())
             #set($licenseName = "&lt;no license name available&gt;")
             #if($license.licenseName)
                 #set($licenseName = $esc.xml($license.licenseName))
@@ -212,7 +214,7 @@ $copyrightAsHtml
                 #end
             #end
 
-            #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
+            #set($licenseId = $licenseIds)
             <li id="licenseTextItem$licenseId">
                 <h3>$licenseId: $licenseName<a class="top" href="#releaseHeader">&#8679;</a></h3>
     <pre class="licenseText" id="licenseText$licenseId">
