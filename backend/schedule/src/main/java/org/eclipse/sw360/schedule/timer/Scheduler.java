@@ -45,12 +45,12 @@ public class Scheduler {
             timer = new Timer();
         }
         ScheduleSyncTask syncTask = new ScheduleSyncTask(body, serviceName);
-        Integer firstRunOffset = ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName);
-        Integer syncInterval = ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName);
+        int firstRunOffset = ScheduleHelper.getRunOffset(serviceName);
+        int syncInterval = ScheduleHelper.getIntervalSec(serviceName);
         nextSync = getNextSyncDate(firstRunOffset, syncInterval);
 
         try {
-            timer.scheduleAtFixedRate(syncTask, nextSync, syncInterval * 1000);
+            timer.scheduleAtFixedRate(syncTask, nextSync, syncInterval * 1000L);
         } catch (IllegalStateException e) {
             log.error(e.getMessage(), e);
             return false;
@@ -73,7 +73,7 @@ public class Scheduler {
 
         // if firstRunOffset is in the past compute next run
         if (calendar.getTime().getTime() < now) {
-            long timeLeftToNextRunInMilliSeconds = interval * 1000 - ((now - calendar.getTime().getTime()) % (interval * 1000));
+            long timeLeftToNextRunInMilliSeconds = interval * 1000L - ((now - calendar.getTime().getTime()) % (interval * 1000L));
             calendar.setTimeInMillis(now + timeLeftToNextRunInMilliSeconds);
         }
         ;
@@ -81,13 +81,13 @@ public class Scheduler {
     }
 
     public static Optional<Date> getNextSync(String serviceName) {
-
-        if (ScheduleConstants.invalidConfiguredServices.contains(serviceName)) {
+        if (ScheduleHelper.getRunOffset(serviceName) == -1 ||
+                ScheduleHelper.getIntervalSec(serviceName) == -1) {
             return Optional.empty();
         }
         return Optional.of(getNextSyncDate(
-                ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName),
-                ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName)));
+                ScheduleHelper.getRunOffset(serviceName),
+                ScheduleHelper.getIntervalSec(serviceName)));
     }
 
     public static synchronized RequestStatus cancelAllSyncJobs() {

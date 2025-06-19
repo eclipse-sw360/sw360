@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
@@ -50,14 +49,14 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_BULK_RELEA
 /**
  * Provides a utility for the bulk delete function
  */
-public class BulkDeleteUtil extends BackendUtils {
+public class BulkDeleteUtil {
 
     private static final String CONFLICT_ERROR = "conflict";
-    
+
     private static final Logger log = LogManager.getLogger(BulkDeleteUtil.class);
 
     private static final int LOOP_MAX = 100000;
-    
+
     private ComponentDatabaseHandler componentDatabaseHandler;
     private ComponentRepository componentRepository;
     private ReleaseRepository releaseRepository;
@@ -67,10 +66,10 @@ public class BulkDeleteUtil extends BackendUtils {
     private ReleaseModerator releaseModerator;
     private AttachmentConnector attachmentConnector;
     private AttachmentDatabaseHandler attachmentDatabaseHandler;
-    private DatabaseHandlerUtil dbHandlerUtil;    
-    
+    private DatabaseHandlerUtil dbHandlerUtil;
+
     private BulkDeleteUtilInspector inspector;
-    
+
     public interface BulkDeleteUtilInspector {
         void checkVariables(Map<String, Release> releaseMap, Map<String, Component> componentMap,Map<String, Boolean> externalLinkMap, Map<String, List<String>> referencingReleaseIdsMap);
         void checkLoopState(int loopCount, Map<String, Release> releaseMap, Map<String, Component> componentMap, Map<String, BulkOperationResultState> resultStateMap);
@@ -79,10 +78,10 @@ public class BulkDeleteUtil extends BackendUtils {
         void checkUpdatedComponentListInLoop(int loopCount, List<Component> updatedComponentList);
         void checkDeletedReleaseListInLoop(int loopCount, List<Release> deletedReleaseList);
     }
-    
+
     public BulkDeleteUtil(
-            ComponentDatabaseHandler componentDatabaseHandler, 
-            ComponentRepository componentRepository,  
+            ComponentDatabaseHandler componentDatabaseHandler,
+            ComponentRepository componentRepository,
             ReleaseRepository releaseRepository,
             ProjectRepository projectRepository,
             ComponentModerator componentModerator,
@@ -97,7 +96,7 @@ public class BulkDeleteUtil extends BackendUtils {
         this.projectRepository = projectRepository;
         this.componentModerator = componentModerator;
         this.releaseModerator = releaseModerator;
-        this.attachmentConnector = attachmentConnector; 
+        this.attachmentConnector = attachmentConnector;
         this.attachmentDatabaseHandler = attachmentDatabaseHandler;
         this.dbHandlerUtil = dbHandlerUtil;
         this.inspector = null;
@@ -113,15 +112,15 @@ public class BulkDeleteUtil extends BackendUtils {
         if (!SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false)) {
             throw fail(500, "Admin private access is not enabled.");
         }
-        
+
         Release release = releaseRepository.get(releaseId);
         assertNotNull(release, "No releases found to bulk delete!");
-        
+
         //create a result state object
         Map<String, BulkOperationResultState> resultStateMap = new HashMap<String, BulkOperationResultState>();
-        
+
         //create an all linked release map
-        Map<String, Release> allLinkedReleaseMap = new HashMap<String, Release>();  
+        Map<String, Release> allLinkedReleaseMap = new HashMap<String, Release>();
         getAllLinkedReleaseMap(release.getId(), allLinkedReleaseMap);
         Set<String> allLinkedReleaseIds = allLinkedReleaseMap.keySet();
 
@@ -132,30 +131,30 @@ public class BulkDeleteUtil extends BackendUtils {
         Map<String, Boolean> externalLinkMap = new HashMap<String, Boolean>();
         Map<String, List<String>> referencingReleaseIdsMap = new HashMap<String, List<String>>();
         getExternalLinkMap(allLinkedReleaseMap.keySet(), externalLinkMap, referencingReleaseIdsMap);
-        
+
         //update result state map for excluded releases
         for (String externalLinkMapId : externalLinkMap.keySet()) {
             if (externalLinkMap.get(externalLinkMapId)) {
                 resultStateMap.put(externalLinkMapId, BulkOperationResultState.EXCLUDED);
             }
         }
-        
+
         //create a linked component map
         Map<String, Component> allComponentMap = getComponenMap(allLinkedReleaseMap);
         Map<String, Component> workComponentMap = getDuplicatedComponentMap(allComponentMap);
-        
+
         if (inspector != null) inspector.checkVariables(workReleaseMap, workComponentMap, externalLinkMap, referencingReleaseIdsMap);
-        
+
         //delete linked releases
         boolean isCompleted = false;
         for (int loopCount=0; loopCount<LOOP_MAX; loopCount++) {
-            
+
             if (inspector != null) inspector.checkLoopState(loopCount, workReleaseMap, workComponentMap, resultStateMap);
-            
+
             //get leaf releases
             Set<String> leafReleaseIds = getLeafReleaseIds(workReleaseMap);
             if (inspector != null) inspector.checkLeafReleaseIdsInLoop(loopCount, leafReleaseIds);
-           
+
             if (CommonUtils.isNullOrEmptyCollection(leafReleaseIds)) {
                 isCompleted = true;
                 break;
@@ -167,7 +166,7 @@ public class BulkDeleteUtil extends BackendUtils {
                     hasExternalLink = true;
                     //remove the release from work tree
                     workReleaseMap.remove(leafReleaseId);
-                    
+
                     //remove the release id from ReleaseIdToRelationship of reference releases
                     List<String> referencingReleaseIds = referencingReleaseIdsMap.get(leafReleaseId);
                     for (String referencingReleaseId : referencingReleaseIds) {
@@ -189,13 +188,13 @@ public class BulkDeleteUtil extends BackendUtils {
             if (hasExternalLink) {
                 continue;
             }
-            
-            //filter releases that failed last time 
+
+            //filter releases that failed last time
             Set<String> targetLeafReleaseIds = leafReleaseIds;
             Set<String> deletedLeafReleaseIds = new HashSet<String>();
             for (String targetLeafReleaseId : targetLeafReleaseIds) {
                 if (resultStateMap.containsKey(targetLeafReleaseId)) {
-                    BulkOperationResultState state = resultStateMap.get(targetLeafReleaseId); 
+                    BulkOperationResultState state = resultStateMap.get(targetLeafReleaseId);
                     if (state  == BulkOperationResultState.FAILED || state == BulkOperationResultState.CONFLICTED) {
                         log.warn(String.format("Release %s is skipped because the last status was error.", targetLeafReleaseId));
                         continue;
@@ -224,7 +223,7 @@ public class BulkDeleteUtil extends BackendUtils {
                 }
                 deletedLeafReleaseIds.removeAll(filteredReleaseIds);
             }
-            
+
             //update referencing releases
             Map<String, Map<String, ReleaseRelationship>> previousRelationshipMap = new HashMap<String, Map<String, ReleaseRelationship>>();
             Set <String> updatedReferencingReleaseIds = new HashSet<String>();
@@ -262,7 +261,7 @@ public class BulkDeleteUtil extends BackendUtils {
                         if (deletedLeafReleaseIds.contains(referencedReleaseId)) {
                             deletedLeafReleaseIds.remove(referencedReleaseId);
                             log.error(String.format("Failed to update the referencing release %s, so Release %s is excluded from bulk deletion.", referencingReleaseId, referencedReleaseId));
-                            
+
                             //update the result state of this release
                             resultStateMap.put(referencedReleaseId, BulkOperationResultState.FAILED);
                         }
@@ -272,7 +271,7 @@ public class BulkDeleteUtil extends BackendUtils {
                     referencingRelease.setReleaseIdToRelationship(referencedReleaseMap);
                 }
             }
-            
+
             //update components
             Map<String, Set<String>> previousComponentReleaseIdsMap = new HashMap<String, Set<String>>();
             Set<String> updatedComponentIds = new HashSet<String>();
@@ -291,7 +290,7 @@ public class BulkDeleteUtil extends BackendUtils {
             }
             List<Component> updatedComponentList = updatedComponentIds.stream().map(id -> workComponentMap.get(id)).collect(Collectors.toList());
             if (inspector != null) inspector.checkUpdatedComponentListInLoop(loopCount, updatedComponentList);
-            
+
             if (!isPreview) {
                 resultState = updateBulkComponent(updatedComponentList);
             } else {
@@ -309,9 +308,9 @@ public class BulkDeleteUtil extends BackendUtils {
                     //exclude from the list of candidates for deletion
                     for (String componentReleaseId : componentReleaseIds) {
                         if (deletedLeafReleaseIds.contains(componentReleaseId)) {
-                            deletedLeafReleaseIds.remove(componentReleaseId);	
+                            deletedLeafReleaseIds.remove(componentReleaseId);
                             log.error(String.format("Failed to update the component %s, so Release %s is excluded from bulk deletion.", componentId, componentReleaseId));
-                            
+
                             //update the result state of this release
                             resultStateMap.put(componentReleaseId, BulkOperationResultState.FAILED);
                             //restore referencing releases
@@ -329,11 +328,11 @@ public class BulkDeleteUtil extends BackendUtils {
                     component.setReleaseIds(componentReleaseIds);
                 }
             }
-            
+
             //delete releases in bulk
             List<Release> deletedReleaseList = deletedLeafReleaseIds.stream().map(id -> workReleaseMap.get(id)).collect(Collectors.toList());
             if (inspector != null) inspector.checkDeletedReleaseListInLoop(loopCount, deletedReleaseList);
-            
+
             if (!isPreview) {
                 resultState = deleteBulkRelease(deletedReleaseList);
             } else {
@@ -350,7 +349,7 @@ public class BulkDeleteUtil extends BackendUtils {
                     workReleaseMap.remove(deletedReleaseId);
                 } else {
                     log.error(String.format("Failed to delete the release %s", deletedReleaseId));
-                    
+
                     resultStateMap.put(deletedReleaseId, state);
                     //restore component link
                     Release deletedRelease = workReleaseMap.get(deletedReleaseId);
@@ -370,7 +369,7 @@ public class BulkDeleteUtil extends BackendUtils {
                     }
                 }
             }
-            
+
             //update modration request
             if (!isPreview) {
                 for (String deletedLeafReleaseId : deletedLeafReleaseIds) {
@@ -397,7 +396,7 @@ public class BulkDeleteUtil extends BackendUtils {
                 updatedComponentList.add(component);
             }
         }
-        
+
         Map<String, BulkOperationResultState> resultState;
         if (!isPreview) {
             List<Component> bulkComponentList = new ArrayList<Component>();
@@ -430,7 +429,7 @@ public class BulkDeleteUtil extends BackendUtils {
                 resultStateMap.put(componentId, state);
             }
         }
-        
+
         //update ramained components
         if (!isPreview) {
             for (Component updatedComponent : updatedComponentList) {
@@ -442,7 +441,7 @@ public class BulkDeleteUtil extends BackendUtils {
                 resultStateMap.put(componentId, BulkOperationResultState.EXCLUDED);
             }
         }
-        
+
         //update result state for remained releases
         for (String linkedReleaseId : allLinkedReleaseIds) {
             if (!resultStateMap.containsKey(linkedReleaseId)) {
@@ -453,7 +452,7 @@ public class BulkDeleteUtil extends BackendUtils {
                 }
             }
         }
-        
+
         //add change log
         if (!isPreview) {
             // add release change logs
@@ -468,7 +467,7 @@ public class BulkDeleteUtil extends BackendUtils {
                     Release newRelease = workReleaseMap.get(linkedReleaseId);
                     if (!oldRelease.equals(newRelease)) {
                         //update
-                        dbHandlerUtil.addChangeLogs(newRelease, oldRelease, user.getEmail(), Operation.UPDATE, attachmentConnector, 
+                        dbHandlerUtil.addChangeLogs(newRelease, oldRelease, user.getEmail(), Operation.UPDATE, attachmentConnector,
                                 Lists.newArrayList(), null, null);
                     }
                 }
@@ -485,22 +484,22 @@ public class BulkDeleteUtil extends BackendUtils {
                     Component newComponent = workComponentMap.get(componentId);
                     if (!oldComponent.equals(newComponent)) {
                         //update
-                        dbHandlerUtil.addChangeLogs(newComponent, oldComponent, user.getEmail(), Operation.UPDATE, attachmentConnector, 
+                        dbHandlerUtil.addChangeLogs(newComponent, oldComponent, user.getEmail(), Operation.UPDATE, attachmentConnector,
                                 Lists.newArrayList(), null, null);
                     }
                 }
             }
         }
-        
+
         //create result data
         BulkOperationNode rootNode = createBulkOperationNodeTree(
                 releaseId, BulkOperationNodeType.RELEASE, null, allLinkedReleaseMap, allComponentMap, resultStateMap);
-        
+
         return rootNode;
     }
-    
+
     public Map<String, ReleaseRelationship> getDuplicatedReleaseIdToRelationship(Release release) throws SW360Exception {
-        Map<String, ReleaseRelationship> relationship = release.getReleaseIdToRelationship(); 
+        Map<String, ReleaseRelationship> relationship = release.getReleaseIdToRelationship();
         if (!CommonUtils.isNullOrEmptyMap(relationship)) {
             Map<String, ReleaseRelationship> newReleaseIdToRelationship = new HashMap<String, ReleaseRelationship>();
             for (String releaseId : relationship.keySet()){
@@ -509,27 +508,27 @@ public class BulkDeleteUtil extends BackendUtils {
             }
             return newReleaseIdToRelationship;
         } else {
-            throw fail(500, "Unexpected ReleaseRelationship.");                
+            throw fail(500, "Unexpected ReleaseRelationship.");
         }
     }
-    
+
     public Set<String> getDuplicatedComponentReleaseIds(Component component) throws SW360Exception {
-        Set<String> releaseIds = component.getReleaseIds(); 
+        Set<String> releaseIds = component.getReleaseIds();
         if (!CommonUtils.isNullOrEmptyCollection(releaseIds)) {
             return new HashSet<String>(releaseIds);
         } else {
-            throw fail(500, "Unexpected ReleaseRelationship.");                
+            throw fail(500, "Unexpected ReleaseRelationship.");
         }
     }
-    
+
     public void deleteReleaseAttachments(Release release) throws SW360Exception {
         attachmentConnector.deleteAttachments(release.getAttachments());
         attachmentDatabaseHandler.deleteUsagesBy(Source.releaseId(release.getId()));
     }
-        
+
     public Map<String, BulkOperationResultState> deleteBulkRelease(List<Release> releaseList) {
         Map<String, BulkOperationResultState> resultState = new HashMap<String, BulkOperationResultState>();
-        
+
         List<Document> documentList = new ArrayList<Document>();
         for(Release release : releaseList) {
             Document document = new Document();
@@ -572,7 +571,7 @@ public class BulkDeleteUtil extends BackendUtils {
 
     public Map<String, BulkOperationResultState> deleteBulkComponent(List<Component> componentList) {
         Map<String, BulkOperationResultState> resultState = new HashMap<String, BulkOperationResultState>();
-        
+
         List<Document> documentList = new ArrayList<Document>();
         for(Component component : componentList) {
             Document document = new Document();
@@ -612,7 +611,7 @@ public class BulkDeleteUtil extends BackendUtils {
         }
         return resultState;
     }
-    
+
     public void getAllLinkedReleaseMap(String releaseId, Map<String, Release> outMap) throws SW360Exception {
         if (outMap.containsKey(releaseId)) {
             return;
@@ -637,7 +636,7 @@ public class BulkDeleteUtil extends BackendUtils {
         }
         return resultMap;
     }
-    
+
     public Map<String, Component> getDuplicatedComponentMap(Map<String, Component> componentMap) {
         Map<String, Component> resultMap = new HashMap<String, Component>();
         for (Map.Entry<String, Component> entry : componentMap.entrySet()) {
@@ -646,8 +645,8 @@ public class BulkDeleteUtil extends BackendUtils {
             resultMap.put(componentId, component);
         }
         return resultMap;
-    }    
-    
+    }
+
     public void getExternalLinkMap(Set<String> allLinkedReleaseIds, Map<String, Boolean> outExternalFlagMap, Map<String, List<String>> outReferencingReleaseIdsMap) {
         Map<String, Boolean> cacheMap = new HashMap<String, Boolean>();
         for (String releaseId : allLinkedReleaseIds) {
@@ -655,20 +654,20 @@ public class BulkDeleteUtil extends BackendUtils {
             outExternalFlagMap.put(releaseId, result);
         }
     }
-    
+
     public boolean checkReleaseHasExternalLink(String releaseId, Set<String> allLinkedReleaseIds, Map<String, List<String>> outReferencingReleaseIdsMap, Map<String, Boolean> cacheMap) {
         if (cacheMap.containsKey(releaseId)) {
             return cacheMap.get(releaseId);
         }
         List<Release> referencingReleaseList = releaseRepository.getReferencingReleases(releaseId);
         outReferencingReleaseIdsMap.put(releaseId, referencingReleaseList.stream().map(r -> r.getId()).collect(Collectors.toList()));
-        
+
         Set<Project> referencingProjects = projectRepository.searchByReleaseId(releaseId);
         if (CommonUtils.isNotEmpty(referencingProjects)) {
             cacheMap.put(releaseId, true);
             return true;
         }
-        
+
         if (CommonUtils.isNotEmpty(referencingReleaseList)) {
             for (Release referencingRelase : referencingReleaseList) {
                 String referencingRelaseId = referencingRelase.getId();
@@ -686,11 +685,11 @@ public class BulkDeleteUtil extends BackendUtils {
             cacheMap.put(releaseId, false);
             return false;
         }
-        
+
         cacheMap.put(releaseId, false);
         return false;
     }
-    
+
     public Map<String, Component> getComponenMap(Map<String, Release> allLinkedReleaseMap){
         Map<String, Component> resultMap = new HashMap<String, Component>();
         for (Release release : allLinkedReleaseMap.values()) {
@@ -702,7 +701,7 @@ public class BulkDeleteUtil extends BackendUtils {
         }
         return resultMap;
     }
-    
+
     public Set<String> getLeafReleaseIds(Map<String, Release> releaseMap) {
         Set<String> resultList = new HashSet<String>();
         for (Release release : releaseMap.values()) {
@@ -712,15 +711,15 @@ public class BulkDeleteUtil extends BackendUtils {
         }
         return resultList;
     }
-    
+
     public BulkOperationNode createBulkOperationNodeTree(
-            String documentId, 
+            String documentId,
             BulkOperationNodeType type,
             String parentId,
-            Map<String, Release> allLinkedReleaseMap, 
-            Map<String, Component> componentMap, 
+            Map<String, Release> allLinkedReleaseMap,
+            Map<String, Component> componentMap,
             Map<String, BulkOperationResultState> resultStateMap) throws SW360Exception {
-        
+
         if (type == BulkOperationNodeType.RELEASE) {
             //create release node
             String releaseId = documentId;
@@ -743,7 +742,7 @@ public class BulkDeleteUtil extends BackendUtils {
                 }
             }
             releaseNode.setChildList(releaseChildList);
-            
+
             //create component node
             String componentId = release.getComponentId();
             if (!componentMap.containsKey(componentId)) {
@@ -762,18 +761,18 @@ public class BulkDeleteUtil extends BackendUtils {
             componentNode.setParentId(parentId);
             releaseNode.setParentId(componentId);
             return componentNode;
-            
+
         } else {
             throw fail(500, "Unsupported data type " + type.toString());
         }
     }
-    
+
     public void setInspector(BulkDeleteUtilInspector inspector) {
         this.inspector = inspector;
     }
-    
+
     public void unsetInspector() {
         this.inspector = null;
     }
-    
+
 }
