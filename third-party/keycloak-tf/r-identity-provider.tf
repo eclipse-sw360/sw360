@@ -51,3 +51,29 @@ resource "keycloak_attribute_importer_identity_provider_mapper" "gid" {
     syncMode = "INHERIT"
   }
 }
+
+# 4. Map `mail` from EntraID to `email` of user
+resource "keycloak_attribute_importer_identity_provider_mapper" "email" {
+  realm                   = keycloak_realm.sw360.id
+  name                    = "MailToEmailMapper"
+  identity_provider_alias = keycloak_oidc_identity_provider.entra_id.alias
+  user_attribute          = "email"
+  claim_name              = "mail"
+
+  extra_config = {
+    syncMode = "INHERIT"
+  }
+}
+
+# 5. Map `mail` from EntraID to `username` of user
+resource "keycloak_attribute_importer_identity_provider_mapper" "username" {
+  realm                   = keycloak_realm.sw360.id
+  name                    = "MailToUsernameMapper"
+  identity_provider_alias = keycloak_oidc_identity_provider.entra_id.alias
+  user_attribute          = "username"
+  claim_name              = "mail"
+
+  extra_config = {
+    syncMode = "INHERIT"
+  }
+}

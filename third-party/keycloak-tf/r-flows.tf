@@ -19,16 +19,7 @@ resource "keycloak_authentication_subflow" "create_or_link" {
   provider_id       = "basic-flow"
 }
 
-# 1.1.1. Alternative path to create user if new
-resource "keycloak_authentication_execution" "idp_create_unique" {
-  realm_id          = keycloak_realm.sw360.id
-  parent_flow_alias = keycloak_authentication_subflow.create_or_link.alias
-  authenticator     = "idp-create-user-if-unique"
-  requirement       = "ALTERNATIVE"
-  priority          = 0
-}
-
-# 1.1.2. Alternative subpath to link existing users
+# 1.1.1. Alternative subpath to link existing users
 resource "keycloak_authentication_subflow" "link_existing_user" {
   realm_id          = keycloak_realm.sw360.id
   parent_flow_alias = keycloak_authentication_subflow.create_or_link.alias
@@ -36,10 +27,10 @@ resource "keycloak_authentication_subflow" "link_existing_user" {
   description       = "If the user already exists, link to existing account"
   requirement       = "ALTERNATIVE"
   provider_id       = "basic-flow"
-  priority          = 1
+  priority          = 0
 }
 
-# 1.1.2.1. Get the existing user from idp
+# 1.1.1.1. Get the existing user from idp
 resource "keycloak_authentication_execution" "idp_detect_existing" {
   realm_id          = keycloak_realm.sw360.id
   parent_flow_alias = keycloak_authentication_subflow.link_existing_user.alias
@@ -54,6 +45,15 @@ resource "keycloak_authentication_execution" "idp_auto_link" {
   parent_flow_alias = keycloak_authentication_subflow.link_existing_user.alias
   authenticator     = "idp-auto-link"
   requirement       = "REQUIRED"
+  priority          = 1
+}
+
+# 1.1.2. Alternative path to create user if new
+resource "keycloak_authentication_execution" "idp_create_unique" {
+  realm_id          = keycloak_realm.sw360.id
+  parent_flow_alias = keycloak_authentication_subflow.create_or_link.alias
+  authenticator     = "idp-create-user-if-unique"
+  requirement       = "ALTERNATIVE"
   priority          = 1
 }
 
