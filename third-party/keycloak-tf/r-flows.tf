@@ -9,52 +9,33 @@ resource "keycloak_authentication_flow" "first_login" {
   provider_id = "basic-flow"
 }
 
-# 1.1. Subpath to split
-resource "keycloak_authentication_subflow" "create_or_link" {
+# 1.1. Create user if new
+resource "keycloak_authentication_execution" "idp_create_unique" {
   realm_id          = keycloak_realm.sw360.id
   parent_flow_alias = keycloak_authentication_flow.first_login.alias
-  alias             = "User create or linking"
-  description       = "Create user on first login or link to existing user from DB"
-  requirement       = "REQUIRED"
-  provider_id       = "basic-flow"
+  authenticator     = "idp-create-user-if-unique"
+  requirement       = "ALTERNATIVE"
+  priority          = 0
 }
 
-# 1.1.1. Alternative subpath to link existing users
+# 1.2. Subpath to link existing user
 resource "keycloak_authentication_subflow" "link_existing_user" {
   realm_id          = keycloak_realm.sw360.id
-  parent_flow_alias = keycloak_authentication_subflow.create_or_link.alias
+  parent_flow_alias = keycloak_authentication_flow.first_login.alias
   alias             = "Link existing user"
   description       = "If the user already exists, link to existing account"
   requirement       = "ALTERNATIVE"
   provider_id       = "basic-flow"
-  priority          = 0
+  priority          = 1
 }
 
-# 1.1.1.1. Get the existing user from idp
-resource "keycloak_authentication_execution" "idp_detect_existing" {
-  realm_id          = keycloak_realm.sw360.id
-  parent_flow_alias = keycloak_authentication_subflow.link_existing_user.alias
-  authenticator     = "idp-detect-existing-broker-user"
-  requirement       = "REQUIRED"
-  priority          = 0
-}
-
-# 1.1.2.2. Link the user with existing idp user
+# 1.2.1. Link the user with existing idp user
 resource "keycloak_authentication_execution" "idp_auto_link" {
   realm_id          = keycloak_realm.sw360.id
   parent_flow_alias = keycloak_authentication_subflow.link_existing_user.alias
   authenticator     = "idp-auto-link"
   requirement       = "REQUIRED"
-  priority          = 1
-}
-
-# 1.1.2. Alternative path to create user if new
-resource "keycloak_authentication_execution" "idp_create_unique" {
-  realm_id          = keycloak_realm.sw360.id
-  parent_flow_alias = keycloak_authentication_subflow.create_or_link.alias
-  authenticator     = "idp-create-user-if-unique"
-  requirement       = "ALTERNATIVE"
-  priority          = 1
+  priority          = 0
 }
 
 # 2. Browser login flow to hide login form
