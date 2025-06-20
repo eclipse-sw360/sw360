@@ -94,6 +94,8 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 		// Headers essential for HTTP operations and negotiation
 		return "Range".equalsIgnoreCase(headerName) ||
 				"Accept".equalsIgnoreCase(headerName) ||
+				"Accept-Encoding".equalsIgnoreCase(headerName) ||
+				"Accept-Language".equalsIgnoreCase(headerName) ||
 				"Content-Type".equalsIgnoreCase(headerName) ||
 				"Authorization".equalsIgnoreCase(headerName) ||
 				"Content-Length".equalsIgnoreCase(headerName) ||
