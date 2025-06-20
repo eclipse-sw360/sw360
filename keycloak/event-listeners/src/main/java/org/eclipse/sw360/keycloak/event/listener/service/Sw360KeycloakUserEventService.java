@@ -24,7 +24,9 @@ public class Sw360KeycloakUserEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakUserEventService.class);
 	public static final String USERNAME = "username";
 	public static final String DEPARTMENT = "Department";
+	public static final String EXTERNAL_ID = "externalId";
 	public static final String DEFAULT_DEPARTMENT = "DEPARTMENT";
+	public static final String DEFAULT_EXTERNAL_ID = "N/A";
 
 
 	private final Sw360UserService userService;
@@ -106,15 +108,23 @@ public class Sw360KeycloakUserEventService {
 		user.setGivenname(userModel.getFirstName());
 		user.setLastname(userModel.getLastName());
 		mapSetDepartment(userModel, user);
+		mapSetExternalId(userModel, user);
 		return user;
 	}
 
 	private void mapSetDepartment(UserModel userModel, User user) {
 		log.debug("User Model Attributes" + userModel.getAttributes());
 		List<String> departments = userModel.getAttributes().getOrDefault(DEPARTMENT, Collections.singletonList(DEFAULT_DEPARTMENT));
-		String department = departments.stream().findFirst().get();
+		String department = departments.getFirst();
 		String parentDepartment = sanitizeDepartment(department);
 		user.setDepartment(parentDepartment);
+	}
+
+	private void mapSetExternalId(UserModel userModel, User user) {
+		log.debug("User Model Attributes" + userModel.getAttributes());
+		List<String> externalIds = userModel.getAttributes().getOrDefault(EXTERNAL_ID, Collections.singletonList(DEFAULT_EXTERNAL_ID));
+		String externalId = externalIds.getFirst();
+		user.setExternalid(sanitizeExternalId(externalId));
 	}
 
 	/**
@@ -129,6 +139,14 @@ public class Sw360KeycloakUserEventService {
 			departmentSanitized= department.trim().split("\\s+")[0];
 		}
 		return departmentSanitized;
+	}
+
+	private String sanitizeExternalId(String externalId) {
+		String externalIdSanitized = null;
+		if (externalId != null) {
+			externalIdSanitized= externalId.trim();
+		}
+		return externalIdSanitized;
 	}
 
 	private boolean checkExistenceOfUserInSw360DB(User user) {
