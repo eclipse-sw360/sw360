@@ -564,4 +564,26 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
         return ResponseEntity.ok("License type deleted successfully: " + status.name());
     }
+
+    @Operation(
+            summary = "Check if a license type is being used and get the count.",
+            description = "Returns whether the license type is being used and the total count of such licenses.",
+            tags = {"License Types"}
+    )
+    @GetMapping(value = LICENSE_TYPES_URL + "/{licenseTypeId}/usage", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> getLicenseTypeUsage(
+            @PathVariable("licenseTypeId") String licenseTypeId
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        try {
+            int count = licenseService.getLicenseTypeUsageCount(licenseTypeId, sw360User);
+            boolean isUsed = count > 0;
+            Map<String, Object> response = new HashMap<>();
+            response.put("isUsed", isUsed);
+            response.put("count", count);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Unable to check license type usage."));
+        }
+    }
 }

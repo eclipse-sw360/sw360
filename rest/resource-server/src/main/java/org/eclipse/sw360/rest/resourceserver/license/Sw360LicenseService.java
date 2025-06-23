@@ -363,4 +363,39 @@ public class Sw360LicenseService {
 
          return status;
      }
+
+     public int getLicenseTypeUsageCount(String licenseTypeId, User sw360User) {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new AccessDeniedException("Unable to retrieve license type usage details. User is not admin");
+        }
+
+        try {
+            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+
+            // Check if the license type exists
+            LicenseType licenseType = sw360LicenseClient.getLicenseTypeById(licenseTypeId);
+            if (licenseType == null) {
+                throw new ResourceNotFoundException("License type not found with ID: " + licenseTypeId);
+            }
+
+            List<License> allLicenses = sw360LicenseClient.getLicenseSummary();
+            int count = 0;
+
+            for (License license : allLicenses) {
+                if (license.getLicenseType() != null && license.getLicenseType().getId().equals(licenseTypeId)) {
+                    count++;
+                }
+            }
+
+            return count;
+        } catch (SW360Exception e) {
+            throw new RuntimeException("SW360-specific error occurred while retrieving license type usage count: " + e.getWhy(), e);
+        } catch (ResourceNotFoundException e) {
+            throw new ResourceNotFoundException("License type not found with ID: " + licenseTypeId, e);
+        } catch (TException e) {
+            throw new RuntimeException("System error occurred while retrieving license type usage count. Please try again later.", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error occurred while retrieving license type usage count.", e);
+        }
+    }
 }
