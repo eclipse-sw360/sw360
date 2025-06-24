@@ -36,6 +36,8 @@ management:
       enabled: true    # Disable to hide sensitive system information
     ping:
       enabled: true
+    ssl:
+      enabled: false   # Disabled as not used
 
 spring:
   application:
