@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -54,6 +55,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -551,7 +553,35 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @Operation(
             summary = "Delete a specific license type.",
             description = "Delete a specific license type.",
-            tags = {"Licenses"}
+            tags = {"Licenses"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "License type deleted successfully.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                    {
+                                                        "status": "SECCESS",
+                                                        "message": "License type deleted successfully."
+                                                    }
+                                                    """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "403", description = "User does not have permission to delete license type."
+                    ),
+                    @ApiResponse(
+                            responseCode = "404", description = "License type with the given ID was not found."
+                    ),
+                    @ApiResponse(
+                            responseCode = "409", description = "Cannot delete license type because it is currently in use."
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Unexpected error occurred while deleting license type."
+                    )
+            }
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSE_TYPES_URL + "/{id}", method = RequestMethod.DELETE)
@@ -562,6 +592,25 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus status = licenseService.deleteLicenseType(id, sw360User);
 
-        return ResponseEntity.ok("License type deleted successfully: " + status.name());
+        switch (status) {
+            case SUCCESS:
+                Map<String, String> successResponse = new HashMap<>();
+                successResponse.put("status", status.name());
+                successResponse.put("message", "License type deleted successfully.");
+                return ResponseEntity.ok(successResponse);
+
+            case IN_USE:
+                throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                        "Cannot delete license type because it is currently in use.");
+
+            case ACCESS_DENIED:
+                throw new AccessDeniedException("User does not have permission to delete license type.");
+
+            case INVALID_INPUT:
+                throw new ResourceNotFoundException("License type with the given ID was not found.");
+
+            default:
+                throw new RuntimeException("Unexpected error occurred while deleting license type.");
+        }
     }
 }
