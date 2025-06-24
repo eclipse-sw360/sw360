@@ -105,6 +105,9 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 	}
 
 	private String stripXSS(String value) {
+		if (value == null) {
+			return null;
+		}
 		return org.owasp.encoder.Encode.forHtml(value);
 
 	}
