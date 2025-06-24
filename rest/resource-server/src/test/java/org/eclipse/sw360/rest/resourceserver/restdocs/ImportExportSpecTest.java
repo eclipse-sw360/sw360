@@ -55,6 +55,7 @@ public class ImportExportSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(importExportService).getDownloadReleaseSample(any(), any());
         Mockito.doNothing().when(importExportService).getDownloadReleaseLink(any(), any());
         Mockito.doNothing().when(importExportService).getComponentDetailedExport(any(), any());
+        Mockito.doNothing().when(importExportService).getDownloadUsers(any(), any());
     }
 
     @Test
@@ -102,4 +103,14 @@ public class ImportExportSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON)).andExpect(status().isOk());
     }
+
+    @Test
+    public void should_document_get_download_users() throws Exception {
+        mockMvc.perform(get("/api/importExport/downloadUsers")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept("text/plain"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
+    }
+
 }
