@@ -50,6 +50,16 @@ enum RequestedAction {
     ATTACHMENTS = 6,
     WRITE_ECC = 7,
 }
+
+enum UserSortColumn {
+    BY_GIVENNAME = -1,
+    BY_LASTNAME = 0,
+    BY_EMAIL = 1,
+    BY_STATUS = 2,
+    BY_DEPARTMENT = 3,
+    BY_ROLE = 4,
+}
+
 struct User {
 
     1: optional string id,
@@ -57,7 +67,7 @@ struct User {
     3: optional string type = "user",
     4: required string email,
     5: optional UserGroup userGroup,
-    6: optional string externalid, 
+    6: optional string externalid,
     7: optional string fullname,
     8: optional string givenname, // firstname or given name of the person
     9: optional string lastname, // lastname or surname of the person
@@ -170,7 +180,13 @@ service UserService {
     /**
      * search users in database
      **/
-    list<User> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
+    map<PaginationData, list<User>> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: PaginationData pageData);
+
+    /**
+     * search users in database that match subQueryRestrictions
+     * Gets the users with mango query and pagination.
+     **/
+    map<PaginationData, list<User>> searchUsersByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
      * get departments of all user

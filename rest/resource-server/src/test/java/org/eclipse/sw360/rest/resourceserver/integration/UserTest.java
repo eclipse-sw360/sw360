@@ -13,22 +13,23 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -62,7 +63,12 @@ public class UserTest extends TestIntegrationBase {
         user.setFullname("Jane Doe");
         userList.add(user);
 
-        given(this.userServiceMock.getAllUsers()).willReturn(userList);
+        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(userList.size()).setDisplayStart(0).setTotalRowCount(userList.size()),
+                        userList.stream().toList()
+                )
+        );
 
         given(this.userServiceMock.getUser(user.getId())).willReturn(user);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
