@@ -363,4 +363,26 @@ public class Sw360LicenseService {
 
          return status;
      }
+
+    public int getLicenseTypeUsageCount(String licenseTypeId, User sw360User) throws  TException{
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new AccessDeniedException("User is not authorized to retrieve license type usage details.");
+        }
+
+        try {
+            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+
+            LicenseType licenseType = sw360LicenseClient.getLicenseTypeById(licenseTypeId);
+            List<License> allLicenses = sw360LicenseClient.getLicenseSummary();
+            return (int) allLicenses.stream()
+                    .filter(license -> license.getLicenseType() != null && license.getLicenseType().getId().equals(licenseTypeId))
+                    .count();
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("License type not found with ID: " + licenseTypeId);
+            } else {
+                throw sw360Exp;
+            }
+        }
+    }
 }
