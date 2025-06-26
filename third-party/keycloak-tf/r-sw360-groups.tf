@@ -6,7 +6,7 @@
 locals {
   sw360_groups = toset([
     "USER", "ADMIN", "CLEARING_ADMIN", "ECC_ADMIN", "SECURITY_ADMIN",
-    "SW360_ADMIN", "CLEARING_EXPERT"
+    "SW360_ADMIN", "CLEARING_EXPERT", "VIEWER"
   ])
 }
 

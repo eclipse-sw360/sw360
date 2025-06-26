@@ -30,11 +30,13 @@ public class OrganizationMapper {
     private static final String MAPPING_VALUES_SUFFIX = ".target";
     private static final String MATCH_PREFIX_KEY = "match.prefix";
     private static final String ENABLE_CUSTOM_MAPPING_KEY = "enable.custom.mapping";
+    private static final String VIEWER_DEPARTMENTS_KEY = "viewer.departments";
     private static final String PROPERTIES_FILE_PATH = "/orgmapping.properties";
 
     private static boolean matchPrefix = false;
     private static boolean customMappingEnabled = false;
     private static List<Map.Entry<String, String>> sortedOrganizationMappings = new ArrayList<>();
+    private static Set<String> viewerOnlyDepartments = new HashSet<>();
 
     // Flags for intelligent loading
     private static volatile boolean initialized = false;
@@ -139,6 +141,21 @@ public class OrganizationMapper {
         return matchPrefix;
     }
 
+    /**
+     * Check if a department is configured as viewer-only.
+     * Viewer-only departments result in users being assigned the VIEWER role.
+     *
+     * @param department the department name (already mapped/sanitized)
+     * @return true if the department is viewer-only
+     */
+    public static boolean isViewerOnlyDepartment(String department) {
+        ensureInitialized();
+        if (department == null || department.isEmpty() || viewerOnlyDepartments.isEmpty()) {
+            return false;
+        }
+        return viewerOnlyDepartments.contains(department);
+    }
+
     private static void loadOrganizationMapperSettings() {
         log.info("Initializing OrganizationMapper...");
 
@@ -161,6 +178,16 @@ public class OrganizationMapper {
 
         matchPrefix = Boolean.parseBoolean(orgmappingProperties.getProperty(MATCH_PREFIX_KEY, "false"));
         customMappingEnabled = Boolean.parseBoolean(orgmappingProperties.getProperty(ENABLE_CUSTOM_MAPPING_KEY, "false"));
+
+        // Load viewer-only departments (comma-separated list)
+        String viewerDepts = orgmappingProperties.getProperty(VIEWER_DEPARTMENTS_KEY, "");
+        viewerOnlyDepartments = Arrays.stream(viewerDepts.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+        if (!viewerOnlyDepartments.isEmpty()) {
+            log.info("Loaded viewer-only departments: " + viewerOnlyDepartments);
+        }
 
         if (!customMappingEnabled) {
             log.info("Custom organization mapping is disabled via configuration");
