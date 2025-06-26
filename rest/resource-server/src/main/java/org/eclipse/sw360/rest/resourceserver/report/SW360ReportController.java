@@ -135,6 +135,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER cannot generate any reports
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }

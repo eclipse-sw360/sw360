@@ -86,6 +86,12 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
     @NotNull
     public static Predicate<Project> isVisible(final User user) {
         return input -> {
+            // VIEWER can only see projects with visibility EVERYONE
+            if (PermissionUtils.isViewer(user)) {
+                Visibility v = input.getVisbility();
+                return v != null && v == Visibility.EVERYONE;
+            }
+
             Visibility visibility = input.getVisbility();
             if (visibility == null) {
                 visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default

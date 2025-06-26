@@ -82,7 +82,7 @@ public abstract class TestRestDocsSpecBase {
     Sw360CustomUserDetailsService sw360CustomUserDetailsService;
 
     @Autowired
-    private BCryptPasswordEncoder encoder;
+    protected BCryptPasswordEncoder encoder;
 
     @MockitoBean
     protected Sw360UserService userServiceMock;

@@ -339,6 +339,16 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @RequestBody Map<String, Object> requestBody
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        // VIEWER can only create READ tokens, not WRITE tokens
+        if (PermissionUtils.isViewer(sw360User)) {
+            @SuppressWarnings("unchecked")
+            List<String> authorities = (List<String>) requestBody.get("authorities");
+            if (authorities != null && authorities.contains(AUTHORITIES_WRITE)) {
+                throw new AccessDeniedException("Viewer can only create READ tokens.");
+            }
+        }
+
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
         String tokenLengthStr = sw360ConfigurationsService.getSW360Configs()
                 .get(SW360ConfigKeys.REST_API_TOKEN_LENGTH);
