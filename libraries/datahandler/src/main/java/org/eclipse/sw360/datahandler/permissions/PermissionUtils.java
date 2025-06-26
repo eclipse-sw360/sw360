@@ -92,6 +92,10 @@ public class PermissionUtils {
         return isInGroup(user, UserGroup.SECURITY_USER);
     }
 
+    public static boolean isReadOnlyUser(User user) {
+        return isInGroup(user, UserGroup.VIEWER);
+    }
+
     public static boolean isSecurityAdminBySecondaryRoles(Set<UserGroup> roles) {
         return roles.contains(UserGroup.SECURITY_ADMIN);
     }
@@ -122,6 +126,8 @@ public class PermissionUtils {
                 return isAdmin(user);
             case SECURITY_USER:
                 return isSecurityUser(user);
+            case VIEWER:
+                return isNormalUser(user) || isAdmin(user) || isClearingAdmin(user) || isEccAdmin(user) || isSecurityAdmin(user) || isSecurityUser(user) || isReadOnlyUser(user);
             default:
                 throw new IllegalArgumentException("Unknown group: " + group);
         }
