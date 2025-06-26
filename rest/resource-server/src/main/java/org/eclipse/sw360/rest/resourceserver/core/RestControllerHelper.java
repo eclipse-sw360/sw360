@@ -1667,4 +1667,10 @@ public class RestControllerHelper<T> {
             throw new AccessDeniedException("User is not allowed to access this resource.");
         }
     }
+
+    public void throwIfReadOnlyUser(User user) {
+        if (PermissionUtils.isReadOnlyUser(user)) {
+            throw new AccessDeniedException("User is not allowed to access this resource.");
+        }
+    }
 }

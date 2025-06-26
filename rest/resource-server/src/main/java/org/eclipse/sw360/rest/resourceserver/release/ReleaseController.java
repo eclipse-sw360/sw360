@@ -366,6 +366,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+        restControllerHelper.throwIfReadOnlyUser(user);
         Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
         Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
 
@@ -872,6 +873,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        restControllerHelper.throwIfReadOnlyUser(user);
         Release release = releaseService.getReleaseForUserById(releaseId, user);
         Map<String, Object> responseMap = new HashMap<>();
         ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
@@ -944,6 +946,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException, IOException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        restControllerHelper.throwIfReadOnlyUser(user);
         releaseService.checkFossologyConnection();
         ReentrantLock lock = mapOfLocks.get(releaseId);
         Map<String, String> responseMap = new HashMap<>();
@@ -1030,6 +1033,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        restControllerHelper.throwIfReadOnlyUser(user);
         releaseService.checkFossologyConnection();
         Map<String, String> responseMap = new HashMap<>();
         String errorMsg = "Could not trigger report generation for this release";
