@@ -105,7 +105,7 @@ public abstract class TestRestDocsSpecBase {
     Sw360CustomUserDetailsService sw360CustomUserDetailsService;
 
     @Autowired
-    private PasswordEncoder encoder;
+    protected PasswordEncoder encoder;
 
     @MockitoBean
     protected Sw360UserService userServiceMock;

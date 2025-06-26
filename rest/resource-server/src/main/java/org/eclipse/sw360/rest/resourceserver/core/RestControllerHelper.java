@@ -1911,4 +1911,11 @@ public class RestControllerHelper<T> {
         }
         return filterMap;
     }
+
+    /** Blocks access for VIEWER (read-only) role. Mirrors {@link #throwIfSecurityUser}. */
+    public void throwIfViewerUser(User user) {
+        if (PermissionUtils.isViewer(user)) {
+            throw new AccessDeniedException("User is not allowed to access this resource.");
+        }
+    }
 }
