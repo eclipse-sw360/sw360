@@ -26,7 +26,8 @@ enum UserGroup {
     SECURITY_ADMIN = 4,
     SW360_ADMIN = 5,
     CLEARING_EXPERT = 6,
-    SECURITY_USER = 7
+    SECURITY_USER = 7,
+    VIEWER = 8
 }
 
 enum UserAccess {
