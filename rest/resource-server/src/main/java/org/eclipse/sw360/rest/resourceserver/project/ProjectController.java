@@ -429,6 +429,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER cannot own/moderate projects
 
         ImmutableMap<String, Boolean> userRoles = ImmutableMap.<String, Boolean>builder()
                 .put(Project._Fields.CREATED_BY.toString(), createdBy)
@@ -477,6 +478,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not access license clearing data
         restControllerHelper.throwIfSecurityUser(sw360User);
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
@@ -543,6 +545,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        // VIEWER sees only summary + attachments, strip non-permitted fields
+        if (PermissionUtils.isViewer(sw360User)) {
+            stripProjectForViewer(sw360Project);
+        }
         HalResource<Project> userHalResource = createHalProject(sw360Project, sw360User);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
@@ -1346,6 +1352,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException, PaginationParameterException, ResourceClassNotFoundException, URISyntaxException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not access vulnerability data
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         List<VulnerabilityDTO> parentProjectVulnerabilities = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
@@ -1458,6 +1465,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not access vulnerability data
         final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
 
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRating = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
@@ -1531,6 +1539,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not access vulnerability data
         Project project = projectService.getProjectForUserById(id, sw360User);
         List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
         Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
@@ -4518,5 +4527,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             groups = Collections.emptySet();
         }
         return groups;
+    }
+
+    /**
+     * Strips non-summary fields from a project for VIEWER role.
+     * VIEWER can only see: summary tab fields (minus "Used in Projects") + attachments.
+     */
+    private void stripProjectForViewer(Project project) {
+        project.unsetSecurityResponsibles();
+        project.unsetLinkedObligationId();
     }
 }
