@@ -24,8 +24,6 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
@@ -91,7 +89,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
-    public static final Set<String> DOMAIN;
+    public static final Set<String> DEFAULT_DOMAINS;
     public static final String REPORT_FILENAME_MAPPING;
     public static final String JWKS_ISSUER_URL;
     public static final String JWKS_ENDPOINT_URL;
@@ -111,8 +109,8 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
         API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
-        DOMAIN = CommonUtils.splitToSet(SW360Utils.readConfig(SW360ConfigKeys.UI_DOMAINS,
-                "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics"));
+        DEFAULT_DOMAINS = CommonUtils.splitToSet(
+                "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics");
         REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
         JWKS_ISSUER_URL = props.getProperty("jwks.issuer.url", null);
         JWKS_ENDPOINT_URL = props.getProperty("jwks.endpoint.url", null);
