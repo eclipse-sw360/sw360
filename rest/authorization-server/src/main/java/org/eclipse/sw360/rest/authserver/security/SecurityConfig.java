@@ -65,7 +65,7 @@ public class SecurityConfig {
 
     @Order(2)
     @Bean
-    public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeRequests(
                 authz -> authz
                 .requestMatchers("/client-management/**").hasAuthority("ADMIN")

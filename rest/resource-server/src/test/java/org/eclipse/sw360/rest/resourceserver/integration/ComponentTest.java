@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -98,8 +99,16 @@ public class ComponentTest extends TestIntegrationBase {
         component.setCreatedBy("admin@sw360.org");
         componentList.add(component);
 
-        Mockito.doReturn(componentList).when(componentServiceMock)
-                .getComponentsForUser(any());
+        Map<PaginationData, List<Component>> paginationMap = Collections.singletonMap(
+                new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(componentList.size()),
+                componentList
+        );
+
+        Mockito.doReturn(paginationMap).when(componentServiceMock)
+                .getRecentComponentsSummaryWithPagination(any(), any());
+
+        Mockito.doReturn(paginationMap).when(componentServiceMock)
+                .searchComponentByExactValues(any(), any(), any());
 
         User user = TestHelper.getTestUser();
 
@@ -189,8 +198,12 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_get_all_components_empty_list() throws IOException, TException {
-        Mockito.doReturn(new ArrayList<>()).when(this.componentServiceMock)
-                .getComponentsForUser(any());
+        Mockito.doReturn(Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(0),
+                        new ArrayList<>()
+                ))
+                .when(componentServiceMock)
+                .getRecentComponentsSummaryWithPagination(any(), any());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components",
@@ -204,8 +217,12 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_get_all_components_wrong_page() throws IOException, TException {
-        Mockito.doThrow(ResourceNotFoundException.class).when(this.componentServiceMock)
-                .getComponentsForUser(any());
+        Mockito.doReturn(Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(0),
+                        new ArrayList<>()
+                ))
+                .when(componentServiceMock)
+                .getRecentComponentsSummaryWithPagination(any(), any());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?page=5&page_entries=10",

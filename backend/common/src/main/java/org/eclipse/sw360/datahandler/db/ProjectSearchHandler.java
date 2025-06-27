@@ -13,8 +13,14 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
@@ -22,6 +28,7 @@ import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -89,6 +96,38 @@ public class ProjectSearchHandler {
         searchView.addNouveau(luceneSearchView, gson);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
         connector.addDesignDoc(searchView);
+    }
+
+    public Map<PaginationData, List<Project>> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        ResourceComparatorGenerator<Project> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
+        ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.getSortColumnNumber());
+        Comparator<Project> comparator;
+        try {
+            comparator = switch (sortBy) {
+                case ProjectSortColumn.BY_NAME ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_PROJECT, "name");
+                case ProjectSortColumn.BY_CREATEDON ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_PROJECT, "createdOn");
+                case null, default -> null; // only two sortable fields, sort by score
+            };
+        } catch (ResourceClassNotFoundException e) {
+            comparator = null;
+        }
+
+        Map<PaginationData, List<Project>> resultProjectList = connector
+                .searchViewWithRestrictions(Project.class,
+                        luceneSearchView.getIndexName(), text, subQueryRestrictions,
+                        pageData, null, pageData.isAscending());
+
+        PaginationData respPageData = resultProjectList.keySet().iterator().next();
+        List<Project> projectList = resultProjectList.values().iterator().next();
+
+        projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).collect(Collectors.toList());
+        if (comparator != null) {
+            projectList.sort(comparator);
+        }
+
+        return Collections.singletonMap(respPageData, projectList);
     }
 
     public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user) {

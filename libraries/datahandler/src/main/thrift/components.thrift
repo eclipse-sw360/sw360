@@ -459,6 +459,14 @@ enum BulkOperationResultState {
     EXCLUDED = 3,
 }
 
+enum ComponentSortColumn {
+    BY_CREATEDON = -1,
+    BY_VENDOR = 0,
+    BY_NAME = 1,
+    BY_MAINLICENSE = 2,
+    BY_TYPE = 3,
+}
+
 enum BulkOperationNodeType {
     PROJECT = 0,
     COMPONENT = 1,
@@ -555,7 +563,7 @@ service ComponentService {
      * search components in database that match subQueryRestrictions
      * They are only the components which are visible to user.
      **/
-    list<Component> refineSearchAccessibleComponents(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+    map<PaginationData, list<Component>> refineSearchAccessibleComponents(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user, 4: PaginationData pageData);
 
     /**
      * search components with the accessibility in database that match subQueryRestrictions
@@ -581,6 +589,22 @@ service ComponentService {
      * get short summary of release by release name prefix
      **/
     list<Release> searchReleaseByNamePrefix(1: string name);
+
+    /**
+     * Get Components with name prefix and paginated
+     **/
+    map<PaginationData, list<Component>> searchComponentByNamePrefixPaginated(1: User user, 2: string name, 3: PaginationData pageData);
+
+    /**
+     * Get Components with exact name and paginated
+     **/
+    map<PaginationData, list<Component>> searchComponentByExactNamePaginated(1: User user, 2: string name, 3: PaginationData pageData);
+
+    /**
+     * search components in database that match subQueryRestrictions
+     * Gets the components with mango query and pagination.
+     **/
+    map<PaginationData, list<Component>> searchComponentByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
      * information for home portlet

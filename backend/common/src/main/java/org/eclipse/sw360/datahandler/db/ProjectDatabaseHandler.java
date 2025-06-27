@@ -230,6 +230,18 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return repository.searchByName(name, user);
     }
 
+    public Map<PaginationData, List<Project>> searchProjectByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        return repository.searchProjectByNamePrefixPaginated(user, name, pageData);
+    }
+
+    public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(User user, String name, PaginationData pageData) {
+        return repository.searchProjectByExactNamePaginated(user, name, pageData);
+    }
+
+    public Map<PaginationData, List<Project>> searchAccessibleProjectByExactValues(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        return repository.searchAccessibleProjectByExactValues(subQueryRestrictions, user, pageData);
+    }
+
     /////////////////////////////
     // CREATE CLEARING REQUEST //
     /////////////////////////////
@@ -344,7 +356,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Boolean projectResponsible = userRoles.get(Project._Fields.PROJECT_RESPONSIBLE.toString());
             Boolean securityResponsible = userRoles.get(Project._Fields.SECURITY_RESPONSIBLES.toString());
 
-            myProjectsFull = myProjectsFull.stream().filter(ProjectPermissions.isVisible(user)::test)
+            myProjectsFull = myProjectsFull.stream().filter(ProjectPermissions.isVisible(user))
                     .filter(project -> {
                         if (creator != null && creator && project.getCreatedBy().equals(userEmail)) {
                             return true;

@@ -61,6 +61,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
@@ -74,6 +75,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.Link;
 import org.springframework.security.access.AccessDeniedException;
@@ -153,18 +155,22 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public static final ImmutableSet<ObligationStatusInfo._Fields> SET_OF_LICENSE_OBLIGATION_FIELDS = ImmutableSet
             .of(ObligationStatusInfo._Fields.COMMENT, ObligationStatusInfo._Fields.STATUS);
 
-    public Set<Project> getProjectsForUser(User sw360User, Pageable pageable) throws TException {
+    public Map<PaginationData, List<Project>> getProjectsForUser(User sw360User, Pageable pageable) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        PaginationData pageData = new PaginationData().setDisplayStart((int) pageable.getOffset())
-                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(0);
-        Map<PaginationData, List<Project>> pageDtToProjects = sw360ProjectClient
+        PaginationData pageData = pageableToPaginationData(pageable, null, null);
+        Map<PaginationData, List<Project>> resp = sw360ProjectClient
                 .getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
-        return new HashSet<>(pageDtToProjects.entrySet().iterator().next().getValue());
+        PaginationData respPagination = resp.keySet().iterator().next();
+        respPagination.setTotalRowCount(sw360ProjectClient.getMyAccessibleProjectCounts(sw360User));
+        return resp;
     }
 
-    public List<Project> getProjectsSummaryForUserWithoutPagination(User sw360User) throws TException {
+    public Map<PaginationData, List<Project>> searchAccessibleProjectByExactValues(
+            Map<String, Set<String>> filterMap, User sw360User, Pageable pageable
+    ) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
+        PaginationData pageData = pageableToPaginationData(pageable, null, null);
+        return sw360ProjectClient.searchAccessibleProjectByExactValues(filterMap, sw360User, pageData);
     }
 
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
@@ -873,9 +879,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, sw360User);
     }
 
-    public List<Project> searchProjectByName(String name, User sw360User) throws TException {
+    public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(
+            User sw360User, String name, Pageable pageable
+    ) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchByName(name, sw360User);
+        name = name.replaceAll("\"", "");
+        return sw360ProjectClient.searchProjectByExactNamePaginated(sw360User, name,
+                pageableToPaginationData(pageable, null, null));
     }
 
     public List<Project> searchProjectByGroup(String group, User sw360User) throws TException {
@@ -1153,9 +1163,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
     }
 
-    public List<Project> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
+    public Map<PaginationData, List<Project>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
+        PaginationData pageData = pageableToPaginationData(pageable,
+                // Can be sorted on name and createdOn, but using different default value for score sorting
+                ProjectSortColumn.BY_TYPE, true);
+        return sw360ProjectClient.refineSearchPageable(null, filterMap, sw360User, pageData);
     }
 
     public void copyLinkedObligationsForClonedProject(Project createDuplicateProject, Project sw360Project, User user)
@@ -1787,5 +1800,45 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return true;
         }).collect(Collectors.toList());
         return releases;
+    }
+
+    /**
+     * Converts a Pageable object to a PaginationData object.
+     *
+     * @param pageable the Pageable object to convert
+     * @return a PaginationData object representing the pagination information
+     */
+    private static PaginationData pageableToPaginationData(
+            @NotNull Pageable pageable, ProjectSortColumn defaultSort, Boolean defaultAscending
+    ) {
+        ProjectSortColumn column = ProjectSortColumn.BY_NAME;
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "created" -> ProjectSortColumn.BY_CREATEDON;
+                case "name" -> ProjectSortColumn.BY_NAME;
+                case "vendor" -> ProjectSortColumn.BY_VENDOR;
+                case "license" -> ProjectSortColumn.BY_MAINLICENSE;
+                case "type" -> ProjectSortColumn.BY_TYPE;
+                case "desc" -> ProjectSortColumn.BY_DESCRIPTION;
+                case "resp" -> ProjectSortColumn.BY_RESPONSIBLE;
+                case "state" -> ProjectSortColumn.BY_STATE;
+                default -> column; // Default to BY_NAME if no match
+            };
+            ascending = order.isAscending();
+        } else {
+            if (defaultSort != null) {
+                column = defaultSort;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
+        }
+
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
 }

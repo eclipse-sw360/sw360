@@ -81,6 +81,17 @@ enum ProjectClearingState {
     CLOSED = 2,
 }
 
+enum ProjectSortColumn {
+    BY_CREATEDON = -1,
+    BY_VENDOR = 0,
+    BY_NAME = 1,
+    BY_MAINLICENSE = 2,
+    BY_TYPE = 3,
+    BY_DESCRIPTION = 4,
+    BY_RESPONSIBLE = 5,
+    BY_STATE = 6,
+}
+
 struct ProjectProjectRelationship {
     1: required ProjectRelationship projectRelationship,
     2: optional bool enableSvm = true;
@@ -374,9 +385,31 @@ service ProjectService {
     list<Project> refineSearch(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user);
 
     /**
+     * returns a list of projects which match `text` and the
+     * `subQueryRestrictions` and are visible to the `user`. The request is pageable
+     */
+    map<PaginationData, list<Project>> refineSearchPageable(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user, 4: PaginationData pageData);
+
+    /**
      * list of projects which are visible to the `user` and match the `name`
      */
     list<Project> searchByName(1: string name, 2: User user);
+
+    /**
+     * Get Projects with name prefix and paginated
+     **/
+    map<PaginationData, list<Project>> searchProjectByNamePrefixPaginated(1: User user, 2: string name, 3: PaginationData pageData);
+
+    /**
+     * Get Projects with exact name and paginated
+     **/
+    map<PaginationData, list<Project>> searchProjectByExactNamePaginated(1: User user, 2: string name, 3: PaginationData pageData);
+
+    /**
+     * search projects in database that match subQueryRestrictions
+     * Gets the projects with mango query and pagination.
+     **/
+    map<PaginationData, list<Project>> searchAccessibleProjectByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
      * project data which are visible to the `user` and match the `group`
@@ -387,7 +420,7 @@ service ProjectService {
      * project data which are visible to the `user` and match the `tag`
      */
     ProjectData searchByTag(1: string tag, 2: User user) throws (1: SW360Exception exp);
- 
+
     /**
      * project data which are visible to the `user` and match the `type`
      */
@@ -532,7 +565,7 @@ service ProjectService {
      * Visibility of any of the projects in the tree for the given user is currently not considered.
      */
     list<Project> fillClearingStateSummaryIncludingSubprojects(1: list<Project> projects, 2: User user);
-    
+
     Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(1: Project project, 2: User user);
 
     /**
@@ -641,7 +674,7 @@ service ProjectService {
      * get clearing state information for list view
      */
     list<map<string,string>> getClearingStateInformationForListView(1:string projectId, 2: User user) throws (1: SW360Exception exp);
-    
+
     /**
      * get accessible clearing state information for list view
      */

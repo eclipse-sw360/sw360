@@ -22,24 +22,30 @@ public class JWTValidator {
 
     /**
      * Creates a validator for JWT access tokens issued by the given PF instance.
-     * 
+     *
      * @param pfBaseUrl the base URL of the PF instance including the trailing
      *                  slash.
      */
-    public JWTValidator(String issuerUrl, String jwksurl) {
+    public JWTValidator(String issuerUrl, String jwksurl, String aud) {
         HttpsJwks httpsJkws = new HttpsJwks(jwksurl);
         HttpsJwksVerificationKeyResolver httpsJwksKeyResolver = new HttpsJwksVerificationKeyResolver(httpsJkws);
-        jwtConsumer = new JwtConsumerBuilder()
+        JwtConsumerBuilder jwtConsumerBuilder = new JwtConsumerBuilder()
                 //TODO:Recheck
 //                .setRequireExpirationTime()
 //                .setAllowedClockSkewInSeconds(30)
                 .setExpectedIssuer(issuerUrl)
-                .setVerificationKeyResolver(httpsJwksKeyResolver).build();
+                .setVerificationKeyResolver(httpsJwksKeyResolver);
+        if (aud.isEmpty()) {
+            jwtConsumerBuilder.setExpectedAudience(false);
+        } else {
+            jwtConsumerBuilder.setExpectedAudience(aud);
+        }
+        jwtConsumer = jwtConsumerBuilder.build();
     }
 
     /**
      * Validates the given JWT access token.
-     * 
+     *
      * @param jwt the JWT access token.
      * @return the claims associated with the given token.
      * @throws InvalidJwtException if the JWT could not be validated.

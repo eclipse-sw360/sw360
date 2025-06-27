@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import org.eclipse.sw360.components.summary.ComponentSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -16,15 +17,20 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
-import com.ibm.cloud.cloudant.v1.model.ViewResult;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.*;
+
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.all;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 
 /**
  * CRUD access for the Component class
@@ -120,7 +126,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     private static final String BY_NAME_LOWERCASE = "function(doc) {" +
             "  if (doc.type == 'component') {" +
-            "    emit(doc.name.toLowerCase().trim(), doc._id);" +
+            "    emit(doc.name.toLowerCase().trim(), 1);" +
             "  } " +
             "}";
 
@@ -171,12 +177,25 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         views.put("byFossologyId", createMapReduce(BY_FOSSOLOGY_ID, null));
         views.put("byExternalIds", createMapReduce(BY_EXTERNAL_IDS, null));
         views.put("byDefaultVendorId", createMapReduce(BY_DEFAULT_VENDOR_ID, null));
-        views.put("bynamelowercase", createMapReduce(BY_NAME_LOWERCASE, null));
+        views.put("bynamelowercase", createMapReduce(BY_NAME_LOWERCASE, "_sum"));
         views.put("bymainlicense", createMapReduce(BY_MAIN_LICENSE, null));
         views.put("byvendor", createMapReduce(BY_VENDOR, null));
         views.put("byVCS", createMapReduce(BY_VCS, null));
         views.put("byVCSLowercase", createMapReduce(BY_VCS_LOWERCASE, null));
         initStandardDesignDocument(views, db);
+
+        createIndex("compByAll", new String[] {
+                Component._Fields.NAME.getFieldName(),
+                Component._Fields.CATEGORIES.getFieldName(),
+                Component._Fields.COMPONENT_TYPE.getFieldName(),
+                Component._Fields.LANGUAGES.getFieldName(),
+                Component._Fields.SOFTWARE_PLATFORMS.getFieldName(),
+                Component._Fields.OPERATING_SYSTEMS.getFieldName(),
+                Component._Fields.VENDOR_NAMES.getFieldName(),
+                Component._Fields.MAIN_LICENSE_IDS.getFieldName(),
+                Component._Fields.CREATED_BY.getFieldName(),
+                Component._Fields.CREATED_ON.getFieldName()
+        }, db);
     }
 
     public List<Component> getRecentComponentsSummary(int limit, User user) {
@@ -274,56 +293,102 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     public Map<PaginationData, List<Component>> getRecentComponentsSummary(User user, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
         Map<PaginationData, List<Component>> result = Maps.newHashMap();
-        List<Component> components = Lists.newArrayList();
-        final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
+        List<Component> components = queryViewPaginated(getViewFromPagination(pageData), pageData, false);
 
-        PostViewOptions.Builder query;
-        switch (sortColumnNo) {
-            case -1:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "byCreatedOn");
-                break;
-            case 0:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "byvendor");
-                break;
-            case 1:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "byname");
-                break;
-            case 2:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "bymainlicense");
-                break;
-            case 3:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "bycomponenttype");
-                break;
-            default:
-                query = getConnector().getPostViewQueryBuilder(Component.class, "all");
-                break;
-        }
-
-        PostViewOptions request;
-        if (rowsPerPage == -1) {
-            request = query.descending(!ascending).includeDocs(true).build();
-        } else {
-            request = query.limit(rowsPerPage).skip(offset)
-                    .descending(!ascending).includeDocs(true).build();
-        }
-
-        try {
-            ViewResult response = getConnector().getPostViewQueryResponse(request);
-            components = getPojoFromViewResponse(response);
-            pageData.setTotalRowCount(response.getTotalRows());
-        } catch (ServiceConfigurationError e) {
-            log.error("Error getting recent components", e);
-        }
-        components = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user);
-        result.put(pageData, components);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user));
         return result;
+    }
+
+    public Map<PaginationData, List<Component>> searchComponentByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Component>> result = Maps.newHashMap();
+        List<Component> components = queryByPrefixPaginated("bynamelowercase", name, pageData, true);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user));
+        return result;
+    }
+
+    public Map<PaginationData, List<Component>> searchComponentByExactNamePaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Component>> result = Maps.newHashMap();
+        List<Component> components = queryViewPaginated("bynamelowercase", name, pageData, true);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user));
+        return result;
+    }
+
+    /**
+     * Get Components matching exact values for the given subQueryRestrictions with pagination.
+     * @param subQueryRestrictions Map of field names to sets of values to match against.
+     * @param user User for permission checks.
+     * @param pageData Pagination data
+     * @return Map containing pagination data as key and list of components as value.
+     */
+    public Map<PaginationData, List<Component>> searchComponentByExactValues(
+            Map<String,Set<String>> subQueryRestrictions, User user, @NotNull PaginationData pageData
+    ) {
+        final boolean ascending = pageData.isAscending();
+        final Map<String, Object> typeSelector = eq("type", "component");
+        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
+
+        final Map<String, String> sortSelector = getSortSelector(pageData, ascending);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList("compByAll"));
+
+        List<Component> components = getConnector().getQueryResultPaginated(
+                qb, Component.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(
+                pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user)
+        );
+    }
+
+    private static @Nonnull String getViewFromPagination(PaginationData pageData) {
+        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ComponentSortColumn.BY_CREATEDON -> "byCreatedOn";
+            case ComponentSortColumn.BY_VENDOR -> "byvendor";
+            case ComponentSortColumn.BY_NAME -> "byname";
+            case ComponentSortColumn.BY_MAINLICENSE -> "bymainlicense";
+            case ComponentSortColumn.BY_TYPE -> "bycomponenttype";
+            case null -> "all";
+        };
+    }
+
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
+        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ComponentSortColumn.BY_VENDOR ->
+                    Collections.singletonMap("vendorNames", ascending ? "asc" : "desc");
+            case ComponentSortColumn.BY_TYPE ->
+                    Collections.singletonMap("componentType", ascending ? "asc" : "desc");
+            case ComponentSortColumn.BY_MAINLICENSE ->
+                    Collections.singletonMap("mainLicenseIds", ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap("name", ascending ? "asc" : "desc"); // Default sort by name
+        };
     }
 
     public List<Component> getComponentsByVCS() {
         return queryView("byVCS");
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                if (Component._Fields.CATEGORIES.getFieldName().equals(entry.getKey()) ||
+                        Component._Fields.LANGUAGES.getFieldName().equals(entry.getKey()) ||
+                        Component._Fields.SOFTWARE_PLATFORMS.getFieldName().equals(entry.getKey()) ||
+                        Component._Fields.OPERATING_SYSTEMS.getFieldName().equals(entry.getKey()) ||
+                        Component._Fields.VENDOR_NAMES.getFieldName().equals(entry.getKey()) ||
+                        Component._Fields.MAIN_LICENSE_IDS.getFieldName().equals(entry.getKey())
+                ) {
+                    andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
+                } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
+                    andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
+                }
+            }
+        }
+        return and(andConditions);
     }
 }

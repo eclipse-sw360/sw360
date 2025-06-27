@@ -29,6 +29,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
@@ -180,38 +181,38 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        List<Component> allComponents = new ArrayList<>();
-        String queryString = request.getQueryString();
-        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
+        Map<PaginationData, List<Component>> paginatedComponents = null;
 
+        Map<String, Set<String>> filterMap = getFilterMap(categories, componentType, languages, softwarePlatforms,
+                operatingSystems, vendors, mainLicenses, createdBy, createdOn);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            Set<String> values = Collections.singleton(name);
+            filterMap.put(Component._Fields.NAME.getFieldName(), values);
+        }
         if (luceneSearch) {
-            Map<String, Set<String>> filterMap = getFilterMap(categories, componentType, languages, softwarePlatforms,
-                    operatingSystems, vendors, mainLicenses, createdBy, createdOn);
-            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-                Set<String> values = CommonUtils.splitToSet(name);
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+            if (filterMap.containsKey(Component._Fields.NAME.getFieldName())) {
+                Set<String> values = filterMap.get(Component._Fields.NAME.getFieldName()).stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(Component._Fields.NAME.getFieldName(), values);
             }
-            allComponents.addAll(componentService.refineSearch(filterMap, sw360User));
+            paginatedComponents = componentService.refineSearch(filterMap, sw360User, pageable);
         } else {
-            if (name != null && !name.isEmpty()) {
-                allComponents.addAll(componentService.searchComponentByName(params.get("name")));
+            if (filterMap.isEmpty()) {
+                paginatedComponents = componentService.getRecentComponentsSummaryWithPagination(sw360User, pageable);
             } else {
-                allComponents.addAll(componentService.getComponentsForUser(sw360User));
-            }
-            Map<String, Set<String>> restrictions = getFilterMap(categories, componentType, languages,
-                    softwarePlatforms, operatingSystems, vendors, mainLicenses, createdBy, createdOn);
-            if (!restrictions.isEmpty()) {
-                allComponents = new ArrayList<>(allComponents.stream()
-                        .filter(filterComponentMap(restrictions)).toList());
+                paginatedComponents = componentService.searchComponentByExactValues(filterMap, sw360User, pageable);
             }
         }
 
-        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                allComponents, SW360Constants.TYPE_COMPONENT);
+        PaginationResult<Component> paginationResult;
+        List<Component> allComponents = new ArrayList<>(paginatedComponents.values().iterator().next());
+        int totalCount = Math.toIntExact(paginatedComponents.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, allComponents, SW360Constants.TYPE_COMPONENT, totalCount);
 
-        CollectionModel resources = getFilteredComponentResources(fields, allDetails, sw360User, paginationResult);
+        CollectionModel<EntityModel<Component>> resources = getFilteredComponentResources(fields, allDetails, sw360User, paginationResult);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

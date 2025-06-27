@@ -220,7 +220,7 @@ public class RestControllerHelper<T> {
 
     public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
                                                                  List<T> resources, String resourceType, int totalCount)
-            throws ResourceClassNotFoundException {
+            throws ResourceClassNotFoundException, PaginationParameterException {
         if (!requestContainsPaging(request)) {
             request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
             request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
