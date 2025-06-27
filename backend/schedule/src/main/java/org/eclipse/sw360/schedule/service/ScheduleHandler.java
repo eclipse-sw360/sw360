@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.schedule.timer.ScheduleHelper;
+import org.eclipse.sw360.schedule.timer.ScheduleConstants;
 import org.eclipse.sw360.schedule.timer.Scheduler;
 
 import java.util.Date;
@@ -55,8 +55,8 @@ public class ScheduleHandler implements ScheduleService.Iface {
     }
 
     @Override
-    public RequestSummary scheduleService(String serviceName) {
-        if (ScheduleHelper.getRunOffset(serviceName) == -1 || ScheduleHelper.getIntervalSec(serviceName) == -1) {
+    public RequestSummary scheduleService(String serviceName) throws TException {
+        if(ScheduleConstants.invalidConfiguredServices.contains(serviceName)){
             log.info("Could not schedule " + serviceName + " because of invalid configuration.");
             return new RequestSummary(RequestStatus.FAILURE);
         }
@@ -146,7 +146,7 @@ public class ScheduleHandler implements ScheduleService.Iface {
 
     @Override
     public int getFirstRunOffset(String serviceName){
-        return ScheduleHelper.getRunOffset(serviceName);
+        return ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName) != null ? ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName) : -1;
     }
 
     @Override
@@ -157,6 +157,6 @@ public class ScheduleHandler implements ScheduleService.Iface {
 
     @Override
     public int getInterval(String serviceName){
-        return ScheduleHelper.getIntervalSec(serviceName);
+        return ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName) != null ? ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName) : -1 ;
     }
 }
