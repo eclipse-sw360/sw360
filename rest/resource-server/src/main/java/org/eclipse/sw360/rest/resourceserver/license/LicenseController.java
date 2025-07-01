@@ -617,7 +617,27 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @Operation(
             summary = "Check if a license type is being used and get the count.",
             description = "Returns whether the license type is being used and the total count of such licenses.",
-            tags = {"License Types"}
+            tags = {"License Types"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "LicenseType usage information",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                            {
+                                                              isUsed: true,
+                                                              count: 5
+                                                            }
+                                                            """
+                                            )
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = " 403", description = "User is not an admin"
+                    )
+            }
     )
     @GetMapping(value = LICENSE_TYPES_URL + "/{licenseTypeId}/usage", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> getLicenseTypeUsage(
