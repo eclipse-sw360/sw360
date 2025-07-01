@@ -372,7 +372,6 @@ public class Sw360LicenseService {
         try {
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
 
-            LicenseType licenseType = sw360LicenseClient.getLicenseTypeById(licenseTypeId);
             List<License> allLicenses = sw360LicenseClient.getLicenseSummary();
             return (int) allLicenses.stream()
                     .filter(license -> license.getLicenseType() != null && license.getLicenseType().getId().equals(licenseTypeId))
