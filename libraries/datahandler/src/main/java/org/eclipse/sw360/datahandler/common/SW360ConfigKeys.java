@@ -68,25 +68,6 @@ public class SW360ConfigKeys {
     public static final String VCS_REDIRECTION_LIMIT = "vcs.redirection.limit";
     public static final String VCS_REDIRECTION_TIMEOUT_LIMIT = "vcs.redirection.timeout.limit";
 
-    // Properties for the Schedule services
-    public static final String AUTOSTART_PROPERTY_NAME = "autostart";
-    public static final String CVESEARCH_OFFSET_PROPERTY_NAME = "schedule.cvesearch.firstOffset.seconds";
-    public static final String CVESEARCH_INTERVAL_PROPERTY_NAME = "schedule.cvesearch.interval.seconds";
-    public static final String SVMSYNC_OFFSET_PROPERTY_NAME = "schedule.svmsync.firstOffset.seconds";
-    public static final String SVMSYNC_INTERVAL_PROPERTY_NAME = "schedule.svmsync.interval.seconds";
-    public static final String SVMMATCH_OFFSET_PROPERTY_NAME = "schedule.svmmatch.firstOffset.seconds";
-    public static final String SVMMATCH_INTERVAL_PROPERTY_NAME = "schedule.svmmatch.interval.seconds";
-    public static final String SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME = "schedule.svmlistupdate.firstOffset.seconds";
-    public static final String SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME = "schedule.svmlistupdate.interval.seconds";
-    public static final String SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME = "schedule.trackingfeedback.firstOffset.seconds";
-    public static final String SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME = "schedule.trackingfeedback.interval.seconds";
-    public static final String SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME = "schedule.srcupload.firstOffset.seconds";
-    public static final String SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME = "schedule.srcupload.interval.seconds";
-    public static final String DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME = "schedule.delete.attachment.firstOffset.seconds";
-    public static final String DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME = "schedule.delete.attachment.interval.seconds";
-    public static final String DEPARTMENT_OFFSET_PROPERTY_NAME = "schedule.department.firstOffset.seconds";
-    public static final String DEPARTMENT_INTERVAL_PROPERTY_NAME = "schedule.department.interval.seconds";
-
     // Properties purely used by UI
     // This property is used in Project Administration
     public static final String UI_CLEARING_TEAMS = "ui.clearing.teams";

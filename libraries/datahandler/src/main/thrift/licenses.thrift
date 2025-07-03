@@ -287,7 +287,7 @@ service LicenseService {
      **/
     list<Obligation> getObligationsByLicenseId( 1: string id);
 
-    LicenseType getLicenseTypeById( 1: string id);
+    LicenseType getLicenseTypeById( 1: string id) throws (1: SW360Exception exp);
 
     /**
      * return filled obligation

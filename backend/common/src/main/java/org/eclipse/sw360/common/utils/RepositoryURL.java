@@ -12,13 +12,15 @@ package org.eclipse.sw360.common.utils;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.VCS_HOSTS;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.VCS_REDIRECTION_LIMIT;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.VCS_REDIRECTION_TIMEOUT_LIMIT;
@@ -27,11 +29,11 @@ public class RepositoryURL {
     private String url;
     private static final Logger log = LogManager.getLogger(RepositoryURL.class);
     private static final String SCHEMA_PATTERN = ".+://(\\w*(?:[\\-@.\\\\s,_:/][/(.\\-)A-Za-z0-9]+)*)";
-    private static final String VCS_HOSTS_STRING = VCS_HOSTS;
+    private static final String VCS_HOSTS_STRING = SW360Utils.readConfig(VCS_HOSTS,"");
     private static final Map<String, String> KNOWN_VCS_HOSTS = parseVCSHosts(VCS_HOSTS_STRING);
     private Set<String> redirectedUrls = new HashSet<>();
-    private static int redirectionTimeout = Integer.parseInt(VCS_REDIRECTION_TIMEOUT_LIMIT);
-    private static int redirectionLimit = Integer.parseInt(VCS_REDIRECTION_LIMIT);
+    private static int redirectionTimeout = Integer.parseInt(SW360Utils.readConfig(VCS_REDIRECTION_TIMEOUT_LIMIT, SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT));
+    private static int redirectionLimit = Integer.parseInt(SW360Utils.readConfig(VCS_REDIRECTION_LIMIT, SW360Constants.VCS_REDIRECTION_LIMIT));
 
     public RepositoryURL(){}
 
