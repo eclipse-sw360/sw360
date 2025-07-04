@@ -17,6 +17,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -143,8 +144,12 @@ public class UserDatabaseHandler {
         return repository.getUserEmails();
     }
 
-    public List<User> search(String text, Map<String, Set<String>> subQueryRestrictions) {
-        return userSearchHandler.search(text, subQueryRestrictions);
+    public Map<PaginationData, List<User>> search(String text, Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
+        return userSearchHandler.search(text, subQueryRestrictions, pageData);
+    }
+
+    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
+        return repository.searchUsersByExactValues(subQueryRestrictions, pageData);
     }
 
     public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
@@ -402,7 +407,7 @@ public class UserDatabaseHandler {
         }
         return users;
     }
-    
+
     public User getByOidcClientId(String clientId) {
         return repository.getByOidcClientId(clientId);
     }

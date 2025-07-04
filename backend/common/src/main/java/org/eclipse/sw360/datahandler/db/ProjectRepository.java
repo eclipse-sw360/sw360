@@ -394,10 +394,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final boolean ascending = pageData.isAscending();
         final ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.getSortColumnNumber());
-        PostFindOptions query = null;
+        final Map<String, String> sortSelector = getSortSelector(pageData);
         List<Project> projects = new ArrayList<>();
         Map<PaginationData, List<Project>> result = Maps.newHashMap();
 
@@ -405,42 +403,30 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector);
-        if (rowsPerPage != -1) {
-            qb.limit(rowsPerPage);
-        }
-        qb.skip(pageData.getDisplayStart());
         String queryViewName = null;
 
         switch (sortBy) {
             case ProjectSortColumn.BY_DESCRIPTION:
-                qb.useIndex(Collections.singletonList("byDesc"))
-                        .addSort(Collections.singletonMap("description", ascending ? "asc" : "desc"));
-                query = qb.build();
+                qb.useIndex(Collections.singletonList("byDesc"));
                 break;
             case ProjectSortColumn.BY_RESPONSIBLE:
-                qb.useIndex(Collections.singletonList("byProjectResponsible"))
-                        .addSort(Collections.singletonMap("projectResponsible", ascending ? "asc" : "desc"));
-                query = qb.build();
+                qb.useIndex(Collections.singletonList("byProjectResponsible"));
                 break;
             case ProjectSortColumn.BY_CREATEDON:
-                qb.useIndex(Collections.singletonList("byCreatedOn"))
-                        .addSort(Collections.singletonMap("createdOn", ascending ? "asc" : "desc"));
-                query = qb.build();
+                qb.useIndex(Collections.singletonList("byCreatedOn"));
             case ProjectSortColumn.BY_STATE:
                 queryViewName = "byState";
                 break;
             case null:
             default: // By default, sort by name
-                qb.useIndex(Collections.singletonList("byName"))
-                        .addSort(Collections.singletonMap("name", ascending ? "asc" : "desc"));
-                query = qb.build();
+                qb.useIndex(Collections.singletonList("byName"));
                 break;
         }
         try {
             if (queryViewName != null) {
                 projects = queryViewPaginated(queryViewName, pageData, false);
             } else {
-                projects = getConnector().getQueryResult(query, Project.class);
+                projects = getConnector().getQueryResultPaginated(qb, Project.class, pageData, sortSelector);
             }
         } catch (Exception e) {
             log.error("Error getting projects", e);
@@ -678,6 +664,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     Collections.singletonMap("projectResponsible", ascending ? "asc" : "desc");
             case ProjectSortColumn.BY_STATE ->
                     Collections.singletonMap("state", ascending ? "asc" : "desc");
+            case ProjectSortColumn.BY_CREATEDON ->
+                    Collections.singletonMap("createdOn", ascending ? "asc" : "desc");
             case null, default ->
                     Collections.singletonMap("name", ascending ? "asc" : "desc"); // Default sort by name
         };

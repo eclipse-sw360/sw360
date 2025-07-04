@@ -28,6 +28,8 @@ import com.ibm.cloud.cloudant.v1.model.ViewResultRow;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -134,6 +136,14 @@ public class UserRepository extends SummaryAwareRepository<User> {
         createIndex("byActiveStatus", new String[] {"deactivated"}, databaseConnector);
         createIndex("byUserGroup", new String[] {"userGroup"}, databaseConnector);
         createIndex("bySecondaryDepartmentsAndRoles", new String[] {"secondaryDepartmentsAndRoles"}, databaseConnector);
+
+        createIndex("usersByAll", new String[] {
+                User._Fields.GIVENNAME.getFieldName(),
+                User._Fields.LASTNAME.getFieldName(),
+                User._Fields.DEPARTMENT.getFieldName(),
+                User._Fields.EMAIL.getFieldName(),
+                User._Fields.USER_GROUP.getFieldName(),
+        }, databaseConnector);
     }
 
     @Override
@@ -185,11 +195,26 @@ public class UserRepository extends SummaryAwareRepository<User> {
         return getResultBasedOnQuery("userEmails");
     }
 
+    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) {
+        final Map<String, Object> typeSelector = eq("type", "user");
+        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
+
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList("usersByAll"));
+
+        List<User> users = getConnector().getQueryResultPaginated(
+                qb, User.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, users);
+    }
+
     public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
-        Map<PaginationData, List<User>> paginatedUsers = queryViewWithPagination(pageData);
-        List<User> userList = paginatedUsers.values().iterator().next();
-        paginatedUsers.put(pageData, userList);
-        return paginatedUsers;
+        return queryViewWithPagination(pageData);
     }
 
     private Set<String> getResultBasedOnQuery(String queryName) {
@@ -210,88 +235,24 @@ public class UserRepository extends SummaryAwareRepository<User> {
     }
 
     private Map<PaginationData, List<User>> queryViewWithPagination(PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        Map<PaginationData, List<User>> result = Maps.newHashMap();
+        final UserSortColumn sortBy = UserSortColumn.findByValue(pageData.getSortColumnNumber());
+        final Map<String, String> sortSelector = getSortSelector(pageData);
         List<User> users = Lists.newArrayList();
-        final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
-        PostFindOptions query = null;
-        final Map<String, Object> typeSelector = Collections.singletonMap("type",
-                Collections.singletonMap("$eq", "user"));
-        final Map<String, Object> emptySecondaryDepartmentsAndRolesSelector = or(
-                List.of(exists("secondaryDepartmentsAndRoles", false), eq("secondaryDepartmentsAndRoles", "")));
+        Map<PaginationData, List<User>> result = Maps.newHashMap();
+
+        final Map<String, Object> typeSelector = eq("type", "user");
+
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(typeSelector);
-        if (rowsPerPage != -1) {
-            qb.limit(rowsPerPage);
-        }
-        qb.skip(pageData.getDisplayStart());
 
-        switch (sortColumnNo) {
-            case -1:
-            case 2:
-                qb.useIndex(Collections.singletonList("byEmailUser"))
-                        .addSort(Collections.singletonMap("email", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 0:
-                qb.useIndex(Collections.singletonList("byFirstName"))
-                        .addSort(Collections.singletonMap("givenname", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 1:
-                qb.useIndex(Collections.singletonList("byLastName"))
-                        .addSort(Collections.singletonMap("lastname", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 3:
-                qb.useIndex(Collections.singletonList("byActiveStatus"))
-                        .addSort(Collections.singletonMap("deactivated", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 4:
-                qb.useIndex(Collections.singletonList("byDepartment"))
-                        .addSort(Collections.singletonMap("department", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 5:
-                qb.useIndex(Collections.singletonList("byUserGroup"))
-                        .addSort(Collections.singletonMap("userGroup", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 6:
-                if (ascending) {
-                    qb.skip(0);
-                }
-                qb.useIndex(Collections.singletonList("bySecondaryDepartmentsAndRoles"))
-                        .addSort(Collections.singletonMap("secondaryDepartmentsAndRoles", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            default:
-                break;
+        if (sortBy == UserSortColumn.BY_STATUS) {
+            qb.useIndex(Collections.singletonList("byActiveStatus"));
+        } else {
+            qb.useIndex(Collections.singletonList("usersByAll"));
         }
 
         try {
-            users = getConnector().getQueryResult(query, User.class);
-
-            if (sortColumnNo == 6) {
-                final Map<String, Object> selectorSecondaryGroupsAndRoles = and(List.of(typeSelector,
-                        emptySecondaryDepartmentsAndRolesSelector));
-                PostFindOptions.Builder emptySecondaryGroupsAndRolesQb = getConnector().getQueryBuilder()
-                        .selector(selectorSecondaryGroupsAndRoles);
-                emptySecondaryGroupsAndRolesQb.skip(pageData.getDisplayStart());
-                if (rowsPerPage != -1) {
-                    emptySecondaryGroupsAndRolesQb.limit(rowsPerPage);
-                }
-                List<User> userList = getConnector()
-                        .getQueryResult(emptySecondaryGroupsAndRolesQb.build(), User.class);
-                if (ascending) {
-                    userList.addAll(users);
-                    users = userList;
-                } else {
-                    users.addAll(userList);
-                }
-            }
+            users = getConnector().getQueryResultPaginated(qb, User.class, pageData, sortSelector);
         } catch (Exception e) {
             log.error("Error getting users", e);
         }
@@ -302,5 +263,38 @@ public class UserRepository extends SummaryAwareRepository<User> {
     public User getByOidcClientId(String clientId) {
         final Set<String> userIds = queryForIdsAsValue("byOidcClientId", clientId);
         return getUserFromIds(userIds);
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null) {
+                for (String value : entry.getValue()) {
+                    if (value.isEmpty()) {
+                        continue;
+                    }
+                    andConditions.add(eq(entry.getKey(), value));
+                }
+            }
+        }
+        return and(andConditions);
+    }
+
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
+        boolean ascending = pageData.isAscending();
+        return switch (UserSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case UserSortColumn.BY_LASTNAME ->
+                    Collections.singletonMap("lastname", ascending ? "asc" : "desc");
+            case UserSortColumn.BY_EMAIL ->
+                    Collections.singletonMap("email", ascending ? "asc" : "desc");
+            case UserSortColumn.BY_STATUS ->
+                    Collections.singletonMap("deactivated", ascending ? "asc" : "desc");
+            case UserSortColumn.BY_DEPARTMENT ->
+                    Collections.singletonMap("department", ascending ? "asc" : "desc");
+            case UserSortColumn.BY_ROLE ->
+                    Collections.singletonMap("userGroup", ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap("givenname", ascending ? "asc" : "desc"); // Default sort by name
+        };
     }
 }

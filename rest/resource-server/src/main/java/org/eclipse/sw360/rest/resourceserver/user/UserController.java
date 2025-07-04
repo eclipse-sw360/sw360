@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -52,7 +53,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import org.springframework.data.domain.Pageable;
@@ -65,7 +65,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 import java.util.stream.Collectors;
@@ -108,72 +107,42 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request,
-            @Parameter(description = "fullName of the users") @RequestParam(value = "givenname",
-                    required = false) String givenname,
-            @RequestParam(value = "email", required = false) String email,
-            @Parameter(description = "luceneSearch parameter to filter the users.") @RequestParam(
-                    value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "Given Name of the users")
+            @RequestParam(value = "givenname", required = false) String givenname,
+            @Parameter(description = "Last Name of the users")
             @RequestParam(value = "lastname", required = false) String lastname,
+            @Parameter(description = "Email of the user")
+            @RequestParam(value = "email", required = false) String email,
+            @Parameter(description = "Department of the users")
             @RequestParam(value = "department", required = false) String department,
-            @RequestParam(value = "usergroup", required = false) UserGroup usergroup
+            @Parameter(description = "Role of the users")
+            @RequestParam(value = "usergroup", required = false) UserGroup usergroup,
+            @Parameter(description = "luceneSearch parameter to filter the users.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
-        PaginationResult<User> paginationResult = null;
-        List<User> sw360Users = new ArrayList<>();
-        boolean isSearchByName = givenname != null && !givenname.isEmpty();
-        boolean isSearchByLastName = lastname != null && !lastname.isEmpty();
-        boolean isSearchByDepartment = CommonUtils.isNotNullEmptyOrWhitespace(department);
-        boolean isUserGroup = usergroup != null && !Objects.equals(usergroup, "");
+
+        Map<PaginationData, List<User>> paginatedUsers = null;
+        Map<String, Set<String>> filterMap = getFilterMap(givenname, lastname, email, department,
+                usergroup, luceneSearch);
         if (luceneSearch) {
-            Map<String, Set<String>> filterMap = new HashMap<>();
-            if (CommonUtils.isNotNullEmptyOrWhitespace(givenname)) {
-                Set<String> values = CommonUtils.splitToSet(givenname);
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
-            }
-            if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
-                Set<String> values = CommonUtils.splitToSet(email);
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(User._Fields.EMAIL.getFieldName(), values);
-            }
-            if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
-                Set<String> values = CommonUtils.splitToSet(department);
-                filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
-            }
-            if (isUserGroup) {
-                Set<String> values = CommonUtils.splitToSet(usergroup.toString());
-                filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
-            }
-            if (CommonUtils.isNotNullEmptyOrWhitespace(lastname)) {
-                Set<String> values = CommonUtils.splitToSet(lastname);
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
-            }
-            List<User> userByGivenName = userService.refineSearch(filterMap);
-            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                    userByGivenName, SW360Constants.TYPE_USER);
+            paginatedUsers = userService.refineSearch(filterMap, pageable);
         } else {
-            if (isSearchByName) {
-                sw360Users.addAll(userService.searchUserByName(givenname));
-            } else if (isSearchByLastName) {
-                sw360Users.addAll(userService.searchUserByLastName(lastname));
-            } else if (isSearchByDepartment) {
-                sw360Users.addAll(userService.searchUserByDepartment(department));
-            } else if (isUserGroup) {
-                sw360Users.addAll(userService.searchUserByUserGroup(usergroup));
+            if (filterMap.isEmpty()) {
+                paginatedUsers = userService.getUsersWithPagination(pageable);
             } else {
-                sw360Users = userService.getAllUsers();
+                paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
             }
-            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                    sw360Users, SW360Constants.TYPE_USER);
         }
+        PaginationResult<User> paginationResult = null;
+        List<User> allUsers = new ArrayList<>(paginatedUsers.values().iterator().next());
+        int totalCount = Math.toIntExact(paginatedUsers.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+
+        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, allUsers, SW360Constants.TYPE_USER, totalCount);
+
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : paginationResult.getResources()) {
             User embeddedUser = restControllerHelper.convertToEmbeddedGetUsers(sw360User);
@@ -447,5 +416,52 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             case "secondary" -> new ResponseEntity<>(userService.getExistingSecondaryDepartments(), HttpStatus.OK);
             default -> new ResponseEntity<>("Type must be: primary or secondary", HttpStatus.BAD_REQUEST);
         };
+    }
+
+    /**
+     * Create a map of filters with the field name in the key and expected value in the value (as set).
+     * @return Filter map from the user's request.
+     */
+    private @NonNull Map<String, Set<String>> getFilterMap(
+            String givenName, String lastName, String email, String department,
+            UserGroup usergroup, boolean luceneSearch
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(givenName)) {
+            Set<String> values = CommonUtils.splitToSet(givenName);
+            if (luceneSearch) {
+                values = values.stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+            }
+            filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
+            Set<String> values = CommonUtils.splitToSet(email);
+            if (luceneSearch) {
+                values = values.stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareFuzzyQuery)
+                        .collect(Collectors.toSet());
+            }
+            filterMap.put(User._Fields.EMAIL.getFieldName(), values);
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
+            Set<String> values = CommonUtils.splitToSet(department);
+            filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
+        }
+        if (usergroup != null) {
+            Set<String> values = CommonUtils.splitToSet(usergroup.toString());
+            filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(lastName)) {
+            Set<String> values = CommonUtils.splitToSet(lastName);
+            if (luceneSearch) {
+                values = values.stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+            }
+            filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
+        }
+        return filterMap;
     }
 }

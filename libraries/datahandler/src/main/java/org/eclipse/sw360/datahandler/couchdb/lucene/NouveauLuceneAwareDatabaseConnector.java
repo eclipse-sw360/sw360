@@ -363,7 +363,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
 
     private static @NotNull String formatSubquery(@NotNull Set<String> filterSet, final String fieldName) {
         final Function<String, String> addType = input -> {
-            if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible") || fieldName.equals("createdBy")) {
+            if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible") || fieldName.equals("createdBy") || fieldName.equals("email")) {
                 return fieldName + ":\"" + input + "\"";
             } if (fieldName.equals("createdOn") || fieldName.equals("timestamp")) {
                 try {
