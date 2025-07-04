@@ -25,14 +25,19 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -146,45 +151,22 @@ public class Sw360UserService {
         sw360UserClient.updateUser(sw360User);
     }
 
-    public List<User> refineSearch(Map<String, Set<String>> filterMap) throws TException {
+    public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        return sw360UserClient.refineSearch(null, filterMap);
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360UserClient.refineSearch(null, filterMap, pageData);
     }
 
-    public List<User> searchUserByName(String givenname) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.searchUsers(givenname);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
+    public Map<PaginationData, List<User>> getUsersWithPagination(Pageable pageable) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360UserClient.getUsersWithPagination(null, pageData);
     }
 
-    public List<User> searchUserByLastName(String lastname) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.searchUsers(lastname);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public List<User> searchUserByDepartment(String department) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.searchDepartmentUsers(department);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public List<User> searchUserByUserGroup(UserGroup usergroup) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.searchUsersGroup(usergroup);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
+    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360UserClient.searchUsersByExactValues(filterMap, pageData);
     }
 
     public RestApiToken convertToRestApiToken(Map<String, Object> requestBody, User sw360User) {
@@ -291,5 +273,32 @@ public class Sw360UserService {
             log.error(e.getMessage());
             return Collections.emptySet();
         }
+    }
+
+    /**
+     * Converts a Pageable object to a PaginationData object.
+     *
+     * @param pageable the Pageable object to convert
+     * @return a PaginationData object representing the pagination information
+     */
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+        UserSortColumn column = UserSortColumn.BY_GIVENNAME;
+        boolean ascending = false;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "lastname" -> UserSortColumn.BY_LASTNAME;
+                case "email" -> UserSortColumn.BY_EMAIL;
+                case "status" -> UserSortColumn.BY_STATUS;
+                case "department" -> UserSortColumn.BY_DEPARTMENT;
+                case "role" -> UserSortColumn.BY_ROLE;
+                default -> column; // Default to BY_GIVENNAME if no match
+            };
+            ascending = order.isAscending();
+        }
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
 }
