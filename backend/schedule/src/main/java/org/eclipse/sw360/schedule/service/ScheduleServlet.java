@@ -10,8 +10,7 @@
  */
 package org.eclipse.sw360.schedule.service;
 
-import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.schedule.timer.ScheduleConstants;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 import org.apache.logging.log4j.LogManager;
@@ -44,8 +43,7 @@ public class ScheduleServlet extends Sw360ThriftServlet {
 
     private void autoStart() throws TException {
         log.info("Auto-starting scheduling tasks in schedule service...");
-        String autostartServicesString = SW360Utils.readConfig(SW360ConfigKeys.AUTOSTART_PROPERTY_NAME, "");
-        String[] servicesToSchedule = autostartServicesString.split(",");
+        String[] servicesToSchedule = ScheduleConstants.autostartServices;
         for (String serviceName : servicesToSchedule) {
             String cleanServiceName = serviceName.trim();
             if (!cleanServiceName.isEmpty()) {

@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 
@@ -635,7 +636,7 @@ public class LicenseDatabaseHandler {
         return license;
     }
 
-    public License setLicenseForChangelogs(License license) {
+    public License setLicenseForChangelogs(License license) throws SW360Exception {
         License licenseForChangelogs = license.deepCopy();
         if (licenseForChangelogs.isSetLicenseTypeDatabaseId()) {
             LicenseType licenseTypeForChangelogs = getLicenseTypeById(licenseForChangelogs.getLicenseTypeDatabaseId());
@@ -856,8 +857,12 @@ public class LicenseDatabaseHandler {
         return getObligationsByIds(ids);
     }
 
-    public LicenseType getLicenseTypeById(String id) {
-        return licenseTypeRepository.get(id);
+    public LicenseType getLicenseTypeById(String id) throws SW360Exception {
+        LicenseType licenseType = licenseTypeRepository.get(id);
+        if (licenseType == null) {
+            throw fail(404,"License type not found with ID:" + id);
+        }
+        return licenseType;
     }
 
     public Obligation getObligationsById(String id) {
