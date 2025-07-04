@@ -260,6 +260,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("id") String id
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+        restControllerHelper.throwIfReadOnlyUser(user);
         Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
         Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
 
@@ -795,6 +796,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfReadOnlyUser(sw360User);
         List<Component> sw360Components = componentService.getMyComponentsForUser(sw360User);
         PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                 sw360Components, SW360Constants.TYPE_COMPONENT);

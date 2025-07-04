@@ -57,16 +57,17 @@ public class EndpointsFilter extends OncePerRequestFilter {
         String[] endpointMethodPairs = endpointsTobeBlackListed.split(",");
         Map<String, Set<String>> endpointHttpMethods = getMapOfEndpointToHttpMethods(endpointMethodPairs);
         boolean isAMatch = verifyMatchingOfRequestURIToEndpoints(requestURI, endpointHttpMethods);
+        User user = restControllerHelper.getSw360UserFromAuthentication();
 
         if (Arrays.asList("POST", "PATCH", "PUT", "DELETE").contains(method) && !isAMatch) {
-            User user = restControllerHelper.getSw360UserFromAuthentication();
-
-            // Inline check for Security User role having read only access
-            if (user.getUserGroup().name().equals("SECURITY_USER")) {
+            // Inline check for Security User role and Viewer role having read only access
+            if (user.getUserGroup().name().equals("SECURITY_USER") || user.getUserGroup().name().equals("VIEWER")) {
                 response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
             } else {
                 filterChain.doFilter(request, response);
             }
+        } else if (user != null && user.getUserGroup() != null && user.getUserGroup().name().equals("VIEWER") && (requestURI.contains("/projects") || requestURI.contains("/clearingrequest") || requestURI.contains("/moderationrequest") || requestURI.contains("/api/ecc") || requestURI.contains("/api/vendors") || requestURI.contains("/api/obligations"))) {
+            response.sendError(HttpStatus.FORBIDDEN.value());
         } else if (!isAMatch) {
             filterChain.doFilter(request, response);
         } else {
