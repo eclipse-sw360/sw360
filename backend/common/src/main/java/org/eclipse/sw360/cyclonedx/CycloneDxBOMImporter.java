@@ -34,6 +34,7 @@ import org.cyclonedx.model.Metadata;
 import org.cyclonedx.parsers.JsonParser;
 import org.cyclonedx.parsers.Parser;
 import org.cyclonedx.parsers.XmlParser;
+import org.eclipse.sw360.common.utils.RepositoryURL;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
@@ -75,6 +76,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
 
+import static org.eclipse.sw360.common.utils.RepositoryURL.*;
+
 /**
  * CycloneDX BOM import implementation.
  * Supports both XML and JSON format of CycloneDX SBOM
@@ -107,25 +110,14 @@ public class CycloneDxBOMImporter {
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
     private static final String REDIRECTED_VCS = "redirectedVCS";
-    private static final Predicate<ExternalReference.Type> typeFilter = type -> ExternalReference.Type.VCS.equals(type);
-
-    private Set<String> redirectedUrls = new HashSet<>();
+    private static final Predicate<ExternalReference.Type> typeFilter = Type.VCS::equals;
 
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
     private final PackageDatabaseHandler packageDatabaseHandler;
     private final User user;
     private final AttachmentConnector attachmentConnector;
-
-    // Map of supported hosts and base URL formats
-    private static final Map<String, String> VCS_HOSTS = Map.of(
-            "github.com", "https://github.com/%s/%s",
-            "gitlab.com", "https://gitlab.com/%s/%s",
-            "bitbucket.org", "https://bitbucket.org/%s/%s",
-            "cs.opensource.google", "https://cs.opensource.google/%s/%s",
-            "go.googlesource.com", "https://go.googlesource.com/%s",
-            "pypi.org", "https://pypi.org/project/%s"
-    );
+    private final RepositoryURL repositoryURL;
 
     public CycloneDxBOMImporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
             PackageDatabaseHandler packageDatabaseHandler, AttachmentConnector attachmentConnector, User user) {
@@ -134,6 +126,7 @@ public class CycloneDxBOMImporter {
         this.packageDatabaseHandler = packageDatabaseHandler;
         this.attachmentConnector = attachmentConnector;
         this.user = user;
+        this.repositoryURL = new RepositoryURL();
     }
 
     /**
@@ -150,11 +143,10 @@ public class CycloneDxBOMImporter {
                         .filter(Objects::nonNull)
                         .filter(ref -> ExternalReference.Type.VCS.equals(ref.getType()))
                         .map(ExternalReference::getUrl)
-                        .map(url -> sanitizeVCS(url.toLowerCase()))
-                        .filter(url -> CommonUtils.isValidUrl(url))
-                        .map(url -> getFinalURL(url))
+                        .filter(CommonUtils::isNotNullEmptyOrWhitespace)
+                        .map(url -> repositoryURL.processURL(url))
                         .map(url -> new AbstractMap.SimpleEntry<>(url, comp)))
-                .collect(Collectors.groupingBy(e -> e.getKey(),
+                .collect(Collectors.groupingBy(AbstractMap.SimpleEntry::getKey,
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 
@@ -294,7 +286,7 @@ public class CycloneDxBOMImporter {
                         // all components does not have VCS, so return & show appropriate error in UI
                         messageMap.put(INVALID_COMPONENT, String.join(JOINER, componentsWithoutVcs));
                         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
-                        messageMap.put(REDIRECTED_VCS, String.join(JOINER, this.redirectedUrls));
+                        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRiderctedUrls()));
                         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
                         messageMap.put(SW360Constants.MESSAGE,
                                 String.format("VCS information is missing for <b>%s</b> / <b>%s</b> Components!",
@@ -723,7 +715,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(DUPLICATE_RELEASE, String.join(JOINER, duplicateReleases));
         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
         messageMap.put(INVALID_RELEASE, String.join(JOINER, invalidReleases));
-        messageMap.put(REDIRECTED_VCS, String.join(JOINER, this.redirectedUrls));
+        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRiderctedUrls()));
         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
         messageMap.put(PROJECT_ID, project.getId());
         messageMap.put(PROJECT_NAME, SW360Utils.getVersionedName(project.getName(), project.getVersion()));
@@ -1003,99 +995,6 @@ public class CycloneDxBOMImporter {
         return comp.getName();
     }
 
-    private String getComponentNameFromVCS(String vcsUrl, boolean isGetVendorandName) {
-        String compName = vcsUrl.replaceAll(SCHEMA_PATTERN, "$1");
-        String[] parts = compName.split("/");
-
-        if (parts.length >= 2) {
-            if (isGetVendorandName) {
-                return String.join("/", Arrays.copyOfRange(parts, 1, parts.length));
-            } else {
-                return parts[parts.length - 1];
-            }
-        }
-        return compName;
-    }
-
-    /*
-     * Sanitize different repository URLS based on their defined schema
-     */
-    public String sanitizeVCS(String vcs) {
-        for (String host : VCS_HOSTS.keySet()) {
-            if (vcs.contains(host)) {
-                return sanitizeVCSByHost(vcs, host);
-            }
-        }
-        return vcs; // Return unchanged if no known host is found
-    }
-
-    private String sanitizeVCSByHost(String vcs, String host) {
-        vcs = "https://" + vcs.substring(vcs.indexOf(host)).trim();
-
-        try {
-            URI uri = URI.create(vcs);
-            String[] urlParts = uri.getPath().split("/");
-            String formattedUrl = formatVCSUrl(host, urlParts);
-
-            if (formattedUrl == null) {
-                log.error("Invalid {} repository URL: {}", host, vcs);
-                return vcs;
-            }
-            return formattedUrl.endsWith("/") ? formattedUrl.substring(0, formattedUrl.length() - 1) : formattedUrl;
-
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid URL format: {}", vcs, e);
-            return vcs;
-        }
-    }
-
-    private String formatVCSUrl(String host, String[] urlParts) {
-        String formattedUrl = null;
-
-        switch (host) {
-            case "github.com":
-            case "bitbucket.org":
-                if (urlParts.length >= 3) {
-                    formattedUrl = String.format(VCS_HOSTS.get(host),
-                            urlParts[1], urlParts[2].replaceAll("\\.git.*|#.*", ""));
-                }
-                break;
-
-            case "gitlab.com":
-                if (urlParts.length >= 2) {
-                    // Join everything after the main host to get the full nested path
-                    String repoPath = String.join("/", Arrays.copyOfRange(urlParts, 1, urlParts.length));
-
-                    // Remove everything from the first occurrence of .git or #
-                    repoPath = repoPath.replaceAll("\\.git.*|#.*", "");
-
-                    formattedUrl = String.format(VCS_HOSTS.get(host), repoPath);
-                }
-                break;
-
-            case "cs.opensource.google":
-                if (urlParts.length >= 3) {
-                    String thirdSegment = urlParts.length > 3 && !urlParts[3].isEmpty() && !urlParts[3].equals("+")
-                            ? urlParts[3] : "";
-                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[1], urlParts[2], thirdSegment);
-                }
-                break;
-
-            case "go.googlesource.com":
-                if (urlParts.length >= 2) {
-                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[1]);
-                }
-                break;
-
-            case "pypi.org":
-                if (urlParts.length >= 3) {
-                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[2].replaceAll("\\.git.*|#.*", ""));
-                }
-                break;
-        }
-
-        return formattedUrl;
-    }
 
     public static boolean containsComp(Map<String, List<org.cyclonedx.model.Component>> map, org.cyclonedx.model.Component element) {
         for (List<org.cyclonedx.model.Component> list : map.values()) {
@@ -1106,60 +1005,4 @@ public class CycloneDxBOMImporter {
         return false;
     }
 
-    public String getFinalURL(String urlString) {
-        URL url;
-        try {
-            url = new URL(urlString);
-        } catch (MalformedURLException e) {
-            log.error("Invalid URL format: {}", e.getMessage());
-            return urlString;
-        }
-
-        int redirectCount = 0;
-
-        while (redirectCount < SW360Constants.VCS_REDIRECTION_LIMIT) {
-            try {
-                HttpURLConnection connection = openConnection(url);
-                int status = connection.getResponseCode();
-
-                if (status == HttpURLConnection.HTTP_MOVED_PERM || status == 308) {
-                    String newUrl = connection.getHeaderField("Location");
-                    connection.disconnect();
-
-                    // Resolve relative URLs
-                    url = new URL(url, newUrl);
-
-                    if (!"https".equalsIgnoreCase(url.getProtocol())) {
-                        log.error("Insecure redirection to non-HTTPS URL: {}", url);
-                        return urlString;
-                    }
-
-                    redirectCount++;
-                    this.redirectedUrls.add(urlString);
-                } else {
-                    connection.disconnect();
-                    break;
-                }
-            } catch (IOException e) {
-                log.error("Error during redirection handling: {}", e.getMessage());
-                return urlString;
-            }
-        }
-
-        if (redirectCount == 0 || redirectCount == SW360Constants.VCS_REDIRECTION_LIMIT) {
-            if (redirectCount == SW360Constants.VCS_REDIRECTION_LIMIT) {
-                log.error("Exceeded maximum redirect limit. Returning original URL.");
-            }
-            return urlString;
-        }
-        return sanitizeVCS(url.toString());
-    }
-
-    private static HttpURLConnection openConnection(URL url) throws IOException{
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setInstanceFollowRedirects(false);
-        connection.setConnectTimeout(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT);
-        connection.setReadTimeout(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT);
-        return connection;
-    }
 }

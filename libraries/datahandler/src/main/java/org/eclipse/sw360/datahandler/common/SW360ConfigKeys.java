@@ -63,6 +63,11 @@ public class SW360ConfigKeys {
 
     public static final String SKIP_DOMAINS_FOR_VALID_SOURCE_CODE = "release.sourcecodeurl.skip.domains";
 
+    //Properties used by the RepositoryURL class to handle VCS from SBOM
+    public static final String VCS_HOSTS = "vcs.hosts";
+    public static final String VCS_REDIRECTION_LIMIT = "vcs.redirection.limit";
+    public static final String VCS_REDIRECTION_TIMEOUT_LIMIT = "vcs.redirection.timeout.limit";
+
     // Properties purely used by UI
     // This property is used in Project Administration
     public static final String UI_CLEARING_TEAMS = "ui.clearing.teams";
