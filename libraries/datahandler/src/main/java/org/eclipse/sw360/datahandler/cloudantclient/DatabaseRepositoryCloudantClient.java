@@ -572,6 +572,7 @@ public class DatabaseRepositoryCloudantClient<T> {
         if (!isReduced) {
             PostViewOptions.Builder countQuery = query.newBuilder();
             countQuery.includeDocs(false);
+            countQuery.limit(1);
             pageData.setTotalRowCount(getViewTotalCount(countQuery.build()));
         } else {
             pageData.setTotalRowCount(viewReduceSum(query));
