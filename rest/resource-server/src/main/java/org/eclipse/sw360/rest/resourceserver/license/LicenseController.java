@@ -613,4 +613,43 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                 throw new RuntimeException("Unexpected error occurred while deleting license type.");
         }
     }
+
+    @Operation(
+            summary = "Check if a license type is being used and get the count.",
+            description = "Returns whether the license type is being used and the total count of such licenses.",
+            tags = {"License Types"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "LicenseType usage information",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                            {
+                                                              isUsed: true,
+                                                              count: 5
+                                                            }
+                                                            """
+                                            )
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = " 403", description = "User is not an admin"
+                    )
+            }
+    )
+    @GetMapping(value = LICENSE_TYPES_URL + "/{licenseTypeId}/usage", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> getLicenseTypeUsage(
+            @PathVariable("licenseTypeId") String licenseTypeId
+    ) throws  TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        int count;
+        count = licenseService.getLicenseTypeUsageCount(licenseTypeId, sw360User);
+        boolean isUsed = count > 0;
+        Map<String, Object> response = new HashMap<>();
+        response.put("isUsed", isUsed);
+        response.put("count", count);
+        return ResponseEntity.ok(response);
+    }
 }

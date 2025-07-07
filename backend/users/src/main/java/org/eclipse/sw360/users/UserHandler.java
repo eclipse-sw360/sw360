@@ -181,9 +181,14 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public List<User> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions)
+    public Map<PaginationData, List<User>> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, PaginationData pageData)
             throws TException {
-        return db.search(text, subQueryRestrictions);
+        return db.search(text, subQueryRestrictions, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
+        return db.searchUsersByExactValues(subQueryRestrictions, pageData);
     }
 
     @Override

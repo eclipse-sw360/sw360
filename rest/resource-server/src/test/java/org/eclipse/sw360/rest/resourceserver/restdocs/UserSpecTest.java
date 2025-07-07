@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import com.google.common.collect.Sets;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -131,7 +132,18 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                 invocation -> new User("test@sw360.org", "DEPARTMENT").setId("1234567890").setFullname("FTest lTest")
                         .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.USER));
         given(this.userServiceMock.getUserByEmailOrExternalId(any())).willReturn(user);
-        when(userServiceMock.refineSearch(any())).thenReturn(mockUserList);
+        when(userServiceMock.refineSearch(any(), any())).thenReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(mockUserList.size()).setDisplayStart(0).setTotalRowCount(mockUserList.size()),
+                        mockUserList.stream().toList()
+                )
+        );
+        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(mockUserList.size()).setDisplayStart(0).setTotalRowCount(mockUserList.size()),
+                        mockUserList.stream().toList()
+                )
+        );
 
         User user2 = new User();
         user2.setEmail("jane@sw360.org");
