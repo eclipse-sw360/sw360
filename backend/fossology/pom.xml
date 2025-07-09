@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
   ~
   ~ This program and the accompanying materials are made
   ~ available under the terms of the Eclipse Public License 2.0
@@ -21,20 +22,37 @@
     <artifactId>backend-fossology</artifactId>
     <packaging>war</packaging>
     <name>backend-fossology</name>
+    <description>SW360 FOSSology Integration with v2 API Support</description>
+    
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <fossology.api.version>v2</fossology.api.version>
     </properties>
-    <build><finalName>fossology</finalName></build>
+    
+    <build>
+        <finalName>fossology</finalName>
+    </build>
+    
     <dependencies>
+        <!-- Core SW360 Dependencies -->
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>backend-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        
+        <!-- SSH Support -->
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
         </dependency>
+        
+        <!-- Spring Framework - Use explicit versions to avoid issues -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
@@ -55,9 +73,126 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
+        
+        <!-- JSON Processing - Enhanced for v2 API -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        
+        <!-- Apache Commons Lang for utilities -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        
+        <!-- HTTP Client for enhanced v2 API support -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        
+        <!-- Commons IO for file handling improvements -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+        
+        <!-- Additional Test Dependencies -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+        </dependency>
     </dependencies>
+    
+    <profiles>
+        <!-- Development Profile -->
+        <profile>
+            <id>dev</id>
+            <properties>
+                <fossology.log.level>DEBUG</fossology.log.level>
+                <fossology.api.version>v2</fossology.api.version>
+            </properties>
+        </profile>
+        
+        <!-- Production Profile -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <fossology.log.level>INFO</fossology.log.level>
+                <fossology.api.version>v2</fossology.api.version>
+            </properties>
+        </profile>
+        
+        <!-- Enhanced Test Profile for v2 API -->
+        <profile>
+            <id>v2-tests</id>
+            <dependencies>
+                <!-- Only add spring-test in test profile with explicit version -->
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-test</artifactId>
+                    <version>${springframework.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                
+                <!-- JSON Path for testing JSON responses -->
+                <dependency>
+                    <groupId>com.jayway.jsonpath</groupId>
+                    <artifactId>json-path</artifactId>
+                    <scope>test</scope>
+                </dependency>
+                
+                <!-- WireMock for mocking FOSSology v2 API -->
+                <dependency>
+                    <groupId>org.wiremock</groupId>
+                    <artifactId>wiremock</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/*Test.java</include>
+                                <include>**/*V2ApiTest.java</include>
+                                <include>**/*V2IntegrationTest.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <fossology.api.version>v2</fossology.api.version>
+                                <fossology.test.mock>true</fossology.test.mock>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <!-- Legacy v1 compatibility profile -->
+        <profile>
+            <id>v1-compat</id>
+            <properties>
+                <fossology.api.version>v1</fossology.api.version>
+            </properties>
+        </profile>
+    </profiles>
 </project>
