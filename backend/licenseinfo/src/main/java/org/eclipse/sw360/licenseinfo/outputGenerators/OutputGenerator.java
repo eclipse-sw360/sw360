@@ -33,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.StringWriter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -247,8 +248,8 @@ public abstract class OutputGenerator<T> {
      * @return rendered template
      */
     protected String renderTemplateWithDefaultValues(Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
-            String file, String projectTitle, String licenseInfoHeaderText, String obligationsText,
-            Map<String, String> externalIds, boolean excludeReleaseVersion) {
+                                                     String file, String projectTitle, String licenseInfoHeaderText, String obligationsText,
+                                                     Map<String, String> externalIds, boolean excludeReleaseVersion) {
         VelocityContext vc = getConfiguredVelocityContext();
         // set header
         vc.put(LICENSE_INFO_PROJECT_TITLE, projectTitle);
@@ -257,16 +258,23 @@ public abstract class OutputGenerator<T> {
 
         // sorted lists of all license to be displayed at the end of the file at once
         List<LicenseNameWithText> licenseNamesWithTexts = getSortedLicenseNameWithTexts(projectLicenseInfoResults);
-        vc.put(ALL_LICENSE_NAMES_WITH_TEXTS, licenseNamesWithTexts);
-        // assign a reference id to each license in order to only display references for
-        // each release. The references will point to
-        // the list with all details at the and of the file (see above)
+        Set<String> seenLicenseTextsForAll = new HashSet<>();
+        List<LicenseNameWithText> dedupedLicenseNamesWithTexts = new ArrayList<>();
+        for (LicenseNameWithText lnt : licenseNamesWithTexts) {
+            String licenseText = lnt.getLicenseText();
+            if (licenseText != null && !licenseText.isEmpty() && !seenLicenseTextsForAll.contains(licenseText)) {
+                dedupedLicenseNamesWithTexts.add(lnt);
+                seenLicenseTextsForAll.add(licenseText);
+            } else if (licenseText == null || licenseText.isEmpty()) {
+                dedupedLicenseNamesWithTexts.add(lnt);
+            }
+        }
+        vc.put(ALL_LICENSE_NAMES_WITH_TEXTS, dedupedLicenseNamesWithTexts); // we need to send only filtered values to vm file, it's using at the end
+
+        // assign a reference id to each license in order to only display references for each release
         int referenceId = 1;
         Map<LicenseNameWithText, Integer> licenseToReferenceId = Maps.newHashMap();
-        for (LicenseNameWithText licenseNamesWithText : licenseNamesWithTexts) {
-            licenseToReferenceId.put(licenseNamesWithText, referenceId++);
-        }
-        vc.put(LICENSE_REFERENCE_ID_MAP_CONTEXT_PROPERTY, licenseToReferenceId);
+        Map<String, Integer> licenseTextToReferenceId = new HashMap<>();
 
         Map<Boolean, List<LicenseInfoParsingResult>> partitionedResults =
                 projectLicenseInfoResults.stream().collect(Collectors.partitioningBy(r -> r.getStatus() == LicenseInfoRequestStatus.SUCCESS));
@@ -274,16 +282,119 @@ public abstract class OutputGenerator<T> {
 
         Map<String, List<LicenseInfoParsingResult>> badResultsPerRelease = excludeReleaseVersion
                 ? partitionedResults.get(false).stream()
-                        .collect(Collectors.groupingBy(this::getComponentLongNameWithoutVersion))
+                .collect(Collectors.groupingBy(this::getComponentLongNameWithoutVersion))
                 : partitionedResults.get(false).stream().collect(Collectors.groupingBy(this::getComponentLongName));
         vc.put(LICENSE_INFO_ERROR_RESULTS_CONTEXT_PROPERTY, badResultsPerRelease);
 
         // be sure that the licenses inside a release are sorted by id. This looks nicer
         SortedMap<String, LicenseInfoParsingResult> sortedLicenseInfos = getSortedLicenseInfos(goodResults, excludeReleaseVersion);
-        // this will effectively change the objects in the collection and therefore the
-        // objects in the sorted map above
-        sortLicenseNamesWithinEachLicenseInfoById(sortedLicenseInfos.values(), licenseToReferenceId);
-        vc.put(LICENSE_INFO_RESULTS_CONTEXT_PROPERTY, sortedLicenseInfos);
+
+        SortedMap<String, LicenseInfoParsingResult> dedupedLicenseInfos = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> seenLicenseTexts = new HashSet<>();
+        AtomicInteger duplicateCounter = new AtomicInteger(1);
+
+        Map<LicenseNameWithText, String> duplicateToOriginalText = new HashMap<>();
+
+        for (Map.Entry<String, LicenseInfoParsingResult> entry : sortedLicenseInfos.entrySet()) {
+            LicenseInfoParsingResult originalResult = entry.getValue();
+            LicenseInfo originalInfo = originalResult.getLicenseInfo();
+
+            if (originalInfo == null || originalInfo.getLicenseNamesWithTexts() == null) {
+                dedupedLicenseInfos.put(entry.getKey(), originalResult);
+                continue;
+            }
+
+            Set<LicenseNameWithText> newLicenseNamesWithTexts = new HashSet<>();
+            for (LicenseNameWithText lnt : originalInfo.getLicenseNamesWithTexts()) {
+                String licenseText = lnt.getLicenseText();
+                if (licenseText != null && !licenseText.isEmpty() && seenLicenseTexts.contains(licenseText)) {
+                    // Duplicate found, create new object without licenseText and with modified type
+                    LicenseNameWithText duplicate = new LicenseNameWithText(lnt);
+                    duplicate.setLicenseText(null);
+                    String newType = (lnt.getType() != null ? lnt.getType() : "unknown") + "_duplicate" + duplicateCounter.getAndIncrement();
+                    duplicate.setType(newType);
+                    newLicenseNamesWithTexts.add(duplicate);
+                    // Track which original licenseText this duplicate refers to
+                    duplicateToOriginalText.put(duplicate, licenseText);
+                } else {
+                    newLicenseNamesWithTexts.add(lnt);
+                    if (licenseText != null && !licenseText.isEmpty()) {
+                        seenLicenseTexts.add(licenseText);
+                    }
+                }
+            }
+
+            LicenseInfo newInfo = new LicenseInfo(originalInfo);
+            newInfo.setLicenseNamesWithTexts(newLicenseNamesWithTexts);
+            LicenseInfoParsingResult newResult = new LicenseInfoParsingResult(originalResult);
+            newResult.setLicenseInfo(newInfo);
+            dedupedLicenseInfos.put(entry.getKey(), newResult);
+        }
+
+        // Use dedupedLicenseInfos for the Velocity context
+        List<LicenseNameWithText> allDedupedLicenseNamesWithTexts = dedupedLicenseInfos.values().stream()
+                .map(LicenseInfoParsingResult::getLicenseInfo)
+                .filter(Objects::nonNull)
+                .map(LicenseInfo::getLicenseNamesWithTexts)
+                .filter(Objects::nonNull)
+                .flatMap(Set::stream)
+                .collect(Collectors.toList());
+
+        // sort allDedupedLicenseNamesWithTexts based on license name before processing
+        allDedupedLicenseNamesWithTexts.sort(Comparator.comparing(LicenseNameWithText::getLicenseName, String.CASE_INSENSITIVE_ORDER));
+
+        for (LicenseNameWithText licenseNamesWithText : allDedupedLicenseNamesWithTexts) {
+            String licenseText = licenseNamesWithText.getLicenseText();
+
+            if (duplicateToOriginalText.containsKey(licenseNamesWithText)) {
+                // This is a duplicate, assign the referenceId of the original
+                String originalLicenseText = duplicateToOriginalText.get(licenseNamesWithText);
+                Integer originalRefId = licenseTextToReferenceId.get(originalLicenseText);
+                if (originalRefId != null) {
+                    licenseToReferenceId.put(licenseNamesWithText, originalRefId);
+                } else {
+                    // Fallback: assign new if original not found (should not happen)
+                    licenseToReferenceId.put(licenseNamesWithText, referenceId++);
+                }
+            } else {
+                if (licenseTextToReferenceId.containsKey(licenseText)) {
+                    licenseToReferenceId.put(licenseNamesWithText, licenseTextToReferenceId.get(licenseText));
+                } else {
+                    licenseTextToReferenceId.put(licenseText, referenceId);
+                    licenseToReferenceId.put(licenseNamesWithText, referenceId++);
+                }
+            }
+        }
+        Map<LicenseNameWithText, Integer> sortedLicenseToReferenceId = licenseToReferenceId.entrySet().stream()
+                .sorted(
+                        Comparator
+                                .comparing((Map.Entry<LicenseNameWithText, Integer> e) -> e.getKey().getLicenseName(), String.CASE_INSENSITIVE_ORDER)
+                                .thenComparing(Map.Entry::getValue)
+                                .thenComparing(e -> e.getKey().getLicenseText() == null ? 1 : 0)
+                )
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
+
+        vc.put(LICENSE_REFERENCE_ID_MAP_CONTEXT_PROPERTY, sortedLicenseToReferenceId);
+
+        sortLicenseNamesWithinEachLicenseInfoById(dedupedLicenseInfos.values(), sortedLicenseToReferenceId);
+
+        // Sort LicenseNamesWithTexts inside each LicenseInfo by license name (case-insensitive)
+        for (LicenseInfoParsingResult result : dedupedLicenseInfos.values()) {
+            LicenseInfo info = result.getLicenseInfo();
+            if (info != null && info.getLicenseNamesWithTexts() != null) {
+                Set<LicenseNameWithText> sortedSet = info.getLicenseNamesWithTexts().stream()
+                        .sorted(Comparator.comparing(LicenseNameWithText::getLicenseName, String.CASE_INSENSITIVE_ORDER))
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+                info.setLicenseNamesWithTexts(sortedSet);
+            }
+        }
+
+        vc.put(LICENSE_INFO_RESULTS_CONTEXT_PROPERTY, dedupedLicenseInfos);
 
         // also display acknowledgments
         SortedMap<String, Set<String>> acknowledgements = getSortedAcknowledgements(sortedLicenseInfos);
@@ -311,7 +422,7 @@ public abstract class OutputGenerator<T> {
             Map<LicenseNameWithText, Integer> licenseToReferenceId) {
         licenseInfoResults.stream().map(LicenseInfoParsingResult::getLicenseInfo).filter(Objects::nonNull)
                 .forEach((LicenseInfo li) -> li.setLicenseNamesWithTexts(
-                        sortSet(li.getLicenseNamesWithTexts(), licenseNameWithText -> licenseToReferenceId.get(licenseNameWithText))));
+                        sortSet(li.getLicenseNamesWithTexts(), licenseNameWithText -> Optional.ofNullable(licenseToReferenceId.get(licenseNameWithText)).orElse(Integer.MAX_VALUE))));
     }
 
     /**
