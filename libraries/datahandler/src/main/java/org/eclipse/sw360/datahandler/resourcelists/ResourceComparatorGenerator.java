@@ -59,6 +59,8 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<ModerationRequest._Fields, Comparator<ModerationRequest>> moderationRequestMap = generateModerationRequestMap();
     private static final Map<Comment._Fields, Comparator<Comment>> commentMap = generateCommentMap();
     private static final Map<ClearingRequest._Fields, Comparator<ClearingRequest>> clearingRequestMap = generateClearingRequestMap();
+    private static final Comparator<Boolean> booleanComparator = Comparator.comparing(Boolean::booleanValue, Comparator.nullsFirst(Boolean::compareTo));
+    private static final Comparator<Double> doubleComparator = Comparator.comparing(Double::doubleValue, Comparator.nullsFirst(Double::compareTo));
 
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
@@ -84,6 +86,11 @@ public class ResourceComparatorGenerator<T> {
         Map<User._Fields, Comparator<User>> userMap = new HashMap<>();
         userMap.put(User._Fields.FULLNAME, Comparator.comparing(User::getFullname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         userMap.put(User._Fields.EMAIL, Comparator.comparing(User::getEmail, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put(User._Fields.GIVENNAME, Comparator.comparing(User::getGivenname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put(User._Fields.LASTNAME, Comparator.comparing(User::getLastname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put(User._Fields.DEACTIVATED, Comparator.comparing(User::isDeactivated, Comparator.nullsFirst(booleanComparator)));
+        userMap.put(User._Fields.DEPARTMENT, Comparator.comparing(User::getDepartment, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put(User._Fields.USER_GROUP, Comparator.comparing(u -> Optional.ofNullable(u.getUserGroup()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(userMap);
     }
 
@@ -176,6 +183,9 @@ public class ResourceComparatorGenerator<T> {
         vulMap.put(Vulnerability._Fields.EXTERNAL_ID, Comparator.comparing(Vulnerability::getExternalId, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         vulMap.put(Vulnerability._Fields.TITLE, Comparator.comparing(Vulnerability::getTitle, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         vulMap.put(Vulnerability._Fields.PRIORITY, Comparator.comparing(Vulnerability::getPriority, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        vulMap.put(Vulnerability._Fields.CVSS, Comparator.comparing(Vulnerability::getCvss, Comparator.nullsFirst(doubleComparator)));
+        vulMap.put(Vulnerability._Fields.PUBLISH_DATE, Comparator.comparing(Vulnerability::getPublishDate, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        vulMap.put(Vulnerability._Fields.LAST_UPDATE_DATE, Comparator.comparing(Vulnerability::getLastUpdateDate, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(vulMap);
     }
 
