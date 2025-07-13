@@ -467,6 +467,12 @@ enum ComponentSortColumn {
     BY_TYPE = 3,
 }
 
+enum ReleaseSortColumn {
+    BY_CREATEDON = -1,
+    BY_NAME = 0,
+    BY_VERSION = 1,
+}
+
 enum BulkOperationNodeType {
     PROJECT = 0,
     COMPONENT = 1,
@@ -571,14 +577,9 @@ service ComponentService {
     list<Component> refineSearchWithAccessibility(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
 
     /**
-     * global search function to list releases which match the text argument
-     */
-    list<Release> searchReleases(1: string text);
-
-    /**
      * global search function to list accessible releases which match the text argument
      */
-    list<Release> searchAccessibleReleases(1: string text, 2: User user);
+    map<PaginationData, list<Release>> searchAccessibleReleases(1: string text, 2: User user, 3: PaginationData pageData);
 
     /**
      *  list accessible releases with pagination for ECC page
@@ -589,6 +590,16 @@ service ComponentService {
      * get short summary of release by release name prefix
      **/
     list<Release> searchReleaseByNamePrefix(1: string name);
+
+    /**
+     * get short summary of release by name paginated
+     **/
+    map<PaginationData, list<Release>> searchReleaseByNamePaginated(1: string name, 2: PaginationData pageData) throws (1: SW360Exception exp);
+
+    /**
+     * get releases that are in NEW state and have a SRC/SRS attachment
+     **/
+    map<PaginationData, list<Release>> getAccessibleNewReleasesWithSrc(1: User user, 2: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
      * Get Components with name prefix and paginated
@@ -896,7 +907,7 @@ service ComponentService {
     bool releaseIsUsed(1: string releaseId);
 
      /**
-       * check if one of the releases of the compnent is used by other releases, components or projects
+       * check if one of the releases of the component is used by other releases, components or projects
        **/
     bool componentIsUsed(1: string componentId);
 
