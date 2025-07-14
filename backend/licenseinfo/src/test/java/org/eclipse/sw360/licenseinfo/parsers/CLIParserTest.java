@@ -30,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.assertLicenseInfoParsingResult;

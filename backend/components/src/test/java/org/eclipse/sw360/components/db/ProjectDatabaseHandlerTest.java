@@ -32,10 +32,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -47,8 +46,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
-import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectDatabaseHandlerTest {
@@ -56,9 +53,6 @@ public class ProjectDatabaseHandlerTest {
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
     private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     private List<Project> projects;
     private List<Vendor> vendors;
@@ -286,7 +280,7 @@ public class ProjectDatabaseHandlerTest {
                 .setSubprojects(Arrays.asList(link2));
 
         stripRandomPartsOfNodeIds(linkedProjects);
-        assertThat(linkedProjects, contains(link1));
+        Assert.assertTrue(linkedProjects.contains(link1));
     }
 
     @Test
@@ -294,8 +288,8 @@ public class ProjectDatabaseHandlerTest {
 
         // we wrap the potentially infinite loop in an executor
         final ExecutorService service = Executors.newSingleThreadExecutor();
-        
-        Project project = handler.getProjectById("P5", user); 
+
+        Project project = handler.getProjectById("P5", user);
 
         final Future<List<ProjectLink>> completionFuture = service.submit(() -> handler.getLinkedProjects(project, true, user));
 
@@ -340,7 +334,7 @@ public class ProjectDatabaseHandlerTest {
                 .setSubprojects(Arrays.asList(link6, link7_5));
 
         stripRandomPartsOfNodeIds(linkedProjects);
-        assertThat(linkedProjects, contains(link5));
+        Assert.assertTrue(linkedProjects.contains(link5));
     }
 
     @Test
@@ -386,7 +380,7 @@ public class ProjectDatabaseHandlerTest {
                 .setSubprojects(Arrays.asList(link6, link7_5));
 
         stripRandomPartsOfNodeIds(linkedProjects);
-        assertThat(linkedProjects, contains(link5));
+        Assert.assertTrue(linkedProjects.contains(link5));
     }
 
     private void stripRandomPartsOfNodeIds(List<ProjectLink> linkedProjects) {

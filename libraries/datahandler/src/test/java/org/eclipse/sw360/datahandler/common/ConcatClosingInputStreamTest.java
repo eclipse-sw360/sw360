@@ -12,9 +12,8 @@ package org.eclipse.sw360.datahandler.common;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,9 +28,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 public class ConcatClosingInputStreamTest {
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void testReadIsEmptyForEmptyIterator() throws Exception {
 
@@ -278,7 +274,7 @@ public class ConcatClosingInputStreamTest {
     }
 
     @Test
-    public void testThrowingOnNullStreams() throws IOException {
+    public void testThrowingOnNullStreams() {
         @SuppressWarnings("unchecked")
         Iterator<InputStream> inputStreams = mock(Iterator.class);
 
@@ -287,11 +283,10 @@ public class ConcatClosingInputStreamTest {
 
         ConcatClosingInputStream concatClosingInputStream = new ConcatClosingInputStream(inputStreams);
 
-        expectedException.expect(IOException.class);
-        expectedException.expectMessage("cannot read from null Stream");
-        @SuppressWarnings("unused")
-        int unused = concatClosingInputStream.read();
-        fail("expected exception");
+        Throwable thrown = Assert.assertThrows(IOException.class, () -> {
+            @SuppressWarnings("unused")
+            int unused = concatClosingInputStream.read();
+        });
+        Assert.assertTrue(thrown.getMessage().contains("cannot read from null Stream"));
     }
-
 }

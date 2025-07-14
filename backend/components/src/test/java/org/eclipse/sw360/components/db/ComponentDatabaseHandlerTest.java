@@ -13,12 +13,11 @@ package org.eclipse.sw360.components.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.SvmConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
@@ -32,7 +31,6 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.*;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -47,7 +45,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getReleaseIds;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printFullname;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.ensureEccInformationIsSet;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -70,9 +67,6 @@ public class ComponentDatabaseHandlerTest {
 
     private static final User user1 = new User().setEmail(email1).setDepartment("AB CD EF").setId("481489458");
     private static final User user2 = new User().setEmail(email2).setDepartment("AB CD EF").setId("4786487647680");
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     private List<Component> components;
     private Map<String, Component>  componentMap;
@@ -173,11 +167,11 @@ public class ComponentDatabaseHandlerTest {
                         "R2B", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 456)));
         RequestStatus requestStatus = handler.updateReleasesWithSvmTrackingFeedback();
 
-        assertThat(requestStatus, is(RequestStatus.SUCCESS));
+        assertEquals(RequestStatus.SUCCESS, requestStatus);
         Release r1A = handler.getRelease("R1A", user1);
-        assertThat(r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID), is("123"));
+        assertEquals("123", r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
         Release r2B = handler.getRelease("R2B", user1);
-        assertThat(r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID), is("456"));
+        assertEquals("456", r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
     }
 
     @Test
@@ -197,7 +191,7 @@ public class ComponentDatabaseHandlerTest {
 
         final Set<Component> usingComponents = handler.getUsingComponents("R1A");
 
-        assertThat(getComponentIds(usingComponents), containsInAnyOrder("Linking"));
+        assertTrue(containsInAnyOrder("Linking").matches(getComponentIds(usingComponents)));
     }
 
 
@@ -218,7 +212,7 @@ public class ComponentDatabaseHandlerTest {
 
         final Set<Component> usingComponents = handler.getUsingComponents(ImmutableSet.of("R1A", "R2A"));
 
-        assertThat(getComponentIds(usingComponents), containsInAnyOrder("Linking"));
+        assertTrue(containsInAnyOrder("Linking").matches(getComponentIds(usingComponents)));
     }
 
     @Test
@@ -279,7 +273,7 @@ public class ComponentDatabaseHandlerTest {
     public void testGetRecentComponents() throws Exception {
         List<Component> recentComponents = handler.getRecentComponentsSummary(5, user1);
         Set<String> componentIds = getComponentIds(recentComponents);
-        assertThat(componentIds, containsInAnyOrder("C3", "C2", "C1"));
+        assertTrue(containsInAnyOrder("C3", "C2", "C1").matches(componentIds));
     }
 
     @Test
@@ -287,7 +281,7 @@ public class ComponentDatabaseHandlerTest {
         List<Component> recentComponents = handler.getRecentComponentsSummary(2, user1);
         Set<String> componentIds = getComponentIds(recentComponents);
         assertEquals(2, recentComponents.size());
-        assertThat(componentIds, containsInAnyOrder("C3", "C2"));
+        assertTrue(containsInAnyOrder("C3", "C2").matches(componentIds));
     }
 
     @Test
@@ -295,7 +289,7 @@ public class ComponentDatabaseHandlerTest {
         List<Release> recentReleases = handler.getRecentReleases();
         Iterable<String> relaseIds = getReleaseIds(recentReleases);
 
-        assertThat(relaseIds, containsInAnyOrder("R1A", "R1B", "R2A", "R2B", "R2C"));
+        assertTrue(containsInAnyOrder("R1A", "R1B", "R2A", "R2B", "R2C").matches(relaseIds));
     }
 
 
@@ -305,29 +299,29 @@ public class ComponentDatabaseHandlerTest {
         List<Release> v2 = handler.getReleasesFromVendorId("V2", user1);
         List<Release> v3 = handler.getReleasesFromVendorId("V3", user1);
 
-        assertThat(getReleaseIds(v1), containsInAnyOrder("R1A", "R2B"));
-        assertThat(getReleaseIds(v2), containsInAnyOrder("R1B", "R2C"));
-        assertThat(getReleaseIds(v3), containsInAnyOrder("R2A"));
+        assertTrue(containsInAnyOrder("R1A", "R2B").matches(getReleaseIds(v1)));
+        assertTrue(containsInAnyOrder("R1B", "R2C").matches(getReleaseIds(v2)));
+        assertTrue(containsInAnyOrder("R2A").matches(getReleaseIds(v3)));
 
     }
 
     @Test
     public void testSearchReleaseByNamePrefix() throws Exception {
         List<Release> releases = handler.searchReleaseByNamePrefix("component1");
-        assertThat(getReleaseIds(releases), containsInAnyOrder("R1A", "R1B"));
+        assertTrue(containsInAnyOrder("R1A", "R1B").matches(getReleaseIds(releases)));
     }
 
     @Test
     public void testSearchReleaseByNamePrefix2() throws Exception {
         List<Release> releases = handler.searchReleaseByNamePrefix("compo");
-        assertThat(getReleaseIds(releases), containsInAnyOrder("R1A", "R1B", "R2A", "R2B", "R2C"));
+        assertTrue(containsInAnyOrder("R1A", "R1B", "R2A", "R2B", "R2C").matches(getReleaseIds(releases)));
     }
 
     @Test
     public void testGetSummaryForExport() throws Exception {
         List<Component> summaryForExport = handler.getSummaryForExport();
         // C4 should NOT be in the results
-        assertThat(getComponentIds(summaryForExport), containsInAnyOrder("C1", "C2", "C3"));
+        assertTrue(containsInAnyOrder("C1", "C2", "C3").matches(getComponentIds(summaryForExport)));
     }
 
     @Test
@@ -335,17 +329,17 @@ public class ComponentDatabaseHandlerTest {
         List<Component> user1components = handler.getSubscribedComponents(email1);
         List<Component> user2components = handler.getSubscribedComponents(email2);
 
-        assertThat(getComponentIds(user1components), contains("C3"));
-        assertThat(user2components, is(empty()));
+        assertTrue(contains("C3").matches(getComponentIds(user1components)));
+        assertTrue(user2components.isEmpty());
 
         handler.subscribeComponent("C1", user2);
 
         List<Component> user2components2 = handler.getSubscribedComponents(email2);
-        assertThat(getComponentIds(user2components2), contains("C1"));
+        assertTrue(contains("C1").matches(getComponentIds(user2components2)));
 
         handler.unsubscribeComponent("C1", user2);
         List<Component> user2components3 = handler.getSubscribedComponents(email2);
-        assertThat(user2components3, is(empty()));
+        assertTrue(user2components3.isEmpty());
     }
 
     @Test
@@ -355,11 +349,11 @@ public class ComponentDatabaseHandlerTest {
         handler.subscribeRelease("R1A", user2);
         List<Release> user2releases = handler.getSubscribedReleases(email2);
 
-        assertThat(getReleaseIds(user1releases), contains("R1B"));
-        assertThat(getReleaseIds(user2releases), contains("R1A", "R2B"));
+        assertTrue(contains("R1B").matches(getReleaseIds(user1releases)));
+        assertTrue(contains("R1A", "R2B").matches(getReleaseIds(user2releases)));
 
         handler.unsubscribeRelease("R1A", user2);
-        assertThat(getReleaseIds(handler.getSubscribedReleases(email2)), contains("R2B"));
+        assertTrue(contains("R2B").matches(getReleaseIds(handler.getSubscribedReleases(email2))));
 
     }
 
@@ -407,7 +401,7 @@ public class ComponentDatabaseHandlerTest {
 
         stripRandomPartsOfNodeIds(linkedReleases);
 
-        assertThat(linkedReleases, contains(releaseLinkR1A));
+        assertTrue(contains(releaseLinkR1A).matches(linkedReleases));
     }
 
     private void stripRandomPartsOfNodeIds(List<ReleaseLink> linkedReleases) {
@@ -460,7 +454,7 @@ public class ComponentDatabaseHandlerTest {
                 .setClearingState(ClearingState.NEW_CLEARING);
 
         stripRandomPartsOfNodeIds(linkedReleases);
-        assertThat(linkedReleases, contains(releaseLinkR1A));
+        assertTrue(contains(releaseLinkR1A).matches(linkedReleases));
     }
 
     @Test
@@ -468,14 +462,14 @@ public class ComponentDatabaseHandlerTest {
         Set<String> releaseIds = getReleaseIds(this.releases);
         List<Release> releases = handler.getReleases(releaseIds);
 
-        assertThat(getReleaseIds(releases), is(releaseIds));
+        assertEquals(releaseIds, getReleaseIds(releases));
     }
 
     @Test
     public void testGetReleasesWithPermissions() throws Exception {
         Set<String> releaseIds = getReleaseIds(this.releases);
         List<Release> releases = handler.getReleasesWithPermissions(releaseIds, user1);
-        assertThat(getReleaseIds(releases), is(releaseIds));
+        assertEquals(releaseIds, getReleaseIds(releases));
 
         Release releaseA = null;
         Release releaseB = null;
@@ -496,20 +490,20 @@ public class ComponentDatabaseHandlerTest {
 
         Map<RequestedAction, Boolean> permissionsOfOwnRelease = releaseA.getPermissions();
 
-        assertThat(permissionsOfOwnRelease.get(RequestedAction.READ), is(true));
-        assertThat(permissionsOfOwnRelease.get(RequestedAction.ATTACHMENTS), is(true));
-        assertThat(permissionsOfOwnRelease.get(RequestedAction.WRITE), is(true));
-        assertThat(permissionsOfOwnRelease.get(RequestedAction.CLEARING), is(true));
-        assertThat(permissionsOfOwnRelease.get(RequestedAction.DELETE), is(true));
-        assertThat(permissionsOfOwnRelease.get(RequestedAction.USERS), is(true));
+        assertTrue(permissionsOfOwnRelease.get(RequestedAction.READ));
+        assertTrue(permissionsOfOwnRelease.get(RequestedAction.ATTACHMENTS));
+        assertTrue(permissionsOfOwnRelease.get(RequestedAction.WRITE));
+        assertTrue(permissionsOfOwnRelease.get(RequestedAction.CLEARING));
+        assertTrue(permissionsOfOwnRelease.get(RequestedAction.DELETE));
+        assertTrue(permissionsOfOwnRelease.get(RequestedAction.USERS));
 
         Map<RequestedAction, Boolean> permissionsOfForeignRelease = releaseB.getPermissions();
-        assertThat(permissionsOfForeignRelease.get(RequestedAction.READ), is(true));
-        assertThat(permissionsOfForeignRelease.get(RequestedAction.ATTACHMENTS), is(false));
-        assertThat(permissionsOfForeignRelease.get(RequestedAction.WRITE), is(false));
-        assertThat(permissionsOfForeignRelease.get(RequestedAction.CLEARING), is(false));
-        assertThat(permissionsOfForeignRelease.get(RequestedAction.DELETE), is(false));
-        assertThat(permissionsOfForeignRelease.get(RequestedAction.USERS), is(false));
+        assertTrue(permissionsOfForeignRelease.get(RequestedAction.READ));
+        assertFalse(permissionsOfForeignRelease.get(RequestedAction.ATTACHMENTS));
+        assertFalse(permissionsOfForeignRelease.get(RequestedAction.WRITE));
+        assertFalse(permissionsOfForeignRelease.get(RequestedAction.CLEARING));
+        assertFalse(permissionsOfForeignRelease.get(RequestedAction.DELETE));
+        assertFalse(permissionsOfForeignRelease.get(RequestedAction.USERS));
     }
 
     @Test
@@ -523,20 +517,20 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component del = handler.getComponent("Del", user1);
-            assertThat(del.getName(), is("delete"));
+            assertEquals("delete", del.getName());
             Release delR = handler.getRelease("DelR", user1);
-            assertThat(delR.getName(), is("delete Release"));
+            assertEquals("delete Release", delR.getName());
         }
 
         RequestStatus status = handler.deleteComponent("Del", user1);
 
-        assertThat(status, is(RequestStatus.IN_USE));
+        assertEquals(RequestStatus.IN_USE, status);
 
         {
             Component del = handler.getComponent("Del", user1);
-            assertThat(del.getName(), is("delete"));
+            assertEquals("delete", del.getName());
             Release delR = handler.getRelease("DelR", user1);
-            assertThat(delR.getName(), is("delete Release"));
+            assertEquals("delete Release", delR.getName());
         }
     }
 
@@ -653,7 +647,7 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.getMainLicenseIds(), is(empty()));
+            assertTrue(component.getMainLicenseIds().isEmpty());
         }
 
         String id = addRelease(componentId, ImmutableSet.of("14", "15"));
@@ -661,20 +655,20 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.getMainLicenseIds(), containsInAnyOrder("13", "14", "15"));
+            assertTrue(containsInAnyOrder("13", "14", "15").matches(component.getMainLicenseIds()));
         }
 
-        assertThat(handler.deleteRelease(id, user1), is(RequestStatus.SUCCESS));
+        assertEquals(RequestStatus.SUCCESS, handler.deleteRelease(id, user1));
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.getMainLicenseIds(), containsInAnyOrder("13", "14"));
+            assertTrue(containsInAnyOrder("13", "14").matches(component.getMainLicenseIds()));
         }
 
-        assertThat(handler.deleteRelease(id1, user1), is(RequestStatus.SUCCESS));
+        assertEquals(RequestStatus.SUCCESS, handler.deleteRelease(id1, user1));
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.getMainLicenseIds(), is(empty()));
+            assertTrue(component.getMainLicenseIds().isEmpty());
         }
     }
 
@@ -702,9 +696,9 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertTrue("Check that languages are not initialized", component.languages == null);
-            assertTrue("Check that operating systems are not initialized", component.operatingSystems == null);
-            assertTrue("Check that vendor names are not initialized", component.vendorNames == null);
+            assertNull("Check that languages are not initialized", component.languages);
+            assertNull("Check that operating systems are not initialized", component.operatingSystems);
+            assertNull("Check that vendor names are not initialized", component.vendorNames);
         }
 
         Set<String> os = new HashSet<>();
@@ -723,9 +717,9 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.languages, containsInAnyOrder("C", "C++"));
-            assertThat(component.operatingSystems, containsInAnyOrder("Linux Ubuntu", "Linux Mint"));
-            assertThat(component.vendorNames, containsInAnyOrder(vendors.get("V1").getShortname()));
+            assertTrue(containsInAnyOrder("C", "C++").matches(component.languages));
+            assertTrue(containsInAnyOrder("Linux Ubuntu", "Linux Mint").matches(component.operatingSystems));
+            assertTrue(containsInAnyOrder(vendors.get("V1").getShortname()).matches(component.vendorNames));
         }
         Set<String> os2 = new HashSet<>();
         os2.add("Linux Debian");
@@ -743,27 +737,27 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.languages, containsInAnyOrder("C", "C++", "C#"));
-            assertThat(component.operatingSystems, containsInAnyOrder("Linux Ubuntu", "Linux Mint", "Linux Debian"));
-            assertThat(component.vendorNames, containsInAnyOrder(vendors.get("V1").getShortname(), vendors.get("V2").getShortname()));
+            assertTrue(containsInAnyOrder("C", "C++", "C#").matches(component.languages));
+            assertTrue(containsInAnyOrder("Linux Ubuntu", "Linux Mint", "Linux Debian").matches(component.operatingSystems));
+            assertTrue(containsInAnyOrder(vendors.get("V1").getShortname(), vendors.get("V2").getShortname()).matches(component.vendorNames));
         }
 
         handler.deleteRelease(id, user1);
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.languages, containsInAnyOrder("C++", "C#"));
-            assertThat(component.operatingSystems, containsInAnyOrder("Linux Mint", "Linux Debian"));
-            assertThat(component.vendorNames, containsInAnyOrder(vendors.get("V2").getShortname()));
+            assertTrue(containsInAnyOrder("C++", "C#").matches(component.languages));
+            assertTrue(containsInAnyOrder("Linux Mint", "Linux Debian").matches(component.operatingSystems));
+            assertTrue(containsInAnyOrder(vendors.get("V2").getShortname()).matches(component.vendorNames));
         }
 
         handler.deleteRelease(id2, user1);
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertThat(component.languages, is(empty()));
-            assertThat(component.operatingSystems, is(empty()));
-            assertThat(component.vendorNames, is(empty()));
+            assertTrue(component.languages.isEmpty());
+            assertTrue(component.operatingSystems.isEmpty());
+            assertTrue(component.vendorNames.isEmpty());
         }
     }
 
@@ -805,7 +799,7 @@ public class ComponentDatabaseHandlerTest {
         RequestStatus status = handler.updateComponent(component, user1);
 
         // then:
-        assertThat(status, is(RequestStatus.DUPLICATE));
+        assertEquals(RequestStatus.DUPLICATE, status);
     }
 
     @Test
@@ -828,7 +822,7 @@ public class ComponentDatabaseHandlerTest {
         expected.setReleases(tmpReleases);
 
         RequestStatus status = handler.updateComponent(expected, user1);
-        assertThat(status, is(RequestStatus.SUCCESS));
+        assertEquals(RequestStatus.SUCCESS, status);
         Component actual = handler.getComponent("C1", user1);
 
         //Other asserts have been dealt with in testUpdateComponent
@@ -877,7 +871,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(expected, actual.getName());
         verify(moderator, never()).updateComponent(component, user2);
     }
-    
+
     @Test
     public void testUpdateRelease() throws Exception {
         Release expected = releases.get(1);
@@ -909,7 +903,7 @@ public class ComponentDatabaseHandlerTest {
         RequestStatus status = handler.updateRelease(release, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
 
         // then:
-        assertThat(status, is(RequestStatus.DUPLICATE));
+        assertEquals(RequestStatus.DUPLICATE, status);
     }
 
     @Test
@@ -944,7 +938,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(expected, actual.getName());
         verify(releaseModerator, never()).updateRelease(release, user1);
     }
-    
+
     @Test
     public void testEccUpdateSentToEccModeration() throws Exception {
         Release release = releases.get(1);
@@ -977,7 +971,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(expected, actual.getEccInformation().getAl());
         verify(releaseModerator, never()).updateReleaseEccInfo(release, user1);
     }
-    
+
     @Test
     public void testDeleteComponent() throws Exception {
         RequestStatus status = handler.deleteComponent("C3", user1);
@@ -1011,7 +1005,7 @@ public class ComponentDatabaseHandlerTest {
         assertFalse("Component deleted", componentsContain(componentSummary, "C3"));
         verify(moderator, never()).deleteComponent(any(Component.class), eq(user2));
     }
-    
+
     @Test
     public void testDontDeleteUsedComponent() throws Exception {
         final Release r1A = handler.getRelease("R1A", user1);
@@ -1079,7 +1073,7 @@ public class ComponentDatabaseHandlerTest {
         assertFalse("Release deleted", releasesContain(releaseSummary, "R1B"));
         verify(releaseModerator, never()).deleteRelease(any(Release.class), eq(user1));
     }
-    
+
     private static boolean componentsContain(Collection<Component> components, @NotNull String id) {
         for (Component component : components) {
             if (id.equals(component.getId()))
@@ -1115,7 +1109,7 @@ public class ComponentDatabaseHandlerTest {
 
         final Map<String, List<String>> duplicateComponents = handler.getDuplicateComponents();
 
-        assertThat(duplicateComponents.size(), is(0));
+        assertTrue(duplicateComponents.isEmpty());
     }
 
 
@@ -1130,8 +1124,8 @@ public class ComponentDatabaseHandlerTest {
 
         final Map<String, List<String>> duplicateReleases = handler.getDuplicateReleases();
 
-        assertThat(summary.getRequestStatus(), is(AddDocumentRequestStatus.DUPLICATE));
-        assertThat(duplicateReleases.size(), is(0));
+        assertEquals(AddDocumentRequestStatus.DUPLICATE, summary.getRequestStatus());
+        assertTrue(duplicateReleases.isEmpty());
     }
 
     @Test
@@ -1144,14 +1138,14 @@ public class ComponentDatabaseHandlerTest {
         tmp.setName(tmp.getName().substring(0, 4));
         String newReleaseId = handler.addRelease(tmp, user1).getId();
 
-        assertThat(newReleaseId, not(isEmptyOrNullString()));
+        assertFalse(CommonUtils.isNullEmptyOrWhitespace(newReleaseId));
     }
 
     @Test
     public void testHasChangesInEccFields() throws Exception {
         Release original = handler.getRelease("R1A", user1);
         original.getEccInformation().setEccStatus(ECCStatus.APPROVED).setAssessorDepartment("XYZ").setAssessorContactPerson("asessor@example.com");
-        assertThat(handler.hasChangesInEccFields(original, original), is(false));
+        assertFalse(handler.hasChangesInEccFields(original, original));
         ComponentDatabaseHandler.ECC_FIELDS.forEach(
                 f -> {
                     Release changed;
@@ -1167,13 +1161,12 @@ public class ComponentDatabaseHandlerTest {
                         default:
                             changed.getEccInformation().setFieldValue(f, "string value");
                     }
-                    assertThat("Field " + f + " did not trigger ecc change flag", handler.hasChangesInEccFields(changed, original), is(true));
+                    assertTrue("Field " + f + " did not trigger ecc change flag", handler.hasChangesInEccFields(changed, original));
                 }
         );
 
         Release changed = handler.getRelease("R1A", user1);
         changed.getEccInformation().setEccStatus(ECCStatus.APPROVED).setAssessorDepartment("XYZ").setAssessorContactPerson("");
-        assertThat(handler.hasChangesInEccFields(changed, original), is(false));
-
+        assertFalse(handler.hasChangesInEccFields(changed, original));
     }
 }
