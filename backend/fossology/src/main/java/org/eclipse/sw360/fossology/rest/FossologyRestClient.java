@@ -433,7 +433,7 @@ public class FossologyRestClient {
                 return reportResource.getInputStream();
             } else {
                 log.error("Failed to download report for reportId {}. HTTP status: {}",
-                        reportId, responseEntity.getStatusCodeValue());
+                        reportId, responseEntity.getStatusCode());
                 return null;
             }
         } catch (RestClientException e) {

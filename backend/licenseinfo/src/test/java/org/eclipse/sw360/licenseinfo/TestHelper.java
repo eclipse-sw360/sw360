@@ -13,7 +13,6 @@ package org.eclipse.sw360.licenseinfo;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -23,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus
 import org.eclipse.sw360.licenseinfo.parsers.AttachmentContentProvider;
 import org.junit.Assert;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -78,10 +78,12 @@ public class TestHelper {
             return store.get(attachmentContentId);
         }
 
-        public AttachmentContentStore put(String filename, String fileContent) throws TException {
+        public AttachmentContentStore put(String filename, String fileContent) throws TException, IOException {
             AttachmentContent attachmentContent = makeAttachmentContent(filename);
             store.put(attachmentContent.getId(), attachmentContent);
-            when(connectorMock.getAttachmentStream(eq(attachmentContent), any(), any())).thenReturn(new ReaderInputStream(new StringReader(fileContent)));
+            when(connectorMock.getAttachmentStream(eq(attachmentContent), any(), any())).thenReturn(
+                    ReaderInputStream.builder().setReader(new StringReader(fileContent)).get()
+            );
             return this;
         }
 

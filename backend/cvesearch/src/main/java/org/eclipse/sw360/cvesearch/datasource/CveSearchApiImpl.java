@@ -22,9 +22,10 @@ import org.apache.logging.log4j.Logger;
 import java.io.BufferedReader;
 import java.lang.reflect.Type;
 import java.io.*;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,10 +51,12 @@ public class CveSearchApiImpl implements CveSearchApi {
 
     private <T> T getParsedContentFor(String query, Function<BufferedReader,T> parser) throws IOException {
         log.debug("Execute query: " + query);
-        try(InputStream is = new URL(query).openStream();
-            InputStreamReader inputStreamReader = new InputStreamReader(is, Charset.forName("UTF-8"));
+        try(InputStream is = new URI(query).toURL().openStream();
+            InputStreamReader inputStreamReader = new InputStreamReader(is, StandardCharsets.UTF_8);
             BufferedReader content = new BufferedReader(inputStreamReader)) {
             return parser.apply(content);
+        } catch (URISyntaxException e) {
+            throw new IOException(e);
         }
     }
 

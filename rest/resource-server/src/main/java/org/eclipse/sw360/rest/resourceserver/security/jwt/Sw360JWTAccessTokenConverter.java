@@ -17,8 +17,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.common.exceptions.UnauthorizedUserException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -139,12 +139,12 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 *
 	 * @param email the email of the user
 	 * @param sw360User the user object fetched from the user service
-	 * @throws UnauthorizedUserException if the user is deactivated or not available
+	 * @throws BadCredentialsException if the user is deactivated or not available
 	 */
 	private static void validateUser(String email, User sw360User) {
 		if (email != null && CommonUtils.isNotNullEmptyOrWhitespace(email)) {
 			if (sw360User == null || sw360User.isDeactivated()) {
-				throw new UnauthorizedUserException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
+				throw new BadCredentialsException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
 			}
 		}
 	}

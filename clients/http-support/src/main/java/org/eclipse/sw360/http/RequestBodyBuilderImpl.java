@@ -12,7 +12,7 @@ package org.eclipse.sw360.http;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -55,7 +55,7 @@ class RequestBodyBuilderImpl implements RequestBodyBuilder {
      */
     public RequestBodyBuilderImpl(ObjectMapper mapper) {
         this.mapper = mapper;
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CAMEL_CASE);
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
     }
 
     @Override

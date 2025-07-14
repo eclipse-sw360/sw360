@@ -46,7 +46,7 @@ public class OSADLObligationConnector extends ObligationConnector {
     protected String getText(String licenseId) {
         String obligationURL = generateURL(licenseId);
 		try {
-			URL url = new URL(obligationURL);
+			URL url = new URI(obligationURL).toURL();
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			int responseCode = conn.getResponseCode();
 			if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -63,7 +63,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 			}
 			in.close();
 			return buffer.toString();
-		} catch (IOException e) {
+		} catch (IOException | URISyntaxException | IllegalArgumentException e) {
 			log.error("Could not get OSADL License for: " + licenseId);
 			return null;
 		}

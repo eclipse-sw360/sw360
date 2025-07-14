@@ -25,6 +25,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import com.google.gson.Gson;
+import org.apache.maven.api.model.Model;
+import org.apache.maven.model.v4.MavenStaxReader;
 import org.apache.thrift.protocol.TType;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
@@ -53,14 +55,13 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Doc
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -399,13 +400,13 @@ public class SW360Utils {
     }
 
     public static String getSW360Version() {
-        final MavenXpp3Reader reader = new MavenXpp3Reader();
+        final MavenStaxReader reader = new MavenStaxReader();
         try (InputStreamReader iStreamReader = new InputStreamReader(
                 SW360Utils.class.getResourceAsStream(SW360Constants.DATA_HANDLER_POM_FILE_PATH))) {
             Model model = reader.read(iStreamReader);
             return model.getVersion();
         } catch (Exception e) {
-            log.error("Error while getting SW360 version information: "+ e);
+            log.error("Error while getting SW360 version information: {}", String.valueOf(e));
             return SW360Constants.NA;
         }
     }
