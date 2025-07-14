@@ -40,11 +40,9 @@ import static org.eclipse.sw360.attachments.db.RemoteAttachmentDownloader.length
 import static org.eclipse.sw360.attachments.db.RemoteAttachmentDownloader.retrieveRemoteAttachments;
 import static org.eclipse.sw360.datahandler.TestUtils.*;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.number.OrderingComparison.greaterThan;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
 
@@ -90,16 +88,20 @@ public class RemoteAttachmentDownloaderTest {
     public void testIntegration() throws Exception {
         AttachmentContent attachmentContent = saveRemoteAttachment(url);
 
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(1));
+        assertEquals(1, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
 
-        assertThat(attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
+        assertTrue(hasLength(greaterThan(0L)).matches(
+                attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
                         new Project()
                                 .setVisbility(Visibility.ME_AND_MODERATORS)
                                 .setCreatedBy(dummyUser.getEmail())
-                                .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentContent.getId())))),
-                hasLength(greaterThan(0l)));
+                                .setAttachments(Collections.singleton(
+                                        new Attachment().setAttachmentContentId(attachmentContent.getId())
+                                ))
+                )
+        ));
 
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(0));
+        assertEquals(0, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
     }
 
     @Test
@@ -107,7 +109,7 @@ public class RemoteAttachmentDownloaderTest {
         assumeThat(getAvailableNetworkInterface(), isAvailable());
 
         saveRemoteAttachment("http://" + BLACK_HOLE_ADDRESS + "/filename");
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+        assertEquals(1, repository.getOnlyRemoteAttachments().size());
 
         ExecutorService executor = newSingleThreadExecutor();
 
@@ -121,7 +123,7 @@ public class RemoteAttachmentDownloaderTest {
 
             try {
                 Integer downloadedSuccessfully = future.get(1, TimeUnit.MINUTES);
-                assertThat(downloadedSuccessfully, is(0));
+                assertEquals(0, downloadedSuccessfully.intValue());
             } catch (TimeoutException e) {
                 fail("retriever got stuck on a black hole");
                 throw e; // unreachable
@@ -131,7 +133,7 @@ public class RemoteAttachmentDownloaderTest {
             executor.awaitTermination(1, TimeUnit.MINUTES);
         }
 
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+        assertEquals(1, repository.getOnlyRemoteAttachments().size());
     }
 
     @Test
@@ -139,31 +141,35 @@ public class RemoteAttachmentDownloaderTest {
         AttachmentContent attachmentContent = saveRemoteAttachment(TestUtils.BLACK_HOLE_ADDRESS);
         AttachmentContent attachmentGood = saveRemoteAttachment(url);
 
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(2));
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(1));
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+        assertEquals(2, repository.getOnlyRemoteAttachments().size());
+        assertEquals(1, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
+        assertEquals(1, repository.getOnlyRemoteAttachments().size());
 
-        assertThat(attachmentConnector.getAttachmentStream(attachmentGood, dummyUser,
-                new Project()
-                        .setVisbility(Visibility.ME_AND_MODERATORS)
-                        .setCreatedBy(dummyUser.getEmail())
-                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentGood.getId())))),
-                hasLength(greaterThan(0l)));
+        assertTrue(hasLength(greaterThan(0L)).matches(
+                attachmentConnector.getAttachmentStream(attachmentGood, dummyUser,
+                        new Project()
+                                .setVisbility(Visibility.ME_AND_MODERATORS)
+                                .setCreatedBy(dummyUser.getEmail())
+                                .setAttachments(Collections.singleton(
+                                        new Attachment().setAttachmentContentId(attachmentGood.getId())
+                                ))
+                )
+        ));
 
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(0));
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+        assertEquals(1, repository.getOnlyRemoteAttachments().size());
+        assertEquals(0, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
+        assertEquals(1, repository.getOnlyRemoteAttachments().size());
 
         try {
-            assertThat(attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
+            assertTrue(attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
                 new Project()
                         .setVisbility(Visibility.ME_AND_MODERATORS)
                         .setCreatedBy(dummyUser.getEmail())
-                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentContent.getId())))),
-                hasLength(greaterThan(0l)));
+                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentContent.getId()))))
+                .available() > 0L);
             fail("expected exception not thrown");
         } catch (SW360Exception e) {
-            assertThat(e.getWhy(), containsString(attachmentContent.getId()));
+            assertTrue(e.getWhy().contains(attachmentContent.getId()));
         }
     }
 
@@ -199,5 +205,4 @@ public class RemoteAttachmentDownloaderTest {
             }
         };
     }
-
 }

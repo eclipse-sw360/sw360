@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.apache.thrift.TException;
 import org.hamcrest.Matchers;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,9 +33,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getReleaseIds;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -64,8 +62,8 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
     public void testImportOnEmptyDb() throws Exception {
         FluentIterable<ComponentCSVRecord> compCSVRecords = getCompCSVRecordsFromTestFile(fileName);
 
-        assertThat(componentClient.getComponentSummary(user), is(empty()));
-        assertThat(componentClient.getReleaseSummary(user), is(empty()));
+        Assert.assertTrue(componentClient.getComponentSummary(user).isEmpty());
+        Assert.assertTrue(componentClient.getReleaseSummary(user).isEmpty());
 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
                 attachmentClient, user);
@@ -84,7 +82,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         attachmentContentRepository.add(overwriter);
         attachmentContentRepository.add(addition);
 
-        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(3));
+        Assert.assertTrue(Matchers.hasSize(3).matches(attachmentContentRepository.getAll()));
         FluentIterable<ComponentAttachmentCSVRecord> compAttachmentCSVRecords =
                 getCompAttachmentCSVRecordsFromTestFile(attachmentsFilename);
 
@@ -95,19 +93,17 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
             attachmentClient.getAttachmentContent(attachmentContentId);
             fail("Expected exception not thrown");
         } catch (Exception e) {
-            assertThat(e, is(instanceOf(SW360Exception.class)));
-            assertThat(((SW360Exception) e).getWhy(),
-                    is("Cannot find " + attachmentContentId + " in database."));
+            Assert.assertTrue(instanceOf(SW360Exception.class).matches(e));
+            Assert.assertEquals("Cannot find " + attachmentContentId + " in database.",
+                    ((SW360Exception) e).getWhy());
         }
 
-        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(2));
+        Assert.assertTrue(Matchers.hasSize(2).matches(attachmentContentRepository.getAll()));
         final AttachmentContent attachmentContent =
                 attachmentClient.getAttachmentContent(getCreatedAttachmentContentId());
         attachmentContent.setOnlyRemote(true);
 
-        assertThat(attachmentContent, is(overwriter));
-
-
+        Assert.assertEquals(overwriter, attachmentContent);
     }
 
     private String getCreatedAttachmentContentId() throws TException {
@@ -116,7 +112,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         sortByField(importedReleases, Release._Fields.NAME);
         final Release release = importedReleases.get(4);
         final Set<Attachment> attachments = release.getAttachments();
-        assertThat(attachments.size(), is(1));
+        Assert.assertEquals(1, attachments.size());
         final Attachment theAttachment = getFirst(attachments);
         return theAttachment.getAttachmentContentId();
     }
@@ -128,11 +124,11 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         ComponentImportUtils.writeToDatabase(compCSVRecords.limit(1), componentClient, vendorClient,
                 attachmentClient, user);
 
-        assertThat(componentClient.getComponentSummary(user), hasSize(1));
+        Assert.assertEquals(1, componentClient.getComponentSummary(user).size());
         List<Release> releaseSummary = componentClient.getReleaseSummary(user);
-        assertThat(releaseSummary, hasSize(1));
+        Assert.assertEquals(1, releaseSummary.size());
 
-        assertThat(releaseSummary.get(0).getName(), is("7-Zip"));
+        Assert.assertEquals("7-Zip", releaseSummary.getFirst().getName());
 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
                 attachmentClient, user);
@@ -145,13 +141,13 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
     public void testImportTwiceIsANoOp() throws Exception {
         FluentIterable<ComponentCSVRecord> compCSVRecords = getCompCSVRecordsFromTestFile(fileName);
 
-        assertThat(componentClient.getComponentSummary(user), hasSize(0));
-        assertThat(componentClient.getReleaseSummary(user), hasSize(0));
-        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(0));
+        Assert.assertEquals(0, componentClient.getComponentSummary(user).size());
+        Assert.assertEquals(0, componentClient.getReleaseSummary(user).size());
+        Assert.assertTrue(Matchers.hasSize(0).matches(attachmentContentRepository.getAll()));
 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
                 attachmentClient, user);
-        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(1));
+        Assert.assertTrue(Matchers.hasSize(1).matches(attachmentContentRepository.getAll()));
         List<Component> componentSummaryAfterFirst = componentClient.getComponentSummary(user);
         List<Release> releaseSummaryAfterFirst = componentClient.getReleaseSummary(user);
 
@@ -160,9 +156,9 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
                 attachmentClient, user);
         assertExpectedComponentsInDb();
-        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(1));
-        assertThat(componentClient.getComponentSummary(user), is(componentSummaryAfterFirst));
-        assertThat(componentClient.getReleaseSummary(user), is(releaseSummaryAfterFirst));
+        Assert.assertTrue(Matchers.hasSize(1).matches(attachmentContentRepository.getAll()));
+        Assert.assertEquals(componentSummaryAfterFirst, componentClient.getComponentSummary(user));
+        Assert.assertEquals(releaseSummaryAfterFirst, componentClient.getReleaseSummary(user));
 
     }
 
@@ -170,42 +166,41 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         List<Component> importedComponents = componentClient.getComponentSummary(user);
         List<Release> importedReleases = componentClient.getReleaseSummary(user);
 
-        assertThat(importedComponents, hasSize(7)); // see the test file
-        assertThat(importedReleases, hasSize(8)); // see the test file
+        Assert.assertEquals(7, importedComponents.size()); // see the test file
+        Assert.assertEquals(8, importedReleases.size()); // see the test file
 
         sortByField(importedComponents, Component._Fields.NAME);
         sortByField(importedReleases, Release._Fields.VERSION);
         sortByField(importedReleases, Release._Fields.NAME);
 
         Component component = importedComponents.get(0);
-        assertThat(component.getName(), is("7-Zip"));
+        Assert.assertEquals("7-Zip", component.getName());
 
         component = componentClient.getComponentById(component.getId(), user);
-        assertThat(component.getName(), is("7-Zip"));
-        assertThat(component.getHomepage(), is("http://commons.apache.org/proper/commons-exec"));
-        assertThat(component.getVendorNames(), is(emptyOrNullCollectionOf(String.class)));
-        assertThat(component.getAttachments(), is(emptyOrNullCollectionOf(Attachment.class)));
-        assertThat(component.getCreatedBy(), equalTo(user.getEmail()));
-        assertThat(component.getReleases(), is(not(nullValue())));
-        assertThat(getReleaseIds(component.getReleases()), containsInAnyOrder(
-                importedReleases.get(0).getId(), importedReleases.get(1).getId()));
+        Assert.assertEquals("7-Zip", component.getName());
+        Assert.assertEquals("http://commons.apache.org/proper/commons-exec", component.getHomepage());
+        Assert.assertEquals(emptyOrNullCollectionOf(String.class), component.getVendorNames());
+        Assert.assertEquals(emptyOrNullCollectionOf(Attachment.class), component.getAttachments());
+        Assert.assertEquals(user.getEmail(), component.getCreatedBy());
+        Assert.assertEquals(not(nullValue()), component.getReleases());
+        Assert.assertTrue(containsInAnyOrder(
+                importedReleases.get(0).getId(), importedReleases.get(1).getId())
+                .matches(getReleaseIds(component.getReleases())));
 
         final Release release = importedReleases.get(4);
-        assertThat(release.getVersion(), is("1.2.11"));
+        Assert.assertEquals("1.2.11", release.getVersion());
         // This release has an download url so the import creates an attachmen
         final Set<Attachment> attachments = release.getAttachments();
-        assertThat(attachments.size(), is(1));
+        Assert.assertEquals(1, attachments.size());
         final Attachment theAttachment = getFirst(attachments);
         final String attachmentContentId = theAttachment.getAttachmentContentId();
 
         final AttachmentContent attachmentContent =
                 attachmentClient.getAttachmentContent(attachmentContentId);
 
-        assertThat(attachmentContent.isOnlyRemote(), is(true));
+        Assert.assertTrue(attachmentContent.isOnlyRemote());
 
-        assertThat(attachmentContent.getRemoteUrl(), is(REMOTE_URL));
-
-
+        Assert.assertEquals(REMOTE_URL, attachmentContent.getRemoteUrl());
     }
 
 }
