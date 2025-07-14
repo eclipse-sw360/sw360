@@ -212,7 +212,12 @@ public class ReleaseTest extends TestIntegrationBase {
 
         release.setPackageIds(linkedPackages);
         given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(releaseList);
-        given(this.releaseServiceMock.refineSearch(any(),any())).willReturn(releaseList);
+        given(this.releaseServiceMock.refineSearch(any(),any(),any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(releaseList.size()).setDisplayStart(0).setTotalRowCount(releaseList.size()),
+                        releaseList
+                )
+        );
         given(this.releaseServiceMock.getRecentReleases(any())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseSubscriptions(any())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
