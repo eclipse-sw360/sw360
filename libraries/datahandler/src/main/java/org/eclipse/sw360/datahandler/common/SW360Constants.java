@@ -114,13 +114,15 @@ public class SW360Constants {
     public static final String SVM_SHORT_STATUS_KEY;
     public static final String SVM_SCHEDULER_EMAIL;
     public static final String DATA_HANDLER_POM_FILE_PATH;
-    public static final Integer VCS_REDIRECTION_LIMIT;
-    public static final Integer VCS_REDIRECTION_TIMEOUT_LIMIT;
     public static final boolean ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP;
     public static final String URL_FORMATS;
     public static final String SRC_ATTACHMENT_UPLOADER_EMAIL;
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
     public static final String PREFERRED_CLEARING_DATE_LIMIT;
+
+    public static final String VCS_REDIRECTION_LIMIT = "5";
+    public static final String VCS_REDIRECTION_TIMEOUT_LIMIT = "5000";
+
     public static final String COMPONENTS = "components";
     public static final String PROJECTS = "projects";
     public static final String LICENSES = "licenses";
@@ -239,8 +241,6 @@ public class SW360Constants {
         SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
         SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
-        VCS_REDIRECTION_LIMIT = Integer.parseInt(props.getProperty("vcs.redirection.limit","5"));
-        VCS_REDIRECTION_TIMEOUT_LIMIT = Integer.parseInt(props.getProperty("vcs.redirection.timeout.limit","5000"));
         ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = Boolean.parseBoolean(
                 System.getProperty("RunTestFlexibleRelationship", props.getProperty("enable.flexible.project.release.relationship", "false")));
         URL_FORMATS = props.getProperty("source.download.formats","");
@@ -249,7 +249,7 @@ public class SW360Constants {
         PREFERRED_CLEARING_DATE_LIMIT =  props.getProperty("preferred.clearing.date.limit","");
     }
 
-    private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){
+    private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName) {
         return new AbstractMap.SimpleImmutableEntry<>(field.toString(), displayName);
     }
 }
