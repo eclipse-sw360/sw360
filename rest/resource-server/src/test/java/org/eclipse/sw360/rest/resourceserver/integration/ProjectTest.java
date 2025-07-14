@@ -24,9 +24,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class ProjectTest extends TestIntegrationBase {
     @Value("${local.server.port}")
     private int port;
 
-    @MockBean
+    @MockitoBean
     private Sw360ProjectService projectServiceMock;
 
     private final Set<Project> projectList = new HashSet<>();
