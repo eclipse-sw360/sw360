@@ -25,8 +25,8 @@ import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -1011,7 +1011,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         assertNotNull(generatorClassname);
         return outputGenerators.stream()
                 .filter(outputGenerator -> generatorClassname.equals(outputGenerator.getClass().getSimpleName()))
-                .findFirst().orElseThrow(() -> new TException("Unknown output generator: " + generatorClassname));
+                .findFirst().orElseThrow(() -> new SW360Exception("Unknown output generator: " + generatorClassname));
     }
 
     protected OutputGenerator<?> getOutputGeneratorByClassnameAndVariant(String generatorClassname, OutputFormatVariant generatorVariant) throws TException {
@@ -1020,7 +1020,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return outputGenerators.stream()
                 .filter(outputGenerator -> generatorClassname.equals(outputGenerator.getClass().getSimpleName()))
                 .filter(outputGenerator -> generatorVariant.equals(outputGenerator.getOutputVariant()))
-                .findFirst().orElseThrow(() -> new TException("Unknown output generator: " + generatorClassname));
+                .findFirst().orElseThrow(() -> new SW360Exception("Unknown output generator: " + generatorClassname + " or variant: " + generatorVariant));
     }
 
     private LicenseInfoParsingResult getLicenseInfoForAttachment(Release release, Attachment attachment, User user)
