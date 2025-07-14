@@ -708,6 +708,10 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
+          <configuration>
+            <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+            <argLine>-XX:+EnableDynamicAgentLoading</argLine>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
