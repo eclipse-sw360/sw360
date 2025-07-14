@@ -270,8 +270,8 @@ public class TestUtils {
 
     public static void assumeCanConnectTo(String url) {
         try {
-            new URL(url).openConnection().getInputStream().close();
-        } catch (IOException e) {
+            new URI(url).toURL().openConnection().getInputStream().close();
+        } catch (IOException | URISyntaxException e) {
             assumeNoException(e);
         }
     }

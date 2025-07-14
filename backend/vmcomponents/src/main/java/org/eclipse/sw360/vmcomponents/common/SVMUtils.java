@@ -17,6 +17,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import static org.apache.log4j.Logger.getLogger;
@@ -30,9 +32,9 @@ public class SVMUtils {
 
     private SVMUtils(){}
 
-    public static String prepareJSONRequestAndGetResponse(String url) throws IOException {
-        StringBuffer json = new StringBuffer();
-        URL url_ = new URL(url);
+    public static String prepareJSONRequestAndGetResponse(String url) throws IOException, URISyntaxException {
+        StringBuilder json = new StringBuilder();
+        URL url_ = new URI(url).toURL();
         log.debug("Call URL: "+url);
         HttpURLConnection conn = (HttpURLConnection) url_.openConnection();
         conn.setRequestMethod("GET");

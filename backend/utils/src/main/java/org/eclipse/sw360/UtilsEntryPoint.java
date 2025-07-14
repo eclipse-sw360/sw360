@@ -54,7 +54,7 @@ public class UtilsEntryPoint {
     private static CommandLine parseArgs(String[] args) throws ParseException {
         Options options = getOptions();
 
-        return new BasicParser().parse(options, args, true);
+        return new DefaultParser().parse(options, args, true);
     }
 
     private static void printHelp() {

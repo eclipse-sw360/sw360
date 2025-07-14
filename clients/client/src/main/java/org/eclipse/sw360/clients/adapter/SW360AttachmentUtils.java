@@ -175,7 +175,7 @@ public class SW360AttachmentUtils {
      */
     public static String calculateHash(Path file, MessageDigest digest) {
         try (DigestInputStream din = new DigestInputStream(Files.newInputStream(file), digest)) {
-            IOUtils.copy(din, NullOutputStream.NULL_OUTPUT_STREAM);
+            IOUtils.copy(din, NullOutputStream.INSTANCE);
         } catch (IOException e) {
             throw new SW360ClientException("Could not calculate hash for file " + file, e);
         }
