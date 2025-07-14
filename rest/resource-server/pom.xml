@@ -24,6 +24,13 @@
     <artifactId>resource-server</artifactId>
     <packaging>war</packaging>
     <properties>
+        <jackson-version>2.17.1</jackson-version>
+        <jackson-databind-nullable-version>0.2.6</jackson-databind-nullable-version>
+        <jakarta-annotation-version>2.1.1</jakarta-annotation-version>
+        <beanvalidation-version>3.0.2</beanvalidation-version>
+        <httpmime-version>4.5.14</httpmime-version>
+        <junit-version>5.10.2</junit-version>
+        <spotless.version>2.27.2</spotless.version>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
     </properties>
 
@@ -157,6 +164,11 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
+            <artifactId>backend-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
             <artifactId>rest-common</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -204,6 +216,23 @@
             <artifactId>springdoc-openapi-starter-common</artifactId>
             <version>${springdoc-openapi-stater-common.version}</version>
         </dependency>
+        <dependency>
+			<groupId>org.openapitools</groupId>
+			<artifactId>jackson-databind-nullable</artifactId>
+			<version>0.2.1</version>
+		</dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.18.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>${jboss-logging.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
     <dependencyManagement>
         <dependencies>
@@ -241,7 +270,7 @@
     <build>
         <finalName>resource</finalName>
         <plugins>
-            <plugin>
+            <!-- <plugin>
                 <groupId>io.github.git-commit-id</groupId>
                 <artifactId>git-commit-id-maven-plugin</artifactId>
                 <version>${git-commit-id.version}</version>
@@ -264,15 +293,13 @@
                 <configuration>
                     <validationShouldFailIfNoMatch>false</validationShouldFailIfNoMatch>
                     <generateGitPropertiesFile>false</generateGitPropertiesFile>
-                    <gitDescribe>
-                        <!--
-                         Run `git describe -tags` to consider lightweight tags
-                         https://github.com/git-commit-id/git-commit-id-maven-plugin/#git-describe-and-a-small-gotcha-with-tags
-                         -->
-                        <tags>true</tags>
+                    <gitDescribe> -->
+                         <!-- Run `git describe -tags` to consider lightweight tags
+                         https://github.com/git-commit-id/git-commit-id-maven-plugin/#git-describe-and-a-small-gotcha-with-tags -->
+                        <!-- <tags>true</tags>
                     </gitDescribe>
                 </configuration>
-            </plugin>
+            </plugin> -->
             <plugin>
                 <groupId>com.internetitem</groupId>
                 <artifactId>write-properties-file-maven-plugin</artifactId>

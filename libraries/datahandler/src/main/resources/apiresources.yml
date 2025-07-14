@@ -1,0 +1,796 @@
+openapi: 3.0.3
+info:
+  title: Component Controller API
+  version: 1.0.0
+
+paths: {}
+#   /componentsOpenAPI/usedBy/{id}:
+#     get:
+#       summary: Get all the resources where the component is used.
+#       description: Get all the resources where the component is used.
+#       tags:
+#         - Components
+#       parameters:
+#         - name: id
+#           in: path
+#           required: true
+#           description: The id of the component.
+#           schema:
+#             type: string
+#       responses:
+#         '200':
+#           description: A list of resources where the component is used.
+#           content:
+#             application/json:
+#               schema:
+#                 type: array
+#                 items:
+#                   type: object
+#         '400':
+#           description: Bad Request
+#         '401':
+#           description: Unauthorized
+#         '404':
+#           description: Component not found
+#         '500':
+#           description: Internal Server Error
+#   /componentsOpenAPI:
+#     get:
+#       summary: List all of the service's components.
+#       description: List all of the service's components.
+#       tags:
+#         - Components
+#       parameters:
+#         - name: pageable
+#           in: query
+#           required: false
+#           schema:
+#             $ref: '#/components/schemas/PageableAPI'
+#         - name: name
+#           in: query
+#           description: Name of the component to filter
+#           required: false
+#           schema:
+#             type: string
+#         - name: categories
+#           in: query
+#           description: Categories of the component to filter, as a comma-separated list.
+#           required: false
+#           schema:
+#             type: string
+#         - name: type
+#           in: query
+#           description: Type of the component to filter
+#           required: false
+#           schema:
+#             $ref: '#/components/schemas/ComponentTypeAPI'
+#         - name: languages
+#           in: query
+#           description: Component languages to filter, as a comma-separated list.
+#           required: false
+#           schema:
+#             type: string
+#         - name: softwarePlatforms
+#           in: query
+#           description: Software Platforms to filter, as a comma-separated list.
+#           required: false
+#           schema:
+#             type: string
+#         - name: operatingSystems
+#           in: query
+#           description: Operating Systems to filter, as a comma-separated list.
+#           required: false
+#           schema:
+#             type: string
+#         - name: vendors
+#           in: query
+#           description: Vendors to filter, as a comma-separated list.
+#           required: false
+#           schema:
+#             type: string
+#         - name: mainLicenses
+#           in: query
+#           description: Main Licenses to filter, as a comma-separated list.
+#           required: false
+#           schema:
+#             type: string
+#         - name: createdBy
+#           in: query
+#           description: Created by user to filter (email).
+#           required: false
+#           schema:
+#             type: string
+#         - name: createdOn
+#           in: query
+#           description: Date component was created on (YYYY-MM-DD).
+#           required: false
+#           schema:
+#             type: string
+#             format: date
+#         - name: fields
+#           in: query
+#           description: Properties which should be present for each component in the result
+#           required: false
+#           schema:
+#             type: array
+#             items:
+#               type: string
+#         - name: allDetails
+#           in: query
+#           description: Flag to get components with all details.
+#           required: false
+#           schema:
+#             type: boolean
+#         - name: luceneSearch
+#           in: query
+#           description: Use lucenesearch to filter the components.
+#           required: false
+#           schema:
+#             type: boolean
+#       responses:
+#         '200':
+#           description: Successful response
+#           content:
+#             application/xml:
+#               schema:
+#                 type: array
+#                 items:
+#                   $ref: '#/components/schemas/ComponentAPI'
+#             application/json:
+#               schema:
+#                 type: array
+#                 items:
+#                   $ref: '#/components/schemas/ComponentAPI'
+#         '400':
+#           description: Bad request
+#         '500':
+#           description: Internal server error
+components:
+  schemas:
+    LicenseAPI:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        revision:
+          type: string
+        shortname:
+          type: string
+        fullname:
+          type: string
+        licenseType:
+          type: object
+        licenseTypeDatabaseId:
+          type: string
+        externalLicenseLink:
+          type: string
+        note:
+          type: string
+        externalIds:
+          type: object
+          additionalProperties:
+            type: string
+        additionalData:
+          type: object
+          additionalProperties:
+            type: string
+        reviewdate:
+          type: string
+        OSIApproved:
+          type: integer
+        FSFLibre:
+          type: integer
+        obligations:
+          type: array
+          items:
+            type: object
+        obligationDatabaseIds:
+          type: array
+          items:
+            type: string
+        obligationListId:
+          type: string
+        text:
+          type: string
+        checked:
+          type: boolean
+        documentState:
+          type: object
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+    ComponentAPI:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: UUID
+          format: uuid
+        revision:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachmentAPI'
+        createdOn:
+          type: string
+          format: date
+        componentType:
+          $ref: '#/components/schemas/ComponentTypeAPI'
+        createdBy:
+          type: string
+        subscribers:
+          type: array
+          items:
+            type: string
+        moderators:
+          type: array
+          items:
+            type: string
+        componentOwner:
+          type: string
+        ownerAccountingUnit:
+          type: string
+        ownerGroup:
+          type: string
+        ownerCountry:
+          type: string
+        roles:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        visibility:
+          type: string
+          enum:
+            - Public
+            - Private
+            - Internal
+        businessUnit:
+          type: string
+        cdxComponentType:
+          type: string
+        externalIds:
+          type: object
+          additionalProperties:
+            type: string
+        additionalData:
+          type: object
+          additionalProperties:
+            type: string
+        releases:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReleaseAPI'
+        releaseIds:
+          type: array
+          items:
+            type: string
+        mainLicenseIds:
+          type: array
+          items:
+            type: string
+        defaultVendor:
+          $ref: '#/components/schemas/VendorAPI'
+        defaultVendorId:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        languages:
+          type: array
+          items:
+            type: string
+        softwarePlatforms:
+          type: array
+          items:
+            type: string
+        operatingSystems:
+          type: array
+          items:
+            type: string
+        vendorNames:
+          type: array
+          items:
+            type: string
+        homepage:
+          type: string
+        mailinglist:
+          type: string
+        wiki:
+          type: string
+        blog:
+          type: string
+        wikipedia:
+          type: string
+        openHub:
+          type: string
+        vcs:
+          type: string
+        documentState:
+          type: string
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+        modifiedBy:
+          type: string
+        modifiedOn:
+          type: string
+          format: date
+        vendors:
+          type: array
+          items:
+            $ref: '#/components/schemas/VendorAPI'
+    ComponentTypeAPI:
+      type: string
+      enum:
+        - SOFTWARE
+        - HARDWARE
+        - INTERNAL
+        - OSS
+        - COTS
+        - FREESOFTWARE
+        - INNER_SOURCE
+        - SERVICE
+        - CODE_SNIPPET
+        - COTS_TRUSTED_SUPPLIER
+    VisibilityAPI:
+      type: string
+      enum:
+        - EVERYONE
+        - RESTRICTED
+        - PRIVATE
+    CycloneDxComponentTypeAPI:
+      type: string
+      enum:
+        - APPLICATION
+        - FRAMEWORK
+        - LIBRARY
+        - CONTAINER
+        - OPERATING_SYSTEM
+        - DEVICE
+        - FIRMWARE
+        - FILE
+        - INSTALLER
+        - OTHER
+    DocumentStateAPI:
+      type: string
+      enum:
+        - DRAFT
+        - FINAL
+        - ARCHIVED
+    VendorAPI:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        revision:
+          type: string
+        shortname:
+          type: string
+        fullname:
+          type: string
+        url:
+          type: string
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+    ReleaseAPI:
+      type: object
+      # required:
+      #   - componentId
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        version:
+          type: string
+        componentId:
+          type: string
+        releaseDate:
+          type: string
+          format: date
+        mainLicenseIds:
+          type: array
+          items:
+            type: string
+        languages:
+          type: array
+          items:
+            type: string
+        operatingSystems:
+          type: array
+          items:
+            type: string
+        softwarePlatforms:
+          type: array
+          items:
+            type: string
+        moderators:
+          type: array
+          items:
+            type: string
+        vendor:
+          $ref: '#/components/schemas/VendorAPI'
+        documentState:
+          $ref: '#/components/schemas/DocumentStateAPI'
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+        modifiedBy:
+          type: string
+        modifiedOn:
+          type: string
+          format: date
+        vulnerabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/VulnerabilityAPI'
+    PageableAPI:
+      description: minimal Pageable query parameters
+      type: object
+      properties:
+        number:
+          type: integer
+          default: 1
+        size:
+          type: integer
+          default: 10
+    AttachmentAPI:
+      type: object
+      properties:
+        attachmentContentId:
+          type: string
+        filename:
+          type: string
+        sha1:
+          type: string
+        attachmentType:
+          type: string
+          enum:
+            - DOCUMENT
+            - SOURCE
+            - DESIGN
+            - REQUIREMENT
+            - CLEARING_REPORT
+            - COMPONENT_LICENSE_INFO_XML
+            - COMPONENT_LICENSE_INFO_COMBINED
+            - SCAN_RESULT_REPORT
+            - SCAN_RESULT_REPORT_XML
+            - SOURCE_SELF
+            - BINARY
+            - BINARY_SELF
+            - DECISION_REPORT
+            - LEGAL_EVALUATION
+            - LICENSE_AGREEMENT
+            - SCREENSHOT
+            - OTHER
+            - README_OSS
+            - SECURITY_ASSESSMENT
+            - INITIAL_SCAN_REPORT
+            - SBOM
+            - INTERNAL_USE_SCAN
+        createdBy:
+          type: string
+        createdTeam:
+          type: string
+        createdComment:
+          type: string
+        createdOn:
+          type: string
+        checkedBy:
+          type: string
+        checkedTeam:
+          type: string
+        checkedComment:
+          type: string
+        checkedOn:
+          type: string
+        uploadHistory:
+          type: array
+          items:
+            type: string
+        checkStatus:
+          type: string
+          enum:
+            - NOTCHECKED
+            - ACCEPTED
+            - REJECTED
+        superAttachmentId:
+          type: string
+        superAttachmentFilename:
+          type: string
+        projectAttachmentUsage:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            revision:
+              type: string
+            type:
+              type: string
+              default: usage
+            visible:
+              type: integer
+            restricted:
+              type: integer
+            projectUsages:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  revision:
+                    type: string
+                  type:
+                    type: string
+                    default: ProjectUsage
+                  projectId:
+                    type: string
+                  projectName:
+                    type: string
+    ProjectAPI:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        revision:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        domain:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachmentAPI'
+        createdOn:
+          type: string
+        businessUnit:
+          type: string
+        state:
+          type: string
+          enum:
+            - ACTIVE
+            - PHASE_OUT
+            - UNKNOWN
+            - SVM_ONLY
+            - PRIVATE
+            - UNDER_DEVELOPMENT
+            - RELEASED
+        projectType:
+          type: string
+          enum:
+            - CUSTOMER
+            - INTERNAL
+            - PRODUCT
+            - SERVICE
+            - INNER_SOURCE
+            - CLOUD_BACKEND
+        tag:
+          type: string
+        clearingState:
+          type: string
+          enum:
+            - OPEN
+            - IN_PROGRESS
+            - CLOSED
+        createdBy:
+          type: string
+          # ref: '#/components/schemas/User'
+        projectResponsible:
+          type: string
+        leadArchitect:
+          type: string
+        moderators:
+          type: array
+          items:
+            type: string
+        contributors:
+          type: array
+          items:
+            type: string
+        roles:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        securityResponsibles:
+          type: array
+          items:
+            type: string
+        linkedProjects:
+          type: object
+          additionalProperties:
+            type: string
+        releaseIdToUsage:
+          type: object
+          additionalProperties:
+            type: string
+        packageIds:
+          type: array
+          items:
+            type: string
+        visibility:
+          type: string
+          enum:
+            - EVERYONE
+            - RESTRICTED
+            - PRIVATE
+        projectOwner:
+          type: string
+        ownerAccountingUnit:
+          type: string
+        ownerGroup:
+          type: string
+        ownerCountry:
+          type: string
+        clearingTeam:
+          type: string
+        preevaluationDeadline:
+          type: string
+        systemTestStart:
+          type: string
+        systemTestEnd:
+          type: string
+        deliveryStart:
+          type: string
+        phaseOutSince:
+          type: string
+        enableSvm:
+          type: boolean
+        externalIds:
+          type: object
+          additionalProperties:
+            type: string
+        additionalData:
+          type: object
+          additionalProperties:
+            type: string
+        considerReleasesFromExternalList:
+          type: boolean
+        licenseInfoHeaderText:
+          type: string
+        enableVulnerabilitiesDisplay:
+          type: boolean
+        obligationsText:
+          type: string
+        clearingSummary:
+          type: string
+        specialRisksOSS:
+          type: string
+        generalRisks3rdParty:
+          type: string
+        specialRisks3rdParty:
+          type: string
+        deliveryChannels:
+          type: string
+        remarksAdditionalRequirements:
+          type: string
+        documentState:
+          type: string
+        clearingRequestId:
+          type: string
+        releaseClearingStateSummary:
+          type: string
+        linkedObligationId:
+          type: string
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+        externalUrls:
+          type: object
+          additionalProperties:
+            type: string
+        vendor:
+          $ref: '#/components/schemas/VendorAPI'
+        modifiedBy:
+          type: string
+        modifiedOn:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentAPI'
+    VulnerabilityAPI:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        revision:
+          type: string
+        type:
+          type: string
+        lastUpdateDate:
+          type: string
+        externalId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        publishDate:
+          type: string
+        lastExternalUpdate:
+          type: string
+        priority:
+          type: string
+        priorityText:
+          type: string
+        action:
+          type: string
+        impact:
+          type: object
+          additionalProperties:
+            type: string
+        legalNotice:
+          type: string
+        assignedExtComponentIds:
+          type: array
+          items:
+            type: string
+        cveReferences:
+          type: array
+          items:
+            type: string
+        vendorAdvisories:
+          type: array
+          items:
+            type: string
+        extendedDescription:
+          type: string
+        references:
+          type: array
+          items:
+            type: string
+        cvss:
+          type: string
+        isSetCvss:
+          type: string
+        cvssTime:
+          type: string
+        vulnerableConfiguration:
+          type: object
+          additionalProperties:
+            type: string
+        access:
+          type: object
+          additionalProperties:
+            type: string
+        cwe:
+          type: string
+        cveFurtherMetaDataPerSource:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string
+        releases:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReleaseAPI'
