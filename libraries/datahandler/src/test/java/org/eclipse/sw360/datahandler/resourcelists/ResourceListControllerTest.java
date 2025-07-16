@@ -13,10 +13,9 @@ package org.eclipse.sw360.datahandler.resourcelists;
 
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -33,9 +32,6 @@ public class ResourceListControllerTest {
     private ResourceListController resourceListController;
     private ResourceComparatorGenerator resourceComparatorGenerator;
     private List<Component> unsortedComponents;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -114,8 +110,8 @@ public class ResourceListControllerTest {
         Comparator comparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "name");
         PaginationOptions paginationOptions = new PaginationOptions(3, 4, comparator);
         List<Component> tmpList = new ArrayList<>(unsortedComponents);
-        thrown.expect(PaginationParameterException.class);
-        resourceListController.applyPagingToList(tmpList, paginationOptions);
+        Assert.assertThrows(PaginationParameterException.class,
+                () -> resourceListController.applyPagingToList(tmpList, paginationOptions));
     }
 
 }

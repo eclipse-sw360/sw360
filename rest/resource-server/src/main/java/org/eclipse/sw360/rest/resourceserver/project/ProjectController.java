@@ -1525,8 +1525,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Download license info for the project.",
-            description = "Set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose " +
-                    "specific template.",
+            description = """
+                    Set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose \
+                    specific template.
+
+                    Combination of `generatorClassName` and `variant` possible are:
+
+                    When `variant` is `DISCLOSURE`, `generatorClassName` can be one of: \
+                    `TextGenerator`, `XhtmlGenerator` or `DISCLOSURE`.
+                    When `variant` is `REPORT`, `generatorClassName` can be one of: \
+                    `DocxGenerator`.""",
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseinfo", method = RequestMethod.GET)

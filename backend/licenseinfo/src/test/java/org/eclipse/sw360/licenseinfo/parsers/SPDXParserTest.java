@@ -31,22 +31,23 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.TestHelper.AttachmentContentStore;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.*;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.w3c.dom.Document;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.InputStream;
 import java.util.*;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.*;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.withSettings;
 
@@ -64,6 +65,9 @@ public class SPDXParserTest {
 
     @Mock
     private AttachmentConnector connector;
+
+    @Rule
+    public MockitoRule rule = MockitoJUnit.rule();
 
     public static final String spdxExampleFile = "SPDXRdfExample-v2.0.rdf";
     public static final String spdx11ExampleFile = "SPDXRdfExample-v1.1.rdf";
@@ -94,7 +98,6 @@ public class SPDXParserTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         attachmentContentStore = new AttachmentContentStore(connector);
 
         parser = new SPDXParser(connector, attachmentContentStore.getAttachmentContentProvider());
@@ -108,25 +111,23 @@ public class SPDXParserTest {
             int numberOfCoyprights, String exampleCopyright, Set<String> exampleConcludedLicenseIds) {
         assertLicenseInfo(result);
 
-        assertThat(result.getFilenames().size(), is(1));
-        assertThat(result.getFilenames().get(0), is(exampleFile));
+        assertEquals(1, result.getFilenames().size());
+        assertEquals(exampleFile, result.getFilenames().get(0));
 
-        assertThat(result.getLicenseNamesWithTextsSize(), is(expectedLicenses.size()));
+        assertEquals(expectedLicenses.size(), result.getLicenseNamesWithTextsSize());
         expectedLicenses.stream()
-                .forEach(licenseId -> assertThat(result.getLicenseNamesWithTexts().stream()
+                .forEach(licenseId -> assertTrue(result.getLicenseNamesWithTexts().stream()
                         .map(LicenseNameWithText::getLicenseName)
-                        .anyMatch(licenseId::equals), is(true)));
-        assertThat(result.getLicenseNamesWithTexts().stream()
+                        .anyMatch(licenseId::equals)));
+        assertTrue(result.getLicenseNamesWithTexts().stream()
                         .map(lt -> lt.getLicenseText())
-                        .anyMatch(t -> t.contains("The CyberNeko Software License, Version 1.0")),
-                is(true));
+                        .anyMatch(t -> t.contains("The CyberNeko Software License, Version 1.0")));
 
-        assertThat(result.getCopyrightsSize(), is(numberOfCoyprights));
-        assertThat(result.getCopyrights().stream()
-                        .anyMatch(c -> c.contains(exampleCopyright)),
-                is(true));
+        assertEquals(numberOfCoyprights, result.getCopyrightsSize());
+        assertTrue(result.getCopyrights().stream()
+                        .anyMatch(c -> c.contains(exampleCopyright)));
 
-        assertThat(result.getConcludedLicenseIds(), containsInAnyOrder(exampleConcludedLicenseIds.toArray()));
+        assertTrue(containsInAnyOrder(exampleConcludedLicenseIds.toArray()).matches(result.getConcludedLicenseIds()));
     }
 
     @Test
