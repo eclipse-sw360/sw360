@@ -15,7 +15,7 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
@@ -45,7 +45,7 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private Sw360ProjectService projectServiceMock;
 
     @Test

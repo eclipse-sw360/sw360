@@ -80,7 +80,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
@@ -137,25 +137,25 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private SW360PackageService packageServiceMock;
 
-    @MockBean
+    @MockitoBean
     private Sw360ProjectService projectServiceMock;
 
-    @MockBean
+    @MockitoBean
     private Sw360ReleaseService releaseServiceMock;
 
-    @MockBean
+    @MockitoBean
     private Sw360AttachmentService attachmentServiceMock;
 
-    @MockBean
+    @MockitoBean
     private Sw360LicenseInfoService licenseInfoMockService;
 
-    @MockBean
+    @MockitoBean
     private Sw360VulnerabilityService vulnerabilityMockService;
 
-    @MockBean
+    @MockitoBean
     private SW360ReportService sw360ReportServiceMock;
 
     private Project project;
