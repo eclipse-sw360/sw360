@@ -76,9 +76,10 @@ public class FossologyRestConfig {
         String baseUrl = getBaseUrlWithSlash();
         if (baseUrl != null) {
             if (baseUrl.contains("/api/v1/")) {
-                baseUrl = baseUrl.replace("/api/v1/", "/api/v2/");
-            } else if (!baseUrl.contains("/api/v2/")) {
-                // If no version specified, add v2
+        throw new IllegalArgumentException("API v1 is no longer supported and deprecated. Please use /api/v2 instead.");
+    }
+        // If no version specified, add v2
+        if (!baseUrl.contains("/api/v2/")) {
                 if (baseUrl.endsWith("/")) {
                     baseUrl += "api/v2/";
                 } else {
