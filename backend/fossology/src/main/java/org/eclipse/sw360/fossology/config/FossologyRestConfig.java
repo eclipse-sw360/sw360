@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -26,7 +27,7 @@ import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Settings for the fossology rest connection
+ * Settings for the fossology rest connection (v2 API)
  */
 @Component
 public class FossologyRestConfig {
@@ -38,6 +39,11 @@ public class FossologyRestConfig {
     public static final String CONFIG_KEY_FOLDER_ID = "folderId";
     public static final String CONFIG_KEY_DOWNLOAD_TIMEOUT = "fossology.downloadTimeout";
     public static final String CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT = "fossology.downloadTimeoutUnit";
+    
+    // v2 API specific configuration keys
+    public static final String CONFIG_KEY_API_VERSION = "fossology.apiVersion";
+    public static final String CONFIG_KEY_AUTO_START_SCAN = "fossology.autoStartScan";
+    public static final String CONFIG_KEY_DEFAULT_GROUP = "fossology.defaultGroup";
 
     private final ConfigContainerRepository repository;
 
@@ -62,6 +68,28 @@ public class FossologyRestConfig {
         return url;
     }
 
+    /**
+     * Get the v2 API base URL with proper path
+     * @return Base URL with v2 API path
+     */
+    public String getV2BaseUrlWithSlash() {
+        String baseUrl = getBaseUrlWithSlash();
+        if (baseUrl != null) {
+            if (baseUrl.contains("/api/v1/")) {
+        throw new IllegalArgumentException("API v1 is no longer supported and deprecated. Please use /api/v2 instead.");
+    }
+        // If no version specified, add v2
+        if (!baseUrl.contains("/api/v2/")) {
+                if (baseUrl.endsWith("/")) {
+                    baseUrl += "api/v2/";
+                } else {
+                    baseUrl += "/api/v2/";
+                }
+            }
+        }
+        return baseUrl;
+    }
+
     public String getAccessToken() {
         return getFirstValue(CONFIG_KEY_TOKEN);
     }
@@ -76,6 +104,29 @@ public class FossologyRestConfig {
 
     public String getDownloadTimeoutUnit() {
         return getFirstValue(CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT);
+    }
+
+    /**
+     * Get API version preference (defaults to v2)
+     */
+    public String getApiVersion() {
+        String version = getFirstValue(CONFIG_KEY_API_VERSION);
+        return version != null ? version : "v2";
+    }
+
+    /**
+     * Check if auto-start scan is enabled (default: true for v2)
+     */
+    public boolean isAutoStartScanEnabled() {
+        String enabled = getFirstValue(CONFIG_KEY_AUTO_START_SCAN);
+        return enabled == null || Boolean.parseBoolean(enabled);
+    }
+
+    /**
+     * Get default group name for operations
+     */
+    public String getDefaultGroup() {
+        return getFirstValue(CONFIG_KEY_DEFAULT_GROUP);
     }
 
     private String getFirstValue(String key) {
@@ -112,6 +163,13 @@ public class FossologyRestConfig {
             Long.parseLong(folderId);
         } catch (NumberFormatException e) {
             throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid folder id.");
+        }
+
+        // Validate v2 configuration options
+        String apiVersion = newConfig.getConfigKeyToValues().getOrDefault(CONFIG_KEY_API_VERSION, new HashSet<>())
+                .stream().findFirst().orElse("v2");
+        if (!apiVersion.equals("v2")) {
+            throw new IllegalStateException("API version must be 'v2'.");
         }
 
         String downloadTimeout = newConfig.getConfigKeyToValues().getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT, new HashSet<>()).stream()
