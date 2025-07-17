@@ -10,7 +10,6 @@
 package org.eclipse.sw360.licenseinfo.util;
 
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,7 +22,7 @@ public class LicenseNameWithTextUtilsTest {
 
         licenseNameWithText = createLicense("name", null, null);
         LicenseNameWithTextUtils.sanitize(licenseNameWithText);
-        Assert.assertThat(licenseNameWithText.getLicenseName(), Matchers.is("name"));
+        Assert.assertEquals("name", licenseNameWithText.getLicenseName());
 
         licenseNameWithText = createLicense("\n", null, null);
         LicenseNameWithTextUtils.sanitize(licenseNameWithText);
@@ -31,7 +30,7 @@ public class LicenseNameWithTextUtilsTest {
 
         licenseNameWithText = createLicense(null, "text", null);
         LicenseNameWithTextUtils.sanitize(licenseNameWithText);
-        Assert.assertThat(licenseNameWithText.getLicenseText(), Matchers.is("text"));
+        Assert.assertEquals("text", licenseNameWithText.getLicenseText());
 
         licenseNameWithText = createLicense(null, " ", null);
         LicenseNameWithTextUtils.sanitize(licenseNameWithText);
@@ -39,7 +38,7 @@ public class LicenseNameWithTextUtilsTest {
 
         licenseNameWithText = createLicense(null, null, "acks");
         LicenseNameWithTextUtils.sanitize(licenseNameWithText);
-        Assert.assertThat(licenseNameWithText.getAcknowledgements(), Matchers.is("acks"));
+        Assert.assertEquals("acks", licenseNameWithText.getAcknowledgements());
 
         licenseNameWithText = createLicense(null, null, "  ");
         LicenseNameWithTextUtils.sanitize(licenseNameWithText);

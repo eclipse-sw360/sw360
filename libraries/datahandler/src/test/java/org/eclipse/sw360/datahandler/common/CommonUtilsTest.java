@@ -11,6 +11,7 @@ package org.eclipse.sw360.datahandler.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -19,9 +20,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author daniele.fognini@tngtech.com
@@ -30,102 +28,102 @@ public class CommonUtilsTest {
 
     @Test
     public void testIsUrl() throws Exception {
-        assertThat(isValidUrl("http://www.google.com"), is(true));
+        Assert.assertTrue(isValidUrl("http://www.google.com"));
     }
 
     @Test
     public void testIsUrl1() throws Exception {
-        assertThat(isValidUrl("www.google.com"), is(false));
+        Assert.assertFalse(isValidUrl("www.google.com"));
     }
 
     @Test
     public void testIsUrl2() throws Exception {
-        assertThat(isValidUrl("ftp://www.google.com"), is(true));
+        Assert.assertTrue(isValidUrl("ftp://www.google.com"));
     }
 
     @Test
     public void testIsUrl3() throws Exception {
-        assertThat(isValidUrl("httpwww://www.google.com"), is(false));
+        Assert.assertFalse(isValidUrl("httpwww://www.google.com"));
     }
 
     @Test
     public void testIsUrl4() throws Exception {
-        assertThat(isValidUrl("http://"), is(false));
+        Assert.assertFalse(isValidUrl("http://"));
     }
 
     @Test
     public void testIsUrl5() throws Exception {
-        assertThat(isValidUrl(null), is(false));
+        Assert.assertFalse(isValidUrl(null));
     }
 
     @Test
     public void testIsUrl6() throws Exception {
-        assertThat(isValidUrl(""), is(false));
+        Assert.assertFalse(isValidUrl(""));
     }
 
     @Test
     public void testNameOfUrl() throws Exception {
-        assertThat(getTargetNameOfUrl("http://www.google.com"), is(""));
+        Assert.assertTrue(getTargetNameOfUrl("http://www.google.com").isEmpty());
     }
 
     @Test
     public void testNameOfUrl1() throws Exception {
-        assertThat(getTargetNameOfUrl("www.google.com"), is(""));
+        Assert.assertTrue(getTargetNameOfUrl("www.google.com").isEmpty());
     }
 
     @Test
     public void testNameOfUrl2() throws Exception {
-        assertThat(getTargetNameOfUrl("ftp://www.google.com"), is(""));
+        Assert.assertTrue(getTargetNameOfUrl("ftp://www.google.com").isEmpty());
     }
 
     @Test
     public void testNameOfUrl3() throws Exception {
-        assertThat(getTargetNameOfUrl("httpwww://www.google.com"), is(""));
+        Assert.assertTrue(getTargetNameOfUrl("httpwww://www.google.com").isEmpty());
     }
 
     @Test
     public void testNameOfUrl4() throws Exception {
-        assertThat(getTargetNameOfUrl("http://example.com/file"), is("file"));
+        Assert.assertEquals("file", getTargetNameOfUrl("http://example.com/file"));
     }
 
     @Test
     public void testNameOfUrl5() throws Exception {
-        assertThat(getTargetNameOfUrl("http://www.google.com?file=12"), is(""));
+        Assert.assertTrue(getTargetNameOfUrl("http://www.google.com?file=12").isEmpty());
     }
 
     @Test
     public void testNameOfUrl6() throws Exception {
-        assertThat(getTargetNameOfUrl("ftp://www.google.com/dir/file.xe"), is("file.xe"));
+        Assert.assertEquals("file.xe", getTargetNameOfUrl("ftp://www.google.com/dir/file.xe"));
     }
 
     @Test
     public void testNameOfUrl7() throws Exception {
-        assertThat(getTargetNameOfUrl("http://www.google.com/dir/file.ext?cookie=14&cr=345"), is("file.ext"));
+        Assert.assertEquals("file.ext", getTargetNameOfUrl("http://www.google.com/dir/file.ext?cookie=14&cr=345"));
     }
 
     @Test
     public void testFormatTime0() throws Exception {
-        assertThat(formatTime(0), is("00:00:00"));
+        Assert.assertEquals("00:00:00", formatTime(0));
     }
 
     @Test
     public void testFormatTimeSecond() throws Exception {
-        assertThat(formatTime(1), is("00:00:01"));
+        Assert.assertEquals("00:00:01", formatTime(1));
     }
 
     @Test
     public void testFormatTimeMinute() throws Exception {
-        assertThat(formatTime(60), is("00:01:00"));
+        Assert.assertEquals("00:01:00", formatTime(60));
     }
 
     @Test
     public void testFormatTimeHour() throws Exception {
-        assertThat(formatTime(3600), is("01:00:00"));
+        Assert.assertEquals("01:00:00", formatTime(3600));
     }
 
     @Test
     public void testFormatTime24Hours() throws Exception {
-        assertThat(formatTime(86400), is("24:00:00"));
+        Assert.assertEquals("24:00:00", formatTime(86400));
     }
 
     @Test
@@ -133,7 +131,7 @@ public class CommonUtilsTest {
         Map<String, Set<String>> roleMap = new HashMap<>();
         Project project = new Project().setName("pname").setRoles(roleMap);
         boolean b = isMapFieldMapOfStringSets(Project._Fields.ROLES, project, project, project, LogManager.getLogger(CommonUtilsTest.class));
-        assertThat(b, is(false));
+        Assert.assertFalse(b);
     }
     @Test
     public void testIsMapFieldMapOfStringSets_EmptySets() throws Exception {
@@ -142,7 +140,7 @@ public class CommonUtilsTest {
         roleMap.put("role2", new HashSet<>());
         Project project = new Project().setName("pname").setRoles(roleMap);
         boolean b = isMapFieldMapOfStringSets(Project._Fields.ROLES, project, project, project, LogManager.getLogger(CommonUtilsTest.class));
-        assertThat(b, is(false));
+        Assert.assertFalse(b);
     }
     @Test
     public void testIsMapFieldMapOfStringSets_NoSet() throws Exception {
@@ -151,7 +149,7 @@ public class CommonUtilsTest {
         externalIds.put("ext2", "id2");
         Project project = new Project().setName("pname").setExternalIds(externalIds);
         boolean b = isMapFieldMapOfStringSets(Project._Fields.EXTERNAL_IDS, project, project, project, LogManager.getLogger(CommonUtilsTest.class));
-        assertThat(b, is(false));
+        Assert.assertFalse(b);
     }
     @Test
     public void testIsMapFieldMapOfStringSets_StringSets() throws Exception {
@@ -159,7 +157,7 @@ public class CommonUtilsTest {
         roleMap.put("expert", toSingletonSet("expert@company.com"));
         Project project = new Project().setName("pname").setRoles(roleMap);
         boolean b = isMapFieldMapOfStringSets(Project._Fields.ROLES, project, project, project, LogManager.getLogger(CommonUtilsTest.class));
-        assertThat(b, is(true));
+        Assert.assertTrue(b);
     }
     @Test
     public void testIsMapFieldMapOfStringSets_SingleStringSets() throws Exception {
@@ -172,61 +170,61 @@ public class CommonUtilsTest {
         roleMap.put("expert", toSingletonSet("expert@company.com"));
         Project project3 = new Project().setName("pname").setRoles(roleMap3);
         boolean b = isMapFieldMapOfStringSets(Project._Fields.ROLES, project, project2, project3, LogManager.getLogger(CommonUtilsTest.class));
-        assertThat(b, is(true));
+        Assert.assertTrue(b);
     }
 
     @Test
     public void testAllHaveSameLengthWithNoParameter() {
-        assertThat(allHaveSameLength(), is(true));
+        Assert.assertTrue(allHaveSameLength());
     }
 
     @Test
     public void testAllHaveSameLengthWithOneParameter() {
-        int array[] = { 1, 2, 3 };
-        assertThat(allHaveSameLength(array), is(true));
+        int[] array = { 1, 2, 3 };
+        Assert.assertTrue(allHaveSameLength(array));
     }
 
     @Test
     public void testAllHaveSameLengthWithArraysOfSameLength() {
-        int iArray[] = { 1, 2, 3 };
-        String sArray[] = { "foo", "bar", "42" };
-        boolean bArray[] = { true, false, false };
+        int[] iArray = { 1, 2, 3 };
+        String[] sArray = { "foo", "bar", "42" };
+        boolean[] bArray = { true, false, false };
 
-        assertThat(allHaveSameLength(iArray, sArray, bArray), is(true));
+        Assert.assertTrue(allHaveSameLength(iArray, sArray, bArray));
     }
 
     @Test
     public void testAllHaveSameLengthWithArraysOfDifferentLength1() {
-        int iArray[] = { 1, 2, 3 };
-        String sArray[] = { "foo", "bar" };
-        boolean bArray[] = { true, false, false };
+        int[] iArray = { 1, 2, 3 };
+        String[] sArray = { "foo", "bar" };
+        boolean[] bArray = { true, false, false };
 
-        assertThat(allHaveSameLength(iArray, sArray, bArray), is(false));
+        Assert.assertFalse(allHaveSameLength(iArray, sArray, bArray));
     }
 
     @Test
     public void testAllHaveSameLengthWithArraysOfDifferentLength2() {
-        int iArray[] = { 1, 2, 3 };
-        String sArray[] = { "foo", "bar", "42" };
-        boolean bArray[] = { true, false };
+        int[] iArray = { 1, 2, 3 };
+        String[] sArray = { "foo", "bar", "42" };
+        boolean[] bArray = { true, false };
 
-        assertThat(allHaveSameLength(iArray, sArray, bArray), is(false));
+        Assert.assertFalse(allHaveSameLength(iArray, sArray, bArray));
     }
 
     @Test
     public void testAllHaveSameLengthWithArraysOfDifferentLength3() {
-        int iArray[] = { 1, 2 };
-        String sArray[] = { "foo", "bar", "42" };
-        boolean bArray[] = { true, false, false };
+        int[] iArray = { 1, 2 };
+        String[] sArray = { "foo", "bar", "42" };
+        boolean[] bArray = { true, false, false };
 
-        assertThat(allHaveSameLength(iArray, sArray, bArray), is(false));
+        Assert.assertFalse(allHaveSameLength(iArray, sArray, bArray));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testAllHaveSameLengthWithOtherObjects1() {
         int i = 1;
 
-        assertThat(allHaveSameLength(i), is(false));
+        Assert.assertFalse(allHaveSameLength(i));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -234,23 +232,23 @@ public class CommonUtilsTest {
         int i = 1;
         String s = "s";
 
-        assertThat(allHaveSameLength(i, s), is(false));
+        Assert.assertFalse(allHaveSameLength(i, s));
     }
 
     @Test
     public void testGetIntOrDefault() throws Exception {
-        assertThat(getIntOrDefault("25", 6), is(25));
-        assertThat(getIntOrDefault("-25", 25), is(-25));
-        assertThat(getIntOrDefault("25z", 6), is(6));
-        assertThat(getIntOrDefault( null, 42), is(42));
+        Assert.assertEquals(25, getIntOrDefault("25", 6));
+        Assert.assertEquals(-25, getIntOrDefault("-25", 25));
+        Assert.assertEquals(6, getIntOrDefault("25z", 6));
+        Assert.assertEquals(42, getIntOrDefault(null, 42));
     }
 
     @Test
     public void testGetFileNameExtension() {
-        assertThat(getExtensionFromFileName("example.doc"), is("doc"));
-        assertThat(getExtensionFromFileName("source.TAR.gz"), is("TAR.gz"));
-        assertThat(getExtensionFromFileName("testfile.test.V1 12.jpg"), is("jpg"));
-        assertThat(getExtensionFromFileName("testfile-without-extension"), is(""));
-        assertNull(getExtensionFromFileName(null));
+        Assert.assertEquals("doc", getExtensionFromFileName("example.doc"));
+        Assert.assertEquals("TAR.gz", getExtensionFromFileName("source.TAR.gz"));
+        Assert.assertEquals("jpg", getExtensionFromFileName("testfile.test.V1 12.jpg"));
+        Assert.assertEquals("", getExtensionFromFileName("testfile-without-extension"));
+        Assert.assertNull(getExtensionFromFileName(null));
     }
 }

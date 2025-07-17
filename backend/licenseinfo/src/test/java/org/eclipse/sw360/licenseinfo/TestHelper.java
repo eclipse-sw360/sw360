@@ -21,16 +21,14 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.licenseinfo.parsers.AttachmentContentProvider;
+import org.junit.Assert;
 
 import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -104,17 +102,17 @@ public class TestHelper {
         assertLicenseInfo(info, true);
     }
 
-    public static void assertLicenseInfo(LicenseInfo info, boolean assertNonempty){
-        assertThat(info.getFilenames(), notNullValue());
-        assertThat(info.getFilenames().size(), greaterThan(0));
+    public static void assertLicenseInfo(LicenseInfo info, boolean assertNonempty) {
+        Assert.assertNotNull(info.getFilenames());
+        Assert.assertFalse(info.getFilenames().isEmpty());
 
         if(assertNonempty){
-            assertThat(info.getCopyrights(), notNullValue());
-            assertThat(info.getLicenseNamesWithTexts(), notNullValue());
-            assertThat(info.getLicenseNamesWithTexts().stream()
+            Assert.assertNotNull(info.getCopyrights());
+            Assert.assertNotNull(info.getLicenseNamesWithTexts());
+            Assert.assertTrue(info.getLicenseNamesWithTexts().stream()
                     .filter(lt -> lt.isSetLicenseText())
                     .findAny()
-                    .isPresent(), is(true));
+                    .isPresent());
         }
     }
 
@@ -123,8 +121,8 @@ public class TestHelper {
     }
 
     public static void assertLicenseInfoParsingResult(LicenseInfoParsingResult result, LicenseInfoRequestStatus status){
-        assertThat(result.getStatus(), is(status));
-        assertThat(result.getLicenseInfo(), notNullValue());
+        Assert.assertEquals(status, result.getStatus());
+        Assert.assertNotNull(result.getLicenseInfo());
         assertLicenseInfo(result.getLicenseInfo(), status == LicenseInfoRequestStatus.SUCCESS);
     }
 }

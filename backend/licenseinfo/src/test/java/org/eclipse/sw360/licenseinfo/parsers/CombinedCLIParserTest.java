@@ -33,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -66,7 +67,7 @@ public class CombinedCLIParserTest {
 
     @Before
     public void setUp() throws Exception {
-        cliTestfile = IOUtils.toString(makeAttachmentContentStream(TEST_XML_FILENAME));
+        cliTestfile = IOUtils.toString(makeAttachmentContentStream(TEST_XML_FILENAME), StandardCharsets.UTF_8);
         attachment = new Attachment("A1", "a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
         content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
         parser = spy(new CombinedCLIParser(connector, attachment -> content, componentDatabaseHandler));
@@ -103,21 +104,33 @@ public class CombinedCLIParserTest {
     @Test
     public void testIsApplicableToFailsOnIncorrectRootElement() throws Exception {
         AttachmentContent content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
-        when(connector.getAttachmentStream(content, new User(), new Project())).thenReturn(new ReaderInputStream(new StringReader("<wrong-root/>")));
+        when(connector.getAttachmentStream(content, new User(), new Project())).thenReturn(
+                ReaderInputStream.builder()
+                        .setCharset(StandardCharsets.UTF_8)
+                        .setReader(new StringReader("<wrong-root/>")).get()
+        );
         assertFalse(parser.isApplicableTo(attachment, new User(), new Project()));
     }
 
     @Test
     public void testIsApplicableToFailsOnMalformedXML() throws Exception {
         AttachmentContent content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
-        when(connector.getAttachmentStream(content, new User(), new Project())).thenReturn(new ReaderInputStream(new StringReader("this is not an xml file")));
+        when(connector.getAttachmentStream(content, new User(), new Project())).thenReturn(
+                ReaderInputStream.builder()
+                        .setCharset(StandardCharsets.UTF_8)
+                        .setReader(new StringReader("this is not an xml file")).get()
+        );
         assertFalse(parser.isApplicableTo(attachment, new User(), new Project()));
     }
 
     @Test
     public void testGetCLI() throws Exception {
         Attachment cliAttachment = new Attachment("A1", "a.xml");
-        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(new ReaderInputStream(new StringReader(cliTestfile)));
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
+                ReaderInputStream.builder()
+                        .setCharset(StandardCharsets.UTF_8)
+                        .setReader(new StringReader(cliTestfile)).get()
+        );
         List<LicenseInfoParsingResult> results = parser.getLicenseInfos(cliAttachment, new User(), new Project());
         assertThat(results.size(), is(1));
         LicenseInfoParsingResult res = results.get(0);

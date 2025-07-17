@@ -29,6 +29,7 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -40,7 +41,6 @@ import java.util.UUID;
  *
  * @author smruti.sahoo@siemens.com
  */
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -57,16 +57,25 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain webFilterChainForOauth(HttpSecurity httpSecurity) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(httpSecurity);
-        httpSecurity.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
-        httpSecurity.exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+                new OAuth2AuthorizationServerConfigurer();
+        RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
+
+        httpSecurity
+                .securityMatcher(endpointsMatcher)
+                .with(authorizationServerConfigurer, Customizer.withDefaults())
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+                .exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")))
+                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+                .getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
+
         return httpSecurity.build();
     }
 
     @Order(2)
     @Bean
     public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeRequests(
+        httpSecurity.authorizeHttpRequests(
                 authz -> authz
                 .requestMatchers("/client-management/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
