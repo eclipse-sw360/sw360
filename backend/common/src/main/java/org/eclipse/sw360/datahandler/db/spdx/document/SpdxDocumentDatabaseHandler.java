@@ -14,9 +14,9 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.apache.logging.log4j.core.util.UuidUtil;
 import org.apache.thrift.TException;
-import org.cyclonedx.exception.ParseException;
 import org.cyclonedx.parsers.JsonParser;
 import org.cyclonedx.parsers.XmlParser;
+import org.cyclonedx.model.Bom;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -401,8 +401,8 @@ public class SpdxDocumentDatabaseHandler {
                 if (extension.equalsIgnoreCase(XML_FILE_EXTENSION)) {
                     try {
                         XmlParser xmlParser = new XmlParser();
-                        List<ParseException> xmlErrors = xmlParser.validate(tempFile);
-                        return xmlErrors == null || xmlErrors.isEmpty();
+                        Bom bom = xmlParser.parse(tempFile);
+                        return bom != null && bom.getMetadata() != null;
                     } catch (Exception e) {
                         log.debug("Not a valid CycloneDX XML file: {}", e.getMessage());
                         return false;
@@ -410,20 +410,19 @@ public class SpdxDocumentDatabaseHandler {
                 } else if (extension.equalsIgnoreCase(JSON_FILE_EXTENSION)) {
                     try {
                         JsonParser jsonParser = new JsonParser();
-                        List<ParseException> jsonErrors = jsonParser.validate(tempFile);
-                        return jsonErrors == null || jsonErrors.isEmpty();
+                        Bom bom = jsonParser.parse(tempFile);
+                        return bom != null && bom.getMetadata() != null;
                     } catch (Exception e) {
                         log.debug("Not a valid CycloneDX JSON file: {}", e.getMessage());
                         return false;
                     }
                 }
             }
-
-            return false;
         } finally {
             if (tempFile.exists()) {
                 tempFile.delete();
             }
         }
+        return false;
     }
 }
