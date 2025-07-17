@@ -12,10 +12,6 @@ package org.eclipse.sw360.cyclonedx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.Predicate;
@@ -286,7 +282,7 @@ public class CycloneDxBOMImporter {
                         // all components does not have VCS, so return & show appropriate error in UI
                         messageMap.put(INVALID_COMPONENT, String.join(JOINER, componentsWithoutVcs));
                         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
-                        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRiderctedUrls()));
+                        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRedirectedUrls()));
                         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
                         messageMap.put(SW360Constants.MESSAGE,
                                 String.format("VCS information is missing for <b>%s</b> / <b>%s</b> Components!",
@@ -715,7 +711,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(DUPLICATE_RELEASE, String.join(JOINER, duplicateReleases));
         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
         messageMap.put(INVALID_RELEASE, String.join(JOINER, invalidReleases));
-        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRiderctedUrls()));
+        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRedirectedUrls()));
         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
         messageMap.put(PROJECT_ID, project.getId());
         messageMap.put(PROJECT_NAME, SW360Utils.getVersionedName(project.getName(), project.getVersion()));

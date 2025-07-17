@@ -115,8 +115,8 @@ public class RepositoryURL {
         URL url;
         HttpURLConnection connection = null;
         try {
-            url = new URL(urlString);
-        } catch (MalformedURLException e) {
+            url = new URI(urlString).toURL();
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
             log.error("Invalid URL format: {}", e.getMessage());
             return urlString;
         }
@@ -133,7 +133,7 @@ public class RepositoryURL {
                     connection.disconnect();
 
                     // Resolve relative URLs
-                    url = new URL(url, newUrl);
+                    url = url.toURI().resolve(newUrl).toURL();
 
                     if (!"https".equalsIgnoreCase(url.getProtocol())) {
                         log.error("Insecure redirection to non-HTTPS URL: {}", url);
@@ -146,7 +146,7 @@ public class RepositoryURL {
                     connection.disconnect();
                     break;
                 }
-            } catch (IOException e) {
+            } catch (IOException | URISyntaxException | IllegalArgumentException e) {
                 log.error("Error during redirection handling: {}", e.getMessage());
                 return urlString;
             }
@@ -159,7 +159,7 @@ public class RepositoryURL {
         }
 
         if (redirectCount == 0 || redirectCount >= redirectionLimit) {
-            if (redirectCount >= Integer.parseInt(VCS_REDIRECTION_LIMIT)) {
+            if (redirectCount >= redirectionLimit) {
                 log.error("Exceeded maximum redirect limit. Returning original URL.");
             }
             return urlString;
@@ -175,7 +175,7 @@ public class RepositoryURL {
         return connection;
     }
 
-    public Set<String> getRiderctedUrls(){
+    public Set<String> getRedirectedUrls(){
         return redirectedUrls;
     }
 

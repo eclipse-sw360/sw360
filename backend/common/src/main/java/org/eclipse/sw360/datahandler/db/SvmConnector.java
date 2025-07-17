@@ -11,13 +11,13 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.ByteArrayBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -99,8 +99,8 @@ public class SvmConnector {
 
             SSLContext sslcontext = SSLContexts
                     .custom()
-                    .useProtocol("TLSv1.2")
-                    .loadTrustMaterial(trustStore)
+                    .setProtocol("TLSv1.2")
+                    .loadTrustMaterial(trustStore, null)
                     .loadKeyMaterial(keyStore, KEY_STORE_PASSPHRASE)
                     .build();
 

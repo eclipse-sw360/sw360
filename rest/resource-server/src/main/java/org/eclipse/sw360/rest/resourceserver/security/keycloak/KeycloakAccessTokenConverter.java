@@ -22,15 +22,11 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.JwtAccessTokenConverterConfigurer;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.oauth2.common.exceptions.UnauthorizedUserException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
 
 @Profile("!SECURITY_MOCK")
 @Component
@@ -93,7 +89,7 @@ public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter im
             String userEmailStr = userEmail.toString();
             User sw360User = userService.getUserByEmail(userEmailStr);
             if (sw360User == null || sw360User.isDeactivated()) {
-                throw new UnauthorizedUserException("User is deactivated");
+                throw new BadCredentialsException("User is deactivated");
             }
         }
 

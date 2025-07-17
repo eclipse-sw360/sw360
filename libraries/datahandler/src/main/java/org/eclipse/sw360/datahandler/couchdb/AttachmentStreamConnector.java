@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -171,7 +172,7 @@ public class AttachmentStreamConnector {
 
         try {
             downloadStream = attachmentContentDownloader.download(attachmentContent, downloadTimeout);
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             String msg = "Cannot download attachment " + attachmentContent.getId() + " from URL";
             log.error(msg, e);
             throw new SW360Exception(msg);

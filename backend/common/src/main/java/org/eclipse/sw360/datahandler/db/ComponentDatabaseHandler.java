@@ -75,6 +75,8 @@ import org.spdx.core.InvalidSPDXAnalysisException;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
@@ -1271,13 +1273,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private boolean isValidURL(String url) {
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            HttpURLConnection connection = (HttpURLConnection) new URI(url).toURL().openConnection();
             connection.setRequestMethod("HEAD");
             connection.setInstanceFollowRedirects(true); // Ensure redirects are followed
             connection.setConnectTimeout(3000);
             connection.setReadTimeout(3000);
             return connection.getResponseCode() == HttpURLConnection.HTTP_OK;
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             log.error("Invalid or unreachable URL: {}", url, e);
             return false;
         }
@@ -3211,7 +3213,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                         // Delete the SRC zip file after the release is updated
                                         file.delete();
                                         break;
-                                    } catch (IOException | TException e) {
+                                    } catch (IOException | URISyntaxException | IllegalArgumentException | TException e) {
                                         log.error(
                                                 "SRC Upload: Error while downloading the source code zip file for release:"
                                                         + r.getId() + " " + e);
@@ -3242,8 +3244,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
 
 
-    public File downloadFile(String url, String destinationDirectory) throws IOException {
-        URL fileUrl = new URL(url);
+    public File downloadFile(String url, String destinationDirectory) throws IOException, URISyntaxException {
+        URL fileUrl = new URI(url).toURL();
         String regex = ".*/([^/]+)/archive/refs/tags/(?:v)?(.*).zip$";
         String fileName = url.replaceAll(regex, "$1-$2.zip");
         Path destinationPath = Paths.get(destinationDirectory, fileName.replace("/","-"));
