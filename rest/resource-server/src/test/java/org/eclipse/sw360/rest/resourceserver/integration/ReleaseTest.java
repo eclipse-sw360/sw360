@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -87,6 +88,12 @@ public class ReleaseTest extends TestIntegrationBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.getDummyReleaseListForTest().get(0).getId()),eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
         given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(TestHelper.getDummyReleaseListForTest());
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.getDummyReleaseListForTest().get(1).getId()),eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(1));
+        given(this.releaseServiceMock.searchReleaseByNamePaginated(any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(TestHelper.getDummyReleaseListForTest().size()).setDisplayStart(0).setTotalRowCount(TestHelper.getDummyReleaseListForTest().size()),
+                        TestHelper.getDummyReleaseListForTest()
+                )
+        );
 
         given(this.licenseServiceMock.getLicenseById("Apache-2.0")).willReturn(
                 new License("Apache 2.0 License")
