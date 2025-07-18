@@ -44,6 +44,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.exporter.CSVExport;
 import org.eclipse.sw360.importer.ComponentAttachmentCSVRecord;
@@ -361,5 +363,182 @@ public class Sw360ImportExportService {
         String filename = String.format("AllUsersData_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Users; filename=\"%s\"", filename));
         FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+    }
+
+    public RequestSummary uploadUsers(User sw360User, MultipartFile file, HttpServletRequest request) throws TException, IOException, ServletException {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new AccessDeniedException("User is not admin");
+        }
+
+        RequestSummary requestSummary = new RequestSummary();
+        requestSummary.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
+        
+        // Validate file
+        if (file == null || file.isEmpty()) {
+            requestSummary.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
+            requestSummary.setMessage("File is required and cannot be empty");
+            return requestSummary;
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".csv")) {
+            requestSummary.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
+            requestSummary.setMessage("File must be a CSV file with .csv extension");
+            return requestSummary;
+        }
+
+        if (file.getSize() > 10 * 1024 * 1024) { // 10MB limit
+            requestSummary.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
+            requestSummary.setMessage("File size too large. Maximum allowed size is 10MB");
+            return requestSummary;
+        }
+        
+        try {
+            UserService.Iface userClient = thriftClients.makeUserClient();
+            InputStream inputStream = file.getInputStream();
+            List<CSVRecord> csvRecords = readAsCSVRecords(inputStream);
+            
+            if (csvRecords == null || csvRecords.isEmpty()) {
+                requestSummary.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
+                requestSummary.setMessage("CSV file is empty or contains no valid data records");
+                return requestSummary;
+            }
+
+            log.info("Processing {} user records from CSV file '{}'", csvRecords.size(), originalFilename);
+            
+            int totalUsers = 0;
+            int successfulUsers = 0;
+            int failedUsers = 0;
+            StringBuilder errorMessages = new StringBuilder();
+
+            for (CSVRecord csvRecord : csvRecords) {
+                totalUsers++;
+                try {
+                    User newUser = parseUserFromCSVRecord(csvRecord);
+                    AddDocumentRequestSummary addSummary = userClient.addUser(newUser);
+                    
+                    if (addSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
+                        successfulUsers++;
+                    } else if (addSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
+                        log.warn("User already exists: {}", newUser.getEmail());
+                        errorMessages.append("User already exists: ").append(newUser.getEmail()).append("; ");
+                        failedUsers++;
+                    } else {
+                        log.error("Failed to add user: {} - {}", newUser.getEmail(), addSummary.getMessage());
+                        errorMessages.append("Failed to add user ").append(newUser.getEmail()).append(": ").append(addSummary.getMessage()).append("; ");
+                        failedUsers++;
+                    }
+                } catch (Exception e) {
+                    log.error("Error processing CSV record {}: {}", totalUsers, e.getMessage());
+                    errorMessages.append("Row ").append(totalUsers).append(" error: ").append(e.getMessage()).append("; ");
+                    failedUsers++;
+                }
+            }
+
+            requestSummary.setTotalElements(totalUsers);
+            requestSummary.setTotalAffectedElements(successfulUsers);
+            
+            if (failedUsers > 0) {
+                requestSummary.setMessage(String.format("Successfully imported %d users, %d failed. Errors: %s", 
+                    successfulUsers, failedUsers, errorMessages.toString()));
+                if (successfulUsers == 0) {
+                    requestSummary.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
+                }
+            } else {
+                requestSummary.setMessage(String.format("Successfully imported %d users", successfulUsers));
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing user import file: {}", e.getMessage(), e);
+            requestSummary.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
+            requestSummary.setMessage("Error processing file: " + e.getMessage());
+        }
+
+        return requestSummary;
+    }
+
+    private User parseUserFromCSVRecord(CSVRecord csvRecord) throws IllegalArgumentException {
+        if (csvRecord.size() < 4) {
+            throw new IllegalArgumentException("CSV record must have at least 4 columns: GivenName, Lastname, Email, Department");
+        }
+
+        User user = new User();
+        
+        // Required fields
+        String givenName = csvRecord.get(0).trim();
+        String lastName = csvRecord.get(1).trim();
+        String email = csvRecord.get(2).trim();
+        String department = csvRecord.get(3).trim();
+        
+        if (givenName.isEmpty()) {
+            throw new IllegalArgumentException("GivenName is required and cannot be empty");
+        }
+        if (lastName.isEmpty()) {
+            throw new IllegalArgumentException("Lastname is required and cannot be empty");
+        }
+        if (email.isEmpty()) {
+            throw new IllegalArgumentException("Email is required and cannot be empty");
+        }
+        if (department.isEmpty()) {
+            throw new IllegalArgumentException("Department is required and cannot be empty");
+        }
+
+        // Validate email format
+        if (!email.matches("^[A-Za-z0-9+_.-]+@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})$")) {
+            throw new IllegalArgumentException("Invalid email format: " + email);
+        }
+
+        // Validate name lengths
+        if (givenName.length() > 100) {
+            throw new IllegalArgumentException("GivenName too long (max 100 characters): " + givenName);
+        }
+        if (lastName.length() > 100) {
+            throw new IllegalArgumentException("Lastname too long (max 100 characters): " + lastName);
+        }
+        if (email.length() > 255) {
+            throw new IllegalArgumentException("Email too long (max 255 characters): " + email);
+        }
+        if (department.length() > 255) {
+            throw new IllegalArgumentException("Department too long (max 255 characters): " + department);
+        }
+
+        user.setGivenname(givenName);
+        user.setLastname(lastName);
+        user.setEmail(email.toLowerCase());
+        user.setDepartment(department);
+        user.setFullname(givenName + " " + lastName);
+
+        // Optional UserGroup (default to USER if not specified or invalid)
+        if (csvRecord.size() > 4 && !csvRecord.get(4).trim().isEmpty()) {
+            try {
+                UserGroup userGroup = UserGroup.valueOf(csvRecord.get(4).trim().toUpperCase());
+                user.setUserGroup(userGroup);
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid UserGroup '{}' for user {}, defaulting to USER", csvRecord.get(4), email);
+                user.setUserGroup(UserGroup.USER);
+            }
+        } else {
+            user.setUserGroup(UserGroup.USER);
+        }
+
+        // Optional external ID
+        if (csvRecord.size() > 5 && !csvRecord.get(5).trim().isEmpty()) {
+            user.setExternalid(csvRecord.get(5).trim());
+        }
+
+        // Optional password hash
+        if (csvRecord.size() > 6 && !csvRecord.get(6).trim().isEmpty()) {
+            user.setPassword(csvRecord.get(6).trim());
+        }
+
+        // Optional mail notification preference
+        if (csvRecord.size() > 7 && !csvRecord.get(7).trim().isEmpty()) {
+            String wantsNotification = csvRecord.get(7).trim().toLowerCase();
+            user.setWantsMailNotification("true".equals(wantsNotification) || "1".equals(wantsNotification));
+        } else {
+            user.setWantsMailNotification(false);
+        }
+
+        return user;
     }
 }
