@@ -277,4 +277,27 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             throw new SW360Exception("Error download users: " + e.getMessage());
         }
     }
+
+    @Operation(
+            summary = "Upload users CSV file.",
+            description = "Upload a users CSV file to import users into the system. Requires ADMIN authority.",
+            tags = {"ImportExport"},
+            parameters = {
+                    @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true, description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data.")
+            }
+    )
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @RequestMapping(value = IMPORTEXPORT_URL + "/uploadUsers", method = RequestMethod.POST, consumes = {
+            MediaType.MULTIPART_MIXED_VALUE,
+            MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
+    public ResponseEntity<RequestSummary> uploadUsers(
+            @Parameter(description = "The users CSV file to be uploaded. Expected columns: GivenName, Lastname, Email, Department, UserGroup (optional), GID (optional), PasswdHash (optional), wantsMailNotification (optional)")
+            @RequestParam("usersFile") MultipartFile file,
+            HttpServletRequest request, HttpServletResponse response
+    ) throws TException, IOException, ServletException {
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = importExportService.uploadUsers(sw360User, file, request);
+        return ResponseEntity.ok(requestSummary);
+    }
 }
