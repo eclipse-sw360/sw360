@@ -1,7 +1,7 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016-2017.
- *
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>, 2025.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -1103,7 +1103,18 @@ public class LicenseDatabaseHandler {
                 final Optional<Obligation> obligationOptional = OSADLObligationConnector.get(licenseId, user);
                 if (obligationOptional.isPresent()) {
                     Obligation oblig = obligationOptional.get();
-                    String obligNode = addNodes(osadlConnector.parseText(oblig.getText()), user);
+                    JSONObject parsedText = osadlConnector.parseText(oblig.getText());
+                    if (parsedText == null) {
+                        log.warn("Failed to parse OSADL text for license: " + licenseId + ". Skipping this license.");
+                        licensesMissing.put(licenseId, sw360License.getFullname());
+                        continue;
+                    }
+                    String obligNode = addNodes(parsedText, user);
+                    if (obligNode == null) {
+                        log.warn("Failed to add nodes for license: " + licenseId + ". Skipping this license.");
+                        licensesMissing.put(licenseId, sw360License.getFullname());
+                        continue;
+                    }
                     String obligText = buildObligationText(obligNode, 0);
                     boolean OSADLexists = false;
                     for (Obligation sw360Obligation : sw360Obligations) {
@@ -1157,7 +1168,16 @@ public class LicenseDatabaseHandler {
 
     public String convertTextToNodes(Obligation obligation, User user) throws SW360Exception {
         OSADLObligationConnector osadlConnector = new OSADLObligationConnector();
-        String obligNode = addNodes(osadlConnector.parseText(obligation.getText()), user);
+        JSONObject parsedText = osadlConnector.parseText(obligation.getText());
+        if (parsedText == null) {
+            log.error("Failed to parse OSADL text for obligation: " + obligation.getId());
+            throw new SW360Exception("Unable to parse OSADL obligation text");
+        }
+        String obligNode = addNodes(parsedText, user);
+        if (obligNode == null) {
+            log.error("Failed to add nodes for obligation: " + obligation.getId());
+            throw new SW360Exception("Unable to create obligation nodes");
+        }
         return obligNode;
     }
 
@@ -1266,12 +1286,13 @@ public class LicenseDatabaseHandler {
             obligationNode.setNodeText("");
             return addObligationNodes(obligationNode, user);
         }
-        if (jsonArray.getString(0).equals("Obligation")) {
+        if (jsonArray.getString(0).equals("Obligation") && jsonArray.length() >= 4) {
             ObligationElement obligationElement = new ObligationElement();
             obligationElement.setLangElement(jsonArray.getString(1));
             obligationElement.setAction(jsonArray.getString(2));
             obligationElement.setObject(jsonArray.getString(3));
-            if (jsonArray.getString(4).equals(ObligationElementStatus.UNDEFINED.toString())) {
+            
+            if (jsonArray.length() > 4 && jsonArray.getString(4).equals(ObligationElementStatus.UNDEFINED.toString())) {
                 obligationElement.setStatus(ObligationElementStatus.UNDEFINED);
             } else {
                 obligationElement.setStatus(ObligationElementStatus.DEFINED);
@@ -1281,11 +1302,14 @@ public class LicenseDatabaseHandler {
             obligationNode.setNodeType("Obligation");
             obligationNode.setOblElementId(addObligationElements(obligationElement, user));
             return addObligationNodes(obligationNode, user);
-        } else {
+        } else if (jsonArray.length() >= 2) {
             ObligationNode obligationNode = new ObligationNode();
             obligationNode.setNodeType(jsonArray.getString(0));
             obligationNode.setNodeText(jsonArray.getString(1));
             return addObligationNodes(obligationNode, user);
+        } else {
+            log.warn("Unexpected JSON array structure with length " + jsonArray.length() + ": " + jsonArray.toString());
+            return null;
         }
     }
 
