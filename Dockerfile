@@ -81,7 +81,7 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 # Runtime image
 
 # 11-jre21-temurin-noble
-FROM tomcat@sha256:5cfc7100fef1f6f7a07c527524cdc99cd2c8af171a93e34c1c3eb513bd42e93e AS sw360
+FROM tomcat@sha256:52a7c268ce41e6717ca94a57f1afdf35cd04f6dc515e769d7b0a5424a0e1315a AS sw360
 
 ARG TOMCAT_DIR=/usr/local/tomcat
 
