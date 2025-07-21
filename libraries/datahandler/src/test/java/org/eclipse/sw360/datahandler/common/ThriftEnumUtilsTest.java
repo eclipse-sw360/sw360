@@ -13,20 +13,19 @@ package org.eclipse.sw360.datahandler.common;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.RepositoryType;
 import org.apache.thrift.TEnum;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Map;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 public class ThriftEnumUtilsTest {
 
     @Test
     public void testToString() {
-        assertThat(ThriftEnumUtils.enumToString(AttachmentType.DESIGN), is("Design document"));
-        assertThat(ThriftEnumUtils.enumToString(RepositoryType.GIT), is("Git"));
+        Assert.assertEquals("Design document", ThriftEnumUtils.enumToString(AttachmentType.DESIGN));
+        Assert.assertEquals("Git", ThriftEnumUtils.enumToString(RepositoryType.GIT));
     }
 
     @SuppressWarnings("unchecked")

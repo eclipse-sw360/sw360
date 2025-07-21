@@ -20,7 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
@@ -97,8 +98,8 @@ public class FossologyRestConfig {
         String url = newConfig.getConfigKeyToValues().get(CONFIG_KEY_URL).stream().findFirst().orElseThrow(
                 () -> new IllegalStateException("The new FOSSology REST configuration does not contain a URL."));
         try {
-            new URL(url);
-        } catch (MalformedURLException e) {
+            new URI(url).toURL();
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
             throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid URL.");
         }
 

@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -24,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -196,6 +198,21 @@ public class TestHelper {
     private static class OAuthToken {
         @JsonProperty("access_token")
         public String accessToken;
+    }
+
+    public static @NotNull ClearingInformation getClearingInformation() {
+        ClearingInformation clearingInformation = new ClearingInformation();
+        clearingInformation.setComment("Comment");
+        clearingInformation.setEvaluated("Evaluated");
+        clearingInformation.setProcStart("Proc Start");
+        clearingInformation.setRequestID("REQ-111");
+        clearingInformation.setScanned("Scanned");
+        clearingInformation.setClearingStandard("Clearing Standard");
+        clearingInformation.setCountOfSecurityVn(2);
+        clearingInformation.setComponentClearingReport(true);
+        clearingInformation.setComponentClearingReportIsSet(false);
+        clearingInformation.setExternalUrl("https://external.url");
+        return clearingInformation;
     }
 
 }

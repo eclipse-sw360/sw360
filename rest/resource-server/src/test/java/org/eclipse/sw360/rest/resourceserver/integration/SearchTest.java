@@ -18,7 +18,6 @@ import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -26,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public class SearchTest extends TestIntegrationBase {
     @LocalServerPort
     private int port;
 
-    @MockBean
+    @MockitoBean
     private Sw360SearchService searchServiceMock;
 
     private List<SearchResult> searchResults;

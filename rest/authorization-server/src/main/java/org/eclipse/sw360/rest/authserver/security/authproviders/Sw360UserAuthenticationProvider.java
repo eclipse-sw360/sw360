@@ -25,7 +25,7 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
-     * @param authentication the authentication request object. 
+     * @param authentication the authentication request object.
      * @return
      * @throws AuthenticationException
      */
@@ -39,7 +39,8 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
     }
 
     private Authentication checkPassword(UserDetails userDetails, String rawPassword) {
-        if(passwordEncoder.matches(rawPassword, userDetails.getPassword())) {
+        if (userDetails != null && rawPassword != null &&
+                passwordEncoder.matches(rawPassword, userDetails.getPassword())) {
             return new UsernamePasswordAuthenticationToken(userDetails, rawPassword, userDetails.getAuthorities());
         } else {
             throw new BadCredentialsException("Bad credentials");
@@ -47,7 +48,7 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
     }
 
     /**
-     * @param authentication 
+     * @param authentication
      * @return
      */
     @Override

@@ -10,38 +10,34 @@
 package org.eclipse.sw360.datahandler.common;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collection;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author daniele.fognini@tngtech.com
  */
 public class SW360ConstantsTest {
     @Test
-    public void testProjectsCanHaveAllAttachmentTypes() throws Exception {
+    public void testProjectsCanHaveAllAttachmentTypes() {
         Collection<AttachmentType> types = SW360Constants.allowedAttachmentTypes(SW360Constants.TYPE_PROJECT);
 
-        assertThat(types, containsInAnyOrder(AttachmentType.values()));
+        Assert.assertTrue(containsInAnyOrder(AttachmentType.values()).matches(types));
     }
 
     @Test
-    public void testComponentsCanNotHaveReports() throws Exception {
+    public void testComponentsCanNotHaveReports() {
         Collection<AttachmentType> types = SW360Constants.allowedAttachmentTypes(SW360Constants.TYPE_COMPONENT);
 
         for (AttachmentType attachmentType : AttachmentType.values()) {
             if (attachmentType == AttachmentType.CLEARING_REPORT) {
-                assertThat(types, not(hasItem(equalTo(attachmentType))));
+                Assert.assertFalse(types.contains(attachmentType));
             } else {
-                assertThat(types, hasItem(equalTo(attachmentType)));
+                Assert.assertTrue(types.contains(attachmentType));
             }
         }
-
     }
 }

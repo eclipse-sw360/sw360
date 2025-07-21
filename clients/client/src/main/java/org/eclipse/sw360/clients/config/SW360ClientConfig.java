@@ -131,8 +131,8 @@ public final class SW360ClientConfig {
                     Validate.notEmpty(clientId, "Undefined client ID"),
                     Validate.notEmpty(clientPassword, "Undefined client password"),
                     Validate.notEmpty(token, "Undefined token"),
-                    Validate.notNull(httpClient),
-                    Validate.notNull(mapper));
+                    Validate.notNull(httpClient, "HTTP client cannot be null"),
+                    Validate.notNull(mapper, "Object Mapper cannot be null"));
         }
         return new SW360ClientConfig(
                 URI.create(stripTrailingSeparator(Validate.notEmpty(restURL, "Undefined REST URL"))),
@@ -142,8 +142,8 @@ public final class SW360ClientConfig {
                 Validate.notEmpty(clientId, "Undefined client ID"),
                 Validate.notEmpty(clientPassword, "Undefined client password"),
                 token,
-                Validate.notNull(httpClient),
-                Validate.notNull(mapper));
+                Validate.notNull(httpClient, "HTTP client cannot be null"),
+                Validate.notNull(mapper, "Object Mapper cannot be null"));
     }
 
     /**
@@ -220,7 +220,7 @@ public final class SW360ClientConfig {
     }
 
     public String getToken() {
-        if (StringUtils.isBlank(token) || StringUtils.equalsIgnoreCase(token, "none")){
+        if (StringUtils.isBlank(token) || "none".equalsIgnoreCase(token)){
               return "";
         }
         return token;

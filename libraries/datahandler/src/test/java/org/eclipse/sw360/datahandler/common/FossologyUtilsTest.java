@@ -13,12 +13,11 @@ import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
 
 import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.junit.Assert.assertThat;
 
 public class FossologyUtilsTest {
 
@@ -39,6 +38,6 @@ public class FossologyUtilsTest {
         FossologyUtils.ensureOrderOfProcessSteps(fossologyProcess);
 
         // then:
-        assertThat(fossologyProcess.getProcessSteps(), Matchers.contains(stepUpload, stepScan, stepReport));
+        Assert.assertTrue(Matchers.contains(stepUpload, stepScan, stepReport).matches(fossologyProcess.getProcessSteps()));
     }
 }

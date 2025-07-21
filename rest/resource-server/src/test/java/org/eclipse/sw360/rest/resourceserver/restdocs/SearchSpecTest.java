@@ -33,8 +33,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -46,7 +46,7 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private Sw360SearchService searchServiceMock;
 
     @Before
@@ -82,9 +82,9 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("searchText").description("The search text"),
-                                parameterWithName("typeMasks").description("The type of resource. Possible values are " +List.of("project", "component", "license", "release", "obligation", "user", "vendor", "document") 
-                                + "\nNote: If document is excluded in typeMasks, then search will be restricted to " + "Name for Project, Component and Release, " 
-                                + "Fullname for License, User and Vendor, " 
+                                parameterWithName("typeMasks").description("The type of resource. Possible values are " +List.of("project", "component", "license", "release", "obligation", "user", "vendor", "document")
+                                + "\nNote: If document is excluded in typeMasks, then search will be restricted to " + "Name for Project, Component and Release, "
+                                + "Fullname for License, User and Vendor, "
                                 + "Title for Obligation"),
                                 parameterWithName("page").description("Page of search results"),
                                 parameterWithName("page_entries").description("Amount of search results per page"),

@@ -213,7 +213,7 @@ public class DocxUtils {
 
     public static void removeParagraph(XWPFDocument document, String paragraphText) {
         XWPFParagraph paragraphToDelete = document.getParagraphs().stream()
-                .filter(p -> StringUtils.equalsIgnoreCase(paragraphText, p.getParagraphText()))
+                .filter(p -> paragraphText.equalsIgnoreCase(p.getParagraphText()))
                 .findFirst().orElse(null);
         if (paragraphToDelete != null) {
             document.removeBodyElement(document.getPosOfParagraph(paragraphToDelete));

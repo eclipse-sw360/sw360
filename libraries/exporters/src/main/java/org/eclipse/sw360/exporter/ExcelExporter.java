@@ -76,8 +76,8 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
             final ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
             stream = new ByteArrayInputStream(out.toByteArray());
-        }finally{
-            workbook.dispose();
+        } finally {
+            workbook.close();
         }
         return stream;
     }
@@ -116,7 +116,7 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
                 outputStream.close();
             }
         } finally {
-            workbook.dispose();
+            workbook.close();
         }
         return file.getPath();
     }

@@ -49,6 +49,8 @@ import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponentService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
 
@@ -142,7 +144,7 @@ public class ThriftClients {
 
         try {
             if (BACKEND_PROXY_URL != null) {
-                URL proxyUrl = new URL(BACKEND_PROXY_URL);
+                URL proxyUrl = new URI(BACKEND_PROXY_URL).toURL();
                 HttpHost proxy = new HttpHost(proxyUrl.getProtocol(), proxyUrl.getHost(), proxyUrl.getPort());
                 DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
                 CloseableHttpClient httpClient = HttpClients.custom().setRoutePlanner(routePlanner).build();
@@ -153,8 +155,8 @@ public class ThriftClients {
             thriftClient.setConnectTimeout(THRIFT_CONNECTION_TIMEOUT);
             thriftClient.setReadTimeout(THRIFT_READ_TIMEOUT);
         } catch (TTransportException e) {
-            log.error("cannot connect to backend on " + destinationAddress, e);
-        } catch (MalformedURLException e) {
+            log.error("cannot connect to backend on {}", destinationAddress, e);
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
             log.error("cannot connect via http proxy (REASON:MalformedURLException) to thrift backend", e);
         }
         return new TCompactProtocol(thriftClient);

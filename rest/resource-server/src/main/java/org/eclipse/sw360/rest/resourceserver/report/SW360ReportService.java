@@ -8,13 +8,12 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SBOM_IMPORT_E
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,7 +159,7 @@ public class SW360ReportService {
                 String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId);
                 String backendURL = base + "api/reports/download?user=" + user.getEmail() + "&module=projects"
                         + "&extendedByReleases=" + withLinkedReleases + "&projectId=" + projectId + "&token=";
-                URL emailURL = new URL(backendURL + projectPath);
+                URL emailURL = new URI(backendURL + projectPath).toURL();
                 if (!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
                     sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
                 }
@@ -186,7 +185,7 @@ public class SW360ReportService {
                 String componentPath = componentclient.getComponentReportInEmail(sw360User, withLinkedReleases);
                 String backendURL = base + "api/reports/download?user=" + sw360User.getEmail() + "&module=components"
                         + "&extendedByReleases=" + withLinkedReleases + "&token=";
-                URL emailURL = new URL(backendURL + componentPath);
+                URL emailURL = new URI(backendURL + componentPath).toURL();
                 if (!CommonUtils.isNullEmptyOrWhitespace(componentPath)) {
                     sendComponentExportSpreadsheetSuccessMail(emailURL.toString(), sw360User.getEmail());
                 }

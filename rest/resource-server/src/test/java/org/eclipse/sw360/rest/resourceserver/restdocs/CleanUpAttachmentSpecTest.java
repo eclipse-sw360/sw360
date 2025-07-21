@@ -30,12 +30,11 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.admin.attachment.Sw360AttachmentCleanUpService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -48,12 +47,12 @@ public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private Sw360AttachmentCleanUpService cleanUpService;
     private RequestSummary requestSummary = new RequestSummary();
 
     ComponentService.Iface componentClient;
-    @MockBean
+    @MockitoBean
     AttachmentService.Iface attachmentClient;
 
     @Before

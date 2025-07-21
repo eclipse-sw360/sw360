@@ -13,7 +13,6 @@ package org.eclipse.sw360.cvesearch.datasource.matcher;
 import org.junit.Test;
 
 import static org.eclipse.sw360.cvesearch.datasource.matcher.ModifiedLevenshteinDistance.levenshteinMatch;
-import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 public class ModifiedLevenshteinDistanceTest {
@@ -25,63 +24,63 @@ public class ModifiedLevenshteinDistanceTest {
         String needDle = "needDle";
 
         // equal strings have distance 0
-        assertThat(levenshteinMatch(needle,needle).getDistance(), is(0));
+        assertEquals(0, levenshteinMatch(needle,needle).getDistance());
 
         // appending or prepending adds 1 to the distance
-        assertThat(levenshteinMatch(needle,needle + "a").getDistance(), is(1));
-        assertThat(levenshteinMatch(needle, "a" + needle ).getDistance(), is(1));
-        assertThat(levenshteinMatch(needle, "a" + needle + "a").getDistance(), is(2));
-        assertThat(levenshteinMatch(needle, needDle).getDistance(), is(1));
-        assertThat(levenshteinMatch(needDle, needle).getDistance(), is(1));
+        assertEquals(1, levenshteinMatch(needle,needle + "a").getDistance());
+        assertEquals(1, levenshteinMatch(needle, "a" + needle ).getDistance());
+        assertEquals(2, levenshteinMatch(needle, "a" + needle + "a").getDistance());
+        assertEquals(1, levenshteinMatch(needle, needDle).getDistance());
+        assertEquals(1, levenshteinMatch(needDle, needle).getDistance());
 
         // dropping adds 1 to the distance
-        assertThat(levenshteinMatch(needle, neele).getDistance(), is(1));
-        assertThat(levenshteinMatch(neele, needle).getDistance(), is(1));
+        assertEquals(1, levenshteinMatch(needle, neele).getDistance());
+        assertEquals(1, levenshteinMatch(neele, needle).getDistance());
 
         // should be able to find the best match
-        assertThat(levenshteinMatch(needle, needle + " " + neele).getDistance(), is(0));
-        assertThat(levenshteinMatch(needle, neele + " " + needle).getDistance(), is(0));
+        assertEquals(0, levenshteinMatch(needle, needle + " " + neele).getDistance());
+        assertEquals(0, levenshteinMatch(needle, neele + " " + needle).getDistance());
 
         // seperated by spaces does not change distance
-        assertThat(levenshteinMatch(needle,needle + " a").getDistance(), is(0));
-        assertThat(levenshteinMatch(needle, "a " + needle ).getDistance(), is(0));
-        assertThat(levenshteinMatch(needle, "a" + needle + " a").getDistance(), is(1));
-        assertThat(levenshteinMatch(needle, "a " + needle + "a").getDistance(), is(1));
-        assertThat(levenshteinMatch(needle, "a " + needle + " a").getDistance(), is(0));
+        assertEquals(0, levenshteinMatch(needle,needle + " a").getDistance());
+        assertEquals(0, levenshteinMatch(needle, "a " + needle ).getDistance());
+        assertEquals(1, levenshteinMatch(needle, "a" + needle + " a").getDistance());
+        assertEquals(1, levenshteinMatch(needle, "a " + needle + "a").getDistance());
+        assertEquals(0, levenshteinMatch(needle, "a " + needle + " a").getDistance());
     }
 
     @Test
     public void getDistancesEmptyNeedle(){
-        assertThat(levenshteinMatch("", "haystack").getDistance(), is(Integer.MAX_VALUE));
-        assertThat(levenshteinMatch("", "haystack").getDistance(), is(Integer.MAX_VALUE));
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("", "haystack").getDistance());
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("", "haystack").getDistance());
     }
 
     @Test
     public void getDistancesEmptyHaystack(){
-        assertThat(levenshteinMatch("needle", "").getDistance(), is(Integer.MAX_VALUE));
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("needle", "").getDistance());
     }
 
     @Test
     public void getDistanceXtoSomethingWithoutX() {
-        assertThat(levenshteinMatch("x","y").getDistance(), is(Integer.MAX_VALUE));
-        assertThat(levenshteinMatch("x","y ").getDistance(), is(Integer.MAX_VALUE));
-        assertThat(levenshteinMatch("x"," y").getDistance(), is(Integer.MAX_VALUE));
-        assertThat(levenshteinMatch("x"," y ").getDistance(), is(Integer.MAX_VALUE));
-        assertThat(levenshteinMatch("x","lorem ipsum").getDistance(), is(Integer.MAX_VALUE));
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("x","y").getDistance());
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("x","y ").getDistance());
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("x"," y").getDistance());
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("x"," y ").getDistance());
+        assertEquals(Integer.MAX_VALUE, levenshteinMatch("x","lorem ipsum").getDistance());
     }
 
     @Test
     public void getDistanceXToXX() {
-        assertThat(levenshteinMatch("xx","x").getDistance(), is(1));
-        assertThat(levenshteinMatch("xx","x ").getDistance(), is(1));
-        assertThat(levenshteinMatch("xx"," x").getDistance(), is(1));
-        assertThat(levenshteinMatch("xx"," x ").getDistance(), is(1));
-        assertThat(levenshteinMatch("xx","y x ").getDistance(), is(1));
-        assertThat(levenshteinMatch("xx"," x y").getDistance(), is(1));
-        assertThat(levenshteinMatch("xx","y x y").getDistance(), is(1));
+        assertEquals(1, levenshteinMatch("xx","x").getDistance());
+        assertEquals(1, levenshteinMatch("xx","x ").getDistance());
+        assertEquals(1, levenshteinMatch("xx"," x").getDistance());
+        assertEquals(1, levenshteinMatch("xx"," x ").getDistance());
+        assertEquals(1, levenshteinMatch("xx","y x ").getDistance());
+        assertEquals(1, levenshteinMatch("xx"," x y").getDistance());
+        assertEquals(1, levenshteinMatch("xx","y x y").getDistance());
 
-        assertThat(levenshteinMatch("Xx","x").getDistance(), is(1));
-        assertThat(levenshteinMatch("xx","X").getDistance(), is(1));
+        assertEquals(1, levenshteinMatch("Xx","x").getDistance());
+        assertEquals(1, levenshteinMatch("xx","X").getDistance());
     }
 
     @Test
@@ -91,8 +90,8 @@ public class ModifiedLevenshteinDistanceTest {
 
         Match match = levenshteinMatch(needle,haystack);
 
-        assertThat(match.getNeedle(), is(needle));
-        assertThat(match.getDistance(), is(greaterThan(0)));
+        assertEquals(needle, match.getNeedle());
+        assertTrue(match.getDistance() > 0);
     }
 
     @Test
@@ -102,7 +101,7 @@ public class ModifiedLevenshteinDistanceTest {
 
         Match match = levenshteinMatch(needle,haystack);
 
-        assertThat(match.getDistance(), is(0));
+        assertEquals(0, match.getDistance());
     }
 
     @Test
@@ -112,7 +111,7 @@ public class ModifiedLevenshteinDistanceTest {
 
         Match match = levenshteinMatch(needle,haystack);
 
-        assertThat(match.getDistance(), is(2));
+        assertEquals(2, match.getDistance());
     }
 
     @Test
@@ -122,7 +121,7 @@ public class ModifiedLevenshteinDistanceTest {
 
         Match match = levenshteinMatch(needle,haystack);
 
-        assertThat(match.getDistance(), is(0));
+        assertEquals(0, match.getDistance());
     }
 
     @Test
@@ -132,7 +131,7 @@ public class ModifiedLevenshteinDistanceTest {
 
         Match match = levenshteinMatch(needle,haystack);
 
-        assertThat(match.getDistance(), is(0));
+        assertEquals(0, match.getDistance());
     }
 
     @Test
@@ -143,7 +142,7 @@ public class ModifiedLevenshteinDistanceTest {
 
         Match match = levenshteinMatch(needle,haystack);
 
-        assertThat(match.getDistance(), is(0));
+        assertEquals(0, match.getDistance());
     }
 
     @Test
@@ -154,6 +153,6 @@ public class ModifiedLevenshteinDistanceTest {
 
         Match match = levenshteinMatch(needle,haystack);
 
-        assertThat(match.getDistance(), is(noise.length())) ;
+        assertEquals(noise.length(), match.getDistance());
     }
 }

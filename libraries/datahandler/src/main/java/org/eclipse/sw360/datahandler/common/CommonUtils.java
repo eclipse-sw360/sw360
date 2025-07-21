@@ -36,7 +36,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -59,7 +60,8 @@ public class CommonUtils {
 
     private static final Ordering<String> CASE_INSENSITIVE_ORDERING = Ordering.from(String.CASE_INSENSITIVE_ORDER);
 
-    public static final CSVFormat sw360CsvFormat = CSVFormat.RFC4180.withQuote('\'').withEscape('\\').withIgnoreSurroundingSpaces(true).withQuoteMode(QuoteMode.ALL);
+    public static final CSVFormat sw360CsvFormat = CSVFormat.RFC4180
+            .builder().setQuote('\'').setEscape('\\').setIgnoreSurroundingSpaces(true).setQuoteMode(QuoteMode.ALL).get();
 
     private static final Splitter COMMA_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
@@ -414,19 +416,22 @@ public class CommonUtils {
     }
 
     public static boolean isValidUrl(String url) {
+        if (isNullOrEmpty(url)) {
+            return false;
+        }
         try {
-            return !isNullOrEmpty(new URL(url).getHost());
-        } catch (MalformedURLException e) {
+            return !isNullOrEmpty(new URI(url).toURL().getHost());
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
             return false;
         }
     }
 
     public static String getTargetNameOfUrl(String url) {
         try {
-            String path = new URL(url).getPath();
+            String path = new URI(url).toURL().getPath();
             String fileName = FilenameUtils.getName(path);
             return !isNullOrEmpty(fileName) ? fileName : path;
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
             return "";
         }
     }

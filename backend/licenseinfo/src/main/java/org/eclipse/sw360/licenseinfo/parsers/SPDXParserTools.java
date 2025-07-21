@@ -19,6 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.apache.jena.util.XMLChar;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -117,14 +119,14 @@ public class SPDXParserTools {
                 if (Util.splitNamespaceXML(label) == label.length()) {
                     try {
                         label = URLDecoder.decode(label, StandardCharsets.UTF_8);
-                        URL url = new URL(label);
+                        URL url = new URI(label).toURL();
                         if (null != url.getRef()) {
                             return url.getRef();
                         } else {
                             String path = url.getPath();
                             return path.substring(path.lastIndexOf('/') + 1);
                         }
-                    } catch (MalformedURLException e) {
+                    } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
                         return "";
                     }
                 }

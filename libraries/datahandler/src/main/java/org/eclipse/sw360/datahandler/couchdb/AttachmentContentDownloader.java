@@ -15,6 +15,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -27,10 +29,10 @@ public class AttachmentContentDownloader {
      *
      * @todo setup DI and move timeout to a member
      */
-    public InputStream download(AttachmentContent attachmentContent, Duration timeout) throws IOException {
+    public InputStream download(AttachmentContent attachmentContent, Duration timeout) throws IOException, URISyntaxException {
         int millisTimeout = ((Number) timeout.toMillis()).intValue();
 
-        URL remoteURL = new URL(attachmentContent.getRemoteUrl());
+        URL remoteURL = new URI(attachmentContent.getRemoteUrl()).toURL();
         URLConnection urlConnection = remoteURL.openConnection();
 
         urlConnection.setConnectTimeout(millisTimeout);
