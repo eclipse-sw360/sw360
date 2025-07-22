@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -155,8 +157,31 @@ public class Sw360VendorService {
     public RequestStatus deleteVendorByid(String vendorId, User sw360User) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            RequestStatus requestStatus = sw360VendorClient.deleteVendor(vendorId, sw360User);
-            return requestStatus;
+            ComponentService.Iface componentClient = getThriftComponentClient();
+            List<Release> releases = componentClient.getReleasesFromVendorId(vendorId, sw360User);
+            RequestStatus global_status = RequestStatus.SUCCESS;
+            boolean mayWriteToAllReleases = true;
+            for (Release release : releases) {
+                Map<RequestedAction, Boolean> permissions = release.getPermissions();
+                mayWriteToAllReleases &= permissions.get(RequestedAction.WRITE);
+            }
+            if (!mayWriteToAllReleases) {
+                throw new RuntimeException("You do not have permission to delete vendor with id " + vendorId);
+            }
+            for (Release release : releases) {
+                if (release.isSetVendorId()) {
+                    release.unsetVendorId();
+                }
+                if (release.isSetVendor()) {
+                    release.unsetVendor();
+                }
+                global_status = componentClient.updateRelease(release, sw360User);
+            }
+            if (global_status == RequestStatus.SUCCESS) {
+                return sw360VendorClient.deleteVendor(vendorId, sw360User);
+            } else {
+                return global_status;
+            }
         } catch (TException e) {
             throw new RuntimeException(e);
         }
