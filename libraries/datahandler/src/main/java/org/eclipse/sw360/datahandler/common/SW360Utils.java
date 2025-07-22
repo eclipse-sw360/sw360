@@ -1169,7 +1169,11 @@ public class SW360Utils {
                 case null, default -> (T) value; // Assume it's a String
             };
         } catch (Exception e) {
-            log.error(e.getMessage());
+            if (e instanceof SW360Exception) {
+                log.error(((SW360Exception) e).getWhy());
+            } else {
+                log.error(e.getMessage());
+            }
             return defaultValue;
         }
     }
