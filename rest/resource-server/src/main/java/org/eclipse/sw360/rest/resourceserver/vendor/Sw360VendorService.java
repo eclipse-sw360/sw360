@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -152,13 +154,26 @@ public class Sw360VendorService {
         }
     }
 
-    public RequestStatus deleteVendorByid(String vendorId, User sw360User) {
+    public RequestStatus deleteVendorByid(String vendorId, User sw360User) throws TException {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            RequestStatus requestStatus = sw360VendorClient.deleteVendor(vendorId, sw360User);
-            return requestStatus;
+            ComponentService.Iface componentClient = getThriftComponentClient();
+            List<Release> releases = componentClient.getReleasesFromVendorId(vendorId, sw360User);
+
+            if (releases.stream().anyMatch(release -> !release.getPermissions().get(RequestedAction.WRITE))) {
+                throw new AccessDeniedException("You do not have permission to delete vendor with id " + vendorId);
+            }
+
+            for (Release release : releases) {
+                if (release.isSetVendorId()) release.unsetVendorId();
+                if (release.isSetVendor()) release.unsetVendor();
+                RequestStatus status = componentClient.updateRelease(release, sw360User);
+                if (status != RequestStatus.SUCCESS) return status;
+            }
+
+            return sw360VendorClient.deleteVendor(vendorId, sw360User);
         } catch (TException e) {
-            throw new RuntimeException(e);
+            throw new TException(e);
         }
     }
     public void deleteAllVendors(User sw360User) {
