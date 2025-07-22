@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</property>
+        <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
+        <property name="hibernate.connection.url">${DB_URL}</property>
+        <property name="hibernate.connection.username">${DB_USERNAME}</property>
+        <property name="hibernate.connection.password">${DB_PASSWORD}</property>
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        <property name="hibernate.show_sql">true</property>
+        <!-- <property name="hibernate.show_sql">false</property> -->
+        <property name="hibernate.connection.pool_size">20</property>
+        <property name="hibernate.c3p0.min_size">5</property>
+        <property name="hibernate.c3p0.max_size">20</property>
+        <property name="hibernate.c3p0.timeout">1800</property>
+        <property name="hibernate.c3p0.max_statements">50</property>
+
+        <mapping class="org.eclipse.sw360.datahandler.postgres.ComponentPG" />
+        <mapping class="org.eclipse.sw360.datahandler.postgres.ReleasePG" />
+        <mapping class="org.eclipse.sw360.datahandler.postgres.VendorPG" />
+        <mapping class="org.eclipse.sw360.datahandler.postgres.ProjectPG" />
+        <mapping class="org.eclipse.sw360.datahandler.postgres.LicensePG" />
+        <mapping class="org.eclipse.sw360.datahandler.postgres.AttachmentPG" />
+        <mapping class="org.eclipse.sw360.datahandler.postgres.VulnerabilityPG" />
+        <!-- <mapping class="org.eclipse.sw360.datahandler.postgres.ComponentRelations" /> -->
+        <mapping class="org.eclipse.sw360.datahandler.postgres.VulnerabilityReleaseRelationPG" />
+
+    </session-factory>
+</hibernate-configuration>
