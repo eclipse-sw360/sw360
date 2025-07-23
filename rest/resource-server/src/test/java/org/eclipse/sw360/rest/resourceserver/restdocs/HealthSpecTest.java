@@ -13,9 +13,9 @@ import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.BDDMockito.given;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class HealthSpecTest extends TestRestDocsSpecBase{
 
-    @MockBean
+    @MockitoBean
     private SW360RestHealthIndicator restHealthIndicatorMock;
 
     @Test

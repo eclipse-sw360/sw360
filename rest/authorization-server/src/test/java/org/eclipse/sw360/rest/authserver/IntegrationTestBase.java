@@ -12,7 +12,6 @@ package org.eclipse.sw360.rest.authserver;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -35,12 +34,9 @@ import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 import org.junit.Before;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,10 +46,10 @@ import org.springframework.security.jwt.Jwt;
 import org.springframework.security.jwt.JwtHelper;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,19 +62,19 @@ public abstract class IntegrationTestBase {
     @Value("${local.server.port}")
     protected int port;
 
-    @MockBean
+    @MockitoBean
     protected ThriftClients thriftClients;
 
-    @MockBean
+    @MockitoBean
     protected Sw360ClientDetailsService sw360ClientDetailsService;
 
-    @MockBean
+    @MockitoBean
     protected OAuthClientRepository clientRepo;
 
-    @MockBean
+    @MockitoBean
     Sw360UserDetailsProvider sw360UserDetailsProvider;
 
-    @SpyBean
+    @MockitoSpyBean
     protected RestTemplateBuilder restTemplateBuilder;
 
     protected User adminTestUser;
@@ -89,7 +85,7 @@ public abstract class IntegrationTestBase {
 
     protected ResponseEntity<String> responseEntity;
 
-    @MockBean
+    @MockitoBean
     Sw360UserDetailsService sw360UserDetailsService;
 
     @Autowired

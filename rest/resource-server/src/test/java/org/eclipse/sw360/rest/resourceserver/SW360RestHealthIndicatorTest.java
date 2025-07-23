@@ -23,16 +23,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 
 import java.net.MalformedURLException;
 import java.util.Collections;
@@ -58,10 +57,10 @@ public class SW360RestHealthIndicatorTest {
     @LocalServerPort
     private int port;
 
-    @SpyBean
+    @MockitoSpyBean
     private SW360RestHealthIndicator restHealthIndicatorMock;
 
-    @MockBean
+    @MockitoBean
     private Sw360UserService userServiceMock;
 
     @Autowired

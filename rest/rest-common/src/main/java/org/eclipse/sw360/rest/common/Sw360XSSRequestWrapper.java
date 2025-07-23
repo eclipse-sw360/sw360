@@ -94,6 +94,8 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 		// Headers essential for HTTP operations and negotiation
 		return "Range".equalsIgnoreCase(headerName) ||
 				"Accept".equalsIgnoreCase(headerName) ||
+				"Accept-Encoding".equalsIgnoreCase(headerName) ||
+				"Accept-Language".equalsIgnoreCase(headerName) ||
 				"Content-Type".equalsIgnoreCase(headerName) ||
 				"Authorization".equalsIgnoreCase(headerName) ||
 				"Content-Length".equalsIgnoreCase(headerName) ||
@@ -105,6 +107,9 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 	}
 
 	private String stripXSS(String value) {
+		if (value == null) {
+			return null;
+		}
 		return org.owasp.encoder.Encode.forHtml(value);
 
 	}
@@ -120,7 +125,7 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 			return arrayNode;
 		} else if (input.isObject()) {
 			ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
-			input.fields().forEachRemaining(entry -> objectNode.set(entry.getKey(), sanitizeInput(entry.getValue())));
+			input.properties().forEach(entry -> objectNode.set(entry.getKey(), sanitizeInput(entry.getValue())));
 			return objectNode;
 		} else {
 			return input;

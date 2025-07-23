@@ -21,14 +21,13 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -39,7 +38,7 @@ public class ImportExportSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private Sw360ImportExportService importExportService;
 
     @Before
@@ -55,6 +54,7 @@ public class ImportExportSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(importExportService).getDownloadReleaseSample(any(), any());
         Mockito.doNothing().when(importExportService).getDownloadReleaseLink(any(), any());
         Mockito.doNothing().when(importExportService).getComponentDetailedExport(any(), any());
+        Mockito.doNothing().when(importExportService).getDownloadUsers(any(), any());
     }
 
     @Test
@@ -101,5 +101,14 @@ public class ImportExportSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(get("/api/importExport/downloadComponent")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON)).andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_get_download_users() throws Exception {
+        mockMvc.perform(get("/api/importExport/downloadUsers")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept("text/plain"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
     }
 }

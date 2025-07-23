@@ -24,6 +24,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.hamcrest.*;
 import org.hamcrest.collection.IsEmptyCollection;
+import org.junit.Assert;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -38,8 +39,6 @@ import static com.google.common.collect.Iterables.tryFind;
 import static com.google.common.collect.Ordering.usingToString;
 import static java.lang.String.format;
 import static java.util.Collections.sort;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNoException;
 import static org.mockito.Mockito.doReturn;
@@ -87,7 +86,7 @@ public class TestUtils {
     }
 
     public static void assertTestString(String testString) {
-        assertThat(testString, containsString("test"));
+        Assert.assertTrue(testString.contains("test"));
     }
 
     public static Answer failOnUnexpectedMethod() {
@@ -270,8 +269,8 @@ public class TestUtils {
 
     public static void assumeCanConnectTo(String url) {
         try {
-            new URL(url).openConnection().getInputStream().close();
-        } catch (IOException e) {
+            new URI(url).toURL().openConnection().getInputStream().close();
+        } catch (IOException | URISyntaxException e) {
             assumeNoException(e);
         }
     }

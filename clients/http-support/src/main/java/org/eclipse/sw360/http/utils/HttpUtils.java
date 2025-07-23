@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -285,9 +286,11 @@ public final class HttpUtils {
                 return mapper.readValue(response.bodyStream(), resultClass);
             } else {
                 try {
-                    return resultClass.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
+                    return resultClass.getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
 
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException(e);
                 }
                 return null;
             }

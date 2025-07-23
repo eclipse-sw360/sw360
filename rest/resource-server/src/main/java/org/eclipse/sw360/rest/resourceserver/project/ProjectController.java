@@ -1525,8 +1525,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Download license info for the project.",
-            description = "Set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose " +
-                    "specific template.",
+            description = """
+                    Set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose \
+                    specific template.
+
+                    Combination of `generatorClassName` and `variant` possible are:
+
+                    When `variant` is `DISCLOSURE`, `generatorClassName` can be one of: \
+                    `TextGenerator`, `XhtmlGenerator` or `DISCLOSURE`.
+                    When `variant` is `REPORT`, `generatorClassName` can be one of: \
+                    `DocxGenerator`.""",
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseinfo", method = RequestMethod.GET)
@@ -3331,12 +3339,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            summary = "Update Component  Obligations ",
+            summary = "Update project Obligations other than License Obligations",
             description = "Pass a map of obligations in request body.",
             tags = {"Projects"}
     )
-    @RequestMapping(value = PROJECTS_URL + "/{id}/updateProjectObligation", method = RequestMethod.PATCH)
-    public ResponseEntity<?> patchComponentObligations(
+    @RequestMapping(value = PROJECTS_URL + "/{id}/updateObligation", method = RequestMethod.PATCH)
+    public ResponseEntity<?> patchObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
             @Parameter(description = "Map of obligation status info")
             @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,
@@ -3344,10 +3352,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     schema = @Schema(allowableValues = {"project", "organization", "component"}))
             @RequestParam(value = "obligationLevel", required = true) String oblLevel
     ) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
         try {
+            final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            restControllerHelper.throwIfSecurityUser(sw360User);
+            final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
             ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
             obligationStatusMap = processObligations(sw360Project, sw360User, requestBodyObligationStatusInfo,obligationList , oblLevel);
             Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService

@@ -21,15 +21,13 @@ import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
-import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
-import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 
@@ -37,6 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.all;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
@@ -279,6 +278,20 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         createIndex("byName", new String[] {"name"}, db);
         createIndex("byDesc", new String[] {"description"}, db);
         createIndex("byProjectResponsible", new String[] {"projectResponsible"}, db);
+        createIndex("byCreatedOn", new String[] {"createdOn"}, db);
+
+        createIndex("projByAll", new String[] {
+                Project._Fields.NAME.getFieldName(),
+                Project._Fields.TAG.getFieldName(),
+                Project._Fields.PROJECT_TYPE.getFieldName(),
+                Project._Fields.OWNER_GROUP.getFieldName(),
+                Project._Fields.VERSION.getFieldName(),
+                Project._Fields.PROJECT_RESPONSIBLE.getFieldName(),
+                Project._Fields.STATE.getFieldName(),
+                Project._Fields.CLEARING_STATE.getFieldName(),
+                Project._Fields.ADDITIONAL_DATA.getFieldName(),
+                Project._Fields.DESCRIPTION.getFieldName()
+        }, db);
     }
 
     public List<Project> searchByName(String name, User user, SummaryType summaryType) {
@@ -381,105 +394,39 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
-        final String requestingUserEmail = user.getEmail();
-        final String userBU = getBUFromOrganisation(user.getDepartment());
+        final ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.getSortColumnNumber());
+        final Map<String, String> sortSelector = getSortSelector(pageData);
         List<Project> projects = new ArrayList<>();
         Map<PaginationData, List<Project>> result = Maps.newHashMap();
 
-        PostFindOptions query = null;
-        final Map<String, Object> typeSelector = eq("type", "project");
-        final Map<String, Object> private_visibility_Selector = eq("visbility", "PRIVATE");
-        final Map<String, Object> createdBySelector = eq("createdBy", requestingUserEmail);
-        final Map<String, Object> getAllPrivateProjects = and(List.of(private_visibility_Selector, createdBySelector));
-        final Map<String, Object> everyone_visibility_Selector = eq("visbility", "EVERYONE");
-
-        final Map<String, Object> isAProjectResponsible = eq("projectResponsible", requestingUserEmail);
-        final Map<String, Object> isALeadArchitect = eq("leadArchitect", requestingUserEmail);
-        final Map<String, Object> isAModerator = elemMatch("moderators", requestingUserEmail);
-        final Map<String, Object> isAContributor = elemMatch("contributors", requestingUserEmail);
-        final Map<String, Object> meAndModorator_visibility_Selector = eq("visbility", "ME_AND_MODERATORS");
-        final Map<String, Object> isUserBelongToMeAndModerator = and(List.of(meAndModorator_visibility_Selector,
-                or(List.of(createdBySelector, isAProjectResponsible, isALeadArchitect, isAModerator, isAContributor))));
-
-        final Map<String, Object> buAndModorator_visibility_Selector = eq("visbility", "BUISNESSUNIT_AND_MODERATORS");
-        final Map<String, Object> userBuSelector = eq("businessUnit", userBU);
-        boolean isAdmin = PermissionUtils.isAdmin(user);
-        boolean isSecurityUser = PermissionUtils.isSecurityUser(user);
-        boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
-        Map<String, Object> isUserBelongToBuAndModerator;
-
-        List<Map<String, Object>> buSelectors = new ArrayList<>();
-        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
-        if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
-            Set<String> secondaryUgs = secondaryDepartmentsAndRoles.keySet();
-            Set<String> secondaryBus = secondaryUgs.stream().map(SW360Utils::getBUFromOrganisation)
-                    .collect(Collectors.toSet());
-            for (String secondaryBU : secondaryBus) {
-                buSelectors.add(eq("businessUnit", secondaryBU));
-            }
-        }
-        buSelectors.add(isUserBelongToMeAndModerator);
-        buSelectors.add(userBuSelector);
-        isUserBelongToBuAndModerator = and(List.of(buAndModorator_visibility_Selector, or(buSelectors)));
-
-        Map<String, Object> finalSelector;
-        if (SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isAdmin) {
-            finalSelector = typeSelector;
-        } else if (isSecurityUser) {
-            finalSelector = typeSelector;
-        } else {
-            if (isClearingAdmin) {
-                finalSelector = and(List.of(typeSelector, or(List.of(getAllPrivateProjects, everyone_visibility_Selector,
-                        isUserBelongToMeAndModerator, buAndModorator_visibility_Selector))));
-            } else {
-                finalSelector = and(List.of(typeSelector, or(List.of(getAllPrivateProjects, everyone_visibility_Selector,
-                        isUserBelongToMeAndModerator, isUserBelongToBuAndModerator))));
-            }
-        }
+        Map<String, Object> finalSelector = getAccessibleProjectSelector(user, Map.of());
 
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector);
-        if (rowsPerPage != -1) {
-            qb.limit(rowsPerPage);
-        }
-        qb.skip(pageData.getDisplayStart());
-        PostViewOptions.Builder queryView = null;
-        switch (sortColumnNo) {
-            case 0:
-                qb.useIndex(Collections.singletonList("byName"))
-                        .addSort(Collections.singletonMap("name", ascending ? "asc" : "desc"));
-                query = qb.build();
+        String queryViewName = null;
+
+        switch (sortBy) {
+            case ProjectSortColumn.BY_DESCRIPTION:
+                qb.useIndex(Collections.singletonList("byDesc"));
                 break;
-            case 1:
-                qb.useIndex(Collections.singletonList("byDesc"))
-                        .addSort(Collections.singletonMap("description", ascending ? "asc" : "desc"));
-                query = qb.build();
+            case ProjectSortColumn.BY_RESPONSIBLE:
+                qb.useIndex(Collections.singletonList("byProjectResponsible"));
                 break;
-            case 2:
-                qb.useIndex(Collections.singletonList("byProjectResponsible"))
-                        .addSort(Collections.singletonMap("projectResponsible", ascending ? "asc" : "desc"));
-                query = qb.build();
+            case ProjectSortColumn.BY_CREATEDON:
+                qb.useIndex(Collections.singletonList("byCreatedOn"));
+            case ProjectSortColumn.BY_STATE:
+                queryViewName = "byState";
                 break;
-            case 3:
-            case 4:
-                queryView = getConnector().getPostViewQueryBuilder(Project.class, "byState");
-                break;
-            default:
+            case null:
+            default: // By default, sort by name
+                qb.useIndex(Collections.singletonList("byName"));
                 break;
         }
         try {
-            if (queryView != null) {
-                PostViewOptions request = queryView.limit(rowsPerPage).skip(pageData.getDisplayStart())
-                        .descending(!ascending).includeDocs(true).build();
-                ViewResult response = getConnector().getPostViewQueryResponse(request);
-                if (response != null) {
-                    projects = getPojoFromViewResponse(response);
-                }
+            if (queryViewName != null) {
+                projects = queryViewPaginated(queryViewName, pageData, false);
             } else {
-                projects = getConnector().getQueryResult(query, Project.class);
+                projects = getConnector().getQueryResultPaginated(qb, Project.class, pageData, sortSelector);
             }
         } catch (Exception e) {
             log.error("Error getting projects", e);
@@ -508,6 +455,38 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     public List<Project> searchByName(String name, User user) {
         return searchByName(name, user, SummaryType.SUMMARY);
+    }
+
+    public Map<PaginationData, List<Project>> searchProjectByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Project>> result = Maps.newHashMap();
+        Set<String> searchIds = queryForIdsByPrefixPaginated("byname", name, pageData, false);
+        result.put(pageData, makeSummaryFromFullDocs(SummaryType.SUMMARY, filterAccessibleProjectsByIds(user, searchIds)));
+        return result;
+    }
+
+    public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(User user, String name, PaginationData pageData) {
+        Map<PaginationData, List<Project>> result = Maps.newHashMap();
+        List<Project> projects = queryViewPaginated("byname", name, pageData, false);
+        result.put(pageData, makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, projects, user));
+        return result;
+    }
+
+    public Map<PaginationData, List<Project>> searchAccessibleProjectByExactValues(
+            Map<String, Set<String>> subQueryRestrictions, User user, @NotNull PaginationData pageData
+    ) {
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+
+        Map<String, Object> finalSelector = getAccessibleProjectSelector(user, subQueryRestrictions);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList("projByAll"));
+
+        List<Project> projects = getConnector().getQueryResultPaginated(
+                qb, Project.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, projects);
     }
 
     public Set<String> getGroups() {
@@ -590,7 +569,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         Set<Project> accessibleProjects = filterAccessibleProjectsByIds(user, searchIds);
         return getProjectData(accessibleProjects);
     }
-    
+
     private ProjectData getProjectData(Set<Project> accessibleProjects) {
         int totalSize = accessibleProjects.size();
         ProjectData projectData = new ProjectData();
@@ -609,5 +588,101 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             }
         }
         return projectData.setFirst250Projects(first250Projects).setProjectIdsOfRemainingProject(listOfRemainingIds);
+    }
+
+    private Map<String, Object> getAccessibleProjectSelector(User user, Map<String, Set<String>> subQueryRestrictions) {
+        final String requestingUserEmail = user.getEmail();
+        final String userBU = getBUFromOrganisation(user.getDepartment());
+
+        final Map<String, Object> typeSelector = eq("type", "project");
+        final Map<String, Object> private_visibility_Selector = eq("visbility", "PRIVATE");
+        final Map<String, Object> createdBySelector = eq("createdBy", requestingUserEmail);
+        final Map<String, Object> getAllPrivateProjects = and(List.of(private_visibility_Selector, createdBySelector));
+        final Map<String, Object> everyone_visibility_Selector = eq("visbility", "EVERYONE");
+
+        final Map<String, Object> isAProjectResponsible = eq("projectResponsible", requestingUserEmail);
+        final Map<String, Object> isALeadArchitect = eq("leadArchitect", requestingUserEmail);
+        final Map<String, Object> isAModerator = elemMatch("moderators", requestingUserEmail);
+        final Map<String, Object> isAContributor = elemMatch("contributors", requestingUserEmail);
+        final Map<String, Object> meAndModerator_visibility_Selector = eq("visbility", "ME_AND_MODERATORS");
+        final Map<String, Object> isUserBelongToMeAndModerator = and(List.of(meAndModerator_visibility_Selector,
+                or(List.of(createdBySelector, isAProjectResponsible, isALeadArchitect, isAModerator, isAContributor))));
+
+        final Map<String, Object> buAndModerator_visibility_Selector = eq("visbility", "BUISNESSUNIT_AND_MODERATORS");
+        final Map<String, Object> userBuSelector = eq("businessUnit", userBU);
+        boolean isAdmin = PermissionUtils.isAdmin(user);
+        boolean isSecurityUser = PermissionUtils.isSecurityUser(user);
+        boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
+        Map<String, Object> isUserBelongToBuAndModerator;
+
+        List<Map<String, Object>> buSelectors = new ArrayList<>();
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
+        if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
+            Set<String> secondaryUgs = secondaryDepartmentsAndRoles.keySet();
+            Set<String> secondaryBus = secondaryUgs.stream().map(SW360Utils::getBUFromOrganisation)
+                    .collect(Collectors.toSet());
+            for (String secondaryBU : secondaryBus) {
+                buSelectors.add(eq("businessUnit", secondaryBU));
+            }
+        }
+        buSelectors.add(isUserBelongToMeAndModerator);
+        buSelectors.add(userBuSelector);
+        isUserBelongToBuAndModerator = and(List.of(buAndModerator_visibility_Selector, or(buSelectors)));
+
+        List<Map<String, Object>> innerRestrictions = new ArrayList<>();
+        innerRestrictions.add(getAllPrivateProjects);
+        innerRestrictions.add(everyone_visibility_Selector);
+        innerRestrictions.add(isUserBelongToMeAndModerator);
+
+        Map<String, Object> finalSelector;
+        if ((SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isAdmin) || isSecurityUser) {
+            if (!subQueryRestrictions.isEmpty()) {
+                finalSelector = and(List.of(typeSelector, getQueryFromRestrictions(subQueryRestrictions)));
+            } else {
+                finalSelector = typeSelector;
+            }
+        } else {
+            if (isClearingAdmin) {
+                innerRestrictions.add(buAndModerator_visibility_Selector);
+            } else {
+                innerRestrictions.add(isUserBelongToBuAndModerator);
+            }
+            if (!subQueryRestrictions.isEmpty()) {
+                innerRestrictions.add(getQueryFromRestrictions(subQueryRestrictions));
+            }
+            finalSelector = and(List.of(typeSelector, or(innerRestrictions)));
+        }
+        return finalSelector;
+    }
+
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
+        final boolean ascending = pageData.isAscending();
+        return switch (ProjectSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ProjectSortColumn.BY_DESCRIPTION ->
+                    Collections.singletonMap("description", ascending ? "asc" : "desc");
+            case ProjectSortColumn.BY_RESPONSIBLE ->
+                    Collections.singletonMap("projectResponsible", ascending ? "asc" : "desc");
+            case ProjectSortColumn.BY_STATE ->
+                    Collections.singletonMap("state", ascending ? "asc" : "desc");
+            case ProjectSortColumn.BY_CREATEDON ->
+                    Collections.singletonMap("createdOn", ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap("name", ascending ? "asc" : "desc"); // Default sort by name
+        };
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                if (Project._Fields.ADDITIONAL_DATA.getFieldName().equals(entry.getKey())) {
+                    andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
+                } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
+                    andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
+                }
+            }
+        }
+        return and(andConditions);
     }
 }

@@ -14,9 +14,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -45,9 +43,6 @@ public class VMDatabaseHandlerTest {
     private static VMComponent c1;
 
     private static VMProcessReporting pr1;
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     private VMDatabaseHandler handler;
 

@@ -32,6 +32,7 @@ public class Sw360KeycloakAdminEventService {
 	private static final String REALM = "sw360";
 
 	private static final String CUSTOM_ATTR_DEPARTMENT = "Department";
+	private static final String CUSTOM_ATTR_EXTERNAL_ID = "externalId";
 
 	public Sw360KeycloakAdminEventService(Sw360UserService sw360UserService, ObjectMapper objectMapper, KeycloakSession keycloakSession) {
 		this.objectMapper = objectMapper;
@@ -142,6 +143,7 @@ public class Sw360KeycloakAdminEventService {
 		user.setGivenname(userEntity.getFirstName());
 		user.setLastname(userEntity.getLastName());
 		setDepartment(userEntity, user);
+		setExternalId(userEntity, user);
 		setUserGroup(userEntity, user);
 		return user;
 	}
@@ -166,6 +168,16 @@ public class Sw360KeycloakAdminEventService {
 			user.setDepartment(department);
 		}, () -> {
 			user.setDepartment("Unknown");
+		});
+	}
+
+	private static void setExternalId(UserEntity userEntity, User user) {
+		Map<String, List<String>> userAttributes = userEntity.getAttributes();
+		Optional.ofNullable(userAttributes.get(CUSTOM_ATTR_EXTERNAL_ID)).ifPresentOrElse((d) -> {
+			String externalId = d.stream().findFirst().get();
+			user.setExternalid(externalId);
+		}, () -> {
+			user.setExternalid("N/A");
 		});
 	}
 }

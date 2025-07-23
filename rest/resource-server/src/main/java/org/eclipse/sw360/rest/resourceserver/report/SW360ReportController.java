@@ -82,7 +82,15 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
     @Operation(
             summary = "Generate the reports.",
-            description = "Generate the reports.",
+            description = """
+                    Generate the reports.
+
+                    Combination of `generatorClassName` and `variant` possible are:
+
+                    When `variant` is `DISCLOSURE`, `generatorClassName` can be one of: \
+                    `TextGenerator`, `XhtmlGenerator` or `DISCLOSURE`.
+                    When `variant` is `REPORT`, `generatorClassName` can be one of: \
+                    `DocxGenerator`.""",
             tags = {"Reports"}
     )
     @GetMapping(value = REPORTS_URL)

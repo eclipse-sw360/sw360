@@ -470,7 +470,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         CTColor colour = CTColor.Factory.newInstance();
         colour.setVal("0000FF");
         // Set the color using XWPFRun
-        XWPFRun run = new XWPFRun(ctr, null);
+        XWPFRun run = new XWPFRun(ctr, (IRunBody)null);
         run.setColor("0000FF"); // Set the color to blue
         ctrpr.addNewU().setVal(STUnderline.SINGLE);
         ctrpr.addNewSz().setVal(BigInteger.valueOf(18L));

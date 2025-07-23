@@ -4,7 +4,213 @@ This is the changelog file of the sw360 project. It starts with the first
 release being provided at eclipse/sw360. For older releases, please refer to
 the first project location:
 
-https://github.com/sw360/sw360portal/releases
+https://github.com/eclipse-sw360/sw360/releases
+
+## sw360-20.0.0-beta
+This is a beta release for the next major version 20.0.0 of SW360. The release
+includes numerous features, corrections, and improvements over the previous
+release 19.2.0.
+
+This release serves as a preview of the upcoming major version 20.0.0 for
+testing and should not be used in production environments.
+
+Highlight of the changes includes:
+* Various vulnerabilities and security fixes.
+* More endpoints created for the support of new UI project.
+* Improvements on KeyCloak sync and user management.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Achal Jhawar <35405812+achaljhawar@users.noreply.github.com>
+> bibhuti230185 <bibhuti230185@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> deo002 <oberoidearsh@gmail.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> harshitg927 <121371860+harshitg927@users.noreply.github.com>
+> Himanshu A Garode <himanshu2006garode@gmail.com>
+> Kaushlendra Pratap <kaushlendra-pratap.singh@siemens.com>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Mohamed Hanafy <mohamed.hanfy.dev@outlook.com>
+> Nikesh kumar <kumar.nikesh@siemens.com>
+> nikesh <kumar.nikesh@siemens.com>
+> pranayh24 <pranayheda24@gmail.com>
+> Rajnish Kumar <22it3036@rgipt.ac.in>
+> Rudra Chopra <prabhuchopra@gmail.com>
+> Sameed Ahmad <141239852+sameed20@users.noreply.github.com>
+> sathwik-y <sathwik.yellapragada@gmail.com>
+> suvrat1629 <suvrat1629@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `080b277bb` feat(importCDX): enhance importer VCS sanitization
+* `c87d2c6b2` feat(vuln): pagination on vulnerabilities endpoint
+* `d588c924d` feat(project): use DB side pagination
+* `46cc985bd` feat(component): use DB side pagination
+* `13a9c716a` feat(datahandler): prepare for paginated queries
+* `0ba6dd02e` feat(docs): add other response types in docs
+* `e4103eb3e` feat(keycloak): set externalId on sync
+* `85986c781` feat(Keycloak): Enhance user synchronization with batch processing and retry logic
+* `e01a4e9f6` feat(core): introduce quick search functionality for vulnerabilities
+* `59f5c49fd` feat(config): add old UI configs
+* `44e6f563f` feat(config): move more configs to DB
+* `64158b1bd` feat(rest): new Security user role.
+* `7be4e0675` feat(Release): Need createdBy field for list of releases under a component
+* `b25398586` feat(Release) : Automate_check_for_Source_Code_Download_URL_1650
+* `178743477` feat(rest): endpoint to get fossology connection configuration data.
+* `310434d5e` feat(obligation): add field comparators
+* `a75e59bbb` feat(rest) : QuickFilter for Obligation page
+* `bcf5141a7` feat(rest) : Completed code for advance-search for packages
+* `3b929a059` feat(Rest): Advance search for packages
+* `3ca1d5b6e` feat(rest): add SBOM file validation for SPDX and CycloneDX formats
+* `bbb4c6c01` feat(rest): endpoint to get src file list for the licences.
+* `24d9d7df8` feat(keycloak): allow thrift loc to be configured
+* `1480c0c75` feat(rest): add additional fields to clearing request endpoint.
+* `c4b541310` feat(rest): getting license info from release attachment's content id.
+* `d1a51acfa` feat(rest): download users endpoint in CSV format
+* `b9be6bace` feat(test): add test for invalid /mergeComponent
+* `93928eeab` feat(component): validate merge selection
+* `2086cf14d` feat(Rest): adding filter search in license clearing get endpoint.
+* `d7a6e4d28` feat(ECC): Add field containsCryptography in Release ECC-Backend
+* `35aa150eb` feat(rest): fossology attachment configs to API
+* `85e406126` feat(rest): added AttachmentCleanUpControllerTest
+* `eae223d9a` feat(rest): added search API integration tests
+* `f5493594f` feat(rest): added tests for ecc rest endpoints
+
+### Corrections
+* `d07f0d922` fix(rest): add documentation for license types usage in admin view.
+* `37c9a5951` fix(resource): no config read at init
+* `1e63f38dc` fix(test): disable ssl health endpoint not used
+* `999eccda1` fix(xss): test for null value for strip
+* `c75442858` fix(spring): upgrade to 3.5.3 from 3.3.3
+* `82e16b696` fix(rest): add license type usage check and restructure delete API response
+* `8fe11c797` fix(rest): add vendor existence validation in getReleases endpoint
+* `18ac76e0c` fix(rest): handle missing component ID with 404 response.
+* `176a70f56` fix(release): throw appropriate exceptions
+* `de970cafd` fix(rest): add endpoint to  merge two releases.
+* `34ff1494e` fix(controller): fix access for SECURITY_USER
+* `7722ae9b0` fix(component): skip should accept URLs
+* `3831b8a06` fix(Rest): Only admin users can delete license types in the admin license tab.
+* `a6dec7574` fix(svm): SVMSyncHandler dont return loop
+* `547611a75` fix(rest): fix permission check
+* `48893d23a` Fix(Rest): Add quick search for license type.
+* `f1ec624ad` fix(bug): Fixed pagination at projects table (#3069)
+* `6f6eb2021` Add proper self-link with project ID in licenseClearing endpoint (#3135)
+* `7a2680b80` fix(rest) : Missing request param for downloadlicenseinfo report
+* `5432c35cd` fix(components): read id for ComponentDTO
+* `aa2ca47ef` fix(component): ComponentDTO for /splitcomponent
+* `a249b7ef1` fix(component): read list of attachments for merge
+* `ab5c62292` fix(rest): improve error messages for invalid SBOM file imports
+* `4e26b0553` fix(cloudant): upgrade to 0.10.3 to fix gson issue
+* `f55dd3b5f` fix(components): allow field createdBy
+* `43c5d1de9` fix(deps): add com.sun.mail:jakarta.mail:2.0.1
+* `348337a8f` fix(spdx): fix deps for spdx-library v2
+* `c8a756b10` fix(sw360UserGroup): add missing CLEARING_EXPERT
+* `cdc2b5dcd` fix(Security) : KeyCloak integration #3087
+* `f0f6ac7d6` fix(backend): fix FossologyConfig
+* `2bfa0ae41` fix(fossology): fetch download timeout from ConfigContainer repository
+* `68236f17d` fix(docs): update scripts/utilities/README.md Documentation (#3066)
+* `586bdc3bb` fix(project): return updated releases
+* `bdf7648f8` fix(docs): fix OpenAPI docs /fossology/saveConfig
+
+### Infrastructure
+* `cce5b2cf9` chore(release): 20.0.0 beta release
+* `4461e9ee1` chore(deps): bump org.dom4j:dom4j from 2.1.4 to 2.2.0
+* `0f9a61592` chore(deps): bump step-security/harden-runner from 2.12.1 to 2.12.2
+* `d52f78f2c` chore(deps): bump github/codeql-action from 3.29.1 to 3.29.2
+* `2f76f4fc9` chore(deps): bump org.apache.maven.plugins:maven-gpg-plugin
+* `3ddcf3e74` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `d1a9ce73a` chore(deps): bump keycloak.version from 26.2.5 to 26.3.0
+* `852f097f8` chore(deps): bump tomcat from `d2f9bdc` to `5ea8fbd`
+* `49d03be83` chore(deps): bump maven from `d9f3089` to `615bd38`
+* `8bd566560` perf(vuln): use views instead of mango query
+* `7ca79f030` chore(rest): paginate users endpoint on DB
+* `4ee6294b9` docs(controller): responses for /licensetype/usage
+* `e72f8207a` chore(deps): bump maven from `3a4ab32` to `d9f3089`
+* `1724114c4` chore(deps): bump github/codeql-action from 3.29.0 to 3.29.1
+* `94d5ee4fd` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `dd8fe8dec` chore(deps): bump org.springframework.security:spring-security-oauth2-authorization-server
+* `b7fc0e8a5` chore(deps): bump log4j2.version from 2.24.3 to 2.25.0
+* `3d4f3d68b` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.17.5 to 1.17.6
+* `384f0c4d7` chore(deps): bump spring-security.version from 6.5.0 to 6.5.1
+* `df8addc43` chore(deps): bump docker/setup-buildx-action from 3.10.0 to 3.11.1
+* `ea9e7ab95` chore(deps): bump tomcat from `f55695f` to `d2f9bdc`
+* `64ef2aacf` chore(deps): bump org.wiremock:wiremock from 3.13.0 to 3.13.1
+* `dccbe71fd` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `930c7b33d` chore(deps): bump springdoc-openapi-stater-common.version
+* `ee35897ba` chore(deps): bump jackson.version from 2.19.0 to 2.19.1
+* `76464f7ba` chore(deps): bump github/codeql-action from 3.28.19 to 3.29.0
+* `388c0b024` chore(deps): bump step-security/harden-runner from 2.12.0 to 2.12.1
+* `d4814d4dd` chore(deps): bump org.springframework:spring-web from 6.2.7 to 6.2.8
+* `72787f9c2` chore(deps): bump org.codehaus.mojo:build-helper-maven-plugin
+* `849b1bbca` chore(deps): bump com.ibm.cloud:cloudant from 0.10.3 to 0.10.4
+* `0bd9c6bd3` chore(deps): bump github/codeql-action from 3.28.18 to 3.28.19
+* `98be9010b` chore(deps): bump maven from `933900d` to `3a4ab32`
+* `5bb6a9c5c` chore(deps): bump tomcat from `8058582` to `f55695f`
+* `09ababc26` chore(deps): bump ossf/scorecard-action from 2.4.1 to 2.4.2
+* `d6f94b768` chore(deps): bump docker/build-push-action from 6.17.0 to 6.18.0
+* `39d02c7ac` chore(deps): bump keycloak.version from 26.2.4 to 26.2.5
+* `2f537d19a` chore(deps): bump io.github.git-commit-id:git-commit-id-maven-plugin
+* `24f1e19f8` chore(deps): bump org.mockito:mockito-core from 5.17.0 to 5.18.0
+* `6c06523db` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `c2bfc63c2` chore(deps): bump spring-security.version from 6.4.5 to 6.5.0
+* `9b3c09f76` chore(mail): update MR email to include docname
+* `5dd802ff4` chore(mail): added more information to the mails
+* `57f5de1a2` chore(deps): bump actions/dependency-review-action from 4.7.0 to 4.7.1
+* `cfcc346f6` chore(deps): bump docker/build-push-action from 6.16.0 to 6.17.0
+* `c7bc2e410` chore(deps): bump github/codeql-action from 3.28.17 to 3.28.18
+* `4719c400a` chore(deps): bump tomcat from `7edbb52` to `8058582`
+* `e51667a87` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `61e34e9b6` chore(deps): bump org.json:json from 20250107 to 20250517
+* `67e95b77a` chore(deps): bump springframework.version from 6.2.6 to 6.2.7
+* `c9252e8b1` chore(deps): bump org.springframework.security:spring-security-oauth2-authorization-server
+* `ce650279f` chore(deps): bump maven from `2e3824a` to `933900d`
+* `facca5607` chore(deps): bump tomcat from `74925aa` to `7edbb52`
+* `b670b4958` chore(deps): bump actions/dependency-review-action from 4.6.0 to 4.7.0
+* `aaf3821a4` chore(deps): bump org.apache.commons:commons-text from 1.13.0 to 1.13.1
+* `20596228d` chore(deps): bump org.apache.commons:commons-csv from 1.13.0 to 1.14.0
+* `2ca22b9c0` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `7eccc398e` chore(deps): bump keycloak.version from 26.2.2 to 26.2.4
+* `5f54415ad` chore(deps): bump springdoc-openapi-stater-common.version
+* `5bb711b65` chore(deps): bump com.google.code.gson:gson from 2.12.1 to 2.13.1
+* `5fcadd5f0` chore(deps): bump github/codeql-action from 3.28.16 to 3.28.17
+* `2e88f3a74` chore(deps): bump commons-io:commons-io from 2.18.0 to 2.19.0
+* `bfe0f1a85` chore(deps): bump org.apache.maven.plugins:maven-failsafe-plugin
+* `84dcd3432` chore(deps): bump org.wiremock:wiremock from 3.12.1 to 3.13.0
+* `d19d4aa71` chore(deps): bump keycloak.version from 26.2.1 to 26.2.2
+* `114126423` chore(deps): update to spdx-tools:2.0.1
+* `6cc01fa3e` chore(deps): bump org.spdx:java-spdx-library from 1.1.1 to 2.0.0
+* `b67e732d6` chore(deps): bump maven from `887820a` to `2e3824a`
+* `6fc499912` chore(deps): bump tomcat from `0c14861` to `74925aa`
+* `81c6940e4` chore(deps): bump spring-security.version from 6.4.4 to 6.4.5
+* `c0c32f235` chore(deps): bump org.apache.commons:commons-collections4
+* `eec18988a` chore(deps): bump jackson.version from 2.18.3 to 2.19.0
+* `42ee8c79f` chore(deps): bump keycloak.version from 26.2.0 to 26.2.1
+* `0423e184c` chore(deps): bump step-security/harden-runner from 2.11.1 to 2.12.0
+* `7d505b27e` chore(deps): bump github/codeql-action from 3.28.15 to 3.28.16
+* `9dc05434b` chore(deps): bump docker/build-push-action from 6.15.0 to 6.16.0
+* `b70e6e036` chore(authorizationserver): remove unused vars
+* `5431f4203` chore(deps): bump springframework.version from 6.2.5 to 6.2.6
+* `eb02b9a35` chore(deps): bump org.mockito:mockito-core from 5.16.1 to 5.17.0
+* `c2684b619` chore(deps): bump com.google.guava:guava from 33.4.0-jre to 33.4.8-jre
+* `2964da147` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.15.11 to 1.17.5
+* `76cdbacdf` chore(deps): bump tomcat from `1374a56` to `0c14861`
+* `a69bf2f49` chore(deps): bump maven from `f1e4a85` to `887820a`
+* `bc42ed8cb` chore(deps): bump joda-time:joda-time from 2.13.0 to 2.14.0
+* `7e84f9f35` chore(deps): bump org.wiremock:wiremock from 3.12.0 to 3.12.1
+* `bc395fbe1` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `f85d5db5f` chore(deps): bump keycloak.version from 26.1.4 to 26.2.0
+* `f25a3c9b9` chore(deps): bump commons-codec:commons-codec from 1.17.1 to 1.18.0
+* `c1cd81235` chore(deps): bump actions/setup-java from 4.7.0 to 4.7.1
+* `85654d998` chore(deps): bump github/codeql-action from 3.28.13 to 3.28.15
 
 ## sw360-19.2.0
 This minor release includes numerous features, corrections, and improvements

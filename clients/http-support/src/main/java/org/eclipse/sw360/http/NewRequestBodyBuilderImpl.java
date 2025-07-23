@@ -10,7 +10,7 @@ import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 /**
  * <p>
@@ -42,7 +42,7 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
      */
     public NewRequestBodyBuilderImpl(ObjectMapper mapper) {
         this.mapper = mapper;
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CAMEL_CASE);
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
     }
 
     @Override

@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -63,10 +63,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private Sw360LicenseService licenseServiceMock;
 
-    @MockBean
+    @MockitoBean
     private SW360ReportService sw360ReportServiceMock;
 
     private License license, license2, license3;
@@ -105,7 +105,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         license3.setId("Apache-3.0");
         license3.setShortname("Apache 3.0");
         license3.setFullname("Apache License 3.0");
-        
+
         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         LicenseType licensetype = new LicenseType();
         licensetype.setId("1234");
@@ -431,7 +431,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 
-    @Test   		
+    @Test
     public void should_document_import_osadl_info() throws Exception {
         mockMvc.perform(post("/api/licenses/import/OSADL")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))

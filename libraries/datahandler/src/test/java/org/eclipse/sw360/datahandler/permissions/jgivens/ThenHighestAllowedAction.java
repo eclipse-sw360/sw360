@@ -13,11 +13,9 @@ package org.eclipse.sw360.datahandler.permissions.jgivens;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
+import org.junit.Assert;
 
 import java.util.List;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author johannes.najjar@tngtech.com
@@ -30,7 +28,7 @@ public class ThenHighestAllowedAction  extends Stage<ThenHighestAllowedAction> {
 
 
     public ThenHighestAllowedAction the_allowed_actions_should_be(List<RequestedAction> i) {
-        assertThat(allowedActions, is(i));
+        Assert.assertEquals(i, allowedActions);
         return self();
     }
 }
