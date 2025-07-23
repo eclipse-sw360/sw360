@@ -12,7 +12,8 @@
 package org.eclipse.sw360.cvesearch.datasource;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,11 +38,11 @@ public class CveSearchDataTestHelper {
 
     public static boolean isUrlReachable(String url) {
         try {
-            final URLConnection connection = new URL(url).openConnection();
+            final URLConnection connection = new URI(url).toURL().openConnection();
             connection.setConnectTimeout(CONNECT_TIMEOUT);
             connection.connect();
             return true;
-        } catch (final IOException e) {
+        } catch (final IOException | URISyntaxException | IllegalArgumentException e) {
             return false;
         }
     }

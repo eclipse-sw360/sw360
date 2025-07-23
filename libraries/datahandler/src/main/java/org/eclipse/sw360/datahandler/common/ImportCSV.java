@@ -39,16 +39,16 @@ public class ImportCSV {
     /**
      * reads a CSV file and returns its content as a list of CSVRecord
      *
-     * @param in
+     * @param in Stream to read the CSV file from
      * @return list of records
      */
     public static List<CSVRecord> readAsCSVRecords(InputStream in) {
         List<CSVRecord> records = null;
 
         try (Reader reader = new InputStreamReader(in);
-             CSVParser parser = new CSVParser(reader, CommonUtils.sw360CsvFormat)) {
+             CSVParser parser = CSVParser.parse(reader, CommonUtils.sw360CsvFormat)) {
             records = parser.getRecords();
-            records.remove(0); // Remove header
+            records.removeFirst(); // Remove header
         } catch (IOException e) {
             log.error("Error parsing CSV File!", e);
         }

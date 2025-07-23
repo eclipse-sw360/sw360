@@ -13,14 +13,13 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 
@@ -45,9 +44,9 @@ public class ReleasePermissionsTest {
         ReleasePermissions permissions = new ReleasePermissions(release, user);
 
         when(user.getUserGroup()).thenReturn(UserGroup.ECC_ADMIN);
-        assertThat(permissions.isActionAllowed(RequestedAction.WRITE_ECC), is(true));
+        Assert.assertTrue(permissions.isActionAllowed(RequestedAction.WRITE_ECC));
 
         when(user.getUserGroup()).thenReturn(UserGroup.CLEARING_ADMIN);
-        assertThat(permissions.isActionAllowed(RequestedAction.WRITE_ECC), is(false));
+        Assert.assertFalse(permissions.isActionAllowed(RequestedAction.WRITE_ECC));
     }
 }

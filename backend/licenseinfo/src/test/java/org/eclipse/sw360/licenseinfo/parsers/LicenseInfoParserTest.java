@@ -25,8 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.makeAttachment;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class LicenseInfoParserTest {
 
@@ -56,12 +55,11 @@ public class LicenseInfoParserTest {
                     String filename = "filename" + extension;
                     Attachment attachment = makeAttachment(filename, attachmentType);
                     try {
-                        assertThat(
+                        assertTrue(
                                 parser.isApplicableTo(attachment, dummyUser,
                                         new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
                                                 .setAttachments(Collections.singleton(
-                                                        new Attachment().setAttachmentContentId(attachment.getAttachmentContentId())))),
-                                is(true));
+                                                        new Attachment().setAttachmentContentId(attachment.getAttachmentContentId())))));
                     } catch (TException e) {
                         e.printStackTrace();
                     }

@@ -33,11 +33,8 @@ import java.util.*;
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -171,7 +168,7 @@ public class ProjectDatabaseHandlerTest {
         // Now contributors can also change the project
         assertEquals(RequestStatus.SUCCESS, status);
     }
-    
+
     @Test
     public void testForceUpdateProject() throws Exception {
         if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
@@ -184,7 +181,7 @@ public class ProjectDatabaseHandlerTest {
 
         RequestStatus status = handler.updateProject(project1, user2, true);
 
-        // if force option is enabled, the project can be changed. 
+        // if force option is enabled, the project can be changed.
         assertEquals(RequestStatus.SUCCESS, status);
     }
 
@@ -208,7 +205,7 @@ public class ProjectDatabaseHandlerTest {
         assertEquals(3, handler.getAccessibleProjectsSummary(user3).size());
 
         boolean deleted = (handler.getProjectById("P1", user1) == null);
-        assertEquals(false, deleted);
+        assertFalse(deleted);
     }
 
     @Test
@@ -231,7 +228,7 @@ public class ProjectDatabaseHandlerTest {
         assertEquals(3, handler.getAccessibleProjectsSummary(user3).size());
 
         boolean deleted = (handler.getProjectById("P2", user2) == null);
-        assertEquals(false, deleted);
+        assertFalse(deleted);
     }
 
 
@@ -255,7 +252,7 @@ public class ProjectDatabaseHandlerTest {
         assertEquals(3, handler.getAccessibleProjectsSummary(user3).size());
 
         boolean deleted = (handler.getProjectById("P2", user2) == null);
-        assertEquals(false, deleted);
+        assertFalse(deleted);
     }
 
     @Test
@@ -278,7 +275,7 @@ public class ProjectDatabaseHandlerTest {
         assertEquals(3, handler.getAccessibleProjectsSummary(user3).size());
 
         boolean deleted = (handler.getProjectById("P3", user3) == null);
-        assertEquals(false, deleted);
+        assertFalse(deleted);
     }
 
     @Test
@@ -301,9 +298,9 @@ public class ProjectDatabaseHandlerTest {
         assertEquals(3, handler.getAccessibleProjectsSummary(user3).size());
 
         boolean deleted = (handler.getProjectById("P3", user3) == null);
-        assertEquals(false, deleted);
+        assertFalse(deleted);
     }
-    
+
     @Test
     public void testForceDeleteProject() throws Exception {
         if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
@@ -329,8 +326,8 @@ public class ProjectDatabaseHandlerTest {
 
         final Map<String, List<String>> duplicateProjects = handler.getDuplicateProjects();
 
-        assertThat(duplicateProjects.size(), is(1));
-        assertThat(duplicateProjects.get(printName(tmp)), containsInAnyOrder(newProjectId,originalProjectId));
+        Assert.assertEquals(1, duplicateProjects.size());
+        Assert.assertTrue(containsInAnyOrder(newProjectId,originalProjectId).matches(duplicateProjects.get(printName(tmp))));
     }
 
     public void testAddProjectWithDuplicateFails() throws Exception {
@@ -344,8 +341,8 @@ public class ProjectDatabaseHandlerTest {
         AddDocumentRequestSummary addProjectResult = handler.addProject(tmp, user1);
 
         // then:
-        assertThat(addProjectResult.getRequestStatus(), is(RequestStatus.DUPLICATE));
-        assertThat(addProjectResult.getId(), is(nullValue()));
+        Assert.assertEquals(RequestStatus.DUPLICATE, addProjectResult.getRequestStatus());
+        Assert.assertNull(addProjectResult.getId());
     }
 
     public void testUpdateProjectWithDuplicateFails() throws Exception {
@@ -361,7 +358,7 @@ public class ProjectDatabaseHandlerTest {
         RequestStatus updateProjectResult = handler.updateProject(tmp, user1);
 
         // then:
-        assertThat(updateProjectResult, is(RequestStatus.DUPLICATE));
+        Assert.assertEquals(RequestStatus.DUPLICATE, updateProjectResult);
     }
 
     @Test
@@ -369,7 +366,7 @@ public class ProjectDatabaseHandlerTest {
         Project project = handler.getProjectById("P1", user1);
         project.setReleaseIdToUsage(Collections.emptyMap());
         RequestStatus status = handler.updateProject(project, user1);
-        assertThat(status, is(RequestStatus.FAILED_SANITY_CHECK));
+        Assert.assertEquals(RequestStatus.FAILED_SANITY_CHECK, status);
     }
 
     @Test
@@ -382,19 +379,19 @@ public class ProjectDatabaseHandlerTest {
                 .build());
 
         RequestStatus status = handler.updateProject(project, user1);
-        assertThat(status, is(RequestStatus.SUCCESS));
+        Assert.assertEquals(RequestStatus.SUCCESS, status);
 
         Project project2 = handler.getProjectById("P2", user1);
         project2.setReleaseIdToUsage(Collections.emptyMap());
         RequestStatus status2 = handler.updateProject(project2, user1);
-        assertThat(status2, is(RequestStatus.SUCCESS));
+        Assert.assertEquals(RequestStatus.SUCCESS, status2);
     }
 
     @Test
     public void testReleaseIdToEmptyProjects() throws Exception {
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects = handler.releaseIdToProjects(new Project().setId("p4"), user1);
         Set<String> releaseIds = releaseIdToProjects.keySet();
-        assertTrue("Release IDs size", releaseIds.size() == 0);
+        Assert.assertTrue("Release IDs size", releaseIds.isEmpty());
     }
 
     @Test
@@ -408,13 +405,13 @@ public class ProjectDatabaseHandlerTest {
 
         Set<String> releaseIds = releaseIdToProjects.keySet();
 
-        assertThat(releaseIds, containsInAnyOrder("r1", "r2","r3","r4","r5","r6"));
-        assertThat(releaseIdToProjects.get("r1"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r2"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r3"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r4"), containsInAnyOrder(createTuple(p1)));
-        assertThat(releaseIdToProjects.get("r5"), containsInAnyOrder(createTuple(p1)));
-        assertThat(releaseIdToProjects.get("r6"), containsInAnyOrder(createTuple(p1)));
+        Assert.assertTrue(containsInAnyOrder("r1", "r2","r3","r4","r5","r6").matches(releaseIds));
+        Assert.assertTrue(containsInAnyOrder(createTuple(p1),createTuple(p2)).matches(releaseIdToProjects.get("r1")));
+        Assert.assertTrue(containsInAnyOrder(createTuple(p1),createTuple(p2)).matches(releaseIdToProjects.get("r2")));
+        Assert.assertTrue(containsInAnyOrder(createTuple(p1),createTuple(p2)).matches(releaseIdToProjects.get("r3")));
+        Assert.assertTrue(containsInAnyOrder(createTuple(p1)).matches(releaseIdToProjects.get("r4")));
+        Assert.assertTrue(containsInAnyOrder(createTuple(p1)).matches(releaseIdToProjects.get("r5")));
+        Assert.assertTrue(containsInAnyOrder(createTuple(p1)).matches(releaseIdToProjects.get("r6")));
 
     }
 
@@ -423,9 +420,9 @@ public class ProjectDatabaseHandlerTest {
         Project p = handler.getProjectById("P4", user1);
 
         List<ProjectLink> projectLinks = handler.getLinkedProjects(p, false, user1);
-        assertThat(projectLinks.size(), is(1));
-        assertThat(projectLinks.get(0).getSubprojects().size(), is(1));
-        assertThat(projectLinks.get(0).getLinkedReleases().size(), is(2));
+        Assert.assertEquals(1, projectLinks.size());
+        Assert.assertEquals(1, projectLinks.get(0).getSubprojects().size());
+        Assert.assertEquals(2, projectLinks.get(0).getLinkedReleases().size());
     }
 
     @Test
@@ -435,9 +432,9 @@ public class ProjectDatabaseHandlerTest {
         clone.unsetRevision();
 
         List<ProjectLink> projectLinks = handler.getLinkedProjects(clone, false, user1);
-        assertThat(projectLinks.size(), is(1));
-        assertThat(projectLinks.get(0).getSubprojects().size(), is(1));
-        assertThat(projectLinks.get(0).getLinkedReleases().size(), is(2));
+        Assert.assertEquals(1, projectLinks.size());
+        Assert.assertEquals(1, projectLinks.get(0).getSubprojects().size());
+        Assert.assertEquals(2, projectLinks.get(0).getLinkedReleases().size());
     }
 
     private ProjectWithReleaseRelationTuple createTuple(Project p) {

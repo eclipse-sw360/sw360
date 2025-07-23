@@ -25,12 +25,11 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -47,7 +46,7 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private Sw360ImportExportService importExportService;
 
     private RequestSummary requestSummary = new RequestSummary();
@@ -66,12 +65,12 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
         licensetype.setLicenseType("wer");
         licensetype.setLicenseTypeId(123);
         licensetype.setType("xyz");
-        
+
         given(this.importExportService.uploadComponent(any(), any(), any(),any())).willReturn(requestSummary);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(sw360User);
         given(this.importExportService.uploadReleaseLink(any(), any(), any())).willReturn(requestSummary);
         given(this.importExportService.uploadComponentAttachment(any(), any(), any())).willReturn(requestSummary);
-        
+
     }
 
     @Test

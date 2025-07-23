@@ -34,10 +34,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -47,12 +47,12 @@ public class DepartmentSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-    
-    @MockBean
+
+    @MockitoBean
     private Sw360DepartmentService departmentServiceMock;
     private RequestSummary requestSummary = new RequestSummary();
     RequestStatus mockRequestStatus = RequestStatus.SUCCESS;
-    
+
     @Before
     public void before() throws TException {
         User sw360User = new User();
@@ -64,7 +64,7 @@ public class DepartmentSpecTest extends TestRestDocsSpecBase {
         given(this.departmentServiceMock.scheduleImportDepartment(any())).willReturn(requestSummary);
         when(departmentServiceMock.isDepartmentScheduled(sw360User)).thenReturn(false);
     }
-    
+
     @Test
     public void should_document_import_department_manually() throws Exception {
         mockMvc.perform(post("/api/departments/manuallyactive")

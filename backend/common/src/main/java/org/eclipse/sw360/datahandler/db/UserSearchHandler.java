@@ -12,13 +12,21 @@ package org.eclipse.sw360.datahandler.db;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,7 +104,42 @@ public class UserSearchHandler {
         return connector.searchAndSortByScore(User.class, luceneSearchView.getIndexName(), queryString);
     }
 
-    public List<User> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictions(User.class, luceneUserSearchView.getIndexName(), text, subQueryRestrictions);
+    public Map<PaginationData, List<User>> search(String text, final Map<String, Set<String>> subQueryRestrictions, @Nonnull PaginationData pageData) {
+        ResourceComparatorGenerator<User> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
+        UserSortColumn sortBy = UserSortColumn.findByValue(pageData.getSortColumnNumber());
+        Comparator<User> comparator;
+
+        try {
+            comparator = switch (sortBy) {
+                case UserSortColumn.BY_GIVENNAME ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_USER, User._Fields.GIVENNAME.getFieldName());
+                case UserSortColumn.BY_LASTNAME ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_USER, User._Fields.LASTNAME.getFieldName());
+                case UserSortColumn.BY_EMAIL ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_USER, User._Fields.EMAIL.getFieldName());
+                case UserSortColumn.BY_STATUS ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_USER, User._Fields.DEACTIVATED.getFieldName());
+                case UserSortColumn.BY_DEPARTMENT ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_USER, User._Fields.DEPARTMENT.getFieldName());
+                case UserSortColumn.BY_ROLE ->
+                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_USER, User._Fields.USER_GROUP.getFieldName());
+                case null, default -> null; // sort by score
+            };
+        } catch (ResourceClassNotFoundException e) {
+            comparator = null;
+        }
+
+        Map<PaginationData, List<User>> resultUserList = connector
+                .searchViewWithRestrictions(User.class,
+                        luceneUserSearchView.getIndexName(), text, subQueryRestrictions,
+                        pageData, null, pageData.isAscending());
+
+        PaginationData respPageData = resultUserList.keySet().iterator().next();
+        List<User> usersList = resultUserList.values().iterator().next();
+        if (comparator != null) {
+            usersList.sort(comparator);
+        }
+
+        return Collections.singletonMap(respPageData, usersList);
     }
 }

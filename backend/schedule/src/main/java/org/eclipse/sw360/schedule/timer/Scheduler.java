@@ -45,8 +45,8 @@ public class Scheduler {
             timer = new Timer();
         }
         ScheduleSyncTask syncTask = new ScheduleSyncTask(body, serviceName);
-        int firstRunOffset = ScheduleHelper.getRunOffset(serviceName);
-        int syncInterval = ScheduleHelper.getIntervalSec(serviceName);
+        Integer firstRunOffset = ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName);
+        Integer syncInterval = ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName);
         nextSync = getNextSyncDate(firstRunOffset, syncInterval);
 
         try {
@@ -81,13 +81,12 @@ public class Scheduler {
     }
 
     public static Optional<Date> getNextSync(String serviceName) {
-        if (ScheduleHelper.getRunOffset(serviceName) == -1 ||
-                ScheduleHelper.getIntervalSec(serviceName) == -1) {
+        if (ScheduleConstants.invalidConfiguredServices.contains(serviceName)) {
             return Optional.empty();
         }
         return Optional.of(getNextSyncDate(
-                ScheduleHelper.getRunOffset(serviceName),
-                ScheduleHelper.getIntervalSec(serviceName)));
+                ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName),
+                ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName)));
     }
 
     public static synchronized RequestStatus cancelAllSyncJobs() {

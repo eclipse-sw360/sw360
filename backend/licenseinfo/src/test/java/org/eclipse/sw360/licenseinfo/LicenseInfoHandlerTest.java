@@ -23,9 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -46,9 +44,6 @@ public class LicenseInfoHandlerTest {
 
     @Mock
     private User user;
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -87,12 +82,12 @@ public class LicenseInfoHandlerTest {
         handler.filterEmptyLicenses(ImmutableList.of(emptyResult, emptyLicenseInfo, parsingResults));
 
         // @formatter:off
-        Assert.assertThat(parsingResults.getLicenseInfo().getLicenseNamesWithTexts(), Matchers.containsInAnyOrder(
+        Assert.assertTrue(Matchers.containsInAnyOrder(
                 createLicense("nameOnly", null, null),
                 createLicense(null, "textOnly", null),
                 createLicense(null, null, "ackOnly"),
                 createLicense("name", "text", "ack")
-        ));
+        ).matches(parsingResults.getLicenseInfo().getLicenseNamesWithTexts()));
         // @formatter:on
     }
 
@@ -134,7 +129,7 @@ public class LicenseInfoHandlerTest {
         // @formatter:on
 
         // @formatter:off
-        Assert.assertThat(filteredResult.getLicenseInfo().getLicenseNamesWithTexts(), Matchers.containsInAnyOrder(
+        Assert.assertTrue(Matchers.containsInAnyOrder(
                 createLicense("l1", null, null),
                 createLicense("l2", "t2", null),
                 createLicense("l3", "t3", null),
@@ -143,7 +138,7 @@ public class LicenseInfoHandlerTest {
                 createLicense("l", "t", "a7"),
                 createLicense("l8", "t8", null),
                 createLicense("l9", "t9", "a9")
-        ));
+        ).matches(filteredResult.getLicenseInfo().getLicenseNamesWithTexts()));
         // @formatter:on
     }
 

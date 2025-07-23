@@ -19,6 +19,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
@@ -27,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,8 @@ public class Sw360LicenseInfoService {
         try {
             LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
             return sw360LicenseInfoClient.getOutputFormatInfoForGeneratorClass(generatorClassName);
+        } catch (SW360Exception e) {
+            throw new BadRequestClientException(e.getWhy(), e);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -61,6 +65,8 @@ public class Sw360LicenseInfoService {
             }
             return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant,
                     selectedReleaseAndAttachmentIds, excludedLicenses, externalIds, fileName);
+        } catch (SW360Exception e) {
+            throw new BadRequestClientException(e.getWhy(), e);
         } catch (TException e) {
             throw new RuntimeException(e);
         }

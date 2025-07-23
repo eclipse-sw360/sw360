@@ -14,13 +14,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -44,7 +43,7 @@ public class EccSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockBean
+    @MockitoBean
     private Sw360ReleaseService releaseService;
 
     @Before
@@ -53,13 +52,13 @@ public class EccSpecTest extends TestRestDocsSpecBase {
         Release rel1 = new Release();
         rel1.setName("testRealease");
         rel1.setVersion("1.0");
-        
+
         EccInformation eccInfo1 = new EccInformation();
         eccInfo1.setAssessorContactPerson("john@siemens.com");
         eccInfo1.setAssessmentDate("24-01-2024");
         eccInfo1.setAssessorDepartment("Department");
         rel1.setEccInformation(eccInfo1);
-        
+
         Release rel2 = new Release();
         rel2.setName("testRealease2");
         rel2.setVersion("2.0");
@@ -71,7 +70,7 @@ public class EccSpecTest extends TestRestDocsSpecBase {
 
         releaseList.add(rel1);
         releaseList.add(rel2);
-        
+
         given(this.releaseService.getReleasesForUser(any())).willReturn(releaseList);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
@@ -105,5 +104,5 @@ public class EccSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
-    
+
 }
