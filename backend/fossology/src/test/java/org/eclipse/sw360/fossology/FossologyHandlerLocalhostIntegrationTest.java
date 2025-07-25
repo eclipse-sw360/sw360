@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
+import org.eclipse.sw360.fossology.service.ReuserAgentService;
 
 import org.apache.thrift.TException;
 import org.hamcrest.Matchers;
@@ -73,6 +74,8 @@ public class FossologyHandlerLocalhostIntegrationTest {
 
     private AttachmentConnector attachmentConnector;
 
+    private ReuserAgentService reuserAgentService;
+
     @BeforeClass
     public static void setupClass() {
         // we need to keep the release consistent to be able to move forward with the
@@ -103,7 +106,9 @@ public class FossologyHandlerLocalhostIntegrationTest {
 
         attachmentConnector = mock(AttachmentConnector.class);
 
-        uut = new FossologyHandler(thriftClients, restConfig, fossologyRestClient, attachmentConnector);
+        reuserAgentService = mock(ReuserAgentService.class);
+
+        uut = new FossologyHandler(thriftClients, restConfig, fossologyRestClient, attachmentConnector, reuserAgentService);
     }
 
     @Test
