@@ -907,4 +907,16 @@ public class DatabaseConnectorCloudant {
         return Collections.singletonMap(field,
                 eq("$elemMatch", value));
     }
+
+    /**
+     * Generates an $elemMatch selector with and custom selector for the field and selector
+     * @param field Field name
+     * @param selector Value to match
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> elemMatch(String field, Map<String, Object> selector) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap("$elemMatch", selector));
+    }
 }

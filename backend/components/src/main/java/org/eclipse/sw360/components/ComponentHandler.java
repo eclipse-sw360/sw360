@@ -151,18 +151,24 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public List<Release> searchReleases(String searchText) throws TException {
-        return releaseSearchHandler.search(searchText);
-    }
-
-    @Override
-    public List<Release> searchAccessibleReleases(String searchText, User user) throws TException {
-        return handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user) ;
+    public Map<PaginationData, List<Release>> searchAccessibleReleases(String searchText, User user, PaginationData pageData) throws TException {
+        return handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user, pageData) ;
     }
 
     @Override
     public List<Release> searchReleaseByNamePrefix(String name) throws TException {
         return handler.searchReleaseByNamePrefix(name);
+    }
+
+    @Override
+    public Map<PaginationData, List<Release>> searchReleaseByNamePaginated(String name, PaginationData pageData) throws TException {
+        return handler.searchReleaseByNamePaginated(name, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, PaginationData pageData) throws TException {
+        assertUser(user);
+        return handler.getAccessibleNewReleasesWithSrc(user, pageData);
     }
 
     @Override

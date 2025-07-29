@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -59,12 +60,13 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
@@ -76,7 +78,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 
 import com.google.common.collect.Sets;
-import org.springframework.web.client.HttpClientErrorException;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -108,7 +109,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     @NonNull
     private final Sw360ProjectService projectService;
-    private final Sw360LicenseService licenseService;
 
     private static FossologyService.Iface fossologyClient;
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
@@ -123,6 +123,18 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public List<Release> getReleasesForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getAllReleasesForUser(sw360User);
+    }
+
+    public Map<PaginationData, List<Release>> searchReleaseByNamePaginated(String name, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360ComponentClient.searchReleaseByNamePaginated(name, pageData);
+    }
+
+    public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360ComponentClient.getAccessibleNewReleasesWithSrc(user, pageData);
     }
 
     public Release getReleaseForUserById(String releaseId, User sw360User) throws TException {
@@ -1329,9 +1341,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     /*
      * Use lucene search for searching releases based on name
      */
-    public List<Release> refineSearch(String searchText, User sw360User) throws TException {
+    public Map<PaginationData, List<Release>> refineSearch(String searchText, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.searchAccessibleReleases(searchText, sw360User);
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360ComponentClient.searchAccessibleReleases(searchText, sw360User, pageData);
     }
 
     public void addEmbeddedLinkedRelease(Release sw360Release, User sw360User, HalResource<ReleaseLink> releaseResource, Set<String> releaseIdsInBranch) {
@@ -1558,5 +1571,30 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new BadRequestClientException("Source and Target Releases must belong to the same component.");
         }
         return targetRelease.getComponentId();
+    }
+
+    /**
+     * Converts a Pageable object to a PaginationData object.
+     *
+     * @param pageable the Pageable object to convert
+     * @return a PaginationData object representing the pagination information
+     */
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+        ReleaseSortColumn column = ReleaseSortColumn.BY_CREATEDON;
+        boolean ascending = false;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "createdOn" -> ReleaseSortColumn.BY_CREATEDON;
+                case "name" -> ReleaseSortColumn.BY_NAME;
+                case "version" -> ReleaseSortColumn.BY_VERSION;
+                default -> column; // Default to BY_CREATEDON if no match
+            };
+            ascending = order.isAscending();
+        }
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
 }
