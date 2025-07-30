@@ -100,7 +100,7 @@ public class SW360ReportService {
     LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
     AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
+    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, boolean withLinkedPackages) throws TException {
         /*
             * If projectId is not null, then validate the project record for the given projectId
             * If the projectId is null, then fetch the project details which are assigned with user
@@ -108,7 +108,7 @@ public class SW360ReportService {
         if (projectId != null && !validateProject(projectId, user)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
-        return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+        return projectclient.getReportDataStream(user, extendedByReleases, projectId, withLinkedPackages);
     }
 
     private boolean validateProject(String projectId, User user) throws TException {
@@ -150,16 +150,16 @@ public class SW360ReportService {
         return documentName;
     }
 
-    public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)
+    public void getUploadedProjectPath(User user, boolean withLinkedReleases, boolean withLinkedPackages, String base, String projectId)
             throws TException {
         if (projectId!=null && !validateProject(projectId, user)) {
             throw new SW360Exception("No project record found for the project Id : " + projectId);
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId);
+                String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId,  withLinkedPackages);
                 String backendURL = base + "api/reports/download?user=" + user.getEmail() + "&module=projects"
-                        + "&extendedByReleases=" + withLinkedReleases + "&projectId=" + projectId + "&token=";
+                        + "&extendedByReleases=" + withLinkedReleases + "&extendedByPackages=" + withLinkedPackages +"&projectId=" + projectId + "&token=";
                 URL emailURL = new URL(backendURL + projectPath);
                 if (!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
                     sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
@@ -172,8 +172,8 @@ public class SW360ReportService {
         asyncThread.start();
     }
 
-    public ByteBuffer getReportStreamFromURl(User user, boolean extendedByReleases, String token) throws TException {
-        return projectclient.downloadExcel(user, extendedByReleases, token);
+    public ByteBuffer getReportStreamFromURl(User user, boolean extendedByReleases, boolean extendedByPackages, String token) throws TException {
+        return projectclient.downloadExcel(user, extendedByReleases, extendedByPackages, token);
     }
 
     public void sendExportSpreadsheetSuccessMail(String emailURL, String email) throws TException {

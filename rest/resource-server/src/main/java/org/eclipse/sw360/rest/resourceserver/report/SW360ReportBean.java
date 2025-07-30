@@ -15,6 +15,7 @@ import java.util.List;
 @Getter
 public class SW360ReportBean{
     boolean withLinkedReleases;
+    boolean withLinkedPackages;
     boolean excludeReleaseVersion;
     String generatorClassName;
     String variant;

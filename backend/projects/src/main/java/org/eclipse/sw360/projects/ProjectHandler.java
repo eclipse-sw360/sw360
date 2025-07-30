@@ -556,21 +556,21 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token)
+    public ByteBuffer downloadExcel(User user, boolean extendedByReleases, boolean extendedByPackages,  String token)
             throws TException {
-        return handler.downloadExcel(user, extendedByReleases,token);
+        return handler.downloadExcel(user, extendedByReleases, extendedByPackages, token);
     }
 
 	@Override
-	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId)
+	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId, boolean extendedByPackages)
 			throws TException {
-		return handler.getReportDataStream(user, extendedByReleases, projectId);
+		return handler.getReportDataStream(user, extendedByReleases, projectId, extendedByPackages);
 	}
 
 	@Override
-	public String getReportInEmail(User user, boolean extendedByReleases, String projectId)
+	public String getReportInEmail(User user, boolean extendedByReleases, String projectId, boolean extendedByPackages)
 			throws TException {
-		return handler.getReportInEmail(user, extendedByReleases, projectId);
+		return handler.getReportInEmail(user, extendedByReleases, projectId, extendedByPackages);
 	}
 
     @Override

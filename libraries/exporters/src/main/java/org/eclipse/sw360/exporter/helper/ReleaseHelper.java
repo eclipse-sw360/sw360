@@ -144,7 +144,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
     }
 
 
-    private void addFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
+    protected void addFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
         switch (field) {
             case COMPONENT_ID:
                 // first, add data for given field
@@ -377,6 +377,17 @@ public class ReleaseHelper implements ExporterHelper<Release> {
             throw new SW360Exception("Could not get Components for ids [" + cIds + "] because of:\n" + e.getMessage());
         }
     }
+
+    public List<Release> getAllReleases(Set<String> ids) throws SW360Exception {
+        List<Release> releasesByIdsForExport;
+        try {
+            releasesByIdsForExport = cClient.getReleasesWithAccessibilityByIdsForExport(nullToEmptySet(ids), user);
+        } catch (TException e) {
+            throw new SW360Exception("Error fetching release information");
+        }
+        return releasesByIdsForExport;
+    }
+
 
     public List<Release> getReleases(Set<String> ids) throws SW360Exception {
         if (preloadedLinkedReleases != null){

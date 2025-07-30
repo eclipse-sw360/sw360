@@ -89,6 +89,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     public void getProjectReport(
             @Parameter(description = "Projects with linked releases.")
             @RequestParam(value = "withlinkedreleases", required = false, defaultValue = "false") boolean withLinkedReleases,
+            @Parameter(description = "Projects with linked packages.")
+            @RequestParam(value = "withlinkedpackages", required = false, defaultValue = "false") boolean withLinkedPackages,
             @Parameter(description = "Project id.")
             @RequestParam(value = "projectId", required = false) String projectId,
             @Parameter(description = "Module name.", schema = @Schema(allowableValues = {
@@ -124,7 +126,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }
-        SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
+        SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, withLinkedPackages, excludeReleaseVersion, generatorClassName, variant,
                 template, externalIds, withSubProject, bomType, selectedRelRelationship);
         String baseUrl = getBaseUrl(request);
         switch (module) {
@@ -161,6 +163,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
      * Creates a SW360ReportBean object with the given parameters.
      *
      * @param withLinkedReleases      whether to include linked releases
+     * @param withLinkedPackages      whether to include linked releases and packages both
      * @param excludeReleaseVersion   whether to exclude release version
      * @param generatorClassName      the generator class name
      * @param variant                 the variant of the report
@@ -171,11 +174,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
      * @param selectedRelRelationship selected release relationships
      * @return a SW360ReportBean object with the specified parameters
      */
-    private SW360ReportBean createReportBeanObject(boolean withLinkedReleases, boolean excludeReleaseVersion, String generatorClassName,
+    private SW360ReportBean createReportBeanObject(boolean withLinkedReleases, boolean withLinkedPackages, boolean excludeReleaseVersion, String generatorClassName,
                                                    String variant, String template, String externalIds, boolean withSubProject, String bomType,
                                                    List<ReleaseRelationship> selectedRelRelationship) {
         SW360ReportBean reportBean = new SW360ReportBean();
         reportBean.setWithLinkedReleases(withLinkedReleases);
+        reportBean.setWithLinkedPackages(withLinkedPackages);
         reportBean.setExcludeReleaseVersion(excludeReleaseVersion);
         reportBean.setGeneratorClassName(generatorClassName);
         reportBean.setVariant(variant);
@@ -193,7 +197,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_PROJECT_REPORT, false)) {
-                sw360ReportService.getUploadedProjectPath(sw360User, reportBean.isWithLinkedReleases(), baseUrl, projectId);
+                sw360ReportService.getUploadedProjectPath(sw360User, reportBean.isWithLinkedReleases(), reportBean.isWithLinkedPackages(), baseUrl, projectId);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
                 response.getWriter().write(responseJson.toString());
@@ -279,7 +283,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
             switch (module) {
                 case SW360Constants.PROJECTS:
-                    buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId);
+                    buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId, reportBean.isWithLinkedPackages());
                     fileName = sw360ReportService.getDocumentName(user, projectId, module);
                     break;
                 case SW360Constants.COMPONENTS:
@@ -354,7 +358,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @Parameter(description = "Token to download report.")
             @RequestParam(value = "token", required = true) String token,
             @Parameter(description = "Extended by releases.")
-            @RequestParam(value = "extendedByReleases", required = false, defaultValue = "false") boolean extendedByReleases
+            @RequestParam(value = "extendedByReleases", required = false, defaultValue = "false") boolean extendedByReleases,
+            @RequestParam(value = "extendedByPackages",   required = false, defaultValue="false") boolean extendedByPackages
     ) throws SW360Exception {
         final User user = restControllerHelper.getUserByEmail(request.getParameter("user"));
         try {
@@ -362,7 +367,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             String fileName = sw360ReportService.getDocumentName(user, null, module);
             switch (module) {
                 case SW360Constants.PROJECTS:
-                    buffer = sw360ReportService.getReportStreamFromURl(user, extendedByReleases, token);
+                    buffer = sw360ReportService.getReportStreamFromURl(user, extendedByReleases, extendedByPackages, token);
                     fileName = sw360ReportService.getDocumentName(user, request.getParameter("projectId"), module);
                     break;
                 case SW360Constants.COMPONENTS:

@@ -697,15 +697,15 @@ service ProjectService {
     /*
     * make excel export
     */
-    binary getReportDataStream(1: User user,2: bool extendedByReleases,3: string projectId) throws (1: SW360Exception exp);
+    binary getReportDataStream(1: User user,2: bool extendedByReleases,3: string projectId,4: bool extendedByPackages) throws (1: SW360Exception exp);
      /*
     * excel export - return the filepath
     */
-    string getReportInEmail(1: User user, 2: bool extendedByReleases, string projectId) throws (1: SW360Exception exp);
+    string getReportInEmail(1: User user, 2: bool extendedByReleases, string projectId,4: bool extendedByPackages) throws (1: SW360Exception exp);
     /*
     * download excel
     */
-    binary downloadExcel(1:User user,2:bool extendedByReleases,3:string token) throws (1: SW360Exception exc);
+    binary downloadExcel(1:User user,2:bool extendedByReleases,3:bool extendedByPackages,4:string token) throws (1: SW360Exception exc);
 
     /**
     * get list ReleaseLink in release network of project by project id and trace

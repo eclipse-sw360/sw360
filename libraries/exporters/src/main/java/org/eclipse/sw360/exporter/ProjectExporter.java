@@ -18,10 +18,12 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.helper.ProjectHelper;
 import org.eclipse.sw360.exporter.helper.ReleaseHelper;
+import org.eclipse.sw360.exporter.helper.PackageHelper;
 
 import java.util.*;
 import java.util.function.Function;
@@ -98,7 +100,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
             .collect(Collectors.toList());
 
     public static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.RELEASE_HEADERS_PROJECT_EXPORT, "release: ");
-
+    public static List<String> HEADERS_EXTENDED_BY_PACKAGES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, PackageExporter.PACKAGE_HEADERS_PROJECT_EXPORT, "package: ");
     public ProjectExporter(ComponentService.Iface componentClient, ProjectService.Iface projectClient, User user, List<Project> projects, boolean extendedByReleases) throws SW360Exception {
         super(new ProjectHelper(projectClient, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
         preloadRelatedDataFor(projects, extendedByReleases, user);
@@ -107,6 +109,14 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
     public ProjectExporter(ComponentService.Iface componentClient, ProjectService.Iface projectClient, User user,
             boolean extendedByReleases) throws SW360Exception {
         super(new ProjectHelper(projectClient, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
+    }
+
+    public ProjectExporter(ComponentService.Iface cClient,PackageService.Iface packageClient, ProjectService.Iface projectClient, User user, List<Project> projects, boolean extendedByPackages) throws SW360Exception {
+        super(new ProjectHelper(projectClient, user, extendedByPackages, new PackageHelper(packageClient, cClient, user), new ReleaseHelper(cClient, user)));
+    }
+
+    public ProjectExporter(ComponentService.Iface cClient,PackageService.Iface packageClient, ProjectService.Iface projectClient, User user, boolean extendedByPackages) throws SW360Exception {
+        super(new ProjectHelper(projectClient, user, extendedByPackages, new PackageHelper(packageClient, cClient, user), new ReleaseHelper(cClient, user)));
     }
 
     private void preloadRelatedDataFor(List<Project> projects, boolean withLinkedOfLinked, User user) throws SW360Exception {
