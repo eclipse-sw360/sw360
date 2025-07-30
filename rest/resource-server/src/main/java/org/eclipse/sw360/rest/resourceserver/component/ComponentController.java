@@ -1323,7 +1323,50 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
      * Helper method to check if a file search result belongs to the given component
      */
     private boolean isFileFromComponent(FileSearchResult result, Component component) {
+        if (result == null || component == null) {
+            return false;
+        }
         
-        return true;
+        int uploadId = result.getUploadId();
+        if (uploadId <= 0) {
+            return false;
+        }
+        
+        // Check if the upload ID matches any external tool process in the component's releases
+        try {
+            User user = restControllerHelper.getSw360UserFromAuthentication();
+            
+            // Get all releases for this component
+            if (component.getReleaseIds() != null && !component.getReleaseIds().isEmpty()) {
+                for (String releaseId : component.getReleaseIds()) {
+                    try {
+                        Release release = releaseService.getReleaseForUserById(releaseId, user);
+                        
+                        // Check if this release has a FOSSology external tool process with matching upload ID
+                        if (release.getExternalToolProcesses() != null) {
+                            for (org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess process : release.getExternalToolProcesses()) {
+                                if (org.eclipse.sw360.datahandler.thrift.components.ExternalTool.FOSSOLOGY.equals(process.getExternalTool())) {
+                                    // Check if any process step has the matching upload ID as result
+                                    if (process.getProcessSteps() != null) {
+                                        for (org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep step : process.getProcessSteps()) {
+                                            if (step.getResult() != null && step.getResult().equals(String.valueOf(uploadId))) {
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Log and continue to next release if there's an issue accessing one release
+                        log.warn("Could not check release {} for upload ID {}: {}", releaseId, uploadId, e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error checking if file belongs to component {}: {}", component.getId(), e.getMessage());
+        }
+        
+        return false;
     }
 }
