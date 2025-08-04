@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -80,9 +81,13 @@ public class FossologyHandler implements FossologyService.Iface {
 
     @Override
     public RequestStatus setFossologyConfig(ConfigContainer newConfig) throws TException {
-        return fossologyRestConfig.update(newConfig).getConfigKeyToValues().equals(newConfig.getConfigKeyToValues())
-                ? RequestStatus.SUCCESS
-                : RequestStatus.FAILURE;
+        try {
+            return fossologyRestConfig.update(newConfig).getConfigKeyToValues().equals(newConfig.getConfigKeyToValues())
+                    ? RequestStatus.SUCCESS
+                    : RequestStatus.FAILURE;
+        } catch (IllegalStateException e) {
+            throw new SW360Exception(e.getMessage()); // Convert to something Thrift allows
+        }
     }
 
     @Override
