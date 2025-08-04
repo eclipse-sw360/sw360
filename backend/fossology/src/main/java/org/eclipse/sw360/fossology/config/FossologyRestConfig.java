@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -27,7 +28,7 @@ import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Settings for the fossology rest connection
+ * Settings for the fossology rest connection (v2 API)
  */
 @Component
 public class FossologyRestConfig {
@@ -40,11 +41,22 @@ public class FossologyRestConfig {
     public static final String CONFIG_KEY_DOWNLOAD_TIMEOUT = "fossology.downloadTimeout";
     public static final String CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT = "fossology.downloadTimeoutUnit";
 
+    // v2 API specific configuration keys
+    public static final String CONFIG_KEY_DEFAULT_GROUP = "fossology.defaultGroup";
+    
+    // File search specific configuration keys
+    public static final String CONFIG_KEY_FILE_SEARCH_MAX_RESULTS = "fossology.fileSearch.maxResults";
+    public static final String CONFIG_KEY_FILE_SEARCH_TIMEOUT = "fossology.fileSearch.timeout";
+    public static final String CONFIG_KEY_FILE_SEARCH_CACHE_TTL = "fossology.fileSearch.cacheTtl";
+    public static final String CONFIG_KEY_FILE_SEARCH_ENABLED = "fossology.fileSearch.enabled";
+
     private final ConfigContainerRepository repository;
 
     private ConfigContainer config;
 
     private boolean outdated;
+
+    private static final String BASEURL_VERSION_SUFFIX = "/api/v2";
 
     @Autowired
     public FossologyRestConfig(ConfigContainerRepository repository) throws SW360Exception {
@@ -53,14 +65,30 @@ public class FossologyRestConfig {
         get();
     }
 
-    public String getBaseUrlWithSlash() {
-        String url = getFirstValue(CONFIG_KEY_URL);
+    /**
+     * Get the v2 API base URL with proper path
+     * @return Base URL with v2 API path
+     */
+    public String getV2BaseUrlWithSlash() {
+        String baseUrl = getFirstValue(CONFIG_KEY_URL);
 
-        if (url != null && !url.endsWith("/")) {
-            url += "/";
+        if (baseUrl != null && !baseUrl.endsWith("/")) {
+            baseUrl += "/";
         }
 
-        return url;
+        if (baseUrl != null) {
+            if (baseUrl.contains("/api/v1")) {
+                throw new IllegalArgumentException("API v1 is no longer supported and deprecated. Please use /api/v2 instead.");
+            }
+            // If no version specified, add v2
+            if (!baseUrl.contains("/api/v2/")) {
+                if (!baseUrl.endsWith("/")) {
+                    baseUrl += "/";
+                }
+                baseUrl += "api/v2/";
+            }
+        }
+        return baseUrl;
     }
 
     public String getAccessToken() {
@@ -77,6 +105,42 @@ public class FossologyRestConfig {
 
     public String getDownloadTimeoutUnit() {
         return getFirstValue(CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT);
+    }
+
+    /**
+     * Get default group name for operations
+     */
+    public String getDefaultGroup() {
+        return getFirstValue(CONFIG_KEY_DEFAULT_GROUP);
+    }
+
+    /**
+     * Get maximum number of results for file search operations
+     */
+    public String getFileSearchMaxResults() {
+        return getFirstValue(CONFIG_KEY_FILE_SEARCH_MAX_RESULTS);
+    }
+
+    /**
+     * Get timeout for file search operations
+     */
+    public String getFileSearchTimeout() {
+        return getFirstValue(CONFIG_KEY_FILE_SEARCH_TIMEOUT);
+    }
+
+    /**
+     * Get cache TTL for file search results
+     */
+    public String getFileSearchCacheTtl() {
+        return getFirstValue(CONFIG_KEY_FILE_SEARCH_CACHE_TTL);
+    }
+
+    /**
+     * Check if file search is enabled
+     */
+    public boolean isFileSearchEnabled() {
+        String enabled = getFirstValue(CONFIG_KEY_FILE_SEARCH_ENABLED);
+        return enabled == null || "true".equalsIgnoreCase(enabled);
     }
 
     private String getFirstValue(String key) {
@@ -113,6 +177,11 @@ public class FossologyRestConfig {
             Long.parseLong(folderId);
         } catch (NumberFormatException e) {
             throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid folder id.");
+        }
+
+        // Validate v2 configuration options
+        if (!url.contains(BASEURL_VERSION_SUFFIX)) {
+            throw new IllegalStateException("Base URL for API must be 'v2'.");
         }
 
         String downloadTimeout = newConfig.getConfigKeyToValues().getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT, new HashSet<>()).stream()
