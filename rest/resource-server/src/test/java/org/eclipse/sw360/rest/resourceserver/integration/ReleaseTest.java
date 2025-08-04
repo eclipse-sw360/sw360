@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -211,7 +212,12 @@ public class ReleaseTest extends TestIntegrationBase {
 
         release.setPackageIds(linkedPackages);
         given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(releaseList);
-        given(this.releaseServiceMock.refineSearch(any(),any())).willReturn(releaseList);
+        given(this.releaseServiceMock.refineSearch(any(),any(),any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(releaseList.size()).setDisplayStart(0).setTotalRowCount(releaseList.size()),
+                        releaseList
+                )
+        );
         given(this.releaseServiceMock.getRecentReleases(any())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseSubscriptions(any())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
@@ -225,6 +231,12 @@ public class ReleaseTest extends TestIntegrationBase {
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
+        given(this.releaseServiceMock.searchReleaseByNamePaginated(any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(TestHelper.getDummyReleaseListForTest().size()).setDisplayStart(0).setTotalRowCount(TestHelper.getDummyReleaseListForTest().size()),
+                        TestHelper.getDummyReleaseListForTest()
+                )
+        );
 
         given(this.licenseServiceMock.getLicenseById("Apache-2.0")).willReturn(
                 new License("Apache 2.0 License")

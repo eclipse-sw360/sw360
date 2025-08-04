@@ -184,33 +184,36 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<Release> sw360Releases = new ArrayList<>();
-        String queryString = request.getQueryString();
-        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
+        Map<PaginationData, List<Release>> paginatedReleases = null;
 
         if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            sw360Releases.addAll(releaseService.refineSearch(name, sw360User));
+            paginatedReleases = releaseService.refineSearch(name, sw360User, pageable);
         } else {
             if (sha1 != null && !sha1.isEmpty()) {
-                sw360Releases.addAll(searchReleasesBySha1(sha1, sw360User));
+                List<Release> sw360Releases = new ArrayList<>(searchReleasesBySha1(sha1, sw360User));
+                paginatedReleases = Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(sw360Releases.size()).setDisplayStart(0)
+                                .setTotalRowCount(sw360Releases.size()),
+                        sw360Releases
+                );
             } else if (isNewClearingWithSourceAvailable) {
-                sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
-                sw360Releases = sw360Releases.stream()
-                        .filter(release -> release.getClearingState() == ClearingState.NEW_CLEARING && !CommonUtils.isNullOrEmptyCollection(release.getAttachments())
-                                && release.getAttachments().stream().anyMatch(attachment -> attachment.getAttachmentType() == AttachmentType.SOURCE
-                                        || attachment.getAttachmentType() == AttachmentType.SOURCE_SELF)).collect(Collectors.toList());
+                paginatedReleases = releaseService.getAccessibleNewReleasesWithSrc(sw360User, pageable);
             } else {
-                sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
-                sw360Releases = sw360Releases.stream()
-                        .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(params.get("name")))
-                        .collect(Collectors.toList());
+                paginatedReleases = releaseService.searchReleaseByNamePaginated(name, pageable);
             }
         }
+
+        List<Release> sw360Releases = new ArrayList<>(paginatedReleases.values().iterator().next());
 
         if (allDetails) {
             for (Release release : sw360Releases) {
                 if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
-                    release.setVendor(vendorService.getVendorById(release.getVendorId()));
+                    try {
+                        Vendor relVendor = vendorService.getVendorById(release.getVendorId());
+                        release.setVendor(relVendor);
+                    } catch (RuntimeException ignore) {
+                        log.error("Unable to find vendor with ID {}", release.getVendorId());
+                    }
                 }
             }
         }
@@ -223,8 +226,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             releaseService.setComponentDependentFieldsInRelease(sw360Releases, sw360User);
         }
 
-        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                sw360Releases, SW360Constants.TYPE_RELEASE);
+        PaginationResult<Release> paginationResult;
+        int totalCount = Math.toIntExact(paginatedReleases.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE, totalCount);
 
         List<EntityModel<Release>> releaseResources = new ArrayList<>();
         for (Release sw360Release : paginationResult.getResources()) {

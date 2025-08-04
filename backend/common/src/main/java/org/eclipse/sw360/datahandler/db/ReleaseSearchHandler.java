@@ -13,13 +13,16 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
@@ -60,7 +63,18 @@ public class ReleaseSearchHandler {
         connector.addDesignDoc(searchView);
     }
 
-    public List<Release> search(String searchText) {
-        return connector.searchView(Release.class, luceneSearchView.getIndexName(), prepareWildcardQuery(searchText));
+    public Map<PaginationData, List<Release>> search(String searchText, PaginationData pageData) {
+        Map<PaginationData, List<Release>> resultReleaseList = connector
+                .searchViewWithRestrictions(Release.class,
+                        luceneSearchView.getIndexName(), null,
+                        Map.of(Release._Fields.NAME.getFieldName(),
+                                Collections.singleton(prepareWildcardQuery(searchText))
+                        ),
+                        pageData, null, pageData.isAscending());
+
+        PaginationData respPageData = resultReleaseList.keySet().iterator().next();
+        List<Release> releaseList = resultReleaseList.values().iterator().next();
+
+        return Collections.singletonMap(respPageData, releaseList);
     }
 }
