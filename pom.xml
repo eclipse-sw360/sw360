@@ -107,7 +107,7 @@
     <commons-io.version>2.20.0</commons-io.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <commons-text.version>1.14.0</commons-text.version>
-    <sun.mail.version>2.0.1</sun.mail.version>
+    <sun.mail.version>2.0.2</sun.mail.version>
     <dom4j.version>2.2.0</dom4j.version>
     <equalsverifier.version>4.0.7</equalsverifier.version>
     <failureaccess.version>1.0.3</failureaccess.version>
