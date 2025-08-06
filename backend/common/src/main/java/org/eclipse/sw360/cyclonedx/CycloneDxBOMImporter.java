@@ -108,6 +108,7 @@ public class CycloneDxBOMImporter {
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
     private static final String REDIRECTED_VCS = "redirectedVCS";
+    public static final String INVALID_VCS_COMPONENT = "invalidVcsComponent";
     private static final Predicate<ExternalReference.Type> typeFilter = Type.VCS::equals;
 
     private final ProjectDatabaseHandler projectDatabaseHandler;
@@ -447,6 +448,7 @@ public class CycloneDxBOMImporter {
         final Set<String> duplicateComponents = new HashSet<>();
         final Set<String> duplicateReleases = new HashSet<>();
         final Set<String> invalidReleases = new HashSet<>();
+        final Set<String> invalidVcsComponents = new HashSet<>();
         final Map<String, ProjectReleaseRelationship> releaseRelationMap = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
         countMap.put(COMP_CREATION_COUNT_KEY, 0); countMap.put(COMP_REUSE_COUNT_KEY, 0);
         countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
@@ -471,6 +473,10 @@ public class CycloneDxBOMImporter {
                     } else {
                         compReuseCount++;
                     }
+                } else if (AddDocumentRequestStatus.INVALID_INPUT.equals(compAddSummary.getRequestStatus())) {
+                    log.warn("Invalid VCS URL for component: " + comp.getName());
+                    invalidVcsComponents.add(comp.getName()+ " (" + comp.getVcs() + ")");
+                    continue;
                 } else {
                     // in case of more than 1 duplicate found, then continue and show error message in UI.
                     log.warn("found multiple components: " + comp.getName());
@@ -550,6 +556,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(DUPLICATE_COMPONENT, String.join(JOINER, duplicateComponents));
         messageMap.put(DUPLICATE_RELEASE, String.join(JOINER, duplicateReleases));
         messageMap.put(INVALID_RELEASE, String.join(JOINER, invalidReleases));
+        messageMap.put(INVALID_VCS_COMPONENT, String.join(JOINER, invalidVcsComponents));
         messageMap.put(PROJECT_ID, project.getId());
         messageMap.put(PROJECT_NAME, SW360Utils.getVersionedName(project.getName(), project.getVersion()));
         messageMap.put(COMP_CREATION_COUNT_KEY, String.valueOf(compCreationCount));
@@ -569,6 +576,7 @@ public class CycloneDxBOMImporter {
         final Set<String> invalidReleases = new HashSet<>();
         final Set<String> nonPkgManagedCompWithoutVCS = new HashSet<>();
         final Set<String> invalidPackages = new HashSet<>();
+        final Set<String> invalidVcsComponents = new HashSet<>();
         final Map<String, ProjectReleaseRelationship> releaseRelationMap = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
         final Set<String> projectPkgIds = CommonUtils.isNullOrEmptyCollection(project.getPackageIds()) ? new HashSet<>() : project.getPackageIds();
         countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
@@ -599,6 +607,10 @@ public class CycloneDxBOMImporter {
                     comp.setId(compAddSummary.getId());
                     String existingCompName = getComponetNameById(comp.getId(), user);
                     comp.setName(existingCompName);
+                } else if (AddDocumentRequestStatus.INVALID_INPUT.equals(compAddSummary.getRequestStatus())) {
+                    log.warn("Invalid VCS URL for component: " + comp.getName());
+                    invalidVcsComponents.add(comp.getName() + " (" + comp.getVcs() + ")");
+                    continue;
                 } else {
                     // in case of more than 1 duplicate found, then continue and show error message in UI.
                     log.warn("found multiple components: " + comp.getName());
@@ -799,6 +811,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRedirectedUrls()));
         messageMap.put(NON_PKG_MANAGED_COMP_WITHOUT_VCS, String.join(JOINER, nonPkgManagedCompWithoutVCS));
         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
+        messageMap.put(INVALID_VCS_COMPONENT, String.join(JOINER, invalidVcsComponents));
         messageMap.put(PROJECT_ID, project.getId());
         messageMap.put(PROJECT_NAME, SW360Utils.getVersionedName(project.getName(), project.getVersion()));
         messageMap.put(REL_CREATION_COUNT_KEY, String.valueOf(relCreationCount));
