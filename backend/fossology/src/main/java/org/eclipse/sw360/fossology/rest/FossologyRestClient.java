@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -15,8 +16,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
+import org.eclipse.sw360.fossology.rest.model.FossologyV2Models.CombinedUploadJobResponse;
 
-import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +30,12 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.InvalidUrlException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Wraps the FOSSology REST API and offers an API on a higher level. Configures
@@ -42,42 +45,35 @@ import java.util.stream.Collectors;
  *
  * GET folders:
 curl -L -X GET \
-"http://[host]:[port]/repo/api/v1/folders" \
+"http://[host]:[port]/repo/api/v2/folders" \
 -H "Authorization: Bearer [token]"
 
- * POST source file:
-curl -L -X POST \
-"http://[host]:[port]/repo/api/v1/uploads" \
--H "folderId: 3" \
+ * POST source file with scan:
+curl -L -X 'POST' \
+'http://[host]:[port]/repo/api/v2/uploads' \
 -H "Authorization: Bearer [token]" \
--H "Content-Type: multipart/form-data" \
--F "fileInput=@[local-path-to-source-file]"
-
- * POST scan job:
-curl -L -X POST \
-"http://[host]:[port]/repo/api/v1/jobs" \
--H "folderId: 3" \
--H "uploadId: 19" \
--H "Authorization: Bearer [token]" \
--H "Content-Type: application/json" \
--d '{"analysis":{"bucket":true,"copyright_email_author":true,"ecc":true,"keyword":true,"mime":true,"monk":true,"nomos":true,"ojo":true,"package":true},"decider":{"nomos_monk":true,"bulk_reused":true,"new_scanner":true},"reuse":{"reuse_upload":0,"reuse_group":0,"reuse_main":true,"reuse_enhanced":true}}'
+-H 'Content-Type: multipart/form-data' \
+-F 'folderId=3' \
+-F 'uploadDescription=string' \
+-F 'uploadType=file' \
+-F 'scanOptions={"analysis":{"bucket":true,"copyright_email_author":true,"ecc":true,"keyword":true,"mime":true,"monk":true,"nomos":true,"ojo":true,"package":true},"decider":{"nomos_monk":true,"bulk_reused":true,"new_scanner":true},"reuse":{"reuse_upload":0,"reuse_group":0,"reuse_main":true,"reuse_enhanced":true}}' \
+-F 'fileInput=@[local-path-to-source-file]'
 
  * GET scan job status:
 curl -L -X GET \
-"http://[host]:[port]/repo/api/v1/jobs/23" \
+"http://[host]:[port]/repo/api/v2/jobs/23" \
 -H "Authorization: Bearer [token]" \
 
  * GET report (start report generation):
 curl -k -s -S -X GET \
-"http://[host]:[port]/repo/api/v1/report" \
--H "uploadId: 19" -H 'reportFormat: spdx2' \
+"http://[host]:[port]/repo/api/v2/report?uploadId=19&reportFormat=spdx2" \
 -H "Authorization: Bearer [token]" \
 
  * GET report:
 curl -k -s -S -X GET \
-"http://[host]:[port]/repo/api/v1/report/24" \
+"http://[host]:[port]/repo/api/v2/report/24" \
 -H "accept: text/plain" > report.rdf.xml \
--H "Authorization: Bearer [token]" \
+-H "Authorization: Bearer [token]"
  *
  * </pre>
  */
@@ -94,6 +90,8 @@ public class FossologyRestClient {
 
     private final RestTemplate restTemplate;
 
+    private final String expectedVersionPrefix = "2.";
+
     @Autowired
     public FossologyRestClient(ObjectMapper objectMapper, FossologyRestConfig restConfig, RestTemplate restTemplate) {
         this.objectMapper = objectMapper;
@@ -105,110 +103,308 @@ public class FossologyRestClient {
     }
 
     /**
-     * Tries to query the folders of the configured FOSSology REST API. If this
-     * succeeds, a connection is possible.
+     * Tries to query the info and folder endpoint of the configured FOSSology
+     * REST API. If this succeeds, a connection is possible.
      *
      * @return true if a connection is possible, false otherwise.
      */
     public boolean checkConnection() {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
+        try {
+            String baseUrl = restConfig.getV2BaseUrlWithSlash();
+            String token = restConfig.getAccessToken();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+            if (CommonUtils.isNullEmptyOrWhitespace(baseUrl) || CommonUtils.isNullEmptyOrWhitespace(token)) {
+                log.error("FOSSology v2 configuration incomplete");
+                return false;
+            }
+
+            if (isCorrectInfoVersion()) {
+                return canConnectToFolders();
+            }
+            return false;
+        } catch (RestClientException e) {
+            log.error("Failed to connect to FOSSology v2 API: {}", e.getMessage());
             return false;
         }
+    }
+
+    private boolean isCorrectInfoVersion() {
+        ResponseEntity<String> response = sendGetRequest("info", Map.of(), List.of(), String.class);
+
+        boolean connected = response.getStatusCode() == HttpStatus.OK;
+        log.info("FOSSology v2 API connection test: {}", connected ? "SUCCESS" : "FAILED");
+
+        if (!connected) {
+            return false;
+        }
+        // Check if the version starts with expectedVersionPrefix
+        String responseBody = response.getBody();
+        if (responseBody != null) {
+            try {
+                // Parse JSON response to extract version
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(responseBody);
+                String version = jsonNode.get("version").asText();
+
+                // Log the version returned by the server
+                log.info("FOSSology API version: {}", version);
+
+                if (!version.startsWith(expectedVersionPrefix)) {
+                    log.error("Expected FOSSology v2 API but got version: {}. Please ensure you have configured the correct v2 endpoint.", version);
+                    return false;
+                } else {
+                    log.info("FOSSology v2 API version verification successful");
+                    return true;
+                }
+            } catch (Exception e) {
+                log.error("Failed to parse version from /info response: {}", e.getMessage());
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private boolean canConnectToFolders() {
+        String folderId = restConfig.getFolderId();
+
+        ResponseEntity<String> response = sendGetRequest("folders/" + folderId, Map.of(), List.of(), String.class);
+
+        if (response.getStatusCode() != HttpStatus.OK) {
+            log.error("Failed to connect to folders endpoint: {}",
+                    response.getBody());
+            return false;
+        }
+        log.info("Successfully connected to folders endpoint.");
+        return true;
+    }
+
+    private @NotNull <T> ResponseEntity<T> sendGetRequest(
+            String url, Map<String, String> queryParameters,
+            List<MediaType> accepts, Class<T> type
+    ) throws InvalidUrlException {
+        String token = restConfig.getAccessToken();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
+        headers.setBearerAuth(token);
+        if (!accepts.isEmpty()) {
+            headers.setAccept(accepts);
+        }
 
-        ResponseEntity<String> response = restTemplate.exchange(baseUrl + "folders",
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        UriComponentsBuilder uriBuilder = createRequestUrl(url, queryParameters);
 
-        return response.getStatusCode() == HttpStatus.OK;
+        log.debug("Sending GET request to: {}", uriBuilder.build().toUriString());
+
+        return restTemplate.exchange(
+                uriBuilder.encode().toUriString(),
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                type
+        );
+    }
+
+    private @NotNull <T, F> ResponseEntity<T> sendPostRequest(
+            String url, Map<String, String> queryParameters, MediaType mediaType,
+            F body, Class<T> type
+    ) throws InvalidUrlException {
+        String token = restConfig.getAccessToken();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(mediaType);
+
+        HttpEntity<F> requestEntity = new HttpEntity<>(body, headers);
+
+        UriComponentsBuilder uriBuilder = createRequestUrl(url, queryParameters);
+
+        log.debug("Sending POST request to: {} with body: {}", uriBuilder.encode().toUriString(), body);
+
+        return restTemplate.exchange(
+                uriBuilder.encode().toUriString(),
+                HttpMethod.POST,
+                requestEntity,
+                type
+        );
+    }
+
+    private UriComponentsBuilder createRequestUrl(
+            String url, Map<String, String> queryParameters
+    ) {
+        String baseUrl = restConfig.getV2BaseUrlWithSlash();
+        String groupName = restConfig.getDefaultGroup();
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseUrl + url);
+        for (Map.Entry<String, String> entry : queryParameters.entrySet()) {
+            uriBuilder.queryParam(entry.getKey(), entry.getValue());
+        }
+        if (groupName != null) {
+            uriBuilder.queryParam("groupName", groupName);
+        }
+        return uriBuilder;
     }
 
     /**
-     * Uploads the file provided in an {@link InputStream} under the given filename
-     * to FOSSology.
-     *
-     * @param filename   the name of the file
-     * @param fileStream the content of the file
-     * @return the uploadId provided by FOSSology in case of an successful upload,
-     *         -1 otherwise
+     * Upload a file to FOSSology and schedule agents on it. Returns the upload
+     * id.
      */
-    public int uploadFile(String filename, InputStream fileStream, String uploadDescription) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
+    public CombinedUploadJobResponse uploadFileAndScan(String filename, InputStream fileStream,
+                                                       String uploadDescription) {
         String folderId = restConfig.getFolderId();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token) || StringUtils.isEmpty(folderId)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>, Folder: <{}>", baseUrl, token,
-                    folderId);
-            return -1;
+        if (isNotValidConfig()) {
+            return createErrorResponse("Missing configuration values.");
         }
 
-        if (StringUtils.isEmpty(filename) || fileStream == null) {
+        if (CommonUtils.isNullEmptyOrWhitespace(filename) || fileStream == null) {
             log.error("Invalid arguments, filename must not be empty and input stream must not be null!");
-            return -1;
+            return createErrorResponse("Invalid arguments");
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.set("Authorization", "Bearer " + token);
-        headers.set("folderId", folderId);
-        headers.set("uploadType", "file");
+        String url = "uploads";
 
-        if (CommonUtils.isNotNullEmptyOrWhitespace(uploadDescription)) {
-            headers.set("uploadDescription", uploadDescription);
-        }
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("fileInput", new FossologyInputStreamResource(filename, fileStream));
+        body.add("folderId", folderId);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(uploadDescription)) {
+            body.set("uploadDescription", uploadDescription);
+        }
+        body.add("ignoreScm", "false");
+        body.add("uploadType", "file");
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        // Add scan options for automatic scanning
+        ObjectNode scanOptions = createScanOptions();
+        body.add("scanOptions", scanOptions.toString());
 
-        FossologyResponse response = null;
         try {
-            log.debug("Attempting to upload file {} to Fossology at {}", filename, baseUrl + "uploads");
-            response = restTemplate.postForObject(baseUrl + "uploads", requestEntity, FossologyResponse.class);
-            log.debug(filename + " uploaded: " + response.getCode() + " - " + response.getMessage() + " - " + response.getType());
+            log.debug("Uploading file {} to FOSSology at /{}", filename, "uploads");
+
+            ResponseEntity<JsonNode> response = sendPostRequest(url, Map.of(),
+                    MediaType.MULTIPART_FORM_DATA, body, JsonNode.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return parseUploadResponse(response.getBody());
+            } else {
+                log.error("Upload failed with status: {}", response.getStatusCode());
+                return createErrorResponse("Upload failed: " + response.getStatusCode());
+            }
         } catch (RestClientException e) {
-            log.error("Error while uploading file '{}' to Fossology. HTTP request failed: {}", filename, e.getMessage());
-            log.debug("Detailed upload error:", e);
+            log.error("Error during v2 upload for file '{}': {}", filename, e.getMessage());
+            return createErrorResponse("Upload error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Parse upload response from /uploads endpoint.
+     */
+    private CombinedUploadJobResponse parseUploadResponse(JsonNode responseBody) {
+        CombinedUploadJobResponse response = new CombinedUploadJobResponse();
+
+        try {
+            // --- Upload ID extraction
+            if (responseBody.has("message")) {
+                String message = responseBody.get("message").asText();
+                log.info("Upload response message: {}", message);
+
+                int uploadId = extractUploadIdFromMessage(message);
+                if (uploadId > 0) {
+                    response.setUploadId(uploadId);
+                    response.setStatus("success");
+                    response.setMessage("Upload successful");
+                    log.info("Successfully uploaded file, uploadId: {}", uploadId);
+
+                } else {
+                    log.warn("Could not extract upload ID from message: {}", message);
+                    response.setStatus("failed");
+                    response.setMessage("Could not extract upload ID from response");
+                }
+            }
+
+            // Handle API‐level errors
+            if (responseBody.has("type") && "ERROR".equals(responseBody.get("type").asText())) {
+                response.setStatus("failed");
+                response.setMessage(responseBody.path("message").asText("Upload failed"));
+            }
+        } catch (Exception e) {
+            log.error("Error parsing upload response: {}", e.getMessage());
+            response.setStatus("failed");
+            response.setMessage("Error parsing response: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    /**
+     * Extract the upload id from the /uploads endpoint response message. If the
+     * upload was successful, the message should contain only the upload id.
+     *
+     * @param message the message from the response.
+     * @return upload id if successful, -1 otherwise.
+     */
+    private int extractUploadIdFromMessage(String message) {
+        if (CommonUtils.isNullEmptyOrWhitespace(message)) {
             return -1;
         }
 
-        HttpStatus responseCode = HttpStatus.valueOf(response.getCode());
-        if (responseCode.is2xxSuccessful()) {
+        if (message.matches("\\d+")) {
             try {
-                return Integer.valueOf(response.getMessage());
+                return Integer.parseInt(message);
             } catch (NumberFormatException e) {
-                log.error("Fossology REST returned non-integer uploadId: '{}'. Error: {}", response.getMessage(), e.getMessage());
-                log.debug("Full number format exception:", e);
+                log.error("Failed to parse upload ID '{}' as integer: {}", message, e.getMessage());
             }
-        } else {
-            log.error("Fossology upload failed with status code {} and message: {}", response.getCode(), response.getMessage());
         }
 
         return -1;
     }
 
     /**
-     * Triggers a scan of a former upload whose uploadId must be given. The
-     * configuration, which scanners to use, is currently hardcoded and cannot be
-     * configured.
+     * Generates a scan options JSON object for the /jobs or /uploads endpoint.
+     * @return JSON object containing default scan options.
+     */
+    private ObjectNode createScanOptions() {
+        ObjectNode scanOptions = objectMapper.createObjectNode();
+
+        ObjectNode analysis = objectMapper.createObjectNode();
+        analysis.put("bucket", true);
+        analysis.put("copyrightEmailAuthor", true);
+        analysis.put("ecc", true);
+        analysis.put("ipra", true);
+        analysis.put("keyword", true);
+        analysis.put("mime", true);
+        analysis.put("monk", true);
+        analysis.put("nomos", true);
+        analysis.put("ojo", true);
+        analysis.put("pkgagent", true);
+        analysis.put("reso", true);
+
+        ObjectNode decider = objectMapper.createObjectNode();
+        decider.put("nomosMonk", true);
+        decider.put("bulkReused", true);
+        decider.put("newScanner", true);
+        decider.put("ojoDecider", true);
+
+        ObjectNode reuse = objectMapper.createObjectNode();
+        reuse.put("reuseUpload", 0);
+        reuse.put("reuseGroup", 0);
+        reuse.put("reuseMain", true);
+        reuse.put("reuseEnhanced", true);
+        reuse.put("reuseReport", true);
+        reuse.put("reuseCopyright", true);
+
+        scanOptions.set("analysis", analysis);
+        scanOptions.set("decider", decider);
+        scanOptions.set("reuse", reuse);
+
+        return scanOptions;
+    }
+
+    /**
+     * Send a post request to /jobs endpoint with `folderId` and `uploadId` as
+     * query parameters. The body contains the scan options as JSON. The
+     * function returns the jobId if success, -1 otherwise.
      *
-     * @param uploadId the upload whose sources should be scanned.
-     * @return the jobId provided by FOSSology in case of an successful start, -1
-     *         otherwise
+     * @param uploadId the upload to start scan for.
+     * @return the jobId if success, -1 otherwise.
      */
     public int startScanning(int uploadId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-        String folderId = restConfig.getFolderId();
-
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token) || StringUtils.isEmpty(folderId)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>, Folder: <{}>", baseUrl, token,
-                    folderId);
+        if (isNotValidConfig()) {
             return -1;
         }
 
@@ -217,57 +413,63 @@ public class FossologyRestClient {
             return -1;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        headers.set("folderId", folderId);
-        headers.set("uploadId", uploadId + "");
-        headers.set("Content-Type", "application/json");
+        String folderId = restConfig.getFolderId();
+        Map<String, String> params = new HashMap<>();
+        params.put("folderId", folderId);
+        params.put("uploadId", String.valueOf(uploadId));
 
-        ObjectNode analysis = objectMapper.createObjectNode();
-        analysis.put("bucket", true);
-        analysis.put("copyright_email_author", true);
-        analysis.put("ecc", true);
-        analysis.put("keyword", true);
-        analysis.put("mime", true);
-        analysis.put("monk", true);
-        analysis.put("nomos", true);
-        analysis.put("ojo", true);
-        analysis.put("package", true);
+        ObjectNode requestBody = createScanOptions();
+        String url = "jobs";
+        ResponseEntity<JsonNode> response;
 
-        ObjectNode decider = objectMapper.createObjectNode();
-        decider.put("nomos_monk", true);
-        decider.put("bulk_reused", true);
-        decider.put("new_scanner", true);
-
-        ObjectNode reuse = objectMapper.createObjectNode();
-        reuse.put("reuse_upload", 0);
-        reuse.put("reuse_group", 0);
-        reuse.put("reuse_main", true);
-        reuse.put("reuse_enhanced", true);
-
-        ObjectNode requestBody = objectMapper.createObjectNode();
-        requestBody.set("analysis", analysis);
-        requestBody.set("decider", decider);
-        requestBody.set("reuse", reuse);
-
-        FossologyResponse response;
         try {
-            log.debug("Starting scan job for uploadId {} at {}", uploadId, baseUrl + "jobs");
-            response = restTemplate.postForObject(baseUrl + "jobs", new HttpEntity<>(requestBody, headers),
-                    FossologyResponse.class);
+            log.debug("Starting scan job for uploadId {} at /{}", uploadId, url);
+            response = sendPostRequest(url, params, MediaType.APPLICATION_JSON,
+                    requestBody, JsonNode.class);
         } catch (RestClientException e) {
-            log.error("Error while starting scanning job for upload {} in Fossology: {}", uploadId, e.getMessage());
-            log.debug("Detailed scanning error:", e);
+            log.error("Error while starting scanning job for upload {} in FOSSology: {}", uploadId, e.getMessage());
             return -1;
         }
 
-        if (HttpStatus.valueOf(response.getCode()).is2xxSuccessful()) {
-            log.debug("Successfully started scan job for uploadId {}, received jobId {}", uploadId, response.getMessage());
-            return Integer.valueOf(response.getMessage());
-        } else {
-            log.error("Failed to start scan job for uploadId {}. Status: {}, Message: {}", uploadId, response.getCode(), response.getMessage());
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            JsonNode responseBody = response.getBody();
+
+            // Per OpenAPI spec, should return Info schema with job id in message
+            String message = responseBody.get("message").asText();
+            log.info("Job scheduling response: {}", message);
+
+            int jobId = extractJobIdFromMessage(message);
+            if (jobId > 0) {
+                log.info("Successfully started scan job, jobId: {}", jobId);
+                return jobId;
+            }
+        }
+
+        log.error("Failed to start scan job for uploadId {}. Status: {}", uploadId, response.getStatusCode());
+        return -1;
+    }
+
+    /**
+     * Extract job ID from /jobs/ endpoint response. The message should contain
+     * the job id if everything went well. Else, it would contain an error
+     * message. The idea is, if message is only integer, it is the job ID.
+     */
+    private int extractJobIdFromMessage(String message) {
+        if (CommonUtils.isNullEmptyOrWhitespace(message)) {
             return -1;
         }
+
+        // The message is only an integer
+        if (message.matches("\\d+")) {
+            try {
+                return Integer.parseInt(message);
+            } catch (NumberFormatException e) {
+                log.error("Error extracting job ID from message '{}': {}", message, e.getMessage());
+                return -1;
+            }
+        }
+
+        return -1;
     }
 
     /**
@@ -277,13 +479,9 @@ public class FossologyRestClient {
      * @param jobId the id of the scan jobId whose status should be queried.
      * @return the Map object containing details like status, eta.
      */
-    public Map<String ,String> checkScanStatus(int jobId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-        Map<String ,String> responseMap=new HashMap<>();
-
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+    public Map<String, String> checkScanStatus(int jobId) {
+        Map<String, String> responseMap = new HashMap<>();
+        if (isNotValidConfig()) {
             return responseMap;
         }
 
@@ -292,36 +490,28 @@ public class FossologyRestClient {
             return responseMap;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-
+        String url = "jobs/" + jobId;
         ResponseEntity<JsonNode> response;
         try {
-            log.debug("Checking scan status for jobId {} at {}", jobId, baseUrl + "jobs/" + jobId);
-            response = restTemplate.exchange(baseUrl + "jobs/" + jobId, HttpMethod.GET, new HttpEntity<>(headers),
-                    JsonNode.class);
+            log.debug("Checking scan status for jobId {} at /{}", jobId, url);
+            response = sendGetRequest(url, Map.of(),
+                    List.of(MediaType.APPLICATION_JSON), JsonNode.class);
         } catch (RestClientException e) {
-            log.error("Error while querying scan status for job id {}: {}", jobId, e.getMessage());
-            log.debug("Detailed scan status error:", e);
+            log.error("Error while querying v2 scan status for job id {}: {}", jobId, e.getMessage());
             return responseMap;
         }
 
         JsonNode body = response.getBody();
-        if (body == null) {
-            log.error("Received empty response body when checking scan status for job id {}", jobId);
-            return responseMap;
-        }
+        if (body != null) {
+            if (body.has("status")) {
+                responseMap.put("status", body.get("status").asText());
+            }
+            if (body.has("eta")) {
+                responseMap.put("eta", String.valueOf(body.get("eta").asInt()));
+            }
 
-        try {
-            String status = body.findValuesAsText("status").get(0);
-            int eta = body.get("eta").intValue();
-            responseMap.put("eta", eta+"");
-            responseMap.put("status", status);
-            log.debug("Scan status for jobId {}: Status={}, ETA={}", jobId, status, eta);
-        } catch (Exception e) {
-            log.error("Error parsing scan status response for job id {}: {}", jobId, e.getMessage());
-            log.debug("Response body was: {}", body);
-            log.debug("Detailed parse error:", e);
+            log.debug("Scan status for jobId {}: Status={}, ETA={}",
+                     jobId, responseMap.get("status"), responseMap.get("eta"));
         }
 
         return responseMap;
@@ -339,52 +529,59 @@ public class FossologyRestClient {
      *         otherwise
      */
     public int startReport(int uploadId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+        if (isNotValidConfig()) {
             return -1;
         }
-
         if (uploadId < 0) {
             log.error("Invalid arguments, uploadId must not be less than 0!");
             return -1;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        headers.set("uploadId", uploadId + "");
-        headers.set("reportFormat", PARAMETER_VALUE_REPORT_FORMAT_SPDX2);
+        Map<String, String> params = new HashMap<>();
+        params.put("uploadId", String.valueOf(uploadId));
+        params.put("reportFormat", PARAMETER_VALUE_REPORT_FORMAT_SPDX2);
 
-        FossologyResponse response;
+        String url = "report";
+        ResponseEntity<JsonNode> resp;
         try {
-            log.debug("Starting report generation for uploadId {} at {}", uploadId, baseUrl + "report");
-            ResponseEntity<FossologyResponse> responseEntity = restTemplate.exchange(baseUrl + "report", HttpMethod.GET,
-                    new HttpEntity<>(headers), FossologyResponse.class);
-            response = responseEntity.getBody();
-            if (response == null) {
-                log.error("Received null response body when starting report generation for uploadId {}", uploadId);
-                return -1;
-            }
+            log.info("Starting report generation for uploadId {} at /{}", uploadId, url);
+            resp = sendGetRequest(url, params, List.of(), JsonNode.class);
         } catch (RestClientException e) {
-            log.error("Error while starting report generation for upload {}: {}", uploadId, e.getMessage());
-            log.debug("Detailed report generation error:", e);
+            log.error("Error while starting report for upload {}: {}", uploadId, e.getMessage());
+            return -1;
+        }
+        if (resp.getStatusCode().value() == 201 && resp.getBody() != null) {
+            JsonNode body = resp.getBody();
+            if (body.has("message")) {
+                int reportId = extractReportIdFromMessage(body.get("message").asText());
+                if (reportId > 0) {
+                    log.info("Parsed reportId={} from message", reportId);
+                    return reportId;
+                }
+            }
+        }
+        log.error("Failed to start report generation (status: {}, message: {})",
+                resp.getStatusCode(),
+                resp.getBody() != null ? resp.getBody().toString() : "No body");
+        return -1;
+    }
+
+    /**
+     * The response from API contains the URL to download the report in the
+     * response which is not very helpful. The URL contains the report ID at the
+     * end which we are looking for here. Thus, we extract the report ID from
+     * `baseUrl/report/{reportId}` URL in message and return.
+     */
+    private int extractReportIdFromMessage(String message) {
+        if (CommonUtils.isNullEmptyOrWhitespace(message)) {
             return -1;
         }
 
-        if (HttpStatus.valueOf(response.getCode()).is2xxSuccessful()) {
-            String reportId = response.getMessage().substring(response.getMessage().lastIndexOf("/") + 1);
-            log.debug("Successfully started report generation for uploadId {}, received reportId {}", uploadId, reportId);
-            try {
-                return Integer.valueOf(reportId);
-            } catch (NumberFormatException e) {
-                log.error("Failed to parse reportId '{}' as integer: {}", reportId, e.getMessage());
-                return -1;
-            }
-        } else {
-            log.error("Failed to start report generation for uploadId {}. Status: {}, Message: {}",
-                    uploadId, response.getCode(), response.getMessage());
+        String reportId = message.substring(message.lastIndexOf("/") + 1);
+        try {
+            return Integer.parseInt(reportId);
+        } catch (NumberFormatException e) {
+            log.error("Failed to parse reportId '{}' as integer: {}", reportId, e.getMessage());
             return -1;
         }
     }
@@ -402,26 +599,20 @@ public class FossologyRestClient {
      *         errors or if the generation just didn't finish yet.
      */
     public InputStream getReport(int reportId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+        if (isNotValidConfig()) {
             return null;
         }
-
         if (reportId < 0) {
             log.error("Invalid arguments, reportId must not be less than 0!");
             return null;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
+        String url = "report/" + reportId;
 
         try {
-            log.debug("Downloading report for reportId {} from {}", reportId, baseUrl + "report/" + reportId);
-            ResponseEntity<Resource> responseEntity = restTemplate.exchange(baseUrl + "report/" + reportId,
-                    HttpMethod.GET, new HttpEntity<>(headers), Resource.class);
+            log.debug("Downloading report for reportId {} from {}", reportId, url);
+            ResponseEntity<Resource> responseEntity = sendGetRequest(
+                    url, Map.of(), List.of(MediaType.ALL), Resource.class);
 
             if (responseEntity.getStatusCode().is2xxSuccessful()) {
                 Resource reportResource = responseEntity.getBody();
@@ -429,11 +620,27 @@ public class FossologyRestClient {
                     log.error("Received null resource when downloading report for reportId {}", reportId);
                     return null;
                 }
-                log.debug("Successfully downloaded report for reportId {}", reportId);
-                return reportResource.getInputStream();
+
+                // Verify the resource has content
+                try {
+                    InputStream stream = reportResource.getInputStream();
+                    if (stream.available() == 0) {
+                        log.warn("Report resource is empty for reportId {}", reportId);
+                        return null;
+                    }
+                    log.info("Successfully downloaded report for reportId {} (size: {} bytes)",
+                            reportId, stream.available());
+                    return stream;
+                } catch (IOException e) {
+                    log.error("Error checking report content for reportId {}: {}", reportId, e.getMessage());
+                    return null;
+                }
+            } else if (responseEntity.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
+                log.debug("Report for reportId {} is not ready yet (Status 503). Will retry later.", reportId);
+                return null;
             } else {
-                log.error("Failed to download report for reportId {}. HTTP status: {}",
-                        reportId, responseEntity.getStatusCode());
+                log.warn("Report download failed for reportId {}. HTTP status: {}",
+                        reportId, responseEntity.getStatusCode().value());
                 return null;
             }
         } catch (RestClientException e) {
@@ -444,198 +651,238 @@ public class FossologyRestClient {
             if (e.getMessage().contains("503")) {
                 log.info("Report for reportId {} is not ready yet (Status 503). Will retry later.", reportId);
             } else {
-                log.error("Error while downloading report for reportId {}: {}", reportId, e.getMessage());
-                log.debug("Detailed report download error:", e);
+                log.error("Error while downloading report for reportId {}: {}", reportId, e.getMessage(), e);
             }
             return null;
-        } catch (IOException e) {
-            log.error("I/O error when processing downloaded report for reportId {}: {}", reportId, e.getMessage());
-            log.debug("Detailed I/O error:", e);
+        } catch (Exception e) {
+            log.error("Unexpected error when processing downloaded report for reportId {} (v2): {}",
+                     reportId, e.getMessage());
             return null;
         }
     }
 
     /**
-     * Checks the package unpack status of a former uploaded package, identified by
-     * the given uploadId.
+     * Checks the package unpack status of a former uploaded package, identified
+     * by the given uploadId. If the ununpack finished, the response should be
+     * 200 with upload object. Else, a 503 with `Look-at` header pointing to the
+     * `/jobs/{jobId}` to check the status.
      *
      * @param uploadId the upload whose sources should be unpacked.
      * @return the Map object containing details like status.
      */
     public Map<String, String> checkUnpackStatus(int uploadId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
         Map<String, String> responseMap = new HashMap<>();
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+
+        if (isNotValidConfig()) {
             return responseMap;
         }
-
         if (uploadId < 0) {
             log.error("Invalid arguments, uploadId must not be less than 0!");
             return responseMap;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        JsonNode response;
+        String url = "uploads/" + uploadId;
+        ResponseEntity<JsonNode> response;
+
         try {
-            log.debug("Checking unpack status for uploadId {} at {}", uploadId, baseUrl + "jobs?upload=" + uploadId);
-            JsonNode[] responseArr = restTemplate.exchange(baseUrl + "jobs?upload=" + uploadId, HttpMethod.GET,
-                    new HttpEntity<>(headers), JsonNode[].class).getBody();
-
-            if (responseArr == null || responseArr.length == 0) {
-                log.error("Received empty response when checking unpack status for uploadId {}", uploadId);
-                return responseMap;
-            }
-
-            String uploadIdStr = "" + uploadId;
-            List<JsonNode> uploadStatus = Arrays.stream(responseArr)
-                    .filter(node -> {
-                        List<String> uploadIds = node.findValuesAsText("uploadId");
-                        return !uploadIds.isEmpty() && uploadIdStr.equals(uploadIds.get(0));
-                    })
-                    .collect(Collectors.toList());
-
-            if (!uploadStatus.isEmpty()) {
-                response = uploadStatus.get(0);
-
-                String status = response.findValuesAsText("status").get(0);
-                responseMap.put("status", status);
-                log.debug("Unpack status for uploadId {}: {}", uploadId, status);
-            } else {
-                log.warn("No status information found for uploadId {} in Fossology response", uploadId);
-            }
-
-            return responseMap;
+            log.debug("Checking unpack status for uploadId {} at {}", uploadId, url);
+            response = sendGetRequest(url, Map.of(), List.of(), JsonNode.class);
         } catch (RestClientException e) {
             log.error("Error while checking unpack status for uploadId {}: {}", uploadId, e.getMessage());
-            log.debug("Detailed unpack status error:", e);
-            return responseMap;
-        } catch (Exception e) {
-            log.error("Unexpected error while processing unpack status for uploadId {}: {}", uploadId, e.getMessage());
-            log.debug("Detailed error:", e);
             return responseMap;
         }
-    }
 
-    public int getFolderId(String uploadId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
-            return -1;
+        if (response.getStatusCode().is2xxSuccessful()) {
+            responseMap.put("status", "Completed");
+            return responseMap;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-
-        try {
-            log.debug("Getting folder details for uploadId {} from {}", uploadId, baseUrl + "uploads/" + uploadId);
-            ResponseEntity<JsonNode> response = restTemplate.exchange(baseUrl + "uploads/" + uploadId,
-                    HttpMethod.GET, new HttpEntity<>(headers), JsonNode.class);
-
-            JsonNode responseBody = response.getBody();
-            if (responseBody == null) {
-                log.error("Received null response body when getting folder details for uploadId {}", uploadId);
-                return -1;
-            }
-
-            if (!responseBody.has("folderid")) {
-                log.error("Response for uploadId {} does not contain 'folderid' field", uploadId);
-                log.debug("Response body was: {}", responseBody);
-                return -1;
-            }
-
-            JsonNode folderId = responseBody.get("folderid");
-            int result = folderId.asInt();
-            log.debug("Found folderId {} for uploadId {}", result, uploadId);
-            return result;
-        } catch (RestClientException e) {
-            log.error("Error while getting folder details for uploadId {}: {}", uploadId, e.getMessage());
-            log.debug("Detailed error:", e);
-            return -1;
+        if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+            log.error("Failed to check unpack status for uploadId {}: {}", uploadId, response.getStatusCode());
+            responseMap.put("status", "Failed");
+            return responseMap;
         }
+
+        List<String> lookAt = response.getHeaders().getOrEmpty("Look-at");
+        if (lookAt.isEmpty()) {
+            responseMap.put("status", "Failed");
+            return responseMap;
+        }
+
+        // The response is not 200, but 503 with a valid Look-at header meaning
+        // the ununpack is still in progress. Can shortcircuit here.
+        // Else, get the jobId from the header and get status with
+        // checkScanStatus()
+        responseMap.put("status", "Processing");
+        return responseMap;
     }
 
+    /**
+     * Search for files using v2 API filesearch endpoint
+     */
     public int getUploadId(String shaValue, String fileName) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
+        if (isNotValidConfig()) {
+            return -1;
+        }
         String folderId = restConfig.getFolderId();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+        String url = "filesearch";
+
+        List<Map<String, String>> body = new ArrayList<>();
+        Map<String, String> shaVal = Map.of("sha1", shaValue);
+        body.add(shaVal);
+
+        log.debug("Searching for file with SHA1 {} in FOSSology at {}", shaValue, url);
+        ResponseEntity<JsonNode> response;
+        try {
+            response = sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
+            );
+        } catch (RestClientException e) {
+            log.error("Error while searching for file {} with SHA1 {}: {}", fileName, shaValue, e.getMessage());
             return -1;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        List<Map<String, String>> body = new ArrayList<>();
-        Map<String, String> shaVal = new HashMap<>();
-        shaVal.put("sha1", shaValue);
-        body.add(shaVal);
+        JsonNode responseBody = response.getBody();
+        if (responseBody == null || !responseBody.isArray() || responseBody.isEmpty()
+                || !responseBody.get(0).has("uploads")
+        ) {
+            log.info("File with SHA1 {} not found in FOSSology", shaValue);
+            return -1;
+        }
 
-        int lastUploadedValue = -1;
-
-        HttpEntity<List<Map<String, String>>> requestEntity = new HttpEntity<>(body, headers);
-
+        JsonNode uploads = responseBody.get(0).get("uploads");
+        if (uploads == null || uploads.isEmpty() || !uploads.isArray()) {
+            log.info("No uploads found for file with SHA1 {}", shaValue);
+            return -1;
+        }
         try {
-            log.debug("Searching for file with SHA1 {} in Fossology at {}", shaValue, baseUrl + "filesearch");
-            ResponseEntity<JsonNode> response = restTemplate.exchange(baseUrl + "filesearch",
-                    HttpMethod.POST, requestEntity, JsonNode.class);
-
-            JsonNode responseBody = response.getBody();
-            if (responseBody == null || !responseBody.isArray() || responseBody.size() == 0) {
-                log.error("Invalid or empty response when searching for file with SHA1 {}", shaValue);
-                return -1;
+            List<Integer> uploadIdList = new ArrayList<>();
+            for (JsonNode upload : uploads) {
+                uploadIdList.add(upload.asInt());
             }
+            uploadIdList.sort(Collections.reverseOrder());
+            log.debug("Found {} upload(s) for file with SHA1 {}", uploadIdList.size(), shaValue);
 
-            JsonNode firstElement = responseBody.get(0);
-            if (!firstElement.has("uploads")) {
-                log.warn("File with SHA1 {} not found in Fossology", shaValue);
-                return -1;
-            }
-
-            JsonNode uploads = firstElement.get("uploads");
-            List<String> uploadIdList = new ArrayList<>();
-            if (uploads != null && uploads.isArray()) {
-                for (JsonNode upload : uploads) {
-                    uploadIdList.add(upload.asText());
-                }
-                uploadIdList.sort(Collections.reverseOrder());
-                log.debug("Found {} upload(s) for file with SHA1 {}", uploadIdList.size(), shaValue);
-            } else {
-                log.warn("No uploads found for file with SHA1 {}", shaValue);
-                return -1;
-            }
-
-            for (String uploadId : uploadIdList) {
-                int id = getFolderId(uploadId);
-                if (id != -1 && id == Integer.parseInt(folderId)) {
-                    lastUploadedValue = Integer.parseInt(uploadId);
-                    log.debug("Found existing upload (id={}) in target folder for file {}", lastUploadedValue, fileName);
-                    break;
+            // Find upload in target folder
+            for (Integer uploadId : uploadIdList) {
+                int uploadFolderId = getFolderId(uploadId);
+                if (uploadFolderId != -1 && uploadFolderId == Integer.parseInt(folderId)) {
+                    log.debug("Found existing upload (id={}) in target folder for file {}", uploadId, fileName);
+                    return uploadId;
                 }
             }
 
-            if (lastUploadedValue == -1) {
-                log.info("No existing upload found in target folder for file {} with SHA1 {}", fileName, shaValue);
-            }
-
-            return lastUploadedValue;
-        } catch (RestClientException e) {
-            log.error("Error while searching for file {} with SHA1 {}: {}", fileName, shaValue, e.getMessage());
-            log.debug("Detailed search error:", e);
+            log.info("No existing upload found in target folder for file {} with SHA1 {}", fileName, shaValue);
             return -1;
         } catch (NumberFormatException e) {
             log.error("Error parsing folder ID or upload ID: {}", e.getMessage());
             return -1;
         } catch (Exception e) {
             log.error("Unexpected error while searching for file {}: {}", fileName, e.getMessage());
-            log.debug("Detailed error:", e);
             return -1;
         }
+    }
+
+    /**
+     * Get folder ID for upload using v2 API
+     */
+    public int getFolderId(int uploadId) {
+        if (isNotValidConfig()) {
+            return -1;
+        }
+        String url = "uploads/" + uploadId;
+
+        try {
+            log.debug("Getting folder details for uploadId {} from {}", uploadId, url);
+            ResponseEntity<JsonNode> response = sendGetRequest(url, Map.of(), List.of(), JsonNode.class);
+
+            JsonNode responseBody = response.getBody();
+            if (responseBody == null || responseBody.isEmpty()) {
+                log.error("Received empty response body when getting folder details for uploadId: {}", uploadId);
+                return -1;
+            }
+
+            if (responseBody.has("folderId")) {
+                JsonNode folderId = responseBody.get("folderId");
+                int result = folderId.asInt();
+                log.debug("Found folderId {} for uploadId {}", result, uploadId);
+                return result;
+            }
+            log.error("Response for uploadId {} does not contain 'folderId' field", uploadId);
+            log.debug("Response body was: {}", responseBody);
+            return -1;
+        } catch (RestClientException e) {
+            log.error("Error while getting folder details for uploadId {}: {}", uploadId, e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * Create error response
+     */
+    private CombinedUploadJobResponse createErrorResponse(String message) {
+        CombinedUploadJobResponse response = new CombinedUploadJobResponse();
+        response.setStatus("failed");
+        response.setMessage(message);
+        response.setUploadId(-1);
+        response.setJobId(-1);
+        return response;
+    }
+
+    /**
+     * The uploads endpoint only returns upload id, even if agents are
+     * scheduled with it. To get the job id, we need to query the /jobs endpoint
+     * with the upload filter and get the job id from the response.
+     * @param uploadId Upload to get the job for
+     */
+    public int getJobIdAfterScan(int uploadId) {
+        if (isNotValidConfig()) {
+            return -1;
+        }
+        String url = "jobs";
+        ResponseEntity<JsonNode> response;
+
+        try {
+            log.debug("Getting job id for uploadId {} from {}", uploadId, url);
+            response = sendGetRequest(
+                    url, Map.of(
+                            "upload", String.valueOf(uploadId),
+                            "sort", "DESC"
+                    ), List.of(), JsonNode.class
+            );
+        } catch (RestClientException e) {
+            log.error("Error while getting job id for uploadId {}: {}", uploadId, e.getMessage());
+            return -1;
+        }
+
+        JsonNode responseBody = response.getBody();
+        if (responseBody == null || responseBody.isEmpty()) {
+            log.error("Received empty response body when getting job id for uploadId: {}", uploadId);
+            return -1;
+        }
+
+        JsonNode latestJob = responseBody.get(0);
+        if (latestJob != null && latestJob.has("id")) {
+            int jobId = latestJob.get("id").asInt(-1);
+            log.info("Found job id {} for uploadId {}", jobId, uploadId);
+            return jobId;
+        }
+        log.error("Unable to find job id for upload: {}", uploadId);
+        log.debug("Response body was: {}", responseBody);
+        return -1;
+    }
+
+    private boolean isNotValidConfig() {
+        String baseUrl = restConfig.getV2BaseUrlWithSlash();
+        String token = restConfig.getAccessToken();
+        String folderId = restConfig.getFolderId();
+
+        if (CommonUtils.isNullEmptyOrWhitespace(baseUrl) || CommonUtils.isNullEmptyOrWhitespace(token) || CommonUtils.isNullEmptyOrWhitespace(folderId)) {
+            log.error("Configuration is missing values! Url: <{}>, Token: <{}>, Folder: <{}>", baseUrl, token,
+                    folderId);
+            return true;
+        }
+        return false;
     }
 }
