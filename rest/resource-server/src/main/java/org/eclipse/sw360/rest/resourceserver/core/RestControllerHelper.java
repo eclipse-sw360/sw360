@@ -881,6 +881,7 @@ public class RestControllerHelper<T> {
         embeddedProject.setBusinessUnit(project.getBusinessUnit());
         embeddedProject.setEnableSvm(project.isEnableSvm());
         embeddedProject.setType(null);
+        embeddedProject.setClearingRequestId(project.getClearingRequestId());
         return embeddedProject;
     }
 
