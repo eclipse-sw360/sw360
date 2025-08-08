@@ -76,6 +76,15 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             "    }" +
             "}";
 
+    private static final String MR_BY_MODERATORS_IDX = "MrByModeratorsIdx";
+    private static final String MR_BY_DATE_IDX = "MrByDateIdx";
+    private static final String MR_BY_COMPONENT_TYPE_IDX = "MrByComponentTypeIdx";
+    private static final String MR_BY_DOCUMENT_NAME_IDX = "MrByDocumentNameIdx";
+    private static final String MR_BY_USERS_IDX = "MrByUsersIdx";
+    private static final String MR_BY_DEPARTMENT_IDX = "MrByDepartmentIdx";
+    private static final String MR_BY_MODERATION_STATE_IDX = "MrByModerationStateIdx";
+    private static final String MR_BY_DOCUMENT_ID_IDX = "MrByDocumentIdIdx";
+
     public ModerationRequestRepository(DatabaseConnectorCloudant db) {
         super(ModerationRequest.class, db, new ModerationRequestSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
@@ -84,15 +93,14 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         views.put("countByModerationState", createMapReduce(COUNTBYMODERATIONSTATE, "_count"));
         views.put("countByRequester", createMapReduce(COUNTBYREQUESTER, "_count"));
         initStandardDesignDocument(views, db);
-        createIndex("byModerators", new String[] {"moderators"}, db);
-        createIndex("byDate", new String[] {"timestamp"}, db);
-        createIndex("byComponentType", new String[] {"componentType"}, db);
-        createIndex("byDocumentName", new String[] {"documentName"}, db);
-        createIndex("byUsers", new String[] {"requestingUser"}, db);
-        createIndex("byDepartment", new String[] {"requestingUserDepartment"}, db);
-        createIndex("byModerationState", new String[] {"moderationState"}, db);
-        createIndex("byId", new String[] {"_id"}, db);
-        createIndex("byDocumentId", new String[] {"documentId"}, db);
+        createIndex(MR_BY_MODERATORS_IDX, "byModerators", new String[] {"moderators"}, db);
+        createIndex(MR_BY_DATE_IDX, "byDate", new String[] {"timestamp"}, db);
+        createIndex(MR_BY_COMPONENT_TYPE_IDX, "byComponentType", new String[] {"componentType"}, db);
+        createIndex(MR_BY_DOCUMENT_NAME_IDX, "byDocumentName", new String[] {"documentName"}, db);
+        createIndex(MR_BY_USERS_IDX, "byUsers", new String[] {"requestingUser"}, db);
+        createIndex(MR_BY_DEPARTMENT_IDX, "byDepartment", new String[] {"requestingUserDepartment"}, db);
+        createIndex(MR_BY_MODERATION_STATE_IDX, "byModerationState", new String[] {"moderationState"}, db);
+        createIndex(MR_BY_DOCUMENT_ID_IDX, "byDocumentId", new String[] {"documentId"}, db);
     }
 
     public List<ModerationRequest> getRequestsByDocumentId(String documentId) {
@@ -101,7 +109,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
         PostFindOptions qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("byDocumentId"))
+                .useIndex(Collections.singletonList(MR_BY_DOCUMENT_ID_IDX))
                 .build();
         List<ModerationRequest> mrs = getConnector().getQueryResult(qb, ModerationRequest.class);
         return mrs;
@@ -113,7 +121,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
         PostFindOptions qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("byModerators"))
+                .useIndex(Collections.singletonList(MR_BY_MODERATORS_IDX))
                 .build();
         List<ModerationRequest> mrs = getConnector().getQueryResult(qb, ModerationRequest.class);
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
@@ -130,7 +138,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                 .selector(finalSelector)
                 .limit(rowsPerPage)
                 .skip(skip)
-                .useIndex(Collections.singletonList("byDate"))
+                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
                 .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
                 .build();
         return getConnector().getQueryResult(qb, ModerationRequest.class);
@@ -175,37 +183,37 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         qb.skip(pageData.getDisplayStart());
         switch (sortColumnNo) {
             case -1, 5:
-                qb.useIndex(Collections.singletonList("byModerators"))
+                qb.useIndex(Collections.singletonList(MR_BY_MODERATORS_IDX))
                         .addSort(Collections.singletonMap("moderators", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
             case 0:
-                qb.useIndex(Collections.singletonList("byDate"))
+                qb.useIndex(Collections.singletonList(MR_BY_DATE_IDX))
                         .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
             case 1:
-                qb.useIndex(Collections.singletonList("byComponentType"))
+                qb.useIndex(Collections.singletonList(MR_BY_COMPONENT_TYPE_IDX))
                         .addSort(Collections.singletonMap("componentType", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
             case 2:
-                qb.useIndex(Collections.singletonList("byDocumentName"))
+                qb.useIndex(Collections.singletonList(MR_BY_DOCUMENT_NAME_IDX))
                         .addSort(Collections.singletonMap("documentName", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
             case 3:
-                qb.useIndex(Collections.singletonList("byUsers"))
+                qb.useIndex(Collections.singletonList(MR_BY_USERS_IDX))
                         .addSort(Collections.singletonMap("requestingUser", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
             case 4:
-                qb.useIndex(Collections.singletonList("byDepartment"))
+                qb.useIndex(Collections.singletonList(MR_BY_DEPARTMENT_IDX))
                         .addSort(Collections.singletonMap("requestingUserDepartment", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
             case 6:
-                qb.useIndex(Collections.singletonList("byModerationState"))
+                qb.useIndex(Collections.singletonList(MR_BY_MODERATION_STATE_IDX))
                         .addSort(Collections.singletonMap("moderationState", ascending ? "asc" : "desc"));
                 query = qb.build();
                 break;
@@ -255,7 +263,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("byUsers"));
+                .useIndex(Collections.singletonList(MR_BY_USERS_IDX));
         List<ModerationRequest> mrs = getConnector().getQueryResult(qb.build(), ModerationRequest.class);
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
@@ -271,7 +279,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                 .selector(finalSelector)
                 .limit(rowsPerPage)
                 .skip(skip)
-                .useIndex(Collections.singletonList("byUsers"))
+                .useIndex(Collections.singletonList(MR_BY_USERS_IDX))
                 .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"));
 
         List<ModerationRequest> modReqs = Lists.newArrayList();

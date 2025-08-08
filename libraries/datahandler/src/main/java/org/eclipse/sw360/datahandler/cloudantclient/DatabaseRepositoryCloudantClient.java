@@ -73,7 +73,8 @@ public class DatabaseRepositoryCloudantClient<T> {
         return mrBuilder.build();
     }
 
-    public void createIndex(String indexName, String[] fields, DatabaseConnectorCloudant db) {
+    public void createIndex(String ddocId, String indexName, String[] fields,
+                            DatabaseConnectorCloudant db) {
         IndexDefinition.Builder indexDefinitionBuilder = new IndexDefinition.Builder();
         for (String fieldName : fields) {
             IndexField field = new IndexField.Builder()
@@ -82,7 +83,8 @@ public class DatabaseRepositoryCloudantClient<T> {
             indexDefinitionBuilder.addFields(field);
         }
 
-        db.createIndex(indexDefinitionBuilder.build(), indexName, "json");
+        db.createIndex(indexDefinitionBuilder.build(), ddocId, indexName,
+                "json");
     }
 
     protected DatabaseConnectorCloudant getConnector() {

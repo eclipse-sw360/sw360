@@ -103,24 +103,6 @@ public class ComponentSearchHandler {
 
     public Map<PaginationData, List<Component>> searchAccessibleComponents(String text, final Map<String,
             Set<String>> subQueryRestrictions, User user, @Nonnull PaginationData pageData) {
-        ResourceComparatorGenerator<Component> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
-        ComponentSortColumn sortBy = ComponentSortColumn.findByValue(pageData.getSortColumnNumber());
-        Comparator<Component> comparator;
-
-        try {
-            comparator = switch (sortBy) {
-                case ComponentSortColumn.BY_NAME ->
-                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "name");
-                case ComponentSortColumn.BY_CREATEDON ->
-                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "createdOn");
-                case ComponentSortColumn.BY_TYPE ->
-                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "componentType");
-                case null, default -> null; // only two sortable fields, sort by score
-            };
-        } catch (ResourceClassNotFoundException e) {
-            comparator = null;
-        }
-
         Map<PaginationData, List<Component>> resultComponentList = connector
                 .searchViewWithRestrictions(Component.class,
                         luceneSearchView.getIndexName(), text, subQueryRestrictions,
@@ -131,10 +113,7 @@ public class ComponentSearchHandler {
 
         componentList = componentList.stream().filter(component ->
                 makePermission(component, user).isActionAllowed(RequestedAction.READ))
-                .collect(Collectors.toList());
-        if (comparator != null) {
-            componentList.sort(comparator);
-        }
+                .toList();
 
         return Collections.singletonMap(respPageData, componentList);
     }

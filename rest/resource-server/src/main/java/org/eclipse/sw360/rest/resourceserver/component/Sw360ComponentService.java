@@ -436,10 +436,10 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             Sort.Order order = pageable.getSort().iterator().next();
             String property = order.getProperty();
             column = switch (property) {
-                case "created" -> ComponentSortColumn.BY_CREATEDON;
+                case "createdOn" -> ComponentSortColumn.BY_CREATEDON;
                 case "name" -> ComponentSortColumn.BY_NAME;
-                case "vendor" -> ComponentSortColumn.BY_VENDOR;
-                case "license" -> ComponentSortColumn.BY_MAINLICENSE;
+                case "vendorNames" -> ComponentSortColumn.BY_VENDOR;
+                case "mainLicenseIds" -> ComponentSortColumn.BY_MAINLICENSE;
                 case "type" -> ComponentSortColumn.BY_TYPE;
                 default -> column; // Default to BY_CREATEDON if no match
             };

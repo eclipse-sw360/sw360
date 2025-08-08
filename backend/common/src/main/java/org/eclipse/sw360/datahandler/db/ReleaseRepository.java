@@ -175,6 +175,9 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                     "  } " +
                     "}";
 
+    private static final String RELEASE_BY_ALL_IDX = "ReleaseByAllIdx";
+    private static final String RELEASE_BY_ATTACHMENT_TYPE_IDX = "ReleaseByAttachmentTypeIdx";
+
     public ReleaseRepository(DatabaseConnectorCloudant db, VendorRepository vendorRepository) {
         super(Release.class, db, new ReleaseSummary(vendorRepository));
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
@@ -199,13 +202,13 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         views.put("byCreatorGroup", createMapReduce(BY_CREATOR_DEPARTMENT_VIEW, null));
         initStandardDesignDocument(views, db);
 
-        createIndex("releaseByAll", new String[] {
+        createIndex(RELEASE_BY_ALL_IDX, "releaseByAll", new String[] {
                 Release._Fields.NAME.getFieldName(),
                 Release._Fields.CREATED_ON.getFieldName(),
                 Release._Fields.VERSION.getFieldName()
         }, db);
 
-        createIndex("releaseByAttachmentType", new String[] {
+        createIndex(RELEASE_BY_ATTACHMENT_TYPE_IDX, "releaseByAttachmentType", new String[] {
                 Release._Fields.TYPE.getFieldName(),
                 Release._Fields.CLEARING_STATE.getFieldName(),
                 Release._Fields.ATTACHMENTS.getFieldName() + "." + Attachment._Fields.ATTACHMENT_TYPE.getFieldName()
@@ -230,7 +233,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("releaseByAll"));
+                .useIndex(Collections.singletonList(RELEASE_BY_ALL_IDX));
 
         List<Release> releases = getConnector().getQueryResultPaginated(
                 qb, Release.class, pageData, sortSelector
@@ -256,7 +259,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("releaseByAttachmentType"));
+                .useIndex(Collections.singletonList(RELEASE_BY_ATTACHMENT_TYPE_IDX));
 
         List<Release> releases = getConnector().getQueryResultPaginated(
                 qb, Release.class, pageData, sortSelector

@@ -160,8 +160,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         PaginationData pageData = pageableToPaginationData(pageable, null, null);
         Map<PaginationData, List<Project>> resp = sw360ProjectClient
                 .getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
-        PaginationData respPagination = resp.keySet().iterator().next();
-        respPagination.setTotalRowCount(sw360ProjectClient.getMyAccessibleProjectCounts(sw360User));
         return resp;
     }
 
@@ -1818,13 +1816,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             Sort.Order order = pageable.getSort().iterator().next();
             String property = order.getProperty();
             column = switch (property) {
-                case "created" -> ProjectSortColumn.BY_CREATEDON;
+                case "createdOn" -> ProjectSortColumn.BY_CREATEDON;
                 case "name" -> ProjectSortColumn.BY_NAME;
                 case "vendor" -> ProjectSortColumn.BY_VENDOR;
                 case "license" -> ProjectSortColumn.BY_MAINLICENSE;
                 case "type" -> ProjectSortColumn.BY_TYPE;
-                case "desc" -> ProjectSortColumn.BY_DESCRIPTION;
-                case "resp" -> ProjectSortColumn.BY_RESPONSIBLE;
+                case "description" -> ProjectSortColumn.BY_DESCRIPTION;
+                case "projectResponsible" -> ProjectSortColumn.BY_RESPONSIBLE;
                 case "state" -> ProjectSortColumn.BY_STATE;
                 default -> column; // Default to BY_NAME if no match
             };
