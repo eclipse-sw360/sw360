@@ -41,7 +41,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -175,7 +174,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     public ResponseEntity<?> deleteVendor(
             @Parameter(description = "The id of the vendor to be deleted.")
             @PathVariable("id") String id
-    ) {
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Vendor sw360Vendor = vendorService.getVendorById(id);
         if (sw360Vendor == null) {
@@ -184,9 +183,8 @@ public class VendorController implements RepresentationModelProcessor<Repository
         RequestStatus requestStatus = vendorService.deleteVendorByid(id, sw360User);
         if (requestStatus == RequestStatus.SUCCESS) {
             return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " deleted successfully.", HttpStatus.OK);
-        } else {
-            throw new BadRequestClientException("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.");
         }
+        throw new BadRequestClientException("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.");
     }
 
     @Operation(

@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -90,10 +91,10 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
                             },
                             example = """
                                     {
-                                      "url": "https://fossology.com/repo/api/v1/",
+                                      "url": "https://fossology.com/repo/api/v2/",
                                       "folderId": "2",
                                       "token": "dead.beef",
-                                      "downloadTimeout": "2",
+                                      "downloadTimeout": "5",
                                       "downloadTimeoutUnit": "MINUTES"
                                     }""",
                             requiredProperties = {"url", "folderId", "token"}
@@ -101,15 +102,19 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             )
             @RequestBody Map<String, String> request
     ) throws SW360Exception {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        String url = request.get("url");
+        String folderId = request.get("folderId");
+        String token = request.get("token");
+        String downloadTimeout = request.get("downloadTimeout");
+        String downloadTimeoutUnit = request.get("downloadTimeoutUnit");
         try {
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            String url = request.get("url");
-            String folderId = request.get("folderId");
-            String token = request.get("token");
-            String downloadTimeout = request.get("downloadTimeout");
-            String downloadTimeoutUnit = request.get("downloadTimeoutUnit");
             sw360FossologyAdminServices.saveConfig(sw360User, url, folderId, token,
                     downloadTimeout, downloadTimeoutUnit);
+        } catch (SW360Exception e) {
+            throw new BadRequestClientException(e.getWhy(), e);
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
