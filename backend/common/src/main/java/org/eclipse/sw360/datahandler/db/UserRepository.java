@@ -11,8 +11,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
-import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.exists;
-import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 
 import org.eclipse.sw360.components.summary.UserSummary;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -116,6 +114,15 @@ public class UserRepository extends SummaryAwareRepository<User> {
             "  }" +
             "}";
 
+    private static final String USER_BY_EMAIL_IDX = "UserByEmailIdx";
+    private static final String USER_BY_DEPARTMENT_IDX = "UserByDepartmentIdx";
+    private static final String USER_BY_FIRST_NAME_IDX = "UserByFirstNameIdx";
+    private static final String USER_BY_LAST_NAME_IDX = "UserByLastNameIdx";
+    private static final String USER_BY_ACTIVE_STATUS_IDX = "UserByActiveStatusIdx";
+    private static final String USER_BY_GROUP_IDX = "UserByGroupIdx";
+    private static final String USER_BY_SECONDARY_DEPT_IDX = "UserBySecondaryDeptIdx";
+    private static final String USER_BY_ALL_IDX = "UserByAllIdx";
+
     public UserRepository(DatabaseConnectorCloudant databaseConnector) {
         super(User.class, databaseConnector, new UserSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
@@ -129,15 +136,16 @@ public class UserRepository extends SummaryAwareRepository<User> {
         views.put("find_by_secondaryDepartments", createMapReduce(FIND_BY_SECONDARY_DEPARTMENT, null));
         views.put("userEmails", createMapReduce(USERS_ALL_EMAIL_VIEW, null));
         initStandardDesignDocument(views, databaseConnector);
-        createIndex("byEmailUser", new String[] {"email"}, databaseConnector);
-        createIndex("byDepartment", new String[] {"department"}, databaseConnector);
-        createIndex("byFirstName", new String[] {"givenname"}, databaseConnector);
-        createIndex("byLastName", new String[] {"lastname"}, databaseConnector);
-        createIndex("byActiveStatus", new String[] {"deactivated"}, databaseConnector);
-        createIndex("byUserGroup", new String[] {"userGroup"}, databaseConnector);
-        createIndex("bySecondaryDepartmentsAndRoles", new String[] {"secondaryDepartmentsAndRoles"}, databaseConnector);
+        createIndex(USER_BY_EMAIL_IDX, "byEmailUser", new String[] {"email"}, databaseConnector);
+        createIndex(USER_BY_DEPARTMENT_IDX, "byDepartment", new String[] {"department"}, databaseConnector);
+        createIndex(USER_BY_FIRST_NAME_IDX, "byFirstName", new String[] {"givenname"}, databaseConnector);
+        createIndex(USER_BY_LAST_NAME_IDX, "byLastName", new String[] {"lastname"}, databaseConnector);
+        createIndex(USER_BY_ACTIVE_STATUS_IDX, "byActiveStatus", new String[] {"deactivated"}, databaseConnector);
+        createIndex(USER_BY_GROUP_IDX, "byUserGroup", new String[] {"userGroup"}, databaseConnector);
+        createIndex(USER_BY_SECONDARY_DEPT_IDX,
+                "bySecondaryDepartmentsAndRoles", new String[] {"secondaryDepartmentsAndRoles"}, databaseConnector);
 
-        createIndex("usersByAll", new String[] {
+        createIndex(USER_BY_ALL_IDX, "usersByAll", new String[] {
                 User._Fields.GIVENNAME.getFieldName(),
                 User._Fields.LASTNAME.getFieldName(),
                 User._Fields.DEPARTMENT.getFieldName(),
@@ -204,7 +212,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
 
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("usersByAll"));
+                .useIndex(Collections.singletonList(USER_BY_ALL_IDX));
 
         List<User> users = getConnector().getQueryResultPaginated(
                 qb, User.class, pageData, sortSelector
@@ -246,9 +254,9 @@ public class UserRepository extends SummaryAwareRepository<User> {
                 .selector(typeSelector);
 
         if (sortBy == UserSortColumn.BY_STATUS) {
-            qb.useIndex(Collections.singletonList("byActiveStatus"));
+            qb.useIndex(Collections.singletonList(USER_BY_ACTIVE_STATUS_IDX));
         } else {
-            qb.useIndex(Collections.singletonList("usersByAll"));
+            qb.useIndex(Collections.singletonList(USER_BY_ALL_IDX));
         }
 
         try {

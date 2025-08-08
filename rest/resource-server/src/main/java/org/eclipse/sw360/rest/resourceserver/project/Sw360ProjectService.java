@@ -160,8 +160,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         PaginationData pageData = pageableToPaginationData(pageable, null, null);
         Map<PaginationData, List<Project>> resp = sw360ProjectClient
                 .getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
-        PaginationData respPagination = resp.keySet().iterator().next();
-        respPagination.setTotalRowCount(sw360ProjectClient.getMyAccessibleProjectCounts(sw360User));
         return resp;
     }
 

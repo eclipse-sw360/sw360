@@ -162,6 +162,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "  } " +
             "}";
 
+    private static final String COMPONENT_BY_ALL_IDX = "ComponentByAllIdx";
+
     public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
         super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
@@ -184,7 +186,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         views.put("byVCSLowercase", createMapReduce(BY_VCS_LOWERCASE, null));
         initStandardDesignDocument(views, db);
 
-        createIndex("compByAll", new String[] {
+        createIndex(COMPONENT_BY_ALL_IDX, "compByAll", new String[] {
                 Component._Fields.NAME.getFieldName(),
                 Component._Fields.CATEGORIES.getFieldName(),
                 Component._Fields.COMPONENT_TYPE.getFieldName(),
@@ -333,7 +335,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("compByAll"));
+                .useIndex(Collections.singletonList(COMPONENT_BY_ALL_IDX));
 
         List<Component> components = getConnector().getQueryResultPaginated(
                 qb, Component.class, pageData, sortSelector
