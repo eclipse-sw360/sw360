@@ -89,7 +89,8 @@ public class SW360ConfigsDatabaseHandler {
             .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
                 .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, ""))
                 .put(VCS_REDIRECTION_LIMIT, getOrDefault(configContainer, VCS_REDIRECTION_LIMIT, String.valueOf(SW360Constants.VCS_REDIRECTION_LIMIT)))
-                .put(VCS_REDIRECTION_TIMEOUT_LIMIT, getOrDefault(configContainer, VCS_REDIRECTION_LIMIT, String.valueOf(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT)))
+                .put(VCS_REDIRECTION_TIMEOUT_LIMIT, getOrDefault(configContainer, VCS_REDIRECTION_TIMEOUT_LIMIT, String.valueOf(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT)))
+                .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
     }
@@ -202,7 +203,8 @@ public class SW360ConfigsDatabaseHandler {
                  TOOL_VENDOR,
                  SKIP_DOMAINS_FOR_VALID_SOURCE_CODE,
                  RELEASE_FRIENDLY_URL,
-                 COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY
+                 COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
+                 NON_PKG_MANAGED_COMPS_PROP
                     -> configValue != null;
 
             // validate int value

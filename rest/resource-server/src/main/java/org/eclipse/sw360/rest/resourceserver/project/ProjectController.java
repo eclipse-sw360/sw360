@@ -1197,7 +1197,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         String parentProjectKey = sw360Project.getName() + " " + sw360Project.getVersion();
         vulnerabilitiesMap.put(parentProjectKey, parentProjectVulnerabilities);
 
-        if (!sw360Project.getLinkedProjects().isEmpty()) {
+        if (sw360Project.getLinkedProjects() != null && !sw360Project.getLinkedProjects().isEmpty()) {
             for (String linkedProjectId : sw360Project.getLinkedProjects().keySet()) {
                 Project linkedProject = projectService.getProjectForUserById(linkedProjectId, sw360User);
                 List<VulnerabilityDTO> linkedProjectVulnerabilities = vulnerabilityService.getVulnerabilitiesByProjectId(linkedProjectId, sw360User);
@@ -2089,7 +2089,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 	}
 
     public Map<String, Integer> countMap(Collection<AttachmentType> attachmentTypes, UsageData filter, Project project, User sw360User, String id) throws TException {
-        boolean projectWithSubProjects = !project.getLinkedProjects().isEmpty();
+        boolean projectWithSubProjects = project.getLinkedProjects() != null && !project.getLinkedProjects().isEmpty();
         List<ProjectLink> mappedProjectLinks =
                 (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP)
                         ? projectService.createLinkedProjects(project,
@@ -2122,7 +2122,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             )
             @RequestParam(value = "filter", required = false) String filter,
             @Parameter(description = "Get the transitive releases.")
-            @RequestParam(value = "transitive", required = true) boolean transitive
+            @RequestParam(value = "transitive", required = false, defaultValue = "false") boolean transitive
     ) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();

@@ -120,7 +120,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.updateWhitelist(any(),any(),any())).willReturn(RequestStatus.SUCCESS);
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
-        Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
+        given(this.licenseServiceMock.importSpdxInformation(any())).willReturn(requestSummary);
         Mockito.doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
         Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
         given(this.licenseServiceMock.deleteLicenseType(any(), any())).willReturn(RequestStatus.SUCCESS);

@@ -67,6 +67,7 @@ public class SW360ConfigKeys {
     public static final String VCS_HOSTS = "vcs.hosts";
     public static final String VCS_REDIRECTION_LIMIT = "vcs.redirection.limit";
     public static final String VCS_REDIRECTION_TIMEOUT_LIMIT = "vcs.redirection.timeout.limit";
+    public static final String NON_PKG_MANAGED_COMPS_PROP = "non.pkg.managed.comps.prop";
 
     // Properties purely used by UI
     // This property is used in Project Administration

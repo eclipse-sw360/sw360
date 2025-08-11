@@ -57,7 +57,7 @@ public class RepositoryURL {
 
         List<String> extractedParams = new ArrayList<>();
         for (int i = 3; i < urlParts.length && extractedParams.size() < paramCount; i++) {
-            String part = urlParts[i].replaceAll("\\.git.*|#.*|\\?.*", "");
+            String part = urlParts[i].replaceAll("\\.git.*|#.*", "");
 
             if (part.equals("+") || part.equals("-") || CommonUtils.isNullEmptyOrWhitespace(part)) {
                 break;
@@ -96,7 +96,7 @@ public class RepositoryURL {
                 return sanitizeVCSByHost(vcs, host);
             }
         }
-        return vcs.replaceAll("\\.git.*|#.*|\\?.*", "");
+        return vcs.replaceAll("\\.git.*|#.*", "");
     }
 
     public static String getComponentNameFromVCS(String vcsUrl, boolean isGetVendorandName) {

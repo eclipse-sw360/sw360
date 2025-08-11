@@ -17,7 +17,7 @@
 # is triggered by buildkit images
 
 # 3-eclipse-temurin-21
-FROM maven@sha256:fb525d54d52bbdce5c5768c5a80580f4bbf6b5679214f35dfd039e580b5172bf AS sw360build
+FROM maven@sha256:1829262961db972b3924b5b8e4a240083626da2d92a49788c7dfb6de4692410d AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -81,7 +81,7 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 # Runtime image
 
 # 11-jre21-temurin-noble
-FROM tomcat@sha256:52a7c268ce41e6717ca94a57f1afdf35cd04f6dc515e769d7b0a5424a0e1315a AS sw360
+FROM tomcat@sha256:a879b8cda54d51a173fe12a77ca0ba1898a786733fa47844bb3ed387dc6dd774 AS sw360
 
 ARG TOMCAT_DIR=/usr/local/tomcat
 

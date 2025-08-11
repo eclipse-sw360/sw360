@@ -466,7 +466,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
                 return addDocumentRequestSummary;
             }
-            if (!CommonUtils.isValidUrl(vcsUrl)) {
+            if (!isValidUrl(vcsUrl)) {
                 log.error("Invalid VCS URL: " + vcsUrl);
                 return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
             }

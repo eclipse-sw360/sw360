@@ -165,10 +165,10 @@ public class LicenseTest extends TestIntegrationBase {
         given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(testRequestSummary);
         given(this.licenseServiceMock.addLicenseType(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.sw360ReportServiceMock.getLicenseBuffer()).willReturn(ByteBuffer.allocate(10000));
+        given(this.licenseServiceMock.importSpdxInformation(any())).willReturn(new RequestSummary().setRequestStatus(RequestStatus.SUCCESS));
 
         doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
-        doNothing().when(licenseServiceMock).importSpdxInformation(any());
         doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
         doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
     }
