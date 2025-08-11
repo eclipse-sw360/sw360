@@ -38,6 +38,15 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-24.04
 
+    services:
+      couchdb:
+        image: couchdb:3
+        ports:
+          - 5984:5984
+        env:
+          COUCHDB_USER: ${{ env.COUCHDB_USER }}
+          COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
@@ -51,9 +60,6 @@ jobs:
         run: |
           chmod +x .github/testForLicenseHeaders.sh
           bash .github/testForLicenseHeaders.sh
-
-      - name: Setup CouchDB
-        run: scripts/startCouchdbForTests.sh
 
       - name: Update properties with DB credentials
         run: |
