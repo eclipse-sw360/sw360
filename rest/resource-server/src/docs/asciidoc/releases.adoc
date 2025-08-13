@@ -1,6 +1,6 @@
 //
 // Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
-//
+// Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025.
 // This program and the accompanying materials are made
 // available under the terms of the Eclipse Public License 2.0
 // which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -333,6 +333,108 @@ include::{snippets}/should_document_trigger_fossology_process/curl-request.adoc[
 
 ===== Example response
 include::{snippets}/should_document_trigger_fossology_process/http-response.adoc[]
+
+[[resources-trigger_fossology_process_with_options-post]]
+==== Trigger FOSSology process with custom scan options
+
+A `POST` request will allow you to trigger FOSSology process for a release with configurable scan options. +
+Please set the request parameters: +
+   `&markFossologyProcessOutdated=<true|false>` to set previous FOSSology process outdated and generate new. +
+   `&uploadDescription=uploadDescription` with the upload description to FOSSology +
+
+The request body should contain custom scan options in JSON format:
+
+[source,json]
+----
+{
+  "analysis": {
+    "bucket": true,
+    "copyrightEmailAuthor": true,
+    "ecc": false,
+    "ipra": false,
+    "keyword": true,
+    "mime": true,
+    "monk": true,
+    "nomos": true,
+    "ojo": true,
+    "pkgagent": false,
+    "reso": false
+  },
+  "decider": {
+    "nomosMonk": true,
+    "bulkReused": true,
+    "newScanner": false,
+    "ojoDecider": false
+  },
+  "reuse": {
+    "reuseMain": true,
+    "reuseEnhanced": false,
+    "reuseReport": false,
+    "reuseCopyright": true
+  }
+}
+----
+
+===== Available Analysis Agents
+- `bucket`: Bucket agent for categorizing licenses
+- `copyrightEmailAuthor`: Copyright, email, and author extraction
+- `ecc`: Export Control Classification (ECC) agent
+- `ipra`: IP Risk Assessment agent
+- `keyword`: Keyword agent for license detection
+- `mime`: MIME type detection agent
+- `monk`: Monk license scanner
+- `nomos`: Nomos license scanner
+- `ojo`: Open Java Object (OJO) license scanner
+- `pkgagent`: Package agent for metadata extraction
+- `reso`: Resolution agent
+
+===== Available Decider Agents
+- `nomosMonk`: Nomos-Monk decider for license decisions
+- `bulkReused`: Bulk reused decider
+- `newScanner`: New scanner decider
+- `ojoDecider`: OJO decider for license decisions
+
+===== Available Reuse Options
+- `reuseMain`: Enable main reuse functionality
+- `reuseEnhanced`: Enable enhanced reuse functionality
+- `reuseReport`: Enable reuse reporting
+- `reuseCopyright`: Enable copyright reuse
+
+===== Response structure
+Similar to the standard FOSSology trigger endpoint.
+
+===== Example request
+[source,bash]
+----
+curl -X POST 'http://localhost:8080/api/releases/{id}/triggerFossologyProcessWithOptions?markFossologyProcessOutdated=false&uploadDescription=Custom%20scan' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "analysis": {
+      "bucket": true,
+      "copyrightEmailAuthor": true,
+      "monk": true,
+      "nomos": true,
+      "ojo": true
+    },
+    "decider": {
+      "nomosMonk": true,
+      "bulkReused": true
+    },
+    "reuse": {
+      "reuseMain": true,
+      "reuseCopyright": true
+    }
+  }'
+----
+
+===== Example response
+[source,json]
+----
+{
+  "message": "FOSSology Process with custom options for Release Id : \"123\" has been triggered."
+}
+----
 
 [[resources-check_fossology_process_status-get]]
 ==== Check FOSSology process status
