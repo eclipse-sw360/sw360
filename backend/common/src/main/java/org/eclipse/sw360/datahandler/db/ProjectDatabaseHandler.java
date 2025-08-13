@@ -419,6 +419,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         setRequestedDateAndTrimComment(project, null, user);
+        setRequestedDateAndTrimCommentForPackages(project, null, user);
         project.unsetVendor();
         // Add project to database and return ID
         repository.add(project);
@@ -465,11 +466,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else if (!changePassesSanityCheck(project, actual)){
             return RequestStatus.FAILED_SANITY_CHECK;
         } else if (!isDependenciesExists(project, user) || (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true) &&
-                isLinkedReleasesUpdateFromLinkedPackagesFailed(project, CommonUtils.nullToEmptySet(actual.getPackageIds())))) {
+                isLinkedReleasesUpdateFromLinkedPackagesFailed(project, CommonUtils.nullToEmptySet(actual != null && actual.getPackageIds() != null ?
+                        actual.getPackageIds().keySet() :
+                        Collections.emptySet())))) {
             return RequestStatus.INVALID_INPUT;
         } else if (isWriteActionAllowedOnProject(actual, user) || forceUpdate) {
             copyImmutableFields(project,actual);
             setRequestedDateAndTrimComment(project, actual, user);
+            setRequestedDateAndTrimCommentForPackages(project, actual, user);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             setReleaseRelations(project, user, actual);
             updateProjectDependentLinkedFields(project, actual);
@@ -545,6 +549,52 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
+    private void setRequestedDateAndTrimCommentForPackages(Project project, Project actual, User user) {
+        Set<String> actualPackagesIds = null;
+        if (Objects.nonNull(actual) && Objects.nonNull(actual.getPackageIds())) {
+            actualPackagesIds = CommonUtils.nullToEmptySet(actual.getPackageIds().keySet());
+        }
+        final Set<String> actualPackageIdsFinal = CommonUtils.nullToEmptySet(actualPackagesIds);
+        Set<String> updatedPackageIds = null;
+        Map<String, ProjectPackageRelationship> updatedProjectPackageIdToUsage = project.getPackageIds();
+        if (Objects.nonNull(updatedProjectPackageIdToUsage)) {
+            updatedPackageIds = CommonUtils.nullToEmptySet(updatedProjectPackageIdToUsage.keySet());
+        } else {
+            updatedPackageIds = new HashSet<>();
+        }
+
+        updatedPackageIds.stream().filter(updatedPackageId -> !actualPackageIdsFinal.contains(updatedPackageId))
+                .forEach(updatedPackageId -> {
+                    ProjectPackageRelationship projectPackageRelationship = updatedProjectPackageIdToUsage
+                            .get(updatedPackageId);
+                    if (Objects.nonNull(projectPackageRelationship)) {
+                        projectPackageRelationship.setCreatedOn(SW360Utils.getCreatedOn());
+                        projectPackageRelationship.setCreatedBy(user.getEmail());
+                    }
+                });
+
+        updatedPackageIds.stream().filter(commonPackageId -> actualPackageIdsFinal.contains(commonPackageId))
+                .forEach(commonPackageId -> {
+                    ProjectPackageRelationship projectPackageRelationship = updatedProjectPackageIdToUsage
+                            .get(commonPackageId);
+                    ProjectPackageRelationship actualProjectPackageRelationship = actual.getPackageIds()
+                            .get(commonPackageId);
+                    if (Objects.nonNull(projectPackageRelationship)
+                            && Objects.nonNull(actualProjectPackageRelationship)) {
+                        projectPackageRelationship.setCreatedOn(actualProjectPackageRelationship.getCreatedOn());
+                        projectPackageRelationship.setCreatedBy(actualProjectPackageRelationship.getCreatedBy());
+                    }
+                });
+
+        if (Objects.nonNull(updatedProjectPackageIdToUsage)) {
+            project.getPackageIds().entrySet().stream().forEach(entry -> {
+                if (Objects.nonNull(entry.getValue()) && Objects.nonNull(entry.getValue().getComment())) {
+                    entry.getValue().setComment(entry.getValue().getComment().trim());
+                }
+            });
+        }
+    }
+
     private boolean isDependenciesExists(Project project, User user) {
         boolean isValidDependentIds = true;
         if (project.isSetReleaseIdToUsage()) {
@@ -575,7 +625,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         if (isValidDependentIds && project.isSetPackageIds()) {
-            Set<String> pacakgeIds = project.getPackageIds();
+            Set<String> pacakgeIds = project.getPackageIds().keySet();
             isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(pacakgeIds, packageRepository);
         }
         return isValidDependentIds;
@@ -793,7 +843,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * @return true if linking or unlinking is failed, else returns false.
      */
     private boolean isLinkedReleasesUpdateFromLinkedPackagesFailed(Project updatedProject, Set<String> currentPackageIds) throws SW360Exception {
-        Set<String> updatedPackageIds = CommonUtils.nullToEmptySet(updatedProject.getPackageIds());
+        Set<String> updatedPackageIds = updatedProject.getPackageIds() != null
+                ? CommonUtils.nullToEmptySet(updatedProject.getPackageIds().keySet())
+                : Collections.emptySet();
         if (updatedPackageIds.equals(currentPackageIds)) {
             return false;
         }
