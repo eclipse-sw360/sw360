@@ -58,6 +58,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -524,7 +525,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         List<HalResource<Package>> halPackages = new ArrayList<>();
         if (sw360Project.getPackageIdsSize() > 0) {
-            for (String packageId : sw360Project.getPackageIds()) {
+            for (Map.Entry<String, ProjectPackageRelationship> entry : sw360Project.getPackageIds().entrySet()) {
+                String packageId = entry.getKey();
                 Package sw360Package = packageService.getPackageForUserById(packageId);
                 HalResource<Package> halPackage = createHalPackage(sw360Package, sw360User);
                 halPackages.add(halPackage);
@@ -2693,7 +2695,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (sw360Project.getPackageIdsSize() > 0) {
-            restControllerHelper.addEmbeddedPackages(halProject, sw360Project.getPackageIds(), packageService);
+            restControllerHelper.addEmbeddedPackages(halProject, sw360Project.getPackageIds().keySet(), packageService);
         }
 
         return halProject;
@@ -2753,8 +2755,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
         Set<String> packageIds = new HashSet<>();
-        if (!CommonUtils.isNullOrEmptyCollection(project.getPackageIds())) {
-            packageIds = project.getPackageIds();
+        if (project.getPackageIds() != null && !CommonUtils.isNullOrEmptyCollection(project.getPackageIds().keySet())) {
+            packageIds = new HashSet<>(project.getPackageIds().keySet());
         }
         if (link) {
             packageIds.addAll(packagesInRequestBody);
@@ -2762,18 +2764,30 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             packageIds.removeAll(packagesInRequestBody);
         }
 
-        project.setPackageIds(packageIds);
+        project.setPackageIds(packageIds.stream()
+                .collect(Collectors.toMap(pkgId -> pkgId, pkgId -> {
+                    ProjectPackageRelationship existing = (project.getPackageIds() != null && project.getPackageIds().get(pkgId) != null)
+                            ? project.getPackageIds().get(pkgId)
+                            : new ProjectPackageRelationship();
+                    if (existing != null && existing.getComment() != null) {
+                        ProjectPackageRelationship rel = new ProjectPackageRelationship();
+                        rel.setComment(existing.getComment());
+                        return rel;
+                    }
+                    return new ProjectPackageRelationship();
+                }))
+        );
         return projectService.updateProject(project, sw360User);
     }
+
 
     private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User) {
         HalResource<Project> halProject = new HalResource<>(sw360Project);
         halProject.addEmbeddedResource(CREATED_BY, sw360Project.getCreatedBy());
 
-        Set<String> packageIds = sw360Project.getPackageIds();
-
-        if (packageIds != null) {
-            for (String id : sw360Project.getPackageIds()) {
+        Set<String> packageIds = sw360Project.getPackageIds() != null ? sw360Project.getPackageIds().keySet() : new HashSet<>();
+        if (packageIds != null && !packageIds.isEmpty()) {
+            for (String id : sw360Project.getPackageIds().keySet()) {
                 Link packageLink = linkTo(ProjectController.class)
                         .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
                 halProject.add(packageLink);
