@@ -46,6 +46,7 @@ typedef licenses.ObligationType ObligationType
 typedef licenses.ObligationLevel ObligationLevel
 typedef vendors.Vendor Vendor
 typedef components.ReleaseNode ReleaseNode
+typedef sw360.ProjectPackageRelationship ProjectPackageRelationship
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -140,7 +141,8 @@ struct Project {
     // Linked objects
     30: optional map<string, ProjectProjectRelationship> linkedProjects,
     31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
-    32: optional set<string> packageIds,
+    32: optional map<string, ProjectPackageRelationship> packageIds,
+    //32: optional set<string> packageIds,
 
     // Admin data
     40: optional string clearingTeam;

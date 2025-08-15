@@ -277,3 +277,9 @@ union Source {
 struct RestrictedResource {
     1: optional i32 projects,
 }
+
+struct ProjectPackageRelationship {
+    1: optional string comment,
+    2: optional string createdOn,
+    3: optional string createdBy
+}

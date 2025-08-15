@@ -44,6 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -239,7 +240,7 @@ public class CycloneDxBOMImporter {
                             packages = "";
                         }
                         Project project = projectDatabaseHandler.getProjectById(projId, user);
-
+                        Map<String, ProjectPackageRelationship> linkedPackages =  CommonUtils.isNullOrEmptyMap(project.getPackageIds()) ? new HashMap<>() : project.getPackageIds();
                         for (org.cyclonedx.model.Component comp : components) {
                             if (CommonUtils.isNullOrEmptyCollection(comp.getExternalReferences())
                                     || comp.getExternalReferences().stream().map(ExternalReference::getType).filter(typeFilter).count() == 0
@@ -263,7 +264,7 @@ public class CycloneDxBOMImporter {
                                     if (CommonUtils.isNotNullEmptyOrWhitespace(pkgAddSummary.getId())) {
                                         pkg.setId(pkgAddSummary.getId());
                                         if (AddDocumentRequestStatus.DUPLICATE.equals(pkgAddSummary.getRequestStatus())) {
-                                            if(!CommonUtils.nullToEmptySet(project.getPackageIds()).contains(pkgAddSummary.getId())){
+                                            if (project.getPackageIds() != null && !CommonUtils.nullToEmptySet(project.getPackageIds().keySet()).contains(pkgAddSummary.getId())) {
                                                 pkgReuseCount++;
                                             }
                                             Package dupPkg = packageDatabaseHandler.getPackageById(pkgAddSummary.getId());
@@ -282,7 +283,8 @@ public class CycloneDxBOMImporter {
                                         duplicatePackages.add(fullName);
                                         continue;
                                     }
-                                    project.addToPackageIds(pkgAddSummary.getId());
+                                    linkedPackages.put(pkgAddSummary.getId(), createPackageNode(project, user, ""));
+                                    project.setPackageIds(linkedPackages);
                                 } catch (SW360Exception e) {
                                     log.error("An error occured while creating/adding package from SBOM: " + e.getMessage());
                                     continue;
@@ -578,7 +580,7 @@ public class CycloneDxBOMImporter {
         final Set<String> invalidPackages = new HashSet<>();
         final Set<String> invalidVcsComponents = new HashSet<>();
         final Map<String, ProjectReleaseRelationship> releaseRelationMap = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
-        final Set<String> projectPkgIds = CommonUtils.isNullOrEmptyCollection(project.getPackageIds()) ? new HashSet<>() : project.getPackageIds();
+        final Set<String> projectPkgIds = CommonUtils.isNullOrEmptyMap(project.getPackageIds()) ? new HashSet<>() : project.getPackageIds().keySet();
         countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
         countMap.put(PKG_CREATION_COUNT_KEY, 0); countMap.put(PKG_REUSE_COUNT_KEY, 0);
         int relCreationCount = 0, relReuseCount = 0, pkgCreationCount = 0, pkgReuseCount = 0;
@@ -588,7 +590,7 @@ public class CycloneDxBOMImporter {
             projectPkgIds.clear();
             log.info("Cleared existing releases and packages for project: " + project.getName());
         }
-
+        Map<String, ProjectPackageRelationship> linkedPackages = CommonUtils.isNullOrEmptyMap(project.getPackageIds()) ? new HashMap<>() : project.getPackageIds();
         for (Map.Entry<String, List<org.cyclonedx.model.Component>> entry : vcsToComponentMap.entrySet()) {
             Component comp = createComponent(entry.getKey());
 
@@ -700,7 +702,7 @@ public class CycloneDxBOMImporter {
                                     packageDatabaseHandler.updatePackage(dupPkg, user);
                                     log.error("Release Id of Package from BOM: '%s' and Database: '%s' is not equal!", releaseId, dupPkgReleaseId);
                                 }
-                                if(!CommonUtils.nullToEmptySet(project.getPackageIds()).contains(pkg.getId())){
+                                if(!CommonUtils.nullToEmptyMap(project.getPackageIds()).containsKey(pkg.getId())){
                                     pkgReuseCount++;
                                 }
                             } else {
@@ -712,7 +714,8 @@ public class CycloneDxBOMImporter {
                             duplicatePackages.add(pkgName);
                             continue;
                         }
-                        project.addToPackageIds(pkg.getId());
+                        linkedPackages.put(pkgAddSummary.getId(), createPackageNode(project, user, ""));
+                        project.setPackageIds(linkedPackages);
                     } catch (SW360Exception e) {
                         log.error("An error occured while creating/adding package from SBOM: " + e.getMessage());
                         continue;
@@ -1118,5 +1121,12 @@ public class CycloneDxBOMImporter {
     public boolean isCompNonPkgManaged(org.cyclonedx.model.Component comp) {
         List<Property> properties = CommonUtils.nullToEmptyList(comp.getProperties());
         return (!properties.isEmpty() && properties.stream().anyMatch(prop -> SW360Utils.readConfig(NON_PKG_MANAGED_COMPS_PROP, "").equals(prop.getName()) && "true".equalsIgnoreCase(prop.getValue())));
+    }
+    public  ProjectPackageRelationship createPackageNode(Project project, User user, String comment) {
+        ProjectPackageRelationship projectPackageRelationship = new ProjectPackageRelationship();
+        projectPackageRelationship.setCreatedBy(user.getEmail());
+        projectPackageRelationship.setCreatedOn(SW360Utils.getCreatedOn());
+        projectPackageRelationship.setComment(comment);
+        return projectPackageRelationship;
     }
 }
