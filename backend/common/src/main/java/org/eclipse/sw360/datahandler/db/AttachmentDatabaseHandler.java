@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2016, 2019. Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -50,6 +50,7 @@ public class AttachmentDatabaseHandler {
     private final AttachmentUsageRepository attachmentUsageRepository;
     private final AttachmentRepository attachmentRepository;
     private final AttachmentOwnerRepository attachmentOwnerRepository;
+    private final ChecksumRepository checksumRepository;
 
 
     private static final Logger log = LogManager.getLogger(AttachmentDatabaseHandler.class);
@@ -61,6 +62,7 @@ public class AttachmentDatabaseHandler {
         attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnectorCloudant(client, dbName));
         attachmentRepository = new AttachmentRepository(new DatabaseConnectorCloudant(client, dbName));
         attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnectorCloudant(client, dbName));
+        checksumRepository = new ChecksumRepository(new DatabaseConnectorCloudant(client, dbName));
     }
 
     public AttachmentConnector getAttachmentConnector(){
@@ -279,5 +281,97 @@ public class AttachmentDatabaseHandler {
 
     public AttachmentContent getAttachmentContentById(String attachmentContentId) {
         return attachmentContentRepository.get(attachmentContentId);
+    }
+
+    public List<Attachment> getAttachmentsByChecksum(String checksum, String checksumType) {
+        return checksumRepository.getAttachmentsByChecksum(checksum, checksumType);
+    }
+
+    public List<Attachment> getAttachmentsByFossologyUploadId(String fossologyUploadId) {
+        return checksumRepository.getAttachmentsByFossologyUploadIds(Set.of(fossologyUploadId));
+    }
+
+    public String getFossologyUploadIdByChecksum(String checksum, String checksumType) {
+        return checksumRepository.getFossologyUploadIdByChecksum(checksum, checksumType);
+    }
+
+    public Map<String, String> getChecksumsByFossologyUploadId(String fossologyUploadId) {
+        return checksumRepository.getChecksumsByFossologyUploadId(fossologyUploadId);
+    }
+
+    public void mapChecksumToFossologyUploadId(String checksum, String checksumType, String fossologyUploadId) {
+        log.info("Mapping {} checksum {} to FOSSology upload ID {}", checksumType, checksum, fossologyUploadId);
+        
+        // Get all attachments with the given checksum across all entities
+        List<Attachment> attachments = getAttachmentsByChecksum(checksum, checksumType);
+        
+        if (attachments.isEmpty()) {
+            log.warn("No attachments found with {} checksum: {}", checksumType, checksum);
+            return;
+        }
+        
+        // For each attachment, finding its parent entity and updating it
+        int updatedCount = 0;
+        for (Attachment attachment : attachments) {
+            try {
+                // Find the owner/parent entities for this attachment
+                List<Source> owners = attachmentOwnerRepository.getOwnersByIds(Set.of(attachment.getAttachmentContentId()));
+                
+                for (Source owner : owners) {
+                    boolean updated = updateAttachmentInParentEntity(owner, attachment.getAttachmentContentId(), fossologyUploadId);
+                    if (updated) {
+                        updatedCount++;
+                        log.debug("Updated attachment {} in {} {} with FOSSology upload ID {}", 
+                            attachment.getAttachmentContentId(), owner.getSetField(), owner.getFieldValue(), fossologyUploadId);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to update attachment {} with FOSSology upload ID {}", 
+                    attachment.getAttachmentContentId(), fossologyUploadId, e);
+            }
+        }
+        
+        log.info("Successfully mapped {} attachment instances with {} checksum {} to FOSSology upload ID {}", 
+            updatedCount, checksumType, checksum, fossologyUploadId);
+    }
+
+    private boolean updateAttachmentInParentEntity(Source owner, String attachmentContentId, String fossologyUploadId) {
+        try {
+            String entityId = owner.getFieldValue().toString();
+            Source._Fields entityType = owner.getSetField();
+            
+            switch (entityType) {
+                case COMPONENT_ID:
+                    return updateComponentAttachment(entityId, attachmentContentId, fossologyUploadId);
+                case PROJECT_ID:
+                    return updateProjectAttachment(entityId, attachmentContentId, fossologyUploadId);
+                case RELEASE_ID:
+                    return updateReleaseAttachment(entityId, attachmentContentId, fossologyUploadId);
+                default:
+                    log.warn("Unsupported entity type for attachment update: {}", entityType);
+                    return false;
+            }
+        } catch (Exception e) {
+            log.error("Error updating attachment in parent entity", e);
+            return false;
+        }
+    }
+
+    private boolean updateComponentAttachment(String componentId, String attachmentContentId, String fossologyUploadId) {
+        
+        attachmentConnector.setFossologyUploadIdForAttachment(attachmentContentId, fossologyUploadId);
+        return true;
+    }
+
+    private boolean updateProjectAttachment(String projectId, String attachmentContentId, String fossologyUploadId) {
+        
+        attachmentConnector.setFossologyUploadIdForAttachment(attachmentContentId, fossologyUploadId);
+        return true;
+    }
+
+    private boolean updateReleaseAttachment(String releaseId, String attachmentContentId, String fossologyUploadId) {
+        
+        attachmentConnector.setFossologyUploadIdForAttachment(attachmentContentId, fossologyUploadId);
+        return true;
     }
 }

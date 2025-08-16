@@ -22,10 +22,12 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.fossology.ScanOptions;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
 import org.eclipse.sw360.fossology.rest.model.FossologyV2Models.CombinedUploadJobResponse;
+import org.eclipse.sw360.fossology.service.ReuserAgentService;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
@@ -39,6 +41,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -60,6 +63,7 @@ public class FossologyHandler implements FossologyService.Iface {
     private final FossologyRestConfig fossologyRestConfig;
     private final FossologyRestClient fossologyRestClient;
     private final AttachmentConnector attachmentConnector;
+    private final ReuserAgentService reuserAgentService;
 
     // v2 API status constants
     private static final String V2_STATUS_SUCCESS = "success";
@@ -72,11 +76,13 @@ public class FossologyHandler implements FossologyService.Iface {
 
     @Autowired
     public FossologyHandler(ThriftClients thriftClients, FossologyRestConfig fossologyRestConfig,
-            FossologyRestClient fossologyRestClient, AttachmentConnector attachmentConnector) {
+            FossologyRestClient fossologyRestClient, AttachmentConnector attachmentConnector,
+            ReuserAgentService reuserAgentService) {
         this.thriftClients = thriftClients;
         this.fossologyRestConfig = fossologyRestConfig;
         this.fossologyRestClient = fossologyRestClient;
         this.attachmentConnector = attachmentConnector;
+        this.reuserAgentService = reuserAgentService;
     }
 
     @Override
@@ -185,12 +191,68 @@ public class FossologyHandler implements FossologyService.Iface {
         return fossologyProcess;
     }
 
+    @Override
+    public ExternalToolProcess processWithScanOptions(String releaseId, User user, String uploadDescription, ScanOptions scanOptions) throws TException {
+        ExternalToolProcess fossologyProcess;
+
+        Iface componentClient = thriftClients.makeComponentClient();
+        Release release = componentClient.getReleaseById(releaseId, user);
+
+        Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+                ExternalTool.FOSSOLOGY);
+        if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {
+            return null;
+        }
+
+        Set<Attachment> sourceAttachments = componentClient.getSourceAttachments(release.getId());
+        if (isIllegalStateSourceAttachments(releaseId, sourceAttachments)) {
+            return null;
+        }
+
+        Attachment sourceAttachment = sourceAttachments.iterator().next();
+        if (isIllegalStateProcessAndAttachments(fossologyProcesses, sourceAttachment)) {
+            return null;
+        }
+
+        if (fossologyProcesses.size() == 0) {
+            fossologyProcess = createFossologyProcess(release, user, sourceAttachment.getAttachmentContentId(),
+                    sourceAttachment.getSha1());
+        } else {
+            
+            fossologyProcess = fossologyProcesses.iterator().next();
+        }
+
+        FossologyUtils.ensureOrderOfProcessSteps(fossologyProcess);
+
+        ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps().getLast();
+
+        // Handle different process steps using v2 API with custom scan options
+        if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())) {
+            handleUploadStepV2(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription, scanOptions);
+        } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
+            handleScanStepV2(componentClient, release, user, fossologyProcess, scanOptions);
+        } else if(!SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false) && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStepV2(componentClient, release, user, fossologyProcess);
+        } else if(reportStep && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStepV2(componentClient, release, user, fossologyProcess);
+        }
+
+        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+
+        return fossologyProcess;
+    }
+
     /**
      * Start the upload to FOSSology and the scan jobs with it. Wait till the
      * upload is done and pass to scan started step with job id.
      */
     private void handleUploadStepV2(Iface componentClient, Release release, User user,
             ExternalToolProcess fossologyProcess, Attachment sourceAttachment, String uploadDescription) throws TException {
+        handleUploadStepV2(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription, null);
+    }
+
+    private void handleUploadStepV2(Iface componentClient, Release release, User user,
+            ExternalToolProcess fossologyProcess, Attachment sourceAttachment, String uploadDescription, ScanOptions scanOptions) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .getLast();
 
@@ -222,8 +284,18 @@ public class FossologyHandler implements FossologyService.Iface {
                     // Upload file using v2 API with automatic scan scheduling
                     InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, release);
                     log.info("STARTING UPLOAD for file {}", attachmentFilename);
-                    CombinedUploadJobResponse response = fossologyRestClient.uploadFileAndScan(
-                        attachmentFilename, attachmentStream, uploadDescription);
+                    
+                    CombinedUploadJobResponse response;
+                    if (scanOptions != null) {
+                        // Use custom scan options
+                        response = fossologyRestClient.uploadFileAndScan(
+                            attachmentFilename, attachmentStream, uploadDescription,
+                            scanOptions.getAnalysis(), scanOptions.getDecider(), scanOptions.getReuse());
+                    } else {
+                        // Use default scan options
+                        response = fossologyRestClient.uploadFileAndScan(
+                            attachmentFilename, attachmentStream, uploadDescription);
+                    }
 
                     if (response != null && V2_STATUS_SUCCESS.equals(response.getStatus())) {
                         int jobId = fossologyRestClient.getJobIdAfterScan(response.getUploadId());
@@ -278,6 +350,14 @@ public class FossologyHandler implements FossologyService.Iface {
                              Release release,
                              User user,
                              ExternalToolProcess fossologyProcess) throws TException {
+        handleScanStepV2(componentClient, release, user, fossologyProcess, null);
+    }
+
+    private void handleScanStepV2(Iface componentClient,
+                             Release release,
+                             User user,
+                             ExternalToolProcess fossologyProcess,
+                             ScanOptions scanOptions) throws TException {
         ExternalToolProcessStep furthestStep =
             fossologyProcess.getProcessSteps().getLast();
         String uploadId = SW360Utils
@@ -292,7 +372,15 @@ public class FossologyHandler implements FossologyService.Iface {
                 updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
 
                 log.info("STARTING SCAN for uploadId: {}", uploadId);
-                int jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId));
+                int jobId;
+                if (scanOptions != null) {
+                    // Use custom scan options
+                    jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId),
+                        scanOptions.getAnalysis(), scanOptions.getDecider(), scanOptions.getReuse());
+                } else {
+                    // Use default scan options
+                    jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId));
+                }
                 if (jobId > -1) {
                     furthestStep.setProcessStepIdInTool(String.valueOf(jobId));
                     furthestStep.setResult(null);
@@ -319,6 +407,10 @@ public class FossologyHandler implements FossologyService.Iface {
                     furthestStep.setResult(String.valueOf(status));
 
                     log.info("SCAN COMPLETED SUCCESSFULLY for jobId: {}", scanningJobId);
+
+                    // APPLY AUTOMATIC REUSE DETECTION AND DECISION COPYING
+                    log.info("APPLYING AUTOMATIC REUSE after scan completion");
+                    applyAutomaticReuse(release, user, fossologyProcess);
 
                     // AUTOMATICALLY TRIGGER REPORT GENERATION
                     boolean reportDisabled = SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false);
@@ -677,5 +769,202 @@ public class FossologyHandler implements FossologyService.Iface {
             case V2_STATUS_QUEUED, V2_STATUS_PROCESSING -> 0;
             default -> -1;
         };
+    }
+
+    /**
+     * Enable reuse for a release by running the Reuser agent
+     * 
+     * @param releaseId Release ID to enable reuse for
+     * @param sourceUploadId Source upload ID to reuse from (0 for global reuse)
+     * @param user User performing the operation
+     * @return RequestStatus indicating success or failure
+     */
+    public RequestStatus enableReuseForRelease(String releaseId, int sourceUploadId, User user) throws TException {
+        try {
+            Iface componentClient = thriftClients.makeComponentClient();
+            Release release = componentClient.getReleaseById(releaseId, user);
+            
+            // Get the FOSSology upload ID for this release
+            Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+                    ExternalTool.FOSSOLOGY);
+            
+            if (fossologyProcesses.isEmpty()) {
+                log.error("No FOSSology process found for release {}", releaseId);
+                return RequestStatus.FAILURE;
+            }
+            
+            ExternalToolProcess fossologyProcess = fossologyProcesses.iterator().next();
+            String uploadId = SW360Utils.getExternalToolProcessStepOfFirstProcessForTool(release, 
+                    ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD).getResult();
+            
+            if (CommonUtils.isNullEmptyOrWhitespace(uploadId)) {
+                log.error("No upload ID found for release {}", releaseId);
+                return RequestStatus.FAILURE;
+            }
+            
+            // Enable reuse with enhanced settings
+            int jobId = reuserAgentService.enableReuseForUpload(
+                    Integer.parseInt(uploadId), 
+                    sourceUploadId, 
+                    0, // reuseGroup - 0 for current group
+                    true, // reuseMain
+                    true, // reuseEnhanced
+                    true, // reuseCopyright
+                    true  // reuseReport
+            );
+            
+            if (jobId > 0) {
+                log.info("Successfully enabled reuse for release {} with job ID {}", releaseId, jobId);
+                
+                // Create a reuse process step to track the operation
+                ExternalToolProcessStep reuseStep = createFossologyProcessStep(user, "REUSE");
+                reuseStep.setStepStatus(ExternalToolProcessStatus.IN_WORK);
+                reuseStep.setProcessStepIdInTool(String.valueOf(jobId));
+                fossologyProcess.addToProcessSteps(reuseStep);
+                
+                updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+                return RequestStatus.SUCCESS;
+            } else {
+                log.error("Failed to enable reuse for release {}", releaseId);
+                return RequestStatus.FAILURE;
+            }
+            
+        } catch (Exception e) {
+            log.error("Error enabling reuse for release {}: {}", releaseId, e.getMessage(), e);
+            return RequestStatus.FAILURE;
+        }
+    }
+
+    /**
+     * Find reuse candidates for a release
+     * 
+     * @param releaseId Release ID to find candidates for
+     * @param user User performing the operation
+     * @return Map of file SHA1 -> List of candidate upload IDs
+     */
+    public Map<String, List<Integer>> findReuseCandidatesForRelease(String releaseId, User user) throws TException {
+        try {
+            Iface componentClient = thriftClients.makeComponentClient();
+            Release release = componentClient.getReleaseById(releaseId, user);
+            
+            // Get the FOSSology upload ID for this release
+            Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+                    ExternalTool.FOSSOLOGY);
+            
+            if (fossologyProcesses.isEmpty()) {
+                log.error("No FOSSology process found for release {}", releaseId);
+                return Map.of();
+            }
+            
+            String uploadId = SW360Utils.getExternalToolProcessStepOfFirstProcessForTool(release, 
+                    ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD).getResult();
+            
+            if (CommonUtils.isNullEmptyOrWhitespace(uploadId)) {
+                log.error("No upload ID found for release {}", releaseId);
+                return Map.of();
+            }
+            
+            return reuserAgentService.findReuseCandidates(Integer.parseInt(uploadId));
+            
+        } catch (Exception e) {
+            log.error("Error finding reuse candidates for release {}: {}", releaseId, e.getMessage(), e);
+            return Map.of();
+        }
+    }
+
+    /**
+     * Get reuse statistics for a release
+     * 
+     * @param releaseId Release ID to get statistics for
+     * @param user User performing the operation
+     * @return Map containing reuse statistics
+     */
+    public Map<String, Object> getReuseStatisticsForRelease(String releaseId, User user) throws TException {
+        Map<String, Object> errorResult = Map.of("error", "Failed to get reuse statistics");
+        
+        try {
+            Iface componentClient = thriftClients.makeComponentClient();
+            Release release = componentClient.getReleaseById(releaseId, user);
+            
+            // Get the FOSSology upload ID for this release
+            Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+                    ExternalTool.FOSSOLOGY);
+            
+            if (fossologyProcesses.isEmpty()) {
+                log.error("No FOSSology process found for release {}", releaseId);
+                return errorResult;
+            }
+            
+            String uploadId = SW360Utils.getExternalToolProcessStepOfFirstProcessForTool(release, 
+                    ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD).getResult();
+            
+            if (CommonUtils.isNullEmptyOrWhitespace(uploadId)) {
+                log.error("No upload ID found for release {}", releaseId);
+                return errorResult;
+            }
+            
+            return reuserAgentService.getReuseStatistics(Integer.parseInt(uploadId));
+            
+        } catch (Exception e) {
+            log.error("Error getting reuse statistics for release {}: {}", releaseId, e.getMessage(), e);
+            return errorResult;
+        }
+    }
+
+    /**
+     * Apply automated reuse detection and clearing decision copying
+     * This method is called after successful scan completion to automatically
+     * detect and apply reuse where possible
+     */
+    private void applyAutomaticReuse(Release release, User user, ExternalToolProcess fossologyProcess) {
+        try {
+            String uploadId = SW360Utils.getExternalToolProcessStepOfFirstProcessForTool(release, 
+                    ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD).getResult();
+            
+            if (CommonUtils.isNullEmptyOrWhitespace(uploadId)) {
+                log.warn("Cannot apply automatic reuse - no upload ID found for release {}", release.getId());
+                return;
+            }
+            
+            log.info("Applying automatic reuse detection for release {} (upload {})", release.getId(), uploadId);
+            
+            // Find reuse candidates
+            Map<String, List<Integer>> candidates = reuserAgentService.findReuseCandidates(Integer.parseInt(uploadId));
+            
+            if (candidates.isEmpty()) {
+                log.info("No reuse candidates found for release {}", release.getId());
+                return;
+            }
+            
+            int totalCandidates = candidates.values().stream().mapToInt(List::size).sum();
+            log.info("Found {} reuse candidates across {} files for release {}", 
+                     totalCandidates, candidates.size(), release.getId());
+            
+            // Apply reuse for global scope (sourceUploadId = 0)
+            int reuseJobId = reuserAgentService.enableReuseForUpload(
+                    Integer.parseInt(uploadId), 
+                    0, // Global reuse
+                    0, // Current group
+                    true, // reuseMain
+                    true, // reuseEnhanced
+                    true, // reuseCopyright
+                    false // reuseReport 
+            );
+            
+            if (reuseJobId > 0) {
+                log.info("Successfully started automatic reuse job {} for release {}", reuseJobId, release.getId());
+                
+                // Add a reuse step to track the operation
+                ExternalToolProcessStep reuseStep = createFossologyProcessStep(user, "AUTO_REUSE");
+                reuseStep.setStepStatus(ExternalToolProcessStatus.IN_WORK);
+                reuseStep.setProcessStepIdInTool(String.valueOf(reuseJobId));
+                fossologyProcess.addToProcessSteps(reuseStep);
+            } else {
+                log.warn("Failed to start automatic reuse for release {}", release.getId());
+            }
+            
+        } catch (Exception e) {
+            log.error("Error applying automatic reuse for release {}: {}", release.getId(), e.getMessage(), e);
+        }
     }
 }

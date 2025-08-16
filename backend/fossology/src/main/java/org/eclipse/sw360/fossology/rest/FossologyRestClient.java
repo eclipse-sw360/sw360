@@ -247,6 +247,18 @@ public class FossologyRestClient {
      */
     public CombinedUploadJobResponse uploadFileAndScan(String filename, InputStream fileStream,
                                                        String uploadDescription) {
+        return uploadFileAndScan(filename, fileStream, uploadDescription, null, null, null);
+    }
+
+    /**
+     * Upload a file to FOSSology and schedule agents on it with custom scan options.
+     * Returns the upload id.
+     */
+    public CombinedUploadJobResponse uploadFileAndScan(String filename, InputStream fileStream,
+                                                       String uploadDescription,
+                                                       Map<String, Boolean> analysisOptions,
+                                                       Map<String, Boolean> deciderOptions,
+                                                       Map<String, Boolean> reuseOptions) {
         String folderId = restConfig.getFolderId();
 
         if (isNotValidConfig()) {
@@ -270,7 +282,7 @@ public class FossologyRestClient {
         body.add("uploadType", "file");
 
         // Add scan options for automatic scanning
-        ObjectNode scanOptions = createScanOptions();
+        ObjectNode scanOptions = createScanOptions(analysisOptions, deciderOptions, reuseOptions);
         body.add("scanOptions", scanOptions.toString());
 
         try {
@@ -359,40 +371,100 @@ public class FossologyRestClient {
      * @return JSON object containing default scan options.
      */
     private ObjectNode createScanOptions() {
+        return createScanOptions(null, null, null);
+    }
+
+    /**
+     * Generates a scan options JSON object for the /jobs or /uploads endpoint with custom options.
+     * @param analysisOptions Custom analysis agent options, or null for defaults
+     * @param deciderOptions Custom decider agent options, or null for defaults
+     * @param reuseOptions Custom reuse options, or null for defaults
+     * @return JSON object containing scan options.
+     */
+    private ObjectNode createScanOptions(Map<String, Boolean> analysisOptions,
+                                         Map<String, Boolean> deciderOptions,
+                                         Map<String, Boolean> reuseOptions) {
         ObjectNode scanOptions = objectMapper.createObjectNode();
 
+        // Default analysis options
+        Map<String, Boolean> defaultAnalysisOptions = createDefaultAnalysisOptions();
+
+        // Default decider options
+        Map<String, Boolean> defaultDeciderOptions = createDefaultDeciderOptions();
+
+        // Default reuse options
+        Map<String, Boolean> defaultReuseOptions = createDefaultReuseOptions();
+
+        // Use provided options or defaults
+        Map<String, Boolean> finalAnalysisOptions = analysisOptions != null ? analysisOptions : defaultAnalysisOptions;
+        Map<String, Boolean> finalDeciderOptions = deciderOptions != null ? deciderOptions : defaultDeciderOptions;
+        Map<String, Boolean> finalReuseOptions = reuseOptions != null ? reuseOptions : defaultReuseOptions;
+
         ObjectNode analysis = objectMapper.createObjectNode();
-        analysis.put("bucket", true);
-        analysis.put("copyrightEmailAuthor", true);
-        analysis.put("ecc", true);
-        analysis.put("ipra", true);
-        analysis.put("keyword", true);
-        analysis.put("mime", true);
-        analysis.put("monk", true);
-        analysis.put("nomos", true);
-        analysis.put("ojo", true);
-        analysis.put("pkgagent", true);
-        analysis.put("reso", true);
+        finalAnalysisOptions.forEach(analysis::put);
 
         ObjectNode decider = objectMapper.createObjectNode();
-        decider.put("nomosMonk", true);
-        decider.put("bulkReused", true);
-        decider.put("newScanner", true);
-        decider.put("ojoDecider", true);
+        finalDeciderOptions.forEach(decider::put);
 
         ObjectNode reuse = objectMapper.createObjectNode();
-        reuse.put("reuseUpload", 0);
-        reuse.put("reuseGroup", 0);
-        reuse.put("reuseMain", true);
-        reuse.put("reuseEnhanced", true);
-        reuse.put("reuseReport", true);
-        reuse.put("reuseCopyright", true);
+        finalReuseOptions.forEach((key, value) -> {
+            if ("reuseUpload".equals(key) || "reuseGroup".equals(key)) {
+                reuse.put(key, value ? 1 : 0);
+            } else {
+                reuse.put(key, value);
+            }
+        });
 
         scanOptions.set("analysis", analysis);
         scanOptions.set("decider", decider);
         scanOptions.set("reuse", reuse);
 
         return scanOptions;
+    }
+
+    /**
+     * Creates default analysis options for FOSSology scanning.
+     */
+    private static Map<String, Boolean> createDefaultAnalysisOptions() {
+        Map<String, Boolean> options = new HashMap<>();
+        options.put("bucket", true);
+        options.put("copyrightEmailAuthor", true);
+        options.put("ecc", true);
+        options.put("ipra", false);
+        options.put("keyword", true);
+        options.put("mime", true);
+        options.put("monk", true);
+        options.put("nomos", true);
+        options.put("ojo", true);
+        options.put("pkgagent", true);
+        options.put("reso", false);
+        return options;
+    }
+
+    /**
+     * Creates default decider options for FOSSology scanning.
+     */
+    private static Map<String, Boolean> createDefaultDeciderOptions() {
+        Map<String, Boolean> options = new HashMap<>();
+        options.put("nomosMonk", true);
+        options.put("bulkReused", true);
+        options.put("newScanner", true);
+        options.put("ojoDecider", false);
+        return options;
+    }
+
+    /**
+     * Creates default reuse options for FOSSology scanning.
+     */
+    private static Map<String, Boolean> createDefaultReuseOptions() {
+        Map<String, Boolean> options = new HashMap<>();
+        options.put("reuseUpload", false);
+        options.put("reuseGroup", false);
+        options.put("reuseMain", true);
+        options.put("reuseEnhanced", true);
+        options.put("reuseReport", false);
+        options.put("reuseCopyright", true);
+        return options;
     }
 
     /**
@@ -404,6 +476,20 @@ public class FossologyRestClient {
      * @return the jobId if success, -1 otherwise.
      */
     public int startScanning(int uploadId) {
+        return startScanning(uploadId, null, null, null);
+    }
+
+    /**
+     * Send a post request to /jobs endpoint with custom scan options.
+     * 
+     * @param uploadId the upload to start scan for.
+     * @param analysisOptions Custom analysis agent options, or null for defaults
+     * @param deciderOptions Custom decider agent options, or null for defaults
+     * @param reuseOptions Custom reuse options, or null for defaults
+     * @return the jobId if success, -1 otherwise.
+     */
+    public int startScanning(int uploadId, Map<String, Boolean> analysisOptions,
+                           Map<String, Boolean> deciderOptions, Map<String, Boolean> reuseOptions) {
         if (isNotValidConfig()) {
             return -1;
         }
@@ -418,7 +504,7 @@ public class FossologyRestClient {
         params.put("folderId", folderId);
         params.put("uploadId", String.valueOf(uploadId));
 
-        ObjectNode requestBody = createScanOptions();
+        ObjectNode requestBody = createScanOptions(analysisOptions, deciderOptions, reuseOptions);
         String url = "jobs";
         ResponseEntity<JsonNode> response;
 
@@ -782,6 +868,162 @@ public class FossologyRestClient {
             log.error("Unexpected error while searching for file {}: {}", fileName, e.getMessage());
             return -1;
         }
+    }
+
+    /**
+     * Enhanced file search by multiple SHA1 checksums using v2 API filesearch endpoint
+     * 
+     * @param sha1Values List of SHA1 checksums to search for
+     * @return Map of SHA1 -> List of upload IDs containing that file
+     */
+    public Map<String, List<Integer>> searchFilesBySha1(List<String> sha1Values) {
+        Map<String, List<Integer>> results = new HashMap<>();
+        
+        if (isNotValidConfig() || CommonUtils.isNullOrEmptyCollection(sha1Values)) {
+            return results;
+        }
+
+        String url = "filesearch";
+        List<Map<String, String>> body = sha1Values.stream()
+                .map(sha1 -> Map.of("sha1", sha1))
+                .collect(ArrayList::new, (list, map) -> list.add(map), ArrayList::addAll);
+
+        log.debug("Searching for {} files by SHA1 in FOSSology", sha1Values.size());
+        
+        try {
+            ResponseEntity<JsonNode> response = sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
+            );
+
+            JsonNode responseBody = response.getBody();
+            if (responseBody != null && responseBody.isArray()) {
+                for (JsonNode searchResult : responseBody) {
+                    String sha1 = searchResult.path("sha1").asText();
+                    List<Integer> uploadIds = new ArrayList<>();
+                    
+                    JsonNode uploads = searchResult.path("uploads");
+                    if (uploads.isArray()) {
+                        for (JsonNode upload : uploads) {
+                            uploadIds.add(upload.asInt());
+                        }
+                    }
+                    
+                    results.put(sha1, uploadIds);
+                }
+            }
+        } catch (RestClientException e) {
+            log.error("Error during bulk file search by SHA1: {}", e.getMessage());
+        }
+
+        return results;
+    }
+
+    /**
+     * Search files by filename pattern using v2 API filesearch endpoint
+     * 
+     * @param filename Filename pattern to search for
+     * @param uploadId Optional upload ID to limit search scope
+     * @return JsonNode containing search results
+     */
+    public JsonNode searchFilesByName(String filename, Integer uploadId) {
+        if (isNotValidConfig() || CommonUtils.isNullEmptyOrWhitespace(filename)) {
+            return null;
+        }
+
+        String url = "filesearch";
+        Map<String, Object> searchCriteria = new HashMap<>();
+        searchCriteria.put("filename", filename);
+        
+        if (uploadId != null) {
+            searchCriteria.put("uploadId", uploadId);
+        }
+
+        List<Map<String, Object>> body = List.of(searchCriteria);
+
+        log.debug("Searching for files by filename pattern: {}", filename);
+        
+        try {
+            ResponseEntity<JsonNode> response = sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+        } catch (RestClientException e) {
+            log.error("Error during file search by name '{}': {}", filename, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Search files by content pattern using v2 API filesearch endpoint
+     * 
+     * @param content Content pattern to search for
+     * @param uploadId Optional upload ID to limit search scope
+     * @return JsonNode containing search results
+     */
+    public JsonNode searchFilesByContent(String content, Integer uploadId) {
+        if (isNotValidConfig() || CommonUtils.isNullEmptyOrWhitespace(content)) {
+            return null;
+        }
+
+        String url = "filesearch";
+        Map<String, Object> searchCriteria = new HashMap<>();
+        searchCriteria.put("content", content);
+        
+        if (uploadId != null) {
+            searchCriteria.put("uploadId", uploadId);
+        }
+
+        List<Map<String, Object>> body = List.of(searchCriteria);
+
+        log.debug("Searching for files by content pattern: {}", content);
+        
+        try {
+            ResponseEntity<JsonNode> response = sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+        } catch (RestClientException e) {
+            log.error("Error during file search by content '{}': {}", content, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Get detailed file information from an upload using v2 API
+     * 
+     * @param uploadId Upload ID to get files from
+     * @return JsonNode containing file details
+     */
+    public JsonNode getFilesByUpload(int uploadId) {
+        if (isNotValidConfig() || uploadId <= 0) {
+            return null;
+        }
+
+        String url = "uploads/" + uploadId + "/files";
+
+        log.debug("Getting files from upload: {}", uploadId);
+        
+        try {
+            ResponseEntity<JsonNode> response = sendGetRequest(
+                    url, Map.of(), List.of(MediaType.APPLICATION_JSON), JsonNode.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+        } catch (RestClientException e) {
+            log.error("Error getting files from upload {}: {}", uploadId, e.getMessage());
+        }
+
+        return null;
     }
 
     /**
