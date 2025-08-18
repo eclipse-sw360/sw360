@@ -96,7 +96,7 @@
 
     <!-- Dependencies version properties -->
     <assertj.version>3.27.4</assertj.version>
-    <byte-buddy.version>1.17.6</byte-buddy.version>
+    <byte-buddy.version>1.17.7</byte-buddy.version>
     <cloudantsdk.version>0.10.6</cloudantsdk.version>
     <commons-cli.version>1.9.0</commons-cli.version>
     <commons-codec.version>1.19.0</commons-codec.version>
