@@ -149,7 +149,7 @@ public class CycloneDxBOMImporter {
                         .filter(ref -> ExternalReference.Type.VCS.equals(ref.getType()))
                         .map(ExternalReference::getUrl)
                         .filter(CommonUtils::isNotNullEmptyOrWhitespace)
-                        .map(repositoryURL::processURL)
+                        .map(url->repositoryURL.processURL(url.trim()))
                         .map(url -> new AbstractMap.SimpleEntry<>(url, comp)))
                 .collect(Collectors.groupingBy(
                         AbstractMap.SimpleEntry::getKey,
