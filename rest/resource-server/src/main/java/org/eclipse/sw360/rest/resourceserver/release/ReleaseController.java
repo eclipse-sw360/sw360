@@ -2,7 +2,7 @@
  * Copyright Siemens AG, 2017-2018.
  * Copyright Bosch Software Innovations GmbH, 2017.
  * Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -84,6 +84,8 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.eclipse.sw360.rest.resourceserver.filesearch.Sw360FileSearchService;
+import org.eclipse.sw360.datahandler.common.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -134,6 +136,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private Sw360ReleaseService releaseService;
+
+    @Autowired
+    private Sw360FileSearchService fileSearchService;
 
     @NonNull
     private SW360PackageService packageService;
@@ -963,6 +968,107 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
                         markFossologyProcessOutdated, uploadDescription);
                 responseMap.put("message", "FOSSology Process for Release Id : " + releaseId + " has been triggered.");
+                status = HttpStatus.OK;
+            }
+
+        } else {
+            status = HttpStatus.NOT_ACCEPTABLE;
+            responseMap.put("message", "FOSSology Process for Release Id : " + releaseId
+                    + " is already running. Please wait till it is completed.");
+        }
+        HalResource responseResource = new HalResource(responseMap);
+        Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL).slash(releaseId)
+                .slash("checkFossologyProcessStatus").withSelfRel();
+        responseResource.add(checkStatusLink);
+
+        return new ResponseEntity<HalResource>(responseResource, status);
+    }
+
+    @Operation(
+            summary = "Trigger FOSSology process with custom scan options.",
+            description = "Trigger FOSSology process with configurable analysis agents, decider agents, and reuse options.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    schema = @Schema(type = "object", implementation = Map.class),
+                                    examples = {
+                                            @ExampleObject(
+                                                    value =
+                                                            "{\"message\": \"FOSSology Process with custom options for Release Id : " +
+                                                                    "\\\"123\\\" has been triggered.\"}"
+                                            )
+                                    }
+                            )}
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value = "{\"message\": \"Invalid scan options provided.\"}"
+                                            )
+                                    }
+                            )}
+                    ),
+                    @ApiResponse(
+                            responseCode = "429",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value =
+                                                            "{\"message\": \"Max 10 FOSSology Process can be triggered simultaneously." +
+                                                                    " Please try after sometime.\"}"
+                                            )
+                                    }
+                            )}
+                    ),
+                    @ApiResponse(
+                            responseCode = "406",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value =
+                                                            "{\"message\": \"FOSSology Process for Release Id : " +
+                                                                    "\\\"123\\\" is already running. Please wait till" +
+                                                                    " it is completed.\"}"
+                                            )
+                                    }
+                            )}
+                    )
+            }
+    )
+    @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcessWithOptions", method = RequestMethod.POST)
+    public ResponseEntity<HalResource> triggerFossologyProcessWithOptions(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String releaseId,
+            @Parameter(description = "Mark previous FOSSology process outdated and generate new.")
+            @RequestParam(value = "markFossologyProcessOutdated", required = false) boolean markFossologyProcessOutdated,
+            @Parameter(description = "Upload description to FOSSology")
+            @RequestParam(value = "uploadDescription", required = false) String uploadDescription,
+            @Parameter(description = "Custom scan options for FOSSology agents")
+            @RequestBody ScanOptionsRequest scanOptionsRequest
+    ) throws TException, IOException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
+        releaseService.checkFossologyConnection();
+        
+        // Validate scan options
+        ScanOptionsValidator.validateComprehensive(scanOptionsRequest);
+        
+        ReentrantLock lock = mapOfLocks.get(releaseId);
+        Map<String, String> responseMap = new HashMap<>();
+        HttpStatus status = null;
+        if (lock == null || !lock.isLocked()) {
+            if (mapOfLocks.size() > 10) {
+                responseMap.put("message",
+                        "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
+                status = HttpStatus.TOO_MANY_REQUESTS;
+            } else {
+                releaseService.executeFossologyProcessWithOptions(user, attachmentService, mapOfLocks, releaseId,
+                        markFossologyProcessOutdated, uploadDescription, scanOptionsRequest);
+                responseMap.put("message", "FOSSology Process with custom options for Release Id : " + releaseId + " has been triggered.");
                 status = HttpStatus.OK;
             }
 
@@ -1947,4 +2053,36 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 sw360User);
         return new ResponseEntity<>(requestStatus, HttpStatus.OK);
     }
+
+    @Operation(
+            summary = "Search files in release attachments.",
+            description = "Search for files within release attachments using FOSSology file search capabilities.",
+            tags = {"Releases", "File Search"}
+    )
+    @PostMapping(value = RELEASES_URL + "/{releaseId}/filesearch")
+    @ApiResponse(
+            responseCode = "200", 
+            description = "File search results",
+            content = @Content(mediaType = "application/json")
+    )
+    public ResponseEntity<List<FileSearchResult>> searchFilesInRelease(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("releaseId") String releaseId,
+            @Parameter(description = "List of SHA1 checksums to search for")
+            @RequestBody List<String> sha1Values
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(releaseId, user);
+        
+        Map<String, List<FileSearchResult>> results = fileSearchService.searchFilesBySha1(sha1Values, user);
+        
+        // Return all results
+        List<FileSearchResult> releaseResults = results.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(releaseResults);
+    }
+
+
 }
