@@ -846,6 +846,20 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             // let the whole action fail if nothing can be deleted
             throw new RuntimeException("Could not delete attachments " + attachmentIds + " from release " + releaseId);
         }
+        Set<String> contentIdsToDelete = attachmentsToDelete.stream()
+                .map(Attachment::getAttachmentContentId)
+                .collect(Collectors.toSet());
+        List<Release> allReleases = Optional.ofNullable(releaseService.getAllReleases(user))
+                .orElse(Collections.emptyList());
+        Set<String> inUse = contentIdsToDelete.stream()
+                .filter(contentId -> allReleases.stream()
+                        .anyMatch((Release r) -> r != null
+                                        && !releaseId.equals(r.getId())
+                                        && r.getAttachments() != null
+                                        && r.getAttachments().stream().anyMatch(att -> contentId.equals(att.getAttachmentContentId())))).collect(Collectors.toSet());
+        if (!inUse.isEmpty()) {
+            throw new RuntimeException("Cannot delete attachment " + inUse + " as it is used by other releases.");
+        }
         log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
         release.getAttachments().removeAll(attachmentsToDelete);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(release, user);

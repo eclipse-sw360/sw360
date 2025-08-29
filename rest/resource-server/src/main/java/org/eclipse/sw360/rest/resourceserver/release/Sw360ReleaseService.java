@@ -125,6 +125,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.getAllReleasesForUser(sw360User);
     }
 
+    public List<Release> getAllReleases(User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getAllReleasesForUser(sw360User);
+    }
+
     public Map<PaginationData, List<Release>> searchReleaseByNamePaginated(String name, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable);
