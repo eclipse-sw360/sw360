@@ -93,10 +93,10 @@ jobs:
           chmod +x third-party/thrift/install-thrift.sh
           DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
 
-      - name: Build SW360
+      - name: Build SW360 with Tests and Coverage
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
-          mvn clean install \
+          mvn clean verify \
             --no-transfer-progress \
             -P deploy -Dhelp-docs=true \
             -Dbase.deploy.dir=. \
@@ -108,6 +108,25 @@ jobs:
             -DRunRestForceUpdateTest=false \
             -fae \
             -Dmaven.plugin.validation=VERBOSE
+
+      - name: Generate Coverage Reports
+        run: |
+          mvn jacoco:report-aggregate
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./target/site/jacoco-aggregate/jacoco.xml
+          flags: unittests,integrationtests
+          name: sw360-coverage
+          fail_ci_if_error: false
+
+      - name: Comment Coverage in PR
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: ./target/site/jacoco-aggregate/jacoco.xml
+          minimum-coverage: 70
 
       - name: Run PrivateProjectAccessTest
         run: |
