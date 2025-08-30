@@ -646,15 +646,6 @@
               <exclude>org/xmlsoap/schemas/**</exclude>
               <exclude>org/apache/ws/commons/schema/**</exclude>
             </excludes>
-            <dataFileSets>
-              <dataFileSet>
-                <directory>${project.basedir}</directory>
-                <includes>
-                  <include>**/target/jacoco.exec</include>
-                  <include>**/target/jacoco-it.exec</include>
-                </includes>
-              </dataFileSet>
-            </dataFileSets>
           </configuration>
           <executions>
             <execution>
@@ -674,6 +665,24 @@
                 <goal>report</goal>
               </goals>
               <phase>prepare-package</phase>
+            </execution>
+            <execution>
+              <id>report-aggregate</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>report-aggregate</goal>
+              </goals>
+              <configuration>
+                <dataFileSets>
+                  <dataFileSet>
+                    <directory>${project.basedir}</directory>
+                    <includes>
+                      <include>**/target/jacoco.exec</include>
+                      <include>**/target/jacoco-it.exec</include>
+                    </includes>
+                  </dataFileSet>
+                </dataFileSets>
+              </configuration>
             </execution>
           </executions>
         </plugin>
