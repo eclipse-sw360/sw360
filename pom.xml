@@ -646,11 +646,26 @@
               <exclude>org/xmlsoap/schemas/**</exclude>
               <exclude>org/apache/ws/commons/schema/**</exclude>
             </excludes>
+            <dataFileSets>
+              <dataFileSet>
+                <directory>${project.basedir}</directory>
+                <includes>
+                  <include>**/target/jacoco.exec</include>
+                  <include>**/target/jacoco-it.exec</include>
+                </includes>
+              </dataFileSet>
+            </dataFileSets>
           </configuration>
           <executions>
             <execution>
               <goals>
                 <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>prepare-agent-integration</id>
+              <goals>
+                <goal>prepare-agent-integration</goal>
               </goals>
             </execution>
             <execution>
