@@ -75,12 +75,15 @@ jobs:
           sudo sed -i 's/^couchdb.user\s*=.*/couchdb.user='${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
           sudo sed -i 's/^couchdb.password\s*=.*/couchdb.password='${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
-      - name: Build + test resource-server only
+      - name: Test resource-server only
         run: |
-          mvn -B clean verify \
-            -pl :resource-server -am \
+          mvn -B -pl :resource-server -am clean test \
             -Dbase.deploy.dir=. \
             --no-transfer-progress
+
+      - name: Generate JaCoCo report (resource-server)
+        run: |
+          mvn -B -pl :resource-server jacoco:report --no-transfer-progress
 
       - name: Coverage Summary (markdown + badge)
         uses: irongut/CodeCoverageSummary@v1.3.0
