@@ -41,6 +41,7 @@ import javax.xml.xpath.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -161,7 +162,14 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
         Set<String> files = new HashSet<String>();
         String sourceFiles = findNamedSubelement(node, SOURCE_FILES_ELEMENT_NAME).map(AbstractCLIParser::normalizeEscapedXhtml).orElse(null);
         if (CommonUtils.isNotNullEmptyOrWhitespace(sourceFiles)) {
-            files.addAll(Arrays.asList(sourceFiles.split(" ")));
+            // Parse comma-separated files and join them with newlines, store as single entry
+            String joinedFiles = Arrays.stream(sourceFiles.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.joining("\n"));
+            if (!joinedFiles.isEmpty()) {
+                files.add(joinedFiles);
+            }
         }
         return new LicenseNameWithText()
                 .setLicenseText(findNamedSubelement(node, LICENSE_CONTENT_ELEMENT_NAME)
