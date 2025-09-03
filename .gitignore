@@ -3,6 +3,11 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
+// filepath: n:\Git demo\sw360\.gitignore
+...existing code...
+.vscode/
+...existing code...
+
 # Package Files #
 *.jar
 *.war
