@@ -79,7 +79,8 @@ def update_package_ids_structure():
             "selector": {
                 "type": {"$eq": "project"},
                 "packageIds": {"$exists": True}
-            }
+            },
+            "limit": 99999
         }
         all_projects = list(db.find(query))
         total_projects = len(all_projects)
