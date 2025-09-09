@@ -3,11 +3,6 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-// filepath: n:\Git demo\sw360\.gitignore
-...existing code...
-.vscode/
-...existing code...
-
 # Package Files #
 *.jar
 *.war
@@ -76,4 +71,3 @@ logs
 scripts/docker-config/etc_sw360/couchdb-test.properties
 scripts/docker-config/etc_sw360/couchdb.properties
 **/*.versionsBackup
-output
