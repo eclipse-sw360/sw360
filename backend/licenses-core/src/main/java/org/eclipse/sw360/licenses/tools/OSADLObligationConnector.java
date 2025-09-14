@@ -19,16 +19,27 @@
 
 package org.eclipse.sw360.licenses.tools;
 
-import java.util.*;
-import java.net.*;
-import java.io.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
+import org.eclipse.sw360.common.utils.BackendUtils;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.json.JSONObject;
+import org.springframework.web.client.HttpClientErrorException;
+import reactor.core.publisher.Mono;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+
 import static org.eclipse.sw360.datahandler.common.CommonUtils.TMP_OBLIGATION_ID_PREFIX;
 
 public class OSADLObligationConnector extends ObligationConnector {
@@ -42,60 +53,51 @@ public class OSADLObligationConnector extends ObligationConnector {
         return BASE_URL + licenseId + ".txt";
     }
 
-    @Override
-    protected String getText(String licenseId) {
-        String obligationURL = generateURL(licenseId);
-		try {
-			URL url = new URI(obligationURL).toURL();
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			int responseCode = conn.getResponseCode();
-			if (responseCode != HttpURLConnection.HTTP_OK) {
-				log.error("Could not open OSADL License URL: " + obligationURL);
-				log.error("HTTP Response Code: " + responseCode);
-				return null;
-			}
-			BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			StringBuffer buffer = new StringBuffer();
-			String inputLine;
-			while ((inputLine = in.readLine()) != null) {
-				buffer.append(inputLine);
-				buffer.append(System.lineSeparator());
-			}
-			in.close();
-			return buffer.toString();
-		} catch (IOException | URISyntaxException | IllegalArgumentException e) {
-			log.error("Could not get OSADL License for: " + licenseId);
-			return null;
-		}
-    }
+    public static Mono<Obligation> get(String licenseId, User user) {
+		OSADLObligationConnector osadlConnector = new OSADLObligationConnector();
+        return osadlConnector.getText(licenseId).flatMap(obligationText -> {
+            if (obligationText == null || obligationText.trim().isEmpty()) {
+                return Mono.empty();
+            }
+            Obligation obligation = new Obligation();
+            obligation.setId(TMP_OBLIGATION_ID_PREFIX + UUID.randomUUID());
+            obligation.setText(obligationText);
+            obligation.setTitle(licenseId);
+            obligation.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+            obligation.setObligationType(ObligationType.OBLIGATION);
+            obligation.setDevelopment(false);
+            obligation.setDistribution(false);
+            obligation.addToWhitelist(user.getDepartment());
+            obligation.setExternalIds(Collections.singletonMap(EXTERNAL_ID_OSADL, licenseId));
+            return Mono.just(obligation);
+        }).onErrorResume(HttpClientErrorException.class, e -> {
+            log.error("Got 404 while fetching OSADL data for license: {}", licenseId);
+            return Mono.empty();
+        }).onErrorResume(ResourceClassNotFoundException.class, e -> {
+            log.error("Got 500 while fetching OSADL data for license: {}", licenseId);
+            return Mono.empty();
+        }).doOnError(e -> {
+            log.error("Unhandled exception while fetching OSADL data for license: {}", licenseId, e);
+        });
+	}
 
 	@Override
 	public JSONObject parseText(String obligationText) {
-        String lines = obligationText;
-        String[] arraylines = lines.split("\n");
-		List<String> jsonText = setLinePath(setLineLevel(arraylines));
+        String[] arrayLines = obligationText.split("\n");
+		List<String> jsonText = setLinePath(setLineLevel(arrayLines));
 		return buildTreeObject(jsonText);
 	}
 
-	public static Optional<Obligation> get(String licenseId, User user) {
-		OSADLObligationConnector osadlConnector = new OSADLObligationConnector();
-		String obligationText = osadlConnector.getText(licenseId);
-		if (obligationText == null) {
-			return Optional.empty();
-		}
-
-		Obligation obligation = new Obligation();
-		obligation.setId(TMP_OBLIGATION_ID_PREFIX + UUID.randomUUID().toString());
-		obligation.setText(obligationText);
-		obligation.setTitle(licenseId);
-		obligation.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
-		obligation.setObligationType(ObligationType.OBLIGATION);
-		obligation.setDevelopment(false);
-		obligation.setDistribution(false);
-		obligation.addToWhitelist(user.getDepartment());
-		obligation.setExternalIds(Collections.singletonMap(EXTERNAL_ID_OSADL, licenseId));
-		return Optional.of(obligation);
-	}
+    @Override
+    protected Mono<String> getText(String licenseId) {
+        String obligationURL = generateURL(licenseId);
+		try {
+            return BackendUtils.getUriBody(new URI(obligationURL));
+        } catch (URISyntaxException e) {
+            log.error("Could not get OSADL License for: {}", licenseId);
+            return Mono.empty();
+        }
+    }
 
 	private List<String> setLineLevel(String[] arraylines) {
 		List<String> refinedLines = new ArrayList<>();
@@ -233,13 +235,11 @@ public class OSADLObligationConnector extends ObligationConnector {
 	private List<String> sortArray(List<List<String>> arrList, String type) {
 		List<String> both = new ArrayList<>();
 		for (List<String> arr: arrList) {
-			for (String i : arr) {
-				both.add(i);
-			}
+            both.addAll(arr);
 		}
 
 		if ( type.equals("ASC")) {
-			both.sort((String s1, String s2) -> s1.length() - s2.length());
+			both.sort(Comparator.comparingInt(String::length));
 		} else {
 			both.sort((String s1, String s2) -> s2.length() - s1.length());
 		}
@@ -250,7 +250,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 		text = text.trim();
 		List<List<String>> data = getProperty();
 		List<String> allKeywords = sortArray(data, "1");
-		List<String> obligationProperty = data.get(0);
+		List<String> obligationProperty = data.getFirst();
 		for (int i = 0; i < allKeywords.size(); i++ ) {
 			if (text.startsWith(allKeywords.get(i))) {
 				if (obligationProperty.contains(allKeywords.get(i))) {
@@ -277,7 +277,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 			}
 		}
 		type = type.trim();
-		if (type.length() == 0) {
+		if (type.isEmpty()) {
 			type = words[0];
 		}
 		value = text.substring(type.length());
@@ -294,10 +294,10 @@ public class OSADLObligationConnector extends ObligationConnector {
 				}
 			}
 
-			if (ORpos.get(0) != 1) {
+			if (ORpos.getFirst() != 1) {
 				return text.split(" ")[0];
 			} else {
-				int lastORPos = ORpos.get(0);
+				int lastORPos = ORpos.getFirst();
 				for (int i = 0; i < ORpos.size() - 1; i++) {
 					if (ORpos.get(i + 1) == ORpos.get(i) + 2) {
 						lastORPos = ORpos.get(i + 1);

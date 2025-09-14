@@ -178,6 +178,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(BulkOperationNode.class, Sw360Module.BulkOperationNodeMixin.class);
             setMixInAnnotation(ReleaseMergeSelector.class, Sw360Module.ReleaseMergeSelectorMixin.class);
             setMixInAnnotation(ProjectPackageRelationship.class, Sw360Module.ProjectPackageRelationshipMixin.class);
+            setMixInAnnotation(RequestSummary.class, Sw360Module.RequestSummaryMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -248,7 +249,9 @@ public class JacksonCustomizations {
                     .replaceWithClass(Annotations.class, Sw360Module.AnnotationsMixin.class)
                     .replaceWithClass(RelationshipsBetweenSPDXElements.class, Sw360Module.RelationshipsBetweenSPDXElementsMixin.class)
                     .replaceWithClass(SnippetInformation.class, Sw360Module.SnippetInformationMixin.class)
-                    .replaceWithClass(OtherLicensingInformationDetected.class, Sw360Module.OtherLicensingInformationDetectedMixin.class);
+                    .replaceWithClass(OtherLicensingInformationDetected.class, Sw360Module.OtherLicensingInformationDetectedMixin.class)
+                    .replaceWithClass(ProjectPackageRelationship.class, ProjectPackageRelationshipMixin.class)
+                    .replaceWithClass(RequestSummary.class, RequestSummaryMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -992,6 +995,15 @@ public class JacksonCustomizations {
                 "setCreatedOn"
         })
         public static abstract class ProjectPackageRelationshipMixin extends ProjectPackageRelationship {
+        }
+
+        @JsonIgnoreProperties({
+                "setTotalAffectedElements",
+                "setTotalElements",
+                "setMessage",
+                "setRequestStatus"
+        })
+        public static abstract class RequestSummaryMixin extends RequestSummary {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

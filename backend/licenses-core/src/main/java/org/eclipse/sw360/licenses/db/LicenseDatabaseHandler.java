@@ -2,6 +2,7 @@
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016-2017.
  * Copyright Ritankar Saha <ritankar.saha786@gmail.com>, 2025.
+ *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -49,6 +50,8 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.net.MalformedURLException;
 import java.sql.Timestamp;
@@ -66,6 +69,9 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import com.google.common.collect.Lists;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.spdx.core.InvalidSPDXAnalysisException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * Class for accessing the CouchDB database
@@ -1093,34 +1099,81 @@ public class LicenseDatabaseHandler {
         IMPORT_TIME = currentTime;
         final List<License> sw360Licenses = licenseRepository.getAll();
         final List<Obligation> sw360Obligations = obligRepository.getAll();
-        JSONObject licensesMissing = new JSONObject();
-        JSONObject licensesSuccess = new JSONObject();
+
+        // Create a map for faster lookup of existing obligations by OSADL license ID
+        final Map<String, Obligation> sw360ObligationsMap = new HashMap<>();
+        for (Obligation oblig : sw360Obligations) {
+            if (oblig.getExternalIds() != null && oblig.getExternalIds().containsKey(OSADLObligationConnector.EXTERNAL_ID_OSADL)) {
+                sw360ObligationsMap.put(oblig.getExternalIds().get(OSADLObligationConnector.EXTERNAL_ID_OSADL), oblig);
+            }
+        }
+
+        ConcurrentHashMap<String, String> licensesMissing = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, String> licensesSuccess = new ConcurrentHashMap<>();
         OSADLObligationConnector osadlConnector = new OSADLObligationConnector();
 
-        try {
-            for (License sw360License : sw360Licenses) {
-                String licenseId = sw360License.getId();
-                final Optional<Obligation> obligationOptional = OSADLObligationConnector.get(licenseId, user);
-                if (obligationOptional.isPresent()) {
-                    Obligation oblig = obligationOptional.get();
+        Mono<RequestSummary> overallProcessingFlux = Flux.fromIterable(sw360Licenses).flatMap(sw360License -> {
+            String licenseId = sw360License.getId();
+            return OSADLObligationConnector.get(licenseId, user).flatMap(oblig -> processAndPersistObligationReactive(user, sw360License, osadlConnector, oblig, licenseId, licensesMissing, licensesSuccess, sw360ObligationsMap)).doOnError(e -> {
+                log.error("Unexcepted error", e);
+                licensesMissing.put(licenseId, sw360License.getFullname());
+            });
+        }, 20).then().thenReturn(requestSummary).doOnSuccess(summary -> {
+            requestSummary.setMessage("{\"licensesSuccess\":" + licensesSuccess + ",\"licensesMissing\":" + licensesMissing + "}");
+            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        }).onErrorResume(e -> {
+            String msg = "Failed to import all OSADL license obligations";
+            log.error(msg, e);
+            requestSummary.setMessage(msg);
+            requestSummary.setRequestStatus(RequestStatus.FAILURE);
+            return Mono.just(requestSummary);
+        }).doFinally(signalType -> {
+            IMPORT_STATUS = false;
+            requestSummary.setTotalAffectedElements(licensesSuccess.size());
+            requestSummary.setTotalElements(sw360Licenses.size());
+        });
+
+        return overallProcessingFlux.block();
+    }
+
+    private Mono<Void> processAndPersistObligationReactive(User user, License sw360License, OSADLObligationConnector osadlConnector, Obligation oblig, String licenseId, ConcurrentHashMap<String, String> licensesMissing, ConcurrentHashMap<String, String> licensesSuccess, Map<String, Obligation> sw360ObligationsMap) {
+        return Mono.defer(() -> {
                     JSONObject parsedText = osadlConnector.parseText(oblig.getText());
                     if (parsedText == null) {
-                        log.warn("Failed to parse OSADL text for license: " + licenseId + ". Skipping this license.");
+                        log.warn("Failed to parse OSADL text for license: {}. Skipping this license.", licenseId);
                         licensesMissing.put(licenseId, sw360License.getFullname());
-                        continue;
+                        return Mono.error(new SW360Exception("Failed to parse OSADL text for license: " + licenseId));
                     }
-                    String obligNode = addNodes(parsedText, user);
-                    if (obligNode == null) {
-                        log.warn("Failed to add nodes for license: " + licenseId + ". Skipping this license.");
+            String obligNode = null;
+            try {
+                obligNode = addNodes(parsedText, user);
+            } catch (SW360Exception e) {
+                return Mono.empty();
+            }
+
+            if (obligNode == null) {
+                log.warn("Failed to add nodes for license: {}. Skipping this license.", licenseId);
                         licensesMissing.put(licenseId, sw360License.getFullname());
-                        continue;
+                return Mono.error(new SW360Exception("Failed to add nodes for OSADL text for license: " + licenseId));
                     }
-                    String obligText = buildObligationText(obligNode, 0);
-                    boolean OSADLexists = false;
-                    for (Obligation sw360Obligation : sw360Obligations) {
-                        if (sw360Obligation.getExternalIds() != null && sw360Obligation.getExternalIds().get(OSADLObligationConnector.EXTERNAL_ID_OSADL).equals(licenseId)) {
-                            sw360Obligation.setText(obligText);
-                            sw360Obligation.setNode(obligNode);
+
+            String obligText = null;
+            try {
+                obligText = buildObligationText(obligNode, 0);
+            } catch (SW360Exception e) {
+                return Mono.empty();
+            }
+
+            String finalObligText = obligText;
+            String finalObligNode = obligNode;
+
+            return Mono.fromRunnable(() -> {
+                        // Blocking long-running operations
+                        Obligation sw360Obligation = sw360ObligationsMap.get(licenseId);
+
+                        if (sw360Obligation != null) {
+                            sw360Obligation.setText(finalObligText);
+                            sw360Obligation.setNode(finalObligNode);
                             sw360Obligation.addToWhitelist(user.getDepartment());
                             obligRepository.update(sw360Obligation);
                             if (!sw360License.getObligationDatabaseIds().contains(sw360Obligation.getId())) {
@@ -1129,41 +1182,36 @@ public class LicenseDatabaseHandler {
                                 licenseRepository.update(sw360License);
                             }
                             licensesSuccess.put(licenseId, sw360License.getFullname());
-                            OSADLexists = true;
-                            break;
+                        } else {
+                            if (oblig.isSetId()) {
+                                oblig.unsetId();
+                            }
+                            oblig.setText(finalObligText);
+                            oblig.setNode(finalObligNode);
+                            String obligId = null;
+                            try {
+                                obligId = addObligations(oblig, user);
+                                sw360License.addToObligationDatabaseIds(obligId);
+                                sw360License.setObligations(getObligationsByIds(sw360License.obligationDatabaseIds));
+                                licenseRepository.update(sw360License);
+                            } catch (SW360Exception e) {
+                                log.error("Could not add obligation to DB: {}", oblig.getTitle());
+                                // Wrap exception for Flux
+                                throw new RuntimeException(e);
+                            }
                         }
-                    }
-                    if (!OSADLexists) {
-                        if (oblig.isSetId()) {
-                            oblig.unsetId();
-                        }
-                        oblig.setText(obligText);
-                        oblig.setNode(obligNode);
-                        String obligId = addObligations(oblig, user);
-                        sw360License.addToObligationDatabaseIds(obligId);
-                        sw360License.setObligations(getObligationsByIds(sw360License.obligationDatabaseIds));
-                        licenseRepository.update(sw360License);
-                    }
-                    licensesSuccess.put(licenseId, sw360License.getFullname());
-                } else {
-                    licensesMissing.put(licenseId, sw360License.getFullname());
-                }
+                        licensesSuccess.put(licenseId, sw360License.getFullname());
+                    }).subscribeOn(Schedulers.boundedElastic()) // Offload DB operations
+                    .then(); // Convert to Mono<Void>
+        }).onErrorMap(e -> {
+            if (e instanceof SW360Exception) {
+                return e;
             }
-            requestSummary.setMessage("{\"licensesSuccess\":" + licensesSuccess.toString()
-                                        + ",\"licensesMissing\":" + licensesMissing.toString()+"}");
-            requestSummary.setTotalAffectedElements(licensesSuccess.length());
-            requestSummary.setTotalElements(sw360Licenses.size());
-            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-            IMPORT_STATUS = false;
-        } catch (SW360Exception e) {
-            IMPORT_STATUS = false;
-            String msg = "Failed to import all OSADL license obligations";
-            log.error(msg, e);
-            requestSummary.setMessage(msg);
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-        }
-
-        return requestSummary;
+            if (e instanceof RuntimeException && e.getCause() instanceof SW360Exception) {
+                return e.getCause(); // Unwrap exception
+            }
+            return new SW360Exception("Unexpected error during processing for license " + licenseId);
+        });
     }
 
     public String convertTextToNodes(Obligation obligation, User user) throws SW360Exception {
@@ -1291,7 +1339,7 @@ public class LicenseDatabaseHandler {
             obligationElement.setLangElement(jsonArray.getString(1));
             obligationElement.setAction(jsonArray.getString(2));
             obligationElement.setObject(jsonArray.getString(3));
-            
+
             if (jsonArray.length() > 4 && jsonArray.getString(4).equals(ObligationElementStatus.UNDEFINED.toString())) {
                 obligationElement.setStatus(ObligationElementStatus.UNDEFINED);
             } else {
