@@ -772,7 +772,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         setText(document.createParagraph().createRun(), "Please note the following license conditions and copyright " +
                 "notices applicable to Open Source Software and/or other components (or parts thereof):");
         addNewLines(document, 0);
-        Map<String, Set<String>> sortedAcknowledgement = getAcknowledgement(projectLicenseInfoResults,
+        Map<String, Map<String, Set<String>>> sortedAcknowledgement = getAcknowledgement(projectLicenseInfoResults,
                 excludeReleaseVersion);
         for (LicenseInfoParsingResult parsingResult : projectLicenseInfoResults) {
             addReleaseTitle(document, parsingResult, excludeReleaseVersion);
@@ -799,18 +799,28 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         addPageBreak(document);
     }
 
-    private void addAcknowledgement(XWPFDocument document, Set<String> acknowledgements) {
-        if (CollectionUtils.isNotEmpty(acknowledgements)) {
+    private void addAcknowledgement(XWPFDocument document, Map<String, Set<String>> acknowledgements) {
+        if (acknowledgements!=null && !acknowledgements.isEmpty()) {
             XWPFRun ackRun = document.createParagraph().createRun();
-            addFormattedText(ackRun, "Acknowledgement", FONT_SIZE, true);
-            for (String acknowledgement : acknowledgements) {
-                setText(document.createParagraph().createRun(), nullToEmptyString(acknowledgement));
+            addFormattedText(ackRun, "Acknowledgements:", FONT_SIZE, true);
+            for (Map.Entry<String, Set<String>> entry : acknowledgements.entrySet()) {
+                String licenseName = entry.getKey();
+                Set<String> acknowledgementSet = entry.getValue();
+                if (!acknowledgementSet.isEmpty()) {
+                    // Print license name as heading
+                    XWPFRun licenseRun = document.createParagraph().createRun();
+                    addFormattedText(licenseRun, licenseName + ":", FONT_SIZE, true);
+                    // Print each acknowledgement under the license name
+                    for (String acknowledgement : acknowledgementSet) {
+                        setText(document.createParagraph().createRun(), nullToEmptyString(acknowledgement));
+                    }
+                }
             }
             addNewLines(document, 1);
         }
     }
 
-    private SortedMap<String, Set<String>> getAcknowledgement(
+    private SortedMap<String, Map<String, Set<String>>> getAcknowledgement(
             Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean excludeReleaseVersion) {
 
         Map<Boolean, List<LicenseInfoParsingResult>> partitionedResults = projectLicenseInfoResults.stream()
