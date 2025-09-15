@@ -155,7 +155,7 @@
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2-authorization-server.version>1.5.2</spring-security-oauth2-authorization-server.version>
     <spring-security.version>6.5.3</spring-security.version>
-    <springdoc-openapi-stater-common.version>2.8.11</springdoc-openapi-stater-common.version>
+    <springdoc-openapi-stater-common.version>2.8.13</springdoc-openapi-stater-common.version>
     <springframework.version>6.2.10</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <wiremock.version>3.13.1</wiremock.version>
