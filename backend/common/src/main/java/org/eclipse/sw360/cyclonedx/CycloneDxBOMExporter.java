@@ -83,7 +83,7 @@ public class CycloneDxBOMExporter {
             Project project = projectDatabaseHandler.getProjectById(projectId, user);
             Bom bom = new Bom();
             Set<String> linkedReleaseIds = Sets.newHashSet(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()));
-            Set<String> linkedPackageIds = Sets.newHashSet(CommonUtils.nullToEmptySet(project.getPackageIds()));
+            Set<String> linkedPackageIds = Sets.newHashSet(CommonUtils.getNullToEmptyKeyset(project.getPackageIds()));
 
             if (!SW360Utils.isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, SW360Utils.readConfig(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER))) {
                 log.warn("User does not have permission to export the SBOM: " + user.getEmail());

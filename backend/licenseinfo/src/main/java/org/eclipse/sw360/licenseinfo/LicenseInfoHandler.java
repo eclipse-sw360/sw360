@@ -1062,6 +1062,40 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             })).flatMap(Collection::stream).collect(Collectors.toList());
             filterEmptyLicenses(results);
 
+            // Merge duplicate licenses in licenseInfoResult by combining their sourceFiles
+            for (LicenseInfoParsingResult result : results) {
+                if (result.getLicenseInfo() != null && result.getLicenseInfo().getLicenseNamesWithTexts() != null) {
+                    Set<LicenseNameWithText> originalLicenses = result.getLicenseInfo().getLicenseNamesWithTexts();
+                    Map<String, LicenseNameWithText> mergedLicenses = new LinkedHashMap<>();
+
+                    for (LicenseNameWithText license : originalLicenses) {
+                        String licenseName = license.getLicenseName();
+                        if (mergedLicenses.containsKey(licenseName)) {
+                            // Merge sourceFiles from duplicate license into the first occurrence
+                            LicenseNameWithText existing = mergedLicenses.get(licenseName);
+                            if (existing.getSourceFiles() != null && license.getSourceFiles() != null) {
+                                // Extract the newline-separated strings from both sets
+                                String existingFiles = existing.getSourceFiles().iterator().next();
+                                String newFiles = license.getSourceFiles().iterator().next();
+                                // Combine them with newline separator
+                                String mergedFiles = existingFiles + "\n" + newFiles;
+                                // Create new set with the merged string
+                                Set<String> mergedSet = new HashSet<>();
+                                mergedSet.add(mergedFiles);
+                                existing.setSourceFiles(mergedSet);
+                            } else if (existing.getSourceFiles() == null && license.getSourceFiles() != null) {
+                                existing.setSourceFiles(license.getSourceFiles());
+                            }
+                        } else {
+                            mergedLicenses.put(licenseName, license);
+                        }
+                    }
+
+                    // Update the licenseNamesWithTexts with merged data
+                    result.getLicenseInfo().setLicenseNamesWithTexts(new HashSet<>(mergedLicenses.values()));
+                }
+            }
+
             results = assignReleaseToLicenseInfoParsingResults(results, release);
             results = assignComponentToLicenseInfoParsingResults(results, release, user);
             licenseInfoCacheForEvaluation.put(attachment.getAttachmentContentId(), results.get(0));

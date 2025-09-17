@@ -72,7 +72,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.5.3</version>
+                    <version>${maven-failsafe-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
