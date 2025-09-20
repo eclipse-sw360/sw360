@@ -1,3 +1,10 @@
+# SW360
+
+[![Website](https://img.shields.io/badge/website-SW360-blue)](https://www.eclipse.org/sw360/)
+
+SW360 is a software component catalogue application designed to provide a central hub for managing software components and their metadata.
+
+Visit the [official project homepage](https://eclipse.dev/sw360/) for more information.
 
 <img width="1280" alt="homeImage" src="https://github.com/user-attachments/assets/3c2e6712-97a7-4637-80b5-915cdd3af1e8" />
 <br></br>
