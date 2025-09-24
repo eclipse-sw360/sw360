@@ -10,109 +10,372 @@
 
 package org.eclipse.sw360.keycloak.event.listener.service;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.jboss.logging.Logger;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.cloudant.security.CouchDbSessionAuthenticator;
+import com.ibm.cloud.sdk.core.security.Authenticator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Service class for managing SW360 users in CouchDB for event listeners.
+ * Provides CRUD operations for user management in Keycloak event processing.
+ * 
+ * @author SW360 Team
+ */
 public class Sw360UserService {
-    public static String thriftServerUrl = "http://localhost:8080";
-    private static final Logger logger = Logger.getLogger(Sw360UserService.class);
+    private static final Logger logger = LoggerFactory.getLogger(Sw360UserService.class);
+    private static final String COUCHDB_SERVICE_NAME = "sw360-couchdb";
+    private static final String PROPERTIES_FILE_PATH = "/couchdb.properties";
+    public static final String SYSTEM_CONFIGURATION_PATH = "/etc/sw360";
 
+    // Static configuration variables (set by SPI factory as primary source)
+    public static String couchdbUrl = null;
+    public static String couchdbUsername = null;
+    public static String couchdbPassword = null;
+    public static String couchdbDatabase = null;
+
+    private final DatabaseConnectorCloudant connector;
+    
+    /**
+     * Initializes the SW360 user service with CouchDB connection.
+     * 
+     * @throws RuntimeException if CouchDB connection cannot be established
+     */
+    public Sw360UserService() {
+        try {
+            Properties props = loadProperties();
+            
+            // Priority: SPI config > Environment variables > Properties file > Defaults
+            String url = getConfigValue(couchdbUrl, "COUCHDB_URL", props.getProperty("couchdb.url", "http://localhost:5984"));
+            String username = getConfigValue(couchdbUsername, "COUCHDB_USER", props.getProperty("couchdb.user", ""));
+            String password = getConfigValue(couchdbPassword, "COUCHDB_PASSWORD", props.getProperty("couchdb.password", ""));
+            String database = getConfigValue(couchdbDatabase, null, props.getProperty("couchdb.usersdb", "sw360users"));
+            
+            if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+                throw new RuntimeException("CouchDB username and password are required for authentication");
+            }
+            
+            logger.info("Initializing SW360 user service for event listener with CouchDB connection to: {}", url);
+            Authenticator authenticator = CouchDbSessionAuthenticator.newAuthenticator(username, password);
+            Cloudant client = new Cloudant(COUCHDB_SERVICE_NAME, authenticator);
+            client.setServiceUrl(url);
+            this.connector = new DatabaseConnectorCloudant(client, database);
+            logger.info("SW360 user service initialized successfully for event listener");
+        } catch (Exception e) {
+            logger.error("Failed to initialize CouchDB connection for event listener", e);
+            throw new RuntimeException("Cannot initialize CouchDB connection: " + e.getMessage(), e);
+        }
+    }
+    
+    private String getConfigValue(String spiValue, String envKey, String fallbackValue) {
+        if (spiValue != null && !spiValue.isEmpty()) {
+            return spiValue;
+        }
+        if (envKey != null) {
+            String envValue = System.getenv(envKey);
+            if (envValue != null && !envValue.isEmpty()) {
+                return envValue;
+            }
+        }
+        return fallbackValue;
+    }
+    
+    private Properties loadProperties() {
+        Properties props = new Properties();
+        
+        // Try external file first
+        java.io.File externalFile = new java.io.File(SYSTEM_CONFIGURATION_PATH, "couchdb.properties");
+        if (externalFile.exists()) {
+            try (java.io.FileInputStream input = new java.io.FileInputStream(externalFile)) {
+                props.load(input);
+                logger.debug("Loaded CouchDB properties from external file: {}", externalFile.getAbsolutePath());
+                return props;
+            } catch (IOException e) {
+                logger.warn("Error loading external CouchDB properties file: {}", e.getMessage());
+            }
+        }
+        
+        // Fallback to classpath resource
+        try (InputStream input = getClass().getResourceAsStream(PROPERTIES_FILE_PATH)) {
+            if (input != null) {
+                props.load(input);
+                logger.debug("Loaded CouchDB properties from classpath: {}", PROPERTIES_FILE_PATH);
+            } else {
+                logger.warn("CouchDB properties file not found in classpath: {}", PROPERTIES_FILE_PATH);
+            }
+        } catch (IOException e) {
+            logger.error("Error loading CouchDB properties from classpath: {}", e.getMessage(), e);
+        }
+        return props;
+    }
+
+    /**
+     * Retrieves all users from the SW360 database.
+     * 
+     * @return List of all users, empty list if none found or on error
+     */
     public List<User> getAllUsers() {
         try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getAllUsers();
+            logger.debug("Event listener retrieving all users from SW360 database");
+            List<User> users = connector.getAll(User.class);
+            logger.info("Event listener retrieved {} users from SW360 database", users.size());
+            return users;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            logger.error("Event listener error retrieving all users from SW360 database", e);
+            return Collections.emptyList();
         }
     }
 
+    /**
+     * Retrieves a user by email address.
+     * 
+     * @param email the email address to search for
+     * @return User if found, null otherwise
+     */
     public User getUserByEmail(String email) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmail(email);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserByEmailOrExternalId(String userIdentifier) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUser(String id) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getUser(id);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserByApiToken(String token) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByApiToken(token);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserFromClientId(String clientId) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByOidcClientId(clientId);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User addUser(User user) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            if(user.getUserGroup() == null) {
-                user.setUserGroup(UserGroup.USER);
-            }
-            AddDocumentRequestSummary documentRequestSummary = sw360UserClient.addUser(user);
-            logger.info("Sw360UserService::addUser()::documentSummarry-->" + documentRequestSummary);
-            if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
-                user.setId(documentRequestSummary.getId());
-                return user;
-            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
-                logger.warn("Duplicate User");
-            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-                logger.warn("Invalid Input/Request");
-            }
-        } catch (Exception e) {
-            logger.error("Error Creating the user in sw360 database");
+        if (email == null || email.trim().isEmpty()) {
+            logger.warn("Event listener attempted to get user with null or empty email");
             return null;
         }
-        return null;
+        
+        try {
+            logger.debug("Event listener retrieving user by email: {}", email);
+            User user = connector.get(User.class, email);
+            if (user != null) {
+                logger.debug("Event listener found user for email: {}", email);
+            } else {
+                logger.debug("Event listener found no user for email: {}", email);
+            }
+            return user;
+        } catch (Exception e) {
+            logger.error("Event listener error retrieving user by email: " + email, e);
+            return null;
+        }
     }
 
-    public RequestStatus updateUser(User user) throws Exception {
-        UserService.Iface sw360UserClient = getThriftUserClient();
-        RequestStatus requestStatus = sw360UserClient.updateUser(user);
-        return requestStatus;
+    /**
+     * Retrieves a user by email or external ID.
+     * First attempts to find by email, then searches all users by external ID.
+     * 
+     * @param userIdentifier the email or external ID to search for
+     * @return User if found, null otherwise
+     */
+    public User getUserByEmailOrExternalId(String userIdentifier) {
+        if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
+            logger.warn("Event listener attempted to get user with null or empty identifier");
+            return null;
+        }
+        
+        try {
+            logger.debug("Event listener retrieving user by email or external ID: {}", userIdentifier);
+            
+            // First try by email/ID
+            User user = connector.get(User.class, userIdentifier);
+            if (user != null) {
+                logger.debug("Event listener found user by direct lookup for identifier: {}", userIdentifier);
+                return user;
+            }
+            
+            // If not found, search by external ID
+            logger.debug("Event listener searching by external ID for identifier: {}", userIdentifier);
+            List<User> allUsers = connector.getAll(User.class);
+            Optional<User> foundUser = allUsers.stream()
+                .filter(u -> userIdentifier.equals(u.getExternalid()))
+                .findFirst();
+                
+            if (foundUser.isPresent()) {
+                logger.debug("Event listener found user by external ID: {}", userIdentifier);
+                return foundUser.get();
+            } else {
+                logger.debug("Event listener found no user for identifier: {}", userIdentifier);
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("Event listener error retrieving user by identifier: " + userIdentifier, e);
+            return null;
+        }
     }
 
-    private UserService.Iface getThriftUserClient() throws Exception {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/users/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new UserService.Client(protocol);
+    /**
+     * Retrieves a user by ID.
+     * 
+     * @param id the user ID to search for
+     * @return User if found, null otherwise
+     */
+    public User getUser(String id) {
+        if (id == null || id.trim().isEmpty()) {
+            logger.warn("Event listener attempted to get user with null or empty ID");
+            return null;
+        }
+        
+        try {
+            logger.debug("Event listener retrieving user by ID: {}", id);
+            User user = connector.get(User.class, id);
+            if (user != null) {
+                logger.debug("Event listener found user for ID: {}", id);
+            } else {
+                logger.debug("Event listener found no user for ID: {}", id);
+            }
+            return user;
+        } catch (Exception e) {
+            logger.error("Event listener error retrieving user by ID: " + id, e);
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves a user by API token.
+     * 
+     * @param token the API token to search for
+     * @return User if found, null otherwise
+     */
+    public User getUserByApiToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            logger.warn("Event listener attempted to get user with null or empty API token");
+            return null;
+        }
+        
+        try {
+            logger.debug("Event listener retrieving user by API token");
+            List<User> allUsers = connector.getAll(User.class);
+            Optional<User> foundUser = allUsers.stream()
+                .filter(user -> user.getRestApiTokens() != null && 
+                    user.getRestApiTokens().stream().anyMatch(apiToken -> token.equals(apiToken.getToken())))
+                .findFirst();
+                
+            if (foundUser.isPresent()) {
+                logger.debug("Event listener found user by API token");
+                return foundUser.get();
+            } else {
+                logger.debug("Event listener found no user for API token");
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("Event listener error retrieving user by API token", e);
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves a user by OAuth client ID.
+     * 
+     * @param clientId the OAuth client ID to search for
+     * @return User if found, null otherwise
+     */
+    public User getUserFromClientId(String clientId) {
+        if (clientId == null || clientId.trim().isEmpty()) {
+            logger.warn("Event listener attempted to get user with null or empty client ID");
+            return null;
+        }
+        
+        try {
+            logger.debug("Event listener retrieving user by OAuth client ID: {}", clientId);
+            List<User> allUsers = connector.getAll(User.class);
+            Optional<User> foundUser = allUsers.stream()
+                .filter(user -> user.getOidcClientInfos() != null && 
+                    user.getOidcClientInfos().containsKey(clientId))
+                .findFirst();
+                
+            if (foundUser.isPresent()) {
+                logger.debug("Event listener found user by OAuth client ID: {}", clientId);
+                return foundUser.get();
+            } else {
+                logger.debug("Event listener found no user for OAuth client ID: {}", clientId);
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("Event listener error retrieving user by OAuth client ID: " + clientId, e);
+            return null;
+        }
+    }
+
+    /**
+     * Adds a new user to the SW360 database.
+     * 
+     * @param user the user to add
+     * @return the created user if successful, null otherwise
+     */
+    public User addUser(User user) {
+        if (user == null) {
+            logger.warn("Event listener attempted to add null user");
+            return null;
+        }
+        
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            logger.warn("Event listener attempted to add user without email");
+            return null;
+        }
+        
+        try {
+            logger.info("Event listener adding new user to SW360 database: {}", user.getEmail());
+            
+            // Set default user group if not specified
+            if (user.getUserGroup() == null) {
+                user.setUserGroup(UserGroup.USER);
+                logger.debug("Event listener set default user group to USER for user: {}", user.getEmail());
+            }
+            
+            // Set ID to email if not specified
+            if (user.getId() == null) {
+                user.setId(user.getEmail());
+                logger.debug("Event listener set user ID to email: {}", user.getEmail());
+            }
+            
+            // Check if user already exists
+            User existingUser = connector.get(User.class, user.getId());
+            if (existingUser != null) {
+                logger.warn("Event listener found user already exists with ID: {}", user.getId());
+                return null;
+            }
+            
+            // Create the user
+            connector.update(user);
+            logger.info("Event listener successfully created user in SW360 database: {}", user.getEmail());
+            return user;
+            
+        } catch (Exception e) {
+            logger.error("Event listener error creating user in SW360 database: " + user.getEmail(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Updates an existing user in the SW360 database.
+     * 
+     * @param user the user to update
+     * @return RequestStatus.SUCCESS if successful, RequestStatus.FAILURE otherwise
+     */
+    public RequestStatus updateUser(User user) {
+        if (user == null) {
+            logger.warn("Event listener attempted to update null user");
+            return RequestStatus.FAILURE;
+        }
+        
+        if (user.getId() == null || user.getId().trim().isEmpty()) {
+            logger.warn("Event listener attempted to update user without ID");
+            return RequestStatus.FAILURE;
+        }
+        
+        try {
+            logger.info("Event listener updating user in SW360 database: {}", user.getId());
+            connector.update(user);
+            logger.info("Event listener successfully updated user in SW360 database: {}", user.getId());
+            return RequestStatus.SUCCESS;
+        } catch (Exception e) {
+            logger.error("Event listener error updating user in SW360 database: " + user.getId(), e);
+            return RequestStatus.FAILURE;
+        }
     }
 }
