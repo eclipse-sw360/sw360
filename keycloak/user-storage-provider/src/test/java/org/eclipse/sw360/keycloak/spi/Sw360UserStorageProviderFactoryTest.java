@@ -62,34 +62,28 @@ public class Sw360UserStorageProviderFactoryTest {
     @Mock
     private GroupModel groupModel;
 
+    @Mock
+    private Sw360UserService sw360UserService;
+
     private Sw360UserStorageProviderFactory factory;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        
-        // Set up test configuration via SPI static variables
-        Sw360UserService.couchdbUrl = "http://localhost:5984";
-        Sw360UserService.couchdbUsername = "testuser";
-        Sw360UserService.couchdbPassword = "testpass";
-        Sw360UserService.couchdbDatabase = "sw360users_test";
-        
+        // Only set static config for config logic tests, not for general unit tests
         factory = new Sw360UserStorageProviderFactory();
     }
 
     @Test
     public void testCreate() {
-
         Sw360UserStorageProvider provider = factory.create(session, componentModel);
         assertNotNull(provider);
-
     }
 
     @Test
     public void testGetId() {
         assertEquals("sw360-user-storage-jpa", factory.getId());
     }
-
 
     @Test
     public void testClose() {
@@ -98,14 +92,12 @@ public class Sw360UserStorageProviderFactoryTest {
 
     @Test
     public void testInitWithAllConfigs() {
-        when(config.get("couchdbUrl")).thenReturn("http://localhost:5984");
+        when(config.get("couchdbUrl")).thenReturn("http://localhost:59841");
         when(config.get("couchdbUsername")).thenReturn("admin");
         when(config.get("couchdbPassword")).thenReturn("testpass");
         when(config.get("couchdbDatabase")).thenReturn("sw360db");
-
         factory.init(config);
-        
-        assertEquals("http://localhost:5984", Sw360UserService.couchdbUrl);
+        assertEquals("http://localhost:59841", Sw360UserService.couchdbUrl);
         assertEquals("admin", Sw360UserService.couchdbUsername);
         assertEquals("testpass", Sw360UserService.couchdbPassword);
         assertEquals("sw360db", Sw360UserService.couchdbDatabase);
@@ -118,21 +110,17 @@ public class Sw360UserStorageProviderFactoryTest {
         assertNull(result);
     }
 
-
     @Test
     public void testPopulateUserAttributesWithValidData() throws Exception {
         User user = createTestUser("test@test.com", "test", "test", "FT", "ext1", UserGroup.USER);
-        
         when(realm.getGroupsStream()).thenReturn(Stream.of(groupModel));
         when(groupModel.getName()).thenReturn("USER");
         when(userModel.getGroupsStream()).thenReturn(Stream.empty());
         when(userModel.getEmail()).thenReturn("test@test.com");
-
         java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
                 .getDeclaredMethod("populateUserAttributes", UserModel.class, RealmModel.class, User.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, user, user.getUserGroup());
-
         verify(userModel).setFirstName("test");
         verify(userModel).setLastName("test");
         verify(userModel).setEmail("test@test.com");
@@ -146,48 +134,38 @@ public class Sw360UserStorageProviderFactoryTest {
     public void testPopulateUserAttributesWithNullValues() throws Exception {
         User user = createTestUser("test@test.com", null, null, null, null, null);
         when(userModel.getEmail()).thenReturn("test@test.com");
-        
         java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
                 .getDeclaredMethod("populateUserAttributes", UserModel.class, RealmModel.class, User.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, user, null);
-
         verify(userModel).setFirstName("Not Provided");
         verify(userModel).setLastName("Not Provided");
         verify(userModel).setSingleAttribute("Department", "Unknown");
         verify(userModel).setSingleAttribute("externalId", "N/A");
     }
 
-   @Test
+    @Test
     public void testAssignGroupToUserWithValidGroup() throws Exception {
-        // Arrange
         when(realm.getGroupsStream()).thenReturn(Stream.of(groupModel));
         when(groupModel.getName()).thenReturn("USER");
         when(userModel.getGroupsStream()).thenReturn(Stream.empty());
         when(userModel.getEmail()).thenReturn("test@test.com");
-
-        // Act
         java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
-        // Provide a new stream for each call to getGroupsStream
         when(userModel.getGroupsStream()).thenReturn(Stream.empty());
         when(realm.getGroupsStream()).thenReturn(Stream.of(groupModel));
         method.invoke(factory, userModel, realm, UserGroup.USER);
-
-        // Assert
         verify(userModel, atLeastOnce()).joinGroup(any(GroupModel.class));
     }
 
     @Test
     public void testAssignGroupToUserWithNullGroup() throws Exception {
         when(userModel.getEmail()).thenReturn("test@test.com");
-
         java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, null);
-
         verify(userModel, never()).joinGroup(any());
     }
 
@@ -195,12 +173,10 @@ public class Sw360UserStorageProviderFactoryTest {
     public void testAssignGroupToUserWithNonExistentGroup() throws Exception {
         when(realm.getGroupsStream()).thenReturn(Stream.empty());
         when(userModel.getEmail()).thenReturn("test@test.com");
-
         java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, UserGroup.USER);
-
         verify(userModel, never()).joinGroup(any());
     }
 
@@ -211,12 +187,10 @@ public class Sw360UserStorageProviderFactoryTest {
         when(mockGroup.getName()).thenReturn("USER");
         when(userModel.getGroupsStream()).thenReturn(Stream.of(mockGroup));
         when(userModel.getEmail()).thenReturn("test@test.com");
-
         java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, UserGroup.USER);
-
         verify(userModel, never()).joinGroup(any());
     }
 
@@ -226,12 +200,9 @@ public class Sw360UserStorageProviderFactoryTest {
             Class<?> wrapperClass = Class.forName("org.eclipse.sw360.keycloak.spi.Sw360UserStorageProviderFactory$ExecutorServiceWrapper");
             java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newSingleThreadExecutor();
             Object wrapper = wrapperClass.getDeclaredConstructor(java.util.concurrent.ExecutorService.class).newInstance(executor);
-            
             java.lang.reflect.Method getExecutorMethod = wrapperClass.getDeclaredMethod("getExecutor");
             java.util.concurrent.ExecutorService retrievedExecutor = (java.util.concurrent.ExecutorService) getExecutorMethod.invoke(wrapper);
-            
             assertEquals(executor, retrievedExecutor);
-            
             java.lang.reflect.Method closeMethod = wrapperClass.getDeclaredMethod("close");
             closeMethod.invoke(wrapper);
         } catch (Exception e) {
@@ -244,10 +215,8 @@ public class Sw360UserStorageProviderFactoryTest {
         try {
             Class<?> batchResultClass = Class.forName("org.eclipse.sw360.keycloak.spi.Sw360UserStorageProviderFactory$BatchResult");
             Object batchResult = batchResultClass.getDeclaredConstructor().newInstance();
-            
             java.lang.reflect.Method getSyncResultMethod = batchResultClass.getDeclaredMethod("getSyncResult");
             SynchronizationResult syncResult = (SynchronizationResult) getSyncResultMethod.invoke(batchResult);
-            
             assertNotNull(syncResult);
             assertEquals(0, syncResult.getAdded());
             assertEquals(0, syncResult.getUpdated());
@@ -256,48 +225,37 @@ public class Sw360UserStorageProviderFactoryTest {
             assertNotNull(factory);
         }
     }
-@Test
-public void testSyncWithExternalUsers() {
-    // Arrange
-    User user1 = createTestUser("user1@test.com", "User", "One", "Dept1", "ext1", UserGroup.USER);
-    User user2 = createTestUser("user2@test.com", "User", "Two", "Dept2", "ext2", UserGroup.USER);
 
-    // Create mock service
-    Sw360UserService mockService = mock(Sw360UserService.class);
-    when(mockService.getAllUsers()).thenReturn(java.util.Arrays.asList(user1, user2));
+    @Test
+    public void testSyncWithExternalUsers() {
+        User user1 = createTestUser("user1@test.com", "User", "One", "Dept1", "ext1", UserGroup.USER);
+        User user2 = createTestUser("user2@test.com", "User", "Two", "Dept2", "ext2", UserGroup.USER);
+        Sw360UserService mockService = mock(Sw360UserService.class);
+        when(mockService.getAllUsers()).thenReturn(java.util.Arrays.asList(user1, user2));
+        factory.setSw360UserService(mockService);
+        when(sessionFactory.create()).thenReturn(session);
+        when(session.realms()).thenReturn(realmProvider);
+        when(realmProvider.getRealm(anyString())).thenReturn(realm);
+        when(session.getContext()).thenReturn(context);
+        when(session.getTransactionManager()).thenReturn(transactionManager);
+        when(session.users()).thenReturn(userProvider);
+        when(userProvider.searchForUserStream(eq(realm), anyMap())).thenReturn(Stream.empty());
+        when(userProvider.getUserByUsername(eq(realm), anyString())).thenReturn(null);
+        when(userProvider.addUser(eq(realm), anyString())).thenReturn(userModel);
+        when(realm.getGroupsStream()).thenReturn(Stream.of(groupModel));
+        when(groupModel.getName()).thenReturn("USER");
+        SynchronizationResult expectedResult = new SynchronizationResult();
+        expectedResult.setAdded(2);
+        expectedResult.setFailed(0);
+        // The factory.sync method should return a SynchronizationResult with added=2, failed=0
+        SynchronizationResult result = factory.sync(sessionFactory, "realmId", model);
+        assertNotNull(result);
+        assertEquals(2, result.getAdded());
+        assertEquals(0, result.getFailed());
+        verify(userProvider, times(2)).addUser(eq(realm), anyString());
+        verify(userModel, atLeast(2)).setEmail(anyString());
+    }
 
-    // Inject mock into factory
-    factory.setSw360UserService(mockService);
-
-    // Mock session behavior
-    when(sessionFactory.create()).thenReturn(session);
-    when(session.realms()).thenReturn(realmProvider);
-    when(realmProvider.getRealm(anyString())).thenReturn(realm);
-    when(session.getContext()).thenReturn(context);
-    when(session.getTransactionManager()).thenReturn(transactionManager);
-    when(session.users()).thenReturn(userProvider);
-
-    // Mock user search and creation
-    when(userProvider.searchForUserStream(eq(realm), anyMap())).thenReturn(Stream.empty());
-    when(userProvider.getUserByUsername(eq(realm), anyString())).thenReturn(null);
-    when(userProvider.addUser(eq(realm), anyString())).thenReturn(userModel);
-
-    // Mock realm group behavior for user group assignment
-    when(realm.getGroupsStream()).thenReturn(Stream.of(groupModel));
-    when(groupModel.getName()).thenReturn("USER");
-
-    // Act
-    SynchronizationResult result = factory.sync(sessionFactory, "realmId", model);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(2, result.getAdded()); // Exactly two users should be added
-    assertEquals(0, result.getFailed());
-
-    // Verify interactions
-    verify(userProvider, times(2)).addUser(eq(realm), anyString());
-    verify(userModel, atLeast(2)).setEmail(anyString());
-}
     private User createTestUser(String email, String firstName, String lastName, String department, String externalId, UserGroup userGroup) {
         User user = new User();
         user.setEmail(email);

@@ -91,12 +91,12 @@ public class Sw360UserService {
         }
         return fallbackValue;
     }
-    
+
     private Properties loadProperties() {
         Properties props = new Properties();
-        
+
         // Try external file first
-        java.io.File externalFile = new java.io.File(SYSTEM_CONFIGURATION_PATH, "couchdb.properties");
+        java.io.File externalFile = new java.io.File(SYSTEM_CONFIGURATION_PATH, PROPERTIES_FILE_PATH);
         if (externalFile.exists()) {
             try (java.io.FileInputStream input = new java.io.FileInputStream(externalFile)) {
                 props.load(input);
@@ -106,9 +106,9 @@ public class Sw360UserService {
                 logger.warn("Error loading external CouchDB properties file: {}", e.getMessage());
             }
         }
-        
+
         // Fallback to classpath resource
-        try (InputStream input = getClass().getResourceAsStream(PROPERTIES_FILE_PATH)) {
+        try (InputStream input = getClass().getResourceAsStream("/"+PROPERTIES_FILE_PATH)) {
             if (input != null) {
                 props.load(input);
                 logger.debug("Loaded CouchDB properties from classpath: {}", PROPERTIES_FILE_PATH);

@@ -96,7 +96,7 @@ public class Sw360UserService {
         Properties props = new Properties();
         
         // Try external file first
-        java.io.File externalFile = new java.io.File(SYSTEM_CONFIGURATION_PATH, "couchdb.properties");
+        java.io.File externalFile = new java.io.File(SYSTEM_CONFIGURATION_PATH, PROPERTIES_FILE_PATH);
         if (externalFile.exists()) {
             try (java.io.FileInputStream input = new java.io.FileInputStream(externalFile)) {
                 props.load(input);
@@ -108,7 +108,7 @@ public class Sw360UserService {
         }
         
         // Fallback to classpath resource
-        try (InputStream input = getClass().getResourceAsStream(PROPERTIES_FILE_PATH)) {
+        try (InputStream input = getClass().getResourceAsStream("/"+PROPERTIES_FILE_PATH)) {
             if (input != null) {
                 props.load(input);
                 logger.debug("Loaded CouchDB properties from classpath: {}", PROPERTIES_FILE_PATH);
