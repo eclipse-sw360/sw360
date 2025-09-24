@@ -26,14 +26,13 @@ public class Sw360CustomEventListenerProvider implements EventListenerProvider {
 
     private static final Logger log = Logger.getLogger(Sw360CustomEventListenerProvider.class);
 
-    private final ObjectMapper objectMapper;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     Sw360UserService userService;
     Sw360KeycloakAdminEventService keycloakAdminEventService;
     Sw360KeycloakUserEventService keycloakUserEventService;
 
     public Sw360CustomEventListenerProvider(KeycloakSession keycloakSession) {
-        this.objectMapper = new ObjectMapper();
         this.userService = new Sw360UserService();
         keycloakAdminEventService = new Sw360KeycloakAdminEventService(userService, objectMapper, keycloakSession);
         keycloakUserEventService = new Sw360KeycloakUserEventService(userService, objectMapper, keycloakSession);
