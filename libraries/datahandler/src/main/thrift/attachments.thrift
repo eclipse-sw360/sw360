@@ -1,7 +1,7 @@
 /*
  * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
- *
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -56,6 +56,8 @@ struct Attachment {
     1: required string attachmentContentId,
     5: required string filename,
     6: optional string sha1,
+    7: optional string md5,
+    8: optional string sha256,
 
     10: optional AttachmentType attachmentType,
 
@@ -73,6 +75,7 @@ struct Attachment {
     22: optional string superAttachmentId,
     23: optional string superAttachmentFilename,
     24: optional ProjectAttachmentUsage projectAttachmentUsage, // for view data only, will not be saved in DB
+    25: optional string fossologyUploadId, // FOSSology upload ID for checksum-to-upload mapping
 }
 
 struct ProjectAttachmentUsage {
@@ -322,6 +325,31 @@ service AttachmentService {
      * Returns attachments based on its sha1 value
      */
     list<Attachment> getAttachmentsBySha1s(1: set<string> sha1s);
+
+    /**
+     * Returns attachments based on checksum (sha1, md5, or sha256)
+     */
+    list<Attachment> getAttachmentsByChecksum(1: string checksum, 2: string checksumType);
+
+    /**
+     * Returns attachments based on FOSSology upload ID
+     */
+    list<Attachment> getAttachmentsByFossologyUploadId(1: string fossologyUploadId);
+
+    /**
+     * Returns FOSSology upload ID for a given checksum
+     */
+    string getFossologyUploadIdByChecksum(1: string checksum, 2: string checksumType);
+
+    /**
+     * Returns checksum for a given FOSSology upload ID
+     */
+    map<string, string> getChecksumsByFossologyUploadId(1: string fossologyUploadId);
+
+    /**
+     * Maps checksum to FOSSology upload ID
+     */
+    void mapChecksumToFossologyUploadId(1: string checksum, 2: string checksumType, 3: string fossologyUploadId);
 
     /**
      * Returns the sources/owners (project, component, release) of the attachment by attachmentContentId
