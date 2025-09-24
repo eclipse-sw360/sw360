@@ -41,13 +41,13 @@
         <dependency>
             <groupId>com.ibm.cloud</groupId>
             <artifactId>cloudant-common</artifactId>
-            <version>0.10.4</version>
+            <version>${cloudant-common.version}</version>
         </dependency>
         <!-- IBM Cloud SDK core for authentication and base functionality -->
         <dependency>
             <groupId>com.ibm.cloud</groupId>
             <artifactId>sdk-core</artifactId>
-            <version>9.24.1</version>
+            <version>${ibm-cloud-sdk-core.version}</version>
         </dependency>
         
         <!-- Logging Dependencies -->
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp-urlconnection</artifactId>
-            <version>4.12.0</version>
+            <version>${okhttp-urlconnection.version}</version>
         </dependency>
         
         <!-- Kotlin Runtime Dependencies (Required by OkHttp/OkIO) -->
@@ -85,11 +85,12 @@
             <artifactId>kotlin-stdlib</artifactId>
             <version>1.9.25</version>
         </dependency>
+
         <!-- OkIO for efficient I/O operations -->
         <dependency>
             <groupId>com.squareup.okio</groupId>
             <artifactId>okio-jvm</artifactId>
-            <version>3.9.1</version>
+            <version>${okio-jvm.version}</version>
         </dependency>
     </dependencies>
 

@@ -98,6 +98,10 @@
     <assertj.version>3.27.3</assertj.version>
     <byte-buddy.version>1.17.6</byte-buddy.version>
     <cloudantsdk.version>0.10.4</cloudantsdk.version>
+    <cloudant-common.version>0.10.4</cloudant-common.version>
+    <ibm-cloud-sdk-core.version>9.24.1</ibm-cloud-sdk-core.version>
+    <okhttp-urlconnection.version>4.12.0</okhttp-urlconnection.version>
+    <okio-jvm.version>3.9.1</okio-jvm.version>
     <commons-cli.version>1.9.0</commons-cli.version>
     <commons-codec.version>1.19.0</commons-codec.version>
     <commons-collection4.version>4.5.0</commons-collection4.version>
