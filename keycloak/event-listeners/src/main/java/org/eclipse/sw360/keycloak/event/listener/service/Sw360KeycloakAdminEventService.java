@@ -1,5 +1,5 @@
 /*
-SPDX-FileCopyrightText: © 2024 Siemens AG
+SPDX-FileCopyrightText: © 2024-2026 Siemens AG
 SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.event.listener.service;
@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.keycloak.event.model.Group;
@@ -16,13 +16,15 @@ import org.eclipse.sw360.keycloak.event.model.UserEntity;
 import org.jboss.logging.Logger;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
 
 public class Sw360KeycloakAdminEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakAdminEventService.class);
@@ -54,25 +56,25 @@ public class Sw360KeycloakAdminEventService {
 			throw new RuntimeException("User can not have multiple groups.");
 		}
 		log.info("Email--->: " + userModel.getEmail());
-		if (OperationType.UPDATE.equals(event.getOperationType())) {
-			log.info("Group Details:::(Group Membership Event)" + event.getRepresentation());
-		} else if (OperationType.CREATE.equals(event.getOperationType())) {
-			log.info("Group Details:::(Group Membership Event - CREATE)" + event.getRepresentation());
-			Group userGroupModel = null;
-			try {
-				userGroupModel = objectMapper.readValue(event.getRepresentation(), Group.class);
-				String userGroup = userGroupModel.getName();
-				User userfromSw360DB = userService.getUserByEmail(userModel.getEmail());
-				userfromSw360DB.setUserGroup(ThriftEnumUtils.stringToEnum(userGroup, UserGroup.class));
-				userService.updateUser(userfromSw360DB);
-			} catch (JsonProcessingException e) {
-				log.error("CustomEventListenerSW360::onEvent(_,_)::Json processing error(GROUP)-->" + e);
-			} catch (Exception e) {
-				log.error("Error updating the user while updating the user group", e);
-			}
-		} else if (OperationType.DELETE.equals(event.getOperationType())) {
-			log.info("Group Details:::(Group Membership Event - DELETE)" + event.getRepresentation());
-		}
+        log.infof("Group Details:::(Group Membership Event: %s)", event.getOperationType().toString());
+        Group userGroupModel;
+        try {
+            userGroupModel = objectMapper.readValue(event.getRepresentation(), Group.class);
+            String userGroup = userGroupModel.getName();
+            Optional<User> userFromSw360DB = Optional.ofNullable(userService.getUserByEmail(userModel.getEmail()));
+            userFromSw360DB.ifPresent(user -> {
+                if (OperationType.DELETE.equals(event.getOperationType())) {
+                    user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP); // While deleting, set group to default user group
+                } else {
+                    user.setUserGroup(ThriftEnumUtils.stringToEnum(userGroup, UserGroup.class));
+                }
+                userService.createOrUpdateUser(user);
+            });
+        } catch (JsonProcessingException e) {
+            log.error("CustomEventListenerSW360::onEvent(_,_)::Json processing error(GROUP)-->" + e);
+        } catch (Exception e) {
+            log.error("Error updating the user while updating the user group", e);
+        }
 	}
 
 	private UserModel getUserModelFromSession(String resourcePath) {
@@ -91,8 +93,9 @@ public class Sw360KeycloakAdminEventService {
 		log.debugf("User Details:::(CREATE Event): %s" ,event.getRepresentation());
 		try {
 			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
-			log.debug("Converted Entity::" + convertEntityToUserThriftObj(userEntity));
-			Optional<User> user = Optional.ofNullable(userService.addUser(convertEntityToUserThriftObj(userEntity)));
+            User sw360User = convertEntityToUserThriftObj(userEntity);
+			log.debugf("Converted Entity:: %s", sw360User);
+			Optional<User> user = Optional.ofNullable(userService.createOrUpdateUser(sw360User));
 			user.ifPresentOrElse((u) -> {
 				log.infof("Saved User Couchdb Id:: %s" ,u.getId());
 			}, () -> {
@@ -107,16 +110,16 @@ public class Sw360KeycloakAdminEventService {
 
 	public void updateUserOperation(AdminEvent event) {
 		log.debugf("User Details:::(Update Event): %s" ,event.getRepresentation());
+        if (!event.getResourceType().equals(ResourceType.USER)) {
+            log.debugf("Not designed to process resource of type: %s", event.getResourceType());
+        }
 		try {
 			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
 			User user = convertEntityToUserThriftObj(userEntity);
 			log.debugf("Converted Entity: %s" ,user);
-			Optional<RequestStatus> rs;
+			Optional<User> rs;
 			try {
-				User existingUsrInCouchDB = userService.getUserByEmail(userEntity.getEmail());
-				user.setId(existingUsrInCouchDB.getId());
-				user.setRevision(existingUsrInCouchDB.getRevision());
-				rs = Optional.ofNullable(userService.updateUser(user));
+				rs = Optional.ofNullable(userService.createOrUpdateUser(user));
 				rs.ifPresentOrElse((u) -> {
 					log.debugf("Update Status: %s" ,u);
 				}, () -> {
@@ -138,6 +141,7 @@ public class Sw360KeycloakAdminEventService {
 
 	private User convertEntityToUserThriftObj(UserEntity userEntity) {
 		User user = new User();
+        user.setType(TYPE_USER);
 		user.setEmail(userEntity.getEmail());
 		user.setFullname(userEntity.getFirstName() + " " + userEntity.getLastName());
 		user.setGivenname(userEntity.getFirstName());
@@ -156,28 +160,18 @@ public class Sw360KeycloakAdminEventService {
 				String groupName = usergroup.replaceFirst("/", "");
 				user.setUserGroup(ThriftEnumUtils.stringToEnum(groupName, UserGroup.class));
 			}, () -> {
-				user.setUserGroup(ThriftEnumUtils.stringToEnum("USER", UserGroup.class));
+				user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP);
 			});
 		});
 	}
 
 	private static void setDepartment(UserEntity userEntity, User user) {
-		Map<String, List<String>> userAttributes = userEntity.getAttributes();
-		Optional.ofNullable(userAttributes.get(CUSTOM_ATTR_DEPARTMENT)).ifPresentOrElse((d) -> {
-			String department = d.stream().findFirst().get();
-			user.setDepartment(department);
-		}, () -> {
-			user.setDepartment("Unknown");
-		});
+        List<String> userDepartment = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_DEPARTMENT, List.of("Unknown"));
+        user.setDepartment(userDepartment.getFirst());
 	}
 
 	private static void setExternalId(UserEntity userEntity, User user) {
-		Map<String, List<String>> userAttributes = userEntity.getAttributes();
-		Optional.ofNullable(userAttributes.get(CUSTOM_ATTR_EXTERNAL_ID)).ifPresentOrElse((d) -> {
-			String externalId = d.stream().findFirst().get();
-			user.setExternalid(externalId);
-		}, () -> {
-			user.setExternalid("N/A");
-		});
+        List<String> userExternalId = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_EXTERNAL_ID, List.of("N/A"));
+        user.setExternalid(userExternalId.getFirst());
 	}
 }

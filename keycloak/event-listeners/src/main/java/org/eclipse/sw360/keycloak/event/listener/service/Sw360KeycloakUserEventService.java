@@ -1,5 +1,5 @@
 /*
-SPDX-FileCopyrightText: © 2024 Siemens AG
+SPDX-FileCopyrightText: © 2024-2026 Siemens AG
 SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.event.listener.service;
@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
 
 public class Sw360KeycloakUserEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakUserEventService.class);
@@ -43,13 +45,13 @@ public class Sw360KeycloakUserEventService {
 	public void userRegistrationEvent(Event event) {
 		Map<String, String> details = event.getDetails();
 		User user = fillUserFromEvent(details);
-		userService.addUser(user);
+		userService.createOrUpdateUser(user);
 	}
 
 	private User fillUserFromEvent(Map<String, String> userDetails) {
-		User user = new User();
 		log.debug("Event Details" + userDetails);
-		user = setUserDepartmentFromSession(user);
+		User user = setUserDepartmentFromSession();
+        user.setType(TYPE_USER);
 		user.setEmail(userDetails.get("email"));
 		user.setFullname(userDetails.get("first_name") + " " + userDetails.get("last_name"));
 		user.setExternalid(userDetails.get("username"));
@@ -58,17 +60,17 @@ public class Sw360KeycloakUserEventService {
 		return user;
 	}
 
-	private User setUserDepartmentFromSession(User user) {
-		keycloakSession.getAttributes().entrySet().forEach(x -> {
-			Object up = x.getValue();
-			if (up instanceof DefaultUserProfile usPro) {
-				usPro.getAttributes().toMap().entrySet().forEach(y -> {
-					if (y.getKey().equalsIgnoreCase("department") && !y.getValue().isEmpty()) {
-						user.setDepartment(y.getValue().get(0));
-					}
-				});
-			}
-		});
+	private User setUserDepartmentFromSession() {
+        User user = new User();
+		keycloakSession.getAttributes().forEach((key, up) -> {
+            if (up instanceof DefaultUserProfile usPro) {
+                usPro.getAttributes().toMap().forEach((key1, value) -> {
+                    if (key1.equalsIgnoreCase("department") && !value.isEmpty()) {
+                        user.setDepartment(value.getFirst());
+                    }
+                });
+            }
+        });
 		return user;
 	}
 
@@ -77,11 +79,7 @@ public class Sw360KeycloakUserEventService {
 		RealmModel realmModel = keycloakSession.realms().getRealmByName(REALM);
 		UserModel userModel = getUserFromKeycloakRealm(event, realmModel, userProvider);
 		User user = convertKcUserModelToUser(userModel);
-		boolean isUserExists = checkExistenceOfUserInSw360DB(user);
-		if (!isUserExists) {
-			log.debug("User logging in for the first time. Saving the user in sw360 database" + user.getEmail());
-			userService.addUser(user);
-		}
+        userService.createOrUpdateUser(user);
 	}
 
 	private UserModel getUserFromKeycloakRealm(Event event, RealmModel realmModel, UserProvider userProvider) {
@@ -102,6 +100,7 @@ public class Sw360KeycloakUserEventService {
 
 	private User convertKcUserModelToUser(UserModel userModel) {
 		User user = new User();
+        user.setType(TYPE_USER);
 		user.setEmail(userModel.getEmail());
 		user.setFullname(userModel.getFirstName() + " " + userModel.getLastName());
 		user.setExternalid(userModel.getUsername());
@@ -149,18 +148,7 @@ public class Sw360KeycloakUserEventService {
 		return externalIdSanitized;
 	}
 
-	private boolean checkExistenceOfUserInSw360DB(User user) {
-		User user1 = null;
-		try {
-			user1 = userService.getUserByEmail(user.getEmail());
-		} catch (Exception ex) {
-			log.error("User doesn't exist in the sw360 user db!", ex);
-			return false;
-		}
-		return user1 != null;
-	}
-
-	public boolean isValidEmail(String email) {
+    public boolean isValidEmail(String email) {
 		String regex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(email);

@@ -1,5 +1,5 @@
 /*
-SPDX-FileCopyrightText: © 2024,2025 Siemens AG
+SPDX-FileCopyrightText: © 2024-2026 Siemens AG
 SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.spi;
@@ -49,6 +49,14 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     private static final String DEFAULT_DEPARTMENT = "Unknown";
     private static final String DEFAULT_EXTERNAL_ID = "N/A";
 
+    private Sw360UserService sw360UserService;
+
+    /**
+     * Allows injection of a mock Sw360UserService for testing.
+     */
+    public void setSw360UserService(Sw360UserService sw360UserService) {
+        this.sw360UserService = sw360UserService;
+    }
 
     @Override
     public Sw360UserStorageProvider create(KeycloakSession session, ComponentModel model) {
@@ -73,15 +81,6 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     @Override
     public void init(Config.Scope config) {
         logger.info("Initializing Sw360UserStorageProviderFactory with config: {}", config);
-        // Read thriftServerUrl from Keycloak SPI config (standalone.xml or provider config)
-        String thriftUrl = config.get("thriftServerUrl");
-        if (thriftUrl != null && !thriftUrl.isEmpty()) {
-            logger.info("In SPI {}, setting thrift server URL to: '{}'",
-                    PROVIDER_ID, config.get("thrift"));
-            Sw360UserService.thriftServerUrl = thriftUrl;
-        } else {
-            logger.info("No 'thriftServerUrl' found in config, using default: '{}'", Sw360UserService.thriftServerUrl);
-        }
     }
 
     @Override
@@ -95,7 +94,7 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
      * <p>
      * This method handles user synchronization by performing the following steps:
      * <ul>
-     *     <li>Fetching all users from an external service.</li>
+     *     <li>Fetching all users from repository.</li>
      *     <li>Processing the fetched users in configurable-sized batches.</li>
      *     <li>Using a concurrent thread pool to efficiently process batches simultaneously.</li>
      *     <li>Updating existing Keycloak users or creating new ones as required.</li>
@@ -112,13 +111,14 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
      * @throws IllegalStateException if synchronization consistently fails after the configured maximum retry attempts.
      * @see ImportSynchronization#sync(KeycloakSessionFactory, String, UserStorageProviderModel)
      */
-
     @Override
     public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         logger.info("Starting user synchronization");
 
         SynchronizationResult totalResult = new SynchronizationResult();
-        Sw360UserService sw360UserService = new Sw360UserService();
+        if (sw360UserService == null) {
+            sw360UserService = new Sw360UserService();
+        }
         List<User> externalUsers = sw360UserService.getAllUsers();
         logger.info("Fetched {} users from external service", externalUsers.size());
 
@@ -187,8 +187,9 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
             }
             session.getContext().setRealm(realm);
             emails = session.users().searchForUserStream(realm, Collections.emptyMap())
-                    .map(UserModel::getEmail)
+                    .map(UserModel::getUsername)
                     .filter(Objects::nonNull)
+                    .filter(u -> !u.startsWith("service-account-"))
                     .collect(Collectors.toSet());
             session.getTransactionManager().commit();
         } catch (Exception e) {
@@ -305,11 +306,13 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     private void processExternalUser(KeycloakSession session, RealmModel realm, User externalUser, Set<String> existingUserEmails, SynchronizationResult result) {
         UserModel user = session.users().getUserByUsername(realm, externalUser.getEmail());
         if (existingUserEmails.contains(externalUser.getEmail()) && user != null) {
-            updateUserInKeycloak(user, realm, externalUser, externalUser.getUserGroup());
-            result.increaseUpdated();
+            if (updateUserInKeycloak(user, realm, externalUser, externalUser.getUserGroup())) {
+                result.increaseUpdated();
+            }
         } else {
-            createUserInKeycloak(session, realm, externalUser, externalUser.getUserGroup());
-            result.increaseAdded();
+            if (createUserInKeycloak(session, realm, externalUser, externalUser.getUserGroup())) {
+                result.increaseAdded();
+            }
         }
     }
 
@@ -381,13 +384,14 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
      * @param externalUser          the external user with updated attributes.
      * @param externalUserUserGroup the external user group.
      */
-    private void updateUserInKeycloak(UserModel keycloakUser, RealmModel realm, User externalUser, UserGroup externalUserUserGroup) {
+    private boolean updateUserInKeycloak(UserModel keycloakUser, RealmModel realm, User externalUser, UserGroup externalUserUserGroup) {
         try {
-
             populateUserAttributes(keycloakUser, realm, externalUser, externalUserUserGroup);
             logger.debug("Updated user in Keycloak: {}", keycloakUser.getEmail());
+            return true;
         } catch (Exception e) {
             logger.error("Error updating user in Keycloak", e);
+            return false;
         }
     }
 
@@ -402,15 +406,17 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
      * @param externalUser          the external user to be created.
      * @param externalUserUserGroup the external user group.
      */
-    private void createUserInKeycloak(KeycloakSession session, RealmModel realm, User externalUser, UserGroup externalUserUserGroup) {
+    private boolean createUserInKeycloak(KeycloakSession session, RealmModel realm, User externalUser, UserGroup externalUserUserGroup) {
         try {
             session.getContext().setRealm(realm);
             UserModel newUser = session.users().addUser(realm, externalUser.getEmail());
             newUser.setEnabled(true);
             populateUserAttributes(newUser, realm, externalUser, externalUserUserGroup);
             logger.debug("Created new user  {}", newUser.getEmail());
+            return true;
         } catch (Exception e) {
             logger.error("Error creating user in Keycloak", e);
+            return false;
         }
     }
 
@@ -441,14 +447,17 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
             return;
         }
 
+        // Collect current groups to avoid stream reuse
+        List<GroupModel> currentGroups = user.getGroupsStream().toList();
+
         // Check if the user is already in the target group
-        if (user.getGroupsStream().anyMatch(g -> g.equals(targetGroup))) {
+        if (currentGroups.stream().anyMatch(g -> g.equals(targetGroup))) {
             logger.debug("User {} is already in group {}", user.getEmail(), groupName);
             return;
         }
 
         // Remove user from all other groups
-        user.getGroupsStream().forEach(user::leaveGroup);
+        currentGroups.forEach(user::leaveGroup);
 
         // Add user to the target group
         user.joinGroup(targetGroup);
@@ -507,5 +516,3 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     }
 
 }
-
-
