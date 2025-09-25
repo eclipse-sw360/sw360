@@ -286,7 +286,7 @@ public class SW360Utils {
             LocalDate currLocalDate = LocalDate.parse(currRequestedClearingDate, format);
             LocalDate requestedLocalDate = LocalDate.parse(newRequestedClearingDate, format);
 
-            return requestedLocalDate.isAfter(currLocalDate);
+            return requestedLocalDate.isEqual(currLocalDate) || requestedLocalDate.isAfter(currLocalDate);
         } catch (DateTimeParseException e) {
             return false;
         }
