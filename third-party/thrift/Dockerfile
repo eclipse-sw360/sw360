@@ -13,7 +13,7 @@
 #--------------------------------------------------------------------------------------------------
 # Thrift
 # Ubuntu Noble image
-FROM ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782 AS build
+FROM ubuntu@sha256:985be7c735afdf6f18aaa122c23f87d989c30bba4e9aa24c8278912aac339a8d AS build
 
 ARG BASEDIR="/build"
 ARG DESTDIR="/"
