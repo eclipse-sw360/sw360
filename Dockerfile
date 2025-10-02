@@ -26,8 +26,7 @@ WORKDIR /build
 SHELL ["/bin/bash", "-c"]
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt \
-    apt-get update -qq \
+RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
     gettext-base \
     git \

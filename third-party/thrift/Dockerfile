@@ -20,8 +20,7 @@ ARG DESTDIR="/"
 ARG THRIFT_VERSION="0.20.0"
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt \
-    apt-get -qq update \
+RUN apt-get -qq update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bison \
     build-essential \
