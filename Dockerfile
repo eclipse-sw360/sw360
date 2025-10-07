@@ -16,8 +16,8 @@
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-# 3-eclipse-temurin-21-nobel
-FROM maven@sha256:ba0d8041e7c6d51bb8f82949ee77c1fdc8b01df8a8ff311e2f7c0e516105e139 AS sw360build
+# 3-eclipse-temurin-21-noble
+FROM maven@sha256:9311699b501f3bad9643f5dd58365eadf7377eeacaa449f19851b087f144a019 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
