@@ -57,7 +57,7 @@ If you intend to develop over SW360, few steps are needed as equal you need have
 requirements
 
 * Base build requirements
-  * Java 11
+  * Java 21
   * Maven 3.8.7
   * pre-commit
   * thrift 0.16.0 runtime
