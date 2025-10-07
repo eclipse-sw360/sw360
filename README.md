@@ -64,14 +64,14 @@ If you intend to develop over SW360, few steps are needed as equal you need have
 requirements
 
 * Base build requirements
-  * Java 11
-  * Maven 3.8.7
+  * Java 21
+  * Maven 4.0.0
   * pre-commit
-  * thrift 0.16.0 runtime
+  * thrift 0.20.0 runtime
   * Python environment ( to [pre-commit](https://pre-commit.com/) ) - SW360 use Eclipse formatting rules
   through [Spotless maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven)
 
-If you can't install thrift 0.16 runtime, you will need the following requirements:
+If you can't install thrift 0.20 runtime, you will need the following requirements:
 
 * C++ dev environment
 * cmake
