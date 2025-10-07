@@ -16,8 +16,8 @@
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-# 3-eclipse-temurin-21
-FROM maven@sha256:486d196b0422fee4f8508e032321bf4c8f27f607b138278a3ceb758117e17219 AS sw360build
+# 3-eclipse-temurin-21-nobel
+FROM maven@sha256:ba0d8041e7c6d51bb8f82949ee77c1fdc8b01df8a8ff311e2f7c0e516105e139 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -80,7 +80,7 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 # Runtime image
 
 # 11-jre21-temurin-noble
-FROM tomcat@sha256:a024567d3b7e960f3c11c55b6366d052fd176aeea36dbb90d6537e0c32a4d699 AS sw360
+FROM tomcat@sha256:ba0d8041e7c6d51bb8f82949ee77c1fdc8b01df8a8ff311e2f7c0e516105e139 AS sw360
 
 ARG TOMCAT_DIR=/usr/local/tomcat
 
