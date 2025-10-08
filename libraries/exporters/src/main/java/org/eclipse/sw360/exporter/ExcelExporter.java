@@ -194,4 +194,134 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         return headerCellStyle;
     }
 
+    /**
+     * Export documents to CSV format
+     */
+    public String makeCsvExport(List<T> documents) {
+        StringBuilder sb = new StringBuilder();
+        List<String> headers = helper.getHeaders();
+        sb.append(String.join(",", headers)).append("\n");
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                // Escape quotes and commas
+                List<String> escaped = new java.util.ArrayList<>();
+                for (String value : row) {
+                    if (value == null) value = "";
+                    if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+                        value = '"' + value.replace("\"", "\"\"") + '"';
+                    }
+                    escaped.add(value);
+                }
+                sb.append(String.join(",", escaped)).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Export documents to TSV format
+     */
+    public String makeTsvExport(List<T> documents) {
+        StringBuilder sb = new StringBuilder();
+        List<String> headers = helper.getHeaders();
+        sb.append(String.join("\t", headers)).append("\n");
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                List<String> escaped = new java.util.ArrayList<>();
+                for (String value : row) {
+                    if (value == null) value = "";
+                    if (value.contains("\t") || value.contains("\n")) {
+                        value = '"' + value.replace("\"", "\"\"") + '"';
+                    }
+                    escaped.add(value);
+                }
+                sb.append(String.join("\t", escaped)).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Export documents to XML format
+     */
+    public String makeXmlExport(List<T> documents) {
+        StringBuilder sb = new StringBuilder();
+        List<String> headers = helper.getHeaders();
+        sb.append("<items>\n");
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                sb.append("  <item>\n");
+                for (int j = 0; j < headers.size(); j++) {
+                    String header = headers.get(j);
+                    String value = row.size() > j ? row.get(j) : "";
+                    if (value == null) value = "";
+                    sb.append("    <" + header + ">" + org.apache.commons.text.StringEscapeUtils.escapeXml11(value) + "</" + header + ">\n");
+                }
+                sb.append("  </item>\n");
+            }
+        }
+        sb.append("</items>\n");
+        return sb.toString();
+    }
+
+    /**
+     * Export documents to JSON format
+     */
+    public String makeJsonExport(List<T> documents) {
+        List<String> headers = helper.getHeaders();
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        boolean firstItem = true;
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                if (!firstItem) sb.append(",");
+                sb.append("{\n");
+                for (int j = 0; j < headers.size(); j++) {
+                    String header = headers.get(j);
+                    String value = row.size() > j ? row.get(j) : "";
+                    if (value == null) value = "";
+                    sb.append("  \"").append(header).append("\": ")
+                      .append("\"").append(value.replace("\"", "\\\"")).append("\"");
+                    if (j < headers.size() - 1) sb.append(",");
+                    sb.append("\n");
+                }
+                sb.append("}");
+                firstItem = false;
+            }
+        }
+        sb.append("]\n");
+        return sb.toString();
+    }
+
+    /**
+     * Export documents to YAML format
+     */
+    public String makeYamlExport(List<T> documents) {
+        StringBuilder sb = new StringBuilder();
+        List<String> headers = helper.getHeaders();
+        sb.append("items:\n");
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                sb.append("  -\n");
+                for (int j = 0; j < headers.size(); j++) {
+                    String header = headers.get(j);
+                    String value = row.size() > j ? row.get(j) : "";
+                    if (value == null) value = "";
+                    sb.append("    ").append(header).append(": ")
+                      .append('"').append(value.replace("\"", "\\\"")).append('"').append("\n");
+                }
+            }
+        }
+        return sb.toString();
+    }
 }
