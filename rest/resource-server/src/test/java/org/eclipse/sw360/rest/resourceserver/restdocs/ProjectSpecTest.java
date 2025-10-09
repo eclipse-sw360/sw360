@@ -2473,7 +2473,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                        responseFields(
                                fieldWithPath("Release Count").description("Total count of releases of a project including sub-projects releases"),
-                               fieldWithPath("Approved Count").description("Approved license clearing state releases")
+                               fieldWithPath("Approved Count").description("Approved license clearing state releases"),
+                               fieldWithPath("newClearing").description("Number of new releases for clearing"),
+                               fieldWithPath("underClearing").description("Number of releases under clearing"),
+                               fieldWithPath("sentToClearingTool").description("Number of releases sent to clearing tool"),
+                               fieldWithPath("reportAvailable").description("Number of releases with report available")
                        )));
     }
 
