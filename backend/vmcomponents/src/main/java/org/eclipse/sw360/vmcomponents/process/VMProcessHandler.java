@@ -32,17 +32,17 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertTrue;
 /**
  * Created by stefan.jaeger on 10.03.16.
  *
- * @author stefan.jaeger@evosoft.com
+ * Process coordinator for SVM related background tasks.
  */
 public class VMProcessHandler {
     private static final Logger log = getLogger(VMProcessHandler.class);
 
     private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                                                                    SVMConstants.PROCESSING_CORE_POOL_SIZE,
-                                                                    SVMConstants.PROCESSING_MAX_POOL_SIZE,
-                                                                    SVMConstants.PROCESSING_KEEP_ALIVE_SECONDS,
-                                                                    TimeUnit.SECONDS,
-                                                                    new PriorityBlockingQueue<>());
+            SVMConstants.PROCESSING_CORE_POOL_SIZE,
+            SVMConstants.PROCESSING_MAX_POOL_SIZE,
+            SVMConstants.PROCESSING_KEEP_ALIVE_SECONDS,
+            TimeUnit.SECONDS,
+            new PriorityBlockingQueue<>());
 
     /**
      * it is very important to use ConcurrentHashMap to be threadsafe
@@ -94,8 +94,7 @@ public class VMProcessHandler {
     }
 
     public static <T extends TBase> void getMasterData(Class<T> elementType, Collection<String> elementIds, String url, boolean triggerMatchCpe){
-        if (elementIds != null && elementIds.size()>0){
-            String time = SW360Utils.getCreatedOnTime();
+        if (elementIds != null && !elementIds.isEmpty()){
             for (String elementId : elementIds) {
                 getMasterData(elementType, elementId, url, triggerMatchCpe);
             }
@@ -135,6 +134,29 @@ public class VMProcessHandler {
     public static <T extends TBase> void getElementIds(Class<T> elementType, String url, boolean triggerStoring){
         try {
             queueing(elementType, "", VMProcessType.GET_IDS, url, triggerStoring);
+        } catch (SW360Exception e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Enqueue a GET_IDS task optionally enriched with modified_after parameter for incremental sync.
+     */
+    public static <T extends TBase> void getElementIdsWithModifiedAfter(Class<T> elementType, String url, String modifiedAfter, boolean triggerStoring){
+        try {
+            String urlWithParam = url;
+            boolean delta = false;
+            if (modifiedAfter != null && !modifiedAfter.isEmpty()) {
+                String separator = url.contains("?") ? "&" : "?";
+                urlWithParam = url + separator + "modified_after=" + modifiedAfter;
+                delta = true;
+            }
+            if (delta) {
+                log.info("Delta sync queued for " + elementType.getSimpleName() + " with modified_after=" + modifiedAfter);
+            } else {
+                log.debug("Full sync queued for " + elementType.getSimpleName());
+            }
+            queueing(elementType, "", VMProcessType.GET_IDS, urlWithParam, triggerStoring);
         } catch (SW360Exception e) {
             log.error(e.getMessage(), e);
         }

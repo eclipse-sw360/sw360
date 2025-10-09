@@ -10,7 +10,9 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMProcessReporting;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,6 +50,14 @@ public class VMProcessReportingRepository extends DatabaseRepositoryCloudantClie
         if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
+    }
+
+    public VMProcessReporting getLastSuccessfulProcessByElementType(String elementType) {
+        List<VMProcessReporting> allProcesses = getAll();
+        return allProcesses.stream()
+                .filter(p -> elementType.equals(p.getElementType()) && p.isSetEndDate())
+                .max(Comparator.comparing(VMProcessReporting::getEndDate))
+                .orElse(null);
     }
 
 }
