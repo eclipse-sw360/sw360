@@ -2007,7 +2007,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<?> saveAttachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
-            @Parameter(description = "Map of key-value pairs where each key is associated with a list of strings.",
+            @Parameter(
+                    description = "Map of key-value pairs where keys are one of `selected`, `deselected`, " +
+                            "`selectedConcludedUsages` or `deselectedConcludedUsages`. The values are list of strings " +
+                            "in format `<release_id>_<usage_type>_<attachment_content_id>`. If the usage is of type " +
+                            "`licenseInfo`, you need to prepend `projectPath` with a `-`. Check the " +
+                            "`selectedConcludedUsages` from example data.",
                     schema = @Schema(
                             example = """
                             {
@@ -2018,10 +2023,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                                     "de213309ba0842ac8a7251bf27ea8f36_manuallySet_eec66c3465f64f0292dfc2564215c681", "value2"
                                 ],
                                 "selectedConcludedUsages": [
-                                    "de213309ba0842ac8a7251bf27ea8f36_licenseInfo_eec66c3465f64f0292dfc2564215c681", "value2"
+                                    "<project_id>-de213309ba0842ac8a7251bf27ea8f36_licenseInfo_eec66c3465f64f0292dfc2564215c681",
+                                    "<parent_proj>:<sub_proj>:<sub_sub_proj>-<release_id>_licenseInfo_<attachment_content_id>",
+                                    "value3"
                                 ],
                                 "deselectedConcludedUsages": [
-                                    "ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681", "value2"
+                                    "b43a13409ba08b1ac8a7471bf27eb1f3c-ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681", "value2"
                                 ]
                             }
                             """

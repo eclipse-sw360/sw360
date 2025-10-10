@@ -17,7 +17,7 @@
 # is triggered by buildkit images
 
 # 3-eclipse-temurin-21-noble
-FROM maven@sha256:9311699b501f3bad9643f5dd58365eadf7377eeacaa449f19851b087f144a019 AS sw360build
+FROM maven@sha256:89086b81ff2ec9c65739b1763ffb729b59b48c569fe13e5c81a54e128b6827a7 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -39,7 +39,10 @@ COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
-COPY --from=ghcr.io/eclipse-sw360/thrift:0.20.0 /usr/local/bin/thrift /usr/bin
+COPY --from=ghcr.io/eclipse-sw360/thrift:0.20.0-noble /usr/local/bin/thrift /usr/bin
+
+# Check if thrift is installed
+RUN /usr/bin/thrift --version
 
 WORKDIR /build/sw360
 
