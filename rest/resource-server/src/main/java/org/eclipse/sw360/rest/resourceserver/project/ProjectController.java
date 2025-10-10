@@ -2921,6 +2921,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             JsonObject row = new JsonObject();
             row.addProperty("Release Count", releaseCount);
             row.addProperty("Approved Count", approvedCount);
+            row.addProperty("newClearing",clearingInfo.newRelease);
+            row.addProperty("underClearing",clearingInfo.underClearing);
+            row.addProperty("sentToClearingTool",clearingInfo.sentToClearingTool);
+            row.addProperty("reportAvailable",clearingInfo.reportAvailable);
             response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
