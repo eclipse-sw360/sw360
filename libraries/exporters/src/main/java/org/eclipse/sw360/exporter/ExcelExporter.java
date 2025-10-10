@@ -34,6 +34,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * Created on 06/02/15.
@@ -50,6 +53,29 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
 
     public ExcelExporter(U helper) {
         this.helper = helper;
+    }
+
+    /**
+     * Build a list of maps representing each exported row. Each map uses header -> cellValue.
+     */
+    public List<Map<String, String>> makeRecords(List<T> documents) throws SW360Exception {
+        List<String> headers = helper.getHeaders();
+        List<Map<String, String>> records = new ArrayList<>();
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                Map<String, String> map = new HashMap<>();
+                for (int j = 0; j < headers.size(); j++) {
+                    String header = headers.get(j);
+                    String value = row.size() > j ? row.get(j) : "";
+                    if (value == null) value = "";
+                    map.put(header, value);
+                }
+                records.add(map);
+            }
+        }
+        return records;
     }
 
     public InputStream makeExcelExport(List<T> documents) throws IOException, SW360Exception {
@@ -223,27 +249,27 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
     /**
      * Export documents to TSV format
      */
-    public String makeTsvExport(List<T> documents) {
-        StringBuilder sb = new StringBuilder();
-        List<String> headers = helper.getHeaders();
-        sb.append(String.join("\t", headers)).append("\n");
-        for (T document : documents) {
-            SubTable table = helper.makeRows(document);
-            for (int i = 0; i < table.getnRows(); i++) {
-                List<String> row = table.getRow(i);
-                List<String> escaped = new java.util.ArrayList<>();
-                for (String value : row) {
-                    if (value == null) value = "";
-                    if (value.contains("\t") || value.contains("\n")) {
-                        value = '"' + value.replace("\"", "\"\"") + '"';
-                    }
-                    escaped.add(value);
-                }
-                sb.append(String.join("\t", escaped)).append("\n");
-            }
-        }
-        return sb.toString();
-    }
+    // public String makeTsvExport(List<T> documents) {
+    //     StringBuilder sb = new StringBuilder();
+    //     List<String> headers = helper.getHeaders();
+    //     sb.append(String.join("\t", headers)).append("\n");
+    //     for (T document : documents) {
+    //         SubTable table = helper.makeRows(document);
+    //         for (int i = 0; i < table.getnRows(); i++) {
+    //             List<String> row = table.getRow(i);
+    //             List<String> escaped = new java.util.ArrayList<>();
+    //             for (String value : row) {
+    //                 if (value == null) value = "";
+    //                 if (value.contains("\t") || value.contains("\n")) {
+    //                     value = '"' + value.replace("\"", "\"\"") + '"';
+    //                 }
+    //                 escaped.add(value);
+    //             }
+    //             sb.append(String.join("\t", escaped)).append("\n");
+    //         }
+    //     }
+    //     return sb.toString();
+    // }
 
     /**
      * Export documents to XML format
@@ -304,24 +330,24 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
     /**
      * Export documents to YAML format
      */
-    public String makeYamlExport(List<T> documents) {
-        StringBuilder sb = new StringBuilder();
-        List<String> headers = helper.getHeaders();
-        sb.append("items:\n");
-        for (T document : documents) {
-            SubTable table = helper.makeRows(document);
-            for (int i = 0; i < table.getnRows(); i++) {
-                List<String> row = table.getRow(i);
-                sb.append("  -\n");
-                for (int j = 0; j < headers.size(); j++) {
-                    String header = headers.get(j);
-                    String value = row.size() > j ? row.get(j) : "";
-                    if (value == null) value = "";
-                    sb.append("    ").append(header).append(": ")
-                      .append('"').append(value.replace("\"", "\\\"")).append('"').append("\n");
-                }
-            }
-        }
-        return sb.toString();
-    }
+    // public String makeYamlExport(List<T> documents) {
+    //     StringBuilder sb = new StringBuilder();
+    //     List<String> headers = helper.getHeaders();
+    //     sb.append("items:\n");
+    //     for (T document : documents) {
+    //         SubTable table = helper.makeRows(document);
+    //         for (int i = 0; i < table.getnRows(); i++) {
+    //             List<String> row = table.getRow(i);
+    //             sb.append("  -\n");
+    //             for (int j = 0; j < headers.size(); j++) {
+    //                 String header = headers.get(j);
+    //                 String value = row.size() > j ? row.get(j) : "";
+    //                 if (value == null) value = "";
+    //                 sb.append("    ").append(header).append(": ")
+    //                   .append('"').append(value.replace("\"", "\\\"")).append('"').append("\n");
+    //             }
+    //         }
+    //     }
+    //     return sb.toString();
+    // }
 }

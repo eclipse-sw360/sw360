@@ -2221,6 +2221,66 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 thriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
 
+    /**
+     * Format-aware report export. Supported formats: csv, json, xml. If format is null or unknown, falls back to Excel.
+     */
+    public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId, String format) throws TException {
+        List<Project> projectList = null;
+        try {
+            if (!isNullOrEmpty(projectId)) {
+                projectList = getProjectDetailsBasedOnId(user, projectId);
+            } else {
+                projectList = getAccessibleProjectsSummary(user);
+            }
+            // normalize format
+            String fmt = (format == null) ? "" : format.trim().toLowerCase();
+            if ("csv".equals(fmt)) {
+                // use headers and records to create CSV via CSVExport helper
+                ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+                List<String> headers = exporter.helper.getHeaders();
+                // convert records to Iterable<Iterable<String>>
+                java.util.List<java.util.List<String>> rows = new java.util.ArrayList<>();
+                try {
+                    for (java.util.Map<String, String> rec : exporter.makeRecords(projectList)) {
+                        java.util.List<String> row = new java.util.ArrayList<>();
+                        for (String h : headers) {
+                            row.add(rec.getOrDefault(h, ""));
+                        }
+                        rows.add(row);
+                    }
+                } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+                    throw new SW360Exception(e.getMessage());
+                }
+                return ByteBuffer.wrap(org.apache.commons.io.IOUtils.toByteArray(org.eclipse.sw360.exporter.CSVExport.createCSV(headers, rows)));
+            } else if ("json".equals(fmt)) {
+                ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+                java.util.List<java.util.Map<String, String>> records;
+                try {
+                    records = exporter.makeRecords(projectList);
+                } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+                    throw new SW360Exception(e.getMessage());
+                }
+                return ByteBuffer.wrap(org.apache.commons.io.IOUtils.toByteArray(org.eclipse.sw360.exporter.JsonExport.toJson(records)));
+            } else if ("xml".equals(fmt)) {
+                ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+                java.util.List<java.util.Map<String, String>> records;
+                try {
+                    records = exporter.makeRecords(projectList);
+                } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+                    throw new SW360Exception(e.getMessage());
+                }
+                return ByteBuffer.wrap(org.apache.commons.io.IOUtils.toByteArray(org.eclipse.sw360.exporter.XmlExport.toXml(records, records.getClass())));
+            } else {
+                // fallback to existing Excel export
+                ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+                InputStream stream = exporter.makeExcelExport(projectList);
+                return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+            }
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
     public String getReportInEmail(User user,
 			boolean extendedByReleases, String projectId) throws TException {
         List<Project> projectList = null;
