@@ -1596,7 +1596,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         mappedProjectLinks.forEach(projectLink -> wrapTException(() ->
                 projectLink.getLinkedReleases().stream().filter(ReleaseLink::isSetAttachments).forEach(releaseLink -> {
                     String releaseLinkId = releaseLink.getId();
-                    Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
+                    Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.
+                            getOrDefault(Source.releaseId(releaseLinkId),new HashSet<>());
 
                     if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
                         selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashMap<>());
