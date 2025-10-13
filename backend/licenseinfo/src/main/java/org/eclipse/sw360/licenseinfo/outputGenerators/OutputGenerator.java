@@ -179,18 +179,33 @@ public abstract class OutputGenerator<T> {
     }
 
     @NotNull
-    protected SortedMap<String, Set<String>> getSortedAcknowledgements(Map<String, LicenseInfoParsingResult> sortedLicenseInfos) {
-        Map<String, Set<String>> acknowledgements = Maps.filterValues(Maps.transformValues(sortedLicenseInfos, pr -> Optional
-                .ofNullable(pr.getLicenseInfo())
-                .map(LicenseInfo::getLicenseNamesWithTexts)
-                .filter(Objects::nonNull)
-                .map(s -> s
-                        .stream()
-                        .map(LicenseNameWithText::getAcknowledgements)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toSet()))
-                .orElse(Collections.emptySet())), set -> !set.isEmpty());
-        return sortStringKeyedMap(acknowledgements);
+    protected SortedMap<String, Map<String, Set<String>>> getSortedAcknowledgements(Map<String, LicenseInfoParsingResult> sortedLicenseInfos) {
+        Map<String, Map<String, Set<String>>> acknowledgements = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        for (Map.Entry<String, LicenseInfoParsingResult> entry : sortedLicenseInfos.entrySet()) {
+            String releaseName = entry.getKey();
+            LicenseInfoParsingResult parsingResult = entry.getValue();
+            LicenseInfo licenseInfo = parsingResult.getLicenseInfo();
+
+            if (licenseInfo != null && licenseInfo.getLicenseNamesWithTexts() != null) {
+                Map<String, Set<String>> licenseAckMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+                for (LicenseNameWithText lnt : licenseInfo.getLicenseNamesWithTexts()) {
+                    String licenseName = lnt.getLicenseName();
+                    Set<String> acknowledgementsSet = new HashSet<>();
+                    if(lnt.getAcknowledgements()!=null && !lnt.getAcknowledgements().isEmpty()){
+                        acknowledgementsSet.add(lnt.getAcknowledgements());
+                    }
+                    if (!acknowledgementsSet.isEmpty()) {
+                        licenseAckMap.put(licenseName, new TreeSet<>(acknowledgementsSet));
+                    }
+                }
+                if (!licenseAckMap.isEmpty()) {
+                    acknowledgements.put(releaseName, licenseAckMap);
+                }
+            }
+        }
+
+        return new TreeMap<>(acknowledgements);
     }
 
     @NotNull
@@ -311,7 +326,7 @@ public abstract class OutputGenerator<T> {
         vc.put(LICENSE_INFO_RESULTS_CONTEXT_PROPERTY, sortedLicenseInfos);
 
         // also display acknowledgments
-        SortedMap<String, Set<String>> acknowledgements = getSortedAcknowledgements(sortedLicenseInfos);
+        SortedMap<String, Map<String, Set<String>>> acknowledgements = getSortedAcknowledgements(sortedLicenseInfos);
         vc.put(ACKNOWLEDGEMENTS_CONTEXT_PROPERTY, acknowledgements);
 
         vc.put(EXTERNAL_IDS, externalIds);

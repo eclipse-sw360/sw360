@@ -133,20 +133,24 @@
 
                     #if(${acknowledgements.get($releaseName)})
                         Acknowledgements:<br/>
-                            #set($acks = [])
-                            #set($acks = $acknowledgements.get($releaseName))
+                        #set($licenseAckMap = $acknowledgements.get($releaseName))
     <pre class="acknowledgements">
+#foreach($licenseName in $licenseAckMap.keySet())
+    <strong>$esc.xml($licenseName)</strong><br/>
+    #set($acks = $licenseAckMap.get($licenseName))
 #foreach($ack in ${acks})
-    #set($containsLink = $ack.matches($anchorRegEx))
-    #set($containsScript = $ack.matches($scriptRegEx))
-    #set($ackAsHtml = $esc.xml($ack))
-    #if($containsLink && !$containsScript)
-        #set($ackAsHtml = $ack)
-    #end
-$ackAsHtml
-#end
-    </pre>
-                    #end
+     #set($containsLink = $ack.matches($anchorRegEx))
+     #set($containsScript = $ack.matches($scriptRegEx))
+     #set($ackAsHtml = $esc.xml($ack))
+     #if($containsLink && !$containsScript)
+     #set($ackAsHtml = $ack)
+     #end
+     $ackAsHtml<br/>
+     #end
+     #end
+         </pre>
+                #end
+
 
                     Licenses:<br/>
                     #set($licenses = [])

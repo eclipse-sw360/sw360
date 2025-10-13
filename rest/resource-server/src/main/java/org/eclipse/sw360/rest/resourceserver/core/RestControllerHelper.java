@@ -873,13 +873,14 @@ public class RestControllerHelper<T> {
         embeddedProject.setDescription(project.getDescription());
         embeddedProject.setProjectResponsible(project.getProjectResponsible());
         embeddedProject.setProjectOwner(project.getProjectOwner());
-	embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setProjectType(project.getProjectType());
         embeddedProject.setState(project.getState());
         embeddedProject.setClearingState(project.getClearingState());
         embeddedProject.setVersion(project.getVersion());
         embeddedProject.setVisbility(project.getVisbility());
         embeddedProject.setBusinessUnit(project.getBusinessUnit());
         embeddedProject.setEnableSvm(project.isEnableSvm());
+        embeddedProject.setTag(project.getTag());
         embeddedProject.setType(null);
         embeddedProject.setClearingRequestId(project.getClearingRequestId());
         return embeddedProject;
