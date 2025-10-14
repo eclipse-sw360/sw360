@@ -108,7 +108,6 @@ public class CycloneDxBOMImporter {
     private static final String INVALID_PACKAGE = "invalidPkg";
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
-    private static final String REDIRECTED_VCS = "redirectedVCS";
     public static final String INVALID_VCS_COMPONENT = "invalidVcsComponent";
     private static final Predicate<ExternalReference.Type> typeFilter = Type.VCS::equals;
 
@@ -299,8 +298,6 @@ public class CycloneDxBOMImporter {
                         // all components does not have VCS, so return & show appropriate error in UI
                         messageMap.put(INVALID_COMPONENT, String.join(JOINER, componentsWithoutVcs));
                         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
-                        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRedirectedUrls()));
-                        messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
                         messageMap.put(SW360Constants.MESSAGE,
                                 String.format("VCS information is missing for <b>%s</b> / <b>%s</b> Components!",
                                         componentsCount - vcsCount, componentsCount));
@@ -811,7 +808,6 @@ public class CycloneDxBOMImporter {
         messageMap.put(DUPLICATE_RELEASE, String.join(JOINER, duplicateReleases));
         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
         messageMap.put(INVALID_RELEASE, String.join(JOINER, invalidReleases));
-        messageMap.put(REDIRECTED_VCS, String.join(JOINER, repositoryURL.getRedirectedUrls()));
         messageMap.put(NON_PKG_MANAGED_COMP_WITHOUT_VCS, String.join(JOINER, nonPkgManagedCompWithoutVCS));
         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
         messageMap.put(INVALID_VCS_COMPONENT, String.join(JOINER, invalidVcsComponents));
