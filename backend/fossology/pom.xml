@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
   ~
   ~ This program and the accompanying materials are made
   ~ available under the terms of the Eclipse Public License 2.0
@@ -21,20 +22,36 @@
     <artifactId>backend-fossology</artifactId>
     <packaging>war</packaging>
     <name>backend-fossology</name>
+    <description>SW360 FOSSology Integration with v2 API Support</description>
+
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
     </properties>
-    <build><finalName>fossology</finalName></build>
+
+    <build>
+        <finalName>fossology</finalName>
+    </build>
+
     <dependencies>
+        <!-- Core SW360 Dependencies -->
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>backend-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- SSH Support -->
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
         </dependency>
+
+        <!-- Spring Framework - Use explicit versions to avoid issues -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
@@ -55,6 +72,8 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
+
+        <!-- JSON Processing - Enhanced for v2 API -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

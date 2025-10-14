@@ -13,15 +13,14 @@
 #--------------------------------------------------------------------------------------------------
 # Thrift
 # Ubuntu Noble image
-FROM ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782 AS build
+FROM ubuntu@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 AS build
 
 ARG BASEDIR="/build"
 ARG DESTDIR="/"
 ARG THRIFT_VERSION="0.20.0"
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt \
-    apt-get -qq update \
+RUN apt-get -qq update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bison \
     build-essential \

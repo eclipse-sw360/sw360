@@ -19,6 +19,7 @@ typedef sw360.RequestStatus RequestStatus
 typedef sw360.ConfigContainer ConfigContainer
 typedef users.User User
 typedef components.ExternalToolProcess ExternalToolProcess
+typedef sw360.SW360Exception SW360Exception
 
 
 service FossologyService {
@@ -26,7 +27,7 @@ service FossologyService {
     /**
      * Saves a ConfigContainer with configFor FOSSOLOGY_REST.
      **/
-    RequestStatus setFossologyConfig(1: ConfigContainer newConfig);
+    RequestStatus setFossologyConfig(1: ConfigContainer newConfig) throws (1: SW360Exception exp);
 
     /**
      * Gets the current ConfigContainer for configFor FOSSOLOGY_REST.
@@ -40,7 +41,7 @@ service FossologyService {
 
     /**
      * Invokes the next step of the one Fossology workflow for the given release.
-     * Not only saves the reached state in the release, but also returns the 
+     * Not only saves the reached state in the release, but also returns the
      * ExternalToolProcess.
      **/
     ExternalToolProcess process(1: string releaseId, 2: User user,3: string uploadDescription);

@@ -1,3 +1,10 @@
+# SW360
+
+[![Website](https://img.shields.io/badge/website-SW360-blue)](https://eclipse.dev/sw360/)
+
+SW360 is a software component catalogue application designed to provide a central hub for managing software components and their metadata.
+
+Visit the [official project homepage](https://eclipse.dev/sw360/) for more information.
 
 <img width="1280" alt="homeImage" src="https://github.com/user-attachments/assets/3c2e6712-97a7-4637-80b5-915cdd3af1e8" />
 <br></br>
@@ -57,14 +64,14 @@ If you intend to develop over SW360, few steps are needed as equal you need have
 requirements
 
 * Base build requirements
-  * Java 11
+  * Java 21
   * Maven 3.8.7
   * pre-commit
-  * thrift 0.16.0 runtime
+  * thrift 0.20.0 runtime
   * Python environment ( to [pre-commit](https://pre-commit.com/) ) - SW360 use Eclipse formatting rules
   through [Spotless maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven)
 
-If you can't install thrift 0.16 runtime, you will need the following requirements:
+If you can't install thrift 0.20 runtime, you will need the following requirements:
 
 * C++ dev environment
 * cmake

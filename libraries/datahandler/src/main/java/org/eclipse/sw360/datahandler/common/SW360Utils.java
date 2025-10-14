@@ -286,7 +286,7 @@ public class SW360Utils {
             LocalDate currLocalDate = LocalDate.parse(currRequestedClearingDate, format);
             LocalDate requestedLocalDate = LocalDate.parse(newRequestedClearingDate, format);
 
-            return requestedLocalDate.isAfter(currLocalDate);
+            return requestedLocalDate.isEqual(currLocalDate) || requestedLocalDate.isAfter(currLocalDate);
         } catch (DateTimeParseException e) {
             return false;
         }
@@ -447,7 +447,7 @@ public class SW360Utils {
                         releaseIds.addAll(project.getReleaseIdToUsage().keySet());
                     }
                     if (project.getPackageIdsSize() > 0) {
-                        packageIds.addAll(project.getPackageIds());
+                        packageIds.addAll(project.getPackageIds().keySet());
                     }
                     if (project.getLinkedProjectsSize() > 0) {
                         getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, projectIds, releaseIds, packageIds, client, user);

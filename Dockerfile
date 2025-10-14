@@ -16,8 +16,8 @@
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-# 3-eclipse-temurin-21
-FROM maven@sha256:fb525d54d52bbdce5c5768c5a80580f4bbf6b5679214f35dfd039e580b5172bf AS sw360build
+# 3-eclipse-temurin-21-noble
+FROM maven@sha256:89086b81ff2ec9c65739b1763ffb729b59b48c569fe13e5c81a54e128b6827a7 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -26,8 +26,7 @@ WORKDIR /build
 SHELL ["/bin/bash", "-c"]
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt \
-    apt-get update -qq \
+RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
     gettext-base \
     git \
@@ -40,7 +39,10 @@ COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
-COPY --from=ghcr.io/eclipse-sw360/thrift:0.20.0 /usr/local/bin/thrift /usr/bin
+COPY --from=ghcr.io/eclipse-sw360/thrift:0.20.0-noble /usr/local/bin/thrift /usr/bin
+
+# Check if thrift is installed
+RUN /usr/bin/thrift --version
 
 WORKDIR /build/sw360
 
@@ -81,7 +83,7 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 # Runtime image
 
 # 11-jre21-temurin-noble
-FROM tomcat@sha256:52a7c268ce41e6717ca94a57f1afdf35cd04f6dc515e769d7b0a5424a0e1315a AS sw360
+FROM tomcat@sha256:ba0d8041e7c6d51bb8f82949ee77c1fdc8b01df8a8ff311e2f7c0e516105e139 AS sw360
 
 ARG TOMCAT_DIR=/usr/local/tomcat
 

@@ -62,6 +62,7 @@ public class XhtmlGeneratorTest {
     static String L1 = "L1";
     static String L2 = "L2";
     static String t1 = "first row\nsecond row";
+    static String t2 = "first row\nsecond row 2";
     static String T1 = "T1";
     static String T2 = "T2";
     static String releaseName = "myrelease";
@@ -78,7 +79,7 @@ public class XhtmlGeneratorTest {
         li.setCopyrights(copyrights);
 
         LicenseNameWithText lnt1 = new LicenseNameWithText().setLicenseName(l1).setLicenseText(t1);
-        LicenseNameWithText lnt2 = new LicenseNameWithText().setLicenseName(l2).setLicenseText(t1);
+        LicenseNameWithText lnt2 = new LicenseNameWithText().setLicenseName(l2).setLicenseText(t2);
         Set<LicenseNameWithText> licenseNameWithTexts = new HashSet<>(Arrays.asList(lnt1, lnt2));
 
         li.setLicenseNamesWithTexts(licenseNameWithTexts);

@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -24,10 +25,12 @@ import java.io.InputStream;
  * So we need our own implementation, extending the {@link InputStreamResource}
  * but providing a filename and a default content-length of -1 which triggers
  * the http container to determine the content length.
+ *
+ * Enhanced for v2 API compatibility.
  */
 public class FossologyInputStreamResource extends InputStreamResource {
 
-    private String filename;
+    private final String filename;
 
     public FossologyInputStreamResource(String filename, InputStream inputStream) {
         super(inputStream);
@@ -45,4 +48,19 @@ public class FossologyInputStreamResource extends InputStreamResource {
         return -1;
     }
 
+    @Override
+    public String getDescription() {
+        return "FOSSology input stream resource [" + (filename != null ? filename : "unknown") + "]";
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return (this == other || (other instanceof FossologyInputStreamResource &&
+                ((FossologyInputStreamResource) other).filename.equals(this.filename)));
+    }
+
+    @Override
+    public int hashCode() {
+        return (filename != null ? filename.hashCode() : 0);
+    }
 }
