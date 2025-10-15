@@ -184,11 +184,8 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Event listener retrieving user by email: {}", email);
             User user = getUserByEmailView(email.trim());
-            if (user != null) {
-                logger.debug("Event listener found user for email: {}", email);
-            } else {
+            if (user == null) {
                 logger.debug("Event listener found no user for email: {}", email);
             }
             return user;
@@ -212,11 +209,8 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Event listener retrieving user by ID: {}", id);
             User user = connector.get(User.class, id);
-            if (user != null) {
-                logger.debug("Event listener found user for ID: {}", id);
-            } else {
+            if (user == null) {
                 logger.debug("Event listener found no user for ID: {}", id);
             }
             return user;
@@ -239,7 +233,6 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Event listener retrieving user by API token");
             return getUserByApiTokenView(token);
         } catch (Exception e) {
             logger.error("Event listener error retrieving user by API token", e);
@@ -260,7 +253,6 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Event listener retrieving user by OAuth client ID: {}", clientId);
             return getUserByOidcClientIdView(clientId);
         } catch (Exception e) {
             logger.error("Event listener error retrieving user by OAuth client ID: " + clientId, e);

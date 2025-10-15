@@ -83,7 +83,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
-            <version>1.9.25</version>
+            <version>${kotlin-stdlib.version}</version>
         </dependency>
 
         <!-- OkIO for efficient I/O operations -->

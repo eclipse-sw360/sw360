@@ -178,11 +178,8 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Retrieving user by email: {}", email);
-            User user = connector.get(User.class, email);
-            if (user != null) {
-                logger.debug("User found for email: {}", email);
-            } else {
+            User user = getUserByEmailView(email);
+            if (user == null) {
                 logger.debug("No user found for email: {}", email);
             }
             return user;
@@ -206,25 +203,18 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Retrieving user by email or external ID: {}", userIdentifier);
-
             // First try by email/ID
             User user = getUserByEmailView(userIdentifier);
             if (user != null) {
-                logger.debug("User found by email lookup for identifier: {}", userIdentifier);
                 return user;
             }
 
             // If not found, search by external ID using view
-            logger.debug("User not found by email lookup, searching by external ID view");
             user = getUserByExternalIdView(userIdentifier);
-            if (user != null) {
-                logger.debug("User found by external ID view: {}", userIdentifier);
-                return user;
-            } else {
+            if (user == null) {
                 logger.debug("No user found for identifier: {}", userIdentifier);
-                return null;
             }
+            return user;
         } catch (Exception e) {
             logger.error("Error retrieving user by identifier {}: {}", userIdentifier, e.getMessage(), e);
             return null;
@@ -244,11 +234,8 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Retrieving user by ID: {}", id);
             User user = connector.get(User.class, id);
-            if (user != null) {
-                logger.debug("User found for ID: {}", id);
-            } else {
+            if (user == null) {
                 logger.debug("No user found for ID: {}", id);
             }
             return user;
@@ -271,7 +258,6 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Retrieving user by API token");
             return getUserByApiTokenView(token);
         } catch (Exception e) {
             logger.error("Error retrieving user by API token: {}", e.getMessage(), e);
@@ -292,7 +278,6 @@ public class Sw360UserService {
         }
         
         try {
-            logger.debug("Retrieving user by OAuth client ID: {}", clientId);
             return getUserByOidcClientIdView(clientId);
         } catch (Exception e) {
             logger.error("Error retrieving user by OAuth client ID {}: {}", clientId, e.getMessage(), e);
