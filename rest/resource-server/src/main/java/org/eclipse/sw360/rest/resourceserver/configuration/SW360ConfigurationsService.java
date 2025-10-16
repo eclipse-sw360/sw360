@@ -67,8 +67,14 @@ public class SW360ConfigurationsService {
     }
 
     public Map<String, String> getConfigForContainer(ConfigFor configFor) throws TException {
-        SW360ConfigsService.Iface configsService = getThriftConfigsClient();
-        return configsService.getConfigForContainer(configFor);
+        Map<String, String> combinedConfig = getSW360ConfigFromDb(configFor);
+        combinedConfig.putAll(getSW360ConfigFromProperties());
+        return combinedConfig;
+    }
+
+    public Map<String, String> getSW360ConfigFromDb(ConfigFor configFor) throws TException {
+        SW360ConfigsService.Iface configService = getThriftConfigsClient();
+        return configService.getConfigForContainer(configFor);
     }
 
     public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfig, User user) throws TException, InvalidPropertiesFormatException {

@@ -189,9 +189,18 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                             allowableValues = {"SW360_CONFIGURATION", "UI_CONFIGURATION"}
                     )
             )
-            @PathVariable(name = "configFor") ConfigFor configFor
+            @PathVariable(name = "configFor") ConfigFor configFor,
+            @RequestParam(required = false, name = "changeable") Boolean changeable
     ) throws TException {
-        return ResponseEntity.ok(sw360ConfigurationsService.getConfigForContainer(configFor));
+        if (changeable == null) {
+            return ResponseEntity.ok(sw360ConfigurationsService.getConfigForContainer(configFor));
+        }
+
+        if (changeable) {
+            return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromDb(configFor));
+        }
+
+        return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromProperties());
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -268,6 +277,11 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
     private void updateConfigInService(
             ConfigFor configFor, Map<String, String> configuration, User sw360User
     ) throws TException {
+        // Don't update readonly keys silently
+        Map<String, String> readonlyConfigs = sw360ConfigurationsService.getSW360ConfigFromProperties();
+        for (String key : readonlyConfigs.keySet()) {
+            configuration.remove(key);
+        }
         try {
             RequestStatus updateStatus;
             if (configFor == null) {
