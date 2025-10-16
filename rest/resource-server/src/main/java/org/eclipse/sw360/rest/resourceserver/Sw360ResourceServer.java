@@ -86,6 +86,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     private static final String APPLICATION_ID = "rest";
 
     public static final String API_TOKEN_HASH_SALT;
+    public static final Boolean API_WRITE_TOKEN_GENERATOR_ENABLED;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
@@ -105,6 +106,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     static {
         Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
+        API_WRITE_TOKEN_GENERATOR_ENABLED = Boolean.parseBoolean(props.getProperty("rest.apitoken.write.generator.enable", "true"));
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
