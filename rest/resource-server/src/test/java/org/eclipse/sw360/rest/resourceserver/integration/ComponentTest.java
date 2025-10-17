@@ -308,7 +308,7 @@ public class ComponentTest extends TestIntegrationBase {
                         HttpMethod.PATCH,
                         new HttpEntity<>(body, headers),
                         String.class);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     @Test
