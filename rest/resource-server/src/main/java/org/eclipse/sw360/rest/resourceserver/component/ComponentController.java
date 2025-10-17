@@ -80,6 +80,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -392,29 +393,73 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     public ResponseEntity<EntityModel<Component>> patchComponent(
             @Parameter(description = "The id of the component to be updated.")
             @PathVariable("id") String id,
-            @Parameter(description = "The component with updated fields.")
-            @RequestBody ComponentDTO updateComponentDto,
-            @Parameter(description = "Comment message.")
-            @RequestParam(value = "comment", required = false) String comment
+            @Parameter(description = "Updated component fields. Add 'comment' field in body for moderation request.")
+            @RequestBody ComponentDTO updateComponentDto
     ) throws TException {
+        if (isNullOrEmpty(id)) {
+            throw new BadRequestClientException("Component ID cannot be null or empty");
+        }
+        
+        if (updateComponentDto == null) {
+            throw new BadRequestClientException("Component data cannot be null");
+        }
+        
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
+        
+        String comment = extractModerationComment(updateComponentDto);
+        validateModerationRequest(sw360Component, user, comment);
+        
         user.setCommentMadeDuringModerationRequest(comment);
-        if (!restControllerHelper.isWriteActionAllowed(sw360Component, user)
-                && (comment == null || comment.isBlank())) {
-            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
-        }
-        if (updateComponentDto.getAttachments() != null) {
-            updateComponentDto.getAttachments().forEach(attachment -> wrapSW360Exception(
-                    () -> this.attachmentService.fillCheckedAttachmentData(attachment, user)));
-        }
-        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
+        
+        processAttachments(updateComponentDto, user);
+        
+        sw360Component = restControllerHelper.updateComponent(sw360Component, updateComponentDto);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
-        HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        
+        handleUpdateStatus(updateComponentStatus);
+        
+        HalResource<Component> halResource = createHalComponent(sw360Component, user);
+        return new ResponseEntity<>(halResource, HttpStatus.OK);
+    }
+    
+    private String extractModerationComment(ComponentDTO updateComponentDto) {
+        try {
+            String comment = updateComponentDto.getComment();
+            return (comment != null && !comment.isBlank()) ? comment.trim() : null;
+        } catch (Exception e) {
+            log.debug("Comment field not available in ComponentDTO", e);
+            return null;
         }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+    
+    private void validateModerationRequest(Component component, User user, String comment) {
+        if (!restControllerHelper.isWriteActionAllowed(component, user) && 
+            (comment == null || comment.isBlank())) {
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.get("message"));
+        }
+    }
+    
+    private void processAttachments(ComponentDTO updateComponentDto, User user) {
+        if (updateComponentDto.getAttachments() != null && !updateComponentDto.getAttachments().isEmpty()) {
+            updateComponentDto.getAttachments().forEach(attachment -> 
+                wrapSW360Exception(() -> attachmentService.fillCheckedAttachmentData(attachment, user))
+            );
+        }
+    }
+    
+    private void handleUpdateStatus(RequestStatus status) {
+        switch (status) {
+            case SENT_TO_MODERATOR:
+                throw new ResponseStatusException(HttpStatus.ACCEPTED, RESPONSE_BODY_FOR_MODERATION_REQUEST.get("message"));
+            case SUCCESS:
+                return;
+            case ACCESS_DENIED:
+                throw new AccessDeniedException("Access denied for component update");
+            case FAILURE:
+            default:
+                throw new RuntimeException("Component update failed with status: " + status);
+        }
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
