@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -426,9 +427,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @RequestMapping(value = COMPONENTS_URL + "/{ids}", method = RequestMethod.DELETE)
     public ResponseEntity<List<MultiStatus>> deleteComponents(
             @Parameter(description = "The ids of the components to be deleted.")
-            @PathVariable("ids") List<String> idsToDelete
+            @PathVariable("ids") List<String> idsToDelete,
+            @Parameter(description = "Comment message")
+            @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (StringUtils.isNotEmpty(comment)) {
+            user.setCommentMadeDuringModerationRequest(comment);
+        }
         List<MultiStatus> results = new ArrayList<>();
         for(String id:idsToDelete) {
             RequestStatus requestStatus = componentService.deleteComponent(id, user);
