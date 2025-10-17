@@ -220,7 +220,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             "function(doc) {" +
                     "  if (doc.type == 'project' && doc.packageIds) {" +
                     "    for(var i in doc.packageIds) {" +
-                    "      emit(doc.packageIds[i], doc._id);" +
+                    "      emit(i, doc._id);" +
                     "    }" +
                     "  }" +
                     "}";
