@@ -652,6 +652,7 @@ public class JacksonCustomizations {
                 "licenseIdsSize",
                 "licenseIdsIterator",
                 "createdBy",
+                "comment",
                 "setId",
                 "setRevision",
                 "setType",
@@ -672,6 +673,7 @@ public class JacksonCustomizations {
                 "setVcs",
                 "setPackageManager",
                 "setRelease",
+                "setComment",
                 "createdByIsSet",
                 "createdOnIsSet",
                 "versionIsSet",
@@ -693,6 +695,7 @@ public class JacksonCustomizations {
                 "homepageUrlIsSet",
                 "hashIsSet",
                 "packageManagerIsSet",
+                "commentIsSet",
                 "typeIsSet"
         })
         static abstract class PackageMixin extends Package {
