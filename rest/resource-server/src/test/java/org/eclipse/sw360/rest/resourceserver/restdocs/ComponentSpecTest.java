@@ -331,6 +331,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 )
         );
         given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.updateComponent(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.componentServiceMock.searchByExternalIds(eq(externalIds), any())).willReturn((new HashSet<>(componentList)));
         given(this.componentServiceMock.convertToEmbeddedWithExternalIds(eq(angularComponent))).willReturn(
                 new Component("Angular")
