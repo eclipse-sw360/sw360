@@ -52,6 +52,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.NotNull;
@@ -86,6 +87,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final SW360PackageService packageService;
+
+    @NonNull
+    private final Sw360ProjectService projectService;
 
     @NonNull
     private Sw360ReleaseService releaseService;
@@ -420,5 +424,42 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             filterMap.put(Package._Fields.CREATED_ON.getFieldName(), CommonUtils.splitToSet(createdOn));
         }
         return filterMap;
+    }
+
+    @Operation(
+            summary = "Check if a package is being used and get the count.",
+            description = "Returns whether the package is being used and the total count of usages.",
+            tags = {"Packages"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Package usage information",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                            {
+                                                              isUsed: true,
+                                                              count: 5
+                                                            }
+                                                            """
+                                            )
+                                    )
+                            }
+                    )
+            }
+    )
+
+    @RequestMapping(value = PACKAGES_URL + "/{id}/usage", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> getPackageUsageInfo(
+            @Parameter(description = "The id of the package to check usage for")
+            @PathVariable("id") String id
+    ) throws TException {
+
+        Map<String, Object> response = new HashMap<>();
+        int usageCount = projectService.getProjectCountByPackageId(id);
+        response.put("isUsed", usageCount > 0);
+        response.put("count", usageCount);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
