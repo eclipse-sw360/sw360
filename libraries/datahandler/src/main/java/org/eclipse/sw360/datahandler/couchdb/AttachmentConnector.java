@@ -81,7 +81,7 @@ public class AttachmentConnector extends AttachmentStreamConnector {
         deleteAttachmentsByIds(attachmentContentIds);
     }
 
-    private void deleteAttachmentsByIds(Collection<String> attachmentContentIds) {
+    public void deleteAttachmentsByIds(Collection<String> attachmentContentIds) {
         connector.deleteIds(attachmentContentIds);
     }
 

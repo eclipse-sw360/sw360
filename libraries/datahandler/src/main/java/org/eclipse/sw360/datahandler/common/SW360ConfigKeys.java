@@ -109,8 +109,6 @@ public class SW360ConfigKeys {
     public static final String UI_PROJECT_TYPE = "ui.project.type";
     // This property is used to create Release External Keys
     public static final String UI_RELEASE_EXTERNALKEYS = "ui.release.externalkeys";
-    // This property is used to enable or disable API Token Generation feature in UI
-    public static final String UI_REST_APITOKEN_GENERATOR_ENABLE = "ui.rest.apitoken.generator.enable";
     // This property is used to create Release Software Platforms
     public static final String UI_SOFTWARE_PLATFORMS = "ui.software.platforms";
     // This property is used to create State of Projects

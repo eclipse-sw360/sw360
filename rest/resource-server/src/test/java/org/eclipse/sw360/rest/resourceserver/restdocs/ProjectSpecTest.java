@@ -2478,6 +2478,24 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_license_clearing_details_count() throws Exception {
+        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/clearingDetailsCount")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON)
+                        .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("newClearing").description("Number of new releases for clearing"),
+                                fieldWithPath("underClearing").description("Number of releases under clearing"),
+                                fieldWithPath("sentToClearingTool").description("Number of releases sent to clearing tool"),
+                                fieldWithPath("reportAvailable").description("Number of releases with report available"),
+                                fieldWithPath("approved").description("Number of approved license clearing state"),
+                                fieldWithPath("totalReleases").description("Total count of releases of a project including sub-projects releases")
+                        )));
+    }
+
+    @Test
     public void should_document_create_summary_administration() throws Exception {
         mockMvc.perform(get("/api/projects/" + project.getId()+ "/summaryAdministration")
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))

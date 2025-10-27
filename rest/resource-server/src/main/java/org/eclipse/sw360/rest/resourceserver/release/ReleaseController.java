@@ -41,6 +41,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -431,9 +432,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @DeleteMapping(value = RELEASES_URL + "/{ids}")
     public ResponseEntity<List<MultiStatus>> deleteReleases(
             @Parameter(description = "The IDs of the releases to be deleted.")
-            @PathVariable("ids") List<String> idsToDelete
+            @PathVariable("ids") List<String> idsToDelete,
+            @Parameter(description = "Comment message")
+            @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (StringUtils.isNotEmpty(comment)) {
+            user.setCommentMadeDuringModerationRequest(comment);
+        }
         List<MultiStatus> results = new ArrayList<>();
         for(String id:idsToDelete) {
             RequestStatus requestStatus = releaseService.deleteRelease(id, user);

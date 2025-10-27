@@ -116,7 +116,6 @@ public class SW360ConfigsDatabaseHandler {
                 .put(UI_PROJECT_TAG, getOrDefault(configContainer, UI_PROJECT_TAG, "[]"))
                 .put(UI_PROJECT_TYPE, getOrDefault(configContainer, UI_PROJECT_TYPE, "[\"Customer Project\",\"Internal Project\",\"Product\",\"Service\",\"Inner Source\"]"))
                 .put(UI_RELEASE_EXTERNALKEYS, getOrDefault(configContainer, UI_RELEASE_EXTERNALKEYS, "[\"org.maven.id\",\"com.github.id\",\"com.gitlab.id\",\"purl.id\"]"))
-                .put(UI_REST_APITOKEN_GENERATOR_ENABLE, getOrDefault(configContainer, UI_REST_APITOKEN_GENERATOR_ENABLE, "true"))
                 .put(UI_SOFTWARE_PLATFORMS, getOrDefault(configContainer, UI_SOFTWARE_PLATFORMS, "[\"Adobe AIR\",\"Adobe Flash\",\"Adobe Shockwave\",\"Binary Runtime Environment for Wireless\",\"Cocoa\",\"Cocoa Touch\",\"Java (software platform)|Java platform\",\"Java Platform, Micro Edition\",\"Java Platform, Standard Edition\",\"Java Platform, Enterprise Edition\",\"JavaFX\",\"JavaFX Mobile\",\"Microsoft XNA\",\"Mono (software)|Mono\",\"Mozilla Prism\",\".NET Framework\",\"Silverlight\",\"Open Web Platform\",\"Oracle Database\",\"Qt (framework)|Qt\",\"SAP NetWeaver\",\"Smartface\",\"Vexi\",\"Windows Runtime\"]"))
                 .put(UI_STATE, getOrDefault(configContainer, UI_STATE, "[\"Active\",\"Phase out\",\"Unknown\"]"))
                 .build();
@@ -193,8 +192,7 @@ public class SW360ConfigsDatabaseHandler {
                  UI_CLEARING_TEAM_UNKNOWN_ENABLED,
                  UI_CUSTOM_WELCOME_PAGE_GUIDELINE,
                  UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON,
-                 UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
-                 UI_REST_APITOKEN_GENERATOR_ENABLE
+                 UI_ENABLE_SECURITY_VULNERABILITY_MONITORING
                     -> isBooleanValue(configValue);
 
             // Validate string value
