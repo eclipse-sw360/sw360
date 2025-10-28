@@ -1596,7 +1596,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         mappedProjectLinks.forEach(projectLink -> wrapTException(() ->
                 projectLink.getLinkedReleases().stream().filter(ReleaseLink::isSetAttachments).forEach(releaseLink -> {
                     String releaseLinkId = releaseLink.getId();
-                    Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
+                    Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.
+                            getOrDefault(Source.releaseId(releaseLinkId),new HashSet<>());
 
                     if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
                         selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashMap<>());
@@ -2921,6 +2922,39 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             JsonObject row = new JsonObject();
             row.addProperty("Release Count", releaseCount);
             row.addProperty("Approved Count", approvedCount);
+            response.getWriter().write(row.toString());
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    @Operation(
+            description = "Get license  clearing details counts for `Clearing Detail` field " +
+                    "at Administration tab of project detail page.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/clearingDetailsCount", method = RequestMethod.GET)
+    public void getlicenseClearingDetailsCount(
+            HttpServletResponse response ,
+            @Parameter(description = "Project ID", example = "376521")
+            @PathVariable("id") String id
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
+        Project proj = projectService.getClearingInfo(sw360Project, sw360User);
+        ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
+        int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.approved;
+
+        try {
+            JsonObject row = new JsonObject();
+            row.addProperty("newClearing",clearingInfo.newRelease);
+            row.addProperty("underClearing",clearingInfo.underClearing);
+            row.addProperty("sentToClearingTool",clearingInfo.sentToClearingTool);
+            row.addProperty("reportAvailable",clearingInfo.reportAvailable);
+            row.addProperty("approved",clearingInfo.approved);
+            row.addProperty("totalReleases", releaseCount);
             response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());

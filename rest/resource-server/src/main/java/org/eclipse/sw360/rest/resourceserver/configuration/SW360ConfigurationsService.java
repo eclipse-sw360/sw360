@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +51,9 @@ public class SW360ConfigurationsService {
     public Map<String, String> getSW360ConfigFromProperties() {
         Map<String, String> configFromProperties = new HashMap<>();
         configFromProperties.put("enable.flexible.project.release.relationship", String.valueOf(SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP));
+        configFromProperties.put("rest.apitoken.read.validity.days", String.valueOf(Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_READ_IN_DAYS));
+        configFromProperties.put("rest.apitoken.write.validity.days", String.valueOf(Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS));
+        configFromProperties.put("ui.rest.apitoken.write.generator.enable", String.valueOf(Sw360ResourceServer.API_WRITE_TOKEN_GENERATOR_ENABLED));
         return configFromProperties;
     }
 
@@ -63,8 +67,14 @@ public class SW360ConfigurationsService {
     }
 
     public Map<String, String> getConfigForContainer(ConfigFor configFor) throws TException {
-        SW360ConfigsService.Iface configsService = getThriftConfigsClient();
-        return configsService.getConfigForContainer(configFor);
+        Map<String, String> combinedConfig = getSW360ConfigFromDb(configFor);
+        combinedConfig.putAll(getSW360ConfigFromProperties());
+        return combinedConfig;
+    }
+
+    public Map<String, String> getSW360ConfigFromDb(ConfigFor configFor) throws TException {
+        SW360ConfigsService.Iface configService = getThriftConfigsClient();
+        return configService.getConfigForContainer(configFor);
     }
 
     public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfig, User user) throws TException, InvalidPropertiesFormatException {

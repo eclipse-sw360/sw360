@@ -1218,8 +1218,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 Component oldComponent = componentRepository.get(componentId);
                 Component updatedComponent = updateReleaseDependentFieldsForComponentId(componentId, user);
                 // clean up attachments in database
-                attachmentConnector.deleteAttachmentDifference(nullToEmptySet(actual.getAttachments()),
+                Set<String> idsToBeDeleted = attachmentConnector.getAttachentContentIdsToBeDeleted(nullToEmptySet(actual.getAttachments()),
                         nullToEmptySet(release.getAttachments()));
+                Set<String> idsInUse = attachmentDatabaseHandler.getAttachmentsByIds(idsToBeDeleted).stream().map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+                attachmentConnector.deleteAttachmentsByIds(idsToBeDeleted.stream().filter(id->!idsInUse.contains(id)).collect(Collectors.toSet()));
                 // update linked packages
                 updateLinkedPackages(CommonUtils.nullToEmptySet(actual.getPackageIds()), CommonUtils.nullToEmptySet(release.getPackageIds()), release.getId(), user);
                 sendMailNotificationsForReleaseUpdate(release, user.getEmail());

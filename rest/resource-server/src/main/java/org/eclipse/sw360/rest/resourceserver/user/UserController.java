@@ -285,7 +285,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             description = "Create rest api token for current user.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Create token successfully."),
-                    @ApiResponse(responseCode = "500", description = "Create token failure.")},
+                    @ApiResponse(responseCode = "403", description = "API token requested with write authority when not allowed"),
+                    @ApiResponse(responseCode = "500", description = "Create token failure.")
+            },
             tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.POST)
     public ResponseEntity<String> createUserRestApiToken(
