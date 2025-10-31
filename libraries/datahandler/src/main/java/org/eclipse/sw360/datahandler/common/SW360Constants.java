@@ -120,9 +120,6 @@ public class SW360Constants {
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
     public static final String PREFERRED_CLEARING_DATE_LIMIT;
 
-    public static final String VCS_REDIRECTION_LIMIT = "5";
-    public static final String VCS_REDIRECTION_TIMEOUT_LIMIT = "5000";
-
     public static final String COMPONENTS = "components";
     public static final String PROJECTS = "projects";
     public static final String LICENSES = "licenses";
