@@ -105,6 +105,19 @@ mvn package -P deploy \
 
 If you want to run the tests, we need start a local couchdb server and Docker is required:
 
+## Supported Export Formats
+
+SW360 now supports exporting data in the following formats:
+
+- Excel (XLSX)
+- CSV (Comma-Separated Values)
+- TSV (Tab-Separated Values)
+- XML
+- JSON
+- YAML
+
+These formats can be used for integration with other tools, direct software processing, or human-readable data exchange. For details on how to use these export options, see the relevant API or UI documentation.
+
 ### License
 
 SPDX-License-Identifier: EPL-2.0
