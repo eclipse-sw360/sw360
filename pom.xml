@@ -129,7 +129,7 @@
     <jboss-logging.version>3.6.1.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.55</jcraft.version>
-    <jetbrains-annotations.version>26.0.2</jetbrains-annotations.version>
+    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
     <jetty.version>10.0.15</jetty.version>
     <jgiven.version>2.0.2</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
