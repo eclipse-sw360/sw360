@@ -99,21 +99,6 @@ public class ProjectSearchHandler {
     }
 
     public Map<PaginationData, List<Project>> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
-        ResourceComparatorGenerator<Project> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
-        ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.getSortColumnNumber());
-        Comparator<Project> comparator;
-        try {
-            comparator = switch (sortBy) {
-                case ProjectSortColumn.BY_NAME ->
-                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_PROJECT, "name");
-                case ProjectSortColumn.BY_CREATEDON ->
-                        resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_PROJECT, "createdOn");
-                case null, default -> null; // only two sortable fields, sort by score
-            };
-        } catch (ResourceClassNotFoundException e) {
-            comparator = null;
-        }
-
         Map<PaginationData, List<Project>> resultProjectList = connector
                 .searchViewWithRestrictions(Project.class,
                         luceneSearchView.getIndexName(), text, subQueryRestrictions,
@@ -122,10 +107,7 @@ public class ProjectSearchHandler {
         PaginationData respPageData = resultProjectList.keySet().iterator().next();
         List<Project> projectList = resultProjectList.values().iterator().next();
 
-        projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).collect(Collectors.toList());
-        if (comparator != null) {
-            projectList.sort(comparator);
-        }
+        projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
 
         return Collections.singletonMap(respPageData, projectList);
     }

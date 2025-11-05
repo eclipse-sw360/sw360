@@ -38,22 +38,28 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-24.04
 
+    services:
+      couchdb:
+        image: couchdb:3
+        ports:
+          - 5984:5984
+        env:
+          COUCHDB_USER: ${{ env.COUCHDB_USER }}
+          COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: webiny/action-conventional-commits@8bc41ff4e7d423d56fa4905f6ff79209a78776c7 # v1.3.0
 
       - name: Verify license headers
         run: |
           chmod +x .github/testForLicenseHeaders.sh
           bash .github/testForLicenseHeaders.sh
-
-      - name: Setup CouchDB
-        run: scripts/startCouchdbForTests.sh
 
       - name: Update properties with DB credentials
         run: |
@@ -63,7 +69,7 @@ jobs:
           sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
       - name: Set up JDK 21
-        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
           java-version: "21"
           distribution: "temurin"
@@ -71,7 +77,7 @@ jobs:
 
       - name: Cache Thrift
         id: cache-thrift
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}

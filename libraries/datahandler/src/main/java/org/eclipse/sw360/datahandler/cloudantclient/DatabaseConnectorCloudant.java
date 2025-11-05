@@ -64,6 +64,18 @@ public class DatabaseConnectorCloudant {
     private final String dbName;
     private final DatabaseInstanceCloudant instance;
 
+    private static final String OPERATOR_EQ = "$eq";
+    private static final String OPERATOR_IN = "$in";
+    private static final String OPERATOR_ALL = "$all";
+    private static final String OPERATOR_AND = "$and";
+    private static final String OPERATOR_OR = "$or";
+    private static final String OPERATOR_EXISTS = "$exists";
+    private static final String OPERATOR_ELEM_MATCH = "$elemMatch";
+    private static final Set<String> OPERATORS = Set.of(
+            OPERATOR_EQ, OPERATOR_IN, OPERATOR_ALL, OPERATOR_AND, OPERATOR_OR,
+            OPERATOR_EXISTS, OPERATOR_ELEM_MATCH
+    );
+
     public DatabaseConnectorCloudant(Cloudant client, String dbName) {
         this.instance = new DatabaseInstanceCloudant(client);
         this.dbName = dbName;
@@ -600,10 +612,11 @@ public class DatabaseConnectorCloudant {
         }
     }
 
-    public void createIndex(IndexDefinition indexDefinition, String indexName,
-                            String indexType) {
+    public void createIndex(IndexDefinition indexDefinition, String ddocId,
+                            String indexName, String indexType) {
         PostIndexOptions indexOptions = new PostIndexOptions.Builder()
                 .db(this.dbName)
+                .ddoc(ddocId)
                 .index(indexDefinition)
                 .name(indexName)
                 .type(indexType)
@@ -647,6 +660,7 @@ public class DatabaseConnectorCloudant {
         PostFindOptions countQuery = qb.build().newBuilder()
                 .fields(Collections.singletonList("_id"))
                 .limit(rowQueryLimit)
+                .useIndex(Collections.singletonList("PaginationIdx"))
                 .build();
 
         try {
@@ -820,7 +834,7 @@ public class DatabaseConnectorCloudant {
      * @return Sanitized field name
      */
     private static @NotNull String replaceFirstSymbol(String field) {
-        if (field.startsWith("$")) {
+        if (field.startsWith("$") && !OPERATORS.contains(field)) {
             field = "\\$" + field.substring(1);
         }
         return field;
@@ -835,7 +849,7 @@ public class DatabaseConnectorCloudant {
     public static @NotNull Map<String, Object> eq(String field, String value) {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
-                Collections.singletonMap("$eq", value));
+                Collections.singletonMap(OPERATOR_EQ, value));
     }
 
     /**
@@ -848,7 +862,7 @@ public class DatabaseConnectorCloudant {
     public static @NotNull Map<String, Object> in(String field, List<String> value) {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
-                Collections.singletonMap("$in", value));
+                Collections.singletonMap(OPERATOR_IN, value));
     }
 
     /**
@@ -861,7 +875,7 @@ public class DatabaseConnectorCloudant {
     public static @NotNull Map<String, Object> all(String field, List<String> value) {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
-                Collections.singletonMap("$all", value));
+                Collections.singletonMap(OPERATOR_ALL, value));
     }
 
     /**
@@ -873,7 +887,7 @@ public class DatabaseConnectorCloudant {
     public static @NotNull Map<String, Object> exists(String field, boolean value) {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
-                Collections.singletonMap("$exists", value));
+                Collections.singletonMap(OPERATOR_EXISTS, value));
     }
 
     /**
@@ -882,7 +896,7 @@ public class DatabaseConnectorCloudant {
      * @return New selector
      */
     public static @NotNull Map<String, Object> and(List<Map<String, Object>> selectors) {
-        return Collections.singletonMap("$and",
+        return Collections.singletonMap(OPERATOR_AND,
                 selectors);
     }
 
@@ -892,7 +906,7 @@ public class DatabaseConnectorCloudant {
      * @return New selector
      */
     public static @NotNull Map<String, Object> or(List<Map<String, Object>> selectors) {
-        return Collections.singletonMap("$or",
+        return Collections.singletonMap(OPERATOR_OR,
                 selectors);
     }
 
@@ -905,7 +919,7 @@ public class DatabaseConnectorCloudant {
     public static @NotNull Map<String, Object> elemMatch(String field, String value) {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
-                eq("$elemMatch", value));
+                eq(OPERATOR_ELEM_MATCH, value));
     }
 
     /**

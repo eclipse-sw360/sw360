@@ -1,6 +1,7 @@
 /*
  * Copyright Siemens AG, 2017-2018.
  * Copyright Bosch Software Innovations GmbH, 2017.
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>, 2025.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -455,10 +456,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/import/SPDX", method = RequestMethod.POST)
-    public ResponseEntity importSPDX() throws TException {
+    public ResponseEntity<RequestSummary> importSPDX() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        licenseService.importSpdxInformation(sw360User);
-        return new ResponseEntity<>(HttpStatus.OK);
+        RequestSummary requestSummary = licenseService.importSpdxInformation(sw360User);
+        requestSummary.setMessage("SPDX license has imported successfully");
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
     }
 
     @Operation(

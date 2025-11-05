@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>, 2025.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -226,10 +226,11 @@ public class Sw360LicenseService {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new LicenseService.Client(protocol);
     }
-    public void importSpdxInformation(User sw360User) throws TException {
+    public RequestSummary importSpdxInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             RequestSummary allSPDXLicenseStatus = sw360LicenseClient.importAllSpdxLicenses(sw360User);
+            return allSPDXLicenseStatus;
         } else {
             throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
         }

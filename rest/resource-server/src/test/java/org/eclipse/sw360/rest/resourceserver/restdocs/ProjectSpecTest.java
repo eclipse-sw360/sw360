@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -104,6 +105,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
@@ -203,6 +205,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, String> additionalData = new HashMap<>();
         additionalData.put("OSPO-Comment", "Some Comment");
 
+        Map<String, ProjectPackageRelationship> linkedPckg = new HashMap<>();
+        ProjectPackageRelationship projectPackageRelationship = new ProjectPackageRelationship()
+                .setComment("Test Comment").setCreatedOn("2020-08-05").setCreatedBy("admin@sw360.org");
+
         setOfAttachment.add(att1);
         Project projectForAtt = new Project();
         projectForAtt.setAttachments(setOfAttachment);
@@ -249,6 +255,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedPackages.add(package1.getId());
         linkedPackages.add(package2.getId());
 
+        Map<String, ProjectPackageRelationship> linkedPckg2 = new HashMap<>();
+        linkedPckg2.put(package1.getId(), projectPackageRelationship);
+        linkedPckg2.put(package2.getId(), projectPackageRelationship);
+
         List<Project> projectListByName = new ArrayList<>();
         Set<Project> usedByProjectList = new HashSet<>();
         project = new Project();
@@ -261,7 +271,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setCreatedOn("2016-12-15");
         project.setCreatedBy("admin@sw360.org");
         project.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
-        project.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
+        //project.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
+        linkedPckg.put("123456", projectPackageRelationship);
+        linkedPckg.put("54844", projectPackageRelationship);
+        project.setPackageIds(linkedPckg);
         project.setBusinessUnit("sw360 AR");
         project.setExternalIds(Collections.singletonMap("mainline-id-project", "515432"));
         project.setOwnerAccountingUnit("4822");
@@ -279,7 +292,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setSpecialRisks3rdParty("Lorem Ipsum");
         project.setLicenseInfoHeaderText("Lorem Ipsum");
         project.setDeliveryChannels("Lorem Ipsum");
-        project.setPackageIds(new HashSet<>(Arrays.asList("pkg-001", "pkg-002", "pkg-003")));
+        //project.setPackageIds(new HashSet<>(Arrays.asList("pkg-001", "pkg-002", "pkg-003")));
+        linkedPckg.put("pkg-001", projectPackageRelationship);
+        linkedPckg.put("pkg-002", projectPackageRelationship);
+        linkedPckg.put("pkg-003", projectPackageRelationship);
+        project.setPackageIds(linkedPckg);
         project.setVendor(new Vendor());
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
         ReleaseClearingStateSummary clearingCount = new ReleaseClearingStateSummary();
@@ -295,7 +312,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setReleaseIdToUsage(linkedReleases);
         linkedProjects.put("376570", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         project.setLinkedProjects(linkedProjects);
-        project.setPackageIds(linkedPackages);
+        project.setPackageIds(linkedPckg2);
         project.setAttachments(attachmentList);
         project.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
         project.setProjectResponsible("projectresponsible@sw360.org");
@@ -324,7 +341,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setProjectType(ProjectType.PRODUCT);
         project2.setDescription("Orange Web provides a suite of components for documentation.");
         project.setDomain("Hardware");
-        project2.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
+        linkedPckg.put("123456", projectPackageRelationship);
+        linkedPckg.put("54844", projectPackageRelationship);
+        project2.setPackageIds(linkedPckg);
+        //project2.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
         project2.setCreatedOn("2016-12-17");
         project2.setCreatedBy("john@sw360.org");
         project2.setBusinessUnit("sw360 EX DF");
@@ -355,7 +375,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedReleases.put("5578999", projectReleaseRelationship);
         project2.setReleaseIdToUsage(linkedReleases);
         project2.setExternalIds(externalIds2);
-        project2.setPackageIds(linkedPackages);
+        project2.setPackageIds(linkedPckg2);
         Map<String, String> externalURLs = new HashMap<>();
         externalURLs.put("homepage", "http://test_wiki_url.com");
         externalURLs.put("wiki", "http://test_wiki_url.com");
@@ -382,8 +402,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedProjects2.put("123456", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         project4.setLinkedProjects(linkedProjects2);
         project4.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
-        project4.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
-
+        //project4.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
+        linkedPckg.put("123456", projectPackageRelationship);
+        linkedPckg.put("54844", projectPackageRelationship);
+        project4.setPackageIds(linkedPckg);
         Project project5 = new Project();
         project5.setId("123456");
         project5.setName("dummy2");
@@ -563,7 +585,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         cycloneDXProject.setProjectType(ProjectType.PRODUCT);
         cycloneDXProject.setCreatedBy("admin@sw360.org");
         cycloneDXProject.setAttachments(cyclonedxSet);
-        cycloneDXProject.setPackageIds(linkedPackages);
+        cycloneDXProject.setPackageIds(linkedPckg2);
 
         RequestSummary requestSummaryForSPDX = new RequestSummary();
         requestSummaryForSPDX.setMessage(SPDXProject.getId());
@@ -1102,7 +1124,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("id").description("The id of the project"),
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
-                                fieldWithPath("packageIds").description("List of package IDs associated with the project."),
+                                //fieldWithPath("packageIds").description("List of package IDs associated with the project."),
+                                fieldWithPath("packageIds").description("Map of package IDs to their relationship metadata, including comment, creation date and creator"),
+                                fieldWithPath("packageIds.*.comment").description("Comment about the package relationship"),
+                                fieldWithPath("packageIds.*.createdOn").description("Date when the package relationship was created"),
+                                fieldWithPath("packageIds.*.createdBy").description("User who created the package relationship"),
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
@@ -2452,6 +2478,24 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_license_clearing_details_count() throws Exception {
+        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/clearingDetailsCount")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON)
+                        .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("newClearing").description("Number of new releases for clearing"),
+                                fieldWithPath("underClearing").description("Number of releases under clearing"),
+                                fieldWithPath("sentToClearingTool").description("Number of releases sent to clearing tool"),
+                                fieldWithPath("reportAvailable").description("Number of releases with report available"),
+                                fieldWithPath("approved").description("Number of approved license clearing state"),
+                                fieldWithPath("totalReleases").description("Total count of releases of a project including sub-projects releases")
+                        )));
+    }
+
+    @Test
     public void should_document_create_summary_administration() throws Exception {
         mockMvc.perform(get("/api/projects/" + project.getId()+ "/summaryAdministration")
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
@@ -3306,7 +3350,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         Project sw360Project = new Project();
         sw360Project.setId(project.getId());
-        sw360Project.setPackageIds(new HashSet<>(Collections.singleton("122357345")));
+        //sw360Project.setPackageIds(new HashSet<>(Collections.singleton("122357345")));
+        sw360Project.setPackageIds(
+                Collections.singleton("122357345").stream()
+                        .collect(Collectors.toMap(id -> id, id -> new ProjectPackageRelationship()))
+        );
 
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(sw360Project);
 

@@ -154,6 +154,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ProjectLink.class, Sw360Module.ProjectLinkMixin.class);
             setMixInAnnotation(BulkOperationNode.class, Sw360Module.BulkOperationNodeMixin.class);
             setMixInAnnotation(ReleaseMergeSelector.class, Sw360Module.ReleaseMergeSelectorMixin.class);
+            setMixInAnnotation(ProjectPackageRelationship.class, Sw360Module.ProjectPackageRelationshipMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -651,6 +652,7 @@ public class JacksonCustomizations {
                 "licenseIdsSize",
                 "licenseIdsIterator",
                 "createdBy",
+                "comment",
                 "setId",
                 "setRevision",
                 "setType",
@@ -671,6 +673,7 @@ public class JacksonCustomizations {
                 "setVcs",
                 "setPackageManager",
                 "setRelease",
+                "setComment",
                 "createdByIsSet",
                 "createdOnIsSet",
                 "versionIsSet",
@@ -692,6 +695,7 @@ public class JacksonCustomizations {
                 "homepageUrlIsSet",
                 "hashIsSet",
                 "packageManagerIsSet",
+                "commentIsSet",
                 "typeIsSet"
         })
         static abstract class PackageMixin extends Package {
@@ -955,6 +959,15 @@ public class JacksonCustomizations {
             @Override
             @JsonProperty(PropertyKeyMapping.COMPONENT_VENDOR_KEY_JSON)
             abstract public Set<String> getVendorNames();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setComment",
+                "setCreatedBy",
+                "setCreatedOn"
+        })
+        public static abstract class ProjectPackageRelationshipMixin extends ProjectPackageRelationship {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

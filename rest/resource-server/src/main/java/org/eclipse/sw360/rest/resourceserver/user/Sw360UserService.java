@@ -39,6 +39,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -52,6 +53,7 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_ACCESS_USERGROUP;
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_TOKEN_GENERATOR_ENABLED;
 
 @Service
 public class Sw360UserService {
@@ -182,6 +184,10 @@ public class Sw360UserService {
         }
 
         RestApiToken restApiToken = mapper.convertValue(requestBody, RestApiToken.class);
+        if (!API_WRITE_TOKEN_GENERATOR_ENABLED && restApiToken.authorities.contains(AUTHORITIES_WRITE)) {
+            throw new AccessDeniedException("Token requested with '" +
+                    AUTHORITIES_WRITE + "' authority, but not allowed.");
+        }
         int numberOfExpireDay = getNumberOfExpireDays(requestBody.get(EXPIRATION_DATE_PROPERTY).toString());
         if (numberOfExpireDay < 0) {
             throw new IllegalArgumentException("Token expiration days is not valid for user");
@@ -283,7 +289,7 @@ public class Sw360UserService {
      */
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
         UserSortColumn column = UserSortColumn.BY_GIVENNAME;
-        boolean ascending = false;
+        boolean ascending = true;
 
         if (pageable.getSort().isSorted()) {
             Sort.Order order = pageable.getSort().iterator().next();
@@ -291,9 +297,9 @@ public class Sw360UserService {
             column = switch (property) {
                 case "lastname" -> UserSortColumn.BY_LASTNAME;
                 case "email" -> UserSortColumn.BY_EMAIL;
-                case "status" -> UserSortColumn.BY_STATUS;
+                case "deactivated" -> UserSortColumn.BY_STATUS;
                 case "department" -> UserSortColumn.BY_DEPARTMENT;
-                case "role" -> UserSortColumn.BY_ROLE;
+                case "primaryRoles" -> UserSortColumn.BY_ROLE;
                 default -> column; // Default to BY_GIVENNAME if no match
             };
             ascending = order.isAscending();

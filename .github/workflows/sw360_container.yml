@@ -15,17 +15,17 @@ name: SW360 Container
 
 on:
   schedule:
-    - cron: "0 0 * * *" # Midnight
+    - cron: '0 0 * * *' # Midnight
   workflow_dispatch:
   pull_request:
     paths:
-      - .github/workflows/sw360_container.yml
-      - .github/workflows/thrift_container.yml
+      - 'Dockerfile'
+
   push:
     branches:
       - main
     paths-ignore:
-      - "**.md"
+      - '**.md'
 
 env:
   REGISTRY: ghcr.io
@@ -41,19 +41,19 @@ jobs:
       sw360_version: ${{ steps.pom_version.outputs.SW360_VERSION }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
         with:
           egress-policy: audit
 
       - name: Checkout main repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
-          java-version: "21"
-          cache: "maven"
-          distribution: "temurin"
+          java-version: '21'
+          cache: 'maven'
+          distribution: 'temurin'
 
       - name: Get revision from pom.xml
         id: pom_version
@@ -71,15 +71,15 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
         with:
           egress-policy: audit
 
       - name: Checkout main repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -93,7 +93,7 @@ jobs:
 
       - name: Extract components metadata (tags, labels) runtime image
         id: meta
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
         with:
           images: |
             ${{ env.REGISTRY }}/${{ github.repository }}

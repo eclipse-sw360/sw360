@@ -160,8 +160,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         PaginationData pageData = pageableToPaginationData(pageable, null, null);
         Map<PaginationData, List<Project>> resp = sw360ProjectClient
                 .getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
-        PaginationData respPagination = resp.keySet().iterator().next();
-        respPagination.setTotalRowCount(sw360ProjectClient.getMyAccessibleProjectCounts(sw360User));
         return resp;
     }
 
@@ -619,17 +617,66 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         try {
             ThriftClients thriftClients = new ThriftClients();
             ProjectService.Iface client = thriftClients.makeProjectClient();
+
+            // Ensure the obligation has a valid model configuration
+            if (obligation == null) {
+                log.error("Obligation list is null");
+                return RequestStatus.FAILURE;
+            }
+
+            // Get current obligation status map
+            Map<String, ObligationStatusInfo> currentObligationStatusMap = obligation.getLinkedObligationStatus();
+            if (currentObligationStatusMap == null) {
+                currentObligationStatusMap = new HashMap<>();
+                obligation.setLinkedObligationStatus(currentObligationStatusMap);
+            }
+
+            // Validate that updated map is not null
+            if (updatedObligationStatusMap == null || updatedObligationStatusMap.isEmpty()) {
+                log.error("Updated obligation status map is null or empty");
+                return RequestStatus.FAILURE;
+            }
+
+            // Update only status and comment fields if they are set in the updated map
+            for (Map.Entry<String, ObligationStatusInfo> entry : updatedObligationStatusMap.entrySet()) {
+                String key = entry.getKey();
+                ObligationStatusInfo updatedOsi = entry.getValue();
+
+                if (updatedOsi == null) {
+                    log.warn("Skipping null ObligationStatusInfo for key: {}", key);
+                    continue;
+                }
+
+                ObligationStatusInfo currentOsi = currentObligationStatusMap.get(key);
+
+                if (currentOsi != null) {
+                    // Only update status if it's explicitly set
+                    if (updatedOsi.isSetStatus()) {
+                        currentOsi.setStatus(updatedOsi.getStatus());
+                        // When status is updated, also update modification metadata
+                        currentOsi.setModifiedBy(sw360User.getEmail());
+                        currentOsi.setModifiedOn(SW360Utils.getCreatedOn());
+                    }
+
+                    // Only update comment if it's explicitly set
+                    if (updatedOsi.isSetComment()) {
+                        currentOsi.setComment(updatedOsi.getComment());
+                    }
+                } else {
+                    // Add new obligation status info if it doesn't exist
+                    currentObligationStatusMap.put(key, updatedOsi);
+                }
+            }
             obligation.unsetLinkedObligationStatus();
-            obligation.setLinkedObligationStatus(updatedObligationStatusMap);
+            obligation.setLinkedObligationStatus(currentObligationStatusMap);
             return client.updateLinkedObligations(obligation, sw360User);
         } catch (TException exception) {
-            log.error("Failed to update obligation for project: ");
+            log.error("Failed to update obligation for project: ", exception);
         }
         return RequestStatus.FAILURE;
     }
-
     public RequestStatus addLinkedObligations(Project project, User user,
-            Map<String, ObligationStatusInfo> licenseObligation) {
+                                              Map<String, ObligationStatusInfo> licenseObligation) {
         ThriftClients thriftClients = new ThriftClients();
         ProjectService.Iface client = thriftClients.makeProjectClient();
         final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
@@ -647,7 +694,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         Map<String, ObligationStatusInfo> obligationStatusInfo = isObligationPresent
                 && obligation.getLinkedObligationStatusSize() > 0 ? obligation.getLinkedObligationStatus()
-                        : Maps.newHashMap();
+                : Maps.newHashMap();
 
         for (Map.Entry<String, ObligationStatusInfo> entry : licenseObligation.entrySet()) {
             ObligationStatusInfo newOsi = entry.getValue();
@@ -1818,13 +1865,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             Sort.Order order = pageable.getSort().iterator().next();
             String property = order.getProperty();
             column = switch (property) {
-                case "created" -> ProjectSortColumn.BY_CREATEDON;
+                case "createdOn" -> ProjectSortColumn.BY_CREATEDON;
                 case "name" -> ProjectSortColumn.BY_NAME;
                 case "vendor" -> ProjectSortColumn.BY_VENDOR;
                 case "license" -> ProjectSortColumn.BY_MAINLICENSE;
                 case "type" -> ProjectSortColumn.BY_TYPE;
-                case "desc" -> ProjectSortColumn.BY_DESCRIPTION;
-                case "resp" -> ProjectSortColumn.BY_RESPONSIBLE;
+                case "description" -> ProjectSortColumn.BY_DESCRIPTION;
+                case "projectResponsible" -> ProjectSortColumn.BY_RESPONSIBLE;
                 case "state" -> ProjectSortColumn.BY_STATE;
                 default -> column; // Default to BY_NAME if no match
             };
@@ -1840,5 +1887,22 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
+    }
+
+    public int getProjectCountByPackageId(String packageId) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        int count;
+        try {
+            count = projectClient.getProjectCountByPackageId(packageId);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested Package Id Not Found");
+            }
+            else {
+                throw sw360Exp;
+            }
+        }
+        return count;
     }
 }

@@ -220,7 +220,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             "function(doc) {" +
                     "  if (doc.type == 'project' && doc.packageIds) {" +
                     "    for(var i in doc.packageIds) {" +
-                    "      emit(doc.packageIds[i], doc._id);" +
+                    "      emit(i, doc._id);" +
                     "    }" +
                     "  }" +
                     "}";
@@ -254,7 +254,12 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "  }" +
                     "}";
 
-    public static Joiner spaceJoiner = Joiner.on(" ");
+    private static final String PROJECT_BY_NAME_IDX = "ProjectByNameIdx";
+    private static final String PROJECT_BY_DESC_IDX = "ProjectByDescIdx";
+    private static final String PROJECT_BY_RESPONSIBLE_IDX = "ProjectByResponsibleIdx";
+    private static final String PROJECT_BY_CREATED_ON_IDX = "ProjectByCreatedOnIdx";
+    private static final String PROJECT_BY_ALL_IDX = "ProjectByAllIdx";
+    public static final String PAGINATION_IDX = "PaginationIdx";
 
     public ProjectRepository(DatabaseConnectorCloudant db) {
         super(Project.class, db, new ProjectSummary());
@@ -275,12 +280,18 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         views.put("myfullprojectscount", createMapReduce(MY_ACCESSIBLE_PROJECTS_COUNT, "_count"));
         views.put("myfullprojectscountca", createMapReduce(ACCESSIBLE_PROJECTS_COUNT_FOR_CA_AND_ABOVE, "_count"));
         initStandardDesignDocument(views, db);
-        createIndex("byName", new String[] {"name"}, db);
-        createIndex("byDesc", new String[] {"description"}, db);
-        createIndex("byProjectResponsible", new String[] {"projectResponsible"}, db);
-        createIndex("byCreatedOn", new String[] {"createdOn"}, db);
+        createIndex(PROJECT_BY_NAME_IDX, "byName",
+                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.NAME.getFieldName()}, db);
+        createIndex(PROJECT_BY_DESC_IDX, "byDesc",
+                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.DESCRIPTION.getFieldName()}, db);
+        createIndex(PROJECT_BY_RESPONSIBLE_IDX, "byProjectResponsible",
+                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.PROJECT_RESPONSIBLE.getFieldName()}, db);
+        createIndex(PROJECT_BY_CREATED_ON_IDX, "byCreatedOn",
+                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.CREATED_ON.getFieldName()}, db);
+        createIndex(PAGINATION_IDX, "byTypePagination",
+                new String[] {"type", "_id"}, db);
 
-        createIndex("projByAll", new String[] {
+        createIndex(PROJECT_BY_ALL_IDX, "projByAll", new String[] {
                 Project._Fields.NAME.getFieldName(),
                 Project._Fields.TAG.getFieldName(),
                 Project._Fields.PROJECT_TYPE.getFieldName(),
@@ -407,19 +418,19 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
         switch (sortBy) {
             case ProjectSortColumn.BY_DESCRIPTION:
-                qb.useIndex(Collections.singletonList("byDesc"));
+                qb.useIndex(Collections.singletonList(PROJECT_BY_DESC_IDX));
                 break;
             case ProjectSortColumn.BY_RESPONSIBLE:
-                qb.useIndex(Collections.singletonList("byProjectResponsible"));
+                qb.useIndex(Collections.singletonList(PROJECT_BY_RESPONSIBLE_IDX));
                 break;
             case ProjectSortColumn.BY_CREATEDON:
-                qb.useIndex(Collections.singletonList("byCreatedOn"));
+                qb.useIndex(Collections.singletonList(PROJECT_BY_CREATED_ON_IDX));
             case ProjectSortColumn.BY_STATE:
                 queryViewName = "byState";
                 break;
             case null:
             default: // By default, sort by name
-                qb.useIndex(Collections.singletonList("byName"));
+                qb.useIndex(Collections.singletonList(PROJECT_BY_NAME_IDX));
                 break;
         }
         try {
@@ -480,7 +491,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
-                .useIndex(Collections.singletonList("projByAll"));
+                .useIndex(Collections.singletonList(PROJECT_BY_ALL_IDX));
 
         List<Project> projects = getConnector().getQueryResultPaginated(
                 qb, Project.class, pageData, sortSelector
@@ -605,8 +616,9 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         final Map<String, Object> isAModerator = elemMatch("moderators", requestingUserEmail);
         final Map<String, Object> isAContributor = elemMatch("contributors", requestingUserEmail);
         final Map<String, Object> meAndModerator_visibility_Selector = eq("visbility", "ME_AND_MODERATORS");
+        final List<Map<String, Object>> checkUserInProjectFields = List.of(createdBySelector, isAProjectResponsible, isALeadArchitect, isAModerator, isAContributor);
         final Map<String, Object> isUserBelongToMeAndModerator = and(List.of(meAndModerator_visibility_Selector,
-                or(List.of(createdBySelector, isAProjectResponsible, isALeadArchitect, isAModerator, isAContributor))));
+                or(checkUserInProjectFields)));
 
         final Map<String, Object> buAndModerator_visibility_Selector = eq("visbility", "BUISNESSUNIT_AND_MODERATORS");
         final Map<String, Object> userBuSelector = eq("businessUnit", userBU);
@@ -625,7 +637,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                 buSelectors.add(eq("businessUnit", secondaryBU));
             }
         }
-        buSelectors.add(isUserBelongToMeAndModerator);
+        buSelectors.addAll(checkUserInProjectFields);
         buSelectors.add(userBuSelector);
         isUserBelongToBuAndModerator = and(List.of(buAndModerator_visibility_Selector, or(buSelectors)));
 
@@ -647,10 +659,16 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             } else {
                 innerRestrictions.add(isUserBelongToBuAndModerator);
             }
+            // If there are subQuery, then "and" them other restrictions
             if (!subQueryRestrictions.isEmpty()) {
-                innerRestrictions.add(getQueryFromRestrictions(subQueryRestrictions));
+                finalSelector = and(List.of(
+                        typeSelector,
+                        getQueryFromRestrictions(subQueryRestrictions),
+                        or(innerRestrictions)
+                ));
+            } else {
+                finalSelector = and(List.of(typeSelector, or(innerRestrictions)));
             }
-            finalSelector = and(List.of(typeSelector, or(innerRestrictions)));
         }
         return finalSelector;
     }

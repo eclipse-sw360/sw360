@@ -65,8 +65,7 @@ public class SW360ConfigKeys {
 
     //Properties used by the RepositoryURL class to handle VCS from SBOM
     public static final String VCS_HOSTS = "vcs.hosts";
-    public static final String VCS_REDIRECTION_LIMIT = "vcs.redirection.limit";
-    public static final String VCS_REDIRECTION_TIMEOUT_LIMIT = "vcs.redirection.timeout.limit";
+    public static final String NON_PKG_MANAGED_COMPS_PROP = "non.pkg.managed.comps.prop";
 
     // Properties purely used by UI
     // This property is used in Project Administration
@@ -108,8 +107,6 @@ public class SW360ConfigKeys {
     public static final String UI_PROJECT_TYPE = "ui.project.type";
     // This property is used to create Release External Keys
     public static final String UI_RELEASE_EXTERNALKEYS = "ui.release.externalkeys";
-    // This property is used to enable or disable API Token Generation feature in UI
-    public static final String UI_REST_APITOKEN_GENERATOR_ENABLE = "ui.rest.apitoken.generator.enable";
     // This property is used to create Release Software Platforms
     public static final String UI_SOFTWARE_PLATFORMS = "ui.software.platforms";
     // This property is used to create State of Projects
