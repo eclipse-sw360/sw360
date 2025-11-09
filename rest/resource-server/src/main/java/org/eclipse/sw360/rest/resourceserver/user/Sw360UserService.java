@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -44,12 +45,17 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.Collections;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_ACCESS_USERGROUP;
@@ -306,5 +312,102 @@ public class Sw360UserService {
         }
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
+    }
+
+    /**
+     * Sync a single UserCSV with Thrift Database
+     *
+     * @param userRec       UserCSV record to sync
+     * @param thriftClients Thrift object to create clients
+     * @return True if the user was synced successfully, false otherwise.
+     */
+    public static boolean syncUser(UserCSV userRec, ThriftClients thriftClients) {
+        User thriftUser = null;
+        try {
+            thriftUser = synchronizeUserWithDatabase(userRec, thriftClients, userRec::getEmail, userRec::getGid, Sw360UserService::fillThriftUserFromUserCSV);
+        } catch (Exception e) {
+            log.error("Error creating a new user", e);
+            return false;
+        }
+
+        return thriftUser != null;
+    }
+
+    /**
+     * Sync a UserCSV with thrift client by first checking if the user already exists by matching email or external id,
+     * if found the user is updated. Otherwise, the user is inserted in the database.
+     *
+     * @param source        User record to be synced.
+     * @param thriftClients Thrift clients.
+     * @param emailSupplier Function to get user's email.
+     * @param extIdSupplier Function to get user's external id.
+     * @param synchronizer  Function to transfer properties from source to thrift object.
+     * @param <T>           Usually UserCSV
+     * @return Object of newly created or updated user on success or null on failure.
+     */
+    public static <T> User synchronizeUserWithDatabase(
+            T source, ThriftClients thriftClients, Supplier<String> emailSupplier,
+            Supplier<String> extIdSupplier, BiConsumer<User, T> synchronizer) {
+        UserService.Iface client = thriftClients.makeUserClient();
+
+        User existingThriftUser = null;
+
+        String email = emailSupplier.get();
+        try {
+            existingThriftUser = client.getByEmailOrExternalId(email, extIdSupplier.get());
+        } catch (TException e) {
+            //This occurs for every new user, so there is not necessarily something wrong
+            log.trace("User not found by email or external ID");
+        }
+
+        User resultUser = null;
+        try {
+            if (existingThriftUser == null) {
+                log.info("Creating new user.");
+                resultUser = new User();
+                synchronizer.accept(resultUser, source);
+                client.addUser(resultUser);
+            } else {
+                resultUser = existingThriftUser;
+                if (!existingThriftUser.getEmail().equals(email)) { // email has changed
+                    resultUser.setFormerEmailAddresses(prepareFormerEmailAddresses(existingThriftUser, email));
+                }
+                synchronizer.accept(resultUser, source);
+                client.updateUser(resultUser);
+            }
+        } catch (TException e) {
+            log.error("Thrift exception when saving the user", e);
+        }
+        return resultUser;
+    }
+
+    /**
+     * Set the fields from CSV to the thrift user object
+     *
+     * @param thriftUser Thrift user object to be updated
+     * @param userCsv    CSV user to read the properties from
+     */
+    public static void fillThriftUserFromUserCSV(final @NotNull User thriftUser, final @NotNull UserCSV userCsv) {
+        thriftUser.setEmail(userCsv.getEmail());
+        thriftUser.setType(TYPE_USER);
+        thriftUser.setUserGroup(UserGroup.valueOf(userCsv.getGroup()));
+        thriftUser.setExternalid(userCsv.getGid());
+        thriftUser.setFullname(userCsv.getGivenname() + " " + userCsv.getLastname());
+        thriftUser.setGivenname(userCsv.getGivenname());
+        thriftUser.setLastname(userCsv.getLastname());
+        thriftUser.setDepartment(userCsv.getDepartment());
+        thriftUser.setWantsMailNotification(userCsv.isWantsMailNotification());
+    }
+
+    /**
+     * Get the list of former email addresses of the user (if they change)
+     */
+    @NotNull
+    public static Set<String> prepareFormerEmailAddresses(@NotNull User thriftUser, String email) {
+        Set<String> formerEmailAddresses = nullToEmptySet(thriftUser.getFormerEmailAddresses()).stream()
+                .filter(e -> !e.equals(email)) // make sure the current email is not in the former addresses
+                .collect(Collectors.toCollection(HashSet::new));
+        formerEmailAddresses.add(thriftUser.getEmail());
+        return formerEmailAddresses;
     }
 }

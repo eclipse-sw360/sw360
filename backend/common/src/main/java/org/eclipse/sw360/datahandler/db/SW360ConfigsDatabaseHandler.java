@@ -88,8 +88,6 @@ public class SW360ConfigsDatabaseHandler {
             .put(RELEASE_FRIENDLY_URL, getOrDefault(configContainer, RELEASE_FRIENDLY_URL, "http://localhost:3000/components/releases/detail/releaseId"))
             .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
                 .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, ""))
-                .put(VCS_REDIRECTION_LIMIT, getOrDefault(configContainer, VCS_REDIRECTION_LIMIT, String.valueOf(SW360Constants.VCS_REDIRECTION_LIMIT)))
-                .put(VCS_REDIRECTION_TIMEOUT_LIMIT, getOrDefault(configContainer, VCS_REDIRECTION_TIMEOUT_LIMIT, String.valueOf(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT)))
                 .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
@@ -206,9 +204,7 @@ public class SW360ConfigsDatabaseHandler {
                     -> configValue != null;
 
             // validate int value
-            case ATTACHMENT_DELETE_NO_OF_DAYS,
-                 VCS_REDIRECTION_LIMIT,
-                 VCS_REDIRECTION_TIMEOUT_LIMIT
+            case ATTACHMENT_DELETE_NO_OF_DAYS
                     -> isIntegerValue(configValue);
 
             // validate string in enum

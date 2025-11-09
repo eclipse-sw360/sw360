@@ -135,3 +135,44 @@ include::{snippets}/should_document_delete_package/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_package/http-response.adoc[]
+
+
+[[resources-package-usage]]
+==== Get Package Usage Information
+
+A `GET` request to `/api/packages/{id}/usage` will get the usage information for a specific package, including whether the package is being used and the count of projects using it.
+
+===== Path parameters
+[cols="2,1,2"]
+|===
+|Name |Type |Description
+
+|id
+|String
+|The ID of the package to check usage for
+|===
+
+===== Response structure
+[cols="2,1,2"]
+|===
+|Path |Type |Description
+
+|count
+|Number
+|Number of projects using this package
+
+|isUsed
+|Boolean
+|Flag indicating if the package is used in any project
+|===
+
+===== Example request
+include::{snippets}/should_document_get_package_usage/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_package_usage/http-response.adoc[]
+
+===== Error response
+When the package is not found:
+
+include::{snippets}/should_document_get_package_usage_not_found/http-response.adoc[]

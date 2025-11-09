@@ -72,6 +72,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.*;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
@@ -80,7 +81,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -386,36 +386,85 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Update an existing component.",
-            description = "Update an existing component by its id.",
-            tags = {"Components"}
+            description = "Partially update an existing component. Only provided fields will be updated. " +
+                         "If the user lacks direct write access, a moderation request will be created. " +
+                         "Include a 'comment' field in the request body when submitting moderation requests.",
+            tags = {"Components"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Component updated successfully"),
+                    @ApiResponse(responseCode = "202", description = "Moderation request created"),
+                    @ApiResponse(responseCode = "400", description = "Invalid input or missing required fields"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "403", description = "Write access forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Component not found")
+            }
     )
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<Component>> patchComponent(
             @Parameter(description = "The id of the component to be updated.")
             @PathVariable("id") String id,
-            @Parameter(description = "The component with updated fields.")
-            @RequestBody ComponentDTO updateComponentDto,
-            @Parameter(description = "Comment message.")
-            @RequestParam(value = "comment", required = false) String comment
+            @Parameter(description = "Updated component fields. Add 'comment' field in body for moderation request.")
+            @RequestBody ComponentDTO updateComponentDto
     ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Component sw360Component = componentService.getComponentForUserById(id, user);
-        user.setCommentMadeDuringModerationRequest(comment);
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
+        Component sw360Component = validateAndGetComponent(id, updateComponentDto, user);
+        String comment = extractModerationComment(updateComponentDto);
         if (!restControllerHelper.isWriteActionAllowed(sw360Component, user)
                 && (comment == null || comment.isBlank())) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
-        if (updateComponentDto.getAttachments() != null) {
-            updateComponentDto.getAttachments().forEach(attachment -> wrapSW360Exception(
-                    () -> this.attachmentService.fillCheckedAttachmentData(attachment, user)));
+        user.setCommentMadeDuringModerationRequest(comment);
+
+        if (updateComponentDto.getAttachments() != null && !updateComponentDto.getAttachments().isEmpty()) {
+            updateComponentDto.getAttachments().forEach(attachment ->
+                wrapSW360Exception(() -> attachmentService.fillCheckedAttachmentData(attachment, user))
+            );
         }
-        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
+
+        sw360Component = restControllerHelper.updateComponent(sw360Component, updateComponentDto);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
-        HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+
         if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+
+        HalResource<Component> halResource = createHalComponent(sw360Component, user);
+        return ResponseEntity.ok(halResource);
+    }
+
+    private String extractModerationComment(ComponentDTO updateComponentDto) {
+        try {
+            String comment = updateComponentDto.getComment();
+            return (comment != null && !comment.isBlank()) ? comment.trim() : null;
+        } catch (Exception e) {
+            log.debug("Comment field not available in ComponentDTO: {}", e.getMessage());
+            return null;
+        }
+    }
+
+
+    private Component validateAndGetComponent(String id, ComponentDTO updateComponentDto, User user) {
+        if (isNullOrEmpty(id)) {
+            throw new BadRequestClientException("Component ID cannot be null or empty");
+        }
+
+        Component sw360Component;
+        try {
+            sw360Component = componentService.getComponentForUserById(id, user);
+        } catch (Exception e) {
+            throw new ResourceNotFoundException("Component not found with ID: " + id);
+        }
+
+        if (sw360Component == null) {
+            throw new ResourceNotFoundException("Component not found with ID: " + id);
+        }
+
+        if (updateComponentDto == null) {
+            throw new BadRequestClientException("Component data cannot be null");
+        }
+
+        return sw360Component;
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

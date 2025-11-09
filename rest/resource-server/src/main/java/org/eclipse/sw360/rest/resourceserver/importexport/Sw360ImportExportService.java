@@ -11,6 +11,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.importexport;
 
+import static org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE;
+import static org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS;
 import static org.eclipse.sw360.importer.ComponentImportUtils.getFlattenedView;
 import static org.eclipse.sw360.importer.ComponentImportUtils.getReleasesById;
 import static org.eclipse.sw360.datahandler.common.ImportCSV.readAsCSVRecords;
@@ -51,6 +53,10 @@ import org.eclipse.sw360.importer.ComponentAttachmentCSVRecordBuilder;
 import org.eclipse.sw360.importer.ComponentCSVRecord;
 import org.eclipse.sw360.importer.ReleaseLinkCSVRecord;
 import org.eclipse.sw360.importer.ReleaseLinkCSVRecordBuilder;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.eclipse.sw360.rest.resourceserver.user.UserCSV;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -361,5 +367,95 @@ public class Sw360ImportExportService {
         String filename = String.format("AllUsersData_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Users; filename=\"%s\"", filename));
         FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+    }
+
+    /**
+     * Process the request from user CSV uploads.
+     * @param sw360User User who initiated the request (must be admin).
+     * @param file      The Multipart CSV File which was uploaded.
+     * @return Request summary with status, total elements, effected elements
+     *         and message set.
+     * @throws IOException If file reading fails.
+     */
+    public RequestSummary uploadUsers(User sw360User, MultipartFile file) throws IOException {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new AccessDeniedException("User is not admin");
+        }
+
+        RequestSummary requestSummary = new RequestSummary();
+        requestSummary.setRequestStatus(SUCCESS);
+
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestClientException("File is required and cannot be empty");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".csv")) {
+            throw new BadRequestClientException("File must be a CSV file with .csv extension");
+        }
+
+        List<UserCSV> csvRecords = getUsersFromRequest(file);
+        int totalUsers = csvRecords.size();
+        int successfulUsers = 0;
+
+        log.info("Processing {} user records from CSV file '{}'", totalUsers, originalFilename);
+
+        if (csvRecords.isEmpty()) {
+            throw new BadRequestClientException("CSV file is empty or contains no valid data records");
+        }
+
+        for (UserCSV user : csvRecords) {
+            if (Sw360UserService.syncUser(user, thriftClients)) {
+                successfulUsers++;
+            }
+        }
+
+        int failedUsers = totalUsers - successfulUsers;
+        requestSummary.setTotalElements(totalUsers);
+        requestSummary.setTotalAffectedElements(successfulUsers);
+
+        if (failedUsers > 0) {
+            requestSummary.setMessage("Successfully imported " +
+                    successfulUsers + " users, " + failedUsers + " failed.");
+            if (successfulUsers == 0) {
+                requestSummary.setRequestStatus(FAILURE);
+            }
+        } else {
+            requestSummary.setMessage("Successfully imported " +
+                    successfulUsers + " users");
+        }
+        return requestSummary;
+    }
+
+    /**
+     * Convert the CSV uploaded into list of UserCSV objects.
+     * @param file File uploaded by user.
+     * @return List of converted users.
+     * @throws IOException If the file reading fails.
+     */
+    private @NotNull List<UserCSV> getUsersFromRequest(@NotNull MultipartFile file) throws IOException {
+        List<CSVRecord> records = readAsCSVRecords(file.getInputStream());
+
+        return getUsersFromCSV(records);
+    }
+
+    /**
+     * Convert the `List<CSVRecord>` to `List<UserCSV>`
+     * @param records CSV records read from file.
+     * @return List of UserCSV objects.
+     */
+    private @NotNull List<UserCSV> getUsersFromCSV(@NotNull List<CSVRecord> records) {
+        List<UserCSV> users = new ArrayList<>();
+
+        for (CSVRecord record : records) {
+            try {
+                UserCSV user = new UserCSV(record);
+                users.add(user);
+            } catch (IndexOutOfBoundsException e) {
+                log.error("Broken csv record");
+            }
+        }
+
+        return users;
     }
 }

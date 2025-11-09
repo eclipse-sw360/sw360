@@ -1888,4 +1888,21 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
+
+    public int getProjectCountByPackageId(String packageId) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        int count;
+        try {
+            count = projectClient.getProjectCountByPackageId(packageId);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested Package Id Not Found");
+            }
+            else {
+                throw sw360Exp;
+            }
+        }
+        return count;
+    }
 }

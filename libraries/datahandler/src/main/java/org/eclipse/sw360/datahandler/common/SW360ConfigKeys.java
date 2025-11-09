@@ -65,8 +65,6 @@ public class SW360ConfigKeys {
 
     //Properties used by the RepositoryURL class to handle VCS from SBOM
     public static final String VCS_HOSTS = "vcs.hosts";
-    public static final String VCS_REDIRECTION_LIMIT = "vcs.redirection.limit";
-    public static final String VCS_REDIRECTION_TIMEOUT_LIMIT = "vcs.redirection.timeout.limit";
     public static final String NON_PKG_MANAGED_COMPS_PROP = "non.pkg.managed.comps.prop";
 
     // Properties purely used by UI

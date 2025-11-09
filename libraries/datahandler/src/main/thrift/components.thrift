@@ -407,6 +407,9 @@ struct ComponentDTO {
     51: optional string mailinglist,
     52: optional string wiki,
     53: optional string blog,
+
+    // Moderation comment passed during PATCH request (not persisted on Component)
+    90: optional string comment,
 }
 
 struct ReleaseLink{
