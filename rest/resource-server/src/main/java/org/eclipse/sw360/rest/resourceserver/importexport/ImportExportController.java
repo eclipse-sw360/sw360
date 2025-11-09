@@ -11,42 +11,45 @@
 
 package org.eclipse.sw360.rest.resourceserver.importexport;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-
-import java.io.IOException;
-
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.rest.webmvc.BasePathAwareController;
-import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.server.RepresentationModelProcessor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.rest.webmvc.BasePathAwareController;
+import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -283,21 +286,58 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             description = "Upload a users CSV file to import users into the system. Requires ADMIN authority.",
             tags = {"ImportExport"},
             parameters = {
-                    @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true, description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data.")
+                    @Parameter(
+                            name = "Content-Type", in = ParameterIn.HEADER, required = true,
+                            description = "The content type of the request. " +
+                                    "Supported values: " + MediaType.MULTIPART_MIXED_VALUE + " or " +
+                                    MediaType.MULTIPART_FORM_DATA_VALUE + "."
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Users imported successfully.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RequestSummary.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "207", description = "Partial import done, some users failed to import. More " +
+                            "information in the `message` field of response.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RequestSummary.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400", description = "The uploaded CSV is in bad format."
+                    ),
+                    @ApiResponse(
+                            responseCode = "403", description = "User is not an admin."
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Failed to upload the file."
+                    )
             }
     )
     @PreAuthorize("hasAuthority('ADMIN')")
-    @RequestMapping(value = IMPORTEXPORT_URL + "/uploadUsers", method = RequestMethod.POST, consumes = {
-            MediaType.MULTIPART_MIXED_VALUE,
-            MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity<RequestSummary> uploadUsers(
-            @Parameter(description = "The users CSV file to be uploaded. Expected columns: GivenName, Lastname, Email, Department, UserGroup (optional), GID (optional), PasswdHash (optional), wantsMailNotification (optional)")
-            @RequestParam("usersFile") MultipartFile file,
-            HttpServletRequest request, HttpServletResponse response
-    ) throws TException, IOException, ServletException {
-
+    @RequestMapping(value = IMPORTEXPORT_URL + "/usersCsv", method = RequestMethod.POST,
+            consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<RequestSummary> uploadUsersCsv(
+            @Parameter(
+                    description = "The users CSV file to be uploaded. " +
+                            "Expected columns: " +
+                            "GivenName, Lastname, Email, Department, UserGroup, GID, PasswdHash, wantsMailNotification (optional)"
+            )
+            @RequestParam("usersCsv") MultipartFile file
+    ) throws IOException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = importExportService.uploadUsers(sw360User, file, request);
-        return ResponseEntity.ok(requestSummary);
+        RequestSummary requestSummary = importExportService.uploadUsers(sw360User, file);
+        if (requestSummary.getRequestStatus() == RequestStatus.SUCCESS) {
+            return ResponseEntity.ok(requestSummary);
+        } else {
+            return new ResponseEntity<>(requestSummary, HttpStatus.MULTI_STATUS);
+        }
     }
 }
