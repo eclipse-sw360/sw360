@@ -4,18 +4,13 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.common;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class is used to sanitize the input from the user to prevent XSS attacks.
@@ -24,71 +19,88 @@ import java.io.IOException;
  */
 public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 
+    private final Map<String, String[]> sanitizedParameterMap;
+
 	public Sw360XSSRequestWrapper(HttpServletRequest request) {
 		super(request);
+        this.sanitizedParameterMap = sanitizeParameters(request);
 	}
 
-	@Override
-	public ServletInputStream getInputStream() throws IOException {
-		ServletInputStream originalInputStream = super.getInputStream();
-		String requestBody = new String(originalInputStream.readAllBytes());
+    /**
+     * Sanitizes all request parameters (query parameters and form data) once during construction.
+     *
+     * @param request The original HttpServletRequest.
+     * @return A map of sanitized parameter names to arrays of sanitized values.
+     */
+    private Map<String, String[]> sanitizeParameters(HttpServletRequest request) {
+        Map<String, String[]> originalParameters = request.getParameterMap();
+        Map<String, String[]> sanitizedMap = new HashMap<>();
 
-		JsonNode requestBodyJSON = sanitizeInput(new ObjectMapper().readTree(requestBody));
-		String sanitizedBody = requestBodyJSON.toString();
-		return new ServletInputStream() {
-			private final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(
-					sanitizedBody.getBytes()
-			);
+        for (Map.Entry<String, String[]> entry : originalParameters.entrySet()) {
+            String paramName = entry.getKey();
+            String[] originalValues = entry.getValue();
+            String[] sanitizedValues = new String[originalValues.length];
+            for (int i = 0; i < originalValues.length; i++) {
+                sanitizedValues[i] = stripXSS(originalValues[i]);
+            }
+            sanitizedMap.put(paramName, sanitizedValues);
+        }
+        return Collections.unmodifiableMap(sanitizedMap);
+    }
 
-			@Override
-			public int read() throws IOException {
-				return byteArrayInputStream.read();
-			}
+    /**
+     * Overrides getParameter to return a sanitized parameter value.
+     */
+    @Override
+    public String getParameter(String name) {
+        String[] values = sanitizedParameterMap.get(name);
+        return (values != null && values.length > 0) ? values[0] : null;
+    }
 
-			@Override
-			public boolean isFinished() {
-				return byteArrayInputStream.available() == 0;
-			}
+     /**
+     * Overrides getParameterValues to return sanitized parameter values.
+     */
+    @Override
+    public String[] getParameterValues(String name) {
+        String[] values = sanitizedParameterMap.get(name);
+        return (values != null) ? values.clone() : null;
+    }
 
-			@Override
-			public boolean isReady() {
-				return true;
-			}
+    /**
+     * Overrides getParameterNames to return the names of the sanitized parameters.
+     */
+    @Override
+    public Enumeration<String> getParameterNames() {
+        return Collections.enumeration(sanitizedParameterMap.keySet());
+    }
 
-			@Override
-			public void setReadListener(ReadListener readListener) {
-			}
-		};
-	}
+    /**
+     * Overrides getParameterMap to return the map of sanitized parameters.
+     */
+    @Override
+    public Map<String, String[]> getParameterMap() {
+        Map<String, String[]> defensiveCopy = new HashMap<>();
+        for (Map.Entry<String, String[]> entry : sanitizedParameterMap.entrySet()) {
+            defensiveCopy.put(entry.getKey(), entry.getValue().clone());
+        }
+        return Collections.unmodifiableMap(defensiveCopy);
+    }
 
-	@Override
-	public String[] getParameterValues(String parameter) {
-		String[] values = super.getParameterValues(parameter);
-		if (values == null) {
-			return null;
-		}
-		int count = values.length;
-		String[] encodedValues = new String[count];
-		for (int i = 0; i < count; i++) {
-			encodedValues[i] = stripXSS(values[i]);
-		}
-		return encodedValues;
-	}
-
-	@Override
-	public String getParameter(String parameter) {
-		String value = super.getParameter(parameter);
-		return stripXSS(value);
-	}
-
-	@Override
-	public String getHeader(String name) {
-		if (shouldIgnoreHeaderForXSS(name)) {
-			return super.getHeader(name);
-		}
-		String value = super.getHeader(name);
-		return stripXSS(value);
-	}
+    /**
+     * Overrides getHeader to return a sanitized header value.
+     */
+    @Override
+    public String getHeader(String name) {
+        String value = super.getHeader(name);
+        if (value == null) {
+            return null;
+        }
+        // Only sanitize headers that are not in the ignore list.
+        if (shouldIgnoreHeaderForXSS(name)) {
+            return value;
+        }
+        return stripXSS(value);
+    }
 
 	private boolean shouldIgnoreHeaderForXSS(String headerName) {
 		// Headers essential for HTTP operations and negotiation
@@ -103,32 +115,27 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 				"User-Agent".equalsIgnoreCase(headerName) ||
 				"Referer".equalsIgnoreCase(headerName) ||
 				"Cookie".equalsIgnoreCase(headerName) ||
-				"Set-Cookie".equalsIgnoreCase(headerName);
+				"Set-Cookie".equalsIgnoreCase(headerName) ||
+                "If-None-Match".equalsIgnoreCase(headerName) ||
+                "If-Modified-Since".equalsIgnoreCase(headerName) ||
+                "X-Requested-With".equalsIgnoreCase(headerName) ||
+                "Origin".equalsIgnoreCase(headerName) ||
+                "Connection".equalsIgnoreCase(headerName);
 	}
 
-	private String stripXSS(String value) {
-		if (value == null) {
-			return null;
-		}
-		return org.owasp.encoder.Encode.forHtml(value);
-
-	}
-
-	private JsonNode sanitizeInput(JsonNode input) {
-		if (input.isTextual()) {
-			return JsonNodeFactory.instance.textNode(stripXSS(input.asText()));
-		} else if (input.isArray()) {
-			ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
-			for (JsonNode element : input) {
-				arrayNode.add(sanitizeInput(element));
-			}
-			return arrayNode;
-		} else if (input.isObject()) {
-			ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
-			input.properties().forEach(entry -> objectNode.set(entry.getKey(), sanitizeInput(entry.getValue())));
-			return objectNode;
-		} else {
-			return input;
-		}
-	}
+    /**
+     * Applies HTML encoding to a string value using OWASP ESAPI Encoder.
+     * The function unescape the input first to prevent double encoding (`&lt;` => `&amp;lt;`).
+     *
+     * @implNote `.forHtmlContent` is chosen over `.forHtml` to prevent encoding quotes.
+     * @param value The string to sanitize.
+     * @return The HTML-encoded string, or null if the input was null.
+     */
+    public static String stripXSS(String value) {
+        if (value == null) {
+            return null;
+        }
+        String canonicalValue = org.apache.commons.text.StringEscapeUtils.unescapeHtml4(value);
+        return org.owasp.encoder.Encode.forHtmlContent(canonicalValue);
+    }
 }
