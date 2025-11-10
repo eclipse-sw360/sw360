@@ -30,6 +30,10 @@ public class Sw360XssFilter implements Filter {
 	 */
 	@Override
 	public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-		filterChain.doFilter(new Sw360XSSRequestWrapper((HttpServletRequest) servletRequest), servletResponse);
+        if (servletRequest instanceof HttpServletRequest) {
+            filterChain.doFilter(new Sw360XSSRequestWrapper((HttpServletRequest) servletRequest), servletResponse);
+        } else {
+            filterChain.doFilter(servletRequest, servletResponse);
+        }
 	}
 }

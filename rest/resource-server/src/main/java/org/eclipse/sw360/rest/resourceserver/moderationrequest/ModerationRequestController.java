@@ -109,9 +109,6 @@ public class ModerationRequestController implements RepresentationModelProcessor
     @NonNull
     private final Sw360ComponentService componentService;
 
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
-
     @Operation(
             summary = "List all of the service's moderation requests.",
             description = "List all of the service's moderation requests.",
@@ -167,7 +164,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
     private Map<String, Object> getModObjectMapper(ModerationRequest moderationRequest) {
         ObjectMapper oMapper = new ObjectMapper();
         oMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        oMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        oMapper.setDefaultPropertyInclusion(
+                JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL)
+        );
         oMapper.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE); // but only public getters
         oMapper.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE); // and none of "is-setters"
         return oMapper.convertValue(moderationRequest, Map.class);
