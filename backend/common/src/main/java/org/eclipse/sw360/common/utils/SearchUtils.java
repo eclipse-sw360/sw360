@@ -61,6 +61,7 @@ public class SearchUtils {
             "    }" +
             "    if (result.trim().length > 0) {" +
             "      index('text', indexName, result.trim(), {'store': true});" +
+            "      index('string', indexName + '_sort', result.trim());" +
             "    }" +
             "  }";
 }

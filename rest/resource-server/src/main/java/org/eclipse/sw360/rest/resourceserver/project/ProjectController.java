@@ -3561,7 +3561,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedResources", method = RequestMethod.GET)
-    public ResponseEntity<?> getLinkedResourcesOfProjectForDependencyNetwork(
+    public ResponseEntity<ProjectLink> getLinkedResourcesOfProjectForDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
             @Parameter(description = "Get linked releases transitively (default is false)", example = "true")
@@ -3580,7 +3580,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/{id}/releases", method = RequestMethod.GET)
-    public ResponseEntity<?> getLinkedReleasesInDependencyNetworkByIndexPath(
+    public ResponseEntity<CollectionModel<ReleaseLink>> getLinkedReleasesInDependencyNetworkByIndexPath(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId,
             @Parameter(description = "Index path", example = "0->1")
