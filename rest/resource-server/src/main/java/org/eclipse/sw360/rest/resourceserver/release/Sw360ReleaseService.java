@@ -1449,7 +1449,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
     }
 
-    public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User) throws TException{
+    public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User, String attachmentId) throws TException{
         ThriftClients thriftClients = new ThriftClients();
         LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
         final Predicate<Attachment> isCLI = attachment -> AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
@@ -1457,10 +1457,23 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Set<LicenseNameWithText> licenseNameWithTexts = new HashSet<LicenseNameWithText>();
         Map<String, Object> successResponse = new HashMap<>();
         List<Attachment> filteredAttachments = CommonUtils.nullToEmptySet(rel.getAttachments()).stream().filter(isCLI).collect(Collectors.toList());
-        if (filteredAttachments.size() > 1) {
-            Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus());
-            filteredAttachments = filteredAttachments.stream().filter(isApprovedCLI).collect(Collectors.toList());
+
+        // If attachmentId is provided, filter by that specific attachment
+        if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentId)) {
+            filteredAttachments = filteredAttachments.stream()
+                    .filter(attachment -> attachmentId.equals(attachment.getAttachmentContentId()))
+                    .collect(Collectors.toList());
+            if (filteredAttachments.isEmpty()) {
+                throw new ResourceNotFoundException("Attachment with id " + attachmentId + " not found or is not a CLI attachment");
+            }
+        } else {
+            // Original logic: filter by approved attachments if multiple exist
+            if (filteredAttachments.size() > 1) {
+                Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus());
+                filteredAttachments = filteredAttachments.stream().filter(isApprovedCLI).collect(Collectors.toList());
+            }
         }
+
         if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(SW360Constants.XML_FILE_EXTENSION)) {
             final Attachment filteredAttachment = filteredAttachments.get(0);
             final String attachmentContentId = filteredAttachment.getAttachmentContentId();

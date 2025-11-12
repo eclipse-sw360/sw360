@@ -1859,7 +1859,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Get license data.",
-            description = "Get license source files list and other license data from release attachment.",
+            description = "Get license source files list and other license data from release attachment. " +
+                    "Optionally specify attachmentId query parameter to get license file list for a specific attachment.",
             tags = {"Releases"},
             responses = {
                     @ApiResponse(
@@ -1903,12 +1904,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = RELEASES_URL + "/{id}/licenseFileList", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
             @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String relId
+            @PathVariable("id") String relId,
+            @Parameter(description = "Optional attachment ID to get license file list for a specific attachment.")
+            @RequestParam(value = "attachmentId", required = false) String attachmentId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
         Release sw360Release = releaseService.getReleaseForUserById(relId, user);
-        Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user);
+        Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user, attachmentId);
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
 
