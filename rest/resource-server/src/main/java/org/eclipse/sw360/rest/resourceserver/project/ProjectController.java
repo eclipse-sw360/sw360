@@ -4087,4 +4087,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
+
+    @Operation(
+            summary = "Get all project groups.",
+            description = "Get all the unique groups used by projects.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/groups", method = RequestMethod.GET)
+    public Set<String> getAllProjectGroups() {
+        Set<String> groups;
+        try {
+            groups = projectService.getGroups();
+        } catch (TException e) {
+            groups = Collections.emptySet();
+        }
+        return groups;
+    }
 }
