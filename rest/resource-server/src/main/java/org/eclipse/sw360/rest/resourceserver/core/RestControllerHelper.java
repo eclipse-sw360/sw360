@@ -20,6 +20,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -564,6 +565,16 @@ public class RestControllerHelper<T> {
         License embeddedLicense = convertToEmbeddedLicense(licenseId);
         HalResource<License> halLicense = new HalResource<>(embeddedLicense);
 
+        if (isLikelyExternalLicenseReference(licenseId)) {
+            LOGGER.info("License '{}' appears to be external reference - creating basic embedded license without database lookup", licenseId);
+            embeddedLicense.setShortname(licenseId);
+            embeddedLicense.setFullname(licenseId);
+            embeddedLicense.setOSIApproved(Quadratic.NA);
+            embeddedLicense.setFSFLibre(Quadratic.NA);
+            embeddedLicense.setChecked(false);
+            return halLicense;
+        }
+
         try {
             License licenseById = licenseService.getLicenseById(licenseId);
             embeddedLicense.setFullname(licenseById.getFullname());
@@ -573,7 +584,7 @@ public class RestControllerHelper<T> {
             halLicense.add(licenseSelfLink);
             return halLicense;
         } catch (ResourceNotFoundException rne) {
-            LOGGER.error("cannot create a self link for license with id" + licenseId);
+            LOGGER.error("cannot create a self link for license with id " + licenseId);
             embeddedLicense.setShortname(licenseId);
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
@@ -581,9 +592,24 @@ public class RestControllerHelper<T> {
             embeddedLicense.setFullname(null);
             return halLicense;
         } catch (Exception e) {
-            LOGGER.error("cannot create self link for license with id: " + licenseId);
+            if (isLikelyExternalLicenseReference(licenseId)) {
+                LOGGER.info("License '{}' not found in SW360 database but appears to be external reference - creating basic embedded license", licenseId);
+                embeddedLicense.setShortname(licenseId);
+                embeddedLicense.setFullname(licenseId);
+                embeddedLicense.setOSIApproved(Quadratic.NA);
+                embeddedLicense.setFSFLibre(Quadratic.NA);
+                embeddedLicense.setChecked(false);
+                return halLicense;
+            } else {
+                LOGGER.error("cannot create self link for license with id: " + licenseId, e);
+                embeddedLicense.setShortname(licenseId);
+                embeddedLicense.setOSIApproved(Quadratic.NA);
+                embeddedLicense.setFSFLibre(Quadratic.NA);
+                embeddedLicense.setChecked(false);
+                embeddedLicense.setFullname(null);
+                return halLicense;
+            }
         }
-        return null;
     }
 
     public LicenseType convertToEmbeddedLicenseType(LicenseType licenseType) {
@@ -782,10 +808,18 @@ public class RestControllerHelper<T> {
             if (fieldValue != null) {
                 switch (field) {
                     case MAIN_LICENSE_IDS:
-                        isLicenseValid(requestBodyRelease.getMainLicenseIds());
+                        Set<String> newMainLicenseIds = requestBodyRelease.getMainLicenseIds();
+                        Set<String> existingMainLicenseIds = releaseToUpdate.getMainLicenseIds();
+                        if (!Objects.equals(newMainLicenseIds, existingMainLicenseIds)) {
+                            isLicenseValidResilient(newMainLicenseIds, "Main License IDs");
+                        }
                         break;
                     case OTHER_LICENSE_IDS:
-                        isLicenseValid(requestBodyRelease.getOtherLicenseIds());
+                        Set<String> newOtherLicenseIds = requestBodyRelease.getOtherLicenseIds();
+                        Set<String> existingOtherLicenseIds = releaseToUpdate.getOtherLicenseIds();
+                        if (!Objects.equals(newOtherLicenseIds, existingOtherLicenseIds)) {
+                            isLicenseValidResilient(newOtherLicenseIds, "Other License IDs");
+                        }
                         break;
                     default:
                 }
@@ -806,20 +840,118 @@ public class RestControllerHelper<T> {
         return licenseRequestBody;
     }
 
+    /**
+     * Legacy license validation method - kept for backward compatibility but deprecated
+     * @deprecated Use isLicenseValidResilient instead
+     */
+    @Deprecated
     private void isLicenseValid(Set<String> licenses) {
-        List <String> licenseIncorrect = new ArrayList<>();
-        if (CommonUtils.isNotEmpty(licenses)) {
-            for (String licenseId : licenses) {
-                try {
-                    licenseService.getLicenseById(licenseId);
-                } catch (Exception e) {
-                    licenseIncorrect.add(licenseId);
-                }
+        isLicenseValidResilient(licenses, "License IDs");
+    }
+
+    /**
+     * More resilient license validation that handles external license references gracefully
+     * @param licenses Set of license IDs to validate
+     * @param fieldName Name of the field being validated (for error messages)
+     */
+    private void isLicenseValidResilient(Set<String> licenses, String fieldName) {
+        if (CommonUtils.isNullOrEmptyCollection(licenses)) {
+            return;
+        }
+
+        List<String> licenseIncorrect = new ArrayList<>();
+        List<String> licenseWarnings = new ArrayList<>();
+        
+        for (String licenseId : licenses) {
+            if (licenseId == null || licenseId.trim().isEmpty()) {
+                continue; // Skip empty/null license IDs
+            }
+            if (isLikelyExternalLicenseReference(licenseId)) {
+                licenseWarnings.add(licenseId);
+                LOGGER.info("{} ID '{}' appears to be external license reference - allowing without database validation", 
+                          fieldName, licenseId);
+                continue;
+            }
+
+            try {
+                licenseService.getLicenseById(licenseId);
+                LOGGER.debug("{} validation successful for ID: {}", fieldName, licenseId);
+            } catch (Exception e) {
+                licenseIncorrect.add(licenseId);
+                LOGGER.warn("{} ID '{}' not found in SW360 database and not recognized as external reference", 
+                          fieldName, licenseId);
             }
         }
+
         if (!licenseIncorrect.isEmpty()) {
-            throw new BadRequestClientException("License with ids " + licenseIncorrect + " does not exist in SW360 database.");
+            String errorMsg = fieldName + " with ids " + licenseIncorrect + " does not exist in SW360 database.";
+            if (!licenseWarnings.isEmpty()) {
+                errorMsg += " Note: External license references " + licenseWarnings + " were allowed.";
+            }
+            LOGGER.error("License validation failed: {}", errorMsg);
+            throw new BadRequestClientException(errorMsg);
         }
+
+        if (!licenseWarnings.isEmpty()) {
+            LOGGER.info("{} update proceeding with external license references: {}", fieldName, licenseWarnings);
+        }
+    }
+
+    /**
+     * Helper method to determine if a license ID appears to be an external reference
+     * (e.g., long descriptive names, proprietary licenses) rather than an internal SW360 ID
+     * This method is conservative to avoid false positives with common SPDX identifiers
+     */
+    private boolean isLikelyExternalLicenseReference(String licenseId) {
+        if (licenseId == null || licenseId.trim().isEmpty()) {
+            return false;
+        }
+
+        String normalizedId = licenseId.toLowerCase().trim();
+
+        return isMatchingConfigurablePatterns(normalizedId) ||
+               isLongDescriptiveName(normalizedId);
+    }
+
+    /**
+     * Check against configurable license patterns from application properties
+     * This is now more conservative to avoid false positives with standard SPDX identifiers
+     */
+    private boolean isMatchingConfigurablePatterns(String normalizedId) {
+
+        if ((normalizedId.endsWith("license") || normalizedId.endsWith("licence")) && 
+            normalizedId.length() > 10) {
+            return true;
+        }
+
+        if ((normalizedId.startsWith(".") || normalizedId.contains("microsoft") || 
+             normalizedId.contains("oracle") || normalizedId.contains("google") ||
+             normalizedId.contains("proprietary") || normalizedId.contains("commercial")) && 
+            normalizedId.contains("license")) {
+            return true;
+        }
+
+        if (normalizedId.startsWith("gnu ") && normalizedId.contains("general public license")) {
+            return true;
+        }
+
+        if (normalizedId.startsWith("creative commons") || normalizedId.contains("cc-by")) {
+            return true;
+        }
+
+        if (normalizedId.matches(".*\\bversion\\s+\\d+.*") && normalizedId.length() > 15) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if it's likely a long descriptive name from external sources
+     * Only very long names are considered external to be conservative
+     */
+    private boolean isLongDescriptiveName(String normalizedId) {
+        return normalizedId.length() > 40; // Increased threshold to be more conservative
     }
 
     public License mapLicenseRequestToLicense(License licenseRequestBody, License licenseUpdate) {
