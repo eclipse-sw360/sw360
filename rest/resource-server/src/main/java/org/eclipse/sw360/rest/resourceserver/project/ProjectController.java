@@ -285,7 +285,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             filterMap.put(Project._Fields.NAME.getFieldName(), values);
         }
 
-        if (luceneSearch) {
+        if (luceneSearch && !filterMap.isEmpty()) {
             if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
                 Set<String> values = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
                         .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
