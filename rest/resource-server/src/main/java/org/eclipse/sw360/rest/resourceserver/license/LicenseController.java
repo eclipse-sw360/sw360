@@ -95,18 +95,39 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "List all of the service's licenses.",
-            description = "List all of the service's licenses.",
+            description = "List all of the service's licenses. Supports quick filtering via luceneSearch parameter.",
             tags = {"Licenses"}
     )
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel> getLicenses(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
+            @Parameter(description = "Use lucene search to filter licenses by license type.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "Search text to filter license types (used with luceneSearch=true).")
+            @RequestParam(value = "searchText", required = false) String searchText,
             HttpServletRequest request
     ) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<License> sw360Licenses = licenseService.getLicenses();
+        List<License> sw360Licenses;
+
+        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            List<LicenseType> licenseTypes = licenseService.quickSearchLicenseType(searchText);
+            Set<String> licenseTypeIds = licenseTypes.stream()
+                    .map(LicenseType::getId)
+                    .filter(CommonUtils::isNotNullEmptyOrWhitespace)
+                    .collect(Collectors.toSet());
+
+            List<License> allLicenses = licenseService.getLicenses();
+            sw360Licenses = allLicenses.stream()
+                    .filter(license -> license.isSetLicenseType() &&
+                            licenseTypeIds.contains(license.getLicenseType().getId()))
+                    .collect(Collectors.toList());
+        } else {
+            sw360Licenses = licenseService.getLicenses();
+        }
+
         PaginationResult<License> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE);
         List<EntityModel<License>> licenseResources = new ArrayList<>();
         paginationResult.getResources().stream()
