@@ -20,6 +20,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -573,7 +574,7 @@ public class RestControllerHelper<T> {
             halLicense.add(licenseSelfLink);
             return halLicense;
         } catch (ResourceNotFoundException rne) {
-            LOGGER.error("cannot create a self link for license with id" + licenseId);
+            LOGGER.error("cannot create a self link for license with id " + licenseId);
             embeddedLicense.setShortname(licenseId);
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
@@ -581,7 +582,7 @@ public class RestControllerHelper<T> {
             embeddedLicense.setFullname(null);
             return halLicense;
         } catch (Exception e) {
-            LOGGER.error("cannot create self link for license with id: " + licenseId);
+            LOGGER.error("cannot create self link for license with id: " + licenseId); 
         }
         return null;
     }
@@ -807,19 +808,32 @@ public class RestControllerHelper<T> {
     }
 
     private void isLicenseValid(Set<String> licenses) {
-        List <String> licenseIncorrect = new ArrayList<>();
+        List<String> licenseIncorrect = new ArrayList<>();
         if (CommonUtils.isNotEmpty(licenses)) {
             for (String licenseId : licenses) {
                 try {
                     licenseService.getLicenseById(licenseId);
                 } catch (Exception e) {
-                    licenseIncorrect.add(licenseId);
+                    try {
+                        createMissingLicense(licenseId);
+                    } catch (Exception createException) {
+                        licenseIncorrect.add(licenseId);
+                    }
                 }
             }
         }
         if (!licenseIncorrect.isEmpty()) {
-            throw new BadRequestClientException("License with ids " + licenseIncorrect + " does not exist in SW360 database.");
+            throw new BadRequestClientException("License with ids " + licenseIncorrect + " does not exist in SW360 database and could not be created automatically.");
         }
+    }
+
+    private void createMissingLicense(String licenseId) throws Exception {
+        License newLicense = new License();
+        newLicense.setId(licenseId);
+        newLicense.setShortname(licenseId);
+        newLicense.setFullname(licenseId);
+        User user = getSw360UserFromAuthentication();
+        licenseService.createLicense(newLicense, user);
     }
 
     public License mapLicenseRequestToLicense(License licenseRequestBody, License licenseUpdate) {
