@@ -1449,19 +1449,35 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
     }
 
-    public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User) throws TException{
+    public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User, String attachmentId) throws TException{
         ThriftClients thriftClients = new ThriftClients();
         LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
-        final Predicate<Attachment> isCLI = attachment -> AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
-                || AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(attachment.getAttachmentType());
+        final Predicate<Attachment> isSupportedAttachment = attachment ->
+                AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
+                || AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(attachment.getAttachmentType())
+                || AttachmentType.INITIAL_SCAN_REPORT.equals(attachment.getAttachmentType());
         Set<LicenseNameWithText> licenseNameWithTexts = new HashSet<LicenseNameWithText>();
         Map<String, Object> successResponse = new HashMap<>();
-        List<Attachment> filteredAttachments = CommonUtils.nullToEmptySet(rel.getAttachments()).stream().filter(isCLI).collect(Collectors.toList());
-        if (filteredAttachments.size() > 1) {
-            Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus());
-            filteredAttachments = filteredAttachments.stream().filter(isApprovedCLI).collect(Collectors.toList());
+        List<Attachment> filteredAttachments = CommonUtils.nullToEmptySet(rel.getAttachments()).stream().filter(isSupportedAttachment).collect(Collectors.toList());
+
+        // If attachmentId is provided, filter by that specific attachment
+        if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentId)) {
+            filteredAttachments = filteredAttachments.stream()
+                    .filter(attachment -> attachmentId.equals(attachment.getAttachmentContentId()))
+                    .collect(Collectors.toList());
+            if (filteredAttachments.isEmpty()) {
+                throw new ResourceNotFoundException("Attachment with id " + attachmentId + " not found or is not a supported attachment type (CLI/ISR)");
+            }
+        } else {
+            // Original logic: filter by approved attachments if multiple exist
+            if (filteredAttachments.size() > 1) {
+                Predicate<Attachment> isApprovedAttachment = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus());
+                filteredAttachments = filteredAttachments.stream().filter(isApprovedAttachment).collect(Collectors.toList());
+            }
         }
-        if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(SW360Constants.XML_FILE_EXTENSION)) {
+
+        if (filteredAttachments.size() == 1 && (filteredAttachments.get(0).getFilename().endsWith(SW360Constants.XML_FILE_EXTENSION)
+                || filteredAttachments.get(0).getFilename().endsWith(SW360Constants.RDF_FILE_EXTENSION))) {
             final Attachment filteredAttachment = filteredAttachments.get(0);
             final String attachmentContentId = filteredAttachment.getAttachmentContentId();
             try {
@@ -1487,7 +1503,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                         successResponse.put("attName", nullToEmptyString(filteredAttachment.getFilename()));
                         return successResponse;
                     } else {
-                        throw new BadRequestClientException("source file information not found in cli");
+                        throw new BadRequestClientException("source file information not found in attachment");
                     }
                 }
             } catch (TException exception) {
@@ -1498,11 +1514,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         else {
             if (filteredAttachments.size() > 1) {
-                throw new DataIntegrityViolationException("multiple approved cli are found in the release");
+                throw new DataIntegrityViolationException("multiple approved attachments are found in the release");
             } else if (filteredAttachments.isEmpty()) {
-                throw new ResourceNotFoundException("cli attachment not found in the release");
+                throw new ResourceNotFoundException("supported attachment (CLI/ISR) not found in the release");
             } else {
-                throw new BadRequestClientException("source file information not found in cli");
+                throw new BadRequestClientException("source file information not found in attachment");
             }
         }
         return successResponse;

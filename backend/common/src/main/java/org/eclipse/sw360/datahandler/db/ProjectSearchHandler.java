@@ -111,7 +111,7 @@ public class ProjectSearchHandler {
     public Map<PaginationData, List<Project>> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
         String sortColumn = getSortColumnName(pageData);
         Map<PaginationData, List<Project>> resultProjectList = connector
-                .searchViewWithRestrictions(Project.class,
+                .searchViewWithRestrictionsWithAnd(Project.class,
                         luceneSearchView.getIndexName(), text, subQueryRestrictions,
                         pageData, sortColumn, pageData.isAscending());
 
@@ -134,7 +134,7 @@ public class ProjectSearchHandler {
     }
 
     public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictions(Project.class, luceneSearchView.getIndexName(),
+        return connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
                 text, subQueryRestrictions);
     }
 
@@ -149,7 +149,7 @@ public class ProjectSearchHandler {
             projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView.getIndexName(),
                     null, filterMap, user);
         } else {
-            projectsByReleaseIds = connector.searchViewWithRestrictions(Project.class, luceneSearchView.getIndexName(),
+            projectsByReleaseIds = connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
                     null, filterMap);
         }
         return new HashSet<>(projectsByReleaseIds);
