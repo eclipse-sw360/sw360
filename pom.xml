@@ -92,12 +92,12 @@
     <json-path.version>2.9.0</json-path.version>
     <json-smart.version>2.6.0</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
-    <jackson.version>2.20.0</jackson.version>
+    <jackson.version>2.20.1</jackson.version>
     <jackson.annotation.version>2.20</jackson.annotation.version>
 
     <!-- Dependencies version properties -->
     <assertj.version>3.27.5</assertj.version>
-    <byte-buddy.version>1.17.7</byte-buddy.version>
+    <byte-buddy.version>1.17.8</byte-buddy.version>
     <cloudantsdk.version>0.10.9</cloudantsdk.version>
     <commons-cli.version>1.9.0</commons-cli.version>
     <commons-codec.version>1.19.0</commons-codec.version>
@@ -139,7 +139,7 @@
     <junit.version>4.13.2</junit.version>
     <log4j2.version>2.25.2</log4j2.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
-    <mockito.version>5.19.0</mockito.version>
+    <mockito.version>5.20.0</mockito.version>
     <okhttp.version>4.12.0</okhttp.version>
     <org.ow2.asm.version>9.9</org.ow2.asm.version>
     <org.spdx.java.spdx.library.version>2.0.1</org.spdx.java.spdx.library.version>
@@ -154,7 +154,7 @@
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2-authorization-server.version>1.5.2</spring-security-oauth2-authorization-server.version>
-    <spring-security.version>6.5.4</spring-security.version>
+    <spring-security.version>6.5.6</spring-security.version>
     <springdoc-openapi-stater-common.version>2.8.13</springdoc-openapi-stater-common.version>
     <springframework.version>6.2.12</springframework.version>
     <thrift.version>0.20.0</thrift.version>
@@ -309,7 +309,7 @@
       <dependency>
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-core-java</artifactId>
-        <version>11.0.0</version>
+        <version>11.0.1</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>

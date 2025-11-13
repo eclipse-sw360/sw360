@@ -1859,7 +1859,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Get license data.",
-            description = "Get license source files list and other license data from release attachment.",
+            description = "Get license source files list and other license data from release attachment (CLI/ISR). " +
+                    "Optionally specify attachmentId query parameter to get license file list for a specific attachment. " +
+                    "Supports CLI XML, CLI Combined, and ISR attachment types.",
             tags = {"Releases"},
             responses = {
                     @ApiResponse(
@@ -1886,13 +1888,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                             }
                     ),
                     @ApiResponse(
-                            responseCode = "400", description = "source file information not found in cli attachment"
+                            responseCode = "400", description = "Source file information not found in attachment"
                     ),
                     @ApiResponse(
-                            responseCode = "409", description = "multiple approved cli are found in the release"
+                            responseCode = "409", description = "Multiple approved attachments are found in the release"
                     ),
                     @ApiResponse(
-                            responseCode = "404", description = "cli attachment not found in the release"
+                            responseCode = "404", description = "Supported attachment (CLI/ISR) not found in the release"
                     ),
                     @ApiResponse(
                             responseCode = "500", description = "Internal server error, while processing the request."
@@ -1903,12 +1905,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = RELEASES_URL + "/{id}/licenseFileList", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
             @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String relId
+            @PathVariable("id") String relId,
+            @Parameter(description = "Optional attachment ID to get license file list for a specific CLI/ISR attachment.")
+            @RequestParam(value = "attachmentId", required = false) String attachmentId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
         Release sw360Release = releaseService.getReleaseForUserById(relId, user);
-        Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user);
+        Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user, attachmentId);
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
 

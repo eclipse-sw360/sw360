@@ -13,11 +13,8 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
@@ -26,9 +23,9 @@ import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -55,18 +52,26 @@ public class ProjectSearchHandler {
                 "    }" +
                 "    if(doc.projectType !== undefined && doc.projectType != null && doc.projectType.length >0) {" +
                 "      index('text', 'projectType', doc.projectType, {'store': true});" +
+                "      index('string', 'projectType_sort', doc.projectType);" +
                 "    }" +
                 "    if(doc.projectResponsible !== undefined && doc.projectResponsible != null && doc.projectResponsible.length >0) {" +
                 "      index('text', 'projectResponsible', doc.projectResponsible, {'store': true});" +
+                "      index('string', 'projectResponsible_sort', doc.projectResponsible);" +
                 "    }" +
                 "    if(doc.name !== undefined && doc.name != null && doc.name.length >0) {" +
                 "      index('text', 'name', doc.name, {'store': true});" +
+                "      index('string', 'name_sort', doc.name);" +
+                "    }" +
+                "    if(doc.description !== undefined && doc.description != null && doc.description.length >0) {" +
+                "      index('text', 'description', doc.description, {'store': true});" +
+                "      index('string', 'description_sort', doc.description);" +
                 "    }" +
                 "    if(doc.version !== undefined && doc.version != null && doc.version.length >0) {" +
                 "      index('string', 'version', doc.version, {'store': true});" +
                 "    }" +
                 "    if(doc.state !== undefined && doc.state != null && doc.state.length >0) {" +
                 "      index('text', 'state', doc.state, {'store': true});" +
+                "      index('string', 'state_sort', doc.state);" +
                 "    }" +
                 "    if(doc.clearingState) {" +
                 "      index('text', 'clearingState', doc.clearingState, {'store': true});" +
@@ -77,6 +82,11 @@ public class ProjectSearchHandler {
                 "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
                 "    if(doc.releaseRelationNetwork !== undefined && doc.releaseRelationNetwork != null && doc.releaseRelationNetwork.length > 0) {" +
                 "      index('text', 'releaseRelationNetwork', doc.releaseRelationNetwork, {'store': true});" +
+                "    }" +
+                "    if(doc.createdOn && doc.createdOn.length) {"+
+                "      var dt = new Date(doc.createdOn);"+
+                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
+                "      index('double', 'createdOn', Number(formattedDt), {'store': true});"+
                 "    }" +
                 "}")
                     .setFieldAnalyzer(
@@ -99,10 +109,11 @@ public class ProjectSearchHandler {
     }
 
     public Map<PaginationData, List<Project>> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        String sortColumn = getSortColumnName(pageData);
         Map<PaginationData, List<Project>> resultProjectList = connector
-                .searchViewWithRestrictions(Project.class,
+                .searchViewWithRestrictionsWithAnd(Project.class,
                         luceneSearchView.getIndexName(), text, subQueryRestrictions,
-                        pageData, null, pageData.isAscending());
+                        pageData, sortColumn, pageData.isAscending());
 
         PaginationData respPageData = resultProjectList.keySet().iterator().next();
         List<Project> projectList = resultProjectList.values().iterator().next();
@@ -123,7 +134,7 @@ public class ProjectSearchHandler {
     }
 
     public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictions(Project.class, luceneSearchView.getIndexName(),
+        return connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
                 text, subQueryRestrictions);
     }
 
@@ -138,7 +149,7 @@ public class ProjectSearchHandler {
             projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView.getIndexName(),
                     null, filterMap, user);
         } else {
-            projectsByReleaseIds = connector.searchViewWithRestrictions(Project.class, luceneSearchView.getIndexName(),
+            projectsByReleaseIds = connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
                     null, filterMap);
         }
         return new HashSet<>(projectsByReleaseIds);
@@ -154,5 +165,25 @@ public class ProjectSearchHandler {
         values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
         filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
         return filterMap;
+    }
+
+    /**
+     * Convert sort column number back to sorting column name. This function makes sure to use the string column (with
+     * `_sort` suffix) for text indexes.
+     * @param pageData Pagination Data from the request.
+     * @return Sort column name. Defaults to name_sort
+     */
+    private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
+        return switch (ProjectSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ProjectSortColumn.BY_CREATEDON -> "createdOn";
+//            case ProjectSortColumn.BY_VENDOR -> "vendor_sort";
+//            case ProjectSortColumn.BY_MAINLICENSE -> "license_sort";
+            case ProjectSortColumn.BY_TYPE -> "projectType_sort";
+            case ProjectSortColumn.BY_DESCRIPTION -> "description_sort";
+            case ProjectSortColumn.BY_RESPONSIBLE -> "projectResponsible_sort";
+            case ProjectSortColumn.BY_STATE -> "state_sort";
+            case null -> "name_sort";
+            default -> "name_sort";
+        };
     }
 }
