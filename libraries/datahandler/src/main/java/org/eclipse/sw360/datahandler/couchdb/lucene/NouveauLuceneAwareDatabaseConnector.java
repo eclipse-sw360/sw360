@@ -318,28 +318,50 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     /**
      * Search the database for a given string and types
      */
-    public <T> List<T> searchViewWithRestrictions(Class<T> type, String indexName,
-                                                  String text,
-                                                  final @NotNull Map<String, Set<String>> subQueryRestrictions) {
-        String query = convertToRestrictiveQuery(type, text, subQueryRestrictions);
+    public <T> List<T> searchViewWithRestrictionsWithAnd(
+            Class<T> type, String indexName, String text, final @NotNull Map<String, Set<String>> subQueryRestrictions
+    ) {
+        String query = convertToRestrictiveQueryWithAnd(type, text, subQueryRestrictions);
 
         return searchView(type, indexName, query);
     }
 
     /**
      * Search the database for a given string and types, with pagination support.
+     * This function uses `AND` to join the restrictions.
      */
-    public <T> Map<PaginationData, List<T>> searchViewWithRestrictions(
+    public <T> Map<PaginationData, List<T>> searchViewWithRestrictionsWithAnd(
             Class<T> type, String indexName, String text,
             final @NotNull Map<String, Set<String>> subQueryRestrictions,
             PaginationData pageData, String sortColumn, boolean sortAscending
     ) {
-        String query = convertToRestrictiveQuery(type, text, subQueryRestrictions);
+        String query = convertToRestrictiveQueryWithAnd(type, text, subQueryRestrictions);
         return searchView(type, indexName, query, pageData, sortColumn, sortAscending);
     }
 
-    private static <T> @NotNull String convertToRestrictiveQuery(Class<T> type, String text, @NotNull Map<String, Set<String>> subQueryRestrictions) {
-        List <String> subQueries = new ArrayList<>();
+    /**
+     * Search the database for a given string and types, with pagination support.
+     * This function uses `OR` to join the restrictions.
+     */
+    public <T> Map<PaginationData, List<T>> searchViewWithRestrictionsWithOr(
+            Class<T> type, String indexName, String text,
+            final @NotNull Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, String sortColumn, boolean sortAscending
+    ) {
+        String query = convertToRestrictiveQueryWithOr(type, text, subQueryRestrictions);
+        return searchView(type, indexName, query, pageData, sortColumn, sortAscending);
+    }
+
+    private static <T> @NotNull String convertToRestrictiveQueryWithAnd(Class<T> type, String text, @NotNull Map<String, Set<String>> subQueryRestrictions) {
+        return AND.join(convertToRestrictiveQuery(type, text, subQueryRestrictions));
+    }
+
+    private static <T> @NotNull String convertToRestrictiveQueryWithOr(Class<T> type, String text, @NotNull Map<String, Set<String>> subQueryRestrictions) {
+        return OR.join(convertToRestrictiveQuery(type, text, subQueryRestrictions));
+    }
+
+    private static <T> @NotNull List<String> convertToRestrictiveQuery(Class<T> type, String text, @NotNull Map<String, Set<String>> subQueryRestrictions) {
+        List<String> subQueries = new ArrayList<>();
         for (Map.Entry<String, Set<String>> restriction : subQueryRestrictions.entrySet()) {
             final Set<String> filterSet = restriction.getValue();
 
@@ -358,7 +380,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             // get all packages with name field and then negate with releaseId field to find orphan packages
             subQueries.add("(name:*) NOT (releaseId:*)");
         }
-        return AND.join(subQueries);
+        return subQueries;
     }
 
     private static @NotNull String formatSubquery(@NotNull Set<String> filterSet, final String fieldName) {
@@ -399,7 +421,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     public List<Project> searchProjectViewWithRestrictionsAndFilter(String indexName, String text,
                                                                     final Map<String, Set<String>> subQueryRestrictions,
                                                                     User user) {
-        List<Project> projectList = searchViewWithRestrictions(Project.class, indexName, text,
+        List<Project> projectList = searchViewWithRestrictionsWithAnd(Project.class, indexName, text,
                 subQueryRestrictions);
         return projectList.stream().filter(ProjectPermissions.isVisible(user)).collect(Collectors.toList());
     }

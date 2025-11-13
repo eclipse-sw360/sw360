@@ -94,7 +94,7 @@ public class ComponentSearchHandler {
     }
 
     public List<Component> search(String text, final Map<String, Set<String>> subQueryRestrictions ){
-        return connector.searchViewWithRestrictions(Component.class, luceneSearchView.getIndexName(),
+        return connector.searchViewWithRestrictionsWithAnd(Component.class, luceneSearchView.getIndexName(),
                 text, subQueryRestrictions);
     }
 
@@ -102,7 +102,7 @@ public class ComponentSearchHandler {
             Set<String>> subQueryRestrictions, User user, @Nonnull PaginationData pageData) {
         String sortColumn = getSortColumnName(pageData);
         Map<PaginationData, List<Component>> resultComponentList = connector
-                .searchViewWithRestrictions(Component.class,
+                .searchViewWithRestrictionsWithAnd(Component.class,
                         luceneSearchView.getIndexName(), text, subQueryRestrictions,
                         pageData, sortColumn, pageData.isAscending());
 
@@ -118,7 +118,7 @@ public class ComponentSearchHandler {
 
     public List<Component> searchWithAccessibility(String text, final Map<String, Set<String>> subQueryRestrictions,
                                                    User user) {
-        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class,
+        List<Component> resultComponentList = connector.searchViewWithRestrictionsWithAnd(Component.class,
                 luceneSearchView.getIndexName(), text, subQueryRestrictions);
         for (Component component : resultComponentList) {
             makePermission(component, user).fillPermissionsInOther(component);
