@@ -96,7 +96,8 @@ public class ResourceComparatorGenerator<T> {
 
     private static Map<License._Fields, Comparator<License>> generateLicenseMap() {
         Map<License._Fields, Comparator<License>> licenseMap = new HashMap<>();
-        licenseMap.put(License._Fields.FULLNAME, Comparator.comparing(License::getShortname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        licenseMap.put(License._Fields.FULLNAME, Comparator.comparing(License::getFullname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        licenseMap.put(License._Fields.SHORTNAME, Comparator.comparing(License::getShortname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(licenseMap);
     }
 
@@ -431,6 +432,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateObligationComparatorWithFields(type, obligationFields);
+            case SW360Constants.TYPE_LICENSE:
+                List<License._Fields> licenseFields = new ArrayList<>();
+                for (String property : properties) {
+                    License._Fields field = License._Fields.findByName(property);
+                    if (field != null) {
+                        licenseFields.add(field);
+                    }
+                }
+                return generateLicenseComparatorWithFields(type, licenseFields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -579,6 +589,14 @@ public class ResourceComparatorGenerator<T> {
             String type, List<Obligation._Fields> fields) throws ResourceClassNotFoundException {
         if (type.equals(SW360Constants.TYPE_OBLIGATION)) {
             return (Comparator<T>) obligationComparator(fields);
+        }
+        throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+    }
+
+    public Comparator<T> generateLicenseComparatorWithFields(
+            String type, List<License._Fields> fields) throws ResourceClassNotFoundException {
+        if (type.equals(SW360Constants.TYPE_LICENSE)) {
+            return (Comparator<T>) licenseComparator(fields);
         }
         throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
     }
@@ -787,6 +805,18 @@ public class ResourceComparatorGenerator<T> {
             }
         }
         comparator = comparator.thenComparing(defaultObligationComparator());
+        return comparator;
+    }
+
+    private Comparator<License> licenseComparator(List<License._Fields> fields) {
+        Comparator<License> comparator = Comparator.comparing(x -> true);
+        for (License._Fields field : fields) {
+            Comparator<License> fieldComparator = licenseMap.get(field);
+            if (fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultLicenseComparator());
         return comparator;
     }
 

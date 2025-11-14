@@ -27,7 +27,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -384,5 +383,18 @@ public class Sw360LicenseService {
                 throw sw360Exp;
             }
         }
+    }
+
+    /**
+     * Search licenses for given text in fullname or shortname.
+     * @param searchText String to search.
+     * @return Sorted list of licenses.
+     * @throws TException If Thrift had issues.
+     */
+    public List<License> searchLicenses(String searchText) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        List<License> licenses = sw360LicenseClient.searchLicense(searchText);
+        licenses.sort(Comparator.comparing(License::getFullname, String.CASE_INSENSITIVE_ORDER));
+        return licenses;
     }
 }

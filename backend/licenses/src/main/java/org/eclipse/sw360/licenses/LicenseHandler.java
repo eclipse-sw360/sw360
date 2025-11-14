@@ -13,6 +13,7 @@ package org.eclipse.sw360.licenses;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ObligationSearchHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -384,7 +385,16 @@ public class LicenseHandler implements LicenseService.Iface {
         return handler.updateObligation(oblig, user);
     }
 
+    @Override
     public List<LicenseType> searchByLicenseType(String licenseType) {
         return handler.searchByLicenseType(licenseType);
+    }
+
+    @Override
+    public List<License> searchLicense(String searchText) {
+        if (CommonUtils.isNullEmptyOrWhitespace(searchText)) {
+            return handler.getLicenseSummary();
+        }
+        return handler.searchLicense(searchText);
     }
 }
