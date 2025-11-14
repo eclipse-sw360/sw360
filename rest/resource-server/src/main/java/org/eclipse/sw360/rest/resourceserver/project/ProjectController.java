@@ -69,6 +69,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -1963,10 +1964,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
+
+
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            summary = "Save attachment usages",
-            description = "Pass an array of string in request body.",
+            summary = "Save attachment usages and ignored licenses",
+            description = "Pass an array of string in request body along with optional ignored license data.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -2010,10 +2013,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(
                     description = "Map of key-value pairs where keys are one of `selected`, `deselected`, " +
-                            "`selectedConcludedUsages` or `deselectedConcludedUsages`. The values are list of strings " +
+                            "`selectedConcludedUsages`, `deselectedConcludedUsages`, or `ignoredLicenses`. The values are list of strings " +
                             "in format `<release_id>_<usage_type>_<attachment_content_id>`. If the usage is of type " +
-                            "`licenseInfo`, you need to prepend `projectPath` with a `-`. Check the " +
-                            "`selectedConcludedUsages` from example data.",
+                            "`licenseInfo`, you need to prepend `projectPath` with a `-`. For `ignoredLicenses`, " +
+                            "provide a map with `<release_id>_<attachment_content_id>` as keys and license data as values.",
                     schema = @Schema(
                             example = """
                             {
@@ -2030,12 +2033,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                                 ],
                                 "deselectedConcludedUsages": [
                                     "b43a13409ba08b1ac8a7471bf27eb1f3c-ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681", "value2"
-                                ]
+                                ],
+                                "ignoredLicenses": {
+                                    "4427a8e723ad405db63f75170ef240a2_5c5d6f54ac6a4b33bcd3c5d3a8fefc43": {
+                                        "excludedLicenseIds": ["MIT", "Apache-2.0"]
+                                        
+                                    }
+                                }
                             }
                             """
                     )
             )
-            @RequestBody Map<String, List<String>> allUsages
+            @RequestBody Map<String, Object> allUsages
     ) throws TException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(id, user);
@@ -2047,14 +2056,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 List<String> selectedConcludedUsages = new ArrayList<>();
                 List<String> deselectedConcludedUsages = new ArrayList<>();
                 List<String> changedUsages = new ArrayList<>();
-                for (Map.Entry<String, List<String>> entry : allUsages.entrySet()) {
+                Map<String, Map<String, Object>> ignoredLicensesData = new HashMap<>();
+                
+                for (Map.Entry<String, Object> entry : allUsages.entrySet()) {
                     String key = entry.getKey();
-                    List<String> list = entry.getValue();
+                    Object value = entry.getValue();
+                    
                     switch (key) {
-                        case "selected" -> selectedUsages.addAll(list);
-                        case "deselected" -> deselectedUsages.addAll(list);
-                        case "selectedConcludedUsages" -> selectedConcludedUsages.addAll(list);
-                        case "deselectedConcludedUsages" -> deselectedConcludedUsages.addAll(list);
+                        case "selected" -> selectedUsages.addAll((List<String>) value);
+                        case "deselected" -> deselectedUsages.addAll((List<String>) value);
+                        case "selectedConcludedUsages" -> selectedConcludedUsages.addAll((List<String>) value);
+                        case "deselectedConcludedUsages" -> deselectedConcludedUsages.addAll((List<String>) value);
+                        case "ignoredLicenses" -> ignoredLicensesData = (Map<String, Map<String, Object>>) value; //https://github.com/eclipse-sw360/sw360/issues/3471
                     }
                 }
                 Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
@@ -2088,6 +2101,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 if (!usagesToCreate.isEmpty()) {
                     projectService.makeAttachmentUsages(usagesToCreate);
                 }
+                
+                // Handle ignored licenses if provided
+                if (!ignoredLicensesData.isEmpty()) {
+                    handleIgnoredLicenses(id, ignoredLicensesData, project, user);
+                }
+                
                 return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
             } else {
                 throw new AccessDeniedException("No write permission for project");
@@ -2097,6 +2116,141 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new SW360Exception("Saving attachment usages for project " + id + " failed");
         }
     }
+
+
+
+    private void handleIgnoredLicenses(String projectId, Map<String, Map<String, Object>> ignoredLicensesData, 
+                                      Project project, User user) throws TException {
+
+        // Validate ignoredLicenses structure
+        validateIgnoredLicensesStructure(ignoredLicensesData);
+
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = project.getReleaseIdToUsage();
+        if (CommonUtils.isNullOrEmptyMap(releaseIdToUsage)) {
+            log.warn("Project {} has no releases, skipping ignored licenses processing", projectId);
+            return;
+        }
+
+        Source projectSource = Source.projectId(projectId);
+        List<AttachmentUsage> usagesToUpdate = new ArrayList<>(ignoredLicensesData.size());
+        Set<String> validReleaseIds = releaseIdToUsage.keySet();
+        List<String> invalidReleases = new ArrayList<>();
+
+        // Validate all releases belong to project
+        ignoredLicensesData.keySet().stream()
+            .map(key -> key.substring(0, key.indexOf('_')))
+            .filter(releaseId -> !validReleaseIds.contains(releaseId))
+            .forEach(invalidReleases::add);
+        
+        // If any invalid releases found, throw BadRequestClientException
+        if (!invalidReleases.isEmpty()) {
+            String errorMessage = String.format("The following releases do not belong to project %s: %s", 
+                                               projectId, String.join(", ", invalidReleases));
+            log.error(errorMessage);
+            throw new BadRequestClientException(errorMessage);
+        }
+
+        // process valid releases
+        for (Map.Entry<String, Map<String, Object>> entry : ignoredLicensesData.entrySet()) {
+            String key = entry.getKey();
+            
+            // Parse key: releaseId_attachmentContentId
+            int underscoreIndex = key.indexOf('_');
+            String releaseId = key.substring(0, underscoreIndex);
+            String attachmentContentId = key.substring(underscoreIndex + 1);
+            
+            // Extract license data (validation already done in validateIgnoredLicensesStructure)
+            Map<String, Object> licenseData = entry.getValue();
+            @SuppressWarnings("unchecked")
+            List<String> excludedLicenseIds = (List<String>) licenseData.get("excludedLicenseIds");
+
+            // Create LicenseInfoUsage with excluded licenses
+            Set<String> excludedLicenseIdSet = CommonUtils.isNullOrEmptyCollection(excludedLicenseIds)
+                ? Collections.emptySet()
+                : new HashSet<>(excludedLicenseIds);
+            
+            LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(excludedLicenseIdSet);
+            licenseInfoUsage.setProjectPath(projectId);
+            
+            // Create AttachmentUsage
+            AttachmentUsage usage = new AttachmentUsage(
+                Source.releaseId(releaseId),
+                attachmentContentId,
+                projectSource
+            );
+            usage.setUsageData(UsageData.licenseInfo(licenseInfoUsage));
+            
+            usagesToUpdate.add(usage);
+        }
+        try {
+            // Get existing license info attachment usages for this project
+            List<AttachmentUsage> existingUsages = projectService.getUsedAttachments(projectSource, null);
+            List<AttachmentUsage> existingLicenseInfoUsages = existingUsages.stream()
+                    .filter(usage -> usage.isSetUsageData() && 
+                            usage.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO))
+                    .collect(Collectors.toList());
+
+            // Find existing usages that match our updates for deletion
+            List<AttachmentUsage> usagesToDelete = existingLicenseInfoUsages.stream()
+                    .filter(existing -> usagesToUpdate.stream()
+                            .anyMatch(update -> isUsageEquivalent(existing, update)))
+                    .collect(Collectors.toList());
+
+            // Delete existing usages if any
+            if (!usagesToDelete.isEmpty()) {
+                log.debug("Deleting {} existing license info usages for project {}", 
+                         usagesToDelete.size(), projectId);
+                projectService.deleteAttachmentUsages(usagesToDelete);
+            }
+
+            // Create new usages
+            log.debug("Creating {} new license info usages for project {}", 
+                     usagesToUpdate.size(), projectId);
+            projectService.makeAttachmentUsages(usagesToUpdate);
+            
+        } catch (Exception e) {
+            log.error("Failed to process ignored licenses for project {}: {}", projectId, e.getMessage(), e);
+            throw new TException("Failed to process ignored licenses", e);
+        }
+    }
+
+    private void validateIgnoredLicensesStructure(Map<String, Map<String, Object>> ignoredLicensesData) {
+        if (CommonUtils.isNullOrEmptyMap(ignoredLicensesData)) {
+            throw new BadRequestClientException("ignoredLicenses field is required and cannot be empty");
+        }
+
+        for (Map.Entry<String, Map<String, Object>> entry : ignoredLicensesData.entrySet()) {
+            String key = entry.getKey();
+            Map<String, Object> licenseData = entry.getValue();
+
+            // Validate key format: should be releaseId_attachmentContentId
+           if (CommonUtils.isNullEmptyOrWhitespace(key) || !key.contains("_") || key.indexOf('_') == 0 || key.lastIndexOf('_') == key.length() - 1) {
+                throw new BadRequestClientException("Invalid key format in ignoredLicenses. Expected format: 'releaseId_attachmentContentId'");
+            }
+
+            // Validate license data structure
+            if (licenseData == null) {
+                throw new BadRequestClientException("License data cannot be null for key: " + key);
+            }
+
+            // Validate excludedLicenseIds field exists and is a list
+            if (!licenseData.containsKey("excludedLicenseIds")) {
+                throw new BadRequestClientException("Missing 'excludedLicenseIds' field for key: " + key);
+            }
+
+            Object excludedLicenseIds = licenseData.get("excludedLicenseIds");
+            if (!(excludedLicenseIds instanceof List)) {
+                throw new BadRequestClientException("'excludedLicenseIds' must be a list for key: " + key);
+            }
+        }
+    }
+    private boolean isUsageEquivalent(AttachmentUsage existing, AttachmentUsage update) {
+        return existing.getOwner().equals(update.getOwner()) &&
+               existing.getAttachmentContentId().equals(update.getAttachmentContentId()) &&
+               existing.getUsedBy().equals(update.getUsedBy());
+    }
+
+
 
     public Map<String, Integer> countMap(Collection<AttachmentType> attachmentTypes, UsageData filter, Project project, User sw360User, String id) throws TException {
         boolean projectWithSubProjects = project.getLinkedProjects() != null && !project.getLinkedProjects().isEmpty();
@@ -2961,6 +3115,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
     }
 
+    @PreAuthorize("hasAuthority('READ')")
     @Operation(
             description = "Get license obligations data from license database.",
             tags = {"Projects"}
