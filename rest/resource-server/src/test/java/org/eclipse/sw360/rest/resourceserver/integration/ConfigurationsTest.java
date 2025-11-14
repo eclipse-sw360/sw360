@@ -11,6 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -40,8 +41,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 
 @RunWith(SpringRunner.class)
 public class ConfigurationsTest extends TestIntegrationBase {
@@ -320,6 +324,43 @@ public class ConfigurationsTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+
+        String responseBody = response.getBody();
+        assertTrue("Response should contain success message",
+                responseBody.contains("Configurations are updated successfully"));
+    }
+
+    @Test
+    public void should_update_with_xss_skip() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String configKey = SW360ConfigKeys.UI_CLEARING_TEAMS;
+        String configValue = "[\"TEAM A\",\"TEAM B\"]";
+
+        Map<String, String> updatedConfigurations = new HashMap<>();
+        updatedConfigurations.put(configKey, configValue);
+
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(updatedConfigurations, headers);
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/configurations/container/SW360_CONFIGURATION",
+                        HttpMethod.PATCH,
+                        requestEntity,
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        verify(this.sw360ConfigurationsService)
+                .updateSW360ConfigForContainer(
+                        eq(ConfigFor.SW360_CONFIGURATION),
+                        argThat(x -> {
+                            assertTrue(x.containsKey(configKey));
+                            assertEquals(configValue, x.get(configKey));
+                            return true;
+                        }),
+                        any());
 
         String responseBody = response.getBody();
         assertTrue("Response should contain success message",

@@ -87,11 +87,13 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
@@ -444,6 +446,42 @@ public class ProjectTest extends TestIntegrationBase {
         JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
         assertEquals(project1.getId(), responseBody.get("id").textValue());
         assertEquals(project1.getName(), responseBody.get("name").textValue());
+    }
+
+    @Test
+    public void should_check_xss_body() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        given(this.projectServiceMock.createProject(any(), any())).willAnswer(i -> {
+            Project project = i.getArgument(0);
+            project.setId("dont_care");
+            project.setCreatedBy("admin@sw360.org");
+            return project;
+        });
+
+        String maliciousDescription = "New project test2223 <img/src/onerror=alert('1')>";
+        String goodSummary = "© &lt; some year with “org”";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", "New Project XSS");
+        body.put("description", maliciousDescription);
+        body.put("projectType", "CUSTOMER");
+        body.put("businessUnit", "Group A");
+        body.put("version", "1.2.0");
+        body.put("visibility", "EVERYONE");
+        body.put("state", "ACTIVE");
+        body.put("clearingState", "OPEN");
+        body.put("clearingSummary", goodSummary);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(org.owasp.encoder.Encode.forHtmlContent(maliciousDescription), responseBody.get("description").textValue());
+        assertEquals(goodSummary, responseBody.get("clearingSummary").textValue());
     }
 
     // ========== PROJECT UPDATE & LINKING ==========

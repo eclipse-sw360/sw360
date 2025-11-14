@@ -14,14 +14,12 @@ import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +84,7 @@ public class PackageSearchHandler {
     }
 
     public List<Package> searchPackagesWithRestrictions(String text, final Map<String , Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictions(Package.class, luceneSearchView.getIndexName(),
+        return connector.searchViewWithRestrictionsWithAnd(Package.class, luceneSearchView.getIndexName(),
                 text, subQueryRestrictions);
     }
 
@@ -97,7 +95,7 @@ public class PackageSearchHandler {
 
     public List<Package> searchAccessiblePackages(String text, final Map<String,
             Set<String>> subQueryRestrictions, User user ){
-        List<Package> resultPackageList = connector.searchViewWithRestrictions(Package.class,
+        List<Package> resultPackageList = connector.searchViewWithRestrictionsWithAnd(Package.class,
                 luceneSearchView.getIndexName(), text, subQueryRestrictions);
         return resultPackageList;
     }

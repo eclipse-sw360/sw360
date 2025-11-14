@@ -111,7 +111,7 @@ public class UserSearchHandler {
 
     public Map<PaginationData, List<User>> search(String text, final Map<String, Set<String>> subQueryRestrictions, @Nonnull PaginationData pageData) {
         String sortColumn = getSortColumnName(pageData);
-        return connector.searchViewWithRestrictions(User.class,
+        return connector.searchViewWithRestrictionsWithAnd(User.class,
                 luceneUserSearchView.getIndexName(), text, subQueryRestrictions,
                 pageData, sortColumn, pageData.isAscending());
     }

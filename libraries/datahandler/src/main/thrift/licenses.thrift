@@ -376,4 +376,9 @@ service LicenseService {
      * Search licenses by partial or full licenseType match (case-insensitive).
      */
     list<LicenseType> searchByLicenseType(1: string licenseType);
+
+    /**
+     * Search licenses by shortname or fullname
+     */
+    list<License> searchLicense(1: string searchText);
 }

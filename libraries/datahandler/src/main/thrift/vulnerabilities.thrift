@@ -291,10 +291,10 @@ service VulnerabilityService {
     map<PaginationData, list<Vulnerability>> getVulnerabilities(1: User user, 2: PaginationData pageData);
 
     /**
-      * returns a list with all vulnerabilities matching searchText in the SW360 database if the user is valid
-      * returns empty list if user is not valid
+      * returns a list with all vulnerabilities matching searchText or CVE ID in the SW360 database if the user
+      * is valid returns empty list if user is not valid
       **/
-    map<PaginationData, list<Vulnerability>> searchVulnerabilities(1: string searchText, 2: User user, 3: PaginationData pageData);
+    map<PaginationData, list<Vulnerability>> searchVulnerabilities(1: string searchText, 2: string cveId, 3: User user, 4: PaginationData pageData);
 
       /**
        * returns a list with the latest vulnerabilities in the SW360 database if the user is valid

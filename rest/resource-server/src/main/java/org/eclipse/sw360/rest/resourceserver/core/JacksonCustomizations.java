@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -61,6 +62,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerifica
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+import org.eclipse.sw360.rest.common.XssPreventionModule;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentMergeSelector;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
@@ -69,20 +71,38 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseMergeSelector;
+import org.jetbrains.annotations.NotNull;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @Configuration
 public class JacksonCustomizations {
     @Bean
-    @Primary
     public Module sw360Module() {
         return new Sw360Module();
+    }
+
+    @Bean
+    public Module xssPreventionModule() {
+        return new XssPreventionModule();
+    }
+
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper(@NotNull List<Module> modules) {
+        ObjectMapper mapper = new ObjectMapper();
+
+        for (Module module : modules) {
+            mapper.registerModule(module);
+        }
+
+        return mapper;
     }
 
     @SuppressWarnings("serial")

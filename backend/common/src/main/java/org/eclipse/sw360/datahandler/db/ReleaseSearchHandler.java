@@ -75,7 +75,7 @@ public class ReleaseSearchHandler {
     public Map<PaginationData, List<Release>> search(String searchText, PaginationData pageData) {
         String sortColumn = getSortColumnName(pageData);
         Map<PaginationData, List<Release>> resultReleaseList = connector
-                .searchViewWithRestrictions(Release.class,
+                .searchViewWithRestrictionsWithAnd(Release.class,
                         luceneSearchView.getIndexName(), null,
                         Map.of(Release._Fields.NAME.getFieldName(),
                                 Collections.singleton(prepareWildcardQuery(searchText))

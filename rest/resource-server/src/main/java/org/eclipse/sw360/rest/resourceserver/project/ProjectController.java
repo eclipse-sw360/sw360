@@ -285,7 +285,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             filterMap.put(Project._Fields.NAME.getFieldName(), values);
         }
 
-        if (luceneSearch) {
+        if (luceneSearch && !filterMap.isEmpty()) {
             if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
                 Set<String> values = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
                         .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
@@ -3561,7 +3561,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedResources", method = RequestMethod.GET)
-    public ResponseEntity<?> getLinkedResourcesOfProjectForDependencyNetwork(
+    public ResponseEntity<ProjectLink> getLinkedResourcesOfProjectForDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
             @Parameter(description = "Get linked releases transitively (default is false)", example = "true")
@@ -3580,7 +3580,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/{id}/releases", method = RequestMethod.GET)
-    public ResponseEntity<?> getLinkedReleasesInDependencyNetworkByIndexPath(
+    public ResponseEntity<CollectionModel<ReleaseLink>> getLinkedReleasesInDependencyNetworkByIndexPath(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId,
             @Parameter(description = "Index path", example = "0->1")
@@ -4086,5 +4086,21 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 ));
 
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get all project groups.",
+            description = "Get all the unique groups used by projects.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/groups", method = RequestMethod.GET)
+    public Set<String> getAllProjectGroups() {
+        Set<String> groups;
+        try {
+            groups = projectService.getGroups();
+        } catch (TException e) {
+            groups = Collections.emptySet();
+        }
+        return groups;
     }
 }

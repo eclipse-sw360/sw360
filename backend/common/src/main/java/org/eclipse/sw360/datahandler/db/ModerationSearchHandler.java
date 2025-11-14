@@ -74,7 +74,7 @@ public class ModerationSearchHandler {
     }
 
     public List<ModerationRequest> search(String text, final Map<String, Set<String>> subQueryRestrictions ) {
-        return connector.searchViewWithRestrictions(ModerationRequest.class, luceneSearchView.getIndexName(),
+        return connector.searchViewWithRestrictionsWithAnd(ModerationRequest.class, luceneSearchView.getIndexName(),
                 text, subQueryRestrictions);
     }
 }

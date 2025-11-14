@@ -1905,4 +1905,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
         return count;
     }
+
+    public Set<String> getGroups() throws TException {
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        return projectClient.getGroups();
+    }
 }
