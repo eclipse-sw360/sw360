@@ -1,7 +1,7 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  * With contributions by Siemens Healthcare Diagnostics Inc, 2018.
- *
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 
@@ -260,6 +261,30 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     private static final String PROJECT_BY_CREATED_ON_IDX = "ProjectByCreatedOnIdx";
     private static final String PROJECT_BY_ALL_IDX = "ProjectByAllIdx";
     public static final String PAGINATION_IDX = "PaginationIdx";
+    private static final String BY_ATTACHMENT_CHECKSUM =
+            "function(doc) {" +
+                    "  if (doc.type == 'project' && doc.attachments) {" +
+                    "    for(var i in doc.attachments) {" +
+                    "      var att = doc.attachments[i];" +
+                    "      if(att.sha1) emit(['sha1', att.sha1], doc._id);" +
+                    "      if(att.md5) emit(['md5', att.md5], doc._id);" +
+                    "      if(att.sha256) emit(['sha256', att.sha256], doc._id);" +
+                    "    }" +
+                    "  }" +
+                    "}";
+
+    private static final String BY_FOSSOLOGY_UPLOAD_ID_PROJECT =
+            "function(doc) {" +
+                    "  if (doc.type == 'project' && doc.attachments) {" +
+                    "    for(var i in doc.attachments) {" +
+                    "      if(doc.attachments[i].fossologyUploadId) {" +
+                    "        emit(doc.attachments[i].fossologyUploadId, doc._id);" +
+                    "      }" +
+                    "    }" +
+                    "  }" +
+                    "}";
+
+    public static Joiner spaceJoiner = Joiner.on(" ");
 
     public ProjectRepository(DatabaseConnectorCloudant db) {
         super(Project.class, db, new ProjectSummary());
@@ -279,6 +304,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         views.put("all", createMapReduce(ALL, null));
         views.put("myfullprojectscount", createMapReduce(MY_ACCESSIBLE_PROJECTS_COUNT, "_count"));
         views.put("myfullprojectscountca", createMapReduce(ACCESSIBLE_PROJECTS_COUNT_FOR_CA_AND_ABOVE, "_count"));
+        views.put("byAttachmentChecksum", createMapReduce(BY_ATTACHMENT_CHECKSUM, null));
+        views.put("byFossologyUploadIdProject", createMapReduce(BY_FOSSOLOGY_UPLOAD_ID_PROJECT, null));
         initStandardDesignDocument(views, db);
         createIndex(PROJECT_BY_NAME_IDX, "byName",
                 new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.NAME.getFieldName()}, db);
@@ -702,5 +729,57 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             }
         }
         return and(andConditions);
+    }
+
+    /**
+     * Get projects by attachment checksum
+     */
+    public Set<Project> getProjectsByAttachmentChecksum(String checksum, String checksumType, User user) {
+        List<Object> key = List.of(checksumType.toLowerCase(), checksum);
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(Project.class, "byAttachmentChecksum")
+                .includeDocs(false)
+                .keys(List.of(key))
+                .build();
+        Set<String> projectIds = queryForIdsAsValue(viewQuery);
+        return getAccessibleProjectSummary(user, projectIds);
+    }
+
+    /**
+     * Get projects by FOSSology upload ID
+     */
+    public Set<Project> getProjectsByFossologyUploadId(String fossologyUploadId, User user) {
+        Set<String> projectIds = queryForIdsAsValue("byFossologyUploadIdProject", fossologyUploadId);
+        return getAccessibleProjectSummary(user, projectIds);
+    }
+
+    /**
+     * Find projects with attachments that have checksums but no FOSSology upload ID
+     */
+    public List<Project> getProjectsWithUnprocessedAttachments(User user) {
+        List<Project> allProjects = getAll();
+        List<Project> accessibleProjects = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, 
+                                    filterAccessibleProjectsByIds(user, 
+                                    allProjects.stream().map(Project::getId).collect(Collectors.toSet())), user);
+        return accessibleProjects.stream()
+                .filter(project -> project.getAttachments() != null)
+                .filter(project -> project.getAttachments().stream()
+                        .anyMatch(att -> (att.getSha1() != null || att.getMd5() != null || att.getSha256() != null) 
+                                      && att.getFossologyUploadId() == null))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get projects by multiple checksums for batch processing
+     */
+    public Map<String, Set<Project>> getProjectsByChecksums(Set<String> checksums, String checksumType, User user) {
+        Map<String, Set<Project>> result = new HashMap<>();
+        for (String checksum : checksums) {
+            Set<Project> projects = getProjectsByAttachmentChecksum(checksum, checksumType, user);
+            if (!projects.isEmpty()) {
+                result.put(checksum, projects);
+            }
+        }
+        return result;
     }
 }
