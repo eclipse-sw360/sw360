@@ -23,13 +23,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -58,18 +59,26 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
-
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -95,16 +104,14 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "List all of the service's licenses.",
-            description = "List all of the service's licenses. Supports quick filtering via luceneSearch parameter.",
+            description = "List all of the service's licenses. Supports quick filtering.",
             tags = {"Licenses"}
     )
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel> getLicenses(
+    public ResponseEntity<CollectionModel<License>> getLicenses(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
-            @Parameter(description = "Use lucene search to filter licenses by license type.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
-            @Parameter(description = "Search text to filter license types (used with luceneSearch=true).")
+            @Parameter(description = "Search text to filter licenses.")
             @RequestParam(value = "searchText", required = false) String searchText,
             HttpServletRequest request
     ) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
@@ -112,32 +119,22 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         restControllerHelper.throwIfSecurityUser(sw360User);
         List<License> sw360Licenses;
 
-        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
-            List<LicenseType> licenseTypes = licenseService.quickSearchLicenseType(searchText);
-            Set<String> licenseTypeIds = licenseTypes.stream()
-                    .map(LicenseType::getId)
-                    .filter(CommonUtils::isNotNullEmptyOrWhitespace)
-                    .collect(Collectors.toSet());
-
-            List<License> allLicenses = licenseService.getLicenses();
-            sw360Licenses = allLicenses.stream()
-                    .filter(license -> license.isSetLicenseType() &&
-                            licenseTypeIds.contains(license.getLicenseType().getId()))
-                    .collect(Collectors.toList());
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            sw360Licenses = licenseService.searchLicenses(searchText);
         } else {
             sw360Licenses = licenseService.getLicenses();
         }
 
         PaginationResult<License> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE);
         List<EntityModel<License>> licenseResources = new ArrayList<>();
-        paginationResult.getResources().stream()
+        paginationResult.getResources()
                 .forEach(license -> {
                     License embeddedLicense = restControllerHelper.convertToEmbeddedLicense(license);
                     EntityModel<License> licenseResource = EntityModel.of(embeddedLicense);
                     licenseResources.add(licenseResource);
                 });
-        CollectionModel resources;
-        if (licenseResources.size() == 0) {
+        CollectionModel<License> resources;
+        if (licenseResources.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(License.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, licenseResources);

@@ -136,11 +136,15 @@ public class LicenseDatabaseHandler {
      */
     public List<License> getLicenseSummary() {
         final List<License> licenses = licenseRepository.getAll();
+        return convertToLicenseSummary(licenses);
+
+    }
+
+    private List<License> convertToLicenseSummary(List<License> licenses) {
         final List<LicenseType> licenseTypes = licenseTypeRepository.getAll();
         putLicenseTypesInLicenses(licenses, licenseTypes);
         /*Note that risks are not set here*/
         return licenseRepository.makeSummaryFromFullDocs(SummaryType.SUMMARY, licenses);
-
     }
 
     /**
@@ -1304,5 +1308,17 @@ public class LicenseDatabaseHandler {
 
     public List<LicenseType> searchByLicenseType(String licenseType) {
         return licenseTypeRepository.searchByLicenseType(licenseType);
+    }
+
+    /**
+     * Search license by shortname or name.
+     * @param searchText String to search.
+     * @return List of licenses.
+     */
+    public List<License> searchLicense(String searchText) {
+        Set<License> results = new HashSet<>();
+        results.addAll(licenseRepository.searchByName(searchText));
+        results.addAll(licenseRepository.searchByShortName(searchText));
+        return convertToLicenseSummary(results.stream().toList());
     }
 }
