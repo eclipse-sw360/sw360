@@ -64,6 +64,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -3110,6 +3111,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     releaseIdToAcceptedCLI, releases, sw360User);
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
+                if(statusInfo.getStatus() == null){
+                    statusInfo.setStatus(ObligationStatus.OPEN);
+                }
                 Set<Release> limitedSet = releaseService
                         .getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
                 statusInfo.setReleases(limitedSet);
