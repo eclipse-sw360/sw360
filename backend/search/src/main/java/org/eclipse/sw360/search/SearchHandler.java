@@ -26,7 +26,6 @@ import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -71,12 +70,12 @@ public class SearchHandler implements SearchService.Iface {
         Set<SearchResult> results = Sets.newLinkedHashSet();
         if (typeMask.isEmpty() || typeMask.contains(SW360Constants.TYPE_USER)) {
             if (text.contains("pkg:")) {
-                dealWithSpecialCharacters(text, user, results, dbSw360users, Arrays.asList(SW360Constants.TYPE_USER));
+                dealWithSpecialCharacters(text, user, results, dbSw360users, List.of(SW360Constants.TYPE_USER));
             } else {
-                results.addAll(dbSw360users.search(text, Arrays.asList(SW360Constants.TYPE_USER), user));
+                results.addAll(dbSw360users.search(text, List.of(SW360Constants.TYPE_USER), user));
             }
         }
-        if(typeMask.isEmpty() || !typeMask.get(0).equals(SW360Constants.TYPE_USER) || typeMask.size() > 1) {
+        if(typeMask.isEmpty() || !typeMask.getFirst().equals(SW360Constants.TYPE_USER) || typeMask.size() > 1) {
             if (text.contains("pkg:")) {
                 dealWithSpecialCharacters(text, user, results, dbSw360db, typeMask);
             } else {
@@ -85,10 +84,10 @@ public class SearchHandler implements SearchService.Iface {
         }
 
         List<SearchResult> srs = new ArrayList<SearchResult>(results);
-        Collections.sort(srs, new SearchResultComparator());
+        srs.sort(new SearchResultComparator());
 
         if (log.isTraceEnabled())
-            log.trace("Search for " + text + " returned " + results.size() + " results");
+            log.trace("Search for {} returned {} results", text, results.size());
 
         return srs;
     }
@@ -99,11 +98,11 @@ public class SearchHandler implements SearchService.Iface {
         searchWithDifferentCombinations(queryStringQuoted, user, results, dbSearchHandler,
                 typeMask, specialCharToURLEncodedValue);
 
-        Map<String, String> urlEncodedValToSPecialChar = specialCharToURLEncodedValue.entrySet().stream()
-                .collect(Collectors.toMap(entry -> entry.getValue(), entry -> entry.getKey()));
+        Map<String, String> urlEncodedValToSpecialChar = specialCharToURLEncodedValue.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
         searchWithDifferentCombinations(queryStringQuoted, user, results, dbSearchHandler,
-                typeMask, urlEncodedValToSPecialChar);
+                typeMask, urlEncodedValToSpecialChar);
 
     }
 
