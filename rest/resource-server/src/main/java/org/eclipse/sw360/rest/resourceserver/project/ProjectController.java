@@ -1560,6 +1560,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "includeAllAttachments", required = false ) boolean includeAllAttachments,
             @Parameter(description = "Exclude release version from the license info file")
             @RequestParam(value = "excludeReleaseVersion", required = false, defaultValue = "false") boolean excludeReleaseVersion,
+            @Parameter(description = "Include subprojects")
+            @RequestParam(value = "includeSubprojects", required = false, defaultValue = "true") boolean includeSubprojects,
             HttpServletResponse response
     ) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1569,10 +1571,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         if (includeAllAttachments) {
             mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
-                    projectService.filterAndSortAllAttachments(SW360Constants.INITIAL_LICENSE_INFO_ATTACHMENT_TYPES), true, sw360User);
+                    projectService.filterAndSortAllAttachments(SW360Constants.INITIAL_LICENSE_INFO_ATTACHMENT_TYPES), true, includeSubprojects, sw360User);
         } else {
             mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
-                    projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, sw360User);
+                    projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, includeSubprojects, sw360User);
         }
 
         List<AttachmentUsage> attchmntUsg = attachmentService.getAttachemntUsages(id);
@@ -2104,7 +2106,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<ProjectLink> mappedProjectLinks =
                 (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP)
                         ? projectService.createLinkedProjects(project,
-                        projectService.filterAndSortAttachments(attachmentTypes), true, sw360User)
+                        projectService.filterAndSortAttachments(attachmentTypes), true, true, sw360User)
                         : projectService.createLinkedProjectsWithAllReleases(project,
                         projectService.filterAndSortAttachments(attachmentTypes), true, sw360User);
 
