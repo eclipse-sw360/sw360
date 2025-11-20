@@ -785,6 +785,162 @@ public class FossologyRestClient {
     }
 
     /**
+     * Enhanced file search by multiple SHA1 checksums using v2 API filesearch endpoint
+     * 
+     * @param sha1Values List of SHA1 checksums to search for
+     * @return Map of SHA1 -> List of upload IDs containing that file
+     */
+    public Map<String, List<Integer>> searchFilesBySha1(List<String> sha1Values) {
+        Map<String, List<Integer>> results = new HashMap<>();
+        
+        if (isNotValidConfig() || CommonUtils.isNullOrEmptyCollection(sha1Values)) {
+            return results;
+        }
+
+        String url = "filesearch";
+        List<Map<String, String>> body = sha1Values.stream()
+                .map(sha1 -> Map.of("sha1", sha1))
+                .collect(ArrayList::new, (list, map) -> list.add(map), ArrayList::addAll);
+
+        log.debug("Searching for {} files by SHA1 in FOSSology", sha1Values.size());
+        
+        try {
+            ResponseEntity<JsonNode> response = sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
+            );
+
+            JsonNode responseBody = response.getBody();
+            if (responseBody != null && responseBody.isArray()) {
+                for (JsonNode searchResult : responseBody) {
+                    String sha1 = searchResult.path("sha1").asText();
+                    List<Integer> uploadIds = new ArrayList<>();
+                    
+                    JsonNode uploads = searchResult.path("uploads");
+                    if (uploads.isArray()) {
+                        for (JsonNode upload : uploads) {
+                            uploadIds.add(upload.asInt());
+                        }
+                    }
+                    
+                    results.put(sha1, uploadIds);
+                }
+            }
+        } catch (RestClientException e) {
+            log.error("Error during bulk file search by SHA1: {}", e.getMessage());
+        }
+
+        return results;
+    }
+
+    /**
+     * Search files by filename pattern using v2 API filesearch endpoint
+     * 
+     * @param filename Filename pattern to search for
+     * @param uploadId Optional upload ID to limit search scope
+     * @return JsonNode containing search results
+     */
+    public JsonNode searchFilesByName(String filename, Integer uploadId) {
+        if (isNotValidConfig() || CommonUtils.isNullEmptyOrWhitespace(filename)) {
+            return null;
+        }
+
+        String url = "filesearch";
+        Map<String, Object> searchCriteria = new HashMap<>();
+        searchCriteria.put("filename", filename);
+        
+        if (uploadId != null) {
+            searchCriteria.put("uploadId", uploadId);
+        }
+
+        List<Map<String, Object>> body = List.of(searchCriteria);
+
+        log.debug("Searching for files by filename pattern: {}", filename);
+        
+        try {
+            ResponseEntity<JsonNode> response = sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+        } catch (RestClientException e) {
+            log.error("Error during file search by name '{}': {}", filename, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Search files by content pattern using v2 API filesearch endpoint
+     * 
+     * @param content Content pattern to search for
+     * @param uploadId Optional upload ID to limit search scope
+     * @return JsonNode containing search results
+     */
+    public JsonNode searchFilesByContent(String content, Integer uploadId) {
+        if (isNotValidConfig() || CommonUtils.isNullEmptyOrWhitespace(content)) {
+            return null;
+        }
+
+        String url = "filesearch";
+        Map<String, Object> searchCriteria = new HashMap<>();
+        searchCriteria.put("content", content);
+        
+        if (uploadId != null) {
+            searchCriteria.put("uploadId", uploadId);
+        }
+
+        List<Map<String, Object>> body = List.of(searchCriteria);
+
+        log.debug("Searching for files by content pattern: {}", content);
+        
+        try {
+            ResponseEntity<JsonNode> response = sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+        } catch (RestClientException e) {
+            log.error("Error during file search by content '{}': {}", content, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Get detailed file information from an upload using v2 API
+     * 
+     * @param uploadId Upload ID to get files from
+     * @return JsonNode containing file details
+     */
+    public JsonNode getFilesByUpload(int uploadId) {
+        if (isNotValidConfig() || uploadId <= 0) {
+            return null;
+        }
+
+        String url = "uploads/" + uploadId + "/files";
+
+        log.debug("Getting files from upload: {}", uploadId);
+        
+        try {
+            ResponseEntity<JsonNode> response = sendGetRequest(
+                    url, Map.of(), List.of(MediaType.APPLICATION_JSON), JsonNode.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+        } catch (RestClientException e) {
+            log.error("Error getting files from upload {}: {}", uploadId, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
      * Get folder ID for upload using v2 API
      */
     public int getFolderId(int uploadId) {
