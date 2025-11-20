@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.VendorSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -61,6 +63,11 @@ public class VendorHandler implements VendorService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<Vendor>> getAllVendorListPaginated(PaginationData pageData) throws TException {
+        return vendorDatabaseHandler.getAllVendors(pageData);
+    }
+
+    @Override
     public Set<String> getAllVendorNames() throws TException {
 
         HashSet<String> vendorNames = new HashSet<>();
@@ -73,8 +80,8 @@ public class VendorHandler implements VendorService.Iface {
     }
 
     @Override
-    public List<Vendor> searchVendors(String searchText) throws TException {
-        return vendorSearchHandler.search(searchText);
+    public Map<PaginationData, List<Vendor>> searchVendors(String searchText, PaginationData pageData) throws TException {
+        return vendorSearchHandler.search(searchText, pageData);
     }
 
     @Override
@@ -113,7 +120,7 @@ public class VendorHandler implements VendorService.Iface {
         assertNotNull(mergeTargetId);
         assertNotNull(mergeSourceId);
         assertNotNull(mergeSelection);
-        
+
         return vendorDatabaseHandler.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, user);
     }
 

@@ -10,14 +10,21 @@
 package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -25,6 +32,8 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import java.util.Set;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * CRUD access for the Vendor class
@@ -47,6 +56,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
                     "}";
 
     private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
+    private static final String VENDORS_BY_ALL_IDX = "VendorsByAllIdx";
 
     public VendorRepository(DatabaseConnectorCloudant db) {
         super(db, Vendor.class);
@@ -55,6 +65,11 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         views.put("vendorbyshortname", createMapReduce(BY_LOWERCASE_VENDOR_SHORTNAME_VIEW, null));
         views.put("vendorbyfullname", createMapReduce(BY_LOWERCASE_VENDOR_FULLNAME_VIEW, null));
         initStandardDesignDocument(views, db);
+
+        createIndex(VENDORS_BY_ALL_IDX, "vendorsByAll", new String[] {
+                Vendor._Fields.FULLNAME.getFieldName(),
+                Vendor._Fields.SHORTNAME.getFieldName(),
+        }, db);
     }
 
     public List<Vendor> searchByFullname(String fullname) {
@@ -84,7 +99,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
             project.unsetVendorId();
         }
     }
-    
+
     public void fillVendor(Release release) {
         fillVendor(release, null);
     }
@@ -108,5 +123,42 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
     public Set<String> getVendorByLowercaseFullnamePrefix(String fullnamePrefix) {
         return queryForIdsByPrefix("vendorbyfullname", fullnamePrefix != null ? fullnamePrefix.toLowerCase() : fullnamePrefix);
+    }
+
+    public Map<PaginationData, List<Vendor>> getVendorsWithPagination(PaginationData pageData) {
+        return queryViewWithPagination(pageData);
+    }
+
+    private Map<PaginationData, List<Vendor>> queryViewWithPagination(PaginationData pageData) {
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+        List<Vendor> vendors = Lists.newArrayList();
+        Map<PaginationData, List<Vendor>> result = Maps.newHashMap();
+
+        final Map<String, Object> typeSelector = eq("type", SW360Constants.TYPE_VENDOR);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(typeSelector);
+
+        qb.useIndex(Collections.singletonList(VENDORS_BY_ALL_IDX));
+
+        try {
+            vendors = getConnector().getQueryResultPaginated(qb, Vendor.class, pageData, sortSelector);
+        } catch (Exception e) {
+            log.error("Error getting vendors", e);
+        }
+        result.put(pageData, vendors);
+        return result;
+    }
+
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
+        boolean ascending = pageData.isAscending();
+        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case VendorSortColumn.BY_FULLNAME ->
+                    Collections.singletonMap("fullname", ascending ? "asc" : "desc");
+            case VendorSortColumn.BY_SHORTNAME ->
+                    Collections.singletonMap("shortname", ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap("fullname", ascending ? "asc" : "desc"); // Default sort by fullname
+        };
     }
 }
