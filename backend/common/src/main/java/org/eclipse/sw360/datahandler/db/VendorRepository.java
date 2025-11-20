@@ -10,13 +10,17 @@
 package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -62,19 +66,15 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         views.put("vendorbyfullname", createMapReduce(BY_LOWERCASE_VENDOR_FULLNAME_VIEW, null));
         initStandardDesignDocument(views, db);
 
-        createPartialTypeIndex(
-                VENDORS_BY_ALL_IDX, "vendorsByType", SW360Constants.TYPE_VENDOR,
-                new String[]{
-                        Vendor._Fields.TYPE.getFieldName(),
-                        Vendor._Fields.FULLNAME.getFieldName(),
-                        Vendor._Fields.SHORTNAME.getFieldName(),
-                        Vendor._Fields.URL.getFieldName(),
-                }, db
-        );
+        createIndex(VENDORS_BY_ALL_IDX, "vendorsByAll", new String[] {
+                Vendor._Fields.FULLNAME.getFieldName(),
+                Vendor._Fields.SHORTNAME.getFieldName(),
+        }, db);
     }
 
     public List<Vendor> searchByFullname(String fullname) {
-        return new ArrayList<>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
+        List<Vendor> vendorsMatchingFullname =  new ArrayList<Vendor>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
+        return vendorsMatchingFullname;
     }
 
     public void fillVendor(Component component) {
@@ -126,34 +126,39 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
     }
 
     public Map<PaginationData, List<Vendor>> getVendorsWithPagination(PaginationData pageData) {
-        if (pageData == null) {
-            throw new IllegalArgumentException("PaginationData cannot be null");
+        return queryViewWithPagination(pageData);
+    }
+
+    private Map<PaginationData, List<Vendor>> queryViewWithPagination(PaginationData pageData) {
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+        List<Vendor> vendors = Lists.newArrayList();
+        Map<PaginationData, List<Vendor>> result = Maps.newHashMap();
+
+        final Map<String, Object> typeSelector = eq("type", SW360Constants.TYPE_VENDOR);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(typeSelector);
+
+        qb.useIndex(Collections.singletonList(VENDORS_BY_ALL_IDX));
+
+        try {
+            vendors = getConnector().getQueryResultPaginated(qb, Vendor.class, pageData, sortSelector);
+        } catch (Exception e) {
+            log.error("Error getting vendors", e);
         }
-
-        String viewName = getViewFromPagination(pageData);
-        log.debug("Using view: {} for pagination sort column {}", viewName , pageData.sortColumnNumber);
-        List<Vendor> vendors = queryViewPaginated(viewName, pageData, false);
-
-        return Collections.singletonMap(pageData, vendors);
+        result.put(pageData, vendors);
+        return result;
     }
 
-
-    private static @NotNull String getViewFromPagination(PaginationData pageData) {
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
+        boolean ascending = pageData.isAscending();
         return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case VendorSortColumn.BY_FULLNAME -> "vendorbyfullname";
-            case VendorSortColumn.BY_SHORTNAME -> "vendorbyshortname";
-            case null -> "all";
+            case VendorSortColumn.BY_FULLNAME ->
+                    Collections.singletonMap("fullname", ascending ? "asc" : "desc");
+            case VendorSortColumn.BY_SHORTNAME ->
+                    Collections.singletonMap("shortname", ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap("fullname", ascending ? "asc" : "desc"); // Default sort by fullname
         };
     }
-
-    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
-        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case VendorSortColumn.BY_FULLNAME -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
-            case VendorSortColumn.BY_SHORTNAME -> Collections.singletonMap("shortname", ascending ? "asc" : "desc");
-            case null, default -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
-        };
-    }
-
-
-
 }
