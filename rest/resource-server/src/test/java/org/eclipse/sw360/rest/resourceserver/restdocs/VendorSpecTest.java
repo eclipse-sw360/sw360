@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -100,8 +101,15 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         releases.add(release1);
         releases.add(release2);
 
+        PaginationData pageData = new PaginationData();
+        pageData.setAscending(true);
+        pageData.setRowsPerPage(10);
+        pageData.setDisplayStart(0);
+        pageData.setSortColumnNumber(0);
+        Map<PaginationData, List<Vendor>> paginatedVendors = Map.of(pageData, vendorList);
+
         given(this.vendorServiceMock.getAllReleaseList(eq(vendor.getId()))).willReturn(releases);
-        given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
+        given(this.vendorServiceMock.getVendors(any())).willReturn(paginatedVendors);
         given(this.vendorServiceMock.mergeVendors(eq(vendor.getId()),eq(vendor2.getId()), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);

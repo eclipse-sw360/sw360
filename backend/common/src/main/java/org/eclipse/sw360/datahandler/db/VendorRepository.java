@@ -66,10 +66,15 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         views.put("vendorbyfullname", createMapReduce(BY_LOWERCASE_VENDOR_FULLNAME_VIEW, null));
         initStandardDesignDocument(views, db);
 
-        createIndex(VENDORS_BY_ALL_IDX, "vendorsByAll", new String[] {
-                Vendor._Fields.FULLNAME.getFieldName(),
-                Vendor._Fields.SHORTNAME.getFieldName(),
-        }, db);
+        createPartialTypeIndex(
+                VENDORS_BY_ALL_IDX, "vendorsByType", SW360Constants.TYPE_VENDOR,
+                new String[]{
+                        Vendor._Fields.TYPE.getFieldName(),
+                        Vendor._Fields.FULLNAME.getFieldName(),
+                        Vendor._Fields.SHORTNAME.getFieldName(),
+                        Vendor._Fields.URL.getFieldName(),
+                }, db
+        );
     }
 
     public List<Vendor> searchByFullname(String fullname) {
@@ -126,10 +131,6 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
     }
 
     public Map<PaginationData, List<Vendor>> getVendorsWithPagination(PaginationData pageData) {
-        return queryViewWithPagination(pageData);
-    }
-
-    private Map<PaginationData, List<Vendor>> queryViewWithPagination(PaginationData pageData) {
         final Map<String, String> sortSelector = getSortSelector(pageData);
         List<Vendor> vendors = Lists.newArrayList();
         Map<PaginationData, List<Vendor>> result = Maps.newHashMap();
@@ -140,6 +141,10 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
                 .selector(typeSelector);
 
         qb.useIndex(Collections.singletonList(VENDORS_BY_ALL_IDX));
+        qb.fields(List.of(Vendor._Fields.TYPE.getFieldName(),
+                Vendor._Fields.FULLNAME.getFieldName(),
+                Vendor._Fields.SHORTNAME.getFieldName(),
+                Vendor._Fields.URL.getFieldName()));
 
         try {
             vendors = getConnector().getQueryResultPaginated(qb, Vendor.class, pageData, sortSelector);
@@ -154,11 +159,11 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         boolean ascending = pageData.isAscending();
         return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
             case VendorSortColumn.BY_FULLNAME ->
-                    Collections.singletonMap("fullname", ascending ? "asc" : "desc");
+                    Collections.singletonMap(Vendor._Fields.FULLNAME.getFieldName(), ascending ? "asc" : "desc");
             case VendorSortColumn.BY_SHORTNAME ->
-                    Collections.singletonMap("shortname", ascending ? "asc" : "desc");
+                    Collections.singletonMap(Vendor._Fields.SHORTNAME.getFieldName(), ascending ? "asc" : "desc");
             case null, default ->
-                    Collections.singletonMap("fullname", ascending ? "asc" : "desc"); // Default sort by fullname
+                    Collections.singletonMap(Vendor._Fields.FULLNAME.getFieldName(), ascending ? "asc" : "desc"); // Default sort by fullname
         };
     }
 }
