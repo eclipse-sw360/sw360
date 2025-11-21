@@ -18,7 +18,6 @@ import org.cyclonedx.parsers.JsonParser;
 import org.cyclonedx.parsers.XmlParser;
 import org.cyclonedx.model.Bom;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
@@ -86,22 +85,22 @@ public class SpdxDocumentDatabaseHandler {
     private final SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
     private final SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
 
-    public SpdxDocumentDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+    public SpdxDocumentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
         SPDXDocumentRepository = new SpdxDocumentRepository(db);
 
-        sw360db = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_DATABASE);
+        sw360db = new DatabaseConnectorCloudant(client, dbName);
         vendorRepository = new VendorRepository(sw360db);
         releaseRepository = new ReleaseRepository(sw360db, vendorRepository);
         // Create the moderator
         moderator = new SpdxDocumentModerator();
         // Create the changelogs
-        dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        dbChangeLogs = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(client, dbName);
-        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(client, dbName);
+        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(client, dbName, changeLogsDbName);
+        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(client, dbName, changeLogsDbName);
     }
 
     public List<SPDXDocument> getSPDXDocumentSummary(User user) {

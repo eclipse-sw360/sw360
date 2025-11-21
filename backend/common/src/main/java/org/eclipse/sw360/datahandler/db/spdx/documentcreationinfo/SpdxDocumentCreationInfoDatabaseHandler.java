@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -53,7 +52,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
     private final SpdxDocumentCreationInfoModerator moderator;
 
-    public SpdxDocumentCreationInfoDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+    public SpdxDocumentCreationInfoDatabaseHandler(Cloudant client, String dbName, String changelogsDbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
@@ -62,7 +61,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         // Create the moderator
         moderator = new SpdxDocumentCreationInfoModerator();
         // Create the changelogs
-        dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        dbChangeLogs = new DatabaseConnectorCloudant(client, changelogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 

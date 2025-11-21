@@ -31,11 +31,11 @@ public class DocumentCreationInformationHandler implements DocumentCreationInfor
     SpdxDocumentCreationInfoDatabaseHandler handler;
 
     DocumentCreationInformationHandler() throws MalformedURLException {
-        handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
     }
 
-    DocumentCreationInformationHandler(Cloudant client, String dbName) throws MalformedURLException {
-        handler = new SpdxDocumentCreationInfoDatabaseHandler(client, dbName);
+    DocumentCreationInformationHandler(Cloudant client, String dbName, String changelogsDbName) throws MalformedURLException {
+        handler = new SpdxDocumentCreationInfoDatabaseHandler(client, dbName, changelogsDbName);
     }
 
     @Override

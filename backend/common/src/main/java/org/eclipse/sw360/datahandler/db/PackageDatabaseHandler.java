@@ -77,7 +77,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Package._Fields.NAME, Package._Fields.VERSION, Package._Fields.VCS, Package._Fields.DESCRIPTION,
             Package._Fields.HOMEPAGE_URL, Package._Fields.PURL, Package._Fields.HASH);
 
-    public PackageDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, String changeLogsDbName,
+    public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName,
             AttachmentDatabaseHandler attachmentDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
 
         super(attachmentDatabaseHandler);
@@ -95,11 +95,11 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         this.databaseHandlerUtil = new DatabaseHandlerUtil(changeLogsDb);
     }
 
-    public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName)
+    public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, String spdxDbName)
             throws MalformedURLException {
 
         this(client, dbName, attachmentDbName, changeLogsDbName, new AttachmentDatabaseHandler(client, dbName, attachmentDbName),
-                new ComponentDatabaseHandler(client, dbName, changeLogsDbName, attachmentDbName));
+                new ComponentDatabaseHandler(client, dbName, changeLogsDbName, attachmentDbName, spdxDbName));
     }
 
     public Package getPackageById(String id) throws SW360Exception {

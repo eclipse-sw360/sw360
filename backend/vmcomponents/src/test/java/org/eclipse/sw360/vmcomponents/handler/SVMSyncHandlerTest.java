@@ -65,6 +65,8 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     private static final String dbNameVM = DatabaseSettingsTest.COUCH_DB_VM;
     private static final String dbNameComp = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String dbNameAtt = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
+    private static final String changelogDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
+    private static final String spdxDbName = DatabaseSettingsTest.COUCH_DB_SPDX;
 
     @Before
     public void setUp() throws TException, IOException {
@@ -85,7 +87,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         user = new User().setEmail("me");
         // Prepare the handler
         handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
-        compDBHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbNameComp, dbNameAtt);
+        compDBHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbNameComp, changelogDbName, dbNameAtt, spdxDbName);
         vendorRepository = new VendorRepository(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbNameComp));
 
         // mock preparation
@@ -103,7 +105,8 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
 //    @Test
     public void create5000Matches() throws SW360Exception, MalformedURLException {
         VMDatabaseHandler handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
-        ComponentDatabaseHandler compDBHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbNameComp, dbNameAtt);
+        ComponentDatabaseHandler compDBHandler = new ComponentDatabaseHandler(
+                DatabaseSettingsTest.getConfiguredClient(), dbNameComp, changelogDbName, dbNameAtt, spdxDbName);
         VMComponent component = new VMComponent(SW360Utils.getCreatedOnTime(), "droelf");
         component.setName("droelf");
         component.setVendor("droelf");

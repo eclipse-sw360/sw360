@@ -71,7 +71,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -155,31 +154,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ProjectModerator(),
-                new ComponentDatabaseHandler(client,dbName,attachmentDbName),
-                new PackageDatabaseHandler(client, dbName, DatabaseSettings.COUCH_DB_CHANGE_LOGS, attachmentDbName),
-                new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
-    }
-
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String changeLogDbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, changeLogDbName, attachmentDbName, new ProjectModerator(),
-                new ComponentDatabaseHandler(client, dbName, attachmentDbName),
-                new PackageDatabaseHandler(client, dbName, changeLogDbName, attachmentDbName),
+    public ProjectDatabaseHandler(Cloudant client, String dbName, String changelogDbName, String attachmentDbName, String spdxDbName) throws MalformedURLException {
+        this(client, dbName, changelogDbName, attachmentDbName, new ProjectModerator(),
+                new ComponentDatabaseHandler(client, dbName, changelogDbName, attachmentDbName, spdxDbName),
+                new PackageDatabaseHandler(client, dbName, changelogDbName, attachmentDbName, spdxDbName),
                 new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
     }
 
     @VisibleForTesting
     public ProjectDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ProjectModerator moderator,
-                                  ComponentDatabaseHandler componentDatabaseHandler, PackageDatabaseHandler packageDatabaseHandler,
-                                  AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, moderator, componentDatabaseHandler, packageDatabaseHandler, attachmentDatabaseHandler);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changeLogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
-    }
-
-    @VisibleForTesting
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, ProjectModerator moderator,
                                   ComponentDatabaseHandler componentDatabaseHandler, PackageDatabaseHandler packageDatabaseHandler,
                                   AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
         super(attachmentDatabaseHandler);
@@ -202,7 +185,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         this.componentDatabaseHandler = componentDatabaseHandler;
         this.packageDatabaseHandler = packageDatabaseHandler;
-        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
     }
 

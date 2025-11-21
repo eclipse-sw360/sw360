@@ -42,7 +42,7 @@ public class PackageHandler implements PackageService.Iface {
     private final PackageSearchHandler packageSearchHandler;
 
     PackageHandler() throws IOException {
-        handler = new PackageDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        handler = new PackageDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, DatabaseSettings.COUCH_DB_SPDX);
         packageSearchHandler = new PackageSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 

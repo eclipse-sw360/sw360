@@ -46,6 +46,7 @@ public class ProjectDatabaseHandlerTest {
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
     private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
+    private static final String spdxDbName = DatabaseSettingsTest.COUCH_DB_SPDX;
 
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
@@ -142,7 +143,7 @@ public class ProjectDatabaseHandlerTest {
 
         databaseConnector.add(new Component("comp1").setId("c1"));
 
-        componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName);
+        componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, spdxDbName);
         attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
         packageHandler = new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, attachmentDatabaseHandler, componentHandler);
         handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, componentHandler, packageHandler, attachmentDatabaseHandler);

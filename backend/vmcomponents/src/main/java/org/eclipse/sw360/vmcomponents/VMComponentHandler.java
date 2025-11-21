@@ -43,7 +43,9 @@ public class VMComponentHandler implements VMComponentService.Iface {
 
     public VMComponentHandler() throws IOException, SW360Exception {
         dbHandler = new VMDatabaseHandler();
-        compHandler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        compHandler = new ComponentDatabaseHandler(
+                DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE,
+                DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, DatabaseSettings.COUCH_DB_SPDX);
     }
 
     @Override

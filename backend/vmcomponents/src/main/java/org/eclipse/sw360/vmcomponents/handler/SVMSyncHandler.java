@@ -377,7 +377,10 @@ public class SVMSyncHandler<T extends TBase> {
     private void initComponentDatabaseHandler() {
         if (compDB == null) {
             try {
-                compDB = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+                compDB = new ComponentDatabaseHandler(
+                        DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE,
+                        DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS,
+                        DatabaseSettings.COUCH_DB_SPDX);
             } catch (MalformedURLException e) {
                 String message = "Failed to initialize " + ComponentDatabaseHandler.class.getSimpleName();
                 log.error(message, e);

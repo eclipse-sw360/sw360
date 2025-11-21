@@ -19,7 +19,6 @@ import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -167,7 +166,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID, ClearingInformation._Fields.EVALUATED,
                     ClearingInformation._Fields.PROC_START);
 
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
+    public ComponentDatabaseHandler(Cloudant client, String dbName, String changelogDbName, String attachmentDbName,
+                                    String spdxDbName, ComponentModerator moderator, ReleaseModerator releaseModerator,
+                                    ProjectModerator projectModerator) throws MalformedURLException {
         super(client, dbName, attachmentDbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
 
@@ -186,35 +187,22 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // Create the attachment connector
         attachmentConnector = new AttachmentConnector(client, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
-        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, changelogDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
 
         this.bulkDeleteUtil = new BulkDeleteUtil(this, componentRepository, releaseRepository, projectRepository, moderator, releaseModerator,
                 attachmentConnector, attachmentDatabaseHandler, dbHandlerUtil);
 
         // Create the spdx document database handler
-        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
+        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, spdxDbName, changelogDbName);
     }
 
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, moderator, releaseModerator, projectModerator);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changeLogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
+    public ComponentDatabaseHandler(Cloudant client, String dbName, String changelogsDbName, String attachmentDbName, String spdxDbName) throws MalformedURLException {
+        this(client, dbName, changelogsDbName, attachmentDbName, spdxDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
     }
 
-
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
-    }
-
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String changelogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changelogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
-    }
-
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ThriftClients thriftClients) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ComponentModerator(thriftClients), new ReleaseModerator(thriftClients), new ProjectModerator(thriftClients));
+    public ComponentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, String spdxDbName, ThriftClients thriftClients) throws MalformedURLException {
+        this(client, dbName, changeLogsDbName, attachmentDbName, spdxDbName, new ComponentModerator(thriftClients), new ReleaseModerator(thriftClients), new ProjectModerator(thriftClients));
     }
 
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {

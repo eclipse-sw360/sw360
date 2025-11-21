@@ -54,7 +54,7 @@ public class ModerationHandler implements ModerationService.Iface {
     private final ModerationSearchHandler modSearchHandler;
 
     public ModerationHandler() throws IOException {
-        handler = new ModerationDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        handler = new ModerationDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
         modSearchHandler = new ModerationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 

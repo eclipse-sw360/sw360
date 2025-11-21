@@ -59,6 +59,7 @@ public class ComponentDatabaseHandlerTest {
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
     private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
+    private static final String spdxDbName = DatabaseSettingsTest.COUCH_DB_SPDX;
 
     private static final String email1 = "cedric.bodet@tngtech.com";
     private static final String email2 = "johannes.najjar@tngtech.com";
@@ -151,7 +152,9 @@ public class ComponentDatabaseHandlerTest {
         componentMap= ThriftUtils.getIdMap(components);
 
         // Prepare the handler
-        handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
+        handler = new ComponentDatabaseHandler(
+                DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName,
+                attachmentsDbName, spdxDbName, moderator, releaseModerator, projectModerator);
         handler.setSvmConnector(svmConnector);
     }
 

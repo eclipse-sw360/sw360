@@ -53,6 +53,7 @@ public class ProjectDatabaseHandlerTest {
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
     private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
+    private static final String spdxDbName = DatabaseSettingsTest.COUCH_DB_SPDX;
 
     private List<Project> projects;
     private List<Vendor> vendors;
@@ -176,10 +177,12 @@ public class ProjectDatabaseHandlerTest {
             databaseConnector.add(project);
         }
 
-        ComponentDatabaseHandler componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
+        ComponentDatabaseHandler componentHandler = new ComponentDatabaseHandler(
+                DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, spdxDbName);
         AttachmentDatabaseHandler attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
         PackageDatabaseHandler packageHandler = new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, attachmentDatabaseHandler, componentHandler);
-        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName, moderator, componentHandler, packageHandler, attachmentDatabaseHandler);
+        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(),
+                dbName, changeLogsDbName, attachmentsDbName, moderator, componentHandler, packageHandler, attachmentDatabaseHandler);
     }
 
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {

@@ -26,6 +26,9 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
 import java.util.List;
@@ -43,8 +46,8 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  *
  * @author: alex.borodin@evosoft.com
  */
+@Component
 public class AttachmentDatabaseHandler {
-    private final DatabaseConnectorCloudant db;
     private final AttachmentContentRepository attachmentContentRepository;
     private final AttachmentConnector attachmentConnector;
     private final AttachmentUsageRepository attachmentUsageRepository;
@@ -54,13 +57,19 @@ public class AttachmentDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(AttachmentDatabaseHandler.class);
 
-    public AttachmentDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(client, attachmentDbName);
+    @Autowired
+    public AttachmentDatabaseHandler(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("COUCH_DB_ATTACHMENTS") String attachmentDbName
+    ) throws MalformedURLException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        DatabaseConnectorCloudant attachmentDb = new DatabaseConnectorCloudant(client, attachmentDbName);
         attachmentConnector = new AttachmentConnector(client, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
-        attachmentContentRepository = new AttachmentContentRepository(db);
-        attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnectorCloudant(client, dbName));
-        attachmentRepository = new AttachmentRepository(new DatabaseConnectorCloudant(client, dbName));
-        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnectorCloudant(client, dbName));
+        attachmentContentRepository = new AttachmentContentRepository(attachmentDb);
+        attachmentUsageRepository = new AttachmentUsageRepository(db);
+        attachmentRepository = new AttachmentRepository(db);
+        attachmentOwnerRepository = new AttachmentOwnerRepository(db);
     }
 
     public AttachmentConnector getAttachmentConnector(){
@@ -269,7 +278,7 @@ public class AttachmentDatabaseHandler {
     public List<Source> getAttachmentOwnersByIds(Set<String> ids) {
         return attachmentOwnerRepository.getOwnersByIds(ids);
     }
-    
+
     public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) {
         return attachmentUsageRepository.getUsagesByReleaseId(releaseId);
     }

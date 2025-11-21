@@ -104,7 +104,7 @@ public class ModerationDatabaseHandler {
 
     private final MailUtil mailUtil = new MailUtil();
 
-    public ModerationDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
+    public ModerationDatabaseHandler(Cloudant client, String dbName, String changelogsDbName, String attachmentDbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repository
@@ -112,20 +112,13 @@ public class ModerationDatabaseHandler {
         clearingRequestRepository = new ClearingRequestRepository(db);
 
         licenseDatabaseHandler = new LicenseDatabaseHandler(client, dbName);
-        projectDatabaseHandler = new ProjectDatabaseHandler(client, dbName, attachmentDbName);
-        componentDatabaseHandler = new ComponentDatabaseHandler(client, dbName, attachmentDbName);
-        spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
-        spdxDocumentCreationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
-        spdxPackageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
-        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        projectDatabaseHandler = new ProjectDatabaseHandler(client, dbName, changelogsDbName, attachmentDbName, DatabaseSettings.COUCH_DB_SPDX);
+        componentDatabaseHandler = new ComponentDatabaseHandler(client, dbName, changelogsDbName, attachmentDbName, DatabaseSettings.COUCH_DB_SPDX);
+        spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX, changelogsDbName);
+        spdxDocumentCreationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX, changelogsDbName);
+        spdxPackageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX, changelogsDbName);
+        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, changelogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-    }
-
-    public ModerationDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changeLogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
-
     }
 
     public List<ModerationRequest> getRequestsByModerator(String moderator) {

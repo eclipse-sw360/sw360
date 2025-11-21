@@ -48,15 +48,15 @@ public class SpdxBOMImporterSink {
     public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
-        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.user = user;
     }
 
     public Response addComponent(Component component) throws SW360Exception {
         log.debug("create Component { name='" + component.getName() + "' }");
-        
+
         if (CommonUtils.isNotNullEmptyOrWhitespace(user.getDepartment())) {
             component.setBusinessUnit(user.getDepartment());
         } else {

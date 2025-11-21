@@ -35,6 +35,7 @@ public class DatabaseSettingsTest {
     public static final String COUCH_DB_USERS;
     public static final String COUCH_DB_VM;
     public static final String COUCH_DB_CHANGELOGS;
+    public static final String COUCH_DB_SPDX;
 
     private static final Optional<String> COUCH_DB_USERNAME;
     private static final Optional<String> COUCH_DB_PASSWORD;
@@ -62,6 +63,7 @@ public class DatabaseSettingsTest {
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360_test_config");
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360_test_users");
         COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360_test_vm");
+        COUCH_DB_SPDX = props.getProperty("couchdb.sw360spdx", "sw360spdx");
         COUCH_DB_CHANGELOGS = props.getProperty("couchdb.change_logs", "sw360_test_changelogs");
     }
 

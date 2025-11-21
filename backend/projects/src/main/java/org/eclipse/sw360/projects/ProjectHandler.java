@@ -66,18 +66,13 @@ public class ProjectHandler implements ProjectService.Iface {
 
     ProjectHandler() throws IOException {
         handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE,
-                DatabaseSettings.COUCH_DB_ATTACHMENTS);
+                DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, DatabaseSettings.COUCH_DB_SPDX);
         searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredClient(),
                 DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    ProjectHandler(Cloudant client, String dbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(client, dbName, attchmntDbName);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
-    }
-
-    ProjectHandler(Cloudant client, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(client, dbName, changeLogsDbName, attchmntDbName);
+    ProjectHandler(Cloudant client, String dbName, String changeLogsDbName, String attchmntDbName, String spdxDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(client, dbName, changeLogsDbName, attchmntDbName, spdxDbName);
         searchHandler = new ProjectSearchHandler(client, dbName);
     }
 

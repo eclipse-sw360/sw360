@@ -48,6 +48,7 @@ public class ProjectHandlerTest {
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String attachmentDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
     private static final String changeLogDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
+    private static final String spdxDbName = DatabaseSettingsTest.COUCH_DB_SPDX;
 
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
@@ -75,7 +76,7 @@ public class ProjectHandlerTest {
         }
 
         // Create the connector
-        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName);
+        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, spdxDbName);
     }
 
     @After
@@ -225,8 +226,8 @@ public class ProjectHandlerTest {
         ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
 
         ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, moderator,
-                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName),
-                new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName),
+                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, spdxDbName),
+                new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, spdxDbName),
                 new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName));
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");

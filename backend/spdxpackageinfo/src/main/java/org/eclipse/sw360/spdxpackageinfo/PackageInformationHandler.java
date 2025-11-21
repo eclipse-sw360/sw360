@@ -33,11 +33,11 @@ public class PackageInformationHandler implements PackageInformationService.Ifac
     SpdxPackageInfoDatabaseHandler handler;
 
     PackageInformationHandler() throws MalformedURLException {
-        handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
     }
 
-    PackageInformationHandler(Cloudant client, String dbName) throws MalformedURLException {
-        handler = new SpdxPackageInfoDatabaseHandler(client, dbName);
+    PackageInformationHandler(Cloudant client, String dbName, String changelogsDbName) throws MalformedURLException {
+        handler = new SpdxPackageInfoDatabaseHandler(client, dbName, changelogsDbName);
     }
 
     @Override

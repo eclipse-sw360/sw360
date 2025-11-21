@@ -20,7 +20,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -69,7 +68,7 @@ public class UserDatabaseHandler {
         db = new DatabaseConnectorCloudant(client, dbName);
         repository = new UserRepository(db);
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
-        userSearchHandler = new UserSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
+        userSearchHandler = new UserSearchHandler(client, dbName);
     }
 
     public User getByEmail(String email) {
