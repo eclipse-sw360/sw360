@@ -132,8 +132,10 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         final boolean ascending = pageData.isAscending();
         final int skip = pageData.getDisplayStart();
         final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByRequestingUserSelector = eq("requestingUser", moderator);
         final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
-        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
+        final Map<String, Object> moderatorOrRequestingUser = or(List.of(filterByModeratorSelector, filterByRequestingUserSelector));
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, moderatorOrRequestingUser));
         PostFindOptions qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
                 .limit(rowsPerPage)
