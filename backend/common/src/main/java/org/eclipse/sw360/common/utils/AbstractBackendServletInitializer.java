@@ -43,7 +43,8 @@ public abstract class AbstractBackendServletInitializer implements WebApplicatio
     protected abstract String getServletName();
 
     protected abstract ServletRegistration.Dynamic getServletRegistration(
-            @NotNull ServletContext servletContext
+            @NotNull ServletContext servletContext,
+            AnnotationConfigWebApplicationContext rootContext
     );
 
     @Override
@@ -55,10 +56,12 @@ public abstract class AbstractBackendServletInitializer implements WebApplicatio
 
         CouchDbPropertyLoader.loadCouchDbProperties(rootContext.getEnvironment());
 
+        rootContext.refresh();
+
         servletContext.addListener(new ContextLoaderListener(rootContext));
         servletContext.addListener(new SW360ServiceContextListener());
 
-        ServletRegistration.Dynamic servletRegistration = getServletRegistration(servletContext);
+        ServletRegistration.Dynamic servletRegistration = getServletRegistration(servletContext, rootContext);
         if (servletRegistration == null) {
             throw new ServletException("Servlet registration failed for: " + getServletName());
         }

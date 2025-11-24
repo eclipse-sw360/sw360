@@ -15,6 +15,7 @@ import jakarta.servlet.ServletRegistration;
 import org.apache.thrift.server.TServlet;
 import org.eclipse.sw360.common.utils.AbstractBackendServletInitializer;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 
 public class AttachmentServletInitializer extends AbstractBackendServletInitializer {
     private static final String SERVLET_NAME = "AttachmentService";
