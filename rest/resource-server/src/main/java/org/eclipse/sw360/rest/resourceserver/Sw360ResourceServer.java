@@ -103,7 +103,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     private static final String SERVER_PATH_URL;
     private static final String APPLICATION_NAME = "/resource";
     private static final Map<Object, Object> versionInfo;
-    public static final String SVM_NOTIFICATION_URL;
 
     static {
         Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
@@ -122,7 +121,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
         CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
         SERVER_PATH_URL = props.getProperty("backend.url", "http://localhost:8080");
-        SVM_NOTIFICATION_URL = props.getProperty("svm.notification.url", "");
 
         versionInfo = new HashMap<>();
         Properties properties = CommonUtils.loadProperties(Sw360ResourceServer.class, VERSION_INFO_PROPERTIES_FILE, false);
