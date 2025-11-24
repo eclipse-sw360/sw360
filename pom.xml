@@ -146,7 +146,7 @@
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
     <plexus-utils.version>4.0.2</plexus-utils.version>
-    <poi.version>5.4.1</poi.version>
+    <poi.version>5.5.0</poi.version>
     <project-lombok.version>1.18.38</project-lombok.version>
     <slf4j.version>2.0.17</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
