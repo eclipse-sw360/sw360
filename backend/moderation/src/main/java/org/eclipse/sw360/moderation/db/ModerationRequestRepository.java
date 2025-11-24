@@ -132,10 +132,8 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         final boolean ascending = pageData.isAscending();
         final int skip = pageData.getDisplayStart();
         final Map<String, Object> typeSelector = eq("type", "moderation");
-        final Map<String, Object> filterByRequestingUserSelector = eq("requestingUser", moderator);
         final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
-        final Map<String, Object> moderatorOrRequestingUser = or(List.of(filterByModeratorSelector, filterByRequestingUserSelector));
-        final Map<String, Object> finalSelector = and(List.of(typeSelector, moderatorOrRequestingUser));
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
         PostFindOptions qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
                 .limit(rowsPerPage)
@@ -358,5 +356,24 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             log.error("Error getting requesting users", e);
         }
         return requestingUserDepts;
+    }
+
+    public List<ModerationRequest> getRequestsByModeratorAndRequestingUserWithPaginationNoFilter(String moderator, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final boolean ascending = pageData.isAscending();
+        final int skip = pageData.getDisplayStart();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByRequestingUserSelector = eq("requestingUser", moderator);
+        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
+        final Map<String, Object> moderatorOrRequestingUser = or(List.of(filterByModeratorSelector, filterByRequestingUserSelector));
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, moderatorOrRequestingUser));
+        PostFindOptions qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .limit(rowsPerPage)
+                .skip(skip)
+                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
+                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
+                .build();
+        return getConnector().getQueryResult(qb, ModerationRequest.class);
     }
 }

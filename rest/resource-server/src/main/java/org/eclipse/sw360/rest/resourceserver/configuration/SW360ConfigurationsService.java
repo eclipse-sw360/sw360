@@ -54,7 +54,6 @@ public class SW360ConfigurationsService {
         configFromProperties.put("rest.apitoken.read.validity.days", String.valueOf(Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_READ_IN_DAYS));
         configFromProperties.put("rest.apitoken.write.validity.days", String.valueOf(Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS));
         configFromProperties.put("ui.rest.apitoken.write.generator.enable", String.valueOf(Sw360ResourceServer.API_WRITE_TOKEN_GENERATOR_ENABLED));
-        configFromProperties.put("svm.notification.url", String.valueOf(Sw360ResourceServer.SVM_NOTIFICATION_URL));
         return configFromProperties;
     }
 
