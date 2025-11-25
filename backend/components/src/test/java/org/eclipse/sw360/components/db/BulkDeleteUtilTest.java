@@ -10,10 +10,12 @@
 
 package org.eclipse.sw360.components.db;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.config.CouchDbContextInitializer;
+import org.eclipse.sw360.config.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -34,10 +36,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -53,17 +60,37 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.withSettings;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class BulkDeleteUtilTest {
 
     private static final Logger log = LogManager.getLogger(BulkDeleteUtilTest.class);
 
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
-    private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
-    private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
-    private static final String spdxDbName = DatabaseSettingsTest.COUCH_DB_SPDX;
+    @Autowired
+    @Qualifier("COUCH_DB_DATABASE")
+    private String dbName;
 
-    //User infomation
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_CHANGELOGS")
+    private String changeLogsDbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_SPDX")
+    private String spdxDbName;
+
+    @Autowired
+    private Cloudant client;
+
+    //User information
     private static final String USER_EMAIL1 = "hoge@piyo.co.jp";
     private static final User user1 = new User().setEmail(USER_EMAIL1).setDepartment("Department1").setId("admin12345").setUserGroup(UserGroup.ADMIN);
 
@@ -104,6 +131,8 @@ public class BulkDeleteUtilTest {
     private long timeLogLastTime = 0;
 
     private Map<String, Vendor> vendors;
+
+    @Autowired
     private ComponentDatabaseHandler handler;
     private DatabaseConnectorCloudant databaseConnector;
     private DatabaseConnectorCloudant changeLogsDatabaseConnector;
@@ -141,36 +170,26 @@ public class BulkDeleteUtilTest {
         vendors.put("V2", new Vendor().setId("V2").setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org"));
         vendors.put("V3", new Vendor().setId("V3").setShortname("Oracle").setFullname("Oracle Corporation Inc").setUrl("http://www.oracle.com"));
 
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), changeLogsDbName);
-
         // Prepare the database
-        databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
-        changeLogsDatabaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), changeLogsDbName);
+        databaseConnector = new DatabaseConnectorCloudant(client, dbName);
+        changeLogsDatabaseConnector = new DatabaseConnectorCloudant(client, changeLogsDbName);
 
         // Prepare vendors
         for (Vendor vendor : vendors.values()) {
             databaseConnector.add(vendor);
         }
 
-        // Prepare the handler
-        handler = new ComponentDatabaseHandler(
-                DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName,
-                attachmentsDbName, spdxDbName, moderator, releaseModerator, projectModerator);
-
         // Prepare the utility object
         bulkDeleteUtil = handler.getBulkDeleteUtil();
 
         treeNodeCreateReleaseCounter = 0;
-
     }
 
     @After
     public void tearDown() throws Exception {
         bulkDeleteUtil.unsetInspector();
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), changeLogsDbName);
+        TestUtils.deleteDatabase(client, dbName);
+        TestUtils.deleteDatabase(client, changeLogsDbName);
     }
 
     @Test

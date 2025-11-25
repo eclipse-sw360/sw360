@@ -9,8 +9,9 @@
  */
 package org.eclipse.sw360.components;
 
+import org.eclipse.sw360.config.CouchDbContextInitializer;
+import org.eclipse.sw360.config.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -19,6 +20,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
 import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.DESCRIPTION;
@@ -34,18 +41,22 @@ import static org.junit.Assert.fail;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class ComponentHandlerTest {
 
+    @Autowired
     private ComponentHandler componentHandler;
     private User adminUser = TestUtils.getAdminUser(getClass());
 
     @Before
     public void setUp() throws Exception {
         assertTestDbNames();
-        deleteAllDatabases();
-        componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredClient(),
-                DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_CHANGELOGS,
-                DatabaseSettingsTest.COUCH_DB_ATTACHMENTS, DatabaseSettingsTest.COUCH_DB_SPDX);
     }
 
     @After

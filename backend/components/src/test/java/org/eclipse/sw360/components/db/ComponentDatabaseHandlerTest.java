@@ -13,11 +13,13 @@ package org.eclipse.sw360.components.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.config.CouchDbContextInitializer;
+import org.eclipse.sw360.config.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.SvmConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
@@ -32,8 +34,17 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.*;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -53,13 +64,33 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class ComponentDatabaseHandlerTest {
 
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
-    private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
-    private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
-    private static final String spdxDbName = DatabaseSettingsTest.COUCH_DB_SPDX;
+    @Autowired
+    @Qualifier("COUCH_DB_DATABASE")
+    private String dbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_CHANGELOGS")
+    private String changeLogsDbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_SPDX")
+    private String spdxDbName;
+
+    @Autowired
+    private Cloudant client;
 
     private static final String email1 = "cedric.bodet@tngtech.com";
     private static final String email2 = "johannes.najjar@tngtech.com";
@@ -73,6 +104,9 @@ public class ComponentDatabaseHandlerTest {
     private Map<String, Component>  componentMap;
     private List<Release> releases;
     private Map<String, Vendor> vendors;
+
+    @Autowired
+    @InjectMocks
     private ComponentDatabaseHandler handler;
 
     private int nextReleaseVersion = 0;
@@ -87,6 +121,10 @@ public class ComponentDatabaseHandlerTest {
 
     @Mock
     SvmConnector svmConnector;
+
+    // Initialize the mocked objects
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Before
     public void setUp() throws Exception {
@@ -133,11 +171,8 @@ public class ComponentDatabaseHandlerTest {
         Release release2c = new Release().setId("R2C").setComponentId("C2").setName("component2").setVersion("releaseC").setCreatedBy(email1).setVendorId("V2");
         releases.add(release2c);
 
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName);
 
         for (Vendor vendor : vendors.values()) {
             databaseConnector.add(vendor);
@@ -149,18 +184,19 @@ public class ComponentDatabaseHandlerTest {
             databaseConnector.add(release);
         }
 
-        componentMap= ThriftUtils.getIdMap(components);
+        componentMap = ThriftUtils.getIdMap(components);
+
+        ReflectionTestUtils.setField(handler, "moderator", moderator);
+        ReflectionTestUtils.setField(handler, "releaseModerator", releaseModerator);
+        ReflectionTestUtils.setField(handler, "projectModerator", projectModerator);
 
         // Prepare the handler
-        handler = new ComponentDatabaseHandler(
-                DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName,
-                attachmentsDbName, spdxDbName, moderator, releaseModerator, projectModerator);
         handler.setSvmConnector(svmConnector);
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        TestUtils.deleteDatabase(client, dbName);
     }
 
     @Test

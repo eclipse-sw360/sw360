@@ -9,12 +9,19 @@
  */
 package org.eclipse.sw360.components;
 
+import org.eclipse.sw360.config.CouchDbContextInitializer;
+import org.eclipse.sw360.config.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
+import org.junit.runner.RunWith;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 
@@ -23,6 +30,13 @@ import java.io.IOException;
  *
  * @author cedric.bodet@tngtech.com
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class TestComponentClient {
 
     private static final User user = new User().setEmail("cedric.bodet@tngtech.com").setDepartment("AB CD EF");
