@@ -19,6 +19,9 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -34,6 +37,7 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESI
  *
  * @author thomas.maier@evosoft.com
  */
+@Component
 public class ReleaseSearchHandler {
 
     private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
@@ -62,7 +66,11 @@ public class ReleaseSearchHandler {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public ReleaseSearchHandler(Cloudant cClient, String dbName) throws IOException {
+    @Autowired
+    public ReleaseSearchHandler(
+            Cloudant cClient,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();

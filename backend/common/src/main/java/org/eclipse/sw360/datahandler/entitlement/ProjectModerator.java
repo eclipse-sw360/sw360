@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.springframework.stereotype.Component;
 
 /**
  * Moderation for the project service
@@ -29,14 +30,10 @@ import org.apache.thrift.TException;
  * @author Johannes.Najjar@tngtech.com
  * @author birgit.heydenreich@tngtech.com
  */
+@Component
 public class ProjectModerator extends Moderator<Project._Fields, Project> {
 
     private static final Logger log = LogManager.getLogger(ProjectModerator.class);
-
-
-    public ProjectModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
 
     public ProjectModerator(){
         super(new ThriftClients());

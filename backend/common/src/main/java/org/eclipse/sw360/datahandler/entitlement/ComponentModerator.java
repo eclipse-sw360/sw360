@@ -13,7 +13,6 @@ import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
@@ -27,13 +26,10 @@ import org.apache.thrift.TException;
  * @author Johannes.Najjar@tngtech.com
  * @author birgit.heydenreich@tngtech.com
  */
+@org.springframework.stereotype.Component
 public class ComponentModerator extends Moderator<Component._Fields, Component> {
 
     private static final Logger log = LogManager.getLogger(ComponentModerator.class);
-
-    public ComponentModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
 
     public ComponentModerator() {
         super(new ThriftClients());

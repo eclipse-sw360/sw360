@@ -80,17 +80,12 @@ public class DatabaseConfig {
     @Value("${lucenesearch.leading.wildcard:false}")
     private boolean luceneLeadingWildcard;
 
-    /**
-     * This bean is required to resolve placeholders in @Value annotations.
-     * It's often implicitly registered, but it's good practice to define it explicitly
-     * when using @PropertySource in older Spring versions or specific setups.
-     */
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
         return new PropertySourcesPlaceholderConfigurer();
     }
 
-    @Bean // Marks the return value of this method as a Spring bean
+    @Bean
     public Cloudant cloudantClient() {
         Cloudant client;
         if (!couchDbUsername.isEmpty() && !couchDbPassword.isEmpty()) {
@@ -113,6 +108,11 @@ public class DatabaseConfig {
         return new TCompactProtocol.Factory();
     }
 
+    @Bean(name="COUCH_DB_URL")
+    public String couchDbUrl() {
+        return couchDbUrl;
+    }
+
     @Bean(name="COUCH_DB_DATABASE")
     public String couchDbDatabaseName() {
         return couchDbDatabase;
@@ -123,44 +123,47 @@ public class DatabaseConfig {
         return couchDbAttachments;
     }
 
-    @Bean
+    @Bean(name="COUCH_DB_CHANGELOGS")
     public String couchDbChangeLogs() {
         return couchDbChangeLogs;
     }
 
-    @Bean
+    @Bean(name="COUCH_DB_CONFIG")
     public String couchDbConfig() {
         return couchDbConfig;
     }
 
-    @Bean
+    @Bean(name="COUCH_DB_USERS")
     public String couchDbUsers() {
         return couchDbUsers;
     }
 
-    @Bean
+    @Bean(name="COUCH_DB_VM")
     public String couchDbVm() {
         return couchDbVm;
     }
 
-    @Bean
+    @Bean(name="COUCH_DB_SPDX")
     public String couchDbSpdx() {
         return couchDbSpdx;
     }
 
-    @Bean
+    @Bean(name="COUCH_DB_OAUTHCLIENTS")
     public String couchDbOauthClients() {
         return couchDbOauthClients;
     }
 
+    @Bean(name="COUCH_DB_CACHE")
     public boolean isCouchDbCache() {
         return couchDbCache;
     }
 
+    @Bean(name="LUCENE_SEARCH_LIMIT")
     public int getLuceneSearchLimit() {
         return luceneSearchLimit;
     }
 
+    @Bean(name="LUCENE_LEADING_WILDCARD")
     public boolean isLuceneLeadingWildcard() {
         return luceneLeadingWildcard;
     }

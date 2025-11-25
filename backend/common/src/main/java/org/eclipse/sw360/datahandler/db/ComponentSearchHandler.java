@@ -23,6 +23,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -41,6 +43,7 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESI
  * @author cedric.bodet@tngtech.com
  * @author alex.borodin@evosoft.com
  */
+@org.springframework.stereotype.Component
 public class ComponentSearchHandler {
 
     private static final Logger log = LogManager.getLogger(ComponentSearchHandler.class);
@@ -83,7 +86,11 @@ public class ComponentSearchHandler {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public ComponentSearchHandler(Cloudant cClient, String dbName) throws IOException {
+    @Autowired
+    public ComponentSearchHandler(
+            Cloudant cClient,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();
