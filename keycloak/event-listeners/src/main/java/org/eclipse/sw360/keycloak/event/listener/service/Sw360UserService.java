@@ -64,7 +64,7 @@ import org.slf4j.LoggerFactory;
 public class Sw360UserService {
     private static final Logger logger = LoggerFactory.getLogger(Sw360UserService.class);
     private static final String COUCHDB_SERVICE_NAME = "sw360-couchdb";
-    private static final String PROPERTIES_FILE_PATH = "/couchdb.properties";
+    private static final String PROPERTIES_FILE_PATH = "couchdb.properties";
     public static final String SYSTEM_CONFIGURATION_PATH = "/etc/sw360";
 
     // CouchDB view names - matching UserRepository view definitions
@@ -78,6 +78,7 @@ public class Sw360UserService {
     public static String couchdbUsername = null;
     public static String couchdbPassword = null;
     public static String couchdbDatabase = null;
+    public static String couchdbDisableSslVerification = null;
 
     private final DatabaseConnectorCloudant connector;
     
@@ -101,6 +102,14 @@ public class Sw360UserService {
             }
             
             logger.info("Initializing SW360 user service for event listener with CouchDB connection to: {}", url);
+            
+            // Configure SSL/TLS settings
+            String disableSSLVerification = getConfigValue(couchdbDisableSslVerification, "COUCHDB_DISABLE_SSL_VERIFICATION", props.getProperty("couchdb.disable.ssl.verification", "false"));
+            if ("true".equalsIgnoreCase(disableSSLVerification)) {
+                System.setProperty("com.ibm.cloud.sdk.core.http.config.disable_ssl_verification", "true");
+                logger.warn("SSL verification disabled for CouchDB connection - ensure this is intentional for your environment");
+            }
+            
             Authenticator authenticator = CouchDbSessionAuthenticator.newAuthenticator(username, password);
             Cloudant client = new Cloudant(COUCHDB_SERVICE_NAME, authenticator);
             client.setServiceUrl(url);
@@ -141,7 +150,7 @@ public class Sw360UserService {
         }
         
         // Fallback to classpath resource
-        try (InputStream input = getClass().getResourceAsStream("/"+PROPERTIES_FILE_PATH)) {
+        try (InputStream input = getClass().getResourceAsStream("/" + PROPERTIES_FILE_PATH)) {
             if (input != null) {
                 props.load(input);
                 logger.debug("Loaded CouchDB properties from classpath: {}", PROPERTIES_FILE_PATH);
