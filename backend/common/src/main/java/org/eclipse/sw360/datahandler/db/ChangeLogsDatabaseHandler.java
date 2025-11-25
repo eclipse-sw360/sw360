@@ -30,12 +30,16 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.ImmutableSet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * Class for accessing the CouchDB database for Change logs objects
  *
  * @author: jaideep.palit@siemens.com
  */
+@Component
 public class ChangeLogsDatabaseHandler {
     private final DatabaseConnectorCloudant db;
     private final ChangeLogsRepository changeLogsRepository;
@@ -47,7 +51,11 @@ public class ChangeLogsDatabaseHandler {
             .add("revision")
             .add("documentState").build();
 
-    public ChangeLogsDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+    @Autowired
+    public ChangeLogsDatabaseHandler(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(client, dbName);
         changeLogsRepository = new ChangeLogsRepository(db);
     }
