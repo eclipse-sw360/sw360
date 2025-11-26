@@ -57,7 +57,9 @@ public class ProjectDatabaseHandlerTest {
     ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
     @Autowired
     ProjectDatabaseHandler handler;
+    @Autowired
     ComponentDatabaseHandler componentHandler;
+    @Autowired
     AttachmentDatabaseHandler attachmentDatabaseHandler;
     PackageDatabaseHandler packageHandler;
 
@@ -144,10 +146,6 @@ public class ProjectDatabaseHandlerTest {
         }
 
         databaseConnector.add(new Component("comp1").setId("c1"));
-
-        componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, spdxDbName);
-        attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
-        packageHandler = new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, attachmentDatabaseHandler, componentHandler);
     }
 
     @After
@@ -155,8 +153,6 @@ public class ProjectDatabaseHandlerTest {
         // Delete the database
         TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
-
-
 
     @Test
     public void testUpdateProject2_1() throws Exception {

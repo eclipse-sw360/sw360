@@ -52,7 +52,7 @@ public class AttachmentStreamConnector {
 
     protected final DatabaseConnectorCloudant connector;
     private final AttachmentContentDownloader attachmentContentDownloader;
-    private final Duration downloadTimeout;
+    private Duration downloadTimeout;
 
     /**
      * @param downloadTimeout timeout for downloading remote attachments
@@ -268,5 +268,9 @@ public class AttachmentStreamConnector {
 
     private String getPartFileName(AttachmentContent attachment, int part) {
         return attachment.getFilename() + "_part" + part;
+    }
+
+    public void setDownloadTimeout(Duration downloadTimeout) {
+        this.downloadTimeout = downloadTimeout;
     }
 }

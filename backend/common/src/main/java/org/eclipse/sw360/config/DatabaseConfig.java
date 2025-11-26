@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
+import org.eclipse.sw360.datahandler.common.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -24,6 +25,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 
 @Configuration
 @ComponentScan({"org.eclipse.sw360"})
@@ -54,6 +58,9 @@ public class DatabaseConfig {
 
     @Value("${couchdb.attachments:sw360attachments}")
     private String couchDbAttachments;
+
+    @Value("${couchdb.attachments.timeout:30}")
+    private long couchDbAttachmentsTimeout;
 
     @Value("${couchdb.change_logs:sw360changelogs}")
     private String couchDbChangeLogs;
@@ -123,6 +130,11 @@ public class DatabaseConfig {
     @Bean(name="COUCH_DB_ATTACHMENTS")
     public String couchDbAttachmentsName() {
         return couchDbAttachments;
+    }
+
+    @Bean(name="COUCH_DB_ATTACHMENTS_TIMEOUT")
+    public Duration couchDbAttachmentsTimeout() {
+        return durationOf(couchDbAttachmentsTimeout, TimeUnit.SECONDS);
     }
 
     @Bean(name="COUCH_DB_CHANGELOGS")

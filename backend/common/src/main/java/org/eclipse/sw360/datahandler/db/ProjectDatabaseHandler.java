@@ -120,11 +120,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private ComponentDatabaseHandler componentDatabaseHandler;
     @Autowired
     private PackageDatabaseHandler packageDatabaseHandler;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
 
     private ProjectRepository repository;
     private ProjectVulnerabilityRatingRepository pvrRepository;
     private ObligationListRepository obligationRepository;
-    private AttachmentConnector attachmentConnector;
     private PackageRepository packageRepository;
     private RelationsUsageRepository relUsageRepository;
     private ReleaseRepository releaseRepository;
@@ -180,9 +181,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         vendorRepository = new VendorRepository(db);
         releaseRepository = new ReleaseRepository(db, vendorRepository);
         packageRepository = new PackageRepository(db);
-
-        // Create the attachment connector
-        attachmentConnector = new AttachmentConnector(client, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
 
         DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);

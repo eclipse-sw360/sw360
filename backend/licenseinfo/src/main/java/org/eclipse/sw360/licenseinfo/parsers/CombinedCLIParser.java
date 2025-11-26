@@ -28,6 +28,8 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -47,6 +49,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
  * Class for extracting copyright and license information from a simple XML file
  * @author: alex.borodin@evosoft.com
  */
+@Component
 public class CombinedCLIParser extends AbstractCLIParser{
 
     private static final Logger log = LogManager.getLogger(CombinedCLIParser.class);
@@ -57,11 +60,11 @@ public class CombinedCLIParser extends AbstractCLIParser{
     private static final String COMBINED_CLI_ROOT_ELEMENT_NAME = "CombinedCLI";
     private static final String COMBINED_CLI_ROOT_ELEMENT_NAMESPACE = null;
 
+    @Autowired
     private ComponentDatabaseHandler componentDatabaseHandler;
 
-    public CombinedCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider, ComponentDatabaseHandler componentDatabaseHandler) {
+    public CombinedCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
         super(attachmentConnector, attachmentContentProvider);
-        this.componentDatabaseHandler = componentDatabaseHandler;
     }
 
     String getCorrelationKey() {

@@ -14,9 +14,12 @@ couchdb.password = $COUCHDB_PASSWORD
 couchdb.database = sw360db
 couchdb.usersdb = sw360users
 couchdb.attachments = sw360attachments
+couchdb.attachments.timeout = 30
 couchdb.change_logs = sw360changelogs
 couchdb.config = sw360config
 couchdb.vulnerability_management = sw360vm
+couchdb.sw360spdx = sw360spdx
+couchdb.sw360oauthclients = sw360oauthclients
 lucenesearch.limit = 1000
 
 # Warning: Nouveau currently does not support use of leading wildcards.

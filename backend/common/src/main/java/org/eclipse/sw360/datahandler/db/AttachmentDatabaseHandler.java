@@ -49,7 +49,8 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
 @Component
 public class AttachmentDatabaseHandler {
     private final AttachmentContentRepository attachmentContentRepository;
-    private final AttachmentConnector attachmentConnector;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
     private final AttachmentUsageRepository attachmentUsageRepository;
     private final AttachmentRepository attachmentRepository;
     private final AttachmentOwnerRepository attachmentOwnerRepository;
@@ -65,7 +66,6 @@ public class AttachmentDatabaseHandler {
     ) throws MalformedURLException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         DatabaseConnectorCloudant attachmentDb = new DatabaseConnectorCloudant(client, attachmentDbName);
-        attachmentConnector = new AttachmentConnector(client, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         attachmentContentRepository = new AttachmentContentRepository(attachmentDb);
         attachmentUsageRepository = new AttachmentUsageRepository(db);
         attachmentRepository = new AttachmentRepository(db);

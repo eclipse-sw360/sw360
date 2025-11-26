@@ -11,6 +11,7 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
@@ -28,10 +29,14 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXDocument> {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentModerator.class);
+
+    @Autowired
+    protected AttachmentConnector attachmentConnector;
 
     public SpdxDocumentModerator(ThriftClients thriftClients) {
         super(thriftClients);
@@ -207,4 +212,8 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         return spdx;
     }
 
+    @Override
+    protected AttachmentConnector getAttachmentConnector() {
+        return attachmentConnector;
+    }
 }

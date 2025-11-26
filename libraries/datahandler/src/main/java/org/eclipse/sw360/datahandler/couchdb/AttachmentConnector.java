@@ -34,6 +34,9 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * Connector for uploading attachments
@@ -41,19 +44,18 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
  * @author cedric.bodet@tngtech.com
  * @author alex.borodin@evosoft.com
  */
+@Component
 public class AttachmentConnector extends AttachmentStreamConnector {
 
-    private static Logger log = LogManager.getLogger(AttachmentConnector.class);
+    private static final Logger log = LogManager.getLogger(AttachmentConnector.class);
 
-    public AttachmentConnector(DatabaseConnectorCloudant databaseConnectorCloudant, Duration downloadTimeout) {
-        super(databaseConnectorCloudant, downloadTimeout);
-    }
-
-    /**
-     * @todo remove this mess of constructors and use dependency injection
-     */
-    public AttachmentConnector(Cloudant client, String dbName, Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnectorCloudant(client, dbName), downloadTimeout);
+    @Autowired
+    public AttachmentConnector(
+            Cloudant client,
+            @Qualifier("COUCH_DB_ATTACHMENTS") String dbName,
+            Duration downloadTimeout
+    ) throws MalformedURLException {
+        super(new DatabaseConnectorCloudant(client, dbName), downloadTimeout);
     }
 
     /**

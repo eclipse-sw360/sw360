@@ -10,6 +10,7 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -18,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Moderation for the component service
@@ -30,6 +32,9 @@ import org.apache.thrift.TException;
 public class ComponentModerator extends Moderator<Component._Fields, Component> {
 
     private static final Logger log = LogManager.getLogger(ComponentModerator.class);
+
+    @Autowired
+    protected AttachmentConnector attachmentConnector;
 
     public ComponentModerator() {
         super(new ThriftClients());
@@ -96,4 +101,8 @@ public class ComponentModerator extends Moderator<Component._Fields, Component> 
         }
     }
 
+    @Override
+    protected AttachmentConnector getAttachmentConnector() {
+        return attachmentConnector;
+    }
 }

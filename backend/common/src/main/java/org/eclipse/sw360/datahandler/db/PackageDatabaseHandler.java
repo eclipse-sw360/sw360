@@ -68,10 +68,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
-    private final AttachmentConnector attachmentConnector;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
     private final PackageRepository packageRepository;
     private final ProjectRepository projectRepository;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
     private final DatabaseHandlerUtil databaseHandlerUtil;
 
     private static final Logger log = LogManager.getLogger(CycloneDxBOMImporter.class);
@@ -85,10 +87,8 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Cloudant client,
             @Qualifier("COUCH_DB_DATABASE") String dbName,
             @Qualifier("COUCH_DB_CHANGELOGS") String changeLogsDbName,
-            @Qualifier("COUCH_DB_ATTACHMENTS") String attachmentDbName,
-            AttachmentDatabaseHandler attachmentDatabaseHandler,
-            ComponentDatabaseHandler componentDatabaseHandler
-    ) throws MalformedURLException {
+            AttachmentDatabaseHandler attachmentDatabaseHandler
+    ) {
         super(attachmentDatabaseHandler);
 
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
@@ -97,10 +97,6 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         packageRepository = new PackageRepository(db);
         projectRepository = new ProjectRepository(db);
 
-        // Create the attachment connector
-        attachmentConnector = new AttachmentConnector(client, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
-
-        this.componentDatabaseHandler = componentDatabaseHandler;
         DatabaseConnectorCloudant changeLogsDb = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.databaseHandlerUtil = new DatabaseHandlerUtil(changeLogsDb);
     }

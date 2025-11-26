@@ -136,7 +136,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
     private BulkDeleteUtil bulkDeleteUtil;
 
-    private final AttachmentConnector attachmentConnector;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
     private SvmConnector svmConnector;
     private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
 
@@ -193,7 +194,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         packageRepository = new PackageRepository(db);
 
         // Create the attachment connector
-        attachmentConnector = new AttachmentConnector(client, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, changelogDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
 
