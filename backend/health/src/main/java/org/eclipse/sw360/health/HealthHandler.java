@@ -9,29 +9,22 @@
  */
 package org.eclipse.sw360.health;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.health.db.HealthDatabaseHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
 import java.util.Set;
 
 /**
  * Implementation of the thrift service "Health"
  */
+@Component
 public class HealthHandler implements HealthService.Iface {
 
-    private final HealthDatabaseHandler handler;
-
-    HealthHandler() throws MalformedURLException {
-        handler = new HealthDatabaseHandler(DatabaseSettings.getConfiguredClient());
-    }
-
-    HealthHandler(Cloudant client) throws MalformedURLException {
-        handler = new HealthDatabaseHandler(client);
-    }
+    @Autowired
+    private HealthDatabaseHandler handler;
 
     @Override
     public Health getHealth() {
