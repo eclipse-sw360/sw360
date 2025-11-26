@@ -10,16 +10,17 @@
  */
 package org.eclipse.sw360.cvesearch.service;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-import org.apache.thrift.protocol.TCompactProtocol;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
-
+@Component
 public class CveSearchServlet extends Sw360ThriftServlet {
-    public CveSearchServlet() throws MalformedURLException, FileNotFoundException {
+    @Autowired
+    public CveSearchServlet(CveSearchHandler searchHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new CveSearchService.Processor<>(new CveSearchHandler()), new TCompactProtocol.Factory());
+        super(new CveSearchService.Processor<>(searchHandler), thriftProtocolFactory);
     }
 }

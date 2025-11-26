@@ -56,16 +56,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * Class for accessing the CouchDB for Packages.
  *
  * @author: abdul.kapti@siemens-healthineers.com
  */
+@Component
 public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private final AttachmentConnector attachmentConnector;
-    private final DatabaseConnectorCloudant db;
     private final PackageRepository packageRepository;
     private final ProjectRepository projectRepository;
     private final ComponentDatabaseHandler componentDatabaseHandler;
@@ -77,11 +80,18 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Package._Fields.NAME, Package._Fields.VERSION, Package._Fields.VCS, Package._Fields.DESCRIPTION,
             Package._Fields.HOMEPAGE_URL, Package._Fields.PURL, Package._Fields.HASH);
 
-    public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName,
-            AttachmentDatabaseHandler attachmentDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
-
+    @Autowired
+    public PackageDatabaseHandler(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("COUCH_DB_CHANGELOGS") String changeLogsDbName,
+            @Qualifier("COUCH_DB_ATTACHMENTS") String attachmentDbName,
+            AttachmentDatabaseHandler attachmentDatabaseHandler,
+            ComponentDatabaseHandler componentDatabaseHandler
+    ) throws MalformedURLException {
         super(attachmentDatabaseHandler);
-        db = new DatabaseConnectorCloudant(client, dbName);
+
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
         packageRepository = new PackageRepository(db);
@@ -93,13 +103,6 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         this.componentDatabaseHandler = componentDatabaseHandler;
         DatabaseConnectorCloudant changeLogsDb = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.databaseHandlerUtil = new DatabaseHandlerUtil(changeLogsDb);
-    }
-
-    public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, String spdxDbName)
-            throws MalformedURLException {
-
-        this(client, dbName, attachmentDbName, changeLogsDbName, new AttachmentDatabaseHandler(client, dbName, attachmentDbName),
-                new ComponentDatabaseHandler(client, dbName, changeLogsDbName, attachmentDbName, spdxDbName));
     }
 
     public Package getPackageById(String id) throws SW360Exception {

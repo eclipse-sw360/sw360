@@ -14,7 +14,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.google.gson.JsonArray;
@@ -88,6 +87,9 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -99,6 +101,7 @@ import java.nio.ByteBuffer;
  * @author thomas.maier@evosoft.com
  * @author ksoranko@verifa.io
  */
+@org.springframework.stereotype.Component
 public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private static final String PROJECTS = "projects";
@@ -111,19 +114,23 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private ExecutorService projectExecutor;
 
-    private final ProjectRepository repository;
-    private final ProjectVulnerabilityRatingRepository pvrRepository;
-    private final ObligationListRepository obligationRepository;
-    private final ProjectModerator moderator;
-    private final AttachmentConnector attachmentConnector;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final PackageDatabaseHandler packageDatabaseHandler;
-    private final PackageRepository packageRepository;
+    @Autowired
+    private ProjectModerator moderator;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
+    private PackageDatabaseHandler packageDatabaseHandler;
+
+    private ProjectRepository repository;
+    private ProjectVulnerabilityRatingRepository pvrRepository;
+    private ObligationListRepository obligationRepository;
+    private AttachmentConnector attachmentConnector;
+    private PackageRepository packageRepository;
+    private RelationsUsageRepository relUsageRepository;
+    private ReleaseRepository releaseRepository;
+    private VendorRepository vendorRepository;
 
     private static final Pattern PLAUSIBLE_GID_REGEXP = Pattern.compile("^[zZ].{7}$");
-    private final RelationsUsageRepository relUsageRepository;
-    private final ReleaseRepository releaseRepository;
-    private final VendorRepository vendorRepository;
     private DatabaseHandlerUtil dbHandlerUtil;
     private final MailUtil mailUtil = new MailUtil();
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -154,17 +161,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String changelogDbName, String attachmentDbName, String spdxDbName) throws MalformedURLException {
-        this(client, dbName, changelogDbName, attachmentDbName, new ProjectModerator(),
-                new ComponentDatabaseHandler(client, dbName, changelogDbName, attachmentDbName, spdxDbName),
-                new PackageDatabaseHandler(client, dbName, changelogDbName, attachmentDbName, spdxDbName),
-                new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
-    }
-
-    @VisibleForTesting
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ProjectModerator moderator,
-                                  ComponentDatabaseHandler componentDatabaseHandler, PackageDatabaseHandler packageDatabaseHandler,
-                                  AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
+    @Autowired
+    public ProjectDatabaseHandler(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("COUCH_DB_CHANGELOGS") String changeLogsDbName,
+            @Qualifier("COUCH_DB_ATTACHMENTS") String attachmentDbName,
+            AttachmentDatabaseHandler attachmentDatabaseHandler
+    ) throws MalformedURLException {
         super(attachmentDatabaseHandler);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
 
@@ -177,14 +181,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         releaseRepository = new ReleaseRepository(db, vendorRepository);
         packageRepository = new PackageRepository(db);
 
-        // Create the moderator
-        this.moderator = moderator;
-
         // Create the attachment connector
         attachmentConnector = new AttachmentConnector(client, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
 
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.packageDatabaseHandler = packageDatabaseHandler;
         DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
     }
