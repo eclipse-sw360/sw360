@@ -27,6 +27,7 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 
@@ -54,6 +55,7 @@ public class ProjectDatabaseHandlerTest {
 
 
     ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
+    @Autowired
     ProjectDatabaseHandler handler;
     ComponentDatabaseHandler componentHandler;
     AttachmentDatabaseHandler attachmentDatabaseHandler;
@@ -146,7 +148,6 @@ public class ProjectDatabaseHandlerTest {
         componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, spdxDbName);
         attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
         packageHandler = new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, attachmentDatabaseHandler, componentHandler);
-        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, componentHandler, packageHandler, attachmentDatabaseHandler);
     }
 
     @After

@@ -24,6 +24,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.hamcrest.*;
 import org.hamcrest.collection.IsEmptyCollection;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -85,6 +86,12 @@ public class TestUtils {
         }
     }
 
+    public static void deleteAllDatabases(Cloudant client, @NotNull Set<String> dbNames) throws MalformedURLException {
+        for (String dbName : dbNames) {
+            deleteDatabase(client, dbName);
+        }
+    }
+
     public static void assertTestString(String testString) {
         Assert.assertTrue(testString.contains("test"));
     }
@@ -130,12 +137,6 @@ public class TestUtils {
         DatabaseInstanceCloudant instance = new DatabaseInstanceCloudant(httpClient);
         if (instance.checkIfDbExists(dbName))
             instance.deleteDatabase(dbName);
-
-        // Giving 500ms Delay between Deleting and Creating test Db
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-        }
     }
 
     public static void createDatabase(Cloudant httpClient, String dbName) throws MalformedURLException {

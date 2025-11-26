@@ -9,21 +9,28 @@
  */
 package org.eclipse.sw360.components;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.config.CouchDbContextInitializer;
 import org.eclipse.sw360.config.DatabaseConfig;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
+import org.junit.After;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.Set;
 
 /**
  * Created by bodet on 10/12/14.
@@ -38,6 +45,18 @@ import java.io.IOException;
 )
 @ActiveProfiles("test")
 public class TestComponentClient {
+
+    @Autowired
+    Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    @After
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
+    }
 
     private static final User user = new User().setEmail("cedric.bodet@tngtech.com").setDepartment("AB CD EF");
 

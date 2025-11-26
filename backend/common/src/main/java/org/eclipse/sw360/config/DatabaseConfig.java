@@ -23,6 +23,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
+import java.util.Set;
+
 @Configuration
 @ComponentScan({"org.eclipse.sw360"})
 public class DatabaseConfig {
@@ -166,5 +168,19 @@ public class DatabaseConfig {
     @Bean(name="LUCENE_LEADING_WILDCARD")
     public boolean isLuceneLeadingWildcard() {
         return luceneLeadingWildcard;
+    }
+
+    @Bean(name="COUCH_DB_ALL_NAMES")
+    public Set<String> couchDbAllNames() {
+        return Set.of(
+                couchDbDatabase,
+                couchDbAttachments,
+                couchDbChangeLogs,
+                couchDbConfig,
+                couchDbUsers,
+                couchDbVm,
+                couchDbSpdx,
+                couchDbOauthClients
+        );
     }
 }

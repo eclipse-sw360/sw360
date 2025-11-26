@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.components;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.config.CouchDbContextInitializer;
 import org.eclipse.sw360.config.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
@@ -22,10 +23,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
 import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.DESCRIPTION;
@@ -51,8 +55,15 @@ import static org.junit.Assert.fail;
 public class ComponentHandlerTest {
 
     @Autowired
+    Cloudant client;
+
+    @Autowired
     private ComponentHandler componentHandler;
     private User adminUser = TestUtils.getAdminUser(getClass());
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @Before
     public void setUp() throws Exception {
@@ -61,7 +72,7 @@ public class ComponentHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        deleteAllDatabases();
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

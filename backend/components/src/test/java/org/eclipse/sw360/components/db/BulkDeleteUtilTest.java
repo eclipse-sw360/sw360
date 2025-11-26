@@ -90,6 +90,10 @@ public class BulkDeleteUtilTest {
     @Autowired
     private Cloudant client;
 
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
     //User information
     private static final String USER_EMAIL1 = "hoge@piyo.co.jp";
     private static final User user1 = new User().setEmail(USER_EMAIL1).setDepartment("Department1").setId("admin12345").setUserGroup(UserGroup.ADMIN);
@@ -188,8 +192,7 @@ public class BulkDeleteUtilTest {
     @After
     public void tearDown() throws Exception {
         bulkDeleteUtil.unsetInspector();
-        TestUtils.deleteDatabase(client, dbName);
-        TestUtils.deleteDatabase(client, changeLogsDbName);
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

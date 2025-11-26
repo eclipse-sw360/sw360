@@ -68,6 +68,10 @@ public class AttachmentHandlerTest {
     @Autowired
     private AttachmentHandler handler;
 
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
     @Before
     public void setUp() throws Exception {
         DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, attachmentsDbName);
@@ -77,9 +81,7 @@ public class AttachmentHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        // Delete the database
-        TestUtils.deleteDatabase(client, attachmentsDbName);
-        TestUtils.deleteDatabase(client, dbName);
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

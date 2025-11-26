@@ -92,6 +92,10 @@ public class ComponentDatabaseHandlerTest {
     @Autowired
     private Cloudant client;
 
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
     private static final String email1 = "cedric.bodet@tngtech.com";
     private static final String email2 = "johannes.najjar@tngtech.com";
 
@@ -196,7 +200,7 @@ public class ComponentDatabaseHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(client, dbName);
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

@@ -85,6 +85,10 @@ public class ProjectDatabaseHandlerTest {
     @Autowired
     private Cloudant client;
 
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
     private List<Project> projects;
     private List<Vendor> vendors;
     private List<Release> releases;
@@ -224,7 +228,7 @@ public class ProjectDatabaseHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(client, dbName);
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
