@@ -11,12 +11,16 @@
 
 package org.eclipse.sw360.configurations;
 
-import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SW360ConfigsServlet extends Sw360ThriftServlet {
-    public SW360ConfigsServlet() {
-        super(new SW360ConfigsService.Processor<>(new SW360ConfigsHandler()), new TCompactProtocol.Factory());
+    @Autowired
+    public SW360ConfigsServlet(SW360ConfigsHandler sw360ConfigsHandler, TProtocolFactory thriftProtocolFactory) {
+        super(new SW360ConfigsService.Processor<>(sw360ConfigsHandler), thriftProtocolFactory);
     }
 }

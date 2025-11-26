@@ -26,6 +26,9 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,13 +38,18 @@ import java.util.Collections;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
+@Component
 public class SW360ConfigsDatabaseHandler {
     private final Logger log = LogManager.getLogger(this.getClass());
     private final ConfigContainerRepository repository;
     private static final Map<ConfigFor, Map<String, String>> configsMapInMem = new HashMap<>();
     private static boolean updating = false;
 
-    public SW360ConfigsDatabaseHandler(Cloudant httpClient, String dbName) {
+    @Autowired
+    public SW360ConfigsDatabaseHandler(
+            Cloudant httpClient,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
         repository = new ConfigContainerRepository(db);
         try {
