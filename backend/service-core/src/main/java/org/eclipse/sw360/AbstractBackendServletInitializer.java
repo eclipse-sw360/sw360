@@ -8,16 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.common.utils;
+package org.eclipse.sw360;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRegistration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.SW360ServiceContextListener;
-import org.eclipse.sw360.config.CouchDbPropertyLoader;
-import org.eclipse.sw360.config.DatabaseConfig;
+import org.eclipse.sw360.datahandler.spring.CouchDbPropertyLoader;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;

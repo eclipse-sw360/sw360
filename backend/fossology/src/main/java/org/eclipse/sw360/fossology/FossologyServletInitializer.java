@@ -8,17 +8,20 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.moderation;
+package org.eclipse.sw360.fossology;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.thrift.server.TServlet;
 import org.eclipse.sw360.AbstractBackendServletInitializer;
+import org.eclipse.sw360.SW360ServiceContextListener;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.web.context.ContextLoaderListener;
+import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 
-public class ModerationServletInitializer extends AbstractBackendServletInitializer {
-    private static final String SERVLET_NAME = "ModerationService";
+public class FossologyServletInitializer extends AbstractBackendServletInitializer {
+    private static final String SERVLET_NAME = "FossologyService";
 
     @Override
     protected String getServletName() {
@@ -30,7 +33,8 @@ public class ModerationServletInitializer extends AbstractBackendServletInitiali
             @NotNull ServletContext servletContext,
             AnnotationConfigWebApplicationContext rootContext
     ) {
-        TServlet servletInstance = rootContext.getBean("moderationServlet", TServlet.class);
+        servletContext.addListener(new RequestContextListener());
+        TServlet servletInstance = rootContext.getBean("fossologyServlet", TServlet.class);
         return servletContext.addServlet(
                 getServletName(),
                 servletInstance

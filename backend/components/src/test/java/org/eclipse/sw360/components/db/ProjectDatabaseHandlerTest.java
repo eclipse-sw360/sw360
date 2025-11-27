@@ -12,14 +12,13 @@ package org.eclipse.sw360.components.db;
 
 import com.google.common.collect.ImmutableMap;
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.eclipse.sw360.config.CouchDbContextInitializer;
-import org.eclipse.sw360.config.DatabaseConfig;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -93,8 +92,9 @@ public class ProjectDatabaseHandlerTest {
     private List<Vendor> vendors;
     private List<Release> releases;
     private List<Component> components;
-    private ProjectDatabaseHandler handler;
 
+    @Autowired
+    private ProjectDatabaseHandler handler;
     @Autowired
     ComponentDatabaseHandler componentHandler;
     @Autowired
@@ -216,10 +216,6 @@ public class ProjectDatabaseHandlerTest {
         for (Project project : projects) {
             databaseConnector.add(project);
         }
-
-        PackageDatabaseHandler packageHandler = new PackageDatabaseHandler(client, dbName, changeLogsDbName, attachmentsDbName, attachmentDatabaseHandler, componentHandler);
-        handler = new ProjectDatabaseHandler(client,
-                dbName, changeLogsDbName, attachmentsDbName, moderator, componentHandler, packageHandler, attachmentDatabaseHandler);
     }
 
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {

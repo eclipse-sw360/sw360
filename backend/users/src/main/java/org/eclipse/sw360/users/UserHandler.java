@@ -59,12 +59,10 @@ public class UserHandler implements UserService.Iface, InitializingBean {
     private UserDatabaseHandler db;
     private ReadFileDepartmentConfig readFileDepartmentConfig;
 
-    public UserHandler() {
-        readFileDepartmentConfig = new ReadFileDepartmentConfig();
-    }
-
     @Override
     public void afterPropertiesSet() {
+        readFileDepartmentConfig = new ReadFileDepartmentConfig();
+
         // Create admin user if not in database yet
         List<User> users = getAllUsers();
         if (users.isEmpty()) {

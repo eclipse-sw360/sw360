@@ -15,8 +15,6 @@ import org.eclipse.sw360.projects.Sw360ThriftServlet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-
 /**
  * Thrift Servlet instantiation
  *

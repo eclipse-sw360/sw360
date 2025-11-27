@@ -11,8 +11,8 @@
 package org.eclipse.sw360.moderation.testutil;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.eclipse.sw360.config.CouchDbContextInitializer;
-import org.eclipse.sw360.config.DatabaseConfig;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;

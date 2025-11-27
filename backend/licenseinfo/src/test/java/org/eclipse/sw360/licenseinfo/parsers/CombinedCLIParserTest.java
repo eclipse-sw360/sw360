@@ -13,8 +13,8 @@ package org.eclipse.sw360.licenseinfo.parsers;
 import com.google.common.collect.ImmutableMap;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.eclipse.sw360.config.CouchDbContextInitializer;
-import org.eclipse.sw360.config.DatabaseConfig;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;

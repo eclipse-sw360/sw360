@@ -13,7 +13,7 @@ package org.eclipse.sw360.wsimport.service;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.thrift.server.TServlet;
-import org.eclipse.sw360.common.utils.AbstractBackendServletInitializer;
+import org.eclipse.sw360.AbstractBackendServletInitializer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 

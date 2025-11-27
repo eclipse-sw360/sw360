@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.config;
+package org.eclipse.sw360.datahandler.spring;
 
 import com.ibm.cloud.cloudant.security.CouchDbSessionAuthenticator;
 import com.ibm.cloud.cloudant.v1.Cloudant;

@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -46,7 +47,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
  * @author cedric.bodet@tngtech.com
  */
 @Component
-public class UserDatabaseHandler {
+public class UserDatabaseHandler implements InitializingBean {
 
     private static final String LAST_NAME_IS_MANDATORY = "Last Name is mandatory";
     private static final String GIVEN_NAME_IS_MANDATORY = "Given Name is mandatory";
@@ -60,7 +61,7 @@ public class UserDatabaseHandler {
     private UserRepository repository;
     @Autowired
     private UserSearchHandler userSearchHandler;
-    private final ReadFileDepartmentConfig readFileDepartmentConfig;
+    private ReadFileDepartmentConfig readFileDepartmentConfig;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private static final String SUCCESS = "SUCCESS";
     private static final String FAIL = "FAIL";
@@ -70,7 +71,8 @@ public class UserDatabaseHandler {
     private List<String> departmentDuplicate;
     private List<String> emailDoNotExist;
 
-    public UserDatabaseHandler() {
+    @Override
+    public void afterPropertiesSet() {
         // Create the connector
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
     }

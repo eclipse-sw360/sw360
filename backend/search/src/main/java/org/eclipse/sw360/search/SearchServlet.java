@@ -28,6 +28,6 @@ public class SearchServlet extends Sw360ThriftServlet {
     @Autowired
     public SearchServlet(SearchHandler searchHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new SearchService.Processor<SearchHandler>(searchHandler), thriftProtocolFactory);
+        super(new SearchService.Processor<>(searchHandler), thriftProtocolFactory);
     }
 }

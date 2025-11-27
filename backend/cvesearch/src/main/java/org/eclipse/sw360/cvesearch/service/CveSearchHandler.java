@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.cvesearch.helper.VulnerabilityUtils.*;
 
 @org.springframework.stereotype.Component
-public class CveSearchHandler implements CveSearchService.Iface {
+public class CveSearchHandler implements CveSearchService.Iface, InitializingBean {
 
     private static final Logger log = LogManager.getLogger(CveSearchHandler.class);
 
@@ -45,8 +46,8 @@ public class CveSearchHandler implements CveSearchService.Iface {
     public static final String CVESEARCH_HOST_PROPERTY = "cvesearch.host";
     private CveSearchWrapper cveSearchWrapper;
 
-
-    public CveSearchHandler() {
+    @Override
+    public void afterPropertiesSet() {
         Properties props = CommonUtils.loadProperties(CveSearchHandler.class, "/cvesearch.properties");
         String host = props.getProperty(CVESEARCH_HOST_PROPERTY, "https://localhost:5000");
 

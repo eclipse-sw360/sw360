@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.config;
+package org.eclipse.sw360.datahandler.spring;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContextInitializer;
