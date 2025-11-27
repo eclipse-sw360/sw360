@@ -10,17 +10,19 @@
  */
 package org.eclipse.sw360.spdxdocumentcreationinfo;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
-
+@Component
 public class DocumentCreationInformationServlet extends Sw360ThriftServlet {
 
-    public DocumentCreationInformationServlet() throws MalformedURLException {
+    @Autowired
+    public DocumentCreationInformationServlet(DocumentCreationInformationHandler handler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new DocumentCreationInformationService.Processor<>(new DocumentCreationInformationHandler()), new TCompactProtocol.Factory());
+        super(new DocumentCreationInformationService.Processor<>(handler), thriftProtocolFactory);
     }
 
 }
