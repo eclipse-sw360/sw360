@@ -9,12 +9,11 @@
  */
 package org.eclipse.sw360.users;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Thrift Servlet instantiation
@@ -22,11 +21,13 @@ import java.net.MalformedURLException;
  * @author cedric.bodet@tngtech.com
  * @author Andreas.Reichel@tngtech.com
  */
+@Component
 public class UserServlet extends Sw360ThriftServlet {
 
-    public UserServlet() throws IOException {
+    @Autowired
+    public UserServlet(UserHandler userHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new UserService.Processor<>(new UserHandler()), new TCompactProtocol.Factory());
+        super(new UserService.Processor<>(userHandler), thriftProtocolFactory);
     }
 
 }
