@@ -14,13 +14,11 @@ import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.components.summary.SummaryType;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.CustomPropertiesRepository;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
-import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.entitlement.LicenseModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -40,7 +38,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -62,8 +59,8 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import com.google.common.collect.Lists;
 import org.spdx.core.InvalidSPDXAnalysisException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
@@ -72,12 +69,7 @@ import org.springframework.stereotype.Component;
  * @author cedric.bodet@tngtech.com
  */
 @Component
-public class LicenseDatabaseHandler {
-
-    /**
-     * Connection to the couchDB database
-     */
-    private final DatabaseConnectorCloudant db;
+public class LicenseDatabaseHandler implements InitializingBean {
 
     /**
      * License Repository
@@ -96,10 +88,14 @@ public class LicenseDatabaseHandler {
     private CustomPropertiesRepository customPropertiesRepository;
     @Autowired
     private LicenseObligationListRepository obligationListRepository;
-    private final DatabaseRepositoryCloudantClient[] repositories;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
     @Autowired
     private LicenseModerator moderator;
+    @Autowired
+    ReleaseRepository releaseRepository;
+
+    private DatabaseRepositoryCloudantClient[] repositories;
 
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
@@ -107,17 +103,8 @@ public class LicenseDatabaseHandler {
     private String obligationText;
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
-    @Autowired
-    public LicenseDatabaseHandler(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName,
-            @Qualifier("COUCH_DB_CHANGELOGS") String changelogsDbName
-    ) {
-        // Create the connector
-        db = new DatabaseConnectorCloudant(client, dbName);
-        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, changelogsDbName);
-        dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
-
+    @Override
+    public void afterPropertiesSet() {
         repositories = new DatabaseRepositoryCloudantClient[]{
                 licenseRepository,
                 licenseTypeRepository,
@@ -985,7 +972,6 @@ public class LicenseDatabaseHandler {
     }
 
     public boolean checkIfInUse(String licenseId) {
-        ReleaseRepository releaseRepository = new ReleaseRepository(db,new VendorRepository(db));
         final List<Release> usingReleases = releaseRepository.searchReleasesByUsingLicenseId(licenseId);
         return !usingReleases.isEmpty();
     }

@@ -88,10 +88,11 @@ public class UserSearchHandler {
     @Autowired
     public UserSearchHandler(
             @Qualifier("CLOUDANT_DB_CONNECTOR_USERS") DatabaseConnectorCloudant db,
-            @Qualifier("COUCH_DB_USERS") String dbName
+            @Qualifier("COUCH_DB_USERS") String dbName,
+            @Qualifier("LUCENE_SEARCH_LIMIT") int luceneSearchLimit
     ) throws IOException {
         // Creates the database connector and adds the lucene search view
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson(), luceneSearchLimit);
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);

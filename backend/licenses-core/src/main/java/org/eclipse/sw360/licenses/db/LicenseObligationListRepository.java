@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
@@ -40,11 +39,10 @@ public class LicenseObligationListRepository extends DatabaseRepositoryCloudantC
 
     @Autowired
     public LicenseObligationListRepository(
-            Cloudant client,
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
             @Qualifier("COUCH_DB_DATABASE") String dbName
     ) {
-        super(new DatabaseConnectorCloudant(client, dbName), LicenseObligationList.class);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        super(db, LicenseObligationList.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byLicenseId", createMapReduce(BY_LICENSE_ID, null));
         views.put("all", createMapReduce(ALL, null));

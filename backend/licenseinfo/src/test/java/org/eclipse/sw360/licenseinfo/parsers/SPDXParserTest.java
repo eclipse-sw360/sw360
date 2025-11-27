@@ -77,8 +77,10 @@ public class SPDXParserTest {
 
     private User dummyUser = new User().setEmail("dummy@some.domain");
 
+    @MockitoBean
     private SPDXParser parser;
 
+    @MockitoBean
     private AttachmentContentStore attachmentContentStore;
 
     @Autowired
@@ -123,10 +125,6 @@ public class SPDXParserTest {
 
     @Before
     public void setUp() throws Exception {
-        attachmentContentStore = new AttachmentContentStore(connector);
-
-        parser = new SPDXParser(connector, attachmentContentStore.getAttachmentContentProvider());
-
         attachmentContentStore.put(spdxExampleFile);
         attachmentContentStore.put(spdx11ExampleFile);
         attachmentContentStore.put(spdx12ExampleFile);

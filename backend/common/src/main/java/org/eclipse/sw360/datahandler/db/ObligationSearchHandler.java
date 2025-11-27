@@ -10,10 +10,8 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -51,18 +49,18 @@ public class ObligationSearchHandler {
 
     @Autowired
     public ObligationSearchHandler(
-            Cloudant cClient,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("LUCENE_SEARCH_LIMIT") int luceneSearchLimit
     ) throws IOException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Creates the database connector and adds the lucene search view
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson(), luceneSearchLimit);
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);
         searchView.addNouveau(luceneSearchView, gson);
         connector.addDesignDoc(searchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        connector.setResultLimit(luceneSearchLimit);
     }
 
     public List<Obligation> search(String searchText) {

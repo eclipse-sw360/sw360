@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.*;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
@@ -37,11 +36,9 @@ public class ObligationElementRepository extends DatabaseRepositoryCloudantClien
 
     @Autowired
     public ObligationElementRepository(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
     ) {
-        super(new DatabaseConnectorCloudant(client, dbName), ObligationElement.class);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        super(db, ObligationElement.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byobligationlang", createMapReduce(BYLANGELEMENT, null));

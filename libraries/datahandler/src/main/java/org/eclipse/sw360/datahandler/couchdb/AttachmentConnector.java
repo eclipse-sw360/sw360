@@ -10,18 +10,14 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import com.google.common.collect.Sets;
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,8 +30,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
@@ -48,15 +42,6 @@ import org.springframework.stereotype.Component;
 public class AttachmentConnector extends AttachmentStreamConnector {
 
     private static final Logger log = LogManager.getLogger(AttachmentConnector.class);
-
-    @Autowired
-    public AttachmentConnector(
-            Cloudant client,
-            @Qualifier("COUCH_DB_ATTACHMENTS") String dbName,
-            Duration downloadTimeout
-    ) throws MalformedURLException {
-        super(new DatabaseConnectorCloudant(client, dbName), downloadTimeout);
-    }
 
     /**
      * Update the database with new attachment metadata

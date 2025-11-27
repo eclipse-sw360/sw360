@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -24,13 +25,10 @@ import java.util.List;
  * @author: alex.borodin@evosoft.com
  */
 public abstract class LicenseInfoParser {
-    protected final AttachmentConnector attachmentConnector;
+    @Autowired
+    protected AttachmentConnector attachmentConnector;
+    @Autowired
     protected AttachmentContentProvider attachmentContentProvider;
-
-    protected LicenseInfoParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider){
-        this.attachmentConnector = attachmentConnector;
-        this.attachmentContentProvider = attachmentContentProvider;
-    }
 
     public abstract List<String> getApplicableFileExtensions();
 

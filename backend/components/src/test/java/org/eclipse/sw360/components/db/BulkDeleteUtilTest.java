@@ -88,6 +88,10 @@ public class BulkDeleteUtilTest {
     private String spdxDbName;
 
     @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
     private Cloudant client;
 
     @Autowired
@@ -175,8 +179,8 @@ public class BulkDeleteUtilTest {
         vendors.put("V3", new Vendor().setId("V3").setShortname("Oracle").setFullname("Oracle Corporation Inc").setUrl("http://www.oracle.com"));
 
         // Prepare the database
-        databaseConnector = new DatabaseConnectorCloudant(client, dbName);
-        changeLogsDatabaseConnector = new DatabaseConnectorCloudant(client, changeLogsDbName);
+        databaseConnector = new DatabaseConnectorCloudant(client, dbName, luceneSearchLimit);
+        changeLogsDatabaseConnector = new DatabaseConnectorCloudant(client, changeLogsDbName, luceneSearchLimit);
 
         // Prepare vendors
         for (Vendor vendor : vendors.values()) {

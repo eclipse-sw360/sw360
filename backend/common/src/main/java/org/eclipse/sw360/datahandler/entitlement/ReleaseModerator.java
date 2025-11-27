@@ -11,17 +11,14 @@ package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
@@ -36,13 +33,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
 public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
     private static final Logger log = LogManager.getLogger(ReleaseModerator.class);
-
-    @Autowired
-    protected AttachmentConnector attachmentConnector;
-
-    public ReleaseModerator() {
-        super(new ThriftClients());
-    }
 
     public RequestStatus updateRelease(Release release, User user) {
 
@@ -219,10 +209,5 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
             release.unsetRepository();
         }
         return release;
-    }
-
-    @Override
-    protected AttachmentConnector getAttachmentConnector() {
-        return attachmentConnector;
     }
 }

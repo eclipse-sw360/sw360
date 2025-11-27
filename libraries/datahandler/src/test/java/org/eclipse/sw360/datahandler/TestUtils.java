@@ -10,13 +10,11 @@
 package org.eclipse.sw360.datahandler;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
@@ -64,25 +62,10 @@ public class TestUtils {
         IS_BULK_RELEASE_DELETING_ENABLED = Boolean.parseBoolean(System.getProperty("RunBulkReleaseDeletingTest", "false"));
     }
 
-    private static final List<String> dbNames = ImmutableList.of(
-            DatabaseSettingsTest.COUCH_DB_DATABASE,
-            DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
-            DatabaseSettingsTest.COUCH_DB_USERS);
-
-    static {
-        assertTestDbNames();
-    }
-
-    public static void assertTestDbNames() {
+    public static void assertTestDbNames(Set<String> dbNames) {
         for (String dbName : dbNames) {
             assertTestString(dbName);
 
-        }
-    }
-
-    public static void deleteAllDatabases() throws MalformedURLException {
-        for (String dbName : dbNames) {
-            deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
         }
     }
 

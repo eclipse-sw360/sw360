@@ -12,10 +12,8 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.ImmutableMap;
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
@@ -26,8 +24,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -39,19 +37,15 @@ import java.util.Collections;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
 @Component
-public class SW360ConfigsDatabaseHandler {
+public class SW360ConfigsDatabaseHandler implements InitializingBean {
     private final Logger log = LogManager.getLogger(this.getClass());
-    private final ConfigContainerRepository repository;
+    @Autowired
+    private ConfigContainerRepository repository;
     private static final Map<ConfigFor, Map<String, String>> configsMapInMem = new HashMap<>();
     private static boolean updating = false;
 
-    @Autowired
-    public SW360ConfigsDatabaseHandler(
-            Cloudant httpClient,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
-    ) {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
-        repository = new ConfigContainerRepository(db);
+    @Override
+    public void afterPropertiesSet() {
         try {
             loadToConfigsInMemForSw360(repository.getByConfigFor(ConfigFor.SW360_CONFIGURATION));
         } catch (IllegalStateException exception) {

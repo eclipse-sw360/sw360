@@ -57,6 +57,10 @@ public class ComponentSearchHandlerTest {
     private String dbName;
 
     @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
     private Cloudant client;
 
     @Autowired
@@ -104,7 +108,7 @@ public class ComponentSearchHandlerTest {
         components.add(component3);
 
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName, luceneSearchLimit);
 
         for (Component component : components) {
             databaseConnector.add(component);

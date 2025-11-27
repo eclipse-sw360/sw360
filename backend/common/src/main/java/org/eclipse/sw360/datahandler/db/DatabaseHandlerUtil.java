@@ -64,7 +64,6 @@ import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
@@ -81,6 +80,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMix
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ObligationMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.LicenseTypeMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.*;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -159,8 +159,18 @@ public class DatabaseHandlerUtil {
     private static boolean isChangeLogDisabledMessageLogged = false;
     private static boolean isLiferayEnvVarNotPresent = true;
 
+    @Autowired
+    @Qualifier("COUCH_DB_DATABASE")
+    private String dbName;
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
+    @Autowired
+    @Qualifier("COUCH_DB_SPDX")
+    private String spdxDbName;
+
     static {
-        Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
+        Properties props = CommonUtils.loadProperties(DatabaseConfig.class, PROPERTIES_FILE_PATH);
         SVM_JSON_LOG_OUTPUT_LOCATION = props.getProperty("svm.json.log.output.location", "/tmp");
         ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
                 "rwx------");
@@ -173,7 +183,7 @@ public class DatabaseHandlerUtil {
 
     @Autowired
     public DatabaseHandlerUtil(
-            @Qualifier("CLOUDANT_DB_CONNECTOR_CHANGELOG") DatabaseConnectorCloudant db
+            @Qualifier("CLOUDANT_DB_CONNECTOR_CHANGELOGS") DatabaseConnectorCloudant db
     ) {
             changeLogRepository = new ChangeLogsRepository(db);
     }
@@ -395,7 +405,7 @@ public class DatabaseHandlerUtil {
     /**
      * Register basic informations for the Document.
      */
-    public static <T extends TBase<T, ? extends TFieldIdEnum>> ChangeLogs initChangeLogsObj(T newDocVersion,
+    public <T extends TBase<T, ? extends TFieldIdEnum>> ChangeLogs initChangeLogsObj(T newDocVersion,
             String userEdited, String parentDocId, Operation operation, Operation parentOperation) {
         ChangeLogs changeLog = new ChangeLogs();
         changeLog.setUserEdited(userEdited);
@@ -407,69 +417,69 @@ public class DatabaseHandlerUtil {
             Project newProjVer = (Project) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof ObligationList) {
             ObligationList newOblListVer = (ObligationList) newDocVersion;
             changeLog.setDocumentId(newOblListVer.getId());
             changeLog.setDocumentType(newOblListVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof AttachmentContent) {
             AttachmentContent newAttachmentContentVer = (AttachmentContent) newDocVersion;
             changeLog.setDocumentId(newAttachmentContentVer.getId());
             changeLog.setDocumentType(newAttachmentContentVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_ATTACHMENTS);
+            changeLog.setDbName(attachmentsDbName);
             info.put(AttachmentContent._Fields.FILENAME.name(), newAttachmentContentVer.getFilename());
             info.put(AttachmentContent._Fields.CONTENT_TYPE.name(), newAttachmentContentVer.getContentType());
         } else if (newDocVersion instanceof Component) {
             Component newCompVer = (Component) newDocVersion;
             changeLog.setDocumentId(newCompVer.getId());
             changeLog.setDocumentType(newCompVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof Release) {
             Release newRelVer = (Release) newDocVersion;
             changeLog.setDocumentId(newRelVer.getId());
             changeLog.setDocumentType(newRelVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof ModerationRequest) {
             ModerationRequest newModReqVer = (ModerationRequest) newDocVersion;
             changeLog.setDocumentId(newModReqVer.getId());
             changeLog.setDocumentType(newModReqVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof SPDXDocument) {
             SPDXDocument newProjVer = (SPDXDocument) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+            changeLog.setDbName(spdxDbName);
         } else if (newDocVersion instanceof DocumentCreationInformation) {
             DocumentCreationInformation newProjVer = (DocumentCreationInformation) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+            changeLog.setDbName(spdxDbName);
         } else if (newDocVersion instanceof PackageInformation) {
             PackageInformation newProjVer = (PackageInformation) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+            changeLog.setDbName(spdxDbName);
         } else if (newDocVersion instanceof Obligation) {
             Obligation newOblVer = (Obligation) newDocVersion;
             changeLog.setDocumentId(newOblVer.getId());
             changeLog.setDocumentType(newOblVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof Package) {
             Package newPkgVer = (Package) newDocVersion;
             changeLog.setDocumentId(newPkgVer.getId());
             changeLog.setDocumentType(newPkgVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof License) {
             License newProjVer = (License) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         } else if (newDocVersion instanceof LicenseObligationList) {
             LicenseObligationList newProjVer = (LicenseObligationList) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
-            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+            changeLog.setDbName(dbName);
         }
 
         log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
@@ -485,7 +495,7 @@ public class DatabaseHandlerUtil {
      * Register Changelog for Deleted attachement as part of Document Upadte
      * operation
      */
-    public static void populateChangeLogsForAttachmentsDeleted(Set<Attachment> attachmentsBefore,
+    public void populateChangeLogsForAttachmentsDeleted(Set<Attachment> attachmentsBefore,
             Set<Attachment> attachmentsAfter, List<ChangeLogs> referenceDocLogList, String userEdited,
             String parentDocId, Operation parentOperation, AttachmentConnector attachmentConnector,
             boolean deleteAllAttachments) {
@@ -520,7 +530,7 @@ public class DatabaseHandlerUtil {
      * @param userEdited
      * @param attachmentConnector
      */
-    public static <T extends TBase> void addSelectLogs(T newDocVersion, String userEdited, AttachmentConnector attachmentConnector) {
+    public <T extends TBase> void addSelectLogs(T newDocVersion, String userEdited, AttachmentConnector attachmentConnector) {
 
         if (!IS_SW360CHANGELOG_ENABLED) {
             if (!isChangeLogDisabledMessageLogged) {
@@ -533,7 +543,7 @@ public class DatabaseHandlerUtil {
         Runnable changeLogRunnable = ()-> {
           try {
               log.info("Generating SelectLogs.");
-              ChangeLogs changeLogParent =initChangeLogsObj(newDocVersion, userEdited, null, Operation.CREATE,null);
+              ChangeLogs changeLogParent = initChangeLogsObj(newDocVersion, userEdited, null, Operation.CREATE,null);
               Map<String,Object> logMap=new LinkedHashMap();
               logMap.put("type",changeLogParent.getType());
               logMap.put("documentId",changeLogParent.getDocumentId());
@@ -572,8 +582,7 @@ public class DatabaseHandlerUtil {
     public <T extends TBase> void addChangeLogs(T newDocVersion, T oldDocVersion, String userEdited,
             Operation operation, AttachmentConnector attachmentConnector, List<ChangeLogs> referenceDocLogList,
             String parentDocId, Operation parentOperation) {
-        if (DatabaseSettings.COUCH_DB_DATABASE.contains("test")
-                || DatabaseSettings.COUCH_DB_ATTACHMENTS.contains("test")) {
+        if (dbName.contains("test") || attachmentsDbName.contains("test")) {
             return;
         }
         Runnable changeLogRunnable = prepareChangeLogRunnable(newDocVersion, oldDocVersion, userEdited, operation,
@@ -595,7 +604,7 @@ public class DatabaseHandlerUtil {
     /**
      * Prepare ChangeLog Runnable along with all the Change data.
      */
-    private static <T extends TBase> Runnable prepareChangeLogRunnable(T newDocVersion, T oldDocVersion,
+    private <T extends TBase> Runnable prepareChangeLogRunnable(T newDocVersion, T oldDocVersion,
             String userEdited, Operation operation, AttachmentConnector attachmentConnector,
             List<ChangeLogs> referenceDocLogList, String parentDocId, Operation parentOperation) {
         return () -> {
@@ -718,7 +727,7 @@ public class DatabaseHandlerUtil {
     /**
      * Register Reference Doc changes ad part of Parent Doc update
      */
-    private static <T extends TBase> void referenceDocChanges(T oldDocVersion, T newDocVersion, String userEdited,
+    private <T extends TBase> void referenceDocChanges(T oldDocVersion, T newDocVersion, String userEdited,
             List<ChangeLogs> referenceDocLogList, AttachmentConnector attachmentConnector, ChangeLogs changeLogParent) {
 
         if (newDocVersion instanceof Project || newDocVersion instanceof Component
@@ -859,7 +868,7 @@ public class DatabaseHandlerUtil {
     /**
      * Get the Changelogs for newly added Attachment on Document update.
      */
-    private static <T extends TBase> void getChangeLogsForAttachments(T oldDocVersion, T newDocVersion,
+    private <T extends TBase> void getChangeLogsForAttachments(T oldDocVersion, T newDocVersion,
             String userEdited, List<ChangeLogs> referenceDocLogList, AttachmentConnector attachmentConnector) {
         log.info("Initialize ChangeLogs for Attachments.");
         Set<Attachment> attachmentsAfter = null;

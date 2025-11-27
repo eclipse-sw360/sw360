@@ -185,9 +185,9 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     @Autowired
     public ReleaseRepository(
             @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
-            VendorRepository vendorRepository
+            ReleaseSummary releaseSummary
     ) {
-        super(Release.class, db, new ReleaseSummary(vendorRepository));
+        super(Release.class, db, releaseSummary);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byname", createMapReduce(BY_NAME, null));

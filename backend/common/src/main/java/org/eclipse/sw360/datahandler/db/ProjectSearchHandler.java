@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -103,14 +102,15 @@ public class ProjectSearchHandler {
     @Autowired
     public ProjectSearchHandler(
             @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("LUCENE_SEARCH_LIMIT") int luceneSearchLimit
     ) throws IOException {
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson(), luceneSearchLimit);
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);
         searchView.addNouveau(luceneSearchView, gson);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        connector.setResultLimit(luceneSearchLimit);
         connector.addDesignDoc(searchView);
     }
 

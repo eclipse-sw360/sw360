@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,11 +87,11 @@ public class ComponentSearchHandler {
 
     @Autowired
     public ComponentSearchHandler(
-            Cloudant cClient,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("LUCENE_SEARCH_LIMIT") int luceneSearchLimit
     ) throws IOException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson(), luceneSearchLimit);
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);

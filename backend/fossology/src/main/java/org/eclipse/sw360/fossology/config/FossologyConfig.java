@@ -14,11 +14,10 @@ package org.eclipse.sw360.fossology.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -27,8 +26,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.COUCH_DB_CONFIG;
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.getConfiguredClient;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 
 @Configuration
@@ -38,10 +35,16 @@ public class FossologyConfig {
     private static final Logger log = LogManager.getLogger(FossologyConfig.class);
     private Duration downloadTimeout = null;
 
+    @Autowired
+    ConfigContainerRepository configContainerRepository;
+
     /**
      * Get download timeout configuration with v2 API support
      */
     private Duration getDownloadTimeout() {
+        if (downloadTimeout != null) {
+            return downloadTimeout;
+        }
         FossologyRestConfig fossologyRestConfig;
         try {
             fossologyRestConfig = new FossologyRestConfig(configContainerRepository());
@@ -71,19 +74,13 @@ public class FossologyConfig {
             }
         }
 
-        return durationOf(timeoutValue, timeoutUnit);
+        downloadTimeout = durationOf(timeoutValue, timeoutUnit);
+        return downloadTimeout;
     }
 
     @Bean
     public ConfigContainerRepository configContainerRepository() {
-        DatabaseConnectorCloudant configContainerDatabaseConnector = new DatabaseConnectorCloudant(getConfiguredClient(),
-                COUCH_DB_CONFIG);
-        return new ConfigContainerRepository(configContainerDatabaseConnector);
-    }
-
-    @Bean
-    public ThriftClients thriftClients() {
-        return new ThriftClients();
+        return configContainerRepository;
     }
 
     /**

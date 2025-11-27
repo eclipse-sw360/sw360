@@ -17,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
@@ -62,7 +61,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
-import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileInputStream;
@@ -79,7 +77,6 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -145,6 +142,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private SvmConnector svmConnector;
     @Autowired
     private SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    @Autowired
+    SpdxBOMImporter spdxBOMImporter;
 
     /**
      * Access to moderation
@@ -178,6 +177,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ClearingInformation._Fields.REQUEST_ID, ClearingInformation._Fields.ADDITIONAL_REQUEST_INFO,
                     ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID, ClearingInformation._Fields.EVALUATED,
                     ClearingInformation._Fields.PROC_START);
+
+    @Autowired
+    private AttachmentStreamConnector attachmentStreamConnector;
 
     @Autowired
     public ComponentDatabaseHandler(
@@ -332,11 +334,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public void addSelectLogs(Component component, User user) {
 
-        DatabaseHandlerUtil.addSelectLogs(component, user.getEmail(), attachmentConnector);
+        dbHandlerUtil.addSelectLogs(component, user.getEmail(), attachmentConnector);
     }
     public void addSelectLogs(Release release, User user) {
 
-        DatabaseHandlerUtil.addSelectLogs(release, user.getEmail(), attachmentConnector);
+        dbHandlerUtil.addSelectLogs(release, user.getEmail(), attachmentConnector);
     }
 
     public Component getComponent(String id, User user) throws SW360Exception {
@@ -723,7 +725,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<ChangeLogs> referenceDocLogList = new LinkedList<>();
             Set<Attachment> attachmentsAfter = component.getAttachments();
             Set<Attachment> attachmentsBefore = actual.getAttachments();
-            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
+            dbHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                     referenceDocLogList, user.getEmail(), component.getId(), Operation.COMPONENT_UPDATE,
                     attachmentConnector, false);
 
@@ -814,7 +816,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                                           String userEdited) {
         String name = component.getName();
         for (Release release : releaseRepository.getReleasesFromComponentId(component.getId())) {
-            ChangeLogs changeLog = DatabaseHandlerUtil.initChangeLogsObj(release, userEdited, component.getId(),
+            ChangeLogs changeLog = dbHandlerUtil.initChangeLogsObj(release, userEdited, component.getId(),
                     Operation.UPDATE, Operation.COMPONENT_UPDATE);
             Set<ChangedFields> changes = new HashSet<ChangedFields>();
             ChangedFields nameFields = new ChangedFields();
@@ -1169,7 +1171,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 List<ChangeLogs> referenceDocLogList = new LinkedList<>();
                 Set<Attachment> attachmentsAfter = release.getAttachments();
                 Set<Attachment> attachmentsBefore = actual.getAttachments();
-                DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
+                dbHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                         referenceDocLogList, user.getEmail(), release.getId(), Operation.RELEASE_UPDATE,
                         attachmentConnector, false);
 
@@ -2835,12 +2837,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user);
-                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                spdxBOMImporter.setUser(user);
 
                 String fileType = getFileType(attachmentContent.getFilename());
                 final String ext = "." + fileType;
@@ -2889,12 +2888,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user);
-                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                spdxBOMImporter.setUser(user);
                 return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user);
             }
         } catch (IOException e) {

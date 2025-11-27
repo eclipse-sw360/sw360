@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.search.db;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.ComponentRepository;
@@ -24,7 +25,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -44,10 +44,11 @@ public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler 
 
     @Autowired
     public Sw360dbDatabaseSearchHandler(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("LUCENE_SEARCH_LIMIT") int luceneSearchLimit
     ) throws IOException {
-        super(client, dbName);
+        super(db, dbName, luceneSearchLimit);
     }
 
     protected boolean isVisibleToUser(SearchResult result, User user) {

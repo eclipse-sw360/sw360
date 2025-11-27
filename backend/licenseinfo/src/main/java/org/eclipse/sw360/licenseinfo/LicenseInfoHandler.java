@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
-import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -86,8 +85,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
     @Autowired
     protected LicenseInfoHandler(
-            AttachmentDatabaseHandler attachmentDatabaseHandler,
-            AttachmentContentProvider contentProvider
+            SPDXParser spdxParser, CLIParser cliParser, CombinedCLIParser combinedCLIParser
     ) {
         this.licenseInfoCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
                 .maximumSize(CACHE_MAX_ITEMS).build();
@@ -101,11 +99,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 .maximumSize(CACHE_MAX_ITEMS).build();
 
         // @formatter:off
-        parsers = Lists.newArrayList(
-            new SPDXParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
-            new CLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
-            new CombinedCLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider)
-        );
+        parsers = Lists.newArrayList(spdxParser, cliParser, combinedCLIParser);
 
         outputGenerators = Lists.newArrayList(
                 new TextGenerator(DISCLOSURE, "License Disclosure as TEXT"),

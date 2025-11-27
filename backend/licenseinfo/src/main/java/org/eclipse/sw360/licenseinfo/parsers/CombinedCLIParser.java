@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -62,10 +61,6 @@ public class CombinedCLIParser extends AbstractCLIParser{
 
     @Autowired
     private ComponentDatabaseHandler componentDatabaseHandler;
-
-    public CombinedCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
-        super(attachmentConnector, attachmentContentProvider);
-    }
 
     String getCorrelationKey() {
         String releaseExternalIdCorrelationKey = SW360Utils.readConfig(SW360ConfigKeys.COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, "");

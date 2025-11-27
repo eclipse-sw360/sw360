@@ -11,12 +11,14 @@
 package org.eclipse.sw360.rest.resourceserver;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -26,6 +28,13 @@ import java.util.List;
 
 @Component
 public class SW360RestHealthIndicator implements HealthIndicator {
+    @Autowired
+    Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    String attachmentsDbName;
+
     @Override
     public Health health() {
         List<Exception> exceptions = new ArrayList<>();
@@ -55,7 +64,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     private boolean isDbReachable(List<Exception> exception) {
         DatabaseInstanceCloudant databaseInstance = makeDatabaseInstance();
         try {
-            return databaseInstance.checkIfDbExists(DatabaseSettings.COUCH_DB_ATTACHMENTS);
+            return databaseInstance.checkIfDbExists(attachmentsDbName);
         } catch (Exception e) {
             exception.add(e);
             return false;
@@ -85,7 +94,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     }
 
     protected DatabaseInstanceCloudant makeDatabaseInstance() {
-        return new DatabaseInstanceCloudant(DatabaseSettings.getConfiguredClient());
+        return new DatabaseInstanceCloudant(client);
     }
 
     public static class RestState {

@@ -26,6 +26,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
 import org.apache.thrift.protocol.TType;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 
@@ -39,12 +40,12 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
  */
 public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
-    protected final ThriftClients thriftClients;
     private static final Logger log = LogManager.getLogger(Moderator.class);
 
-    public Moderator(ThriftClients thriftClients) {
-        this.thriftClients = thriftClients;
-    }
+    @Autowired
+    protected ThriftClients thriftClients;
+    @Autowired
+    protected AttachmentConnector attachmentConnector;
 
     public void notifyModeratorOnDelete(String documentId) {
         try {
@@ -123,7 +124,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                 } else {
                     try {
                         if (CommonUtils.isNotNullEmptyOrWhitespace(id)
-                                && getAttachmentConnector().getAttachmentContent(id) != null) {
+                                && attachmentConnector.getAttachmentContent(id) != null) {
                             attachments.add(update);
                         }
                     } catch (SW360Exception e) {
@@ -215,6 +216,4 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
         }
         return resultMap;
     }
-
-    protected abstract AttachmentConnector getAttachmentConnector();
 }

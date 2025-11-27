@@ -86,6 +86,10 @@ public class ComponentDatabaseHandlerTest {
     private String changeLogsDbName;
 
     @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
     @Qualifier("COUCH_DB_SPDX")
     private String spdxDbName;
 
@@ -176,7 +180,7 @@ public class ComponentDatabaseHandlerTest {
         releases.add(release2c);
 
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName, luceneSearchLimit);
 
         for (Vendor vendor : vendors.values()) {
             databaseConnector.add(vendor);

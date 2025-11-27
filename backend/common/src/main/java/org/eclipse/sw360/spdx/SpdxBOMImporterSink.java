@@ -31,10 +31,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@org.springframework.stereotype.Component
 public class SpdxBOMImporterSink {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporterSink.class);
 
@@ -48,9 +48,9 @@ public class SpdxBOMImporterSink {
     private SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
     @Autowired
     private SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
-    private final User user;
+    private User user;
 
-    public SpdxBOMImporterSink(User user) throws MalformedURLException {
+    public void setUser(User user) {
         this.user = user;
     }
 

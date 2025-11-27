@@ -63,6 +63,10 @@ public class AttachmentHandlerTest {
     private String attachmentsDbName;
 
     @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
     private Cloudant client;
 
     @Autowired
@@ -74,7 +78,7 @@ public class AttachmentHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, attachmentsDbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, attachmentsDbName, luceneSearchLimit);
         databaseConnector.add(new AttachmentContent().setId("A1").setFilename("a.txt").setContentType("text"));
         databaseConnector.add(new AttachmentContent().setId("A2").setFilename("b.jpg").setContentType("image"));
     }

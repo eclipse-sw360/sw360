@@ -9,55 +9,75 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.internal.http.RealResponseBody;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.Duration;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 
-import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class AttachmentStreamConnectorTest {
-    @Mock
+    @MockitoBean
     public DatabaseConnectorCloudant connector;
-    @Mock
+    @MockitoBean
     private AttachmentContentDownloader attachmentContentDownloader;
 
     private User dummyUser = new User().setEmail("dummy@some.domain");
 
     AttachmentStreamConnector attachmentStreamConnector;
 
-    @Before
-    public void setUp() throws Exception {
-        attachmentStreamConnector = new AttachmentStreamConnector(connector, attachmentContentDownloader, durationOf(5, TimeUnit.SECONDS));
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    @After
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
@@ -80,7 +100,7 @@ public class AttachmentStreamConnectorTest {
         doReturn(returnedStream).when(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
         lenient().doNothing().when(attachmentStreamConnector).uploadAttachmentPart(attachment, 1, downloadUrlStream);
 
-        when(attachmentContentDownloader.download(eq(attachment), ArgumentMatchers.any(Duration.class))).thenReturn(downloadUrlStream);
+        when(attachmentContentDownloader.download(eq(attachment))).thenReturn(downloadUrlStream);
 
         when(connector.get(AttachmentContent.class, id)).thenReturn(rereadAttachment);
         doReturn(rereadAttachment).when(rereadAttachment).setOnlyRemote(anyBoolean());
@@ -92,7 +112,7 @@ public class AttachmentStreamConnectorTest {
                              .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(id)))),
                 sameInstance(returnedStream));
 
-        verify(attachmentContentDownloader).download(eq(attachment), ArgumentMatchers.any(Duration.class));
+        verify(attachmentContentDownloader).download(eq(attachment));
         verify(attachmentStreamConnector).uploadAttachment(attachment, downloadUrlStream);
         verify(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
 

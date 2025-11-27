@@ -15,28 +15,59 @@ import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.ibm.cloud.cloudant.v1.model.PostDocumentOptions;
 import com.ibm.cloud.cloudant.v1.model.PutDatabaseOptions;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.testthrift.TestObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.eclipse.sw360.datahandler.common.DatabaseSettingsTest.COUCH_DB_DATABASE;
+import java.net.MalformedURLException;
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class DatabaseConnectorTest {
-
-    DatabaseConnectorCloudant connector;
 
     TestObject object;
 
     String id;
     String rev;
+
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_DATABASE")
+    String dbName;
+
+    @Autowired
+    @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE")
+    DatabaseConnectorCloudant connector;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @Before
     public void setUp() throws Exception {
@@ -45,12 +76,11 @@ public class DatabaseConnectorTest {
         object.setName("Test");
         object.setText("This is some nice test text.");
         // Initialize the mapper factory
-        Cloudant client = DatabaseSettingsTest.getConfiguredClient();
         DatabaseInstanceCloudant dbInstance = new DatabaseInstanceCloudant(client);
 
         // Create database if it does not exists
-        if (!dbInstance.checkIfDbExists(COUCH_DB_DATABASE)) {
-            PutDatabaseOptions putDbOptions = new PutDatabaseOptions.Builder().db(COUCH_DB_DATABASE).build();
+        if (!dbInstance.checkIfDbExists(dbName)) {
+            PutDatabaseOptions putDbOptions = new PutDatabaseOptions.Builder().db(dbName).build();
             try {
                 client.putDatabase(putDbOptions).execute().getResult();
             } catch (ServiceResponseException e) {
@@ -60,12 +90,9 @@ public class DatabaseConnectorTest {
             }
         }
 
-        // Now create the actual database connector
-        connector = new DatabaseConnectorCloudant(client, COUCH_DB_DATABASE);
-
         // Add the object
         PostDocumentOptions postDocOption = new PostDocumentOptions.Builder()
-                .db(COUCH_DB_DATABASE)
+                .db(dbName)
                 .document(connector.getDocumentFromPojo(object))
                 .build();
 
@@ -78,11 +105,8 @@ public class DatabaseConnectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        // Default connector for testing
-        if (connector.getInstance().checkIfDbExists(COUCH_DB_DATABASE)) {
-            connector.getInstance().deleteDatabase(COUCH_DB_DATABASE);
-        }
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

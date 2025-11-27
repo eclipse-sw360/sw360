@@ -60,6 +60,10 @@ public class LicenseHandlerTest {
     private String dbName;
 
     @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
     private LicenseHandler handler;
     private User user;
 
@@ -222,7 +226,7 @@ public class LicenseHandlerTest {
         obligs.put("T4", oblig4);
         obligs.put("T5", oblig5);
 
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName, luceneSearchLimit);
 
         // Add obligations to database
         for (Obligation oblig : obligs.values()) {

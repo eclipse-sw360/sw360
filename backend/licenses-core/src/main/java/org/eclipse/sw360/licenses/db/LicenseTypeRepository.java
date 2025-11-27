@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
@@ -36,11 +35,9 @@ public class LicenseTypeRepository extends DatabaseRepositoryCloudantClient<Lice
 
     @Autowired
     public LicenseTypeRepository(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
     ) {
-        super(new DatabaseConnectorCloudant(client, dbName), LicenseType.class);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        super(db, LicenseType.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("bylicensetype", createMapReduce(BYLICENSETYPE, null));

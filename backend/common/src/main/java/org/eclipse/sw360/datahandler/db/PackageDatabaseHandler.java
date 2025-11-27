@@ -14,13 +14,11 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE;
 
-import java.net.MalformedURLException;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -29,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Assert;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -48,7 +45,6 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
@@ -84,20 +80,16 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     @Autowired
     public PackageDatabaseHandler(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName,
-            @Qualifier("COUCH_DB_CHANGELOGS") String changeLogsDbName,
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
+            @Qualifier("CLOUDANT_DB_CONNECTOR_CHANGELOGS") DatabaseConnectorCloudant changeLogsDb,
             AttachmentDatabaseHandler attachmentDatabaseHandler
     ) {
         super(attachmentDatabaseHandler);
-
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
         packageRepository = new PackageRepository(db);
         projectRepository = new ProjectRepository(db);
 
-        DatabaseConnectorCloudant changeLogsDb = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.databaseHandlerUtil = new DatabaseHandlerUtil(changeLogsDb);
     }
 

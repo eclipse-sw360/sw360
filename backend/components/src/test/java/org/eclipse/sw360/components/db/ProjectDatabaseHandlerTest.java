@@ -82,6 +82,10 @@ public class ProjectDatabaseHandlerTest {
     private String spdxDbName;
 
     @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
     private Cloudant client;
 
     @Autowired
@@ -202,7 +206,7 @@ public class ProjectDatabaseHandlerTest {
         projects.add(project7);
 
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName, luceneSearchLimit);
 
         for (Vendor vendor : vendors) {
             databaseConnector.add(vendor);

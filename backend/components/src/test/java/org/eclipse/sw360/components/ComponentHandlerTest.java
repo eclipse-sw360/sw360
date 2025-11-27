@@ -67,7 +67,7 @@ public class ComponentHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        assertTestDbNames();
+        assertTestDbNames(allDatabaseNames);
     }
 
     @After

@@ -205,31 +205,41 @@ public class DatabaseConfig {
 
     @Bean(name="CLOUDANT_DB_CONNECTOR_DATABASE")
     public DatabaseConnectorCloudant databaseConnectorCloudant() {
-        return new DatabaseConnectorCloudant(cloudantClient(), couchDbDatabase);
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbDatabase, luceneSearchLimit);
     }
 
     @Bean(name="CLOUDANT_DB_CONNECTOR_SPDX")
     public DatabaseConnectorCloudant spdxDbConnectorCloudant() {
-        return new DatabaseConnectorCloudant(cloudantClient(), couchDbSpdx);
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbSpdx, luceneSearchLimit);
     }
 
-    @Bean(name="CLOUDANT_DB_CONNECTOR_CHANGELOG")
+    @Bean(name="CLOUDANT_DB_CONNECTOR_CHANGELOGS")
     public DatabaseConnectorCloudant changelogsDbConnectorCloudant() {
-        return new DatabaseConnectorCloudant(cloudantClient(), couchDbChangeLogs);
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbChangeLogs, luceneSearchLimit);
     }
 
     @Bean(name="CLOUDANT_DB_CONNECTOR_ATTACHMENTS")
     public DatabaseConnectorCloudant attachmentsDbConnectorCloudant() {
-        return new DatabaseConnectorCloudant(cloudantClient(), couchDbAttachments);
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbAttachments, luceneSearchLimit);
     }
 
     @Bean(name="CLOUDANT_DB_CONNECTOR_VM")
     public DatabaseConnectorCloudant vmDbConnectorCloudant() {
-        return new DatabaseConnectorCloudant(cloudantClient(), couchDbVm);
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbVm, luceneSearchLimit);
     }
 
     @Bean(name="CLOUDANT_DB_CONNECTOR_USERS")
     public DatabaseConnectorCloudant usersDbConnectorCloudant() {
-        return new DatabaseConnectorCloudant(cloudantClient(), couchDbUsers);
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbUsers, luceneSearchLimit);
+    }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_CONFIG")
+    public DatabaseConnectorCloudant configDbConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbConfig, luceneSearchLimit);
+    }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_OAUTHCLIENTS")
+    public DatabaseConnectorCloudant oauthClientsDbConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbOauthClients, luceneSearchLimit);
     }
 }

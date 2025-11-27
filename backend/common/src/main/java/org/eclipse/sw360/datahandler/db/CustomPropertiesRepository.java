@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -46,11 +45,9 @@ public class CustomPropertiesRepository extends DatabaseRepositoryCloudantClient
 
     @Autowired
     public CustomPropertiesRepository(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
     ) {
-        super(new DatabaseConnectorCloudant(client, dbName), CustomProperties.class);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        super(db, CustomProperties.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("customPropertiesByDocType", createMapReduce(CUSTOM_PROPERTIES_BY_DOCTYPE, null));
         views.put("all", createMapReduce(ALL, null));

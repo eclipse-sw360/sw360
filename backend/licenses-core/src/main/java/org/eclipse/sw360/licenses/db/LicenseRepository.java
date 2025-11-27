@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.licenses.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.components.summary.LicenseSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -40,11 +39,9 @@ public class LicenseRepository extends SummaryAwareRepository<License> {
 
     @Autowired
     public LicenseRepository(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
     ) {
-        super(License.class, new DatabaseConnectorCloudant(client, dbName), new LicenseSummary());
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        super(License.class, db, new LicenseSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byname", createMapReduce(BYNAME, null));
