@@ -10,8 +10,6 @@
 package org.eclipse.sw360.search.db;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.ComponentRepository;
 import org.eclipse.sw360.datahandler.db.ProjectRepository;
@@ -27,37 +25,29 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.io.IOException;
 
+@org.springframework.stereotype.Component
 public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler {
 
-    private final ProjectRepository projectRepository;
+    @Autowired
+    private ProjectRepository projectRepository;
+    @Autowired
+    private ComponentRepository componentRepository;
+    @Autowired
+    private VendorRepository vendorRepository;
+    @Autowired
+    private ReleaseRepository releaseRepository;
 
-    private final ComponentRepository componentRepository;
-    private final VendorRepository vendorRepository;
-    private final ReleaseRepository releaseRepository;
-
-    public Sw360dbDatabaseSearchHandler() throws IOException {
-        super(DatabaseSettings.COUCH_DB_DATABASE);
-        
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        
-        projectRepository = new ProjectRepository(db);
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
-    }
-
-    public Sw360dbDatabaseSearchHandler(Cloudant client, String dbName) throws IOException {
+    @Autowired
+    public Sw360dbDatabaseSearchHandler(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) throws IOException {
         super(client, dbName);
-
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-        
-        projectRepository = new ProjectRepository(db);
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
     }
 
     protected boolean isVisibleToUser(SearchResult result, User user) {
@@ -66,7 +56,7 @@ public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler 
 	        return ProjectPermissions.isVisible(user).test(project);
         } else if(result.type.equals(SW360Constants.TYPE_COMPONENT)) {
             Component component = componentRepository.get(result.id);
-            return ComponentPermissions.isVisible(user).test(component);    	
+            return ComponentPermissions.isVisible(user).test(component);
         } else if(result.type.equals(SW360Constants.TYPE_RELEASE)) {
             Release release = releaseRepository.get(result.id);
             boolean isReleaseVisible = ReleasePermissions.isVisible(user).test(release);
@@ -74,7 +64,7 @@ public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler 
             String componentId = release.getComponentId();
             if(CommonUtils.isNotNullEmptyOrWhitespace(componentId)) {
                 Component component = componentRepository.get(componentId);
-                isComponentVisible = ComponentPermissions.isVisible(user).test(component); 
+                isComponentVisible = ComponentPermissions.isVisible(user).test(component);
             }
             return isReleaseVisible && isComponentVisible;
         } else {

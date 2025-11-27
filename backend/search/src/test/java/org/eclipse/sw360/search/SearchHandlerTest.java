@@ -9,26 +9,40 @@
  */
 package org.eclipse.sw360.search;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.junit.Before;
+import org.eclipse.sw360.datahandler.TestUtils;
+import org.junit.After;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import java.net.MalformedURLException;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class SearchHandlerTest {
 
+    @Autowired
     SearchHandler handler;
 
-    @Before
-    public void setUp() throws Exception {
-        handler = new SearchHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
-    }
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @Test(expected = TException.class)
     public void testSearchNull() throws Exception {
         handler.search(null, null);
+    }
+
+    @After
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     public void testSearchEmpty() throws Exception {

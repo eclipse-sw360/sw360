@@ -16,7 +16,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.FluentIterable;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -25,6 +24,8 @@ import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,6 +43,10 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESI
 public abstract class AbstractDatabaseSearchHandler {
 
     private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+
+    @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    protected int luceneSearchLimit;
 
     private static final NouveauIndexDesignDocument luceneSearchView
         = new NouveauIndexDesignDocument("all", new NouveauIndexFunction(
@@ -81,20 +86,6 @@ public abstract class AbstractDatabaseSearchHandler {
             "}"));
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public AbstractDatabaseSearchHandler(String dbName) throws IOException {
-        Cloudant client = DatabaseSettings.getConfiguredClient();
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-        // Create the database connector and add the search view to couchDB
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        searchView.addNouveau(luceneFilteredSearchView, gson);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-        connector.addDesignDoc(searchView);
-    }
-
     public AbstractDatabaseSearchHandler(Cloudant client, String dbName) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         // Create the database connector and add the search view to couchDB
@@ -104,7 +95,7 @@ public abstract class AbstractDatabaseSearchHandler {
         searchView.setId(DDOC_NAME);
         searchView.addNouveau(luceneSearchView, gson);
         searchView.addNouveau(luceneFilteredSearchView, gson);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        connector.setResultLimit(luceneSearchLimit);
         connector.addDesignDoc(searchView);
     }
 
