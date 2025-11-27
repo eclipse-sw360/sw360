@@ -12,11 +12,15 @@ package org.eclipse.sw360.licenses.db;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the Obligation class
@@ -24,12 +28,18 @@ import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
+@Component
 public class TodoRepository extends DatabaseRepositoryCloudantClient<Obligation> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'obligation') emit(null, doc._id) }";
 
-    public TodoRepository(DatabaseConnectorCloudant db) {
-        super(db, Obligation.class);
+    @Autowired
+    public TodoRepository(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) {
+        super(new DatabaseConnectorCloudant(client, dbName), Obligation.class);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);

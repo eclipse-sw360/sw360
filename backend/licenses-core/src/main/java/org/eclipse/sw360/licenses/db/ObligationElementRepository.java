@@ -14,15 +14,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.*;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the Obligation Element class
  */
+@Component
 public class ObligationElementRepository extends DatabaseRepositoryCloudantClient<ObligationElement> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'obligationElement') emit(null, doc._id) }";
@@ -30,9 +35,13 @@ public class ObligationElementRepository extends DatabaseRepositoryCloudantClien
     private static final String BYACTION = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.action, null) } }";
     private static final String BYOBJECT = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.object, null) } }";
 
-
-    public ObligationElementRepository(DatabaseConnectorCloudant db) {
-        super(db, ObligationElement.class);
+    @Autowired
+    public ObligationElementRepository(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) {
+        super(new DatabaseConnectorCloudant(client, dbName), ObligationElement.class);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byobligationlang", createMapReduce(BYLANGELEMENT, null));

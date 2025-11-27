@@ -19,6 +19,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,6 +29,7 @@ import java.util.List;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
+@Component
 public class ObligationSearchHandler {
 
     private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
@@ -45,7 +49,11 @@ public class ObligationSearchHandler {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public ObligationSearchHandler(Cloudant cClient, String dbName) throws IOException {
+    @Autowired
+    public ObligationSearchHandler(
+            Cloudant cClient,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Creates the database connector and adds the lucene search view
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());

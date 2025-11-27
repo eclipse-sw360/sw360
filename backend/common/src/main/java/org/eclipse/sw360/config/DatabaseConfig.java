@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.common.Duration;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -194,5 +195,10 @@ public class DatabaseConfig {
                 couchDbSpdx,
                 couchDbOauthClients
         );
+    }
+
+    @Bean
+    public ThriftClients thriftClients() {
+        return new ThriftClients();
     }
 }

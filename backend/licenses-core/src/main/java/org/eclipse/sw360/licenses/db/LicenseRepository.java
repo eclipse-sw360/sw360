@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.licenses.db;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.components.summary.LicenseSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -16,6 +17,9 @@ import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +30,7 @@ import java.util.Map;
  *
  * @author cedric.bodet@tngtech.com
  */
-
+@Component
 public class LicenseRepository extends SummaryAwareRepository<License> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'license') emit(null, doc._id) }";
@@ -34,8 +38,13 @@ public class LicenseRepository extends SummaryAwareRepository<License> {
     private static final String BYSHORTNAME = "function(doc) { if(doc.type == 'license') { emit(doc._id, null) } }";
     private static final String BYLICENSETYPEID = "function(doc) { if(doc.type == 'license') { emit(doc.licenseTypeDatabaseId, null) } }";
 
-    public LicenseRepository(DatabaseConnectorCloudant db) {
-        super(License.class, db, new LicenseSummary());
+    @Autowired
+    public LicenseRepository(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) {
+        super(License.class, new DatabaseConnectorCloudant(client, dbName), new LicenseSummary());
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byname", createMapReduce(BYNAME, null));

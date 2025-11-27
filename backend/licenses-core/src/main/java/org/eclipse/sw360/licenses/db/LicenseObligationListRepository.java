@@ -13,17 +13,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the LicenseObligationList class
- *
- * 
  */
+@Component
 public class LicenseObligationListRepository extends DatabaseRepositoryCloudantClient<LicenseObligationList> {
 
     private static final String BY_LICENSE_ID =
@@ -35,8 +38,13 @@ public class LicenseObligationListRepository extends DatabaseRepositoryCloudantC
 
     private static final String ALL = "function(doc) { if (doc.type == 'licenseObligationList') emit(null, doc._id) }";
 
-    public LicenseObligationListRepository(DatabaseConnectorCloudant db) {
-        super(db, LicenseObligationList.class);
+    @Autowired
+    public LicenseObligationListRepository(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName
+    ) {
+        super(new DatabaseConnectorCloudant(client, dbName), LicenseObligationList.class);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byLicenseId", createMapReduce(BY_LICENSE_ID, null));
         views.put("all", createMapReduce(ALL, null));

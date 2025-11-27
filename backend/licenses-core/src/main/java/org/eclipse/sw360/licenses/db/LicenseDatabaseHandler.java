@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
-import java.net.MalformedURLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -62,14 +61,17 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import com.google.common.collect.Lists;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.spdx.core.InvalidSPDXAnalysisException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * Class for accessing the CouchDB database
  *
  * @author cedric.bodet@tngtech.com
  */
+@Component
 public class LicenseDatabaseHandler {
 
     /**
@@ -80,16 +82,24 @@ public class LicenseDatabaseHandler {
     /**
      * License Repository
      */
-    private final LicenseRepository licenseRepository;
-    private final TodoRepository obligRepository;
-    private final ObligationElementRepository obligationElementRepository;
-    private final ObligationNodeRepository obligationNodeRepository;
-    private final LicenseTypeRepository licenseTypeRepository;
-    private final LicenseObligationListRepository obligationListRepository;
-    private final LicenseModerator moderator;
-    private final CustomPropertiesRepository customPropertiesRepository;
+    @Autowired
+    private LicenseRepository licenseRepository;
+    @Autowired
+    private TodoRepository obligRepository;
+    @Autowired
+    private ObligationElementRepository obligationElementRepository;
+    @Autowired
+    private ObligationNodeRepository obligationNodeRepository;
+    @Autowired
+    private LicenseTypeRepository licenseTypeRepository;
+    @Autowired
+    private CustomPropertiesRepository customPropertiesRepository;
+    @Autowired
+    private LicenseObligationListRepository obligationListRepository;
     private final DatabaseRepositoryCloudantClient[] repositories;
     private DatabaseHandlerUtil dbHandlerUtil;
+    @Autowired
+    private LicenseModerator moderator;
 
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
@@ -97,20 +107,16 @@ public class LicenseDatabaseHandler {
     private String obligationText;
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
-    public LicenseDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+    @Autowired
+    public LicenseDatabaseHandler(
+            Cloudant client,
+            @Qualifier("COUCH_DB_DATABASE") String dbName,
+            @Qualifier("COUCH_DB_CHANGELOGS") String changelogsDbName
+    ) {
         // Create the connector
         db = new DatabaseConnectorCloudant(client, dbName);
-        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, changelogsDbName);
         dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
-
-        // Create the repository
-        licenseRepository = new LicenseRepository(db);
-        obligRepository = new TodoRepository(db);
-        obligationElementRepository = new ObligationElementRepository(db);
-        obligationNodeRepository = new ObligationNodeRepository(db);
-        licenseTypeRepository = new LicenseTypeRepository(db);
-        customPropertiesRepository = new CustomPropertiesRepository(db);
-        obligationListRepository = new LicenseObligationListRepository(db);
 
         repositories = new DatabaseRepositoryCloudantClient[]{
                 licenseRepository,
@@ -121,8 +127,6 @@ public class LicenseDatabaseHandler {
                 obligationNodeRepository,
                 obligationListRepository
         };
-
-        moderator = new LicenseModerator();
     }
 
 

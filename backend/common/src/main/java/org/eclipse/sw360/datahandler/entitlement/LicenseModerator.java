@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,6 +36,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
  *
  * @author birgit.heydenreich@tngtech.com
  */
+@Component
 public class LicenseModerator extends Moderator<License._Fields, License> {
 
     private static final Logger log = LogManager.getLogger(LicenseModerator.class);
@@ -42,13 +44,9 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
     @Autowired
     protected AttachmentConnector attachmentConnector;
 
-
+    @Autowired
     public LicenseModerator(ThriftClients thriftClients) {
         super(thriftClients);
-    }
-
-    public LicenseModerator() {
-        super(new ThriftClients());
     }
 
     public RequestStatus updateLicense(License license, User user) {
