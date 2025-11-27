@@ -17,16 +17,23 @@ import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Component
 public class SpdxDocumentCreationInfoRepository extends SummaryAwareRepository<DocumentCreationInformation> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'documentCreationInformation') emit(null, doc._id) }";
 
-    public SpdxDocumentCreationInfoRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public SpdxDocumentCreationInfoRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_SPDX") DatabaseConnectorCloudant db
+    ) {
         super(DocumentCreationInformation.class, db, new DocumentCreationInformationSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

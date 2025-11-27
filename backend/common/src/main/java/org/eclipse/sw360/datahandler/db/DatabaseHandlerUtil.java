@@ -126,6 +126,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
@@ -135,7 +137,7 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
  *
  * Common class for database handlers to put the common/generic logic.
  */
-
+@org.springframework.stereotype.Component
 public class DatabaseHandlerUtil {
     private static final Logger log = LogManager.getLogger(DatabaseHandlerUtil.class);
     private static final Logger changelog = LogManager.getLogger("sw360changelog");
@@ -169,7 +171,10 @@ public class DatabaseHandlerUtil {
                 "sw360changelog/sw360changelog");
     }
 
-    public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
+    @Autowired
+    public DatabaseHandlerUtil(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_CHANGELOG") DatabaseConnectorCloudant db
+    ) {
             changeLogRepository = new ChangeLogsRepository(db);
     }
 

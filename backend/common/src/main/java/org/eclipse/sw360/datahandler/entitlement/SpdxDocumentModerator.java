@@ -30,7 +30,9 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXDocument> {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentModerator.class);
@@ -38,12 +40,9 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
     @Autowired
     protected AttachmentConnector attachmentConnector;
 
+    @Autowired
     public SpdxDocumentModerator(ThriftClients thriftClients) {
         super(thriftClients);
-    }
-
-    public SpdxDocumentModerator() {
-        super(new ThriftClients());
     }
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) {

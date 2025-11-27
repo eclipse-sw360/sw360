@@ -28,7 +28,9 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SpdxDocumentCreationInfoModerator
         extends Moderator<DocumentCreationInformation._Fields, DocumentCreationInformation> {
 
@@ -37,12 +39,9 @@ public class SpdxDocumentCreationInfoModerator
     @Autowired
     protected AttachmentConnector attachmentConnector;
 
+    @Autowired
     public SpdxDocumentCreationInfoModerator(ThriftClients thriftClients) {
         super(thriftClients);
-    }
-
-    public SpdxDocumentCreationInfoModerator() {
-        super(new ThriftClients());
     }
 
     public RequestStatus updateSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {

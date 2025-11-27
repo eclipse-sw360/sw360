@@ -10,11 +10,12 @@
 
 package org.eclipse.sw360.moderation;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 /**
  * Thrift Servlet instantiation
  *
@@ -22,11 +23,13 @@ import java.io.IOException;
  * @author Johannes.Najjar@tngtech.com
  * @author Andreas.Reichel@tngtech.com
  */
+@Component
 public class ModerationServlet extends Sw360ThriftServlet {
 
-    public ModerationServlet() throws IOException {
+    @Autowired
+    public ModerationServlet(ModerationHandler moderationHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new ModerationService.Processor<ModerationHandler>(new ModerationHandler()), new TCompactProtocol.Factory());
+        super(new ModerationService.Processor<>(moderationHandler), thriftProtocolFactory);
     }
 
 }

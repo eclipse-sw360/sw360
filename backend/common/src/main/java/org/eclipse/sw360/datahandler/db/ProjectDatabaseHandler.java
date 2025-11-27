@@ -167,7 +167,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Cloudant client,
             @Qualifier("COUCH_DB_DATABASE") String dbName,
             @Qualifier("COUCH_DB_CHANGELOGS") String changeLogsDbName,
-            @Qualifier("COUCH_DB_ATTACHMENTS") String attachmentDbName,
             AttachmentDatabaseHandler attachmentDatabaseHandler
     ) throws MalformedURLException {
         super(attachmentDatabaseHandler);
@@ -1912,7 +1911,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, this, componentDatabaseHandler);
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
                 return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent, user);
             }

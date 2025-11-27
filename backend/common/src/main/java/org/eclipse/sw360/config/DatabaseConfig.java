@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.springframework.beans.factory.annotation.Value;
@@ -200,5 +201,20 @@ public class DatabaseConfig {
     @Bean
     public ThriftClients thriftClients() {
         return new ThriftClients();
+    }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_DATABASE")
+    public DatabaseConnectorCloudant databaseConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbDatabase);
+    }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_SPDX")
+    public DatabaseConnectorCloudant spdxDbConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbSpdx);
+    }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_CHANGELOG")
+    public DatabaseConnectorCloudant changelogsDbConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbChangeLogs);
     }
 }

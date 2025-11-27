@@ -93,7 +93,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Sets.newHashSet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
-import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -139,7 +138,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     @Autowired
     private AttachmentConnector attachmentConnector;
     private SvmConnector svmConnector;
-    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
 
     /**
      * Access to moderation
@@ -199,9 +199,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         this.bulkDeleteUtil = new BulkDeleteUtil(this, componentRepository, releaseRepository, projectRepository, moderator, releaseModerator,
                 attachmentConnector, attachmentDatabaseHandler, dbHandlerUtil);
-
-        // Create the spdx document database handler
-        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, spdxDbName, changelogDbName);
     }
 
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {
@@ -2857,7 +2854,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
 
                 String fileType = getFileType(attachmentContent.getFilename());
@@ -2911,7 +2908,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
                 return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user);
             }

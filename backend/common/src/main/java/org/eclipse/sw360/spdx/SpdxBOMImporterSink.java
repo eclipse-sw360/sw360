@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.spdx;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -30,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.MalformedURLException;
 import java.util.*;
@@ -38,19 +38,19 @@ import java.util.stream.Collectors;
 public class SpdxBOMImporterSink {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporterSink.class);
 
-    private final ProjectDatabaseHandler projectDatabaseHandler;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
-    private final SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
-    private final SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
+    @Autowired
+    private ProjectDatabaseHandler projectDatabaseHandler;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
+    @Autowired
+    private SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
     private final User user;
 
-    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
-        this.projectDatabaseHandler = projectDatabaseHandler;
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+    public SpdxBOMImporterSink(User user) throws MalformedURLException {
         this.user = user;
     }
 
