@@ -217,4 +217,19 @@ public class DatabaseConfig {
     public DatabaseConnectorCloudant changelogsDbConnectorCloudant() {
         return new DatabaseConnectorCloudant(cloudantClient(), couchDbChangeLogs);
     }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_ATTACHMENTS")
+    public DatabaseConnectorCloudant attachmentsDbConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbAttachments);
+    }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_VM")
+    public DatabaseConnectorCloudant vmDbConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbVm);
+    }
+
+    @Bean(name="CLOUDANT_DB_CONNECTOR_USERS")
+    public DatabaseConnectorCloudant usersDbConnectorCloudant() {
+        return new DatabaseConnectorCloudant(cloudantClient(), couchDbUsers);
+    }
 }

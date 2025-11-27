@@ -48,29 +48,18 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  */
 @Component
 public class AttachmentDatabaseHandler {
-    private final AttachmentContentRepository attachmentContentRepository;
-    @Autowired
-    private AttachmentConnector attachmentConnector;
-    private final AttachmentUsageRepository attachmentUsageRepository;
-    private final AttachmentRepository attachmentRepository;
-    private final AttachmentOwnerRepository attachmentOwnerRepository;
-
-
     private static final Logger log = LogManager.getLogger(AttachmentDatabaseHandler.class);
 
     @Autowired
-    public AttachmentDatabaseHandler(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName,
-            @Qualifier("COUCH_DB_ATTACHMENTS") String attachmentDbName
-    ) throws MalformedURLException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-        DatabaseConnectorCloudant attachmentDb = new DatabaseConnectorCloudant(client, attachmentDbName);
-        attachmentContentRepository = new AttachmentContentRepository(attachmentDb);
-        attachmentUsageRepository = new AttachmentUsageRepository(db);
-        attachmentRepository = new AttachmentRepository(db);
-        attachmentOwnerRepository = new AttachmentOwnerRepository(db);
-    }
+    private AttachmentConnector attachmentConnector;
+    @Autowired
+    private AttachmentContentRepository attachmentContentRepository;
+    @Autowired
+    private AttachmentUsageRepository attachmentUsageRepository;
+    @Autowired
+    private AttachmentRepository attachmentRepository;
+    @Autowired
+    private AttachmentOwnerRepository attachmentOwnerRepository;
 
     public AttachmentConnector getAttachmentConnector(){
         return attachmentConnector;

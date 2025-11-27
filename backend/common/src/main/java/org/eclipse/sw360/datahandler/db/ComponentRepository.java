@@ -24,6 +24,8 @@ import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -38,6 +40,7 @@ import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorClou
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
+@org.springframework.stereotype.Component
 public class ComponentRepository extends SummaryAwareRepository<Component> {
     private static final String ALL = "function(doc) { if (doc.type == 'component') emit(null, doc._id) }";
     private static final String BY_CREATED_ON = "function(doc) { if(doc.type == 'component') { emit(doc.createdOn, doc._id) } }";
@@ -164,8 +167,12 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     private static final String COMPONENT_BY_ALL_IDX = "ComponentByAllIdx";
 
-    public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
-        super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
+    @Autowired
+    public ComponentRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
+            ComponentSummary componentSummary
+    ) {
+        super(Component.class, db, componentSummary);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byCreatedOn", createMapReduce(BY_CREATED_ON, null));

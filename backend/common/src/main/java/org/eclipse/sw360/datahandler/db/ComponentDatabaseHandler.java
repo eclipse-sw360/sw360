@@ -10,14 +10,12 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.google.common.collect.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -72,7 +70,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.spdx.core.InvalidSPDXAnalysisException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -126,13 +123,21 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     /**
      * Connection to the couchDB database
      */
-    private final ComponentRepository componentRepository;
-    private final ReleaseRepository releaseRepository;
-    private final VendorRepository vendorRepository;
-    private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
-    private final PackageRepository packageRepository;
+    @Autowired
+    private ComponentRepository componentRepository;
+    @Autowired
+    private ReleaseRepository releaseRepository;
+    @Autowired
+    private VendorRepository vendorRepository;
+    @Autowired
+    private ProjectRepository projectRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PackageRepository packageRepository;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
+    @Autowired
     private BulkDeleteUtil bulkDeleteUtil;
 
     @Autowired
@@ -176,29 +181,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     @Autowired
     public ComponentDatabaseHandler(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName,
-            @Qualifier("COUCH_DB_CHANGELOGS") String changelogDbName,
-            @Qualifier("COUCH_DB_ATTACHMENTS") String attachmentDbName,
-            @Qualifier("COUCH_DB_SPDX") String spdxDbName
+            AttachmentDatabaseHandler attachmentDatabaseHandler
     ) throws MalformedURLException {
-        super(client, dbName, attachmentDbName);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-
-        // Create the repositories
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
-        projectRepository = new ProjectRepository(db);
-        userRepository = new UserRepository(db);
-        packageRepository = new PackageRepository(db);
-
-        // Create the attachment connector
-        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, changelogDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-
-        this.bulkDeleteUtil = new BulkDeleteUtil(this, componentRepository, releaseRepository, projectRepository, moderator, releaseModerator,
-                attachmentConnector, attachmentDatabaseHandler, dbHandlerUtil);
+        super(attachmentDatabaseHandler);
     }
 
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {

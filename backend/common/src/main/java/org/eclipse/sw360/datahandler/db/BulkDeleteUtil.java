@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import com.ibm.cloud.cloudant.v1.model.Document;
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.google.common.collect.Lists;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +50,7 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_BULK_RELEA
 /**
  * Provides a utility for the bulk delete function
  */
+@org.springframework.stereotype.Component
 public class BulkDeleteUtil {
 
     private static final String CONFLICT_ERROR = "conflict";
@@ -57,18 +59,26 @@ public class BulkDeleteUtil {
 
     private static final int LOOP_MAX = 100000;
 
+    @Autowired
     private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
     private ComponentRepository componentRepository;
+    @Autowired
     private ReleaseRepository releaseRepository;
+    @Autowired
     private ProjectRepository projectRepository;
+    @Autowired
     private ComponentModerator componentModerator;
-    @SuppressWarnings("unused")
+    @Autowired
     private ReleaseModerator releaseModerator;
+    @Autowired
     private AttachmentConnector attachmentConnector;
+    @Autowired
     private AttachmentDatabaseHandler attachmentDatabaseHandler;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
 
-    private BulkDeleteUtilInspector inspector;
+    private BulkDeleteUtilInspector inspector = null;
 
     public interface BulkDeleteUtilInspector {
         void checkVariables(Map<String, Release> releaseMap, Map<String, Component> componentMap,Map<String, Boolean> externalLinkMap, Map<String, List<String>> referencingReleaseIdsMap);
@@ -77,29 +87,6 @@ public class BulkDeleteUtil {
         void checkUpdatedReferencingReleaseListInLoop(int loopCount, List<Release> updatedReferencingReleaseList);
         void checkUpdatedComponentListInLoop(int loopCount, List<Component> updatedComponentList);
         void checkDeletedReleaseListInLoop(int loopCount, List<Release> deletedReleaseList);
-    }
-
-    public BulkDeleteUtil(
-            ComponentDatabaseHandler componentDatabaseHandler,
-            ComponentRepository componentRepository,
-            ReleaseRepository releaseRepository,
-            ProjectRepository projectRepository,
-            ComponentModerator componentModerator,
-            ReleaseModerator releaseModerator,
-            AttachmentConnector attachmentConnector,
-            AttachmentDatabaseHandler attachmentDatabaseHandler,
-            DatabaseHandlerUtil dbHandlerUtil
-            ) {
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.componentRepository = componentRepository;
-        this.releaseRepository = releaseRepository;
-        this.projectRepository = projectRepository;
-        this.componentModerator = componentModerator;
-        this.releaseModerator = releaseModerator;
-        this.attachmentConnector = attachmentConnector;
-        this.attachmentDatabaseHandler = attachmentDatabaseHandler;
-        this.dbHandlerUtil = dbHandlerUtil;
-        this.inspector = null;
     }
 
     public BulkOperationNode deleteBulkRelease(String releaseId, User user, boolean isPreview) throws SW360Exception  {

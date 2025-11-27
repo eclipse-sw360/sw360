@@ -13,7 +13,6 @@ package org.eclipse.sw360.datahandler.db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.google.gson.JsonArray;
@@ -26,7 +25,6 @@ import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMExporter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
@@ -88,7 +86,6 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.nio.ByteBuffer;
 
@@ -122,17 +119,24 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private PackageDatabaseHandler packageDatabaseHandler;
     @Autowired
     private AttachmentConnector attachmentConnector;
-
+    @Autowired
     private ProjectRepository repository;
+    @Autowired
     private ProjectVulnerabilityRatingRepository pvrRepository;
+    @Autowired
     private ObligationListRepository obligationRepository;
+    @Autowired
     private PackageRepository packageRepository;
+    @Autowired
     private RelationsUsageRepository relUsageRepository;
+    @Autowired
     private ReleaseRepository releaseRepository;
+    @Autowired
     private VendorRepository vendorRepository;
+    @Autowired
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     private static final Pattern PLAUSIBLE_GID_REGEXP = Pattern.compile("^[zZ].{7}$");
-    private DatabaseHandlerUtil dbHandlerUtil;
     private final MailUtil mailUtil = new MailUtil();
     private static final ObjectMapper mapper = new ObjectMapper();
     // this caching structure is only used for filling clearing state summaries and
@@ -164,25 +168,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     @Autowired
     public ProjectDatabaseHandler(
-            Cloudant client,
-            @Qualifier("COUCH_DB_DATABASE") String dbName,
-            @Qualifier("COUCH_DB_CHANGELOGS") String changeLogsDbName,
             AttachmentDatabaseHandler attachmentDatabaseHandler
     ) throws MalformedURLException {
         super(attachmentDatabaseHandler);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-
-        // Create the repositories
-        repository = new ProjectRepository(db);
-        pvrRepository = new ProjectVulnerabilityRatingRepository(db);
-        obligationRepository = new ObligationListRepository(db);
-        relUsageRepository = new RelationsUsageRepository(db);
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        packageRepository = new PackageRepository(db);
-
-        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, changeLogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
     }
 
     /////////////////////

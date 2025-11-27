@@ -16,12 +16,16 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Component
 public class AttachmentOwnerRepository extends DatabaseRepositoryCloudantClient<Source> {
     private static final String ATTACHMENTOWNER_VIEW_NAME = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { "
             + "for(var i in doc.attachments) { " + "var source;"
@@ -30,7 +34,10 @@ public class AttachmentOwnerRepository extends DatabaseRepositoryCloudantClient<
             + "if (doc.type == 'release') {source = {releaseId: doc._id}}"
             + "emit(doc.attachments[i].attachmentContentId, source); } } }";
 
-    public AttachmentOwnerRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public AttachmentOwnerRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, Source.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("attachmentOwner", createMapReduce(ATTACHMENTOWNER_VIEW_NAME, null));

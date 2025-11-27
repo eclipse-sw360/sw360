@@ -27,13 +27,16 @@ import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the Package class
  *
  * @author abdul.kapti@siemens-healthineers.com
  */
-
+@Component
 public class PackageRepository extends DatabaseRepositoryCloudantClient<Package> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'package') emit(null, doc._id) }";
@@ -49,7 +52,10 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
     private static final String BY_PURL_LOWERCASE = "function(doc) { if (doc.type == 'package') { emit(doc.purl.toLowerCase().trim(), doc._id) } }";
     private static final String BY_VERSION = "function(doc) { if (doc.type == 'package') { emit(doc.version.trim(), doc._id) } }";
 
-    public PackageRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public PackageRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, Package.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
