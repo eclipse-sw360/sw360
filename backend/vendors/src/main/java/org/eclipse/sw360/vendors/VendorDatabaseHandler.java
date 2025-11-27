@@ -14,7 +14,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
@@ -35,31 +34,23 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.exporter.VendorExporter;
 
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.ImmutableSet;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareVendor;
 
+@org.springframework.stereotype.Component
 public class VendorDatabaseHandler {
     private static final Logger log = LogManager.getLogger(VendorDatabaseHandler.class);
-    private final VendorRepository repository;
-
-    public VendorDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-        repository = new VendorRepository(db);
-    }
-
-    public VendorDatabaseHandler(DatabaseConnectorCloudant db) throws MalformedURLException {
-        repository = new VendorRepository(db);
-    }
+    @Autowired
+    private VendorRepository repository;
 
     public Vendor getByID(String id) throws TException {
         return repository.get(id);
@@ -152,7 +143,7 @@ public class VendorDatabaseHandler {
     public RequestStatus mergeVendors(String mergeTargetId, String mergeSourceId, Vendor mergeSelection, User user) throws TException {
         Vendor mergeTarget = getByID(mergeTargetId);
         Vendor mergeSource = getByID(mergeSourceId);
-       
+
         if (!makePermission(mergeTarget, user).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, user).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, user).isActionAllowed(RequestedAction.DELETE)) {
@@ -173,18 +164,18 @@ public class VendorDatabaseHandler {
             if(status != RequestStatus.SUCCESS) {
                 return status;
             }
-           
+
             // now update the vendor in relating documents
             summary = updateComponents(mergeTarget, mergeSource, user);
             if(summary.getRequestStatus() != RequestStatus.SUCCESS) {
-                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements()) 
+                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements())
                     + "] of [" + summary.getTotalElements() + "] components: " + summary.getMessage());
                 return summary.getRequestStatus();
             }
 
             summary = updateReleases(mergeTarget, mergeSource, user);
             if(summary.getRequestStatus() != RequestStatus.SUCCESS) {
-                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements()) 
+                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements())
                     + "] of [" + summary.getTotalElements() + "] releases: " + summary.getMessage());
                 return summary.getRequestStatus();
             }
@@ -213,7 +204,7 @@ public class VendorDatabaseHandler {
         components.stream().forEach(component -> {
             component.setDefaultVendorId(mergeTarget.getId());
         });
-        
+
         return componentsClient.updateComponents(components, user);
     }
 
