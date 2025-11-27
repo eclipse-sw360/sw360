@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.spdxdocument;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.spdx.document.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -18,20 +17,19 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
+@Component
 public class SPDXDocumentHandler implements SPDXDocumentService.Iface {
 
+    @Autowired
     SpdxDocumentDatabaseHandler handler;
-
-    SPDXDocumentHandler() throws MalformedURLException {
-        handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-    }
 
     @Override
     public List<SPDXDocument> getSPDXDocumentSummary(User user) throws TException {
