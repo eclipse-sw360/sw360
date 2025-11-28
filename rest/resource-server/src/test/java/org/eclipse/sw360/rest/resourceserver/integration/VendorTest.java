@@ -167,7 +167,7 @@ public class VendorTest extends TestIntegrationBase {
         pageData.setDisplayStart(0);
         pageData.setSortColumnNumber(0);
         Map<PaginationData, List<Vendor>> paginatedVendors = Map.of(pageData, Collections.singletonList(testVendor));
-        given(this.vendorServiceMock.searchVendors("Google", any())).willReturn(paginatedVendors);
+        given(this.vendorServiceMock.searchVendors(eq("Google"), any())).willReturn(paginatedVendors);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
