@@ -10,18 +10,17 @@
 package org.eclipse.sw360.attachments;
 
 import com.google.common.collect.ImmutableSet;
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -37,17 +36,11 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
+@Component
 public class AttachmentHandler implements AttachmentService.Iface {
 
-    private final AttachmentDatabaseHandler handler;
-
-    public AttachmentHandler() throws MalformedURLException {
-        handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-    }
-
-    public AttachmentHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        handler = new AttachmentDatabaseHandler(client, dbName, attachmentDbName);
-    }
+    @Autowired
+    private AttachmentDatabaseHandler handler;
 
     @Override
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
@@ -206,7 +199,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
 
         List<AttachmentUsage> usagesWithNonEmptyType = attachmentUsages.stream()
                 .filter(AttachmentUsage::isSetUsageData)
-                .collect(Collectors.toList());
+                .toList();
         boolean hasEmptyUsageDataType = usagesWithNonEmptyType.size() != attachmentUsages.size();
         Set<UsageData._Fields> typesToReplace = usagesWithNonEmptyType.stream()
                 .map(usage -> usage.getUsageData().getSetField())

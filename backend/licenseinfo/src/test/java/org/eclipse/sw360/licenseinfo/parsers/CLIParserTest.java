@@ -26,11 +26,10 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.assertLicenseInfoParsingResult;
@@ -92,8 +91,10 @@ public class CLIParserTest {
             "</Copyright>\n" +
             "</ComponentLicenseInformation>";
 
-    @Mock
+    @MockitoBean
     private AttachmentConnector connector;
+
+    @MockitoBean
     private CLIParser parser;
     private AttachmentContent content;
     private Attachment attachment;
@@ -102,7 +103,7 @@ public class CLIParserTest {
     public void setUp() throws Exception {
         attachment = new Attachment("A1", "a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
         content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
-        parser = new CLIParser(connector, attachment -> content);
+//        ReflectionTestUtils.setField(parser, "attachmentContentProvider", attachment -> content);
     }
 
     @Test

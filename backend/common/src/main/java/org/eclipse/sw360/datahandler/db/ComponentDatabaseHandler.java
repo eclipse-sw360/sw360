@@ -10,17 +10,13 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.google.common.collect.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
@@ -65,13 +61,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
-import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import org.spdx.core.InvalidSPDXAnalysisException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -81,7 +77,6 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -92,7 +87,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Sets.newHashSet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
-import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -109,6 +103,7 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareRelease
  * @author alex.borodin@evosoft.com
  * @author thomas.maier@evosoft.com
  */
+@org.springframework.stereotype.Component
 public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(ComponentDatabaseHandler.class);
@@ -125,24 +120,40 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     /**
      * Connection to the couchDB database
      */
-    private final ComponentRepository componentRepository;
-    private final ReleaseRepository releaseRepository;
-    private final VendorRepository vendorRepository;
-    private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
-    private final PackageRepository packageRepository;
+    @Autowired
+    private ComponentRepository componentRepository;
+    @Autowired
+    private ReleaseRepository releaseRepository;
+    @Autowired
+    private VendorRepository vendorRepository;
+    @Autowired
+    private ProjectRepository projectRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PackageRepository packageRepository;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
+    @Autowired
     private BulkDeleteUtil bulkDeleteUtil;
 
-    private final AttachmentConnector attachmentConnector;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
     private SvmConnector svmConnector;
-    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    @Autowired
+    SpdxBOMImporter spdxBOMImporter;
+
     /**
      * Access to moderation
      */
-    private final ComponentModerator moderator;
-    private final ReleaseModerator releaseModerator;
-    private final ProjectModerator projectModerator;
+    @Autowired
+    private ComponentModerator moderator;
+    @Autowired
+    private ReleaseModerator releaseModerator;
+    @Autowired
+    private ProjectModerator projectModerator;
 
     public static final List<EccInformation._Fields> ECC_FIELDS = Arrays.asList(EccInformation._Fields.ECC_STATUS, EccInformation._Fields.AL, EccInformation._Fields.ECCN, EccInformation._Fields.MATERIAL_INDEX_NUMBER, EccInformation._Fields.ECC_COMMENT);
 
@@ -167,54 +178,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID, ClearingInformation._Fields.EVALUATED,
                     ClearingInformation._Fields.PROC_START);
 
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
-        super(client, dbName, attachmentDbName);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+    @Autowired
+    private AttachmentStreamConnector attachmentStreamConnector;
 
-        // Create the repositories
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
-        projectRepository = new ProjectRepository(db);
-        userRepository = new UserRepository(db);
-        packageRepository = new PackageRepository(db);
-
-        // Create the moderator
-        this.moderator = moderator;
-        this.releaseModerator = releaseModerator;
-        this.projectModerator = projectModerator;
-
-        // Create the attachment connector
-        attachmentConnector = new AttachmentConnector(client, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
-        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-
-        this.bulkDeleteUtil = new BulkDeleteUtil(this, componentRepository, releaseRepository, projectRepository, moderator, releaseModerator,
-                attachmentConnector, attachmentDatabaseHandler, dbHandlerUtil);
-
-        // Create the spdx document database handler
-        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
-    }
-
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, moderator, releaseModerator, projectModerator);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changeLogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
-    }
-
-
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
-    }
-
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String changelogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changelogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
-    }
-
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ThriftClients thriftClients) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ComponentModerator(thriftClients), new ReleaseModerator(thriftClients), new ProjectModerator(thriftClients));
+    @Autowired
+    public ComponentDatabaseHandler(
+            AttachmentDatabaseHandler attachmentDatabaseHandler
+    ) throws MalformedURLException {
+        super(attachmentDatabaseHandler);
     }
 
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {
@@ -363,11 +334,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public void addSelectLogs(Component component, User user) {
 
-        DatabaseHandlerUtil.addSelectLogs(component, user.getEmail(), attachmentConnector);
+        dbHandlerUtil.addSelectLogs(component, user.getEmail(), attachmentConnector);
     }
     public void addSelectLogs(Release release, User user) {
 
-        DatabaseHandlerUtil.addSelectLogs(release, user.getEmail(), attachmentConnector);
+        dbHandlerUtil.addSelectLogs(release, user.getEmail(), attachmentConnector);
     }
 
     public Component getComponent(String id, User user) throws SW360Exception {
@@ -754,7 +725,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<ChangeLogs> referenceDocLogList = new LinkedList<>();
             Set<Attachment> attachmentsAfter = component.getAttachments();
             Set<Attachment> attachmentsBefore = actual.getAttachments();
-            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
+            dbHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                     referenceDocLogList, user.getEmail(), component.getId(), Operation.COMPONENT_UPDATE,
                     attachmentConnector, false);
 
@@ -845,7 +816,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                                           String userEdited) {
         String name = component.getName();
         for (Release release : releaseRepository.getReleasesFromComponentId(component.getId())) {
-            ChangeLogs changeLog = DatabaseHandlerUtil.initChangeLogsObj(release, userEdited, component.getId(),
+            ChangeLogs changeLog = dbHandlerUtil.initChangeLogsObj(release, userEdited, component.getId(),
                     Operation.UPDATE, Operation.COMPONENT_UPDATE);
             Set<ChangedFields> changes = new HashSet<ChangedFields>();
             ChangedFields nameFields = new ChangedFields();
@@ -1200,7 +1171,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 List<ChangeLogs> referenceDocLogList = new LinkedList<>();
                 Set<Attachment> attachmentsAfter = release.getAttachments();
                 Set<Attachment> attachmentsBefore = actual.getAttachments();
-                DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
+                dbHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                         referenceDocLogList, user.getEmail(), release.getId(), Operation.RELEASE_UPDATE,
                         attachmentConnector, false);
 
@@ -2866,12 +2837,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
-                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                spdxBOMImporter.setUser(user);
 
                 String fileType = getFileType(attachmentContent.getFilename());
                 final String ext = "." + fileType;
@@ -2920,12 +2888,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
-                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                spdxBOMImporter.setUser(user);
                 return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user);
             }
         } catch (IOException e) {

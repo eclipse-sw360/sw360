@@ -33,7 +33,7 @@ public class LicenseInfoParserTest {
 
     @Test
     public void testIsApplicableTo() throws Exception {
-        LicenseInfoParser parser = new LicenseInfoParser(null, null) {
+        LicenseInfoParser parser = new LicenseInfoParser() {
             @Override
             public List<String> getApplicableFileExtensions() {
                 return Arrays.asList(".ext1", ".ext2");

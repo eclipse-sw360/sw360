@@ -4,14 +4,15 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.handler;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
@@ -29,7 +30,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,15 +43,21 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.eclipse.sw360.datahandler.TestUtils.assumeCanConnectTo;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
 /**
  * @author stefan.jaeger@evosoft.com
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class SVMSyncHandlerTest extends AbstractJSONMockTest {
 
     private final String URL_ACTIONS = "http://localhost:8090/portal/api/v1/public/actions";
@@ -57,36 +69,31 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     private SVMSyncHandler<Vulnerability> svmVulHandler = null;
     private SVMSyncHandler<Release> releaseHandler = null;
 
+    @Autowired
     private VMDatabaseHandler handler;
+    @Autowired
     private ComponentDatabaseHandler compDBHandler;
+    @Autowired
     private VendorRepository vendorRepository;
     private User user;
 
-    private static final String dbNameVM = DatabaseSettingsTest.COUCH_DB_VM;
-    private static final String dbNameComp = DatabaseSettingsTest.COUCH_DB_DATABASE;
-    private static final String dbNameAtt = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @Before
     public void setUp() throws TException, IOException {
-        assertTestString(dbNameVM);
-        assertTestString(dbNameComp);
-        assertTestString(dbNameAtt);
         assumeCanConnectTo(URL_ACTIONS);
 
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbNameVM);
-
-
-        svmActionHandler = new SVMSyncHandler<VMAction>(VMAction.class);
-        svmComponentHandler = new SVMSyncHandler<VMComponent>(VMComponent.class);
-        svmPriorityHandler = new SVMSyncHandler<VMPriority>(VMPriority.class);
-        svmVulHandler = new SVMSyncHandler<Vulnerability>(Vulnerability.class);
-        releaseHandler = new SVMSyncHandler<Release>(Release.class);
+        svmActionHandler = new SVMSyncHandler<>(VMAction.class);
+        svmComponentHandler = new SVMSyncHandler<>(VMComponent.class);
+        svmPriorityHandler = new SVMSyncHandler<>(VMPriority.class);
+        svmVulHandler = new SVMSyncHandler<>(Vulnerability.class);
+        releaseHandler = new SVMSyncHandler<>(Release.class);
         user = new User().setEmail("me");
-        // Prepare the handler
-        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
-        compDBHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbNameComp, dbNameAtt);
-        vendorRepository = new VendorRepository(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbNameComp));
 
         // mock preparation
         staticJSONResponse("/portal/api/v1/public/actions", "[1,2,3,4,5,6,7,8,9]");
@@ -94,16 +101,12 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbNameVM);
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbNameComp);
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbNameAtt);
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
 //    @Test
     public void create5000Matches() throws SW360Exception, MalformedURLException {
-        VMDatabaseHandler handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
-        ComponentDatabaseHandler compDBHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbNameComp, dbNameAtt);
         VMComponent component = new VMComponent(SW360Utils.getCreatedOnTime(), "droelf");
         component.setName("droelf");
         component.setVendor("droelf");

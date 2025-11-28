@@ -40,6 +40,9 @@ import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorClou
 import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the Release class
@@ -48,6 +51,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Johannes.Najjar@tngtech.com
  * @author stefan.jaeger@evosoft.com
  */
+@Component
 public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'release') emit(null, doc._id) }";
@@ -178,8 +182,12 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     private static final String RELEASE_BY_ALL_IDX = "ReleaseByAllIdx";
     private static final String RELEASE_BY_ATTACHMENT_TYPE_IDX = "ReleaseByAttachmentTypeIdx";
 
-    public ReleaseRepository(DatabaseConnectorCloudant db, VendorRepository vendorRepository) {
-        super(Release.class, db, new ReleaseSummary(vendorRepository));
+    @Autowired
+    public ReleaseRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
+            ReleaseSummary releaseSummary
+    ) {
+        super(Release.class, db, releaseSummary);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byname", createMapReduce(BY_NAME, null));

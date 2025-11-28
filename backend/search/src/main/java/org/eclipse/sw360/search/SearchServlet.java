@@ -9,11 +9,11 @@
  */
 package org.eclipse.sw360.search;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.search.SearchService;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-
-import java.io.IOException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Thrift Servlet instantiation
@@ -22,10 +22,12 @@ import java.io.IOException;
  * @author johannes.najjar@tngtech.com
  * @author Andreas.Reichel@tngtech.com
  */
+@Component
 public class SearchServlet extends Sw360ThriftServlet {
 
-    public SearchServlet() throws IOException {
+    @Autowired
+    public SearchServlet(SearchHandler searchHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new SearchService.Processor<SearchHandler>(new SearchHandler()), new TCompactProtocol.Factory());
+        super(new SearchService.Processor<>(searchHandler), thriftProtocolFactory);
     }
 }

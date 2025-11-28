@@ -10,33 +10,25 @@
  */
 package org.eclipse.sw360.spdxdocumentcreationinfo;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
-
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
 import java.util.List;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
+@Component
 public class DocumentCreationInformationHandler implements DocumentCreationInformationService.Iface {
 
+    @Autowired
     SpdxDocumentCreationInfoDatabaseHandler handler;
-
-    DocumentCreationInformationHandler() throws MalformedURLException {
-        handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-    }
-
-    DocumentCreationInformationHandler(Cloudant client, String dbName) throws MalformedURLException {
-        handler = new SpdxDocumentCreationInfoDatabaseHandler(client, dbName);
-    }
 
     @Override
     public List<DocumentCreationInformation> getDocumentCreationInformationSummary(User user) throws TException {

@@ -50,6 +50,7 @@ import org.spdx.tools.SpdxToolsHelper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,12 +65,14 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrW
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 
+@org.springframework.stereotype.Component
 public class SpdxBOMImporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporter.class);
-    private final SpdxBOMImporterSink sink;
+    @Autowired
+    private SpdxBOMImporterSink sink;
 
-    public SpdxBOMImporter(SpdxBOMImporterSink sink) {
-        this.sink = sink;
+    public void setUser(User user) {
+        sink.setUser(user);
     }
 
     public ImportBomRequestPreparation prepareImportSpdxBOMAsRelease(File targetFile) throws InvalidSPDXAnalysisException {

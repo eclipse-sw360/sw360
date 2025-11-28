@@ -10,13 +10,10 @@
 package org.eclipse.sw360.changelogs;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 
-import java.io.IOException;
 import java.util.List;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ChangeLogsDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
@@ -24,24 +21,19 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Implementation of the Thrift service
  *
  * @author jaideep.palit@siemens.com
  */
+@Component
 public class ChangeLogsHandler implements ChangeLogsService.Iface {
 
-    private final ChangeLogsDatabaseHandler handler;
-
-    ChangeLogsHandler() throws IOException {
-        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-    }
-
-    ChangeLogsHandler(Cloudant client, String dbName) throws IOException {
-        handler = new ChangeLogsDatabaseHandler(client, dbName);
-    }
+    @Autowired
+    private ChangeLogsDatabaseHandler handler;
 
     @Override
     public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) throws SW360Exception {

@@ -12,13 +12,11 @@ package org.eclipse.sw360.datahandler.db;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
-import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -40,10 +38,6 @@ public abstract class AttachmentAwareDatabaseHandler {
 
     protected AttachmentAwareDatabaseHandler(AttachmentDatabaseHandler attachmentDatabaseHandler) {
         this.attachmentDatabaseHandler = attachmentDatabaseHandler;
-    }
-
-    protected AttachmentAwareDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
     }
 
     protected Source toSource(Release release){
@@ -104,7 +98,7 @@ public abstract class AttachmentAwareDatabaseHandler {
         } else if (type instanceof Package) {
             Package pkg = (Package) type;
             pkg.setModifiedBy(userEmail);
-            pkg.setModifiedOn(SW360Utils.getCreatedOn());            
+            pkg.setModifiedOn(SW360Utils.getCreatedOn());
         }
     }
 }

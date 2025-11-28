@@ -9,10 +9,10 @@
  */
 package org.eclipse.sw360.projects;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.apache.thrift.protocol.TCompactProtocol;
-
-import java.io.IOException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Thrift Servlet instantiation
@@ -20,11 +20,13 @@ import java.io.IOException;
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
+@Component
 public class ProjectServlet extends Sw360ThriftServlet {
 
-    public ProjectServlet() throws IOException {
+    @Autowired
+    public ProjectServlet(ProjectHandler projectHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new ProjectService.Processor<>(new ProjectHandler()), new TCompactProtocol.Factory());
+        super(new ProjectService.Processor<>(projectHandler), thriftProtocolFactory);
     }
 
 }

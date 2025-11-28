@@ -11,6 +11,8 @@ package org.eclipse.sw360.datahandler.couchdb;
 
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -23,13 +25,19 @@ import java.net.URLConnection;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Component
 public class AttachmentContentDownloader {
+    @Autowired
+    private Duration timeout;
+
+    public void setTimeout(Duration timeout) {
+        this.timeout = timeout;
+    }
+
     /**
      * download an incomplete AttachmentContent from its URL
-     *
-     * @todo setup DI and move timeout to a member
      */
-    public InputStream download(AttachmentContent attachmentContent, Duration timeout) throws IOException, URISyntaxException {
+    public InputStream download(AttachmentContent attachmentContent) throws IOException, URISyntaxException {
         int millisTimeout = ((Number) timeout.toMillis()).intValue();
 
         URL remoteURL = new URI(attachmentContent.getRemoteUrl()).toURL();

@@ -10,15 +10,11 @@
  */
 package org.eclipse.sw360.datahandler.db.spdx.document;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
-
 import org.apache.logging.log4j.core.util.UuidUtil;
 import org.apache.thrift.TException;
 import org.cyclonedx.parsers.JsonParser;
 import org.cyclonedx.parsers.XmlParser;
 import org.cyclonedx.model.Bom;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
@@ -48,13 +44,14 @@ import org.apache.logging.log4j.LogManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.google.common.collect.Lists;
 import org.spdx.library.model.v2.SpdxDocument;
 import org.spdx.tools.SpdxToolsHelper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
@@ -66,43 +63,25 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTEN
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSPDXDocument;
 
+@Component
 public class SpdxDocumentDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentDatabaseHandler.class);
 
-    /**
-     * Connection to the couchDB database
-     */
-    private final DatabaseConnectorCloudant db;
-    private final DatabaseConnectorCloudant sw360db;
-    private final DatabaseConnectorCloudant dbChangeLogs;
-
-    private final SpdxDocumentRepository SPDXDocumentRepository;
-    private final ReleaseRepository releaseRepository;
-    private final VendorRepository vendorRepository;
+    @Autowired
+    private SpdxDocumentRepository SPDXDocumentRepository;
+    @Autowired
+    private VendorRepository vendorRepository;
+    @Autowired
+    private ReleaseRepository releaseRepository;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
-    private final SpdxDocumentModerator moderator;
-
-    private final SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
-    private final SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
-
-    public SpdxDocumentDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(client, dbName);
-
-        // Create the repositories
-        SPDXDocumentRepository = new SpdxDocumentRepository(db);
-
-        sw360db = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_DATABASE);
-        vendorRepository = new VendorRepository(sw360db);
-        releaseRepository = new ReleaseRepository(sw360db, vendorRepository);
-        // Create the moderator
-        moderator = new SpdxDocumentModerator();
-        // Create the changelogs
-        dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(client, dbName);
-        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(client, dbName);
-    }
+    @Autowired
+    private SpdxDocumentModerator moderator;
+    @Autowired
+    private SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
+    @Autowired
+    private SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
 
     public List<SPDXDocument> getSPDXDocumentSummary(User user) {
         List<SPDXDocument> spdxs = SPDXDocumentRepository.getSPDXDocumentSummary();

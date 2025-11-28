@@ -25,11 +25,14 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import java.util.Set;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * CRUD access for the Vendor class
  *
  */
+@org.springframework.stereotype.Component
 public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
     private static final String BY_LOWERCASE_VENDOR_SHORTNAME_VIEW =
@@ -48,7 +51,10 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
 
-    public VendorRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public VendorRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, Vendor.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
@@ -84,7 +90,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
             project.unsetVendorId();
         }
     }
-    
+
     public void fillVendor(Release release) {
         fillVendor(release, null);
     }

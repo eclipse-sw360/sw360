@@ -10,7 +10,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -34,7 +33,6 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Supplier;
@@ -55,23 +53,16 @@ public class SVMSyncHandler<T extends TBase> {
     private static final ImmutableSet<VMMatchState> MATCH_STATES_WORTH_SAVING = ImmutableSet.of(VMMatchState.ACCEPTED, VMMatchState.DECLINED, VMMatchState.MATCHING_LEVEL_3);
     private static final ImmutableSet<VMMatchType> MATCH_TYPES_NAME_VERSION_VENDOR = ImmutableSet.of(VMMatchType.NAME_CR, VMMatchType.VERSION_CR, VMMatchType.VENDOR_CR);
 
-    private final VMDatabaseHandler dbHandler;
+    // TODO: Figure out how to pass this bean
+    private VMDatabaseHandler dbHandler;
     private ComponentDatabaseHandler compDB = null;
     private final Class<T> type;
     private final String uuid = UUID.randomUUID().toString();
 
-    public  SVMSyncHandler(Class<T> type) throws MalformedURLException, SW360Exception {
-        this(type, null);
-    }
-
-    private SVMSyncHandler(Class<T> type, VMDatabaseHandler dbHandler) throws MalformedURLException, SW360Exception {
+    public SVMSyncHandler(Class<T> type) throws SW360Exception {
         assertNotNull(type);
         this.type = type;
-        if (dbHandler == null) {
-            this.dbHandler = new VMDatabaseHandler();
-        } else {
-            this.dbHandler = dbHandler;
-        }
+//        this.dbHandler = dbHandler;
     }
 
     public String getUuid() {
@@ -374,17 +365,6 @@ public class SVMSyncHandler<T extends TBase> {
         }
     }
 
-    private void initComponentDatabaseHandler() {
-        if (compDB == null) {
-            try {
-                compDB = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-            } catch (MalformedURLException e) {
-                String message = "Failed to initialize " + ComponentDatabaseHandler.class.getSimpleName();
-                log.error(message, e);
-            }
-        }
-    }
-
     public VMResult<VMComponent> findMatchByComponent(String componentId){
         if (!VMComponent.class.isAssignableFrom(type)){
             return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.FAILURE, 0, 0, "no match possible for type " + this.type.getSimpleName()));
@@ -393,11 +373,6 @@ public class SVMSyncHandler<T extends TBase> {
         HashMap<String, VMMatch> knownMatches = new HashMap<>();
         if (component == null) {
             return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 0, 0, null), (VMComponent)null);
-        }
-        try {
-            initComponentDatabaseHandler();
-        } catch (RuntimeException e) {
-            return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.FAILURE, 0, 0, e.getMessage()));
         }
 
         // match by CPE
@@ -459,11 +434,6 @@ public class SVMSyncHandler<T extends TBase> {
             return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.FAILURE, 0, 0, "no match possible for type " + this.type.getSimpleName()));
         }
         if (!StringUtils.isEmpty(releaseId)) {
-            try {
-                initComponentDatabaseHandler();
-            } catch (RuntimeException e) {
-                return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.FAILURE, 0, 0, e.getMessage()));
-            }
             Release release;
             try {
                 release = compDB.getRelease(releaseId, null);

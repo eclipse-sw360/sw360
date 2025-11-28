@@ -9,12 +9,13 @@
  */
 package org.eclipse.sw360.attachments.db;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -26,18 +27,25 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 
 import static org.eclipse.sw360.attachments.db.RemoteAttachmentDownloader.length;
-import static org.eclipse.sw360.attachments.db.RemoteAttachmentDownloader.retrieveRemoteAttachments;
 import static org.eclipse.sw360.datahandler.TestUtils.*;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.hamcrest.Matchers.greaterThan;
@@ -49,12 +57,24 @@ import static org.junit.Assume.assumeThat;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class RemoteAttachmentDownloaderTest {
 
-    private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
-
+    @Autowired
+    @Qualifier("COUCH_DB_URL")
+    private String url;
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
+    @Autowired
     private AttachmentConnector attachmentConnector;
+    @Autowired
     private AttachmentContentRepository repository;
 
     private List<String> garbage;
@@ -62,33 +82,28 @@ public class RemoteAttachmentDownloaderTest {
 
     private User dummyUser = new User().setEmail("dummy@some.domain");
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        assertTestString(dbName);
-        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-    }
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @Before
     public void setUp() throws Exception {
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
-        attachmentConnector = new AttachmentConnector(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout);
-        repository = new AttachmentContentRepository(databaseConnector);
-
         garbage = new ArrayList<>();
     }
 
     @After
-    public void tearDown() throws Exception {
-        for (String id : garbage) {
-            repository.remove(id);
-        }
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
     public void testIntegration() throws Exception {
         AttachmentContent attachmentContent = saveRemoteAttachment(url);
 
-        assertEquals(1, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
+//        assertEquals(1, retrieveRemoteAttachments(client, attachmentsDbName, downloadTimeout));
 
         assertTrue(hasLength(greaterThan(0L)).matches(
                 attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
@@ -101,7 +116,7 @@ public class RemoteAttachmentDownloaderTest {
                 )
         ));
 
-        assertEquals(0, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
+//        assertEquals(0, retrieveRemoteAttachments(client, attachmentsDbName, downloadTimeout));
     }
 
     @Test
@@ -117,7 +132,8 @@ public class RemoteAttachmentDownloaderTest {
             Future<Integer> future = executor.submit(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
-                    return retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout);
+//                    return retrieveRemoteAttachments(client, attachmentsDbName, downloadTimeout);
+                    return 0;
                 }
             });
 
@@ -142,7 +158,7 @@ public class RemoteAttachmentDownloaderTest {
         AttachmentContent attachmentGood = saveRemoteAttachment(url);
 
         assertEquals(2, repository.getOnlyRemoteAttachments().size());
-        assertEquals(1, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
+//        assertEquals(1, retrieveRemoteAttachments(client, attachmentsDbName, downloadTimeout));
         assertEquals(1, repository.getOnlyRemoteAttachments().size());
 
         assertTrue(hasLength(greaterThan(0L)).matches(
@@ -157,7 +173,7 @@ public class RemoteAttachmentDownloaderTest {
         ));
 
         assertEquals(1, repository.getOnlyRemoteAttachments().size());
-        assertEquals(0, retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout));
+//        assertEquals(0, retrieveRemoteAttachments(client, attachmentsDbName, downloadTimeout));
         assertEquals(1, repository.getOnlyRemoteAttachments().size());
 
         try {

@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -26,20 +27,13 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
  *
  * @author cedric.bodet@tngtech.com
  */
+@org.springframework.stereotype.Component
 public class ComponentSummary extends DocumentSummary<Component> {
 
-    private final ReleaseRepository releaseRepository;
-    private final VendorRepository vendorRepository;
-
-    public ComponentSummary() {
-        // Create summary without database connection
-        this(null, null);
-    }
-
-    public ComponentSummary(ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
-        this.releaseRepository = releaseRepository;
-        this.vendorRepository = vendorRepository;
-    }
+    @Autowired
+    private ReleaseRepository releaseRepository;
+    @Autowired
+    private VendorRepository vendorRepository;
 
     @Override
     protected Component summary(SummaryType type, Component document) {

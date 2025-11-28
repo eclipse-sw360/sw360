@@ -28,6 +28,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
  * @author Johannes.Najjar@tngtech.com
  * @author thomas.maier@evosoft.com
  */
-
+@Component
 public class UserRepository extends SummaryAwareRepository<User> {
     private static final String ALL = "function(doc) { if (doc.type == 'user') emit(null, doc._id) }";
     private static final String BYEXTERNALID = "function(doc) { if (doc.type == 'user' && doc.externalid) emit(doc.externalid.toLowerCase(), doc._id) }";
@@ -123,7 +125,9 @@ public class UserRepository extends SummaryAwareRepository<User> {
     private static final String USER_BY_SECONDARY_DEPT_IDX = "UserBySecondaryDeptIdx";
     private static final String USER_BY_ALL_IDX = "UserByAllIdx";
 
-    public UserRepository(DatabaseConnectorCloudant databaseConnector) {
+    public UserRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_USERS") DatabaseConnectorCloudant databaseConnector
+    ) {
         super(User.class, databaseConnector, new UserSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

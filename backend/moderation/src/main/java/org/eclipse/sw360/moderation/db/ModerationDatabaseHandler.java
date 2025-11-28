@@ -10,14 +10,11 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
@@ -62,8 +59,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -83,6 +80,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
  * @author Johannes.Najjar@tngtech.com
  * @author alex.borodin@evosoft.com
  */
+@org.springframework.stereotype.Component
 public class ModerationDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(ModerationDatabaseHandler.class);
@@ -91,42 +89,26 @@ public class ModerationDatabaseHandler {
     /**
      * Connection to the couchDB database
      */
-    private final ModerationRequestRepository repository;
-    private final ClearingRequestRepository clearingRequestRepository;
-    private final LicenseDatabaseHandler licenseDatabaseHandler;
-    private final ProjectDatabaseHandler projectDatabaseHandler;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
-    private final SpdxDocumentCreationInfoDatabaseHandler spdxDocumentCreationInfoDatabaseHandler;
-    private final SpdxPackageInfoDatabaseHandler spdxPackageInfoDatabaseHandler;
-    private final DatabaseConnectorCloudant db;
+    @Autowired
+    private ProjectDatabaseHandler projectDatabaseHandler;
+    @Autowired
+    private LicenseDatabaseHandler licenseDatabaseHandler;
+    @Autowired
+    private ModerationRequestRepository repository;
+    @Autowired
+    private ClearingRequestRepository clearingRequestRepository;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentCreationInfoDatabaseHandler spdxDocumentCreationInfoDatabaseHandler;
+    @Autowired
+    private SpdxPackageInfoDatabaseHandler spdxPackageInfoDatabaseHandler;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
 
     private final MailUtil mailUtil = new MailUtil();
-
-    public ModerationDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(client, dbName);
-
-        // Create the repository
-        repository = new ModerationRequestRepository(db);
-        clearingRequestRepository = new ClearingRequestRepository(db);
-
-        licenseDatabaseHandler = new LicenseDatabaseHandler(client, dbName);
-        projectDatabaseHandler = new ProjectDatabaseHandler(client, dbName, attachmentDbName);
-        componentDatabaseHandler = new ComponentDatabaseHandler(client, dbName, attachmentDbName);
-        spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
-        spdxDocumentCreationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
-        spdxPackageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
-        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-    }
-
-    public ModerationDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changeLogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
-
-    }
 
     public List<ModerationRequest> getRequestsByModerator(String moderator) {
         return repository.getRequestsByModerator(moderator);

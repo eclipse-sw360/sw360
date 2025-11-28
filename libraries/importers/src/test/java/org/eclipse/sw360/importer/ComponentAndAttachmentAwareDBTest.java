@@ -11,10 +11,13 @@
 package org.eclipse.sw360.importer;
 
 import com.google.common.collect.FluentIterable;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -25,11 +28,18 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
 import static org.eclipse.sw360.importer.ComponentImportUtils.convertCSVRecordsToCompCSVRecords;
@@ -40,6 +50,13 @@ import static org.mockito.Mockito.*;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class ComponentAndAttachmentAwareDBTest {
 
     protected ComponentService.Iface componentClient;
@@ -48,42 +65,46 @@ public class ComponentAndAttachmentAwareDBTest {
     protected AttachmentContentRepository attachmentContentRepository;
     protected User user;
 
-    protected static DatabaseConnectorCloudant getDBConnector(String couchDbDatabase)
-            throws MalformedURLException {
-        return new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(),
-                couchDbDatabase);
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
+
+    @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    protected DatabaseConnectorCloudant getDBConnector(String couchDbDatabase) {
+        return new DatabaseConnectorCloudant(client, couchDbDatabase, luceneSearchLimit);
     }
 
-    protected static AttachmentContentRepository getAttachmentContentRepository()
-            throws MalformedURLException {
+    protected AttachmentContentRepository getAttachmentContentRepository() {
         return new AttachmentContentRepository(
-                getDBConnector(DatabaseSettingsTest.COUCH_DB_ATTACHMENTS));
+                getDBConnector(attachmentsDbName));
     }
 
     protected static FluentIterable<ComponentCSVRecord> getCompCSVRecordsFromTestFile(
-            String fileName) throws IOException {
+            String fileName) {
         InputStream testStream = ComponentImportUtilsTest.class.getResourceAsStream(fileName);
         List<CSVRecord> testRecords = ImportCSV.readAsCSVRecords(testStream);
         return convertCSVRecordsToCompCSVRecords(testRecords);
     }
 
     protected static FluentIterable<ComponentAttachmentCSVRecord> getCompAttachmentCSVRecordsFromTestFile(
-            String fileName) throws IOException {
+            String fileName) {
         InputStream testStream = ComponentImportUtilsTest.class.getResourceAsStream(fileName);
 
         List<CSVRecord> testRecords = ImportCSV.readAsCSVRecords(testStream);
         return convertCSVRecordsToComponentAttachmentCSVRecords(testRecords);
     }
 
-    protected void deleteDatabases() throws MalformedURLException {
-        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(),
-                DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
-        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(),
-                DatabaseSettingsTest.COUCH_DB_DATABASE);
-    }
-
     protected static ThriftClients getThriftClients() throws TException, IOException {
-        assertTestDbNames();
 
         ThriftClients thriftClients = failingMock(ThriftClients.class);
 
@@ -98,8 +119,6 @@ public class ComponentAndAttachmentAwareDBTest {
 
     @Before
     public void setUp() throws Exception {
-        deleteDatabases();
-
         ThriftClients thriftClients = getThriftClients();
 
         componentClient = thriftClients.makeComponentClient();
@@ -107,12 +126,10 @@ public class ComponentAndAttachmentAwareDBTest {
         attachmentClient = thriftClients.makeAttachmentClient();
         attachmentContentRepository = getAttachmentContentRepository();
         user = getAdminUser(getClass());
-
-
     }
 
     @After
     public void tearDown() throws Exception {
-        deleteDatabases();
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 }

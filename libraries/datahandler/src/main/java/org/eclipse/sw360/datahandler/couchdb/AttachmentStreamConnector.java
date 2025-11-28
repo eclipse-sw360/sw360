@@ -16,7 +16,6 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.ConcatClosingInputStream;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -24,12 +23,14 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,31 +48,15 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
  * @author cedric.bodet@tngtech.com
  * @author daniele.fognini@tngtech.com
  */
+@Component
 public class AttachmentStreamConnector {
     private static Logger log = LogManager.getLogger(AttachmentStreamConnector.class);
 
-    protected final DatabaseConnectorCloudant connector;
-    private final AttachmentContentDownloader attachmentContentDownloader;
-    private final Duration downloadTimeout;
-
-    /**
-     * @param downloadTimeout timeout for downloading remote attachments
-     * @throws java.net.MalformedURLException if the given database address not a valid url.
-     * @todo remove this mess of constructors and use dependency injection
-     */
-    public AttachmentStreamConnector(Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS), downloadTimeout);
-    }
-
-    public AttachmentStreamConnector(DatabaseConnectorCloudant connector, Duration downloadTimeout) {
-        this(connector, new AttachmentContentDownloader(), downloadTimeout);
-    }
-
-    public AttachmentStreamConnector(DatabaseConnectorCloudant connector, AttachmentContentDownloader attachmentContentDownloader, Duration downloadTimeout) {
-        this.connector = connector;
-        this.attachmentContentDownloader = attachmentContentDownloader;
-        this.downloadTimeout = downloadTimeout;
-    }
+    @Autowired
+    @Qualifier("CLOUDANT_DB_CONNECTOR_ATTACHMENTS")
+    protected DatabaseConnectorCloudant connector;
+    @Autowired
+    private AttachmentContentDownloader attachmentContentDownloader;
 
     /**
      * Get an input stream to download the attachment
@@ -171,7 +156,7 @@ public class AttachmentStreamConnector {
         final InputStream downloadStream;
 
         try {
-            downloadStream = attachmentContentDownloader.download(attachmentContent, downloadTimeout);
+            downloadStream = attachmentContentDownloader.download(attachmentContent);
         } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             String msg = "Cannot download attachment " + attachmentContent.getId() + " from URL";
             log.error(msg, e);
@@ -268,5 +253,9 @@ public class AttachmentStreamConnector {
 
     private String getPartFileName(AttachmentContent attachment, int part) {
         return attachment.getFilename() + "_part" + part;
+    }
+
+    public void setDownloadTimeout(Duration downloadTimeout) {
+        this.attachmentContentDownloader.setTimeout(downloadTimeout);
     }
 }

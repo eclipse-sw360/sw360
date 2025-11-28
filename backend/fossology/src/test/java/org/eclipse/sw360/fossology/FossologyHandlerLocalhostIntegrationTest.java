@@ -12,10 +12,8 @@ package org.eclipse.sw360.fossology;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
@@ -31,6 +29,7 @@ import org.hamcrest.Matchers;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.FileInputStream;
@@ -41,8 +40,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.eclipse.sw360.datahandler.common.DatabaseSettingsTest.COUCH_DB_CONFIG;
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.getConfiguredClient;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -73,6 +70,9 @@ public class FossologyHandlerLocalhostIntegrationTest {
 
     private AttachmentConnector attachmentConnector;
 
+    @Autowired
+    FossologyRestConfig restConfig;
+
     @BeforeClass
     public static void setupClass() {
         // we need to keep the release consistent to be able to move forward with the
@@ -85,8 +85,6 @@ public class FossologyHandlerLocalhostIntegrationTest {
     public void setup() throws MalformedURLException, TException {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        FossologyRestConfig restConfig = new FossologyRestConfig(
-                new ConfigContainerRepository(new DatabaseConnectorCloudant(getConfiguredClient(), COUCH_DB_CONFIG)));
         Map<String, Set<String>> configKeyToValues = new HashMap<>();
         configKeyToValues.put(FossologyRestConfig.CONFIG_KEY_URL,
                 Stream.of(CONFIG_URL_VALUE).collect(Collectors.toSet()));

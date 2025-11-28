@@ -9,15 +9,23 @@
  */
 package org.eclipse.sw360.health;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
 import org.eclipse.sw360.health.db.HealthDatabaseHandler;
+import org.junit.After;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableSet;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -25,46 +33,52 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class HealthHandlerTest {
-    public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(
-            DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
-            DatabaseSettingsTest.COUCH_DB_DATABASE,
-            DatabaseSettingsTest.COUCH_DB_USERS);
+
+    @Autowired
+    private HealthHandler healthHandler;
+
+    @Autowired
+    private HealthDatabaseHandler healthDatabaseHandler;
+
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    @After
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
+    }
+
     @Test
     public void testGetHealthFailsUponMissingDB() throws MalformedURLException {
-        TestUtils.deleteAllDatabases();
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
+        final Health health = healthHandler.getHealthOfSpecificDbs(healthDatabaseHandler.DATABASES_TO_CHECK);
         assertEquals(Status.DOWN, health.status);
-        assertEquals(DATABASES_TO_CHECK.size(), health.getDetails().size());
+        assertEquals(healthDatabaseHandler.DATABASES_TO_CHECK.size(), health.getDetails().size());
     }
 
     @Test
-    public void testGetHealth() throws MalformedURLException {
-        for (String database : DATABASES_TO_CHECK) {
-            TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
-        }
-
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+    public void testGetHealth() {
+        final Health health = healthHandler.getHealthOfSpecificDbs(healthDatabaseHandler.DATABASES_TO_CHECK);
         assertEquals(Status.UP, health.status);
         assertEquals(new HashMap<>(), health.getDetails());
-
-        for (String database : DATABASES_TO_CHECK) {
-            TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
-        }
     }
 
     @Test
-    public void testGetHealthWithPartialDBMissing() throws MalformedURLException {
-        final String couchDbDatabase = DatabaseSettingsTest.COUCH_DB_DATABASE;
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
-
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+    public void testGetHealthWithPartialDBMissing() {
+        final Health health = healthHandler.getHealthOfSpecificDbs(healthDatabaseHandler.DATABASES_TO_CHECK);
         assertEquals(Status.ERROR, health.getStatus());
-        assertEquals(DATABASES_TO_CHECK.size() -1, health.getDetails().size());
-
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
+        assertEquals(healthDatabaseHandler.DATABASES_TO_CHECK.size() -1, health.getDetails().size());
     }
 }

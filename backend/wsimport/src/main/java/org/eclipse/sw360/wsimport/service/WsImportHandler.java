@@ -24,6 +24,8 @@ import org.eclipse.sw360.datahandler.thrift.projectimport.RemoteCredentials;
 import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,9 +33,13 @@ import java.util.stream.Collectors;
 /**
  * @author ksoranko@verifa.io
  */
+@Component
 public class WsImportHandler implements ProjectImportService.Iface {
 
     private static final Logger LOGGER = LogManager.getLogger(WsImportHandler.class);
+
+    @Autowired
+    ThriftUploader thriftUploader;
 
     @Override
     public synchronized ImportStatus importData(List<String> projectTokens, User user, TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {
@@ -42,7 +48,7 @@ public class WsImportHandler implements ProjectImportService.Iface {
                 .map(t -> new WsImportService().getWsProject(t, tokenCredentials))
                 .collect(Collectors.toList());
 
-        return new ThriftUploader().importWsProjects(toImport, user, tokenCredentials);
+        return thriftUploader.importWsProjects(toImport, user, tokenCredentials);
     }
 
     @Override

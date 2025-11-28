@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
@@ -26,19 +25,13 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SpdxDocumentCreationInfoModerator
         extends Moderator<DocumentCreationInformation._Fields, DocumentCreationInformation> {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentCreationInfoModerator.class);
-
-    public SpdxDocumentCreationInfoModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public SpdxDocumentCreationInfoModerator() {
-        super(new ThriftClients());
-    }
 
     public RequestStatus updateSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
 
@@ -152,5 +145,4 @@ public class SpdxDocumentCreationInfoModerator
         documentCreationInfo.setCreator(actuals);
         return documentCreationInfo;
     }
-
 }

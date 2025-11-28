@@ -24,6 +24,7 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
@@ -154,12 +155,13 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
         return builder
-            .sources(Sw360ResourceServer.class)
+            .sources(Sw360ResourceServer.class, DatabaseConfig.class)
             .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID));
     }
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(Sw360ResourceServer.class)
+            .sources(DatabaseConfig.class)
             .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID))
             .build()
             .run(args);

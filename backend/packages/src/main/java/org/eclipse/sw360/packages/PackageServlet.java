@@ -9,12 +9,13 @@
  */
 package org.eclipse.sw360.packages;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-import org.apache.thrift.protocol.TCompactProtocol;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.Serial;
 
 
 /**
@@ -22,13 +23,16 @@ import java.net.MalformedURLException;
  *
  * @author abdul.kapti@siemens-healthineers.com
  */
+@Component
 public class PackageServlet extends Sw360ThriftServlet {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    public PackageServlet() throws MalformedURLException, IOException {
+    @Autowired
+    public PackageServlet(PackageHandler packageHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new PackageService.Processor<>(new PackageHandler()), new TCompactProtocol.Factory());
+        super(new PackageService.Processor<>(packageHandler), thriftProtocolFactory);
     }
 
 }

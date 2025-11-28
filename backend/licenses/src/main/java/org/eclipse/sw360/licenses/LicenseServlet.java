@@ -9,12 +9,11 @@
  */
 package org.eclipse.sw360.licenses;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-
-import java.net.MalformedURLException;
-import java.io.IOException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Thrift Servlet instantiation
@@ -22,11 +21,13 @@ import java.io.IOException;
  * @author cedric.bodet@tngtech.com
  * @author Andreas.Reichel@tngtech.com
  */
+@Component
 public class LicenseServlet extends Sw360ThriftServlet {
 
-    public LicenseServlet() throws MalformedURLException, IOException {
+    @Autowired
+    public LicenseServlet(LicenseHandler licenseHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new LicenseService.Processor<>(new LicenseHandler()), new TCompactProtocol.Factory());
+        super(new LicenseService.Processor<>(licenseHandler), thriftProtocolFactory);
     }
 
 }

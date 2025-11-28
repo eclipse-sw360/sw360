@@ -28,8 +28,10 @@ import org.jetbrains.annotations.NotNull;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,6 +53,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisat
  * @author thomas.maier@evosoft.com
  * @author ksoranko@verifa.io
  */
+@Component
 public class ProjectRepository extends SummaryAwareRepository<Project> {
     private static final String ALL = "function(doc) { if (doc.type == 'project') emit(null, doc._id) }";
 
@@ -261,7 +264,10 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     private static final String PROJECT_BY_ALL_IDX = "ProjectByAllIdx";
     public static final String PAGINATION_IDX = "PaginationIdx";
 
-    public ProjectRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public ProjectRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(Project.class, db, new ProjectSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byname", createMapReduce(BY_NAME_VIEW, null));

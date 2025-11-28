@@ -9,8 +9,10 @@
  */
 package org.eclipse.sw360.components;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -19,6 +21,15 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
 import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.DESCRIPTION;
@@ -34,23 +45,34 @@ import static org.junit.Assert.fail;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class ComponentHandlerTest {
 
+    @Autowired
+    Cloudant client;
+
+    @Autowired
     private ComponentHandler componentHandler;
     private User adminUser = TestUtils.getAdminUser(getClass());
 
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
     @Before
     public void setUp() throws Exception {
-        assertTestDbNames();
-        deleteAllDatabases();
-        componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredClient(),
-                DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_CHANGELOGS,
-                DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
+        assertTestDbNames(allDatabaseNames);
     }
 
     @After
     public void tearDown() throws Exception {
-        deleteAllDatabases();
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

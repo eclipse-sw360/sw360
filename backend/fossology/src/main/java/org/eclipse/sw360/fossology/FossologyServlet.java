@@ -9,13 +9,11 @@
  */
 package org.eclipse.sw360.fossology;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
-import org.apache.thrift.protocol.TCompactProtocol;
+import org.eclipse.sw360.projects.Sw360ThriftServlet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.net.MalformedURLException;
 
 /**
  * Thrift Servlet instantiation
@@ -23,12 +21,12 @@ import java.net.MalformedURLException;
  * @author daniele.fognini@tngtech.com
  */
 @Controller
-public class FossologyServlet extends SpringTServlet {
+public class FossologyServlet extends Sw360ThriftServlet {
 
     @Autowired
-    public FossologyServlet(FossologyHandler fossologyHandler) throws MalformedURLException {
+    public FossologyServlet(FossologyHandler fossologyHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new FossologyService.Processor<>(fossologyHandler), new TCompactProtocol.Factory());
+        super(new FossologyService.Processor<>(fossologyHandler), thriftProtocolFactory);
     }
 
 }

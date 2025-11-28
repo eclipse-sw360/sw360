@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.licenseinfo;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Enums;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -18,12 +17,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
-import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -44,8 +41,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +58,7 @@ import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVaria
 /**
  * Implementation of the Thrift service
  */
+@org.springframework.stereotype.Component
 public class LicenseInfoHandler implements LicenseInfoService.Iface {
     private static final Logger LOGGER = LogManager.getLogger(LicenseInfoHandler.class);
     private static final int CACHE_TIMEOUT_MINUTES = 15;
@@ -73,25 +71,22 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
     protected List<LicenseInfoParser> parsers;
     protected List<OutputGenerator<?>> outputGenerators;
+
+    @Autowired
     protected ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
     protected ProjectDatabaseHandler projectDatabaseHandler;
+
     protected Cache<Object[], List<LicenseInfoParsingResult>> licenseInfoCache;
     protected Cache<String, LicenseInfoParsingResult> licenseInfoCacheForEvaluation;
     protected Cache<String, List<ObligationParsingResult>> obligationCache;
     protected Cache<String, List<ObligationParsingResult>> obligationCacheForEvaluation;
     protected Cache<String, LicenseInfoParsingResult> licenseObligationMappingCache;
 
-    public LicenseInfoHandler() throws MalformedURLException {
-        this(new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
-                new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
-                new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS));
-    }
-
-    @VisibleForTesting
-    protected LicenseInfoHandler(AttachmentDatabaseHandler attachmentDatabaseHandler,
-                              ComponentDatabaseHandler componentDatabaseHandler, ProjectDatabaseHandler projectDatabaseHandler) throws MalformedURLException {
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.projectDatabaseHandler = projectDatabaseHandler;
+    @Autowired
+    protected LicenseInfoHandler(
+            SPDXParser spdxParser, CLIParser cliParser, CombinedCLIParser combinedCLIParser
+    ) {
         this.licenseInfoCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
                 .maximumSize(CACHE_MAX_ITEMS).build();
         this.obligationCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
@@ -103,14 +98,8 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         this.licenseObligationMappingCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
                 .maximumSize(CACHE_MAX_ITEMS).build();
 
-        AttachmentContentProvider contentProvider = attachment -> attachmentDatabaseHandler.getAttachmentContent(attachment.getAttachmentContentId());
-
         // @formatter:off
-        parsers = Lists.newArrayList(
-            new SPDXParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
-            new CLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
-            new CombinedCLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider, componentDatabaseHandler)
-        );
+        parsers = Lists.newArrayList(spdxParser, cliParser, combinedCLIParser);
 
         outputGenerators = Lists.newArrayList(
                 new TextGenerator(DISCLOSURE, "License Disclosure as TEXT"),

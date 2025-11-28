@@ -10,19 +10,20 @@
  */
 package org.eclipse.sw360.wsimport.service;
 
-import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.projectimport.ProjectImportService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-
-import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * @author ksoranko@verifa.io
  */
+@Component
 public class WsImportServlet extends Sw360ThriftServlet {
-    public WsImportServlet() throws MalformedURLException, FileNotFoundException {
+    @Autowired
+    public WsImportServlet(WsImportHandler importHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new ProjectImportService.Processor<>(new WsImportHandler()), new TCompactProtocol.Factory());
+        super(new ProjectImportService.Processor<>(importHandler), thriftProtocolFactory);
     }
 }

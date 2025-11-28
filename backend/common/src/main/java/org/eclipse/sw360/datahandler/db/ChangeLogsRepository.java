@@ -19,12 +19,15 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the ChangeLogs class
  *
  * @author jaideep.palit@siemens.com
  */
+@Component
 public class ChangeLogsRepository extends DatabaseRepositoryCloudantClient<ChangeLogs> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'changeLogs') emit(doc._id, null) }";
@@ -53,7 +56,9 @@ public class ChangeLogsRepository extends DatabaseRepositoryCloudantClient<Chang
                     "  }" +
                     "}";
 
-    public ChangeLogsRepository(DatabaseConnectorCloudant db) {
+    public ChangeLogsRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, ChangeLogs.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byDocumentId", createMapReduce(BY_DOCUMENT_ID, null));

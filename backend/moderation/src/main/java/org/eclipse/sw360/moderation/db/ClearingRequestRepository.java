@@ -24,12 +24,16 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the ClearingRequest class
  *
  * @author abdul.mannankapti@siemens.com
  */
+@Component
 public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<ClearingRequest> {
     private static final String ALL = "function(doc) { if (doc.type == 'clearingRequest') emit(null, doc._id) }";
 
@@ -66,7 +70,10 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
             "    }" +
             "}";
 
-    public ClearingRequestRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public ClearingRequestRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, ClearingRequest.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

@@ -11,13 +11,13 @@
 package org.eclipse.sw360.projects;
 
 import com.google.common.collect.ImmutableMap;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
-import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -30,31 +30,61 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getProjectIds;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class ProjectHandlerTest {
-
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
-    private static final String attachmentDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
-    private static final String changeLogDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
 
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
     private static final User user3 = new User().setEmail("user3").setDepartment("AB CD EF");
     private static final Map<String, Boolean> userRoles = new HashMap<>();
 
+    @Autowired
     ProjectHandler handler;
+
+    @Autowired
+    @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE")
+    private DatabaseConnectorCloudant db;
+
+    @Autowired
+    AttachmentDatabaseHandler attachmentHandler;
+
+    @Autowired
+    ProjectDatabaseHandler dbHandler;
+
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @Before
     public void setUp() throws Exception {
@@ -65,23 +95,15 @@ public class ProjectHandlerTest {
         projects.get(1).addToContributors("user1");
         projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
 
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
         for (Project project : projects) {
-            databaseConnector.add(project);
+            db.add(project);
         }
-
-        // Create the connector
-        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName);
     }
 
     @After
-    public void tearDown() throws Exception {
-        // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
@@ -224,16 +246,12 @@ public class ProjectHandlerTest {
     public void testUpdateProject2_1() throws Exception {
         ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
 
-        ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, moderator,
-                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName),
-                new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName),
-                new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName));
-        Project project2 = handler.getProjectById("P2", user1);
+        Project project2 = dbHandler.getProjectById("P2", user1);
         project2.setName("Project2new");
 
         Mockito.doReturn(RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project2, user1);
 
-        RequestStatus status = handler.updateProject(project2, user1);
+        RequestStatus status = dbHandler.updateProject(project2, user1);
 
         // Now contributors can also change the project
         assertEquals(RequestStatus.SUCCESS, status);
@@ -371,8 +389,4 @@ public class ProjectHandlerTest {
         List<Project> projects = handler.searchByName("Project1", user1);
         assertThat(getProjectIds(projects), containsInAnyOrder("P1"));
     }
-
-
-
-
 }

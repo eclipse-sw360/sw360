@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.entitlement;
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
@@ -20,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,18 +33,10 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
  *
  * @author birgit.heydenreich@tngtech.com
  */
+@Component
 public class LicenseModerator extends Moderator<License._Fields, License> {
 
     private static final Logger log = LogManager.getLogger(LicenseModerator.class);
-
-
-    public LicenseModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public LicenseModerator() {
-        super(new ThriftClients());
-    }
 
     public RequestStatus updateLicense(License license, User user) {
 

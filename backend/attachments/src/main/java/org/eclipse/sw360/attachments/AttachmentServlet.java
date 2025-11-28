@@ -9,9 +9,11 @@
  */
 package org.eclipse.sw360.attachments;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
 
@@ -22,11 +24,12 @@ import java.net.MalformedURLException;
  * @author Johannes.Najjar@tngtech.com
  * @author Andreas.Reichel@tngtech.com
  */
+@Component
 public class AttachmentServlet extends Sw360ThriftServlet {
 
-    public AttachmentServlet() throws MalformedURLException {
+    @Autowired
+    public AttachmentServlet(AttachmentHandler attachmentHandler, TProtocolFactory thriftProtocolFactory) throws MalformedURLException {
         // Create a service processor using the provided handler
-        super(new AttachmentService.Processor<>(new AttachmentHandler()), new TCompactProtocol.Factory());
+        super(new AttachmentService.Processor<>(attachmentHandler), thriftProtocolFactory);
     }
-
 }

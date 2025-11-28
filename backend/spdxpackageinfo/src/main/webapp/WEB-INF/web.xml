@@ -19,20 +19,4 @@
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
-
-    <listener>
-        <listener-class>org.eclipse.sw360.SW360ServiceContextListener</listener-class>
-    </listener>
-
-    <servlet>
-        <servlet-name>PackageInformationService</servlet-name>
-        <servlet-class>org.eclipse.sw360.spdxpackageinfo.PackageInformationServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>PackageInformationService</servlet-name>
-        <url-pattern>/thrift</url-pattern>
-    </servlet-mapping>
-
 </web-app>

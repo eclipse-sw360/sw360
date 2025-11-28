@@ -13,7 +13,6 @@ import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -30,17 +29,10 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
  * @author birgit.heydenreich@tngtech.com
  * @author alex.borodin@evosoft.com
  */
+@org.springframework.stereotype.Component
 public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
     private static final Logger log = LogManager.getLogger(ReleaseModerator.class);
-
-    public ReleaseModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public ReleaseModerator() {
-        super(new ThriftClients());
-    }
 
     public RequestStatus updateRelease(Release release, User user) {
 

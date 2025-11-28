@@ -12,7 +12,8 @@ package org.eclipse.sw360.rest.resourceserver;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
@@ -23,12 +24,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -52,6 +56,11 @@ import static org.mockito.Mockito.when;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Sw360ResourceServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class SW360RestHealthIndicatorTest {
 
     @LocalServerPort
@@ -65,6 +74,10 @@ public class SW360RestHealthIndicatorTest {
 
     @Autowired
     private TestRestTemplate testRestTemplate;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
 
     private static final String IS_DB_REACHABLE = "isDbReachable";
     private static final String IS_THRIFT_REACHABLE = "isThriftReachable";
@@ -137,7 +150,7 @@ public class SW360RestHealthIndicatorTest {
 
         Health health = new Health()
                 .setStatus(Status.DOWN)
-                .setDetails(Collections.singletonMap(DatabaseSettings.COUCH_DB_ATTACHMENTS, new Exception("").getMessage()));
+                .setDetails(Collections.singletonMap(attachmentsDbName, new Exception("").getMessage()));
 
         final HealthService.Iface healthClient = mock(HealthService.Iface.class);
         when(healthClient.getHealth())

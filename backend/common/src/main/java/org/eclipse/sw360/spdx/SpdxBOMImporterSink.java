@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.spdx;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -30,33 +29,34 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@org.springframework.stereotype.Component
 public class SpdxBOMImporterSink {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporterSink.class);
 
-    private final ProjectDatabaseHandler projectDatabaseHandler;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
-    private final SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
-    private final SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
-    private final User user;
+    @Autowired
+    private ProjectDatabaseHandler projectDatabaseHandler;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    @Autowired
+    private SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
+    @Autowired
+    private SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
+    private User user;
 
-    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
-        this.projectDatabaseHandler = projectDatabaseHandler;
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+    public void setUser(User user) {
         this.user = user;
     }
 
     public Response addComponent(Component component) throws SW360Exception {
         log.debug("create Component { name='" + component.getName() + "' }");
-        
+
         if (CommonUtils.isNotNullEmptyOrWhitespace(user.getDepartment())) {
             component.setBusinessUnit(user.getDepartment());
         } else {

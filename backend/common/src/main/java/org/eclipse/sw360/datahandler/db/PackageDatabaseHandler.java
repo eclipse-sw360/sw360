@@ -14,13 +14,11 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE;
 
-import java.net.MalformedURLException;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -29,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Assert;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -48,7 +45,6 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
@@ -56,19 +52,24 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * Class for accessing the CouchDB for Packages.
  *
  * @author: abdul.kapti@siemens-healthineers.com
  */
+@Component
 public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
-    private final AttachmentConnector attachmentConnector;
-    private final DatabaseConnectorCloudant db;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
     private final PackageRepository packageRepository;
     private final ProjectRepository projectRepository;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
     private final DatabaseHandlerUtil databaseHandlerUtil;
 
     private static final Logger log = LogManager.getLogger(CycloneDxBOMImporter.class);
@@ -77,29 +78,19 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Package._Fields.NAME, Package._Fields.VERSION, Package._Fields.VCS, Package._Fields.DESCRIPTION,
             Package._Fields.HOMEPAGE_URL, Package._Fields.PURL, Package._Fields.HASH);
 
-    public PackageDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, String changeLogsDbName,
-            AttachmentDatabaseHandler attachmentDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
-
+    @Autowired
+    public PackageDatabaseHandler(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db,
+            @Qualifier("CLOUDANT_DB_CONNECTOR_CHANGELOGS") DatabaseConnectorCloudant changeLogsDb,
+            AttachmentDatabaseHandler attachmentDatabaseHandler
+    ) {
         super(attachmentDatabaseHandler);
-        db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
         packageRepository = new PackageRepository(db);
         projectRepository = new ProjectRepository(db);
 
-        // Create the attachment connector
-        attachmentConnector = new AttachmentConnector(client, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
-
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        DatabaseConnectorCloudant changeLogsDb = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.databaseHandlerUtil = new DatabaseHandlerUtil(changeLogsDb);
-    }
-
-    public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName)
-            throws MalformedURLException {
-
-        this(client, dbName, attachmentDbName, changeLogsDbName, new AttachmentDatabaseHandler(client, dbName, attachmentDbName),
-                new ComponentDatabaseHandler(client, dbName, changeLogsDbName, attachmentDbName));
     }
 
     public Package getPackageById(String id) throws SW360Exception {
