@@ -10,6 +10,7 @@
 package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 
 import java.util.ArrayList;
@@ -17,10 +18,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -78,8 +75,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
     }
 
     public List<Vendor> searchByFullname(String fullname) {
-        List<Vendor> vendorsMatchingFullname =  new ArrayList<Vendor>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
-        return vendorsMatchingFullname;
+        return new ArrayList<>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
     }
 
     public void fillVendor(Component component) {
@@ -131,39 +127,70 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
     }
 
     public Map<PaginationData, List<Vendor>> getVendorsWithPagination(PaginationData pageData) {
-        final Map<String, String> sortSelector = getSortSelector(pageData);
-        List<Vendor> vendors = Lists.newArrayList();
-        Map<PaginationData, List<Vendor>> result = Maps.newHashMap();
-
-        final Map<String, Object> typeSelector = eq("type", SW360Constants.TYPE_VENDOR);
-
-        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
-                .selector(typeSelector);
-
-        qb.useIndex(Collections.singletonList(VENDORS_BY_ALL_IDX));
-        qb.fields(List.of(Vendor._Fields.TYPE.getFieldName(),
-                Vendor._Fields.FULLNAME.getFieldName(),
-                Vendor._Fields.SHORTNAME.getFieldName(),
-                Vendor._Fields.URL.getFieldName()));
-
-        try {
-            vendors = getConnector().getQueryResultPaginated(qb, Vendor.class, pageData, sortSelector);
-        } catch (Exception e) {
-            log.error("Error getting vendors", e);
+        if (pageData == null) {
+            throw new IllegalArgumentException("PaginationData cannot be null");
         }
-        result.put(pageData, vendors);
-        return result;
+
+        String viewName = getViewFromPagination(pageData);
+        log.debug("Using view: {} for pagination sort column {}", viewName , pageData.sortColumnNumber);
+        List<Vendor> vendors = queryViewPaginated(viewName, pageData, false);
+
+        return Collections.singletonMap(pageData, vendors);
     }
 
-    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
-        boolean ascending = pageData.isAscending();
+    /**
+     * Get Vendors matching exact values for the given subQueryRestrictions with pagination.
+     * @param subQueryRestrictions Map of field names to sets of values to match against.
+     * @param pageData Pagination data
+     * @return Map containing pagination data as key and list of vendors as value.
+     */
+    public Map<PaginationData, List<Vendor>> searchVendorByExactValues(
+            Map<String,Set<String>> subQueryRestrictions, @NotNull PaginationData pageData
+    ) {
+
+        final boolean ascending = pageData.isAscending();
+        final Map<String, Object> typeSelector = eq("type", "vendor");
+        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
+
+        final Map<String, String> sortSelector = getSortSelector(pageData, ascending);
+
+        var qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList(VENDORS_BY_ALL_IDX));
+
+        List<Vendor> vendors = getConnector().getQueryResultPaginated(
+                qb, Vendor.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, vendors);
+    }
+
+    private static @NotNull String getViewFromPagination(PaginationData pageData) {
         return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case VendorSortColumn.BY_FULLNAME ->
-                    Collections.singletonMap(Vendor._Fields.FULLNAME.getFieldName(), ascending ? "asc" : "desc");
-            case VendorSortColumn.BY_SHORTNAME ->
-                    Collections.singletonMap(Vendor._Fields.SHORTNAME.getFieldName(), ascending ? "asc" : "desc");
-            case null, default ->
-                    Collections.singletonMap(Vendor._Fields.FULLNAME.getFieldName(), ascending ? "asc" : "desc"); // Default sort by fullname
+            case VendorSortColumn.BY_FULLNAME -> "vendorbyfullname";
+            case VendorSortColumn.BY_SHORTNAME -> "vendorbyshortname";
+            case null -> "all";
         };
     }
+
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
+        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case VendorSortColumn.BY_FULLNAME -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
+            case VendorSortColumn.BY_SHORTNAME -> Collections.singletonMap("shortname", ascending ? "asc" : "desc");
+            case null, default -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
+        };
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
+            }
+        }
+        return and(andConditions);
+    }
+
+
 }
