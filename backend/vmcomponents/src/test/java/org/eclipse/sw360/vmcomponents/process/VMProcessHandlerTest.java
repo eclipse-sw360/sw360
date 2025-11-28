@@ -13,7 +13,6 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
@@ -24,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,8 +60,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     private long timeout = 2000;
 
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_VM;
-
+    @Autowired
     private VMDatabaseHandler handler;
 
     public VMProcessHandlerTest() {
@@ -71,14 +70,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @Before
     public void setUp() throws TException, IOException {
-        assertTestString(dbName);
         assumeCanConnectTo(URL_ACTIONS);
-
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
-        // Prepare the handler
-        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
 
         // mock preparation
         staticJSONResponse("/portal/api/v1/public/actions/5", "{\"text\": \"Install New Package\"}");
@@ -89,7 +81,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+//        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test

@@ -11,8 +11,6 @@
 package org.eclipse.sw360.attachments.db;
 
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
@@ -20,34 +18,44 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
-import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 
 /**
  * Utility to retrieve remote attachments
  *
  * @author daniele.fognini@tngtech.com
  */
+@Component
 public class RemoteAttachmentDownloader {
     private static final Logger log = getLogger(RemoteAttachmentDownloader.class);
 
-    public static void main(String[] args) throws MalformedURLException {
-        Duration downloadTimeout = durationOf(30, TimeUnit.SECONDS);
-        retrieveRemoteAttachments(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
+    @Autowired
+    private Cloudant client;
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
+    @Autowired
+    private Duration downloadTimeout;
+    @Autowired
+    AttachmentConnector attachmentConnector;
+    @Autowired
+    AttachmentContentRepository attachmentContentRepository;
+
+    public void run() throws MalformedURLException {
+        retrieveRemoteAttachments();
     }
 
-    public static int retrieveRemoteAttachments(Cloudant client, String dbAttachments, Duration downloadTimeout) throws MalformedURLException {
-        AttachmentConnector attachmentConnector = new AttachmentConnector(client, dbAttachments, downloadTimeout);
-        AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnectorCloudant(client, dbAttachments));
-
+    public int retrieveRemoteAttachments() throws MalformedURLException {
         List<AttachmentContent> remoteAttachments = attachmentContentRepository.getOnlyRemoteAttachments();
         log.info("we have {} remote attachments to retrieve", remoteAttachments.size());
 

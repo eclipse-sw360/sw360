@@ -11,12 +11,14 @@ package org.eclipse.sw360;
 
 import org.eclipse.sw360.attachments.db.RemoteAttachmentDownloader;
 import org.apache.commons.cli.*;
+import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
 
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Component
 public class UtilsEntryPoint {
 
     private static final String OPTION_HELP = "h";
@@ -41,14 +43,15 @@ public class UtilsEntryPoint {
         }
 
         if (cmd.hasOption(OPTION_DOWNLOAD)) {
-            runRemoteAttachmentDownloader(leftArgs);
+            runRemoteAttachmentDownloader();
         } else {
             printHelp();
         }
     }
 
-    private static void runRemoteAttachmentDownloader(String[] args) throws MalformedURLException {
-        RemoteAttachmentDownloader.main(args);
+    private static void runRemoteAttachmentDownloader() throws MalformedURLException {
+        // TODO: Fix if this utility is used anywhere
+//        RemoteAttachmentDownloader.run();
     }
 
     private static CommandLine parseArgs(String[] args) throws ParseException {

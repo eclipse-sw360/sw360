@@ -5,9 +5,11 @@
 
 package org.eclipse.sw360.vmcomponents.db;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
@@ -16,21 +18,30 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.junit.Assert.*;
 
 /**
  * @author stefan.jaeger@evosoft.com
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class VMDatabaseHandlerTest {
-
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_VM;
 
     private static VMPriority p1;
     private static VMPriority p2;
@@ -44,18 +55,23 @@ public class VMDatabaseHandlerTest {
 
     private static VMProcessReporting pr1;
 
+    @Autowired
     private VMDatabaseHandler handler;
+
+    @Autowired
+    @Qualifier("CLOUDANT_DB_CONNECTOR_VM")
+    DatabaseConnectorCloudant databaseConnector;
+
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @Before
     public void setUp() throws Exception {
-        assertTestString(dbName);
-
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
         // set up prios
         p1 = new VMPriority().setVmid("1").setShortText("one").setLongText("onelong");
         p2 = new VMPriority().setVmid("2").setShortText("two").setLongText("twolong");
@@ -85,14 +101,11 @@ public class VMDatabaseHandlerTest {
 
         // set up process reporting
         pr1 = new VMProcessReporting(VMAction.class.getSimpleName(), SW360Utils.getCreatedOnTime());
-
-        // Prepare the handler
-        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
     }
 
     @After
-    public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
