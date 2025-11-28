@@ -30,7 +30,6 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
@@ -102,9 +101,9 @@ public class SearchController implements RepresentationModelProcessor<Repository
                 searchResults, SW360Constants.TYPE_SEARCHRESULT);
 
         List<EntityModel<SearchResult>> searchResources = paginationResult.getResources().stream()
-                .map(sr -> EntityModel.of(sr)).collect(Collectors.toList());
+                .map(EntityModel::of).collect(Collectors.toList());
 
-        CollectionModel resources = null;
+        CollectionModel<EntityModel<SearchResult>> resources = null;
         if (CommonUtils.isNotEmpty(searchResources)) {
             resources = restControllerHelper.generatePagesResource(paginationResult, searchResources);
         }else{

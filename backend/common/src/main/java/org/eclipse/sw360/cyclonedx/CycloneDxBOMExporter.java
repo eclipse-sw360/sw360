@@ -289,7 +289,6 @@ public class CycloneDxBOMExporter {
             if (null != pckg.getPackageType()) {
                 comp.setType(getCdxComponentType(pckg.getPackageType()));
             }
-            comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
             comp.setDescription(pckg.getDescription());
             List<ExternalReference> extRefs = Lists.newArrayList();
             if (CommonUtils.isNotNullEmptyOrWhitespace(pckg.getHomepageUrl())) {
@@ -315,10 +314,14 @@ public class CycloneDxBOMExporter {
     private LicenseChoice getLicenseFromSw360Document(Set<String> sw360Licenses) {
         LicenseChoice licenseChoice = new LicenseChoice();
         List<License> licenses = Lists.newArrayList();
-        for (String lic : sw360Licenses) {
-            License license = new License();
-            license.setId(lic);
-            licenses.add(license);
+        if (CommonUtils.isNotEmpty(sw360Licenses)) {
+            for (String lic : sw360Licenses) {
+                if (CommonUtils.isNotNullEmptyOrWhitespace(lic)) {
+                    License license = new License();
+                    license.setId(lic);
+                    licenses.add(license);
+                }
+            }
         }
         licenseChoice.setLicenses(licenses);
         return licenseChoice;

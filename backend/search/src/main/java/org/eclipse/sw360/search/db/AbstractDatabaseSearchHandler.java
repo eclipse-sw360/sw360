@@ -121,11 +121,11 @@ public abstract class AbstractDatabaseSearchHandler {
      */
     public List<SearchResult> searchWithoutWildcard(String text, User user, final List<String> typeMask) {
         String query = text;
-        if (typeMask != null && !typeMask.isEmpty() && typeMask.get(typeMask.size() - 1).equals("document")) {
+        if (typeMask != null && !typeMask.isEmpty() && typeMask.getLast().equals("document")) {
             if (typeMask.size() == 1) {
                 return getSearchResults(query, user);
             }
-            typeMask.remove(typeMask.size() - 1);
+            typeMask.removeLast();
             final Function<String, String> addType = input -> "type:" + input;
             query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
                     + prepareWildcardQuery(text);
@@ -139,11 +139,11 @@ public abstract class AbstractDatabaseSearchHandler {
      */
     public List<SearchResult> search(String text, final List<String> typeMask, User user) {
         String query = text;
-        if (typeMask != null && !typeMask.isEmpty() && typeMask.get(typeMask.size() - 1).equals("document")) {
+        if (typeMask != null && !typeMask.isEmpty() && typeMask.getLast().equals("document")) {
             if (typeMask.size() == 1) {
                 return search(query, user);
             }
-            typeMask.remove(typeMask.size() - 1);
+            typeMask.removeLast();
             final Function<String, String> addType = input -> "type:" + input;
             query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
                     + prepareWildcardQuery(text);
@@ -182,7 +182,7 @@ public abstract class AbstractDatabaseSearchHandler {
         NouveauResult queryLucene = connector.searchView(luceneSearchView.getIndexName(), queryString);
         return convertLuceneResultAndFilterForVisibility(queryLucene, user);
     }
-    
+
     private @NotNull List<SearchResult> getFilteredSearchResults(String queryString, User user) {
         NouveauResult queryLucene = connector.searchView(luceneFilteredSearchView.getIndexName(), queryString);
         return convertLuceneResultAndFilterForVisibility(queryLucene, user);

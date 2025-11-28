@@ -15,15 +15,11 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
-import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Lists;
@@ -35,13 +31,8 @@ import lombok.RequiredArgsConstructor;
 public class Sw360SearchService {
     private static final Logger log = LogManager.getLogger(Sw360SearchService.class);
 
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
-    private SearchService.Iface getThriftSearchClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/search/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new SearchService.Client(protocol);
+    private SearchService.Iface getThriftSearchClient() {
+        return new ThriftClients().makeSearchClient();
     }
 
     public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional) throws TException {
