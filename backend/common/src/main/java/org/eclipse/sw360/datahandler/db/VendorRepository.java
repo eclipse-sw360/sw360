@@ -10,14 +10,18 @@
 package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -25,6 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import java.util.Set;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * CRUD access for the Vendor class
@@ -47,6 +53,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
                     "}";
 
     private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
+    private static final String VENDORS_BY_ALL_IDX = "VendorsByAllIdx";
 
     public VendorRepository(DatabaseConnectorCloudant db) {
         super(db, Vendor.class);
@@ -55,11 +62,20 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         views.put("vendorbyshortname", createMapReduce(BY_LOWERCASE_VENDOR_SHORTNAME_VIEW, null));
         views.put("vendorbyfullname", createMapReduce(BY_LOWERCASE_VENDOR_FULLNAME_VIEW, null));
         initStandardDesignDocument(views, db);
+
+        createPartialTypeIndex(
+                VENDORS_BY_ALL_IDX, "vendorsByType", SW360Constants.TYPE_VENDOR,
+                new String[]{
+                        Vendor._Fields.TYPE.getFieldName(),
+                        Vendor._Fields.FULLNAME.getFieldName(),
+                        Vendor._Fields.SHORTNAME.getFieldName(),
+                        Vendor._Fields.URL.getFieldName(),
+                }, db
+        );
     }
 
     public List<Vendor> searchByFullname(String fullname) {
-        List<Vendor> vendorsMatchingFullname =  new ArrayList<Vendor>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
-        return vendorsMatchingFullname;
+        return new ArrayList<>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
     }
 
     public void fillVendor(Component component) {
@@ -84,7 +100,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
             project.unsetVendorId();
         }
     }
-    
+
     public void fillVendor(Release release) {
         fillVendor(release, null);
     }
@@ -109,4 +125,72 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
     public Set<String> getVendorByLowercaseFullnamePrefix(String fullnamePrefix) {
         return queryForIdsByPrefix("vendorbyfullname", fullnamePrefix != null ? fullnamePrefix.toLowerCase() : fullnamePrefix);
     }
+
+    public Map<PaginationData, List<Vendor>> getVendorsWithPagination(PaginationData pageData) {
+        if (pageData == null) {
+            throw new IllegalArgumentException("PaginationData cannot be null");
+        }
+
+        String viewName = getViewFromPagination(pageData);
+        log.debug("Using view: {} for pagination sort column {}", viewName , pageData.sortColumnNumber);
+        List<Vendor> vendors = queryViewPaginated(viewName, pageData, false);
+
+        return Collections.singletonMap(pageData, vendors);
+    }
+
+    /**
+     * Get Vendors matching exact values for the given subQueryRestrictions with pagination.
+     * @param subQueryRestrictions Map of field names to sets of values to match against.
+     * @param pageData Pagination data
+     * @return Map containing pagination data as key and list of vendors as value.
+     */
+    public Map<PaginationData, List<Vendor>> searchVendorByExactValues(
+            Map<String,Set<String>> subQueryRestrictions, @NotNull PaginationData pageData
+    ) {
+
+        final boolean ascending = pageData.isAscending();
+        final Map<String, Object> typeSelector = eq("type", "vendor");
+        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
+
+        final Map<String, String> sortSelector = getSortSelector(pageData, ascending);
+
+        var qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList(VENDORS_BY_ALL_IDX));
+
+        List<Vendor> vendors = getConnector().getQueryResultPaginated(
+                qb, Vendor.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, vendors);
+    }
+
+    private static @NotNull String getViewFromPagination(PaginationData pageData) {
+        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case VendorSortColumn.BY_FULLNAME -> "vendorbyfullname";
+            case VendorSortColumn.BY_SHORTNAME -> "vendorbyshortname";
+            case null -> "all";
+        };
+    }
+
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
+        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case VendorSortColumn.BY_FULLNAME -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
+            case VendorSortColumn.BY_SHORTNAME -> Collections.singletonMap("shortname", ascending ? "asc" : "desc");
+            case null, default -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
+        };
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
+            }
+        }
+        return and(andConditions);
+    }
+
+
 }
