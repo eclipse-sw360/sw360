@@ -49,6 +49,14 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     private static final String DEFAULT_DEPARTMENT = "Unknown";
     private static final String DEFAULT_EXTERNAL_ID = "N/A";
 
+    private Sw360UserService sw360UserService;
+
+    /**
+     * Allows injection of a mock Sw360UserService for testing.
+     */
+    public void setSw360UserService(Sw360UserService sw360UserService) {
+        this.sw360UserService = sw360UserService;
+    }
 
     @Override
     public Sw360UserStorageProvider create(KeycloakSession session, ComponentModel model) {
@@ -73,14 +81,38 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     @Override
     public void init(Config.Scope config) {
         logger.info("Initializing Sw360UserStorageProviderFactory with config: {}", config);
-        // Read thriftServerUrl from Keycloak SPI config (standalone.xml or provider config)
-        String thriftUrl = config.get("thriftServerUrl");
-        if (thriftUrl != null && !thriftUrl.isEmpty()) {
-            logger.info("In SPI {}, setting thrift server URL to: '{}'",
-                    PROVIDER_ID, config.get("thrift"));
-            Sw360UserService.thriftServerUrl = thriftUrl;
+        
+        // Read CouchDB configuration from Keycloak SPI config
+        String couchdbUrl = config.get("couchdbUrl");
+        if (couchdbUrl != null && !couchdbUrl.isEmpty()) {
+            logger.info("In SPI {}, setting CouchDB URL to: '{}'", PROVIDER_ID, couchdbUrl);
+            Sw360UserService.couchdbUrl = couchdbUrl;
         } else {
-            logger.info("No 'thriftServerUrl' found in config, using default: '{}'", Sw360UserService.thriftServerUrl);
+            logger.info("No 'couchdbUrl' found in config, using default: '{}'", Sw360UserService.couchdbUrl);
+        }
+        
+        String couchdbUsername = config.get("couchdbUsername");
+        if (couchdbUsername != null && !couchdbUsername.isEmpty()) {
+            logger.info("In SPI {}, setting CouchDB username to: '{}'", PROVIDER_ID, couchdbUsername);
+            Sw360UserService.couchdbUsername = couchdbUsername;
+        } else {
+            logger.info("No 'couchdbUsername' found in config, using default: '{}'", Sw360UserService.couchdbUsername);
+        }
+        
+        String couchdbPassword = config.get("couchdbPassword");
+        if (couchdbPassword != null && !couchdbPassword.isEmpty()) {
+            logger.info("In SPI {}, setting CouchDB password", PROVIDER_ID);
+            Sw360UserService.couchdbPassword = couchdbPassword;
+        } else {
+            logger.info("No 'couchdbPassword' found in config, using default");
+        }
+        
+        String couchdbDatabase = config.get("couchdbDatabase");
+        if (couchdbDatabase != null && !couchdbDatabase.isEmpty()) {
+            logger.info("In SPI {}, setting CouchDB database to: '{}'", PROVIDER_ID, couchdbDatabase);
+            Sw360UserService.couchdbDatabase = couchdbDatabase;
+        } else {
+            logger.info("No 'couchdbDatabase' found in config, using default: '{}'", Sw360UserService.couchdbDatabase);
         }
     }
 
@@ -118,7 +150,9 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
         logger.info("Starting user synchronization");
 
         SynchronizationResult totalResult = new SynchronizationResult();
-        Sw360UserService sw360UserService = new Sw360UserService();
+        if(sw360UserService == null) {
+            sw360UserService = new Sw360UserService();
+        }
         List<User> externalUsers = sw360UserService.getAllUsers();
         logger.info("Fetched {} users from external service", externalUsers.size());
 
@@ -441,14 +475,17 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
             return;
         }
 
+        // Collect current groups to avoid stream reuse
+        List<GroupModel> currentGroups = user.getGroupsStream().toList();
+        
         // Check if the user is already in the target group
-        if (user.getGroupsStream().anyMatch(g -> g.equals(targetGroup))) {
+        if (currentGroups.stream().anyMatch(g -> g.equals(targetGroup))) {
             logger.debug("User {} is already in group {}", user.getEmail(), groupName);
             return;
         }
 
         // Remove user from all other groups
-        user.getGroupsStream().forEach(user::leaveGroup);
+        currentGroups.forEach(user::leaveGroup);
 
         // Add user to the target group
         user.joinGroup(targetGroup);
@@ -507,5 +544,3 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     }
 
 }
-
-

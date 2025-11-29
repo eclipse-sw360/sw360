@@ -20,9 +20,77 @@
     </parent>
 
     <dependencies>
+        <!-- Core SW360 Dependencies -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>datahandler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- IBM Cloudant SDK Dependencies for Direct CouchDB Access -->
+        <!-- Main Cloudant SDK for CouchDB operations -->
+        <dependency>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>cloudant</artifactId>
+        </dependency>
+        <!-- Cloudant common utilities including security authenticators -->
+        <dependency>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>cloudant-common</artifactId>
+            <version>${cloudant-common.version}</version>
+        </dependency>
+        <!-- IBM Cloud SDK core for authentication and base functionality -->
+        <dependency>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>sdk-core</artifactId>
+            <version>${ibm-cloud-sdk-core.version}</version>
+        </dependency>
+        
+        <!-- Logging Dependencies -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        
+        <!-- JSON Processing -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        
+        <!-- HTTP Client Dependencies (Required by Cloudant SDK) -->
+        <!-- OkHttp for HTTP operations -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+        <!-- OkHttp URL connection support -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp-urlconnection</artifactId>
+            <version>${okhttp-urlconnection.version}</version>
+        </dependency>
+        
+        <!-- Kotlin Runtime Dependencies (Required by OkHttp/OkIO) -->
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin-stdlib.version}</version>
+        </dependency>
+
+        <!-- OkIO for efficient I/O operations -->
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio-jvm</artifactId>
+            <version>${okio-jvm.version}</version>
         </dependency>
     </dependencies>
 
@@ -40,6 +108,7 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
@@ -54,8 +123,18 @@
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
+                            <!-- Copy only specific dependencies to Keycloak providers directory -->
+                            <!-- Excludes transitive dependencies to prevent copying 150+ JARs that would break Keycloak -->
                             <excludeTransitive>true</excludeTransitive>
-                            <excludeGroupIds>org.keycloak,org.jboss.logging,org.jboss.arquillian.graphene,javax.xml.bind,org.projectlombok</excludeGroupIds>
+                            <!-- Exclude groups that conflict with Keycloak or are not needed -->
+                            <excludeGroupIds>org.keycloak,org.jboss.logging,org.jboss.arquillian.graphene,javax.xml.bind,org.projectlombok,org.slf4j,junit,org.hamcrest,org.mockito,org.objenesis,net.bytebuddy</excludeGroupIds>
+                            <!-- Include only essential JARs for SW360-Keycloak CouchDB integration -->
+                            <!-- SW360 Core: datahandler, commonIO, libthrift, spring-security-crypto -->
+                            <!-- IBM Cloudant: cloudant, cloudant-common, sdk-core -->
+                            <!-- HTTP/JSON: okhttp, okhttp-urlconnection, gson -->
+                            <!-- Kotlin/IO: kotlin-stdlib, okio-jvm -->
+                            <!-- Logging: log4j-core, log4j-api -->
+                            <includeArtifactIds>datahandler,commonIO,libthrift,cloudant,cloudant-common,okhttp,okhttp-urlconnection,kotlin-stdlib,okio-jvm,log4j-core,log4j-api,spring-security-crypto,gson,sdk-core</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

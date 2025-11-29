@@ -39,7 +39,12 @@ public class Sw360UserStorageProvider implements UserStorageProvider, UserRegist
 	public Sw360UserStorageProvider(KeycloakSession session, ComponentModel model) {
 		this.session = session;
 		this.model = model;
-		sw360UserService = new Sw360UserService();
+		try {
+			sw360UserService = new Sw360UserService();
+		} catch (Exception e) {
+			logger.warnf("Failed to initialize SW360 user service: %s. Provider will operate in limited mode.", e.getMessage());
+			sw360UserService = null;
+		}
 	}
 
 	@Override

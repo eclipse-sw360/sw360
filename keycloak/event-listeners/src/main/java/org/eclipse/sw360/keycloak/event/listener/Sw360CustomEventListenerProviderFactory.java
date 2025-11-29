@@ -22,7 +22,7 @@ public class Sw360CustomEventListenerProviderFactory implements EventListenerPro
     private static final Logger logger = Logger.getLogger(Sw360CustomEventListenerProviderFactory.class);
 
     public static final String SW360_ADD_USER_TO_COUCHDB = "sw360-add-user-to-couchdb";
-
+    
     public EventListenerProvider create(KeycloakSession session) {
         logger.info("Creating Sw360CustomEventListenerProvider");
         return new Sw360CustomEventListenerProvider(session);
@@ -31,10 +31,38 @@ public class Sw360CustomEventListenerProviderFactory implements EventListenerPro
     @Override
     public void init(Config.Scope config) {
         logger.info("Initializing Sw360CustomEventListenerProviderFactory with config: " + config);
-        if (config.get("thrift") != null && !config.get("thrift").isEmpty()) {
-            logger.infof("In SPI %s, setting thrift server URL to: '%s'",
-                    SW360_ADD_USER_TO_COUCHDB, config.get("thrift"));
-            Sw360UserService.thriftServerUrl = config.get("thrift");
+        
+        // Read CouchDB configuration from Keycloak SPI config
+        String couchdbUrl = config.get("couchdbUrl");
+        if (couchdbUrl != null && !couchdbUrl.isEmpty()) {
+            logger.info("In SPI " + SW360_ADD_USER_TO_COUCHDB + ", setting CouchDB URL to: '" + couchdbUrl + "'");
+            Sw360UserService.couchdbUrl = couchdbUrl;
+        } else {
+            logger.info("No 'couchdbUrl' found in config, using default: '" + Sw360UserService.couchdbUrl + "'");
+        }
+        
+        String couchdbUsername = config.get("couchdbUsername");
+        if (couchdbUsername != null && !couchdbUsername.isEmpty()) {
+            logger.info("In SPI " + SW360_ADD_USER_TO_COUCHDB + ", setting CouchDB username to: '" + couchdbUsername + "'");
+            Sw360UserService.couchdbUsername = couchdbUsername;
+        } else {
+            logger.info("No 'couchdbUsername' found in config, using default: '" + Sw360UserService.couchdbUsername + "'");
+        }
+        
+        String couchdbPassword = config.get("couchdbPassword");
+        if (couchdbPassword != null && !couchdbPassword.isEmpty()) {
+            logger.info("In SPI " + SW360_ADD_USER_TO_COUCHDB + ", setting CouchDB password");
+            Sw360UserService.couchdbPassword = couchdbPassword;
+        } else {
+            logger.info("No 'couchdbPassword' found in config, using default");
+        }
+        
+        String couchdbDatabase = config.get("couchdbDatabase");
+        if (couchdbDatabase != null && !couchdbDatabase.isEmpty()) {
+            logger.info("In SPI " + SW360_ADD_USER_TO_COUCHDB + ", setting CouchDB database to: '" + couchdbDatabase + "'");
+            Sw360UserService.couchdbDatabase = couchdbDatabase;
+        } else {
+            logger.info("No 'couchdbDatabase' found in config, using default: '" + Sw360UserService.couchdbDatabase + "'");
         }
     }
 
