@@ -59,13 +59,10 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -85,6 +82,8 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -714,6 +713,63 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360User, sw360Release.getAttachments(), Source.releaseId(id));
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+    
+    @Operation(
+            summary = "Get linked packages of a release.",
+            description = "Get linked packages of a release.",
+            tags = {"Releases"}
+    )
+    @GetMapping(value = RELEASES_URL + "/{id}/linkedPackages")
+    public ResponseEntity<CollectionModel<EntityModel<Package>>> getLinkedPackages(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String id,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            @Parameter(description = "Filter by vendor")
+            @RequestParam(value = "vendor", required = false) String vendor,
+            @Parameter(description = "Filter by package name")
+            @RequestParam(value = "name", required = false) String name,
+            @Parameter(description = "Filter by package manager")
+            @RequestParam(value = "packageManager", required = false) String packageManager,
+            @Parameter(description = "Filter by license")
+            @RequestParam(value = "license", required = false) String license,
+            HttpServletRequest request
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Set<Package> packages = packageService.getPackagesByReleaseId(id);
+
+        List<Package> filteredPackages = packages.stream()
+                .filter(pkg -> {
+                    boolean match = true;
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(vendor)) {
+                        String pkgVendor = pkg.isSetVendor() ? pkg.getVendor().getFullname() : "";
+                        match &= StringUtils.containsIgnoreCase(pkgVendor, vendor);
+                    }
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                        match &= StringUtils.containsIgnoreCase(pkg.getName(), name);
+                    }
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(packageManager)) {
+                        match &= pkg.isSetPackageManager() && pkg.getPackageManager().name().equalsIgnoreCase(packageManager);
+                    }
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(license)) {
+                        match &= pkg.isSetLicenseIds() && pkg.getLicenseIds().contains(license);
+                    }
+                    return match;
+                })
+                .collect(Collectors.toList());
+
+        PaginationResult<Package> paginationResult = restControllerHelper.createPaginationResult(request, pageable, filteredPackages, "Package");
+
+        List<EntityModel<Package>> packageResources = new ArrayList<>();
+        for (Package pkg : paginationResult.getResources()) {
+             EntityModel<Package> packageResource = EntityModel.of(pkg);
+             packageResources.add(packageResource);
+        }
+        
+        CollectionModel<EntityModel<Package>> resources = restControllerHelper.generatePagesResource(paginationResult, packageResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @Operation(
