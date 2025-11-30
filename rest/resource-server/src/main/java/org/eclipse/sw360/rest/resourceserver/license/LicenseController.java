@@ -534,12 +534,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary=licenseService.importOsadlInformation(sw360User);
-        requestSummary.setMessage("OSADL license has imported successfully");
-        requestSummary.unsetTotalAffectedElements();
-        requestSummary.unsetTotalElements();
-        HttpStatus status = HttpStatus.OK;
-        return new ResponseEntity<>(requestSummary,status);
+        RequestSummary requestSummary = licenseService.importOsadlInformation(sw360User);
+        HttpStatus status = requestSummary.getRequestStatus() == RequestStatus.SUCCESS ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
+        return new ResponseEntity<>(requestSummary, status);
     }
 
     @Operation(
