@@ -172,4 +172,9 @@ public class SW360PackageService {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
         return sw360PackageClient.refineSearchAccessiblePackages(null, filterMap, sw360User);
     }
+    
+    public Set<Package> getPackagesByReleaseId(String releaseId) throws TException {
+        PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.getPackagesByReleaseId(releaseId);
+    }
 }
