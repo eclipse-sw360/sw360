@@ -44,7 +44,8 @@ public class VendorHandler implements VendorService.Iface {
     public VendorHandler(Cloudant client, String dbName) throws IOException {
         DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(client, DatabaseSettings.COUCH_DB_DATABASE);     // Remove release id from component
+        // Use the provided dbName for search handler to allow test databases to work correctly
+        vendorSearchHandler = new VendorSearchHandler(client, dbName != null ? dbName : DatabaseSettings.COUCH_DB_DATABASE);     // Fallback to default DB name if null
     }
 
     @Override
