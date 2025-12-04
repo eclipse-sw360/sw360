@@ -1,6 +1,7 @@
 /*
  * Copyright Siemens AG, 2014-2015, 2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com> , 2025.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -20,6 +21,12 @@ typedef sw360.ConfigContainer ConfigContainer
 typedef users.User User
 typedef components.ExternalToolProcess ExternalToolProcess
 typedef sw360.SW360Exception SW360Exception
+
+struct ScanOptions {
+    1: optional map<string, bool> analysis,
+    2: optional map<string, bool> decider,
+    3: optional map<string, bool> reuse
+}
 
 
 service FossologyService {
@@ -68,4 +75,10 @@ service FossologyService {
      * Check scan status for a scan job Id.
      **/
     map<string, string> checkScanStatus(i32 scanJobId);
+
+    /**
+     * Invokes the next step of the Fossology workflow for the given release with custom scan options.
+     * This allows users to configure which analysis agents, decider agents, and reuse options to enable.
+     **/
+    ExternalToolProcess processWithScanOptions(1: string releaseId, 2: User user, 3: string uploadDescription, 4: ScanOptions scanOptions);
 }

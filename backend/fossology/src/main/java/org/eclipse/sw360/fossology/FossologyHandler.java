@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.fossology.ScanOptions;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -185,12 +186,68 @@ public class FossologyHandler implements FossologyService.Iface {
         return fossologyProcess;
     }
 
+    @Override
+    public ExternalToolProcess processWithScanOptions(String releaseId, User user, String uploadDescription, ScanOptions scanOptions) throws TException {
+        ExternalToolProcess fossologyProcess;
+
+        Iface componentClient = thriftClients.makeComponentClient();
+        Release release = componentClient.getReleaseById(releaseId, user);
+
+        Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+                ExternalTool.FOSSOLOGY);
+        if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {
+            return null;
+        }
+
+        Set<Attachment> sourceAttachments = componentClient.getSourceAttachments(release.getId());
+        if (isIllegalStateSourceAttachments(releaseId, sourceAttachments)) {
+            return null;
+        }
+
+        Attachment sourceAttachment = sourceAttachments.iterator().next();
+        if (isIllegalStateProcessAndAttachments(fossologyProcesses, sourceAttachment)) {
+            return null;
+        }
+
+        if (fossologyProcesses.size() == 0) {
+            fossologyProcess = createFossologyProcess(release, user, sourceAttachment.getAttachmentContentId(),
+                    sourceAttachment.getSha1());
+        } else {
+            
+            fossologyProcess = fossologyProcesses.iterator().next();
+        }
+
+        FossologyUtils.ensureOrderOfProcessSteps(fossologyProcess);
+
+        ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps().getLast();
+
+        // Handle different process steps using v2 API with custom scan options
+        if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())) {
+            handleUploadStepV2(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription, scanOptions);
+        } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
+            handleScanStepV2(componentClient, release, user, fossologyProcess, scanOptions);
+        } else if(!SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false) && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStepV2(componentClient, release, user, fossologyProcess);
+        } else if(reportStep && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStepV2(componentClient, release, user, fossologyProcess);
+        }
+
+        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+
+        return fossologyProcess;
+    }
+
     /**
      * Start the upload to FOSSology and the scan jobs with it. Wait till the
      * upload is done and pass to scan started step with job id.
      */
     private void handleUploadStepV2(Iface componentClient, Release release, User user,
             ExternalToolProcess fossologyProcess, Attachment sourceAttachment, String uploadDescription) throws TException {
+        handleUploadStepV2(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription, null);
+    }
+
+    private void handleUploadStepV2(Iface componentClient, Release release, User user,
+            ExternalToolProcess fossologyProcess, Attachment sourceAttachment, String uploadDescription, ScanOptions scanOptions) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .getLast();
 
@@ -222,8 +279,18 @@ public class FossologyHandler implements FossologyService.Iface {
                     // Upload file using v2 API with automatic scan scheduling
                     InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, release);
                     log.info("STARTING UPLOAD for file {}", attachmentFilename);
-                    CombinedUploadJobResponse response = fossologyRestClient.uploadFileAndScan(
-                        attachmentFilename, attachmentStream, uploadDescription);
+                    
+                    CombinedUploadJobResponse response;
+                    if (scanOptions != null) {
+                        // Use custom scan options
+                        response = fossologyRestClient.uploadFileAndScan(
+                            attachmentFilename, attachmentStream, uploadDescription,
+                            scanOptions.getAnalysis(), scanOptions.getDecider(), scanOptions.getReuse());
+                    } else {
+                        // Use default scan options
+                        response = fossologyRestClient.uploadFileAndScan(
+                            attachmentFilename, attachmentStream, uploadDescription);
+                    }
 
                     if (response != null && V2_STATUS_SUCCESS.equals(response.getStatus())) {
                         int jobId = fossologyRestClient.getJobIdAfterScan(response.getUploadId());
@@ -278,6 +345,14 @@ public class FossologyHandler implements FossologyService.Iface {
                              Release release,
                              User user,
                              ExternalToolProcess fossologyProcess) throws TException {
+        handleScanStepV2(componentClient, release, user, fossologyProcess, null);
+    }
+
+    private void handleScanStepV2(Iface componentClient,
+                             Release release,
+                             User user,
+                             ExternalToolProcess fossologyProcess,
+                             ScanOptions scanOptions) throws TException {
         ExternalToolProcessStep furthestStep =
             fossologyProcess.getProcessSteps().getLast();
         String uploadId = SW360Utils
@@ -292,7 +367,15 @@ public class FossologyHandler implements FossologyService.Iface {
                 updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
 
                 log.info("STARTING SCAN for uploadId: {}", uploadId);
-                int jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId));
+                int jobId;
+                if (scanOptions != null) {
+                    // Use custom scan options
+                    jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId),
+                        scanOptions.getAnalysis(), scanOptions.getDecider(), scanOptions.getReuse());
+                } else {
+                    // Use default scan options
+                    jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId));
+                }
                 if (jobId > -1) {
                     furthestStep.setProcessStepIdInTool(String.valueOf(jobId));
                     furthestStep.setResult(null);
