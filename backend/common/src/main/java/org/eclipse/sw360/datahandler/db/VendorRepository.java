@@ -10,8 +10,7 @@
 package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
-import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -138,33 +137,6 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         return Collections.singletonMap(pageData, vendors);
     }
 
-    /**
-     * Get Vendors matching exact values for the given subQueryRestrictions with pagination.
-     * @param subQueryRestrictions Map of field names to sets of values to match against.
-     * @param pageData Pagination data
-     * @return Map containing pagination data as key and list of vendors as value.
-     */
-    public Map<PaginationData, List<Vendor>> searchVendorByExactValues(
-            Map<String,Set<String>> subQueryRestrictions, @NotNull PaginationData pageData
-    ) {
-
-        final boolean ascending = pageData.isAscending();
-        final Map<String, Object> typeSelector = eq("type", "vendor");
-        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
-        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
-
-        final Map<String, String> sortSelector = getSortSelector(pageData, ascending);
-
-        var qb = getConnector().getQueryBuilder()
-                .selector(finalSelector)
-                .useIndex(Collections.singletonList(VENDORS_BY_ALL_IDX));
-
-        List<Vendor> vendors = getConnector().getQueryResultPaginated(
-                qb, Vendor.class, pageData, sortSelector
-        );
-
-        return Collections.singletonMap(pageData, vendors);
-    }
 
     private static @NotNull String getViewFromPagination(PaginationData pageData) {
         return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
@@ -182,15 +154,6 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         };
     }
 
-    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
-        List<Map<String, Object>> andConditions = new ArrayList<>();
-        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
-            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
-            }
-        }
-        return and(andConditions);
-    }
 
 
 }
