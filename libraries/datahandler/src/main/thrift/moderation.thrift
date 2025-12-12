@@ -34,7 +34,6 @@ typedef licenses.License License
 typedef licenses.Obligation Obligation
 typedef components.ComponentType ComponentType
 typedef projects.ClearingRequest ClearingRequest
-typedef sw360.ClearingRequestSize ClearingSize
 typedef spdxdocument.SPDXDocument SPDXDocument
 typedef documentcreationinformation.DocumentCreationInformation DocumentCreationInformation
 typedef packageinformation.PackageInformation PackageInformation
@@ -316,11 +315,6 @@ service ModerationService {
     oneway void updateClearingRequestForChangeInProjectBU(1: string crId, 2: string businessUnit, 3: User user);
 
     /**
-     * update clearing request if project's BU is changed
-     **/
-    oneway  void updateClearingRequestForChangeInClearingSize(1: string crId, 2: ClearingSize size);
-
-    /**
      * get clearing request by Id for view/read
      **/
     ClearingRequest getClearingRequestById(1: string id, 2: User user);
@@ -359,4 +353,14 @@ service ModerationService {
      * get the count of open CR with priority 'critical' and user group
      **/
     i32 getOpenCriticalCrCountByGroup(1: string group);
+
+    /**
+     * get recent clearing requests with pagination
+     **/
+    map<PaginationData, list<ClearingRequest>> getRecentClearingRequestsWithPagination(1: User user, 2: PaginationData pageData);
+
+    /**
+     * search clearing requests by filters with pagination
+     **/
+    map<PaginationData, list<ClearingRequest>> searchClearingRequestsByFilters(1: User user, 2: map<string, set<string>> filterMap, 3: PaginationData pageData);
 }

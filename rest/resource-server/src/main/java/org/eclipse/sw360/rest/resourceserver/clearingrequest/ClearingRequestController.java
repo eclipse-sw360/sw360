@@ -32,13 +32,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
-import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -62,8 +59,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.server.ResponseStatusException;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -139,12 +134,13 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         if (StringUtils.hasText(clearingRequest.projectId)) {
             try{
                 Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
+                if (isSingleRequest) {
+                    // Only process comments for single request view
+                    sw360ClearingRequestService.convertTimestampAndEmail(clearingRequest);
+                }
                 Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
-                ClearingRequest updatedCR = restControllerHelper.updateCRSize(clearingRequest, projectWithClearingInfo, sw360User);
-                sw360ClearingRequestService.convertTimestampAndEmail(updatedCR);
-                halClearingRequest = new HalResource<>(updatedCR);
                 restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
-                restControllerHelper.addEmbeddedProject(halClearingRequest, project, true);
+                restControllerHelper.addEmbeddedProjectDTO(halClearingRequest, project);
             }catch (Exception e){
                 log.info("Clearing request with id: {} is linked to project that has restricted visibility.", clearingRequest.getId());
                 return null;
@@ -165,57 +161,84 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
 
 
     @Operation(
-            summary = "Get all the Clearing Requests visible to the user.",
-            description = "Get all the Clearing Requests visible to the user.",
+            summary = "List all clearing requests visible to the user.",
+            description = "List all clearing requests visible to user",
             tags = {"ClearingRequest"}
     )
     @RequestMapping(value = CLEARING_REQUESTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<?>> getMyClearingRequests(
+    public ResponseEntity<CollectionModel<?>> getClearingRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
-            @Parameter(description = "The clearing request state of the request.",
-                    schema = @Schema(
-                            implementation = ClearingRequestState.class
-                    )
-            )
-            @RequestParam(value = "state", required = false) String state,
+            @Parameter(description = "Project ID to filter")
+            @RequestParam(value = "projectId", required = false) String projectId,
+            @Parameter(description = "Status of the clearing request",
+                    schema = @Schema(implementation = ClearingRequestState.class))
+            @RequestParam(value = "status", required = false) String status,
+            @Parameter(description = "Requesting user email to filter")
+            @RequestParam(value = "createdBy", required = false) String createdBy,
+            @Parameter(description = "Date clearing request was created on (timestamp).")
+            @RequestParam(value = "createdOn", required = false) String createdOn,
             HttpServletRequest request
-    ) throws SW360Exception {
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<ClearingRequest> clearingRequestList = new ArrayList<>();
-        ClearingRequestState crState = null;
-        if (StringUtils.hasText(state)) {
-            try {
-                crState = ClearingRequestState.valueOf(state.toUpperCase());
-            } catch (IllegalArgumentException exp) {
-                throw new BadRequestClientException(
-                        String.format("Invalid ClearingRequest state '%s', possible values are: %s", state, Arrays.asList(ClearingRequestState.values())),
-                        exp);
-            }
-        }
+
+        Map<PaginationData, List<ClearingRequest>> paginatedClearingRequests = null;
+        Map<String, Set<String>> filterMap = getFilterMapForClearingRequests(projectId, status, createdBy, createdOn);
+
         try {
-            clearingRequestList.addAll(sw360ClearingRequestService.getMyClearingRequests(sw360User, crState));
-            clearingRequestList.sort(Comparator.comparingLong(ClearingRequest::getTimestamp));
-            PaginationResult<ClearingRequest> paginationResult = restControllerHelper.createPaginationResult(request, pageable, clearingRequestList, SW360Constants.TYPE_CLEARING);
+            if (filterMap.isEmpty()) {
+                paginatedClearingRequests = sw360ClearingRequestService.getRecentClearingRequestsWithPagination(sw360User, pageable);
+            } else {
+                paginatedClearingRequests = sw360ClearingRequestService.searchClearingRequestsByFilters(sw360User, filterMap, pageable);
+            }
+
+            PaginationResult<ClearingRequest> paginationResult;
+            List<ClearingRequest> allClearingRequests = new ArrayList<>(paginatedClearingRequests.values().iterator().next());
+            int totalCount = Math.toIntExact(paginatedClearingRequests.keySet().stream()
+                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, allClearingRequests, SW360Constants.TYPE_CLEARING, totalCount);
+
             final List<EntityModel<ClearingRequest>> clearingRequestResources = new ArrayList<>();
             for (ClearingRequest cr : paginationResult.getResources()) {
                 ClearingRequest embeddedCR = restControllerHelper.convertToEmbeddedClearingRequest(cr);
                 HalResource<ClearingRequest> halResource = createHalClearingRequestWithAllDetails(embeddedCR, sw360User, false);
-                 if(halResource != null) clearingRequestResources.add(halResource);
+                if(halResource != null) clearingRequestResources.add(halResource);
             }
+
             CollectionModel<EntityModel<ClearingRequest>> resources;
             if (clearingRequestResources.isEmpty()) {
                 resources = restControllerHelper.emptyPageResource(ClearingRequest.class, paginationResult);
             } else {
                 resources = restControllerHelper.generatePagesResource(paginationResult, clearingRequestResources);
             }
-            HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-            return new ResponseEntity<>(resources, status);
+            HttpStatus status1 = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+            return new ResponseEntity<>(resources, status1);
 
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private Map<String, Set<String>> getFilterMapForClearingRequests(
+            String projectId, String status, String createdBy, String createdOn) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
+            filterMap.put(ClearingRequest._Fields.PROJECT_ID.getFieldName(), Collections.singleton(projectId));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(status)) {
+            filterMap.put(ClearingRequest._Fields.CLEARING_STATE.getFieldName(), Collections.singleton(status));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
+            filterMap.put(ClearingRequest._Fields.REQUESTING_USER.getFieldName(), Collections.singleton(createdBy));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(createdOn)) {
+            filterMap.put(ClearingRequest._Fields.TIMESTAMP.getFieldName(), Collections.singleton(createdOn));
+        }
+        
+        return filterMap;
     }
 
     @Operation(
