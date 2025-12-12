@@ -115,7 +115,14 @@ public class ClearingRequestTest extends TestIntegrationBase {
 
     @Test
     public void should_get_my_clearing_requests() throws IOException, TException {
-        given(clearingServiceMock.getMyClearingRequests(any(), any())).willReturn(new java.util.HashSet<>(List.of(cr)));
+        // Mock pagination methods
+        org.eclipse.sw360.datahandler.thrift.PaginationData paginationData = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        paginationData.setTotalRowCount(1);
+        paginationData.setRowsPerPage(20);
+        paginationData.setDisplayStart(0);
+        given(clearingServiceMock.getRecentClearingRequestsWithPagination(any(), any())).willReturn(
+            java.util.Collections.singletonMap(paginationData, List.of(cr))
+        );
         // Ensure embedded details path executes without exception
         org.eclipse.sw360.datahandler.thrift.projects.Project proj = new org.eclipse.sw360.datahandler.thrift.projects.Project();
         org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary summary = new org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary();

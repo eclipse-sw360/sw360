@@ -1020,7 +1020,6 @@ public class RestControllerHelper<T> {
         License embeddedLicense = new License();
         embeddedLicense.setId(license.getId());
         embeddedLicense.setFullname(license.getFullname());
-        embeddedLicense.setShortname(license.getShortname());
         embeddedLicense.setChecked(license.isChecked());
         embeddedLicense.setLicenseType(license.getLicenseType());
         embeddedLicense.unsetOSIApproved();
@@ -1416,7 +1415,6 @@ public class RestControllerHelper<T> {
         embeddedClearingRequest.setType(null);
         embeddedClearingRequest.setClearingType(clearingRequest.getClearingType());
         embeddedClearingRequest.setTimestamp(clearingRequest.getTimestamp());
-        embeddedClearingRequest.setClearingSize(clearingRequest.getClearingSize());
         return embeddedClearingRequest;
     }
 
@@ -1611,7 +1609,8 @@ public class RestControllerHelper<T> {
     public void addEmbeddedDatesClearingRequest(HalResource<ClearingRequest> halClearingRequest, ClearingRequest clearingRequest, boolean isSingleRequest) {
         halClearingRequest.addEmbeddedResource("createdOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getTimestamp()));
         if (isSingleRequest) {
-            halClearingRequest.addEmbeddedResource("lastUpdatedOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getModifiedOn()));
+            long lastUpdatedOn = clearingRequest.getModifiedOn() > 0 ? clearingRequest.getModifiedOn() : clearingRequest.getTimestamp();
+            halClearingRequest.addEmbeddedResource("lastUpdatedOn", SW360Utils.convertEpochTimeToDate(lastUpdatedOn));
         }
     }
 
@@ -1658,19 +1657,6 @@ public class RestControllerHelper<T> {
         // Do not add attachment as it is an embedded field
         release.unsetAttachments();
         return halRelease;
-    }
-    public ClearingRequest updateCRSize(ClearingRequest clearingRequest, Project project, User sw360User) throws TException {
-        int openReleaseCount = SW360Utils.getOpenReleaseCount(project.getReleaseClearingStateSummary());
-        ClearingRequestSize currentSize = SW360Utils.determineCRSize(openReleaseCount);
-        ClearingRequestSize initialSize = clearingRequest.getClearingSize();
-        if(initialSize == null) return clearingRequest;
-        if(!initialSize.equals(ClearingRequestSize.VERY_LARGE)) {
-            int limit = SW360Utils.CLEARING_REQUEST_SIZE_MAP.get(initialSize);
-            if(openReleaseCount > limit){
-                clearingRequestService.updateClearingRequestForChangeInClearingSize(clearingRequest.getId(), currentSize);
-            }
-        }
-        return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
     }
 
     public boolean isWriteActionAllowed(Object object, User user) {
