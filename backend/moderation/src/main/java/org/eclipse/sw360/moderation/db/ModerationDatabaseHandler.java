@@ -165,6 +165,17 @@ public class ModerationDatabaseHandler {
         return new HashSet<ClearingRequest>(clearingRequestRepository.getClearingRequestsByBU(businessUnit));
     }
 
+    public Map<PaginationData, List<ClearingRequest>> getRecentClearingRequestsWithPagination(User user, PaginationData pageData) {
+        return clearingRequestRepository.getRecentClearingRequestsWithPagination(
+                user.getEmail(), user.getDepartment(), pageData);
+    }
+
+    public Map<PaginationData, List<ClearingRequest>> searchClearingRequestsByFilters(
+            User user, Map<String, Set<String>> filterMap, PaginationData pageData) {
+        return clearingRequestRepository.searchClearingRequestsByFilters(
+                user.getEmail(), user.getDepartment(), filterMap, pageData);
+    }
+
     public Integer getOpenCriticalCrCountByGroup(String group) {
         return clearingRequestRepository.getOpenCriticalClearingRequestCount(group);
     }
@@ -315,15 +326,6 @@ public class ModerationDatabaseHandler {
         try {
             ClearingRequest clearingRequest = clearingRequestRepository.get(crId);
             clearingRequest.setProjectBU(businessUnit);
-            clearingRequestRepository.update(clearingRequest);
-        } catch (Exception e) {
-            log.error("Failed to update CR-ID: %s with error: %s", crId, e.getMessage());
-        }
-    }
-    public void updateClearingRequestForChangeInClearingSize(String crId, ClearingRequestSize size) {
-        try{
-            ClearingRequest clearingRequest = clearingRequestRepository.get(crId);
-            clearingRequest.setClearingSize(size);
             clearingRequestRepository.update(clearingRequest);
         } catch (Exception e) {
             log.error("Failed to update CR-ID: %s with error: %s", crId, e.getMessage());
