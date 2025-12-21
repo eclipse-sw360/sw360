@@ -59,7 +59,6 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
@@ -115,1846 +114,1614 @@ import com.google.common.collect.ImmutableMap;
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    public static final String RELEASES_URL = "/releases";
-    private static final String SPDX_DOCUMENT = "spdxDocument";
-    private static final String DOCUMENT_CREATION_INFORMATION = "documentCreationInformation";
-    private static final String PACKAGE_INFORMATION = "packageInformation";
-    private static final Logger log = LogManager.getLogger(ReleaseController.class);
-    private static final Map<String, ReentrantLock> mapOfLocks = new HashMap<String, ReentrantLock>();
-    private static final ImmutableMap<Release._Fields,String> mapOfFieldsTobeEmbedded = ImmutableMap.of(
-            Release._Fields.MODERATORS, "sw360:moderators",
-            Release._Fields.ATTACHMENTS, "sw360:attachments",
-            Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
-            Release._Fields.RELEASE_ID_TO_RELATIONSHIP,"sw360:releaseIdToRelationship",
-            Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
-    private static final ImmutableMap<Release._Fields, String[]> mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames = ImmutableMap.<Release._Fields, String[]>builder()
-            .put(Release._Fields.SOURCE_CODE_DOWNLOADURL, new String[] { "downloadurl", "sourceCodeDownloadurl" })
-            .build();
-    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
-            .put("message", "Moderation request is created").build();
-
-    @NonNull
-    private Sw360ReleaseService releaseService;
-
-    @NonNull
-    private SW360PackageService packageService;
-
-    @NonNull
-    private final Sw360VulnerabilityService vulnerabilityService;
-
-    @NonNull
-    private final Sw360VendorService vendorService;
-
-    @NonNull
-    private Sw360AttachmentService attachmentService;
-
-    @NonNull
-    private RestControllerHelper restControllerHelper;
-
-    @NonNull
-    private Sw360LicenseInfoService sw360LicenseInfoService;
-
-    @NonNull
-    private SW360SPDXDocumentService sw360SPDXDocumentService;
-
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
-
-    @Operation(
-            summary = "List all of the service's releases.",
-            description = "List all of the service's releases.",
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL)
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
-            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
-            Pageable pageable,
-            @Parameter(description = "sha1 of the release attachment")
-            @RequestParam(value = "sha1", required = false) String sha1,
-            @Parameter(description = "Fields of the object to be embedded in the response")
-            @RequestParam(value = "fields", required = false) List<String> fields,
-            @Parameter(description = "name of the release")
-            @RequestParam(value = "name", required = false) String name,
-            @Parameter(description = "luceneSearch parameter to filter the releases.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
-            @Parameter(description = "fetch releases that are in NEW state and have a SRC/SRS attachment")
-            @RequestParam(value = "isNewClearingWithSourceAvailable", required = false) boolean isNewClearingWithSourceAvailable,
-            @Parameter(description = "allDetails of the release")
-            @RequestParam(value = "allDetails", required = false) boolean allDetails,
-            HttpServletRequest request
-    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
-
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Map<PaginationData, List<Release>> paginatedReleases = null;
-
-        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            paginatedReleases = releaseService.refineSearch(name, sw360User, pageable);
-        } else {
-            if (sha1 != null && !sha1.isEmpty()) {
-                List<Release> sw360Releases = new ArrayList<>(searchReleasesBySha1(sha1, sw360User));
-                paginatedReleases = Collections.singletonMap(
-                        new PaginationData().setRowsPerPage(sw360Releases.size()).setDisplayStart(0)
-                                .setTotalRowCount(sw360Releases.size()),
-                        sw360Releases
-                );
-            } else if (isNewClearingWithSourceAvailable) {
-                paginatedReleases = releaseService.getAccessibleNewReleasesWithSrc(sw360User, pageable);
-            } else {
-                paginatedReleases = releaseService.searchReleaseByNamePaginated(name, pageable);
-            }
-        }
-
-        List<Release> sw360Releases = new ArrayList<>(paginatedReleases.values().iterator().next());
-
-        if (allDetails) {
-            for (Release release : sw360Releases) {
-                if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
-                    try {
-                        Vendor relVendor = vendorService.getVendorById(release.getVendorId());
-                        release.setVendor(relVendor);
-                    } catch (RuntimeException ignore) {
-                        log.error("Unable to find vendor with ID {}", release.getVendorId());
-                    }
-                }
-            }
-        }
-
-        if (CommonUtils.isNotNullEmptyOrWhitespace(sha1) || CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            for (Release release : sw360Releases) {
-                releaseService.setComponentDependentFieldsInRelease(release, sw360User);
-            }
-        } else {
-            releaseService.setComponentDependentFieldsInRelease(sw360Releases, sw360User);
-        }
-
-        PaginationResult<Release> paginationResult;
-        int totalCount = Math.toIntExact(paginatedReleases.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
-        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE, totalCount);
-
-        List<EntityModel<Release>> releaseResources = new ArrayList<>();
-        for (Release sw360Release : paginationResult.getResources()) {
-            EntityModel<Release> releaseResource = null;
-            if (!allDetails) {
-                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
-                releaseResource = EntityModel.of(embeddedRelease);
-            } else {
-                releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
-            }
-
-            releaseResources.add(releaseResource);
-        }
-
-        CollectionModel<EntityModel<Release>> resources = null;
-        if (CommonUtils.isNotEmpty(releaseResources)) {
-            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
-        }
-
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(resources, status);
-    }
-
-    private List<Release> searchReleasesBySha1(String sha1, User sw360User) throws TException {
-        List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
-        List<Release> releases = new ArrayList<>();
-        for (AttachmentInfo attachmentInfo : attachmentInfos) {
-            if (attachmentInfo.getOwner().isSetReleaseId()) {
-                releases.add(releaseService.getReleaseForUserById(attachmentInfo.getOwner().getReleaseId(), sw360User));
-            }
-        }
-        return releases;
-    }
-
-    @Operation(
-            summary = "Get a release by ID.",
-            description = "Get a single release by ID.",
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/{id}")
-    public ResponseEntity<EntityModel<Release>> getRelease(
-            @Parameter(description = "The ID of the release to be retrieved.")
-            @PathVariable("id") String id
-    ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
-        restControllerHelper.addEmbeddedDataToHalResourceRelease(halRelease, sw360Release);
-        List<ReleaseLink> linkedReleaseRelations = releaseService.getLinkedReleaseRelations(sw360Release, sw360User);
-
-        String spdxId = sw360Release.getSpdxId();
-        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId) && SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
-            SPDXDocument spdxDocument = releaseService.getSPDXDocumentById(spdxId, sw360User);
-            sw360SPDXDocumentService.sortSectionForSPDXDocument(spdxDocument);
-            restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocument);
-            String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
-            if (CommonUtils.isNotNullEmptyOrWhitespace(spdxDocumentCreationInfoId)) {
-                DocumentCreationInformation documentCreationInformation = releaseService.getDocumentCreationInformationById(spdxDocumentCreationInfoId, sw360User);
-                sw360SPDXDocumentService.sortSectionForDocumentCreation(documentCreationInformation);
-                restControllerHelper.addEmbeddedDocumentCreationInformation(halRelease, documentCreationInformation);
-            }
-            String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
-            if(CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
-                PackageInformation packageInformation = releaseService.getPackageInformationById(spdxPackageInfoId, sw360User);
-                sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
-                restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
-            }
-        }
-        if (linkedReleaseRelations != null) {
-            restControllerHelper.addEmbeddedReleaseLinks(halRelease, linkedReleaseRelations);
-        }
-        return new ResponseEntity<>(halRelease, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Get recently created releases.",
-            description = "Get 5 of the service's most recently created releases.",
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/recentReleases")
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getRecentRelease() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<Release> sw360Releases = releaseService.getRecentReleases(sw360User);
-
-        List<EntityModel<Release>> resources = new ArrayList<>();
-        sw360Releases.forEach(r -> {
-            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(r);
-            resources.add(EntityModel.of(embeddedRelease));
-        });
-
-        CollectionModel<EntityModel<Release>> finalResources = restControllerHelper.createResources(resources);
-        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(finalResources, status);
-    }
-
-    @Operation(
-            summary = "Get vulnerabilities of a single release.",
-            description = "Get vulnerabilities of a single release.",
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
-    public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfReleases(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id
-    ) {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByReleaseId(id, user);
-        CollectionModel<VulnerabilityDTO> resources = CollectionModel.of(allVulnerabilityDTOs);
-        return new ResponseEntity<>(resources,HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Get service's releases subscription.",
-            description = "Get service's releases subscription.",
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/mySubscriptions")
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleaseSubscription() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<Release> sw360Releases = releaseService.getReleaseSubscriptions(sw360User);
-
-        List<EntityModel<Release>> resources = new ArrayList<>();
-        sw360Releases.forEach(c -> {
-            Release embeddedComponent = restControllerHelper.convertToEmbeddedRelease(c);
-            resources.add(EntityModel.of(embeddedComponent));
-        });
-
-        CollectionModel<EntityModel<Release>> finalResources = restControllerHelper.createResources(resources);
-        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(finalResources, status);
-    }
-
-    @Operation(
-            summary = "Get all the resources where the release is used.",
-            description = "Get all the resources where the release is used.",
-            tags = {"Releases"}
-    )
-    @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
-            throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
-        Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
-
-        List<EntityModel> resources = new ArrayList<>();
-        sw360Projects.forEach(p -> {
-            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-            resources.add(EntityModel.of(embeddedProject));
-        });
-
-        sw360Components.forEach(c -> {
-            Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
-            resources.add(EntityModel.of(embeddedComponent));
-        });
-
-        RestrictedResource restrictedResource = new RestrictedResource();
-        restrictedResource.setProjects(releaseService.countProjectsByReleaseId(id) - sw360Projects.size());
-        resources.add(EntityModel.of(restrictedResource));
-
-        CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
-        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(finalResources, status);
-    }
-
-    @Operation(
-            summary = "Get releases by external IDs.",
-            description = "Get releases where provided external IDs match.",
-            tags = {"Releases"},
-            parameters = {
-                    @Parameter(
-                            description = "The external IDs of the releases to filter.",
-                            example = "{\n" +
-                                    "\"mainline-id-component\": \"1432\",\n" +
-                                    "\"mainline-id-component\": \"4876\"\n" +
-                                    "}",
-                            in = ParameterIn.QUERY,
-                            name = "externalIds",
-                            explode = Explode.TRUE,
-                            schema = @Schema(implementation = LinkedMultiValueMap.class)
-                    )
-            }
-
-    )
-    @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
-    public ResponseEntity<Release> searchByExternalIds(
-            HttpServletRequest request
-    ) throws TException {
-        String queryString = request.getQueryString();
-        return restControllerHelper.searchByExternalIds(queryString, releaseService, null);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Delete releases.",
-            description = "Delete existing releases.",
-            tags = {"Releases"}
-    )
-    @DeleteMapping(value = RELEASES_URL + "/{ids}")
-    public ResponseEntity<List<MultiStatus>> deleteReleases(
-            @Parameter(description = "The IDs of the releases to be deleted.")
-            @PathVariable("ids") List<String> idsToDelete,
-            @Parameter(description = "Comment message")
-            @RequestParam(value = "comment", required = false) String comment
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        if (StringUtils.isNotEmpty(comment)) {
-            user.setCommentMadeDuringModerationRequest(comment);
-        }
-        List<MultiStatus> results = new ArrayList<>();
-        for(String id:idsToDelete) {
-            RequestStatus requestStatus = releaseService.deleteRelease(id, user);
-            if(requestStatus == RequestStatus.SUCCESS) {
-                results.add(new MultiStatus(id, HttpStatus.OK));
-            } else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
-                results.add(new MultiStatus(id, HttpStatus.ACCEPTED));
-            } else if (requestStatus == RequestStatus.IN_USE) {
-                results.add(new MultiStatus(id, HttpStatus.CONFLICT));
-            } else {
-                results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
-            }
-        }
-        return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Update a release.",
-            description = "Update an existing release.",
-            tags = {"Releases"}
-    )
-    @PatchMapping(value = RELEASES_URL + "/{id}")
-    public ResponseEntity<EntityModel<Release>> patchRelease(
-            @Parameter(description = "The ID of the release to be updated.")
-            @PathVariable("id") String id,
-            @Parameter(description = "The release object to be updated.",
-                    schema = @Schema(implementation = Release.class))
-            @RequestBody Map<String, Object> reqBodyMap
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Release sw360Release = releaseService.getReleaseForUserById(id, user);
-        Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
-        updateRelease.setClearingState(sw360Release.getClearingState());
-        sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
-        releaseService.setComponentNameAsReleaseName(sw360Release, user);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
-        sw360Release = releaseService.getReleaseForUserById(id, user);
-        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
-        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(halRelease, HttpStatus.OK);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Update vulnerabilities of a release.",
-            description = "Update vulnerabilities of an existing release.",
-            tags = {"Releases"}
-    )
-    @PatchMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
-    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(
-            @Parameter(description = "The ID of the release to be updated.")
-            @PathVariable("id") String releaseId,
-            @Parameter(description = "The vulnerability object to be updated.")
-            @RequestBody VulnerabilityState vulnerabilityState
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        if(CommonUtils.isNullOrEmptyCollection(vulnerabilityState.getReleaseVulnerabilityRelationDTOs())) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
-                    "Required field ReleaseVulnerabilityRelation is not present");
-        }
-        if(vulnerabilityState.getVerificationState() == null) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
-                    "Required field verificationState is not present");
-        }
-        List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId, user);
-        Set<String> externalIdsFromRequestDto = vulnerabilityState.getReleaseVulnerabilityRelationDTOs().stream().map(ReleaseVulnerabilityRelationDTO::getExternalId).collect(Collectors.toSet());
-        List<VulnerabilityDTO> actualVDtoFromRequest = vulnerabilityService.getVulnerabilityDTOByExternalId(externalIdsFromRequestDto, releaseId);
-        Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
-        Set<String> commonExtIds = Sets.intersection(actualExternalId, externalIdsFromRequestDto);
-        if(CommonUtils.isNullOrEmptyCollection(commonExtIds) || commonExtIds.size() != externalIdsFromRequestDto.size()) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "External ID is not valid");
-        }
-
-        Map<String, ReleaseVulnerabilityRelation> releasemap = new HashMap<>();
-        actualVDtoFromRequest.forEach(vulnerabilityDTO -> {
-            releasemap.put(vulnerabilityDTO.getExternalId(),vulnerabilityDTO.getReleaseVulnerabilityRelation());
-        });
-        RequestStatus requestStatus = null;
-        for (Map.Entry<String, ReleaseVulnerabilityRelation> entry : releasemap.entrySet()) {
-            requestStatus = updateReleaseVulnerabilityRelation(releaseId, user, vulnerabilityState.getComment(), vulnerabilityState.getVerificationState(), entry.getKey());
-            if (requestStatus != RequestStatus.SUCCESS) {
-                break;
-            }
-        }
-        if (requestStatus == RequestStatus.ACCESS_DENIED){
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "User not allowed!");
-        }
-        List<VulnerabilityDTO> vulnerabilityDTOList = getVulnerabilityUpdated(externalIdsFromRequestDto, releaseId);
-        final List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
-        vulnerabilityDTOList.forEach(dto->{
-            final EntityModel<VulnerabilityDTO> vulnerabilityDTOEntityModel = EntityModel.of(dto);
-            vulnerabilityResources.add(vulnerabilityDTOEntityModel);
-        });
-        CollectionModel<EntityModel<VulnerabilityDTO>> resources = null;
-        resources = restControllerHelper.createResources(vulnerabilityResources);
-        HttpStatus status = resources == null ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
-        return new ResponseEntity<>(resources, status);
-    }
-
-    public RequestStatus updateReleaseVulnerabilityRelation(String releaseId, User user, String comment, VerificationState verificationState, String externalIdRequest) throws TException {
-        List<VulnerabilityDTO> vulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId, user);
-        ReleaseVulnerabilityRelation releaseVulnerabilityRelation = new ReleaseVulnerabilityRelation();
-        for (VulnerabilityDTO vulnerabilityDTO: vulnerabilityDTOs) {
-            if (vulnerabilityDTO.getExternalId().equals(externalIdRequest)) {
-                releaseVulnerabilityRelation = vulnerabilityDTO.getReleaseVulnerabilityRelation();
-            }
-        }
-        ReleaseVulnerabilityRelation relation = updateReleaseVulnerabilityRelationFromRequest(releaseVulnerabilityRelation, comment, verificationState, user);
-        return vulnerabilityService.updateReleaseVulnerabilityRelation(relation,user);
-    }
-
-    public static ReleaseVulnerabilityRelation updateReleaseVulnerabilityRelationFromRequest(ReleaseVulnerabilityRelation dbRelation, String comment, VerificationState verificationState, User user) {
-        if (!dbRelation.isSetVerificationStateInfo()) {
-            dbRelation.setVerificationStateInfo(new ArrayList<>());
-        }
-        VerificationStateInfo verificationStateInfo = new VerificationStateInfo();
-        List<VerificationStateInfo> verificationStateHistory = dbRelation.getVerificationStateInfo();
-
-        verificationStateInfo.setCheckedBy(user.getEmail());
-        verificationStateInfo.setCheckedOn(SW360Utils.getCreatedOn());
-        verificationStateInfo.setVerificationState(verificationState);
-        verificationStateInfo.setComment(comment);
-
-        verificationStateHistory.add(verificationStateInfo);
-        dbRelation.setVerificationStateInfo(verificationStateHistory);
-        return dbRelation;
-    }
-
-    public List<VulnerabilityDTO> getVulnerabilityUpdated(Set<String> externalIds, String releaseIds) {
-        return vulnerabilityService.getVulnerabilityDTOByExternalId(externalIds, releaseIds);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Create a release.",
-            description = "Create a new release.",
-            tags = {"Releases"}
-    )
-    @PostMapping(value = RELEASES_URL)
-    public ResponseEntity<EntityModel<Release>> createRelease(
-            @Parameter(description = "The release object to be created.",
-                    schema = @Schema(implementation = Release.class))
-            @RequestBody Map<String, Object> reqBodyMap
-    ) throws URISyntaxException, TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release release = setBackwardCompatibleFieldsInRelease(reqBodyMap);
-        if (release.isSetComponentId()) {
-            URI componentURI = new URI(release.getComponentId());
-            String path = componentURI.getPath();
-            String componentId = path.substring(path.lastIndexOf('/') + 1);
-            release.setComponentId(componentId);
-        }
-        if (release.isSetVendorId()) {
-            URI vendorURI = new URI(release.getVendorId());
-            String path = vendorURI.getPath();
-            String vendorId = path.substring(path.lastIndexOf('/') + 1);
-            release.setVendorId(vendorId);
-        }
-
-        if (release.getMainLicenseIds() != null) {
-            Set<String> mainLicenseIds = new HashSet<>();
-            Set<String> mainLicenseUris = release.getMainLicenseIds();
-            for (String licenseURIString : mainLicenseUris.toArray(new String[mainLicenseUris.size()])) {
-                URI licenseURI = new URI(licenseURIString);
-                String path = licenseURI.getPath();
-                String licenseId = path.substring(path.lastIndexOf('/') + 1);
-                mainLicenseIds.add(licenseId);
-            }
-            release.setMainLicenseIds(mainLicenseIds);
-        }
-
-        release.unsetClearingState();
-        Release sw360Release = releaseService.createRelease(release, sw360User);
-        HalResource<Release> halResource = createHalReleaseResource(sw360Release, true);
-
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
-                .buildAndExpand(sw360Release.getId()).toUri();
-
-        return ResponseEntity.created(location).body(halResource);
-    }
-
-    @Operation(
-            summary = "Update SPDX document.",
-            description = "Update SPDX document of a release.",
-            tags = {"Releases"}
-    )
-    @PreAuthorize("hasAuthority('WRITE')")
-    @PatchMapping(value = RELEASES_URL + "/{id}/spdx")
-    public ResponseEntity<?> updateSPDX(
-            @Parameter(description = "Updated data of SPDX document")
-            @RequestBody Map<String, Object> reqBodyMap,
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId
-    ) throws TException {
-        if (!SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
-            throw new SW360Exception("Feature SPDXDocument disable");
-        }
-        if (CommonUtils.isNullEmptyOrWhitespace(releaseId)) {
-            throw new BadRequestClientException("Release id not found");
-        }
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Release release = releaseService.getReleaseForUserById(releaseId, user);
-        String spdxId = "";
-
-        if (CommonUtils.isNullEmptyOrWhitespace(release.getSpdxId())) {
-            spdxId = sw360SPDXDocumentService.addSPDX(release, user);
-        }
-        SPDXDocument spdxDocumentActual = CommonUtils.isNullEmptyOrWhitespace(spdxId)
-                ? releaseService.getSPDXDocumentById(release.getSpdxId(), user)
-                : releaseService.getSPDXDocumentById(spdxId, user);
-        spdxId = spdxDocumentActual.getId();
-        if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
-            throw new BadRequestClientException("Update SPDXDocument Failed!");
-        }
-        HalResource<Release> halRelease = createHalReleaseResource(release, false);
-
-        if(reqBodyMap.isEmpty()) {
-            return ResponseEntity.ok(halRelease);
-        }
-
-        if (null != reqBodyMap.get(SPDX_DOCUMENT)) {
-            SPDXDocument spdxDocumentRequest = sw360SPDXDocumentService.convertToSPDXDocument(reqBodyMap.get(SPDX_DOCUMENT));
-            if (null != spdxDocumentRequest) {
-                spdxDocumentRequest = sw360SPDXDocumentService.updateSPDXDocumentFromRequest(spdxDocumentRequest, spdxDocumentActual, release.getModerators());
-                RequestStatus requestStatus = releaseService.updateSPDXDocument(spdxDocumentRequest, release.getId(), user);
-                if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
-                    return ResponseEntity.accepted().body(RESPONSE_BODY_FOR_MODERATION_REQUEST);
-                }
-                restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocumentRequest);
-            }
-        } else {
-            restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocumentActual);
-        }
-
-        if (null != reqBodyMap.get(DOCUMENT_CREATION_INFORMATION)) {
-            DocumentCreationInformation documentCreationInformation = sw360SPDXDocumentService.convertToDocumentCreationInformation(reqBodyMap.get(DOCUMENT_CREATION_INFORMATION));
-            if (null != documentCreationInformation) {
-                documentCreationInformation = sw360SPDXDocumentService.updateDocumentCreationInformationFromRequest(documentCreationInformation, spdxDocumentActual, release.getModerators());
-                releaseService.updateDocumentCreationInformation(documentCreationInformation, spdxId, user);
-                restControllerHelper.addEmbeddedDocumentCreationInformation(halRelease, documentCreationInformation);
-            }
-        }
-
-        if (null != reqBodyMap.get(PACKAGE_INFORMATION)) {
-            PackageInformation packageInformation = sw360SPDXDocumentService.convertToPackageInformation(reqBodyMap.get(PACKAGE_INFORMATION));
-            if( null != packageInformation) {
-                packageInformation = sw360SPDXDocumentService.updatePackageInformationFromRequest(packageInformation, spdxDocumentActual, release.getModerators());
-                releaseService.updatePackageInformation(packageInformation, spdxId, user);
-                restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
-            }
-        }
-
-        return new ResponseEntity<>(halRelease, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Get attachment info of a release.",
-            description = "Get all attachment information of a release.",
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/{id}/attachments")
-    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getReleaseAttachments(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id
-    ) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(sw360User);
-        final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360User, sw360Release.getAttachments(), Source.releaseId(id));
-        return new ResponseEntity<>(resources, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Download the attachment bundle of a release.",
-            description = "Download the attachment bundle of a release.",
-            parameters = {
-                    @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = "application/zip"),
-            },
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {@Content(mediaType = "application/zip")}
-                    )
-            },
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/{releaseId}/attachments/download", produces="application/zip")
-    public void downloadAttachmentBundleFromRelease(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("releaseId") String releaseId,
-            HttpServletResponse response
-    ) throws TException, IOException {
-        final User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
-        final Release release = releaseService.getReleaseForUserById(releaseId, user);
-        final Set<Attachment> attachments = release.getAttachments();
-        attachmentService.downloadAttachmentBundleWithContext(release, attachments, user, response);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Update an attachment info of a release.",
-            description = "Update an attachment information of a release.",
-            tags = {"Releases"}
-    )
-    @PatchMapping(value = RELEASES_URL + "/{id}/attachment/{attachmentId}")
-    public ResponseEntity<EntityModel<Attachment>> patchReleaseAttachmentInfo(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id,
-            @Parameter(description = "The ID of the attachment.")
-            @PathVariable("attachmentId") String attachmentId,
-            @Parameter(description = "The attachment information.")
-            @RequestBody Attachment attachmentData
-    ) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        Set<Attachment> attachments = sw360Release.getAttachments();
-        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
-        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
-        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Create a new attachment for the release.",
-            description = "Create a new attachment for the release.",
-            tags = {"Releases"}
-    )
-    @PostMapping(value = RELEASES_URL + "/{releaseId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
-    public ResponseEntity<HalResource<Release>> addAttachmentToRelease(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("releaseId") String releaseId,
-            @Parameter(description = "The attachment file.")
-            @RequestPart("file") MultipartFile file,
-            @Parameter(description = "The attachment information.")
-            @RequestPart("attachment") Attachment newAttachment
-    ) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
-        Attachment attachment = null;
-        try {
-            attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
-        } catch (IOException e) {
-            log.error("failed to upload attachment", e);
-            throw new RuntimeException("failed to upload attachment", e);
-        }
-
-        release.addToAttachments(attachment);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User);
-        HalResource<Release> halRelease = createHalReleaseResource(release, true);
-        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(halRelease, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Download an attachment of a release.",
-            description = "Download an attachment of a release.",
-            parameters = {
-                    @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = MediaType.APPLICATION_OCTET_STREAM_VALUE),
-            },
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {@Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)}
-                    )
-            },
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/{releaseId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public void downloadAttachmentFromRelease(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("releaseId") String releaseId,
-            @Parameter(description = "The ID of the attachment.")
-            @PathVariable("attachmentId") String attachmentId,
-            HttpServletResponse response
-    ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(sw360User);
-        Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
-        attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
-    }
-
-    @Operation(
-            summary = "Delete attachments from a release.",
-            description = "Delete attachments from a release.",
-            tags = {"Releases"}
-    )
-    @DeleteMapping(RELEASES_URL + "/{releaseId}/attachments/{attachmentIds}")
-    public ResponseEntity<HalResource<Release>> deleteAttachmentsFromRelease(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("releaseId") String releaseId,
-            @Parameter(description = "The IDs of the attachments to be deleted.")
-            @PathVariable("attachmentIds") List<String> attachmentIds
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Release release = releaseService.getReleaseForUserById(releaseId, user);
-
-        Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.releaseId(releaseId),
-                release.getAttachments(), attachmentIds);
-        if (attachmentsToDelete.isEmpty()) {
-            // let the whole action fail if nothing can be deleted
-            throw new RuntimeException("Could not delete attachments " + attachmentIds + " from release " + releaseId);
-        }
-        log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
-        release.getAttachments().removeAll(attachmentsToDelete);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, user);
-        HalResource<Release> halRelease = createHalReleaseResource(release, true);
-        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(halRelease, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Check status of triggered FOSSology process of a release.",
-            description = "Check status of triggered FOSSology process of a release.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    schema = @Schema(
-                                            type = "object",
-                                            example = "{\"status\": \"SUCCESS\"}"
-                                    ))}
-                    )
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)
-    public ResponseEntity<Map<String, Object>> checkFossologyProcessStatus(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
-        Release release = releaseService.getReleaseForUserById(releaseId, user);
-        Map<String, Object> responseMap = new HashMap<>();
-        ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
-        ReentrantLock lock = mapOfLocks.get(releaseId);
-        if (lock != null && lock.isLocked()) {
-            responseMap.put("status", RequestStatus.PROCESSING);
-        } else if (fossologyProcess != null && releaseService.isFOSSologyProcessCompleted(fossologyProcess)) {
-            log.info("FOSSology process for Release : " + releaseId + " is complete.");
-            responseMap.put("status", RequestStatus.SUCCESS);
-        } else {
-            responseMap.put("status", RequestStatus.FAILURE);
-        }
-        responseMap.put("fossologyProcessInfo", fossologyProcess);
-        return new ResponseEntity<>(responseMap, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Trigger FOSSology process of a release.",
-            description = "Trigger FOSSology process of a release.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    schema = @Schema(type = "object", implementation = Map.class),
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"FOSSology Process for Release Id : " +
-                                                                    "\\\"123\\\" has been triggered.\"}"
-                                            )
-                                    }
-                            )}
-                    ),
-                    @ApiResponse(
-                            responseCode = "429",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"Max 10 FOSSology Process can be " +
-                                                                    "triggered simultaneously. Please try after sometime.\"}"
-                                            )
-                                    }
-                            )}
-                    ),
-                    @ApiResponse(
-                            responseCode = "406",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"FOSSology Process for Release Id : " +
-                                                                    "\\\"123\\\" is already running. Please wait till" +
-                                                                    " it is completed.\"}"
-                                            )
-                                    }
-                            )}
-                    )
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess", method = RequestMethod.GET)
-    public ResponseEntity<HalResource> triggerFossologyProcess(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId,
-            @Parameter(description = "Mark previous FOSSology process outdated and generate new.")
-            @RequestParam(value = "markFossologyProcessOutdated", required = false) boolean markFossologyProcessOutdated,
-            @Parameter(description = "Upload description to FOSSology")
-            @RequestParam(value = "uploadDescription", required = false) String uploadDescription
-    ) throws TException, IOException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
-        releaseService.checkFossologyConnection();
-        ReentrantLock lock = mapOfLocks.get(releaseId);
-        Map<String, String> responseMap = new HashMap<>();
-        HttpStatus status = null;
-        if (lock == null || !lock.isLocked()) {
-            if (mapOfLocks.size() > 10) {
-                responseMap.put("message",
-                        "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
-                status = HttpStatus.TOO_MANY_REQUESTS;
-            } else {
-                releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
-                        markFossologyProcessOutdated, uploadDescription);
-                responseMap.put("message", "FOSSology Process for Release Id : " + releaseId + " has been triggered.");
-                status = HttpStatus.OK;
-            }
-
-        } else {
-            status = HttpStatus.NOT_ACCEPTABLE;
-            responseMap.put("message", "FOSSology Process for Release Id : " + releaseId
-                    + " is already running. Please wait till it is completed.");
-        }
-        HalResource responseResource = new HalResource(responseMap);
-        Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL).slash(releaseId)
-                .slash("checkFossologyProcessStatus").withSelfRel();
-        responseResource.add(checkStatusLink);
-
-        return new ResponseEntity<HalResource>(responseResource, status);
-    }
-
-    @Operation(
-            summary = "Re-generate fossology report.",
-            description = "Re-generate fossology report.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    schema = @Schema(type = "object", implementation = Map.class),
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"FOSSology Process for Release Id : " +
-                                                                    "\\\"123\\\" has been triggered.\"}"
-                                            )
-                                    }
-                            )}
-                    ),
-                    @ApiResponse(
-                            responseCode = "429",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"Max 10 FOSSology Process can be " +
-                                                                    "triggered simultaneously. Please try after sometime.\"}"
-                                            )
-                                    }
-                            )}
-                    ),
-                    @ApiResponse(
-                            responseCode = "406",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"FOSSology Process for Release Id : " +
-                                                                    "\\\"123\\\" is already running. Please wait till" +
-                                                                    " it is completed.\"}"
-                                            )
-                                    }
-                            )}
-                    ),
-                    @ApiResponse(
-                            responseCode = "500",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    schema = @Schema(type = "object", implementation = Map.class))}
-                    )
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport", method = RequestMethod.GET)
-    public ResponseEntity<HalResource> triggerReloadFossologyReport(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
-        releaseService.checkFossologyConnection();
-        Map<String, String> responseMap = new HashMap<>();
-        String errorMsg = "Could not trigger report generation for this release";
-        HttpStatus status = null;
-        try {
-            Release release = releaseService.getReleaseForUserById(releaseId, user);
-            RequestStatus requestResult = releaseService.triggerReportGenerationFossology(releaseId, user);
-
-            if (requestResult == RequestStatus.FAILURE) {
-                responseMap.put("message", errorMsg);
-                status = HttpStatus.INTERNAL_SERVER_ERROR;
-            } else {
-                ExternalToolProcess externalToolProcess = releaseService.getExternalToolProcess(release);
-                if (externalToolProcess != null) {
-                    ReentrantLock lock = mapOfLocks.get(releaseId);
-
-                    if (lock == null || !lock.isLocked()) {
-                        if (mapOfLocks.size() > 10) {
-                            responseMap.put("message",
-                                    "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
-                            status = HttpStatus.TOO_MANY_REQUESTS;
+        public static final String RELEASES_URL = "/releases";
+        private static final String SPDX_DOCUMENT = "spdxDocument";
+        private static final String DOCUMENT_CREATION_INFORMATION = "documentCreationInformation";
+        private static final String PACKAGE_INFORMATION = "packageInformation";
+        private static final Logger log = LogManager.getLogger(ReleaseController.class);
+        private static final Map<String, ReentrantLock> mapOfLocks = new HashMap<String, ReentrantLock>();
+        private static final ImmutableMap<Release._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.of(
+                        Release._Fields.MODERATORS, "sw360:moderators",
+                        Release._Fields.ATTACHMENTS, "sw360:attachments",
+                        Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
+                        Release._Fields.RELEASE_ID_TO_RELATIONSHIP, "sw360:releaseIdToRelationship",
+                        Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
+        private static final ImmutableMap<Release._Fields, String[]> mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames = ImmutableMap.<Release._Fields, String[]>builder()
+                        .put(Release._Fields.SOURCE_CODE_DOWNLOADURL,
+                                        new String[] { "downloadurl", "sourceCodeDownloadurl" })
+                        .build();
+        private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap
+                        .<String, String>builder()
+                        .put("message", "Moderation request is created").build();
+
+        @NonNull
+        private Sw360ReleaseService releaseService;
+
+        @NonNull
+        private SW360PackageService packageService;
+
+        @NonNull
+        private final Sw360VulnerabilityService vulnerabilityService;
+
+        @NonNull
+        private final Sw360VendorService vendorService;
+
+        @NonNull
+        private Sw360AttachmentService attachmentService;
+
+        @NonNull
+        private RestControllerHelper restControllerHelper;
+
+        @NonNull
+        private Sw360LicenseInfoService sw360LicenseInfoService;
+
+        @NonNull
+        private SW360SPDXDocumentService sw360SPDXDocumentService;
+
+        @NonNull
+        private final com.fasterxml.jackson.databind.Module sw360Module;
+
+        @Operation(summary = "List all of the service's releases.", description = "List all of the service's releases.", tags = {
+                        "Releases" })
+        @GetMapping(value = RELEASES_URL)
+        public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
+                        @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class)) Pageable pageable,
+                        @Parameter(description = "sha1 of the release attachment") @RequestParam(value = "sha1", required = false) String sha1,
+                        @Parameter(description = "Fields of the object to be embedded in the response") @RequestParam(value = "fields", required = false) List<String> fields,
+                        @Parameter(description = "name of the release") @RequestParam(value = "name", required = false) String name,
+                        @Parameter(description = "luceneSearch parameter to filter the releases.") @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+                        @Parameter(description = "fetch releases that are in NEW state and have a SRC/SRS attachment") @RequestParam(value = "isNewClearingWithSourceAvailable", required = false) boolean isNewClearingWithSourceAvailable,
+                        @Parameter(description = "allDetails of the release") @RequestParam(value = "allDetails", required = false) boolean allDetails,
+                        HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException,
+                        ResourceClassNotFoundException {
+
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                Map<PaginationData, List<Release>> paginatedReleases = null;
+
+                if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                        paginatedReleases = releaseService.refineSearch(name, sw360User, pageable);
+                } else {
+                        if (sha1 != null && !sha1.isEmpty()) {
+                                List<Release> sw360Releases = new ArrayList<>(searchReleasesBySha1(sha1, sw360User));
+                                paginatedReleases = Collections.singletonMap(
+                                                new PaginationData().setRowsPerPage(sw360Releases.size())
+                                                                .setDisplayStart(0)
+                                                                .setTotalRowCount(sw360Releases.size()),
+                                                sw360Releases);
+                        } else if (isNewClearingWithSourceAvailable) {
+                                paginatedReleases = releaseService.getAccessibleNewReleasesWithSrc(sw360User, pageable);
                         } else {
-                            releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
-                                    false, "");
-                            responseMap.put("message", "Re-generate FOSSology's report process for Release Id : " + releaseId
-                                    + " has been triggered.");
-                            status = HttpStatus.OK;
+                                paginatedReleases = releaseService.searchReleaseByNamePaginated(name, pageable);
                         }
-                    } else {
-                        responseMap.put("message", "Another FOSSology Process for Release Id : " + releaseId
-                                + " is already running. Please wait till it is completed.");
-                        status = HttpStatus.NOT_ACCEPTABLE;
-                    }
-                } else {
-                    responseMap.put("message", "The source file is either not yet uploaded or scanning is not done.");
-                    status = HttpStatus.INTERNAL_SERVER_ERROR;
                 }
-            }
-        } catch (TException | IOException e) {
-            responseMap.put("message", errorMsg);
-            status = HttpStatus.INTERNAL_SERVER_ERROR;
-            log.error("Error pulling report from fossology", e);
-        }
 
-        HalResource responseResource = new HalResource(responseMap);
-        if (status == HttpStatus.OK || status == HttpStatus.NOT_ACCEPTABLE) {
-            Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL).slash(releaseId)
-                    .slash("checkFossologyProcessStatus").withSelfRel();
-            responseResource.add(checkStatusLink);
-        }
-        return new ResponseEntity<>(responseResource, status);
-    }
+                List<Release> sw360Releases = new ArrayList<>(paginatedReleases.values().iterator().next());
 
-    @Operation(
-            summary = "Link release to a release.",
-            description = "Link release to a release.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            content = {@Content(mediaType = "application/hal+json")},
-                            description = "Update stored."
-                    ),
-                    @ApiResponse(
-                            responseCode = "202",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"Moderation request is created\"}"
-                                            )
-                                    })},
-                            description = "Moderation request is created for the update."
-                    )
-            }
-    )
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = RELEASES_URL + "/{id}/releases", method = RequestMethod.POST)
-    public ResponseEntity linkReleases(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id,
-            @Parameter(description = "Relationship links with release ID as the key.",
-                    schema = @Schema(
-                            type = "object",
-                            example = "{\n" +
-                                    "  \"releaseId1\": \"DYNAMICALLY_LINKED\",\n" +
-                                    "  \"releaseId2\": \"CONTAINED\"\n" +
-                                    "}"
-                    )
-            )
-            @RequestBody Map<String, ReleaseRelationship> releaseIdToRelationship
-    ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        if (releaseIdToRelationship.isEmpty()) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Input data can not empty!");
-        }
-        sw360Release.setReleaseIdToRelationship(releaseIdToRelationship);
-
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
-        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Add or link packages to the project.",
-            description = "Add or link packages to the project.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            content = {@Content(mediaType = "application/hal+json")},
-                            description = "Update stored."
-                    ),
-                    @ApiResponse(
-                            responseCode = "202",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"Moderation request is created\"}"
-                                            )
-                                    })},
-                            description = "Moderation request is created for the update."
-                    )
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/link/packages", method = RequestMethod.PATCH)
-    public ResponseEntity<?> linkPackages(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id,
-            @Parameter(description = "The package IDs to be linked.")
-            @RequestBody Set<String> packagesInRequestBody
-    ) throws URISyntaxException, TException {
-        if(!packageService.validatePackageIds(packagesInRequestBody)){
-            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
-        }
-        RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
-        if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Unlink packages to the project.",
-            description = "Unlink packages to the project.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            content = {@Content(mediaType = "application/hal+json")},
-                            description = "Update stored."
-                    ),
-                    @ApiResponse(
-                            responseCode = "202",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"Moderation request is created\"}"
-                                            )
-                                    })},
-                            description = "Moderation request is created for the update."
-                    )
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/unlink/packages", method = RequestMethod.PATCH)
-    public ResponseEntity<?> unlinkPackages(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id,
-            @Parameter(description = "The package IDs to be linked.")
-            @RequestBody Set<String> packagesInRequestBody
-    ) throws URISyntaxException, TException {
-        if(!packageService.validatePackageIds(packagesInRequestBody)){
-            throw new ResourceNotFoundException("Package ID invalid!");
-        }
-        RequestStatus unlinkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
-        if (unlinkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @Operation(
-            summary = "Write SPDX license info into release.",
-            description = "Write SPDX license info into release.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    schema = @Schema(type = "object", implementation = Release.class))}
-                    ),
-                    @ApiResponse(
-                            responseCode = "202",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value =
-                                                            "{\"message\": \"Moderation request is created\"}"
-                                            )
-                                    })},
-                            description = "Moderation request is created for the update."
-                    )
-            }
-    )
-    @PostMapping(value = RELEASES_URL + "/{id}/spdxLicenses")
-    public ResponseEntity writeSpdxLicenseInfoIntoRelease(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId,
-            @Parameter(description = "The SPDX license info.",
-                    schema = @Schema(
-                            type = "object",
-                            example = "{\n" +
-                                    "  \"mainLicenseIds\": [\n" +
-                                    "    \"LicenseRef-1\",\n" +
-                                    "    \"LicenseRef-2\"\n" +
-                                    "  ],\n" +
-                                    "  \"otherLicenseIds\": [\n" +
-                                    "    \"LicenseRef-3\",\n" +
-                                    "    \"LicenseRef-4\"\n" +
-                                    "  ]\n" +
-                                    "}",
-                            requiredProperties = {"mainLicenseIds", "otherLicenseIds"}
-                    )
-            )
-            @RequestBody Map<String, Set<String>> licensesInfoInRequestBody
-    ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
-        Set<String> licenseIds = licensesInfoInRequestBody.get("mainLicenseIds");
-        Set<String> otherLicenseIds = licensesInfoInRequestBody.get("otherLicenseIds");
-
-        if (!CommonUtils.isNullOrEmptyCollection(licenseIds)) {
-	    sw360Release.getMainLicenseIds().clear();
-            for (String licenseId : licenseIds) {
-                sw360Release.addToMainLicenseIds(licenseId);
-            }
-        }
-
-        if (!CommonUtils.isNullOrEmptyCollection(otherLicenseIds)) {
-	    sw360Release.getOtherLicenseIds().clear();
-            for (String licenseId : otherLicenseIds) {
-                sw360Release.addToOtherLicenseIds(licenseId);
-            }
-        }
-
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
-        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
-        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(halRelease, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Load SPDX license info from release.",
-            description = "Load SPDX License Information from the attachment of the release.",
-            tags = {"Releases"}
-    )
-    @GetMapping(value = RELEASES_URL + "/{id}/spdxLicensesInfo")
-    public ResponseEntity<?> loadSpdxLicensesInfo(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId,
-            @Parameter(description = "The ID of the attachment.")
-            @RequestParam("attachmentId") String attachmentId,
-            @Parameter(description = "Include concluded license.")
-            @RequestParam(value = "includeConcludedLicense", required = false, defaultValue = "false") boolean includeConcludedLicense
-    ) throws SW360Exception {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Map<String, Set<String>> licenseToSrcFilesMap = new LinkedHashMap<>();
-        Set<String> mainLicenseNames = new TreeSet<>();
-        Set<String> otherLicenseNames = new TreeSet<>();
-        final Set<String> concludedLicenseIds = new TreeSet<>();
-
-        AttachmentType attachmentType;
-        String attachmentName;
-        long totalFileCount = 0;
-        Map<String, Object> responseBody = new LinkedHashMap<>();
-        Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() &&
-                null != result.getLicenseInfo().getLicenseNamesWithTexts());
-
-        try {
-            Release release = releaseService.getReleaseForUserById(releaseId, user);
-            attachmentType = release.getAttachments().stream()
-                    .filter(att -> attachmentId.equals(att.getAttachmentContentId())).map(Attachment::getAttachmentType).findFirst().orElse(null);
-            if (null == attachmentType) {
-                throw new SW360Exception("Cannot retrieve license information for attachment id " + attachmentId + " in release "
-                        + releaseId + ".");
-            }
-            if (!attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_XML) &&
-                    !attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED) &&
-                    !attachmentType.equals(AttachmentType.INITIAL_SCAN_REPORT)) {
-                throw new SW360Exception("Cannot retrieve license information for attachment type " + attachmentType + ".");
-            }
-            attachmentName = release.getAttachments().stream()
-                    .filter(att -> attachmentId.equals(att.getAttachmentContentId())).map(Attachment::getFilename).findFirst().orElse("");
-            final boolean isISR = AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType);
-            if (isISR) {
-                includeConcludedLicense = true;
-            }
-            List<LicenseInfoParsingResult> licenseInfoResult = sw360LicenseInfoService.getLicenseInfoForAttachment(release, user, attachmentId, includeConcludedLicense);
-            List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
-                    .filter(filterLicenseResult)
-                    .map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
-                    .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
-                            && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
-                            && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
-                    .collect(Collectors.toList());
-
-            if (attachmentName.endsWith(SW360Constants.RDF_FILE_EXTENSION)) {
-                if (isISR) {
-                    totalFileCount = licenseInfoResult.stream().map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
-                            .map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).flatMap(Set::stream).distinct().count();
-                    licenseToSrcFilesMap = CommonUtils.nullToEmptyList(licenseWithTexts).stream().collect(Collectors.toMap(LicenseNameWithText::getLicenseName,
-                            LicenseNameWithText::getSourceFiles, (oldValue, newValue) -> oldValue));
-                    licenseWithTexts.forEach(lwt -> {
-                        lwt.getSourceFiles().forEach(sf -> {
-                            if (sf.replaceAll(".*/", "").matches(SW360Constants.MAIN_LICENSE_FILES)) {
-                                concludedLicenseIds.add(lwt.getLicenseName());
-                            }
-                        });
-                    });
-                } else {
-                    concludedLicenseIds.addAll(licenseInfoResult.stream().flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
-                            .collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER))));
-                }
-                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
-                otherLicenseNames.removeAll(concludedLicenseIds);
-            } else if (attachmentName.endsWith(SW360Constants.XML_FILE_EXTENSION)) {
-                mainLicenseNames = licenseWithTexts.stream()
-                        .filter(license -> license.getType().equalsIgnoreCase(SW360Constants.LICENSE_TYPE_GLOBAL))
-                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
-                otherLicenseNames = licenseWithTexts.stream()
-                        .filter(license -> !license.getType().equalsIgnoreCase(SW360Constants.LICENSE_TYPE_GLOBAL))
-                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
-            }
-        } catch (TException e) {
-            log.error(e.getMessage(), e);
-            throw new SW360Exception("Cannot retrieve license information for attachment id " + attachmentId + " in release "
-                    + releaseId + ".");
-        }
-
-        if (CommonUtils.isNotEmpty(concludedLicenseIds)) {
-            responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.CONCLUDED_LICENSE_IDS);
-            responseBody.put(SW360Constants.LICENSE_IDS, concludedLicenseIds);
-        } else if (CommonUtils.isNotEmpty(mainLicenseNames)) {
-            responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.MAIN_LICENSE_ID);
-            responseBody.put(SW360Constants.LICENSE_IDS, mainLicenseNames);
-        }
-        responseBody.put(SW360Constants.OTHER_LICENSE, SW360Constants.OTHER_LICENSE_IDS);
-        responseBody.put(SW360Constants.OTHER_LICENSE_IDS_KEY, otherLicenseNames);
-        if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
-            responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.POSSIBLE_MAIN_LICENSE_IDS);
-            responseBody.put(SW360Constants.TOTAL_FILE_COUNT, totalFileCount);
-        }
-        responseBody.putAll(licenseToSrcFilesMap);
-
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Get linked releases information for a release by id.",
-            description = "Get linked releases information for a release by id.",
-            tags = {"Releases"},
-            responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        content = {@Content(mediaType = "application/hal+json",
-                                schema = @Schema(
-                                        type = "object",
-                                        example = """
-                                                {
-                                                    "_embedded": {
-                                                        "sw360:releaseLinks": [
-                                                            {
-                                                                "id": "123211321",
-                                                                "name": "Release 1",
-                                                                "version": "1.0",
-                                                                "releaseRelationship": "CONTAINED",
-                                                                "clearingState": "NEW_CLEARING",
-                                                                "licenseIds": [],
-                                                                "accessible": true,
-                                                                "componentId": "4566612"
-                                                            }
-                                                        ]
-                                                    },
-                                                    "_links": {
-                                                        "curies": [
-                                                            {
-                                                                "href": "http://localhost:8080/resource/docs/{rel}.html",
-                                                                "name": "sw360",
-                                                                "templated": true
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                        """
-                                ))}
-                    )
-            }
-    )
-    @GetMapping(value = RELEASES_URL + "/{id}/releases")
-    public ResponseEntity<CollectionModel<HalResource<ReleaseLink>>> getLinkedReleases(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id,
-            @Parameter(description = "Get direct (false) or transitive (true) linked releases.")
-            @RequestParam(value = "transitive", required = false, defaultValue = "false") boolean transitive
-    ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        Map<String, ReleaseRelationship> releaseRelationshipMap = !CommonUtils.isNullOrEmptyMap(sw360Release.getReleaseIdToRelationship())
-                ? sw360Release.getReleaseIdToRelationship()
-                : new HashMap<>();
-        Set<String> releaseIdsInBranch = new HashSet<>();
-
-        final List<HalResource<ReleaseLink>> linkedReleaseResources = releaseRelationshipMap.entrySet().stream()
-                .map(item -> wrapTException(() -> {
-                    final Release releaseById = releaseService.getReleaseForUserById(item.getKey(), sw360User);
-                    final ReleaseLink embeddedReleaseLink = restControllerHelper.convertToReleaseLink(releaseById, item.getValue());
-                    embeddedReleaseLink.setAccessible(releaseService.isReleaseActionAllowed(releaseById, sw360User, RequestedAction.READ));
-                    final HalResource<ReleaseLink> releaseResource = new HalResource<>(embeddedReleaseLink);
-                    if (transitive) {
-                        releaseService.addEmbeddedLinkedRelease(releaseById, sw360User, releaseResource, releaseIdsInBranch);
-                    }
-                    return releaseResource;
-                })).collect(Collectors.toList());
-
-        CollectionModel<HalResource<ReleaseLink>> collectionModel = CollectionModel.of(linkedReleaseResources);
-        return new ResponseEntity<>(collectionModel, HttpStatus.OK);
-    }
-
-    private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)
-            throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release release = releaseService.getReleaseForUserById(id, sw360User);
-        Set<String> packageIds;
-        packageIds = release.getPackageIds();
-        if (CommonUtils.isNullOrEmptyCollection(packageIds)) {
-            packageIds = new HashSet<>();
-        }
-        if (link) {
-            packageIds.addAll(packagesInRequestBody);
-        } else {
-            packageIds.removeAll(packagesInRequestBody);
-        }
-
-        release.setPackageIds(packageIds);
-        return releaseService.updateRelease(release, sw360User);
-    }
-
-    @Operation(
-            summary = "Get assessment summary info of release.",
-            description = "Get assessment summary info of release (Have one CLI file only).",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    schema = @Schema(
-                                            type = "object",
-                                            example = "{\n" +
-                                                    "  \"GeneralAssessment\": \"General Assessment\",\n" +
-                                                    "  \"CriticalFilesFound\": \"Critical Files Found\",\n" +
-                                                    "  \"AdditionalNotes\": \"Additional Notes\",\n" +
-                                                    "  \"UsageRestrictionsFound\": \"None\",\n" +
-                                                    "  \"ExportRestrictionsFound\": \"Export Restrictions Found\",\n" +
-                                                    "  \"DependencyNotes\": \"Dependency Notes\"\n" +
-                                                    "}"
-                                    ))}
-                    )
-            }
-    )
-    @GetMapping(value = RELEASES_URL + "/{id}/assessmentSummaryInfo")
-    public ResponseEntity loadAssessmentSummaryInfo(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String id
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
-        Release release = releaseService.getReleaseForUserById(id, user);
-        final boolean INCLUDE_CONCLUDED_LICENSE = true;
-
-        Map<String, String> assessmentSummaryMap = new HashMap<>();
-        List<String> cliAttachmentIds = release.getAttachments().stream()
-                .filter(att -> att.getAttachmentType().equals(AttachmentType.COMPONENT_LICENSE_INFO_XML))
-                .map(Attachment::getAttachmentContentId).collect(Collectors.toList());
-        if (cliAttachmentIds.size() != 1) {
-            throw new SW360Exception("Number of CLI attachments must be 1");
-        }
-        List<LicenseInfoParsingResult> licenseInfoResult = sw360LicenseInfoService.getLicenseInfoForAttachment(release,
-                user, cliAttachmentIds.get(0), INCLUDE_CONCLUDED_LICENSE);
-
-        if (CommonUtils.isNotEmpty(licenseInfoResult) && Objects.nonNull(licenseInfoResult.get(0).getLicenseInfo())) {
-            assessmentSummaryMap = licenseInfoResult.get(0).getLicenseInfo().getAssessmentSummary();
-        }
-
-        if (CommonUtils.isNullOrEmptyMap(assessmentSummaryMap)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-
-        return new ResponseEntity<>(assessmentSummaryMap, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Check cyclic hierarchy of a release with other releases.",
-            description = "Check cyclic hierarchy of a release with other releases.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "207",
-                            content = {@Content(mediaType = "application/hal+json",
-                                    schema = @Schema(
-                                            type = "object",
-                                            example = """
-                                                [
-                                                    {
-                                                        "message": "release1(1) -> release1(1)",
-                                                        "status": 409
-                                                    },
-                                                    {
-                                                        "message": "There are no cyclic link between 3765276512 and 12121212",
-                                                        "status": 200
-                                                    }
-                                                ]
-                                            """
-                                    ))}
-                    )
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/checkCyclicLink", method = RequestMethod.POST)
-    public ResponseEntity<?> checkForCyclicReleaseLink(
-            @Parameter(description = "The ID of the checking release.")
-            @PathVariable("id") String releaseId,
-            @Parameter(description = "Release ids to check",
-                schema = @Schema(example = """
-                        {
-                          "linkedReleases": ["3765276512"],
-                          "linkedToReleases": ["12121212"]
-                        }
-                    """
-                )
-            )
-            @RequestBody Map<String, Set<String>> relationshipReleaseIds
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        List<ImmutableMap<String, Object>> results = new ArrayList<>();
-        Release checkingRelease = releaseService.getReleaseForUserById(releaseId, user);
-        if (!CommonUtils.isNullOrEmptyCollection(relationshipReleaseIds.get("linkedToReleases"))) {
-            for (String parentReleaseId : relationshipReleaseIds.get("linkedToReleases")) {
-                String cyclicPath;
-                try {
-                    Release parentRelease = releaseService.getReleaseForUserById(parentReleaseId, user);
-                    cyclicPath = releaseService.checkForCyclicLinkedReleases(parentRelease, checkingRelease, user);
-                } catch (ResourceNotFoundException notFoundException) {
-                    results.add(ImmutableMap.<String, Object>builder()
-                            .put("message", notFoundException.getMessage())
-                            .put("status", 404)
-                            .build());
-                    continue;
-                }
-                if (CommonUtils.isNotNullEmptyOrWhitespace(cyclicPath.trim())) {
-                    results.add(ImmutableMap.<String, Object>builder()
-                            .put("message", cyclicPath)
-                            .put("status", 409)
-                            .build());
-                } else {
-                    results.add(ImmutableMap.<String, Object>builder()
-                            .put("message", "There are no cyclic link between " + parentReleaseId + " and " + releaseId)
-                            .put("status", 200)
-                            .build());
-                }
-            }
-        }
-
-        if (!CommonUtils.isNullOrEmptyCollection(relationshipReleaseIds.get("linkedReleases"))) {
-            for (String linkedReleaseId : relationshipReleaseIds.get("linkedReleases")) {
-                String cyclicPath;
-                try {
-                    Release linkedRelease = releaseService.getReleaseForUserById(linkedReleaseId, user);
-                    cyclicPath = releaseService.checkForCyclicLinkedReleases(checkingRelease, linkedRelease, user);
-                } catch (ResourceNotFoundException notFoundException) {
-                    results.add(ImmutableMap.<String, Object>builder()
-                            .put("message", notFoundException.getMessage())
-                            .put("status", 404)
-                            .build());
-                    continue;
-                }
-                if (CommonUtils.isNotNullEmptyOrWhitespace(cyclicPath.trim())) {
-                    results.add(ImmutableMap.<String, Object>builder()
-                            .put("message", cyclicPath)
-                            .put("status", 409)
-                            .build());
-                } else {
-                    results.add(ImmutableMap.<String, Object>builder()
-                            .put("message", "There are no cyclic link between " + releaseId + " and " + linkedReleaseId)
-                            .put("status", 200)
-                            .build());
-                }
-            }
-        }
-
-        return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
-    }
-
-    @Operation(
-            summary = "Handle release subscription for requesting user.",
-            description = "Handle release subscription for requesting user.",
-            tags = {"Releases"}
-    )
-    @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = RELEASES_URL + "/{id}/subscriptions")
-    public ResponseEntity<String> handleReleaseSubscriptions(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Release releaseById = releaseService.getReleaseForUserById(releaseId, user);
-        Set<String> subscribers = releaseById.getSubscribers();
-        if (subscribers.contains(user.getEmail())) {
-            releaseService.unsubscribeRelease(user, releaseId);
-            return new ResponseEntity<>("Release has been unsubscribed", HttpStatus.OK);
-        } else {
-            releaseService.subscribeRelease(user, releaseId);
-            return new ResponseEntity<>("Release has been subscribed", HttpStatus.OK);
-        }
-    }
-
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
-        return resource;
-    }
-
-    private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
-        HalResource<Release> halRelease = new HalResource<>(release);
-        Link componentLink = linkTo(ReleaseController.class)
-                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId()).withRel("component");
-        halRelease.add(componentLink);
-        release.setComponentId(null);
-        if (verbose) {
-            if (release.getModerators() != null) {
-                Set<String> moderators = release.getModerators();
-                restControllerHelper.addEmbeddedModerators(halRelease, moderators);
-                release.setModerators(null);
-            }
-            if (release.getAttachments() != null) {
-                Set<Attachment> attachments = release.getAttachments();
-                restControllerHelper.addEmbeddedAttachments(halRelease, attachments);
-                release.setAttachments(null);
-            }
-            if (release.getVendor() != null) {
-                Vendor vendor = release.getVendor();
-                HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor);
-                halRelease.addEmbeddedResource("sw360:vendors", vendorHalResource);
-                release.setVendor(null);
-            }
-            if (release.getMainLicenseIds() != null) {
-                restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
-            }
-            if (release.getOtherLicenseIds() != null) {
-                restControllerHelper.addEmbeddedOtherLicenses(halRelease, release.getOtherLicenseIds());
-            }
-            Set<String> packageIds = release.getPackageIds();
-
-            if (packageIds != null) {
-                restControllerHelper.addEmbeddedPackages(halRelease, packageIds, packageService);
-                release.setPackageIds(null);
-            }
-        }
-        return halRelease;
-    }
-    private HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
-        HalResource<Release> halRelease = new HalResource<>(release);
-        Link componentLink = linkTo(ReleaseController.class)
-                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
-                .withRel("component");
-        halRelease.add(componentLink);
-        release.setComponentId(null);
-        Set<String> packageIds = release.getPackageIds();
-
-        if (packageIds != null) {
-            for (String id : release.getPackageIds()) {
-                Link packageLink = linkTo(ReleaseController.class)
-                        .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
-                halRelease.add(packageLink);
-            }
-        }
-        release.setPackageIds(null);
-        for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
-            restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
-        }
-        // Do not add attachment as it is an embedded field
-        release.unsetAttachments();
-        return halRelease;
-    }
-
-    private Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-
-        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(reqBodyMap.get("attachments"), mapper);
-        if (null != reqBodyMap.get("attachments")) {
-            reqBodyMap.remove("attachments");
-        }
-        Release release = mapper.convertValue(reqBodyMap, Release.class);
-        if (null != attachments) {
-            release.setAttachments(attachments);
-        }
-
-        mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames.entrySet().stream().forEach(entry -> {
-            Release._Fields field = entry.getKey();
-            String oldFieldName = entry.getValue()[0];
-            String newFieldName = entry.getValue()[1];
-            if (!reqBodyMap.containsKey(newFieldName) && reqBodyMap.containsKey(oldFieldName)) {
-                release.setFieldValue(field, CommonUtils.nullToEmptyString(reqBodyMap.get(oldFieldName)));
-            }
-        });
-
-        return release;
-    }
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Bulk delete releases.",
-            description = "Bulk delete existing releases.",
-            tags = {"Releases"}
-    )
-    @DeleteMapping(value = RELEASES_URL + "/{id}/bulkDelete")
-    public ResponseEntity<BulkOperationNode> bulkDeleteReleases(
-            @Parameter(description = "The release id to be bulk-deleted.")
-            @PathVariable("id") String id,
-            @Parameter(description = "isPreview flag for bulk deletion.")
-            @RequestParam(value = "isPreview", defaultValue="false", required = false) boolean isPreview
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        BulkOperationNode result = releaseService.deleteBulkRelease(id, user, isPreview);
-
-        return new ResponseEntity<BulkOperationNode>(result, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Get license data.",
-            description = "Get license data from release attachment.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "License Data for the attachment.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(
-                                                    example = """
-                                                            {[
-                                                              "name": "License1",
-                                                              "text": "License text 1"
-                                                            ]}
-                                                            """
-                                            ))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "400", description = "attachContentId cannot be parsed.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(
-                                                    example = """
-                                                            {[
-                                                              "error": "No applicable parser has been found for the attachment",
-                                                              "file": "source.zip"
-                                                            ]}
-                                                           """
-                                            ))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "404", description = "Provided attachContentId not found."
-                    )
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}", method = RequestMethod.GET)
-    public ResponseEntity<List<Map<String,String>>> getReleaseLicenseInfo(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String relId,
-            @Parameter(description = "The ID of the attachment.")
-            @PathVariable("attachContentId") String attachContentId
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
-        Release sw360Release = releaseService.getReleaseForUserById(relId, user);
-        List<Map<String,String>> results = new ArrayList<>();
-        boolean found = false;
-        boolean type = true;
-        for (Attachment attachment : sw360Release.getAttachments()) {
-            if (attachContentId.equals(attachment.getAttachmentContentId())) {
-                found =true;
-                type = attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML
-                        || attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_COMBINED;
-                break;
-            }
-        }
-        if (!found) {
-            throw new ResourceNotFoundException("Attachment not found");
-        }
-        results = releaseService.getReleaseLicenseInfo(sw360Release, user, attachContentId);
-        if (!type) {
-            return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(results, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Get license data.",
-            description = "Get license source files list and other license data from release attachment (CLI/ISR). " +
-                    "Optionally specify attachmentId query parameter to get license file list for a specific attachment. " +
-                    "Supports CLI XML, CLI Combined, and ISR attachment types.",
-            tags = {"Releases"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "License Data for the attachment.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(
-                                                    example = """
-                                                        {
-                                                          "relId": "54321",
-                                                          "relName": "releaseName",
-                                                          "data": [
-                                                            {
-                                                              "licName": "MIT",
-                                                              "licType": "Global",
-                                                              "srcFiles": [ "dir1/file1", "dir2/file2" ],
-                                                              "licSpdxId": "MIT"
-                                                            }
-                                                          ],
-                                                          "attName": "filename.xml"
-                                                        }
-                                                        """
-                                            ))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "400", description = "Source file information not found in attachment"
-                    ),
-                    @ApiResponse(
-                            responseCode = "409", description = "Multiple approved attachments are found in the release"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404", description = "Supported attachment (CLI/ISR) not found in the release"
-                    ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Internal server error, while processing the request."
-                    )
-
-            }
-    )
-    @RequestMapping(value = RELEASES_URL + "/{id}/licenseFileList", method = RequestMethod.GET)
-    public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
-            @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String relId,
-            @Parameter(description = "Optional attachment ID to get license file list for a specific CLI/ISR attachment.")
-            @RequestParam(value = "attachmentId", required = false) String attachmentId
-    ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
-        Release sw360Release = releaseService.getReleaseForUserById(relId, user);
-        Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user, attachmentId);
-        return new ResponseEntity<>(results, HttpStatus.OK);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @Operation(
-            summary = "Merge two releases.",
-            description = "Merge source release into target release.",
-            tags = {"Releases"}
-    )
-    @RequestMapping(value = RELEASES_URL + "/mergereleases", method = RequestMethod.PATCH)
-    public ResponseEntity<RequestStatus> mergeReleases(
-            @Parameter(description = "The id of the merge target release.")
-            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
-            @Parameter(description = "The id of the merge source release.")
-            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
-            @Parameter(description = "The merge selection.",
-                    schema = @Schema(
-                            implementation = ReleaseMergeSelector.class,
-                            type = "object",
-                            example = """
-                                    {
-                                      "name": "Final Release Name",
-                                      "createdOn": "Final created date",
-                                      "createdBy": "Final creator name",
-                                      "version": "1.0.0",
-                                      "attachments": [
-                                        {
-                                          "attachmentContentId": "att1",
-                                          "filename": "saveme.txt"
+                if (allDetails) {
+                        for (Release release : sw360Releases) {
+                                if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
+                                        try {
+                                                Vendor relVendor = vendorService.getVendorById(release.getVendorId());
+                                                release.setVendor(relVendor);
+                                        } catch (RuntimeException ignore) {
+                                                log.error("Unable to find vendor with ID {}", release.getVendorId());
                                         }
-                                      ]
-                                    }
-                                    """,
-                            requiredProperties = {"name", "createdOn", "createdBy"}
-                    )
-            )
-            @RequestBody ReleaseMergeSelector mergeSelection
-    ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        // perform the real merge, update merge target and delete merge sources
-        RequestStatus requestStatus = releaseService.mergeRelease(mergeTargetId, mergeSourceId, mergeSelection,
-                sw360User);
-        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
-    }
+                                }
+                        }
+                }
+
+                if (CommonUtils.isNotNullEmptyOrWhitespace(sha1) || CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                        for (Release release : sw360Releases) {
+                                releaseService.setComponentDependentFieldsInRelease(release, sw360User);
+                        }
+                } else {
+                        releaseService.setComponentDependentFieldsInRelease(sw360Releases, sw360User);
+                }
+
+                PaginationResult<Release> paginationResult;
+                int totalCount = Math.toIntExact(paginatedReleases.keySet().stream()
+                                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+                paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                                request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE, totalCount);
+
+                List<EntityModel<Release>> releaseResources = new ArrayList<>();
+                for (Release sw360Release : paginationResult.getResources()) {
+                        EntityModel<Release> releaseResource = null;
+                        if (!allDetails) {
+                                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release,
+                                                fields);
+                                releaseResource = EntityModel.of(embeddedRelease);
+                        } else {
+                                releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
+                        }
+
+                        releaseResources.add(releaseResource);
+                }
+
+                CollectionModel<EntityModel<Release>> resources = null;
+                if (CommonUtils.isNotEmpty(releaseResources)) {
+                        resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+                }
+
+                HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+                return new ResponseEntity<>(resources, status);
+        }
+
+        private List<Release> searchReleasesBySha1(String sha1, User sw360User) throws TException {
+                List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
+                List<Release> releases = new ArrayList<>();
+                for (AttachmentInfo attachmentInfo : attachmentInfos) {
+                        if (attachmentInfo.getOwner().isSetReleaseId()) {
+                                releases.add(releaseService.getReleaseForUserById(
+                                                attachmentInfo.getOwner().getReleaseId(), sw360User));
+                        }
+                }
+                return releases;
+        }
+
+        @Operation(summary = "Get a release by ID.", description = "Get a single release by ID.", tags = { "Releases" })
+        @GetMapping(value = RELEASES_URL + "/{id}")
+        public ResponseEntity<EntityModel<Release>> getRelease(
+                        @Parameter(description = "The ID of the release to be retrieved.") @PathVariable("id") String id)
+                        throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+                HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+                restControllerHelper.addEmbeddedDataToHalResourceRelease(halRelease, sw360Release);
+                List<ReleaseLink> linkedReleaseRelations = releaseService.getLinkedReleaseRelations(sw360Release,
+                                sw360User);
+
+                String spdxId = sw360Release.getSpdxId();
+                if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId)
+                                && SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
+                        SPDXDocument spdxDocument = releaseService.getSPDXDocumentById(spdxId, sw360User);
+                        sw360SPDXDocumentService.sortSectionForSPDXDocument(spdxDocument);
+                        restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocument);
+                        String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
+                        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxDocumentCreationInfoId)) {
+                                DocumentCreationInformation documentCreationInformation = releaseService
+                                                .getDocumentCreationInformationById(spdxDocumentCreationInfoId,
+                                                                sw360User);
+                                sw360SPDXDocumentService.sortSectionForDocumentCreation(documentCreationInformation);
+                                restControllerHelper.addEmbeddedDocumentCreationInformation(halRelease,
+                                                documentCreationInformation);
+                        }
+                        String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
+                        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
+                                PackageInformation packageInformation = releaseService
+                                                .getPackageInformationById(spdxPackageInfoId, sw360User);
+                                sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
+                                restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
+                        }
+                }
+                if (linkedReleaseRelations != null) {
+                        restControllerHelper.addEmbeddedReleaseLinks(halRelease, linkedReleaseRelations);
+                }
+                return new ResponseEntity<>(halRelease, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Get recently created releases.", description = "Get 5 of the service's most recently created releases.", tags = {
+                        "Releases" })
+        @GetMapping(value = RELEASES_URL + "/recentReleases")
+        public ResponseEntity<CollectionModel<EntityModel<Release>>> getRecentRelease() throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                List<Release> sw360Releases = releaseService.getRecentReleases(sw360User);
+
+                List<EntityModel<Release>> resources = new ArrayList<>();
+                sw360Releases.forEach(r -> {
+                        Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(r);
+                        resources.add(EntityModel.of(embeddedRelease));
+                });
+
+                CollectionModel<EntityModel<Release>> finalResources = restControllerHelper.createResources(resources);
+                HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+                return new ResponseEntity<>(finalResources, status);
+        }
+
+        @Operation(summary = "Get vulnerabilities of a single release.", description = "Get vulnerabilities of a single release.", tags = {
+                        "Releases" })
+        @GetMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
+        public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfReleases(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id) {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService
+                                .getVulnerabilitiesByReleaseId(id, user);
+                CollectionModel<VulnerabilityDTO> resources = CollectionModel.of(allVulnerabilityDTOs);
+                return new ResponseEntity<>(resources, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Get service's releases subscription.", description = "Get service's releases subscription.", tags = {
+                        "Releases" })
+        @GetMapping(value = RELEASES_URL + "/mySubscriptions")
+        public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleaseSubscription() throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                List<Release> sw360Releases = releaseService.getReleaseSubscriptions(sw360User);
+
+                List<EntityModel<Release>> resources = new ArrayList<>();
+                sw360Releases.forEach(c -> {
+                        Release embeddedComponent = restControllerHelper.convertToEmbeddedRelease(c);
+                        resources.add(EntityModel.of(embeddedComponent));
+                });
+
+                CollectionModel<EntityModel<Release>> finalResources = restControllerHelper.createResources(resources);
+                HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+                return new ResponseEntity<>(finalResources, status);
+        }
+
+        @Operation(summary = "Get all the resources where the release is used.", description = "Get all the resources where the release is used.", tags = {
+                        "Releases" })
+        @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
+        public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+                Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService
+                                .getProjectsByRelease(id, user);
+                Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService
+                                .getUsingComponentsForRelease(id, user);
+
+                List<EntityModel> resources = new ArrayList<>();
+                sw360Projects.forEach(p -> {
+                        Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+                        resources.add(EntityModel.of(embeddedProject));
+                });
+
+                sw360Components.forEach(c -> {
+                        Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+                        resources.add(EntityModel.of(embeddedComponent));
+                });
+
+                RestrictedResource restrictedResource = new RestrictedResource();
+                restrictedResource.setProjects(releaseService.countProjectsByReleaseId(id) - sw360Projects.size());
+                resources.add(EntityModel.of(restrictedResource));
+
+                CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
+                HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+                return new ResponseEntity<>(finalResources, status);
+        }
+
+        @Operation(summary = "Get releases by external IDs.", description = "Get releases where provided external IDs match.", tags = {
+                        "Releases" }, parameters = {
+                                        @Parameter(description = "The external IDs of the releases to filter.", example = "{\n"
+                                                        +
+                                                        "\"mainline-id-component\": \"1432\",\n" +
+                                                        "\"mainline-id-component\": \"4876\"\n" +
+                                                        "}", in = ParameterIn.QUERY, name = "externalIds", explode = Explode.TRUE, schema = @Schema(implementation = LinkedMultiValueMap.class))
+                        }
+
+        )
+        @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
+        public ResponseEntity<Release> searchByExternalIds(
+                        HttpServletRequest request) throws TException {
+                String queryString = request.getQueryString();
+                return restControllerHelper.searchByExternalIds(queryString, releaseService, null);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Delete releases.", description = "Delete existing releases.", tags = { "Releases" })
+        @DeleteMapping(value = RELEASES_URL + "/{ids}")
+        public ResponseEntity<List<MultiStatus>> deleteReleases(
+                        @Parameter(description = "The IDs of the releases to be deleted.") @PathVariable("ids") List<String> idsToDelete,
+                        @Parameter(description = "Comment message") @RequestParam(value = "comment", required = false) String comment)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                if (StringUtils.isNotEmpty(comment)) {
+                        user.setCommentMadeDuringModerationRequest(comment);
+                }
+                List<MultiStatus> results = new ArrayList<>();
+                for (String id : idsToDelete) {
+                        RequestStatus requestStatus = releaseService.deleteRelease(id, user);
+                        if (requestStatus == RequestStatus.SUCCESS) {
+                                results.add(new MultiStatus(id, HttpStatus.OK));
+                        } else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+                                results.add(new MultiStatus(id, HttpStatus.ACCEPTED));
+                        } else if (requestStatus == RequestStatus.IN_USE) {
+                                results.add(new MultiStatus(id, HttpStatus.CONFLICT));
+                        } else {
+                                results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
+                        }
+                }
+                return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Update a release.", description = "Update an existing release.", tags = { "Releases" })
+        @PatchMapping(value = RELEASES_URL + "/{id}")
+        public ResponseEntity<EntityModel<Release>> patchRelease(
+                        @Parameter(description = "The ID of the release to be updated.") @PathVariable("id") String id,
+                        @Parameter(description = "The release object to be updated.", schema = @Schema(implementation = Release.class)) @RequestBody Map<String, Object> reqBodyMap)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                Release sw360Release = releaseService.getReleaseForUserById(id, user);
+                Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+                updateRelease.setClearingState(sw360Release.getClearingState());
+                sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease, reqBodyMap);
+                releaseService.setComponentNameAsReleaseName(sw360Release, user);
+                RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
+                sw360Release = releaseService.getReleaseForUserById(id, user);
+                HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+                if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                return new ResponseEntity<>(halRelease, HttpStatus.OK);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Update vulnerabilities of a release.", description = "Update vulnerabilities of an existing release.", tags = {
+                        "Releases" })
+        @PatchMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
+        public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(
+                        @Parameter(description = "The ID of the release to be updated.") @PathVariable("id") String releaseId,
+                        @Parameter(description = "The vulnerability object to be updated.") @RequestBody VulnerabilityState vulnerabilityState)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                if (CommonUtils.isNullOrEmptyCollection(vulnerabilityState.getReleaseVulnerabilityRelationDTOs())) {
+                        throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                                        "Required field ReleaseVulnerabilityRelation is not present");
+                }
+                if (vulnerabilityState.getVerificationState() == null) {
+                        throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                                        "Required field verificationState is not present");
+                }
+                List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId, user);
+                Set<String> externalIdsFromRequestDto = vulnerabilityState.getReleaseVulnerabilityRelationDTOs()
+                                .stream().map(ReleaseVulnerabilityRelationDTO::getExternalId)
+                                .collect(Collectors.toSet());
+                List<VulnerabilityDTO> actualVDtoFromRequest = vulnerabilityService
+                                .getVulnerabilityDTOByExternalId(externalIdsFromRequestDto, releaseId);
+                Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId)
+                                .collect(Collectors.toSet());
+                Set<String> commonExtIds = Sets.intersection(actualExternalId, externalIdsFromRequestDto);
+                if (CommonUtils.isNullOrEmptyCollection(commonExtIds)
+                                || commonExtIds.size() != externalIdsFromRequestDto.size()) {
+                        throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "External ID is not valid");
+                }
+
+                Map<String, ReleaseVulnerabilityRelation> releasemap = new HashMap<>();
+                actualVDtoFromRequest.forEach(vulnerabilityDTO -> {
+                        releasemap.put(vulnerabilityDTO.getExternalId(),
+                                        vulnerabilityDTO.getReleaseVulnerabilityRelation());
+                });
+                RequestStatus requestStatus = null;
+                for (Map.Entry<String, ReleaseVulnerabilityRelation> entry : releasemap.entrySet()) {
+                        requestStatus = updateReleaseVulnerabilityRelation(releaseId, user,
+                                        vulnerabilityState.getComment(), vulnerabilityState.getVerificationState(),
+                                        entry.getKey());
+                        if (requestStatus != RequestStatus.SUCCESS) {
+                                break;
+                        }
+                }
+                if (requestStatus == RequestStatus.ACCESS_DENIED) {
+                        throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "User not allowed!");
+                }
+                List<VulnerabilityDTO> vulnerabilityDTOList = getVulnerabilityUpdated(externalIdsFromRequestDto,
+                                releaseId);
+                final List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
+                vulnerabilityDTOList.forEach(dto -> {
+                        final EntityModel<VulnerabilityDTO> vulnerabilityDTOEntityModel = EntityModel.of(dto);
+                        vulnerabilityResources.add(vulnerabilityDTOEntityModel);
+                });
+                CollectionModel<EntityModel<VulnerabilityDTO>> resources = null;
+                resources = restControllerHelper.createResources(vulnerabilityResources);
+                HttpStatus status = resources == null ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
+                return new ResponseEntity<>(resources, status);
+        }
+
+        public RequestStatus updateReleaseVulnerabilityRelation(String releaseId, User user, String comment,
+                        VerificationState verificationState, String externalIdRequest) throws TException {
+                List<VulnerabilityDTO> vulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId,
+                                user);
+                ReleaseVulnerabilityRelation releaseVulnerabilityRelation = new ReleaseVulnerabilityRelation();
+                for (VulnerabilityDTO vulnerabilityDTO : vulnerabilityDTOs) {
+                        if (vulnerabilityDTO.getExternalId().equals(externalIdRequest)) {
+                                releaseVulnerabilityRelation = vulnerabilityDTO.getReleaseVulnerabilityRelation();
+                        }
+                }
+                ReleaseVulnerabilityRelation relation = updateReleaseVulnerabilityRelationFromRequest(
+                                releaseVulnerabilityRelation, comment, verificationState, user);
+                return vulnerabilityService.updateReleaseVulnerabilityRelation(relation, user);
+        }
+
+        public static ReleaseVulnerabilityRelation updateReleaseVulnerabilityRelationFromRequest(
+                        ReleaseVulnerabilityRelation dbRelation, String comment, VerificationState verificationState,
+                        User user) {
+                if (!dbRelation.isSetVerificationStateInfo()) {
+                        dbRelation.setVerificationStateInfo(new ArrayList<>());
+                }
+                VerificationStateInfo verificationStateInfo = new VerificationStateInfo();
+                List<VerificationStateInfo> verificationStateHistory = dbRelation.getVerificationStateInfo();
+
+                verificationStateInfo.setCheckedBy(user.getEmail());
+                verificationStateInfo.setCheckedOn(SW360Utils.getCreatedOn());
+                verificationStateInfo.setVerificationState(verificationState);
+                verificationStateInfo.setComment(comment);
+
+                verificationStateHistory.add(verificationStateInfo);
+                dbRelation.setVerificationStateInfo(verificationStateHistory);
+                return dbRelation;
+        }
+
+        public List<VulnerabilityDTO> getVulnerabilityUpdated(Set<String> externalIds, String releaseIds) {
+                return vulnerabilityService.getVulnerabilityDTOByExternalId(externalIds, releaseIds);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Create a release.", description = "Create a new release.", tags = { "Releases" })
+        @PostMapping(value = RELEASES_URL)
+        public ResponseEntity<EntityModel<Release>> createRelease(
+                        @Parameter(description = "The release object to be created.", schema = @Schema(implementation = Release.class)) @RequestBody Map<String, Object> reqBodyMap)
+                        throws URISyntaxException, TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                Release release = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+                if (release.isSetComponentId()) {
+                        URI componentURI = new URI(release.getComponentId());
+                        String path = componentURI.getPath();
+                        String componentId = path.substring(path.lastIndexOf('/') + 1);
+                        release.setComponentId(componentId);
+                }
+                if (release.isSetVendorId()) {
+                        URI vendorURI = new URI(release.getVendorId());
+                        String path = vendorURI.getPath();
+                        String vendorId = path.substring(path.lastIndexOf('/') + 1);
+                        release.setVendorId(vendorId);
+                }
+
+                if (release.getMainLicenseIds() != null) {
+                        Set<String> mainLicenseIds = new HashSet<>();
+                        Set<String> mainLicenseUris = release.getMainLicenseIds();
+                        for (String licenseURIString : mainLicenseUris.toArray(new String[mainLicenseUris.size()])) {
+                                URI licenseURI = new URI(licenseURIString);
+                                String path = licenseURI.getPath();
+                                String licenseId = path.substring(path.lastIndexOf('/') + 1);
+                                mainLicenseIds.add(licenseId);
+                        }
+                        release.setMainLicenseIds(mainLicenseIds);
+                }
+
+                release.unsetClearingState();
+                Release sw360Release = releaseService.createRelease(release, sw360User);
+                HalResource<Release> halResource = createHalReleaseResource(sw360Release, true);
+
+                URI location = ServletUriComponentsBuilder
+                                .fromCurrentRequest().path("/{id}")
+                                .buildAndExpand(sw360Release.getId()).toUri();
+
+                return ResponseEntity.created(location).body(halResource);
+        }
+
+        @Operation(summary = "Update SPDX document.", description = "Update SPDX document of a release.", tags = {
+                        "Releases" })
+        @PreAuthorize("hasAuthority('WRITE')")
+        @PatchMapping(value = RELEASES_URL + "/{id}/spdx")
+        public ResponseEntity<?> updateSPDX(
+                        @Parameter(description = "Updated data of SPDX document") @RequestBody Map<String, Object> reqBodyMap,
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String releaseId)
+                        throws TException {
+                if (!SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
+                        throw new SW360Exception("Feature SPDXDocument disable");
+                }
+                if (CommonUtils.isNullEmptyOrWhitespace(releaseId)) {
+                        throw new BadRequestClientException("Release id not found");
+                }
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                Release release = releaseService.getReleaseForUserById(releaseId, user);
+                String spdxId = "";
+
+                if (CommonUtils.isNullEmptyOrWhitespace(release.getSpdxId())) {
+                        spdxId = sw360SPDXDocumentService.addSPDX(release, user);
+                }
+                SPDXDocument spdxDocumentActual = CommonUtils.isNullEmptyOrWhitespace(spdxId)
+                                ? releaseService.getSPDXDocumentById(release.getSpdxId(), user)
+                                : releaseService.getSPDXDocumentById(spdxId, user);
+                spdxId = spdxDocumentActual.getId();
+                if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
+                        throw new BadRequestClientException("Update SPDXDocument Failed!");
+                }
+                HalResource<Release> halRelease = createHalReleaseResource(release, false);
+
+                if (reqBodyMap.isEmpty()) {
+                        return ResponseEntity.ok(halRelease);
+                }
+
+                if (null != reqBodyMap.get(SPDX_DOCUMENT)) {
+                        SPDXDocument spdxDocumentRequest = sw360SPDXDocumentService
+                                        .convertToSPDXDocument(reqBodyMap.get(SPDX_DOCUMENT));
+                        if (null != spdxDocumentRequest) {
+                                spdxDocumentRequest = sw360SPDXDocumentService.updateSPDXDocumentFromRequest(
+                                                spdxDocumentRequest, spdxDocumentActual, release.getModerators());
+                                RequestStatus requestStatus = releaseService.updateSPDXDocument(spdxDocumentRequest,
+                                                release.getId(), user);
+                                if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+                                        return ResponseEntity.accepted().body(RESPONSE_BODY_FOR_MODERATION_REQUEST);
+                                }
+                                restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocumentRequest);
+                        }
+                } else {
+                        restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocumentActual);
+                }
+
+                if (null != reqBodyMap.get(DOCUMENT_CREATION_INFORMATION)) {
+                        DocumentCreationInformation documentCreationInformation = sw360SPDXDocumentService
+                                        .convertToDocumentCreationInformation(
+                                                        reqBodyMap.get(DOCUMENT_CREATION_INFORMATION));
+                        if (null != documentCreationInformation) {
+                                documentCreationInformation = sw360SPDXDocumentService
+                                                .updateDocumentCreationInformationFromRequest(
+                                                                documentCreationInformation, spdxDocumentActual,
+                                                                release.getModerators());
+                                releaseService.updateDocumentCreationInformation(documentCreationInformation, spdxId,
+                                                user);
+                                restControllerHelper.addEmbeddedDocumentCreationInformation(halRelease,
+                                                documentCreationInformation);
+                        }
+                }
+
+                if (null != reqBodyMap.get(PACKAGE_INFORMATION)) {
+                        PackageInformation packageInformation = sw360SPDXDocumentService
+                                        .convertToPackageInformation(reqBodyMap.get(PACKAGE_INFORMATION));
+                        if (null != packageInformation) {
+                                packageInformation = sw360SPDXDocumentService.updatePackageInformationFromRequest(
+                                                packageInformation, spdxDocumentActual, release.getModerators());
+                                releaseService.updatePackageInformation(packageInformation, spdxId, user);
+                                restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
+                        }
+                }
+
+                return new ResponseEntity<>(halRelease, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Get attachment info of a release.", description = "Get all attachment information of a release.", tags = {
+                        "Releases" })
+        @GetMapping(value = RELEASES_URL + "/{id}/attachments")
+        public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getReleaseAttachments(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id)
+                        throws TException {
+                final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(sw360User);
+                final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+                final CollectionModel<EntityModel<Attachment>> resources = attachmentService
+                                .getAttachmentResourcesFromList(sw360User, sw360Release.getAttachments(),
+                                                Source.releaseId(id));
+                return new ResponseEntity<>(resources, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Download the attachment bundle of a release.", description = "Download the attachment bundle of a release.", parameters = {
+                        @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = "application/zip"),
+        }, responses = {
+                        @ApiResponse(responseCode = "200", content = { @Content(mediaType = "application/zip") })
+        }, tags = { "Releases" })
+        @GetMapping(value = RELEASES_URL + "/{releaseId}/attachments/download", produces = "application/zip")
+        public void downloadAttachmentBundleFromRelease(
+                        @Parameter(description = "The ID of the release.") @PathVariable("releaseId") String releaseId,
+                        HttpServletResponse response) throws TException, IOException {
+                final User user = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(user);
+                final Release release = releaseService.getReleaseForUserById(releaseId, user);
+                final Set<Attachment> attachments = release.getAttachments();
+                attachmentService.downloadAttachmentBundleWithContext(release, attachments, user, response);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Update an attachment info of a release.", description = "Update an attachment information of a release.", tags = {
+                        "Releases" })
+        @PatchMapping(value = RELEASES_URL + "/{id}/attachment/{attachmentId}")
+        public ResponseEntity<EntityModel<Attachment>> patchReleaseAttachmentInfo(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id,
+                        @Parameter(description = "The ID of the attachment.") @PathVariable("attachmentId") String attachmentId,
+                        @Parameter(description = "The attachment information.") @RequestBody Attachment attachmentData)
+                        throws TException {
+                final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+                Set<Attachment> attachments = sw360Release.getAttachments();
+                Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData,
+                                attachmentId, sw360User);
+                RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
+                if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
+                return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Create a new attachment for the release.", description = "Create a new attachment for the release.", tags = {
+                        "Releases" })
+        @PostMapping(value = RELEASES_URL + "/{releaseId}/attachments", consumes = { "multipart/mixed",
+                        "multipart/form-data" })
+        public ResponseEntity<HalResource<Release>> addAttachmentToRelease(
+                        @Parameter(description = "The ID of the release.") @PathVariable("releaseId") String releaseId,
+                        @Parameter(description = "The attachment file.") @RequestPart("file") MultipartFile file,
+                        @Parameter(description = "The attachment information.") @RequestPart("attachment") Attachment newAttachment)
+                        throws TException {
+                final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                Attachment attachment = null;
+                try {
+                        attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
+                } catch (IOException e) {
+                        log.error("failed to upload attachment", e);
+                        throw new RuntimeException("failed to upload attachment", e);
+                }
+
+                release.addToAttachments(attachment);
+                RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User);
+                HalResource<Release> halRelease = createHalReleaseResource(release, true);
+                if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                return new ResponseEntity<>(halRelease, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Download an attachment of a release.", description = "Download an attachment of a release.", parameters = {
+                        @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = MediaType.APPLICATION_OCTET_STREAM_VALUE),
+        }, responses = {
+                        @ApiResponse(responseCode = "200", content = {
+                                        @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE) })
+        }, tags = { "Releases" })
+        @GetMapping(value = RELEASES_URL
+                        + "/{releaseId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+        public void downloadAttachmentFromRelease(
+                        @Parameter(description = "The ID of the release.") @PathVariable("releaseId") String releaseId,
+                        @Parameter(description = "The ID of the attachment.") @PathVariable("attachmentId") String attachmentId,
+                        HttpServletResponse response) throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(sw360User);
+                Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
+        }
+
+        @Operation(summary = "Delete attachments from a release.", description = "Delete attachments from a release.", tags = {
+                        "Releases" })
+        @DeleteMapping(RELEASES_URL + "/{releaseId}/attachments/{attachmentIds}")
+        public ResponseEntity<HalResource<Release>> deleteAttachmentsFromRelease(
+                        @Parameter(description = "The ID of the release.") @PathVariable("releaseId") String releaseId,
+                        @Parameter(description = "The IDs of the attachments to be deleted.") @PathVariable("attachmentIds") List<String> attachmentIds)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                Release release = releaseService.getReleaseForUserById(releaseId, user);
+
+                Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(
+                                Source.releaseId(releaseId),
+                                release.getAttachments(), attachmentIds);
+                if (attachmentsToDelete.isEmpty()) {
+                        // let the whole action fail if nothing can be deleted
+                        throw new RuntimeException(
+                                        "Could not delete attachments " + attachmentIds + " from release " + releaseId);
+                }
+                log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
+                release.getAttachments().removeAll(attachmentsToDelete);
+                RequestStatus updateReleaseStatus = releaseService.updateRelease(release, user);
+                HalResource<Release> halRelease = createHalReleaseResource(release, true);
+                if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                return new ResponseEntity<>(halRelease, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Check status of triggered FOSSology process of a release.", description = "Check status of triggered FOSSology process of a release.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "200", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", example = "{\"status\": \"SUCCESS\"}")) })
+                        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)
+        public ResponseEntity<Map<String, Object>> checkFossologyProcessStatus(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String releaseId)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(user);
+                Release release = releaseService.getReleaseForUserById(releaseId, user);
+                Map<String, Object> responseMap = new HashMap<>();
+                ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
+                ReentrantLock lock = mapOfLocks.get(releaseId);
+                if (lock != null && lock.isLocked()) {
+                        responseMap.put("status", RequestStatus.PROCESSING);
+                } else if (fossologyProcess != null && releaseService.isFOSSologyProcessCompleted(fossologyProcess)) {
+                        log.info("FOSSology process for Release : " + releaseId + " is complete.");
+                        responseMap.put("status", RequestStatus.SUCCESS);
+                } else {
+                        responseMap.put("status", RequestStatus.FAILURE);
+                }
+                responseMap.put("fossologyProcessInfo", fossologyProcess);
+                return new ResponseEntity<>(responseMap, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Trigger FOSSology process of a release.", description = "Trigger FOSSology process of a release.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "200", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", implementation = Map.class), examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"FOSSology Process for Release Id : "
+                                                                                        +
+                                                                                        "\\\"123\\\" has been triggered.\"}")
+                                                        }) }),
+                                        @ApiResponse(responseCode = "429", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"Max 10 FOSSology Process can be "
+                                                                                        +
+                                                                                        "triggered simultaneously. Please try after sometime.\"}")
+                                                        }) }),
+                                        @ApiResponse(responseCode = "406", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"FOSSology Process for Release Id : "
+                                                                                        +
+                                                                                        "\\\"123\\\" is already running. Please wait till"
+                                                                                        +
+                                                                                        " it is completed.\"}")
+                                                        }) })
+                        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess", method = RequestMethod.GET)
+        public ResponseEntity<HalResource> triggerFossologyProcess(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String releaseId,
+                        @Parameter(description = "Mark previous FOSSology process outdated and generate new.") @RequestParam(value = "markFossologyProcessOutdated", required = false) boolean markFossologyProcessOutdated,
+                        @Parameter(description = "Upload description to FOSSology") @RequestParam(value = "uploadDescription", required = false) String uploadDescription)
+                        throws TException, IOException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(user);
+                releaseService.checkFossologyConnection();
+                ReentrantLock lock = mapOfLocks.get(releaseId);
+                Map<String, String> responseMap = new HashMap<>();
+                HttpStatus status = null;
+                if (lock == null || !lock.isLocked()) {
+                        if (mapOfLocks.size() > 10) {
+                                responseMap.put("message",
+                                                "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
+                                status = HttpStatus.TOO_MANY_REQUESTS;
+                        } else {
+                                releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
+                                                markFossologyProcessOutdated, uploadDescription);
+                                responseMap.put("message", "FOSSology Process for Release Id : " + releaseId
+                                                + " has been triggered.");
+                                status = HttpStatus.OK;
+                        }
+
+                } else {
+                        status = HttpStatus.NOT_ACCEPTABLE;
+                        responseMap.put("message", "FOSSology Process for Release Id : " + releaseId
+                                        + " is already running. Please wait till it is completed.");
+                }
+                HalResource responseResource = new HalResource(responseMap);
+                Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL).slash(releaseId)
+                                .slash("checkFossologyProcessStatus").withSelfRel();
+                responseResource.add(checkStatusLink);
+
+                return new ResponseEntity<HalResource>(responseResource, status);
+        }
+
+        @Operation(summary = "Re-generate fossology report.", description = "Re-generate fossology report.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "200", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", implementation = Map.class), examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"FOSSology Process for Release Id : "
+                                                                                        +
+                                                                                        "\\\"123\\\" has been triggered.\"}")
+                                                        }) }),
+                                        @ApiResponse(responseCode = "429", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"Max 10 FOSSology Process can be "
+                                                                                        +
+                                                                                        "triggered simultaneously. Please try after sometime.\"}")
+                                                        }) }),
+                                        @ApiResponse(responseCode = "406", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"FOSSology Process for Release Id : "
+                                                                                        +
+                                                                                        "\\\"123\\\" is already running. Please wait till"
+                                                                                        +
+                                                                                        " it is completed.\"}")
+                                                        }) }),
+                                        @ApiResponse(responseCode = "500", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", implementation = Map.class)) })
+                        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport", method = RequestMethod.GET)
+        public ResponseEntity<HalResource> triggerReloadFossologyReport(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String releaseId)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(user);
+                releaseService.checkFossologyConnection();
+                Map<String, String> responseMap = new HashMap<>();
+                String errorMsg = "Could not trigger report generation for this release";
+                HttpStatus status = null;
+                try {
+                        Release release = releaseService.getReleaseForUserById(releaseId, user);
+                        RequestStatus requestResult = releaseService.triggerReportGenerationFossology(releaseId, user);
+
+                        if (requestResult == RequestStatus.FAILURE) {
+                                responseMap.put("message", errorMsg);
+                                status = HttpStatus.INTERNAL_SERVER_ERROR;
+                        } else {
+                                ExternalToolProcess externalToolProcess = releaseService
+                                                .getExternalToolProcess(release);
+                                if (externalToolProcess != null) {
+                                        ReentrantLock lock = mapOfLocks.get(releaseId);
+
+                                        if (lock == null || !lock.isLocked()) {
+                                                if (mapOfLocks.size() > 10) {
+                                                        responseMap.put("message",
+                                                                        "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
+                                                        status = HttpStatus.TOO_MANY_REQUESTS;
+                                                } else {
+                                                        releaseService.executeFossologyProcess(user, attachmentService,
+                                                                        mapOfLocks, releaseId,
+                                                                        false, "");
+                                                        responseMap.put("message",
+                                                                        "Re-generate FOSSology's report process for Release Id : "
+                                                                                        + releaseId
+                                                                                        + " has been triggered.");
+                                                        status = HttpStatus.OK;
+                                                }
+                                        } else {
+                                                responseMap.put("message", "Another FOSSology Process for Release Id : "
+                                                                + releaseId
+                                                                + " is already running. Please wait till it is completed.");
+                                                status = HttpStatus.NOT_ACCEPTABLE;
+                                        }
+                                } else {
+                                        responseMap.put("message",
+                                                        "The source file is either not yet uploaded or scanning is not done.");
+                                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                                }
+                        }
+                } catch (TException | IOException e) {
+                        responseMap.put("message", errorMsg);
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                        log.error("Error pulling report from fossology", e);
+                }
+
+                HalResource responseResource = new HalResource(responseMap);
+                if (status == HttpStatus.OK || status == HttpStatus.NOT_ACCEPTABLE) {
+                        Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL)
+                                        .slash(releaseId)
+                                        .slash("checkFossologyProcessStatus").withSelfRel();
+                        responseResource.add(checkStatusLink);
+                }
+                return new ResponseEntity<>(responseResource, status);
+        }
+
+        @Operation(summary = "Link release to a release.", description = "Link release to a release.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "201", content = {
+                                                        @Content(mediaType = "application/hal+json") }, description = "Update stored."),
+                                        @ApiResponse(responseCode = "202", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")
+                                                        }) }, description = "Moderation request is created for the update.")
+                        })
+        @PreAuthorize("hasAuthority('WRITE')")
+        @RequestMapping(value = RELEASES_URL + "/{id}/releases", method = RequestMethod.POST)
+        public ResponseEntity linkReleases(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id,
+                        @Parameter(description = "Relationship links with release ID as the key.", schema = @Schema(type = "object", example = "{\n"
+                                        +
+                                        "  \"releaseId1\": \"DYNAMICALLY_LINKED\",\n" +
+                                        "  \"releaseId2\": \"CONTAINED\"\n" +
+                                        "}")) @RequestBody Map<String, ReleaseRelationship> releaseIdToRelationship)
+                        throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+                if (releaseIdToRelationship.isEmpty()) {
+                        throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Input data can not empty!");
+                }
+                sw360Release.setReleaseIdToRelationship(releaseIdToRelationship);
+
+                RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
+                if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                return new ResponseEntity<>(HttpStatus.CREATED);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Add or link packages to the project.", description = "Add or link packages to the project.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "201", content = {
+                                                        @Content(mediaType = "application/hal+json") }, description = "Update stored."),
+                                        @ApiResponse(responseCode = "202", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")
+                                                        }) }, description = "Moderation request is created for the update.")
+                        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/link/packages", method = RequestMethod.PATCH)
+        public ResponseEntity<?> linkPackages(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id,
+                        @Parameter(description = "The package IDs to be linked.") @RequestBody Set<String> packagesInRequestBody)
+                        throws URISyntaxException, TException {
+                if (!packageService.validatePackageIds(packagesInRequestBody)) {
+                        return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+                }
+                RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
+                if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                return new ResponseEntity<>(HttpStatus.CREATED);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Unlink packages to the project.", description = "Unlink packages to the project.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "201", content = {
+                                                        @Content(mediaType = "application/hal+json") }, description = "Update stored."),
+                                        @ApiResponse(responseCode = "202", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")
+                                                        }) }, description = "Moderation request is created for the update.")
+                        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/unlink/packages", method = RequestMethod.PATCH)
+        public ResponseEntity<?> unlinkPackages(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id,
+                        @Parameter(description = "The package IDs to be linked.") @RequestBody Set<String> packagesInRequestBody)
+                        throws URISyntaxException, TException {
+                if (!packageService.validatePackageIds(packagesInRequestBody)) {
+                        throw new ResourceNotFoundException("Package ID invalid!");
+                }
+                RequestStatus unlinkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
+                if (unlinkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                return new ResponseEntity<>(HttpStatus.CREATED);
+        }
+
+        @Operation(summary = "Write SPDX license info into release.", description = "Write SPDX license info into release.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "200", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", implementation = Release.class)) }),
+                                        @ApiResponse(responseCode = "202", content = {
+                                                        @Content(mediaType = "application/hal+json", examples = {
+                                                                        @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")
+                                                        }) }, description = "Moderation request is created for the update.")
+                        })
+        @PostMapping(value = RELEASES_URL + "/{id}/spdxLicenses")
+        public ResponseEntity writeSpdxLicenseInfoIntoRelease(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String releaseId,
+                        @Parameter(description = "The SPDX license info.", schema = @Schema(type = "object", example = "{\n"
+                                        +
+                                        "  \"mainLicenseIds\": [\n" +
+                                        "    \"LicenseRef-1\",\n" +
+                                        "    \"LicenseRef-2\"\n" +
+                                        "  ],\n" +
+                                        "  \"otherLicenseIds\": [\n" +
+                                        "    \"LicenseRef-3\",\n" +
+                                        "    \"LicenseRef-4\"\n" +
+                                        "  ]\n" +
+                                        "}", requiredProperties = { "mainLicenseIds",
+                                                        "otherLicenseIds" })) @RequestBody Map<String, Set<String>> licensesInfoInRequestBody)
+                        throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                Set<String> licenseIds = licensesInfoInRequestBody.get("mainLicenseIds");
+                Set<String> otherLicenseIds = licensesInfoInRequestBody.get("otherLicenseIds");
+
+                if (!CommonUtils.isNullOrEmptyCollection(licenseIds)) {
+                        sw360Release.getMainLicenseIds().clear();
+                        for (String licenseId : licenseIds) {
+                                sw360Release.addToMainLicenseIds(licenseId);
+                        }
+                }
+
+                if (!CommonUtils.isNullOrEmptyCollection(otherLicenseIds)) {
+                        sw360Release.getOtherLicenseIds().clear();
+                        for (String licenseId : otherLicenseIds) {
+                                sw360Release.addToOtherLicenseIds(licenseId);
+                        }
+                }
+
+                RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
+                HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+                if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+                        return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+                }
+                return new ResponseEntity<>(halRelease, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Load SPDX license info from release.", description = "Load SPDX License Information from the attachment of the release.", tags = {
+                        "Releases" })
+        @GetMapping(value = RELEASES_URL + "/{id}/spdxLicensesInfo")
+        public ResponseEntity<?> loadSpdxLicensesInfo(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String releaseId,
+                        @Parameter(description = "The ID of the attachment.") @RequestParam("attachmentId") String attachmentId,
+                        @Parameter(description = "Include concluded license.") @RequestParam(value = "includeConcludedLicense", required = false, defaultValue = "false") boolean includeConcludedLicense)
+                        throws SW360Exception {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                Map<String, Set<String>> licenseToSrcFilesMap = new LinkedHashMap<>();
+                Set<String> mainLicenseNames = new TreeSet<>();
+                Set<String> otherLicenseNames = new TreeSet<>();
+                final Set<String> concludedLicenseIds = new TreeSet<>();
+
+                AttachmentType attachmentType;
+                String attachmentName;
+                long totalFileCount = 0;
+                Map<String, Object> responseBody = new LinkedHashMap<>();
+                Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() &&
+                                null != result.getLicenseInfo().getLicenseNamesWithTexts());
+
+                try {
+                        Release release = releaseService.getReleaseForUserById(releaseId, user);
+                        attachmentType = release.getAttachments().stream()
+                                        .filter(att -> attachmentId.equals(att.getAttachmentContentId()))
+                                        .map(Attachment::getAttachmentType).findFirst().orElse(null);
+                        if (null == attachmentType) {
+                                throw new SW360Exception("Cannot retrieve license information for attachment id "
+                                                + attachmentId + " in release "
+                                                + releaseId + ".");
+                        }
+                        if (!attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_XML) &&
+                                        !attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED) &&
+                                        !attachmentType.equals(AttachmentType.INITIAL_SCAN_REPORT)) {
+                                throw new SW360Exception("Cannot retrieve license information for attachment type "
+                                                + attachmentType + ".");
+                        }
+                        attachmentName = release.getAttachments().stream()
+                                        .filter(att -> attachmentId.equals(att.getAttachmentContentId()))
+                                        .map(Attachment::getFilename).findFirst().orElse("");
+                        final boolean isISR = AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType);
+                        if (isISR) {
+                                includeConcludedLicense = true;
+                        }
+                        List<LicenseInfoParsingResult> licenseInfoResult = sw360LicenseInfoService
+                                        .getLicenseInfoForAttachment(release, user, attachmentId,
+                                                        includeConcludedLicense);
+                        List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
+                                        .filter(filterLicenseResult)
+                                        .map(LicenseInfoParsingResult::getLicenseInfo)
+                                        .map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
+                                        .filter(license -> !license.getLicenseName()
+                                                        .equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
+                                                        && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
+                                                        && !license.getLicenseName()
+                                                                        .equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude
+                                                                                                                        // unknown,
+                                                                                                                        // n/a
+                                                                                                                        // and
+                                                                                                                        // noassertion
+                                        .collect(Collectors.toList());
+
+                        if (attachmentName.endsWith(SW360Constants.RDF_FILE_EXTENSION)) {
+                                if (isISR) {
+                                        totalFileCount = licenseInfoResult.stream()
+                                                        .map(LicenseInfoParsingResult::getLicenseInfo)
+                                                        .map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
+                                                        .map(LicenseNameWithText::getSourceFiles)
+                                                        .filter(Objects::nonNull).flatMap(Set::stream).distinct()
+                                                        .count();
+                                        licenseToSrcFilesMap = CommonUtils.nullToEmptyList(licenseWithTexts).stream()
+                                                        .collect(Collectors.toMap(LicenseNameWithText::getLicenseName,
+                                                                        LicenseNameWithText::getSourceFiles,
+                                                                        (oldValue, newValue) -> oldValue));
+                                        licenseWithTexts.forEach(lwt -> {
+                                                lwt.getSourceFiles().forEach(sf -> {
+                                                        if (sf.replaceAll(".*/", "")
+                                                                        .matches(SW360Constants.MAIN_LICENSE_FILES)) {
+                                                                concludedLicenseIds.add(lwt.getLicenseName());
+                                                        }
+                                                });
+                                        });
+                                } else {
+                                        concludedLicenseIds.addAll(licenseInfoResult.stream()
+                                                        .flatMap(singleResult -> singleResult.getLicenseInfo()
+                                                                        .getConcludedLicenseIds().stream())
+                                                        .collect(Collectors.toCollection(() -> new TreeSet<String>(
+                                                                        String.CASE_INSENSITIVE_ORDER))));
+                                }
+                                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName)
+                                                .collect(Collectors.toCollection(() -> new TreeSet<String>(
+                                                                String.CASE_INSENSITIVE_ORDER)));
+                                otherLicenseNames.removeAll(concludedLicenseIds);
+                        } else if (attachmentName.endsWith(SW360Constants.XML_FILE_EXTENSION)) {
+                                mainLicenseNames = licenseWithTexts.stream()
+                                                .filter(license -> license.getType()
+                                                                .equalsIgnoreCase(SW360Constants.LICENSE_TYPE_GLOBAL))
+                                                .map(LicenseNameWithText::getLicenseName)
+                                                .collect(Collectors.toCollection(() -> new TreeSet<String>(
+                                                                String.CASE_INSENSITIVE_ORDER)));
+                                otherLicenseNames = licenseWithTexts.stream()
+                                                .filter(license -> !license.getType()
+                                                                .equalsIgnoreCase(SW360Constants.LICENSE_TYPE_GLOBAL))
+                                                .map(LicenseNameWithText::getLicenseName)
+                                                .collect(Collectors.toCollection(() -> new TreeSet<String>(
+                                                                String.CASE_INSENSITIVE_ORDER)));
+                        }
+                } catch (TException e) {
+                        log.error(e.getMessage(), e);
+                        throw new SW360Exception("Cannot retrieve license information for attachment id " + attachmentId
+                                        + " in release "
+                                        + releaseId + ".");
+                }
+
+                if (CommonUtils.isNotEmpty(concludedLicenseIds)) {
+                        responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.CONCLUDED_LICENSE_IDS);
+                        responseBody.put(SW360Constants.LICENSE_IDS, concludedLicenseIds);
+                } else if (CommonUtils.isNotEmpty(mainLicenseNames)) {
+                        responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.MAIN_LICENSE_ID);
+                        responseBody.put(SW360Constants.LICENSE_IDS, mainLicenseNames);
+                }
+                responseBody.put(SW360Constants.OTHER_LICENSE, SW360Constants.OTHER_LICENSE_IDS);
+                responseBody.put(SW360Constants.OTHER_LICENSE_IDS_KEY, otherLicenseNames);
+                if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
+                        responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.POSSIBLE_MAIN_LICENSE_IDS);
+                        responseBody.put(SW360Constants.TOTAL_FILE_COUNT, totalFileCount);
+                }
+                responseBody.putAll(licenseToSrcFilesMap);
+
+                return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Get linked releases information for a release by id.", description = "Get linked releases information for a release by id.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "200", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", example = """
+                                                                                {
+                                                                                    "_embedded": {
+                                                                                        "sw360:releaseLinks": [
+                                                                                            {
+                                                                                                "id": "123211321",
+                                                                                                "name": "Release 1",
+                                                                                                "version": "1.0",
+                                                                                                "releaseRelationship": "CONTAINED",
+                                                                                                "clearingState": "NEW_CLEARING",
+                                                                                                "licenseIds": [],
+                                                                                                "accessible": true,
+                                                                                                "componentId": "4566612"
+                                                                                            }
+                                                                                        ]
+                                                                                    },
+                                                                                    "_links": {
+                                                                                        "curies": [
+                                                                                            {
+                                                                                                "href": "http://localhost:8080/resource/docs/{rel}.html",
+                                                                                                "name": "sw360",
+                                                                                                "templated": true
+                                                                                            }
+                                                                                        ]
+                                                                                    }
+                                                                                }
+                                                                        """)) })
+                        })
+        @GetMapping(value = RELEASES_URL + "/{id}/releases")
+        public ResponseEntity<CollectionModel<HalResource<ReleaseLink>>> getLinkedReleases(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id,
+                        @Parameter(description = "Get direct (false) or transitive (true) linked releases.") @RequestParam(value = "transitive", required = false, defaultValue = "false") boolean transitive)
+                        throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+                Map<String, ReleaseRelationship> releaseRelationshipMap = !CommonUtils
+                                .isNullOrEmptyMap(sw360Release.getReleaseIdToRelationship())
+                                                ? sw360Release.getReleaseIdToRelationship()
+                                                : new HashMap<>();
+                Set<String> releaseIdsInBranch = new HashSet<>();
+
+                final List<HalResource<ReleaseLink>> linkedReleaseResources = releaseRelationshipMap.entrySet().stream()
+                                .map(item -> wrapTException(() -> {
+                                        final Release releaseById = releaseService.getReleaseForUserById(item.getKey(),
+                                                        sw360User);
+                                        final ReleaseLink embeddedReleaseLink = restControllerHelper
+                                                        .convertToReleaseLink(releaseById, item.getValue());
+                                        embeddedReleaseLink.setAccessible(releaseService.isReleaseActionAllowed(
+                                                        releaseById, sw360User, RequestedAction.READ));
+                                        final HalResource<ReleaseLink> releaseResource = new HalResource<>(
+                                                        embeddedReleaseLink);
+                                        if (transitive) {
+                                                releaseService.addEmbeddedLinkedRelease(releaseById, sw360User,
+                                                                releaseResource, releaseIdsInBranch);
+                                        }
+                                        return releaseResource;
+                                })).collect(Collectors.toList());
+
+                CollectionModel<HalResource<ReleaseLink>> collectionModel = CollectionModel.of(linkedReleaseResources);
+                return new ResponseEntity<>(collectionModel, HttpStatus.OK);
+        }
+
+        private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)
+                        throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                Release release = releaseService.getReleaseForUserById(id, sw360User);
+                Set<String> packageIds;
+                packageIds = release.getPackageIds();
+                if (CommonUtils.isNullOrEmptyCollection(packageIds)) {
+                        packageIds = new HashSet<>();
+                }
+                if (link) {
+                        packageIds.addAll(packagesInRequestBody);
+                } else {
+                        packageIds.removeAll(packagesInRequestBody);
+                }
+
+                release.setPackageIds(packageIds);
+                return releaseService.updateRelease(release, sw360User);
+        }
+
+        @Operation(summary = "Get assessment summary info of release.", description = "Get assessment summary info of release (Have one CLI file only).", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "200", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", example = "{\n"
+                                                                        +
+                                                                        "  \"GeneralAssessment\": \"General Assessment\",\n"
+                                                                        +
+                                                                        "  \"CriticalFilesFound\": \"Critical Files Found\",\n"
+                                                                        +
+                                                                        "  \"AdditionalNotes\": \"Additional Notes\",\n"
+                                                                        +
+                                                                        "  \"UsageRestrictionsFound\": \"None\",\n" +
+                                                                        "  \"ExportRestrictionsFound\": \"Export Restrictions Found\",\n"
+                                                                        +
+                                                                        "  \"DependencyNotes\": \"Dependency Notes\"\n"
+                                                                        +
+                                                                        "}")) })
+                        })
+        @GetMapping(value = RELEASES_URL + "/{id}/assessmentSummaryInfo")
+        public ResponseEntity loadAssessmentSummaryInfo(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String id)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(user);
+                Release release = releaseService.getReleaseForUserById(id, user);
+                final boolean INCLUDE_CONCLUDED_LICENSE = true;
+
+                Map<String, String> assessmentSummaryMap = new HashMap<>();
+                List<String> cliAttachmentIds = release.getAttachments().stream()
+                                .filter(att -> att.getAttachmentType()
+                                                .equals(AttachmentType.COMPONENT_LICENSE_INFO_XML))
+                                .map(Attachment::getAttachmentContentId).collect(Collectors.toList());
+                if (cliAttachmentIds.size() != 1) {
+                        throw new SW360Exception("Number of CLI attachments must be 1");
+                }
+                List<LicenseInfoParsingResult> licenseInfoResult = sw360LicenseInfoService.getLicenseInfoForAttachment(
+                                release,
+                                user, cliAttachmentIds.get(0), INCLUDE_CONCLUDED_LICENSE);
+
+                if (CommonUtils.isNotEmpty(licenseInfoResult)
+                                && Objects.nonNull(licenseInfoResult.get(0).getLicenseInfo())) {
+                        assessmentSummaryMap = licenseInfoResult.get(0).getLicenseInfo().getAssessmentSummary();
+                }
+
+                if (CommonUtils.isNullOrEmptyMap(assessmentSummaryMap)) {
+                        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+                }
+
+                return new ResponseEntity<>(assessmentSummaryMap, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Check cyclic hierarchy of a release with other releases.", description = "Check cyclic hierarchy of a release with other releases.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "207", content = {
+                                                        @Content(mediaType = "application/hal+json", schema = @Schema(type = "object", example = """
+                                                                            [
+                                                                                {
+                                                                                    "message": "release1(1) -> release1(1)",
+                                                                                    "status": 409
+                                                                                },
+                                                                                {
+                                                                                    "message": "There are no cyclic link between 3765276512 and 12121212",
+                                                                                    "status": 200
+                                                                                }
+                                                                            ]
+                                                                        """)) })
+                        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/checkCyclicLink", method = RequestMethod.POST)
+        public ResponseEntity<?> checkForCyclicReleaseLink(
+                        @Parameter(description = "The ID of the checking release.") @PathVariable("id") String releaseId,
+                        @Parameter(description = "Release ids to check", schema = @Schema(example = """
+                                            {
+                                              "linkedReleases": ["3765276512"],
+                                              "linkedToReleases": ["12121212"]
+                                            }
+                                        """)) @RequestBody Map<String, Set<String>> relationshipReleaseIds)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                List<ImmutableMap<String, Object>> results = new ArrayList<>();
+                Release checkingRelease = releaseService.getReleaseForUserById(releaseId, user);
+                if (!CommonUtils.isNullOrEmptyCollection(relationshipReleaseIds.get("linkedToReleases"))) {
+                        for (String parentReleaseId : relationshipReleaseIds.get("linkedToReleases")) {
+                                String cyclicPath;
+                                try {
+                                        Release parentRelease = releaseService.getReleaseForUserById(parentReleaseId,
+                                                        user);
+                                        cyclicPath = releaseService.checkForCyclicLinkedReleases(parentRelease,
+                                                        checkingRelease, user);
+                                } catch (ResourceNotFoundException notFoundException) {
+                                        results.add(ImmutableMap.<String, Object>builder()
+                                                        .put("message", notFoundException.getMessage())
+                                                        .put("status", 404)
+                                                        .build());
+                                        continue;
+                                }
+                                if (CommonUtils.isNotNullEmptyOrWhitespace(cyclicPath.trim())) {
+                                        results.add(ImmutableMap.<String, Object>builder()
+                                                        .put("message", cyclicPath)
+                                                        .put("status", 409)
+                                                        .build());
+                                } else {
+                                        results.add(ImmutableMap.<String, Object>builder()
+                                                        .put("message", "There are no cyclic link between "
+                                                                        + parentReleaseId + " and " + releaseId)
+                                                        .put("status", 200)
+                                                        .build());
+                                }
+                        }
+                }
+
+                if (!CommonUtils.isNullOrEmptyCollection(relationshipReleaseIds.get("linkedReleases"))) {
+                        for (String linkedReleaseId : relationshipReleaseIds.get("linkedReleases")) {
+                                String cyclicPath;
+                                try {
+                                        Release linkedRelease = releaseService.getReleaseForUserById(linkedReleaseId,
+                                                        user);
+                                        cyclicPath = releaseService.checkForCyclicLinkedReleases(checkingRelease,
+                                                        linkedRelease, user);
+                                } catch (ResourceNotFoundException notFoundException) {
+                                        results.add(ImmutableMap.<String, Object>builder()
+                                                        .put("message", notFoundException.getMessage())
+                                                        .put("status", 404)
+                                                        .build());
+                                        continue;
+                                }
+                                if (CommonUtils.isNotNullEmptyOrWhitespace(cyclicPath.trim())) {
+                                        results.add(ImmutableMap.<String, Object>builder()
+                                                        .put("message", cyclicPath)
+                                                        .put("status", 409)
+                                                        .build());
+                                } else {
+                                        results.add(ImmutableMap.<String, Object>builder()
+                                                        .put("message", "There are no cyclic link between " + releaseId
+                                                                        + " and " + linkedReleaseId)
+                                                        .put("status", 200)
+                                                        .build());
+                                }
+                        }
+                }
+
+                return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
+        }
+
+        @Operation(summary = "Handle release subscription for requesting user.", description = "Handle release subscription for requesting user.", tags = {
+                        "Releases" })
+        @PreAuthorize("hasAuthority('WRITE')")
+        @PostMapping(value = RELEASES_URL + "/{id}/subscriptions")
+        public ResponseEntity<String> handleReleaseSubscriptions(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String releaseId)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                Release releaseById = releaseService.getReleaseForUserById(releaseId, user);
+                Set<String> subscribers = releaseById.getSubscribers();
+                if (subscribers.contains(user.getEmail())) {
+                        releaseService.unsubscribeRelease(user, releaseId);
+                        return new ResponseEntity<>("Release has been unsubscribed", HttpStatus.OK);
+                } else {
+                        releaseService.subscribeRelease(user, releaseId);
+                        return new ResponseEntity<>("Release has been subscribed", HttpStatus.OK);
+                }
+        }
+
+        @Override
+        public RepositoryLinksResource process(RepositoryLinksResource resource) {
+                resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
+                return resource;
+        }
+
+        private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
+                HalResource<Release> halRelease = new HalResource<>(release);
+                Link componentLink = linkTo(ReleaseController.class)
+                                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
+                                .withRel("component");
+                halRelease.add(componentLink);
+                release.setComponentId(null);
+                if (verbose) {
+                        if (release.getModerators() != null) {
+                                Set<String> moderators = release.getModerators();
+                                restControllerHelper.addEmbeddedModerators(halRelease, moderators);
+                                release.setModerators(null);
+                        }
+                        if (release.getAttachments() != null) {
+                                Set<Attachment> attachments = release.getAttachments();
+                                restControllerHelper.addEmbeddedAttachments(halRelease, attachments);
+                                release.setAttachments(null);
+                        }
+                        if (release.getVendor() != null) {
+                                Vendor vendor = release.getVendor();
+                                HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor);
+                                halRelease.addEmbeddedResource("sw360:vendors", vendorHalResource);
+                                release.setVendor(null);
+                        }
+                        if (release.getMainLicenseIds() != null) {
+                                restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
+                        }
+                        if (release.getOtherLicenseIds() != null) {
+                                restControllerHelper.addEmbeddedOtherLicenses(halRelease, release.getOtherLicenseIds());
+                        }
+                        Set<String> packageIds = release.getPackageIds();
+
+                        if (packageIds != null) {
+                                restControllerHelper.addEmbeddedPackages(halRelease, packageIds, packageService);
+                                release.setPackageIds(null);
+                        }
+                }
+                return halRelease;
+        }
+
+        private HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
+                HalResource<Release> halRelease = new HalResource<>(release);
+                Link componentLink = linkTo(ReleaseController.class)
+                                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
+                                .withRel("component");
+                halRelease.add(componentLink);
+                release.setComponentId(null);
+                Set<String> packageIds = release.getPackageIds();
+
+                if (packageIds != null) {
+                        for (String id : release.getPackageIds()) {
+                                Link packageLink = linkTo(ReleaseController.class)
+                                                .slash("api" + PackageController.PACKAGES_URL + "/" + id)
+                                                .withRel("packages");
+                                halRelease.add(packageLink);
+                        }
+                }
+                release.setPackageIds(null);
+                for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
+                        restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()),
+                                        halRelease);
+                }
+                // Do not add attachment as it is an embedded field
+                release.unsetAttachments();
+                return halRelease;
+        }
+
+        private Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.registerModule(sw360Module);
+
+                Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(reqBodyMap.get("attachments"),
+                                mapper);
+                if (null != reqBodyMap.get("attachments")) {
+                        reqBodyMap.remove("attachments");
+                }
+                Release release = mapper.convertValue(reqBodyMap, Release.class);
+                if (null != attachments) {
+                        release.setAttachments(attachments);
+                }
+
+                mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames.entrySet().stream().forEach(entry -> {
+                        Release._Fields field = entry.getKey();
+                        String oldFieldName = entry.getValue()[0];
+                        String newFieldName = entry.getValue()[1];
+                        if (!reqBodyMap.containsKey(newFieldName) && reqBodyMap.containsKey(oldFieldName)) {
+                                release.setFieldValue(field,
+                                                CommonUtils.nullToEmptyString(reqBodyMap.get(oldFieldName)));
+                        }
+                });
+
+                return release;
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Bulk delete releases.", description = "Bulk delete existing releases.", tags = {
+                        "Releases" })
+        @DeleteMapping(value = RELEASES_URL + "/{id}/bulkDelete")
+        public ResponseEntity<BulkOperationNode> bulkDeleteReleases(
+                        @Parameter(description = "The release id to be bulk-deleted.") @PathVariable("id") String id,
+                        @Parameter(description = "isPreview flag for bulk deletion.") @RequestParam(value = "isPreview", defaultValue = "false", required = false) boolean isPreview)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                BulkOperationNode result = releaseService.deleteBulkRelease(id, user, isPreview);
+
+                return new ResponseEntity<BulkOperationNode>(result, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Get license data.", description = "Get license data from release attachment.", tags = {
+                        "Releases" }, responses = {
+                                        @ApiResponse(responseCode = "200", description = "License Data for the attachment.", content = {
+                                                        @Content(mediaType = "application/json", schema = @Schema(example = """
+                                                                        {[
+                                                                          "name": "License1",
+                                                                          "text": "License text 1"
+                                                                        ]}
+                                                                        """))
+                                        }),
+                                        @ApiResponse(responseCode = "400", description = "attachContentId cannot be parsed.", content = {
+                                                        @Content(mediaType = "application/json", schema = @Schema(example = """
+                                                                         {[
+                                                                           "error": "No applicable parser has been found for the attachment",
+                                                                           "file": "source.zip"
+                                                                         ]}
+                                                                        """))
+                                        }),
+                                        @ApiResponse(responseCode = "404", description = "Provided attachContentId not found.")
+                        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}", method = RequestMethod.GET)
+        public ResponseEntity<List<Map<String, String>>> getReleaseLicenseInfo(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String relId,
+                        @Parameter(description = "The ID of the attachment.") @PathVariable("attachContentId") String attachContentId)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(user);
+                Release sw360Release = releaseService.getReleaseForUserById(relId, user);
+                List<Map<String, String>> results = new ArrayList<>();
+                boolean found = false;
+                boolean type = true;
+                for (Attachment attachment : sw360Release.getAttachments()) {
+                        if (attachContentId.equals(attachment.getAttachmentContentId())) {
+                                found = true;
+                                type = attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML
+                                                || attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_COMBINED;
+                                break;
+                        }
+                }
+                if (!found) {
+                        throw new ResourceNotFoundException("Attachment not found");
+                }
+                results = releaseService.getReleaseLicenseInfo(sw360Release, user, attachContentId);
+                if (!type) {
+                        return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
+                }
+                return new ResponseEntity<>(results, HttpStatus.OK);
+        }
+
+        @Operation(summary = "Get license data.", description = "Get license source files list and other license data from release attachment (CLI/ISR). "
+                        +
+                        "Optionally specify attachmentId query parameter to get license file list for a specific attachment. "
+                        +
+                        "Supports CLI XML, CLI Combined, and ISR attachment types.", tags = {
+                                        "Releases" }, responses = {
+                                                        @ApiResponse(responseCode = "200", description = "License Data for the attachment.", content = {
+                                                                        @Content(mediaType = "application/json", schema = @Schema(example = """
+                                                                                        {
+                                                                                          "relId": "54321",
+                                                                                          "relName": "releaseName",
+                                                                                          "data": [
+                                                                                            {
+                                                                                              "licName": "MIT",
+                                                                                              "licType": "Global",
+                                                                                              "srcFiles": [ "dir1/file1", "dir2/file2" ],
+                                                                                              "licSpdxId": "MIT"
+                                                                                            }
+                                                                                          ],
+                                                                                          "attName": "filename.xml"
+                                                                                        }
+                                                                                        """))
+                                                        }),
+                                                        @ApiResponse(responseCode = "400", description = "Source file information not found in attachment"),
+                                                        @ApiResponse(responseCode = "409", description = "Multiple approved attachments are found in the release"),
+                                                        @ApiResponse(responseCode = "404", description = "Supported attachment (CLI/ISR) not found in the release"),
+                                                        @ApiResponse(responseCode = "500", description = "Internal server error, while processing the request.")
+
+        })
+        @RequestMapping(value = RELEASES_URL + "/{id}/licenseFileList", method = RequestMethod.GET)
+        public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
+                        @Parameter(description = "The ID of the release.") @PathVariable("id") String relId,
+                        @Parameter(description = "Optional attachment ID to get license file list for a specific CLI/ISR attachment.") @RequestParam(value = "attachmentId", required = false) String attachmentId)
+                        throws TException {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                restControllerHelper.throwIfSecurityUser(user);
+                Release sw360Release = releaseService.getReleaseForUserById(relId, user);
+                Map<String, Object> results = releaseService.getReleaseLicenseFileListInfo(sw360Release, user,
+                                attachmentId);
+                return new ResponseEntity<>(results, HttpStatus.OK);
+        }
+
+        @PreAuthorize("hasAuthority('WRITE')")
+        @Operation(summary = "Merge two releases.", description = "Merge source release into target release.", tags = {
+                        "Releases" })
+        @RequestMapping(value = RELEASES_URL + "/mergereleases", method = RequestMethod.PATCH)
+        public ResponseEntity<RequestStatus> mergeReleases(
+                        @Parameter(description = "The id of the merge target release.") @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+                        @Parameter(description = "The id of the merge source release.") @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+                        @Parameter(description = "The merge selection.", schema = @Schema(implementation = ReleaseMergeSelector.class, type = "object", example = """
+                                        {
+                                          "name": "Final Release Name",
+                                          "createdOn": "Final created date",
+                                          "createdBy": "Final creator name",
+                                          "version": "1.0.0",
+                                          "attachments": [
+                                            {
+                                              "attachmentContentId": "att1",
+                                              "filename": "saveme.txt"
+                                            }
+                                          ]
+                                        }
+                                        """, requiredProperties = {
+                                        "name", "createdOn",
+                                        "createdBy" })) @RequestBody ReleaseMergeSelector mergeSelection)
+                        throws TException {
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                // perform the real merge, update merge target and delete merge sources
+                RequestStatus requestStatus = releaseService.mergeRelease(mergeTargetId, mergeSourceId, mergeSelection,
+                                sw360User);
+                return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+        }
 }

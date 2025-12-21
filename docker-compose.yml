@@ -32,6 +32,8 @@ services:
     image: couchdb:3.4
     restart: unless-stopped
     environment:
+      - COUCHDB_USER=sw360
+      - COUCHDB_PASSWORD=sw360fossie
       - COUCHDB_CREATE_DATABASE=yes
     ports:
       - "5984:5984"
@@ -43,10 +45,11 @@ services:
       - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini
       - ./config/couchdb/nouveau.ini:/opt/couchdb/etc/local.d/nouveau.ini
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
+      test: [ "CMD-SHELL", "curl --fail -s http://couchdb:5984/_up" ]
       interval: 30s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
 volumes:
   couchdb: null
