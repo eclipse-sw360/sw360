@@ -36,6 +36,9 @@ import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
@@ -49,6 +52,7 @@ import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorClou
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
+@Component
 public class ModerationRequestRepository extends SummaryAwareRepository<ModerationRequest> {
     private static final String ALL = "function(doc) { if (doc.type == 'moderation') emit(null, doc._id) }";
     private static final String REQUESTING_USERS_VIEW = "function(doc) { " +
@@ -85,7 +89,10 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     private static final String MR_BY_MODERATION_STATE_IDX = "MrByModerationStateIdx";
     private static final String MR_BY_DOCUMENT_ID_IDX = "MrByDocumentIdIdx";
 
-    public ModerationRequestRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public ModerationRequestRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(ModerationRequest.class, db, new ModerationRequestSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

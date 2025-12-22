@@ -10,8 +10,6 @@
 package org.eclipse.sw360.vendors;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.VendorSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -19,31 +17,22 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
+@Component
 public class VendorHandler implements VendorService.Iface {
 
-    private final VendorDatabaseHandler vendorDatabaseHandler;
-    private final VendorSearchHandler vendorSearchHandler;
-
-    public VendorHandler() throws IOException {
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);     // Remove release id from component
-    }
-
-    public VendorHandler(Cloudant client, String dbName) throws IOException {
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName);
-        vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(client, DatabaseSettings.COUCH_DB_DATABASE);     // Remove release id from component
-    }
+    @Autowired
+    private VendorDatabaseHandler vendorDatabaseHandler;
+    @Autowired
+    private VendorSearchHandler vendorSearchHandler;
 
     @Override
     public Vendor getByID(String id) throws TException {
@@ -113,7 +102,7 @@ public class VendorHandler implements VendorService.Iface {
         assertNotNull(mergeTargetId);
         assertNotNull(mergeSourceId);
         assertNotNull(mergeSelection);
-        
+
         return vendorDatabaseHandler.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, user);
     }
 

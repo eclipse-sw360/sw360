@@ -65,7 +65,6 @@ import com.google.common.base.Strings;
 import lombok.NonNull;
 
 import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 
@@ -91,6 +90,9 @@ public class SW360ReportService {
 
     @NonNull
     private final Sw360LicenseInfoService licenseInfoService;
+
+    @Autowired
+    private AttachmentStreamConnector attachmentStreamConnector;
 
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
     ThriftClients thriftClients = new ThriftClients();
@@ -368,8 +370,6 @@ public class SW360ReportService {
 
     private ByteBuffer serveAttachmentBundle(List<AttachmentContent> attachments,
                                              Project project, User sw360User) throws IOException, TException {
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
-        final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
         return getAttachmentBundleByteBuffer(attachmentStreamConnector, attachments, project, sw360User);
     }
 

@@ -9,55 +9,74 @@
  */
 package org.eclipse.sw360.vendors;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class VendorHandlerTest {
 
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
-
+    @Autowired
     private VendorHandler vendorHandler;
+
+    @Autowired
+    @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE")
+    DatabaseConnectorCloudant databaseConnector;
+
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
     private List<Vendor> vendorList;
 
     @Before
     public void setUp() throws Exception {
-
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
         vendorList = new ArrayList<>();
         vendorList.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com"));
         vendorList.add(new Vendor().setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org"));
 
-
         for (Vendor vendor : vendorList) {
             databaseConnector.add(vendor);
         }
-
-        vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @After
-    public void tearDown() throws Exception {
-        // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
-
 
     @Test
     public void testGetByID() throws Exception {
@@ -122,5 +141,4 @@ public class VendorHandlerTest {
         List<Vendor> vendors = vendorHandler.searchVendors("m");
         assertEquals(1, vendors.size());
     }
-
 }

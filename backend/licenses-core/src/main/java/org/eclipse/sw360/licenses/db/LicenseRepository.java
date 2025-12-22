@@ -16,6 +16,9 @@ import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +29,7 @@ import java.util.Map;
  *
  * @author cedric.bodet@tngtech.com
  */
-
+@Component
 public class LicenseRepository extends SummaryAwareRepository<License> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'license') emit(null, doc._id) }";
@@ -34,7 +37,10 @@ public class LicenseRepository extends SummaryAwareRepository<License> {
     private static final String BYSHORTNAME = "function(doc) { if(doc.type == 'license') { emit(doc._id, null) } }";
     private static final String BYLICENSETYPEID = "function(doc) { if(doc.type == 'license') { emit(doc.licenseTypeDatabaseId, null) } }";
 
-    public LicenseRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public LicenseRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(License.class, db, new LicenseSummary());
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

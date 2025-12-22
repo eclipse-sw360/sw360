@@ -9,6 +9,10 @@
  */
 package org.eclipse.sw360.spdx;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -21,31 +25,50 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.InputStream;
+import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class SpdxBOMImporterTest {
 
     private InputStream inputStream;
     private AttachmentContent attachmentContent;
 
-    @Mock
+    @MockitoBean
     private SpdxBOMImporterSink spdxBOMImporterSink;
 
+    @Autowired
     private SpdxBOMImporter spdxBOMImporter;
 
     @Mock
     private User user;
 
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
     @Before
     public void before() throws Exception {
-        spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-
         inputStream = getClass()
              .getClassLoader().getResourceAsStream("bom.spdx.rdf");
 
@@ -75,6 +98,7 @@ public class SpdxBOMImporterTest {
         if(inputStream != null) {
             inputStream.close();
         }
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

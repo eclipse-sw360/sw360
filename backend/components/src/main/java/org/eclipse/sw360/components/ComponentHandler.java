@@ -10,7 +10,6 @@
 package org.eclipse.sw360.components;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
 import org.eclipse.sw360.datahandler.db.ReleaseSearchHandler;
@@ -25,9 +24,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -41,32 +39,15 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
+@org.springframework.stereotype.Component
 public class ComponentHandler implements ComponentService.Iface {
 
-    private final ComponentDatabaseHandler handler;
-    private final ComponentSearchHandler componentSearchHandler;
-    private final ReleaseSearchHandler releaseSearchHandler;
-
-    public ComponentHandler() throws IOException {
-        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-    }
-
-    public ComponentHandler(Cloudant cClient, String dbName, String changeLogsDBName, String attachmentDbName) throws IOException {
-        handler = new ComponentDatabaseHandler(cClient, dbName, changeLogsDBName, attachmentDbName);
-        componentSearchHandler = new ComponentSearchHandler(cClient, dbName);
-        releaseSearchHandler = new ReleaseSearchHandler(cClient, dbName);
-    }
-
-    // TODO use dependency injection instead of this constructors mess
-    public ComponentHandler(ThriftClients thriftClients) throws IOException {
-        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
-    }
-
-    public ComponentHandler(Cloudant client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
-        handler = new ComponentDatabaseHandler(client, dbName, changeLogsDBName, attachmentDbName, thriftClients);
-        componentSearchHandler = new ComponentSearchHandler(client, dbName);
-        releaseSearchHandler = new ReleaseSearchHandler(client, dbName);
-    }
+    @Autowired
+    private ComponentDatabaseHandler handler;
+    @Autowired
+    private ComponentSearchHandler componentSearchHandler;
+    @Autowired
+    private ReleaseSearchHandler releaseSearchHandler;
 
     /////////////////////
     // SUMMARY GETTERS //

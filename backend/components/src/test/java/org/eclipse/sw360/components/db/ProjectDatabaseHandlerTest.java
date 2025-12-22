@@ -11,13 +11,14 @@
 package org.eclipse.sw360.components.db;
 
 import com.google.common.collect.ImmutableMap;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -34,10 +35,18 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -47,21 +56,60 @@ import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class ProjectDatabaseHandlerTest {
 
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
-    private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
-    private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
+    @Autowired
+    @Qualifier("COUCH_DB_DATABASE")
+    private String dbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ATTACHMENTS")
+    private String attachmentsDbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_CHANGELOGS")
+    private String changeLogsDbName;
+
+    @Autowired
+    @Qualifier("COUCH_DB_SPDX")
+    private String spdxDbName;
+
+    @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     private List<Project> projects;
     private List<Vendor> vendors;
     private List<Release> releases;
     private List<Component> components;
+
+    @Autowired
     private ProjectDatabaseHandler handler;
+    @Autowired
+    ComponentDatabaseHandler componentHandler;
+    @Autowired
+    AttachmentDatabaseHandler attachmentDatabaseHandler;
 
     @Mock
     private ProjectModerator moderator;
+
+    // Initialize the mocked objects
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private static final User user = new User().setEmail("admin@sw360.org").setDepartment("DEPARTMENT");
 
@@ -157,11 +205,8 @@ public class ProjectDatabaseHandlerTest {
         Project project7 = new Project().setId("P7").setName("project7").setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project7);
 
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
         // Prepare the database
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName, luceneSearchLimit);
 
         for (Vendor vendor : vendors) {
             databaseConnector.add(vendor);
@@ -175,11 +220,6 @@ public class ProjectDatabaseHandlerTest {
         for (Project project : projects) {
             databaseConnector.add(project);
         }
-
-        ComponentDatabaseHandler componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
-        AttachmentDatabaseHandler attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
-        PackageDatabaseHandler packageHandler = new PackageDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, attachmentDatabaseHandler, componentHandler);
-        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName, moderator, componentHandler, packageHandler, attachmentDatabaseHandler);
     }
 
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {
@@ -188,7 +228,7 @@ public class ProjectDatabaseHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
@@ -406,6 +446,4 @@ public class ProjectDatabaseHandlerTest {
             }
         });
     }
-
-
 }

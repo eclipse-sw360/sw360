@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
@@ -29,19 +28,12 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fields, PackageInformation> {
 
     private static final Logger log = LogManager.getLogger(SpdxPackageInfoModerator.class);
-
-
-    public SpdxPackageInfoModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public SpdxPackageInfoModerator() {
-        super(new ThriftClients());
-    }
 
     public RequestStatus updateSpdxPackageInfo(PackageInformation packageInfo, User user) {
 
@@ -203,5 +195,4 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
         packageInfo.setPackageVerificationCode(actual);
         return packageInfo;
     }
-
 }

@@ -9,6 +9,9 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatch;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -21,6 +24,7 @@ import java.util.Set;
  *
  * @author stefan.jaeger@evosoft.com
  */
+@Component
 public class VMMatchRepository extends DatabaseRepositoryCloudantClient<VMMatch> {
 
     private static final String ALL =
@@ -43,7 +47,10 @@ public class VMMatchRepository extends DatabaseRepositoryCloudantClient<VMMatch>
                     "  } " +
                     "}";
 
-    public VMMatchRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public VMMatchRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_VM") DatabaseConnectorCloudant db
+    ) {
         super(db, VMMatch.class);
 
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();

@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
 import java.util.List;
@@ -39,14 +40,13 @@ import static org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus.SUCC
 /**
  * @author: ksoranko@verifa.io
  */
+@org.springframework.stereotype.Component
 public class ThriftExchange {
 
     private static final Logger LOGGER = LogManager.getLogger(ThriftExchange.class);
-    private static ThriftClients thriftClients = new ThriftClients();
 
-    //public ThriftExchange(ThriftClients thriftClients) {
-    //    this.thriftClients = thriftClients;
-    //}
+    @Autowired
+    private static ThriftClients thriftClients;
 
     /**
      * Add the Project to DB. Required fields are: name.

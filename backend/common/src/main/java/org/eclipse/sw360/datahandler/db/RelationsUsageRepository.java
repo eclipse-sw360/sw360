@@ -20,6 +20,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the RelationsUsageRepository class
@@ -27,7 +30,7 @@ import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
  * @author smruti.sahoo@siemens.com
  *
  */
-
+@Component
 public class RelationsUsageRepository extends DatabaseRepositoryCloudantClient<UsedReleaseRelations> {
 
     private static final String BY_PROJECT_ID =
@@ -39,7 +42,10 @@ public class RelationsUsageRepository extends DatabaseRepositoryCloudantClient<U
 
     private static final String ALL = "function(doc) { if (doc.type == 'usedReleaseRelation') emit(null, doc._id); }";
 
-    public RelationsUsageRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public RelationsUsageRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, UsedReleaseRelations.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));

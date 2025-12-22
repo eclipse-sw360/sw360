@@ -13,7 +13,6 @@ package org.eclipse.sw360.search;
 import com.google.common.collect.ImmutableMap;
 
 import com.google.common.collect.Sets;
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -23,8 +22,10 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
+import org.eclipse.sw360.search.db.Sw360usersDatabaseSearchHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,23 +40,16 @@ import java.util.stream.Collectors;
  *
  * @author cedric.bodet@tngtech.com
  */
+@Component
 public class SearchHandler implements SearchService.Iface {
 
     private static final Logger log = LogManager.getLogger(SearchHandler.class);
 
-    private final AbstractDatabaseSearchHandler dbSw360db;
-    private final AbstractDatabaseSearchHandler dbSw360users;
+    @Autowired
+    private Sw360dbDatabaseSearchHandler dbSw360db;
+    @Autowired
+    private Sw360usersDatabaseSearchHandler dbSw360users;
     ImmutableMap<String, String> specialCharToURLEncodedValue = ImmutableMap.of(" ", "%20", "+", "%2B", "@", "%40", "&", "%26", "#", "%23", "?", "%3F");
-
-    public SearchHandler() throws IOException {
-        dbSw360db = new Sw360dbDatabaseSearchHandler();
-        dbSw360users = new Sw360usersDatabaseSearchHandler();
-    }
-
-    public SearchHandler(Cloudant client, String dbName) throws IOException {
-        dbSw360db = new Sw360dbDatabaseSearchHandler(client, dbName);
-        dbSw360users = new Sw360usersDatabaseSearchHandler(client, dbName);
-    }
 
     @Override
     public List<SearchResult> searchFiltered(String text, User user, List<String> typeMask) throws TException {

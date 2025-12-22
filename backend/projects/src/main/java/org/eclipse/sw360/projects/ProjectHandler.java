@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
@@ -43,9 +42,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -58,28 +57,14 @@ import java.util.*;
  * @author thomas.maier@evosoft.com
  * @author ksoranko@verifa.io
  */
+@Component
 public class ProjectHandler implements ProjectService.Iface {
 
     private static final Logger log = LogManager.getLogger(ProjectHandler.class);
-    private final ProjectDatabaseHandler handler;
-    private final ProjectSearchHandler searchHandler;
-
-    ProjectHandler() throws IOException {
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE,
-                DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredClient(),
-                DatabaseSettings.COUCH_DB_DATABASE);
-    }
-
-    ProjectHandler(Cloudant client, String dbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(client, dbName, attchmntDbName);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
-    }
-
-    ProjectHandler(Cloudant client, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(client, dbName, changeLogsDbName, attchmntDbName);
-        searchHandler = new ProjectSearchHandler(client, dbName);
-    }
+    @Autowired
+    private ProjectDatabaseHandler handler;
+    @Autowired
+    private ProjectSearchHandler searchHandler;
 
     /////////////////////
     // SUMMARY GETTERS //

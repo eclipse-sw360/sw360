@@ -11,7 +11,6 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
-import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -23,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
@@ -44,14 +44,11 @@ import static org.eclipse.sw360.licenseinfo.parsers.SPDXParserTools.getLicenseIn
  * @author: alex.borodin@evosoft.com
  * @author: maximilian.huber@tngtech.com
  */
+@Component
 public class SPDXParser extends LicenseInfoParser {
     protected static final String FILETYPE_SPDX_EXTENSION = ".rdf";
 
     private static final Logger log = LogManager.getLogger(SPDXParser.class);
-
-    public SPDXParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
-        super(attachmentConnector, attachmentContentProvider);
-    }
 
     @Override
     public List<String> getApplicableFileExtensions() {

@@ -16,24 +16,32 @@ import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Component
 public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<ConfigContainer> {
     private static final String ALL = "function(doc) { emit(null, doc._id); }";
     private static final String BYID = "function(doc) { emit(doc._id, null); }";
     private static final String BYCONFIGFOR = "function(doc) { emit(doc.configFor, null); }";
 
-    public ConfigContainerRepository(DatabaseConnectorCloudant databaseConnector) {
-        super(databaseConnector, ConfigContainer.class);
+    @Autowired
+    public ConfigContainerRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_CONFIG") DatabaseConnectorCloudant db,
+            @Qualifier("COUCH_DB_CONFIG") String dbName
+    ) {
+        super(db, ConfigContainer.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byId", createMapReduce(BYID, null));
         views.put("byConfigFor", createMapReduce(BYCONFIGFOR, null));
-        initStandardDesignDocument(views, databaseConnector);
+        initStandardDesignDocument(views, db);
     }
 
     public ConfigContainer getByConfigFor(ConfigFor configFor) {

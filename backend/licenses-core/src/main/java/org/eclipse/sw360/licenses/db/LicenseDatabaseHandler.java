@@ -14,13 +14,11 @@ import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.components.summary.SummaryType;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.CustomPropertiesRepository;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
-import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.entitlement.LicenseModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -40,7 +38,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -48,7 +45,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
-import java.net.MalformedURLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -62,34 +58,44 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import com.google.common.collect.Lists;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.spdx.core.InvalidSPDXAnalysisException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Class for accessing the CouchDB database
  *
  * @author cedric.bodet@tngtech.com
  */
-public class LicenseDatabaseHandler {
-
-    /**
-     * Connection to the couchDB database
-     */
-    private final DatabaseConnectorCloudant db;
+@Component
+public class LicenseDatabaseHandler implements InitializingBean {
 
     /**
      * License Repository
      */
-    private final LicenseRepository licenseRepository;
-    private final TodoRepository obligRepository;
-    private final ObligationElementRepository obligationElementRepository;
-    private final ObligationNodeRepository obligationNodeRepository;
-    private final LicenseTypeRepository licenseTypeRepository;
-    private final LicenseObligationListRepository obligationListRepository;
-    private final LicenseModerator moderator;
-    private final CustomPropertiesRepository customPropertiesRepository;
-    private final DatabaseRepositoryCloudantClient[] repositories;
+    @Autowired
+    private LicenseRepository licenseRepository;
+    @Autowired
+    private TodoRepository obligRepository;
+    @Autowired
+    private ObligationElementRepository obligationElementRepository;
+    @Autowired
+    private ObligationNodeRepository obligationNodeRepository;
+    @Autowired
+    private LicenseTypeRepository licenseTypeRepository;
+    @Autowired
+    private CustomPropertiesRepository customPropertiesRepository;
+    @Autowired
+    private LicenseObligationListRepository obligationListRepository;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
+    @Autowired
+    private LicenseModerator moderator;
+    @Autowired
+    ReleaseRepository releaseRepository;
+
+    private DatabaseRepositoryCloudantClient[] repositories;
 
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
@@ -97,21 +103,8 @@ public class LicenseDatabaseHandler {
     private String obligationText;
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
-    public LicenseDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
-        // Create the connector
-        db = new DatabaseConnectorCloudant(client, dbName);
-        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
-
-        // Create the repository
-        licenseRepository = new LicenseRepository(db);
-        obligRepository = new TodoRepository(db);
-        obligationElementRepository = new ObligationElementRepository(db);
-        obligationNodeRepository = new ObligationNodeRepository(db);
-        licenseTypeRepository = new LicenseTypeRepository(db);
-        customPropertiesRepository = new CustomPropertiesRepository(db);
-        obligationListRepository = new LicenseObligationListRepository(db);
-
+    @Override
+    public void afterPropertiesSet() {
         repositories = new DatabaseRepositoryCloudantClient[]{
                 licenseRepository,
                 licenseTypeRepository,
@@ -121,8 +114,6 @@ public class LicenseDatabaseHandler {
                 obligationNodeRepository,
                 obligationListRepository
         };
-
-        moderator = new LicenseModerator();
     }
 
 
@@ -981,7 +972,6 @@ public class LicenseDatabaseHandler {
     }
 
     public boolean checkIfInUse(String licenseId) {
-        ReleaseRepository releaseRepository = new ReleaseRepository(db,new VendorRepository(db));
         final List<Release> usingReleases = releaseRepository.searchReleasesByUsingLicenseId(licenseId);
         return !usingReleases.isEmpty();
     }

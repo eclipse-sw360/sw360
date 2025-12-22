@@ -12,7 +12,12 @@ package org.eclipse.sw360.licenseinfo.parsers;
 
 import com.google.common.collect.ImmutableMap;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -26,15 +31,27 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ReaderInputStream;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.assertLicenseInfoParsingResult;
@@ -46,31 +63,52 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
  * @author: alex.borodin@evosoft.com
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class CombinedCLIParserTest {
     private static final String TEST_XML_FILENAME = "CombinedCLITest.xml";
 
-    @Mock
-    private AttachmentConnector connector;
+    @Spy
+    @Autowired
     private CombinedCLIParser parser;
+
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    @MockitoBean
+    private AttachmentDatabaseHandler attachmentDatabaseHandler;
+
+    @MockitoBean
+    private AttachmentConnector connector;
     private AttachmentContent content;
     private Attachment attachment;
-    @Mock
+    @MockitoBean
     private ComponentDatabaseHandler componentDatabaseHandler;
     private String cliTestfile;
+
+    // Initialize the mocked objects
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Before
     public void setUp() throws Exception {
         cliTestfile = IOUtils.toString(makeAttachmentContentStream(TEST_XML_FILENAME), StandardCharsets.UTF_8);
         attachment = new Attachment("A1", "a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
         content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
-        parser = spy(new CombinedCLIParser(connector, attachment -> content, componentDatabaseHandler));
         doReturn("external-correlation-id").when(parser).getCorrelationKey();
         Release r1 = new Release().setId("id1")
                 .setName("r1")
@@ -93,6 +131,12 @@ public class CombinedCLIParserTest {
                 .setExternalIds(ImmutableMap.of("some_external_id", "1234"));
 
         when(componentDatabaseHandler.getAllReleasesIdMap()).thenReturn(ImmutableMap.of(r1.getId(), r1, r2.getId(), r2, r3.getId(), r3, r4.getId(), r4));
+        when(attachmentDatabaseHandler.getAttachmentContent("A1")).thenReturn(content);
+    }
+
+    @After
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

@@ -16,7 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -73,10 +72,6 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String OBLIGATION_TOPIC_ELEMENT_NAME = "Topic";
     private static final String OBLIGATION_TEXT_ELEMENT_NAME = "Text";
     private static final String OBLIGATION_LICENSE_ELEMENT_NAME = "Licenses";
-
-    public AbstractCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
-        super(attachmentConnector, attachmentContentProvider);
-    }
 
     public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context,
             boolean includeFilesHash) throws TException {

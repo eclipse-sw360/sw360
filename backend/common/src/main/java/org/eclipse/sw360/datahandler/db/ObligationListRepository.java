@@ -18,12 +18,16 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the Project class
  *
  * @author abdul.mannankapti@siemens.com
  */
+@Component
 public class ObligationListRepository extends DatabaseRepositoryCloudantClient<ObligationList> {
 
     private static final String BY_PROJECT_ID =
@@ -35,7 +39,10 @@ public class ObligationListRepository extends DatabaseRepositoryCloudantClient<O
 
     private static final String ALL = "function(doc) { if (doc.type == 'obligationList') emit(null, doc._id) }";
 
-    public ObligationListRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public ObligationListRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, ObligationList.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));

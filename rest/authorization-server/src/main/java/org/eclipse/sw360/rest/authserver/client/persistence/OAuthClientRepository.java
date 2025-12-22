@@ -12,7 +12,8 @@ package org.eclipse.sw360.rest.authserver.client.persistence;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -46,13 +47,11 @@ public class OAuthClientRepository extends DatabaseRepositoryCloudantClient<OAut
                     "  emit(doc.client_id, null); " +
                     "}";
 
-    public OAuthClientRepository() {
-        super(OAuthClientEntity.class);
-
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(),
-                DatabaseSettings.COUCH_DB_OAUTHCLIENTS);
-
-        super.setConnector(db);
+    @Autowired
+    public OAuthClientRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_OAUTHCLIENTS") DatabaseConnectorCloudant db
+    ) {
+        super(db, OAuthClientEntity.class);
 
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

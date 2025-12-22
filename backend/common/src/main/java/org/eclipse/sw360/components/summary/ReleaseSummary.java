@@ -17,6 +17,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Release._Fields;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.exporter.ReleaseExporter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.function.Function;
@@ -29,18 +31,11 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
  *
  * @author cedric.bodet@tngtech.com
  */
+@Component
 public class ReleaseSummary extends DocumentSummary<Release> {
 
-    private final VendorRepository vendorRepository;
-
-    public ReleaseSummary() {
-        // Create summary without database connection
-        this(null);
-    }
-
-    public ReleaseSummary(VendorRepository vendorRepository) {
-        this.vendorRepository = vendorRepository;
-    }
+    @Autowired
+    private VendorRepository vendorRepository;
 
     @Override
     public List<Release> makeSummary(SummaryType type, Collection<Release> fullDocuments) {

@@ -10,18 +10,14 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import com.google.common.collect.Sets;
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,6 +30,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.springframework.stereotype.Component;
 
 /**
  * Connector for uploading attachments
@@ -41,20 +38,10 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
  * @author cedric.bodet@tngtech.com
  * @author alex.borodin@evosoft.com
  */
+@Component
 public class AttachmentConnector extends AttachmentStreamConnector {
 
-    private static Logger log = LogManager.getLogger(AttachmentConnector.class);
-
-    public AttachmentConnector(DatabaseConnectorCloudant databaseConnectorCloudant, Duration downloadTimeout) {
-        super(databaseConnectorCloudant, downloadTimeout);
-    }
-
-    /**
-     * @todo remove this mess of constructors and use dependency injection
-     */
-    public AttachmentConnector(Cloudant client, String dbName, Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnectorCloudant(client, dbName), downloadTimeout);
-    }
+    private static final Logger log = LogManager.getLogger(AttachmentConnector.class);
 
     /**
      * Update the database with new attachment metadata

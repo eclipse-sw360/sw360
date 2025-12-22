@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.spdxpackageinfo;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.spdx.packageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -18,27 +17,20 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
-
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
+@Component
 public class PackageInformationHandler implements PackageInformationService.Iface {
 
+    @Autowired
     SpdxPackageInfoDatabaseHandler handler;
-
-    PackageInformationHandler() throws MalformedURLException {
-        handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-    }
-
-    PackageInformationHandler(Cloudant client, String dbName) throws MalformedURLException {
-        handler = new SpdxPackageInfoDatabaseHandler(client, dbName);
-    }
 
     @Override
     public List<PackageInformation> getPackageInformationSummary(User user) throws TException {

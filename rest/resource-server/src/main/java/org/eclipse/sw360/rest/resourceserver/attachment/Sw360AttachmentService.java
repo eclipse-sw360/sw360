@@ -28,8 +28,6 @@ import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -54,10 +52,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -85,7 +81,7 @@ public class Sw360AttachmentService {
     @NonNull
     private final ThriftServiceProvider<AttachmentService.Iface> thriftAttachmentServiceProvider;
 
-    private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
+    @Autowired
     private AttachmentConnector attachmentConnector;
 
     public List<AttachmentUsage> getAttachemntUsages(String projectId) throws TException {
@@ -343,20 +339,8 @@ public class Sw360AttachmentService {
         throw new ResourceNotFoundException("Requested Attachment Not Found");
     }
 
-    private AttachmentConnector getConnector() throws SW360Exception {
-        if (attachmentConnector == null) makeConnector();
+    private AttachmentConnector getConnector() {
         return attachmentConnector;
-    }
-
-    private synchronized void makeConnector() throws SW360Exception {
-        if (attachmentConnector == null) {
-            try {
-                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
-            } catch (MalformedURLException e) {
-                log.error("Invalid database address received...", e);
-                throw new SW360Exception(e.getMessage());
-            }
-        }
     }
 
     private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {

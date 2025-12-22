@@ -9,11 +9,11 @@
  */
 package org.eclipse.sw360.vendors;
 
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-
-import java.io.IOException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Thrift Servlet instantiation
@@ -22,11 +22,13 @@ import java.io.IOException;
  * @author johannes.najjar@tngtech.com
  * @author Andreas.Reichel@tngtech.com
  */
+@Component
 public class VendorServlet extends Sw360ThriftServlet {
 
-    public VendorServlet() throws IOException {
+    @Autowired
+    public VendorServlet(VendorHandler vendorHandler, TProtocolFactory thriftProtocolFactory) {
         // Create a service processor using the provided handler
-        super(new VendorService.Processor<>(new VendorHandler()), new TCompactProtocol.Factory());
+        super(new VendorService.Processor<>(vendorHandler), thriftProtocolFactory);
     }
 
 }

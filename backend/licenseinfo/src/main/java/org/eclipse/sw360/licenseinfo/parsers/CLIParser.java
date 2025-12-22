@@ -15,7 +15,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -27,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestSta
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
@@ -50,6 +50,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
  * Class for extracting copyright and license information from a simple XML file
  * @author: alex.borodin@evosoft.com
  */
+@Component
 public class CLIParser extends AbstractCLIParser {
 
     private static final Logger log = LogManager.getLogger(CLIParser.class);
@@ -61,10 +62,6 @@ public class CLIParser extends AbstractCLIParser {
     private static final String CLI_ROOT_ELEMENT_NAME = "ComponentLicenseInformation";
     private static final String CLI_ROOT_XPATH = "/ComponentLicenseInformation";
     private static final String CLI_ROOT_ELEMENT_NAMESPACE = null;
-
-    public CLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
-        super(attachmentConnector, attachmentContentProvider);
-    }
 
     @Override
     public <T> boolean isApplicableTo(Attachment attachment, User user, T context) throws TException {

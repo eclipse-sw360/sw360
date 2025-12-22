@@ -9,44 +9,57 @@
  */
 package org.eclipse.sw360.users;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.net.MalformedURLException;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class UserHandlerTest {
     private static final String DUMMY_LASTNAME = "Dummy Lastname";
 
     private static final String DUMMY_GIVENNAME = "Dummy Givenname";
-
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_USERS;
 
     private static final String DUMMY_EMAIL_ADDRESS_1 = "dummy.user1@dummy.domain.tld";
     private static final String DUMMY_EMAIL_ADDRESS_2 = "dummy.user2@dummy.domain.tld";
     private static final String DUMMY_COMMENT = "Lorem ipsum";
     private static final String DUMMY_DEPARTMENT = "DummyDepartment";
 
+    @Autowired
     UserHandler handler;
 
-    @Before
-    public void setUp() throws Exception {
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+    @Autowired
+    private Cloudant client;
 
-        // Create the connector
-        handler = new UserHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
-    }
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
 
     @After
-    public void tearDown() throws Exception {
-        // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test

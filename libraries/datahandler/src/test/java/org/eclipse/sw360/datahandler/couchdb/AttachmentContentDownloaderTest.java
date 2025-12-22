@@ -11,17 +11,28 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import com.google.common.io.CharStreams;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.Duration;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.util.Set;
 import java.util.concurrent.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
@@ -38,23 +49,41 @@ import static org.mockito.Mockito.when;
 /**
  * @author daniele.fognini@tngtech.com
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class AttachmentContentDownloaderTest {
     private final Duration downloadTimeout = durationOf(2, TimeUnit.SECONDS);
+    @MockitoBean
     private AttachmentContentDownloader attachmentContentDownloader;
 
-    @Before
-    public void setUp() throws Exception {
-        attachmentContentDownloader = new AttachmentContentDownloader();
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    @Autowired
+    @Qualifier("COUCH_DB_URL")
+    private String couchDbUrl;
+
+    @After
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
     public void testTheCouchDbUrl() throws Exception {
         AttachmentContent attachmentContent = mock(AttachmentContent.class);
 
-        when(attachmentContent.getRemoteUrl()).thenReturn(DatabaseSettingsTest.getCouchDbUrl());
+        when(attachmentContent.getRemoteUrl()).thenReturn(couchDbUrl);
 
-        try (InputStream download = attachmentContentDownloader.download(attachmentContent, downloadTimeout)) {
+        try (InputStream download = attachmentContentDownloader.download(attachmentContent)) {
             String read = CharStreams.toString(new InputStreamReader(download));
             assertThat(read, is(not(nullOrEmpty())));
             assertThat(read, containsString("couchdb"));
@@ -70,7 +99,7 @@ public class AttachmentContentDownloaderTest {
             when(attachmentContent.getRemoteUrl()).thenReturn("http://" + BLACK_HOLE_ADDRESS + "/filename");
 
             try (InputStream download = attachmentContentDownloader
-                    .download(attachmentContent, downloadTimeout)) {
+                    .download(attachmentContent)) {
                 return CharStreams.toString(new InputStreamReader(download));
             }
         };

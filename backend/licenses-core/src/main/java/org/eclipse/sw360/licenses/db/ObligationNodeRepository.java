@@ -19,10 +19,14 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
- /**
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+
+/**
  * CRUD access for the Obligation Node class
  */
-
+@Component
 public class ObligationNodeRepository extends DatabaseRepositoryCloudantClient<ObligationNode> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'obligationNode') emit(null, doc._id) }";
@@ -30,7 +34,10 @@ public class ObligationNodeRepository extends DatabaseRepositoryCloudantClient<O
     private static final String BYNODETEXT = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeText, null) } }";
     private static final String BYOBLIGATIONID = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.oblElementId, null) } }";
 
-    public ObligationNodeRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public ObligationNodeRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, ObligationNode.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

@@ -14,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -22,22 +21,22 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
+@Component
 public class AttachmentFrontendUtils {
 
     private static final Logger log = LogManager.getLogger(AttachmentFrontendUtils.class);
 
+    @Autowired
     private AttachmentStreamConnector connector;
-    // TODO add Config class and DI
-    private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
 
     protected final ThreadLocal<AttachmentService.Iface> attchmntClient = ThreadLocal.<AttachmentService.Iface>withInitial(
             () -> {
@@ -70,19 +69,7 @@ public class AttachmentFrontendUtils {
         }
     }
 
-    private synchronized void makeConnector() throws TException {
-        if (connector == null) {
-            try {
-                connector = new AttachmentStreamConnector(downloadTimeout);
-            } catch (MalformedURLException e) {
-                log.error("Invalid database address received...", e);
-                throw new TException(e);
-            }
-        }
-    }
-
     public AttachmentStreamConnector getConnector() throws TException {
-        if (connector == null) makeConnector();
         return connector;
     }
 
@@ -115,12 +102,10 @@ public class AttachmentFrontendUtils {
     }
 
 
-    public Attachment uploadAttachmentContent(AttachmentContent attachmentContent, InputStream fileStream, User sw360User)
-            throws TException {
-        final AttachmentStreamConnector attachmentStreamConnector = getConnector();
+    public Attachment uploadAttachmentContent(AttachmentContent attachmentContent, InputStream fileStream, User sw360User) {
         if (attachmentContent != null) {
             try {
-                attachmentStreamConnector.uploadAttachment(attachmentContent, fileStream);
+                connector.uploadAttachment(attachmentContent, fileStream);
                 if (sw360User != null) {
                     return CommonUtils.getNewAttachment(sw360User, attachmentContent.getId(), attachmentContent.getFilename());
                 } else {

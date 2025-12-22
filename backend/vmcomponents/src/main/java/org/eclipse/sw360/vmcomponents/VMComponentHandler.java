@@ -4,13 +4,11 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
@@ -21,8 +19,9 @@ import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.apache.log4j.Logger.getLogger;
@@ -33,18 +32,15 @@ import static org.apache.log4j.Logger.getLogger;
  * @author stefan.jaeger@evosoft.com
  * @author alex.borodin@evosoft.com
  */
+@Component
 public class VMComponentHandler implements VMComponentService.Iface {
 
     private static final Logger log = getLogger(VMComponentHandler.class);
 
-    private final VMDatabaseHandler dbHandler;
-    private final ComponentDatabaseHandler compHandler;
-
-
-    public VMComponentHandler() throws IOException, SW360Exception {
-        dbHandler = new VMDatabaseHandler();
-        compHandler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-    }
+    @Autowired
+    private VMDatabaseHandler dbHandler;
+    @Autowired
+    private ComponentDatabaseHandler compHandler;
 
     @Override
     public List<VMProcessReporting> getAllProcesses(User user) throws TException {

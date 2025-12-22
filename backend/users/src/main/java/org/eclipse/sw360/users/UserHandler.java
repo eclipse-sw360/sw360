@@ -13,7 +13,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -26,7 +25,6 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -39,26 +37,30 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
 /**
  * Implementation of the Thrift service
  *
  * @author cedric.bodet@tngtech.com
  */
-public class UserHandler implements UserService.Iface {
+@Component
+public class UserHandler implements UserService.Iface, InitializingBean {
 
     private static final Logger log = LogManager.getLogger(UserHandler.class);
     private static final String EXTENSION = ".log";
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    @Autowired
     private UserDatabaseHandler db;
     private ReadFileDepartmentConfig readFileDepartmentConfig;
 
-    public UserHandler() throws IOException {
-        db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(),
-                DatabaseSettings.COUCH_DB_USERS);
+    @Override
+    public void afterPropertiesSet() {
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
 
         // Create admin user if not in database yet
@@ -89,10 +91,6 @@ public class UserHandler implements UserService.Iface {
                 log.atError().withThrowable(e).log("Error creating admin user");
             }
         }
-    }
-
-    public UserHandler(Cloudant client, String userDbName) throws IOException {
-        db = new UserDatabaseHandler(client, userDbName);
     }
 
     @Override

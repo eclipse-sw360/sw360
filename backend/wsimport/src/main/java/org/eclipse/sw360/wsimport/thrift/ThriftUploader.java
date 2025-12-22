@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 import java.util.function.Function;
@@ -46,6 +47,7 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.UNKNOWN;
 /**
  * @author: ksoranko@verifa.io
  */
+@org.springframework.stereotype.Component
 public class ThriftUploader {
 
     private static final Logger LOGGER = LogManager.getLogger(ThriftUploader.class);
@@ -54,11 +56,8 @@ public class ThriftUploader {
     private final WsLicenseToSw360LicenseTranslator licenseToLicenseTranslator = new WsLicenseToSw360LicenseTranslator();
     private final WsProjectToSw360ProjectTranslator projectToProjectTranslator = new WsProjectToSw360ProjectTranslator();
 
+    @Autowired
     private ThriftExchange thriftExchange;
-
-    public ThriftUploader() {
-        this.thriftExchange = new ThriftExchange();
-    }
 
     private <T> Optional<String> searchExistingEntityId(Optional<List<T>> nomineesOpt, Function<T, String> idExtractor, String wsName, String sw360name) {
         return nomineesOpt.flatMap(

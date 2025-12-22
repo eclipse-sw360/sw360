@@ -11,14 +11,18 @@
 package org.eclipse.sw360.licenseinfo.parsers;
 
 import com.google.common.collect.Sets;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.test.SpringDataProviderRunner;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -30,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.TestHelper.AttachmentContentStore;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,11 +42,18 @@ import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.w3c.dom.Document;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.*;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.*;
@@ -54,16 +66,31 @@ import static org.mockito.Mockito.withSettings;
 /**
  * @author: maximilian.huber@tngtech.com
  */
-@RunWith(DataProviderRunner.class)
+@RunWith(SpringDataProviderRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class SPDXParserTest {
 
     private User dummyUser = new User().setEmail("dummy@some.domain");
 
+    @MockitoBean
     private SPDXParser parser;
 
+    @MockitoBean
     private AttachmentContentStore attachmentContentStore;
 
-    @Mock
+    @Autowired
+    private Cloudant client;
+
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    @MockitoBean
     private AttachmentConnector connector;
 
     @Rule
@@ -98,13 +125,14 @@ public class SPDXParserTest {
 
     @Before
     public void setUp() throws Exception {
-        attachmentContentStore = new AttachmentContentStore(connector);
-
-        parser = new SPDXParser(connector, attachmentContentStore.getAttachmentContentProvider());
-
         attachmentContentStore.put(spdxExampleFile);
         attachmentContentStore.put(spdx11ExampleFile);
         attachmentContentStore.put(spdx12ExampleFile);
+    }
+
+    @After
+    public void tearDown() throws MalformedURLException {
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     private void assertIsResultOfExample(LicenseInfo result, String exampleFile, List<String> expectedLicenses,

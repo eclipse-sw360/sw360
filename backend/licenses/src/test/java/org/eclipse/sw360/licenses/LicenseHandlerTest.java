@@ -9,8 +9,10 @@
  */
 package org.eclipse.sw360.licenses;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.spring.CouchDbContextInitializer;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -20,6 +22,13 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.*;
 
@@ -30,10 +39,31 @@ import static org.junit.Assert.*;
  *
  * @author cedric.bodet@tngtech.com
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(
+        classes = {DatabaseConfig.class},
+        initializers = {CouchDbContextInitializer.class}
+)
+@ActiveProfiles("test")
 public class LicenseHandlerTest {
 
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+    @Autowired
+    private Cloudant client;
 
+    @Autowired
+    @Qualifier("COUCH_DB_ALL_NAMES")
+    private Set<String> allDatabaseNames;
+
+    @Autowired
+    @Qualifier("COUCH_DB_DATABASE")
+    private String dbName;
+
+    @Autowired
+    @Qualifier("LUCENE_SEARCH_LIMIT")
+    private int luceneSearchLimit;
+
+    @Autowired
     private LicenseHandler handler;
     private User user;
 
@@ -52,14 +82,8 @@ public class LicenseHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
         // Create all test entries
         createTestEntries();
-
-        // Create the handler
-        handler = new LicenseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Create the user
         user = new User().setEmail("test@siemens.com").setDepartment("CT BE OP SWI OSS").setUserGroup(UserGroup.ADMIN);
@@ -67,8 +91,7 @@ public class LicenseHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        TestUtils.deleteAllDatabases(client, allDatabaseNames);
     }
 
     @Test
@@ -203,7 +226,7 @@ public class LicenseHandlerTest {
         obligs.put("T4", oblig4);
         obligs.put("T5", oblig5);
 
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName, luceneSearchLimit);
 
         // Add obligations to database
         for (Obligation oblig : obligs.values()) {

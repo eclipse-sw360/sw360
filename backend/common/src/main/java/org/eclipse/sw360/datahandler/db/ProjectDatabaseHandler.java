@@ -13,8 +13,6 @@ package org.eclipse.sw360.datahandler.db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.google.gson.JsonArray;
@@ -27,7 +25,6 @@ import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMExporter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
@@ -55,7 +52,6 @@ import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
-import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -68,10 +64,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -89,6 +83,8 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -100,6 +96,7 @@ import java.nio.ByteBuffer;
  * @author thomas.maier@evosoft.com
  * @author ksoranko@verifa.io
  */
+@org.springframework.stereotype.Component
 public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private static final String PROJECTS = "projects";
@@ -112,20 +109,40 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private ExecutorService projectExecutor;
 
-    private final ProjectRepository repository;
-    private final ProjectVulnerabilityRatingRepository pvrRepository;
-    private final ObligationListRepository obligationRepository;
-    private final ProjectModerator moderator;
-    private final AttachmentConnector attachmentConnector;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final PackageDatabaseHandler packageDatabaseHandler;
-    private final PackageRepository packageRepository;
+    @Autowired
+    private ProjectModerator moderator;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
+    private PackageDatabaseHandler packageDatabaseHandler;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
+    @Autowired
+    private ProjectRepository repository;
+    @Autowired
+    private ProjectVulnerabilityRatingRepository pvrRepository;
+    @Autowired
+    private ObligationListRepository obligationRepository;
+    @Autowired
+    private PackageRepository packageRepository;
+    @Autowired
+    private RelationsUsageRepository relUsageRepository;
+    @Autowired
+    private ReleaseRepository releaseRepository;
+    @Autowired
+    private VendorRepository vendorRepository;
+    @Autowired
+    private DatabaseHandlerUtil dbHandlerUtil;
+    @Autowired
+    CycloneDxBOMExporter cycloneDxBOMExporter;
+    @Autowired
+    CycloneDxBOMImporter cycloneDxBOMImporter;
+    @Autowired
+    SpdxBOMImporter spdxBOMImporter;
+    @Autowired
+    private AttachmentStreamConnector attachmentStreamConnector;
 
     private static final Pattern PLAUSIBLE_GID_REGEXP = Pattern.compile("^[zZ].{7}$");
-    private final RelationsUsageRepository relUsageRepository;
-    private final ReleaseRepository releaseRepository;
-    private final VendorRepository vendorRepository;
-    private DatabaseHandlerUtil dbHandlerUtil;
     private final MailUtil mailUtil = new MailUtil();
     private static final ObjectMapper mapper = new ObjectMapper();
     // this caching structure is only used for filling clearing state summaries and
@@ -155,55 +172,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ProjectModerator(),
-                new ComponentDatabaseHandler(client,dbName,attachmentDbName),
-                new PackageDatabaseHandler(client, dbName, DatabaseSettings.COUCH_DB_CHANGE_LOGS, attachmentDbName),
-                new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
-    }
-
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String changeLogDbName, String attachmentDbName) throws MalformedURLException {
-        this(client, dbName, changeLogDbName, attachmentDbName, new ProjectModerator(),
-                new ComponentDatabaseHandler(client, dbName, attachmentDbName),
-                new PackageDatabaseHandler(client, dbName, changeLogDbName, attachmentDbName),
-                new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
-    }
-
-    @VisibleForTesting
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ProjectModerator moderator,
-                                  ComponentDatabaseHandler componentDatabaseHandler, PackageDatabaseHandler packageDatabaseHandler,
-                                  AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, moderator, componentDatabaseHandler, packageDatabaseHandler, attachmentDatabaseHandler);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changeLogsDbName);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
-    }
-
-    @VisibleForTesting
-    public ProjectDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, ProjectModerator moderator,
-                                  ComponentDatabaseHandler componentDatabaseHandler, PackageDatabaseHandler packageDatabaseHandler,
-                                  AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
+    @Autowired
+    public ProjectDatabaseHandler(
+            AttachmentDatabaseHandler attachmentDatabaseHandler
+    ) throws MalformedURLException {
         super(attachmentDatabaseHandler);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-
-        // Create the repositories
-        repository = new ProjectRepository(db);
-        pvrRepository = new ProjectVulnerabilityRatingRepository(db);
-        obligationRepository = new ObligationListRepository(db);
-        relUsageRepository = new RelationsUsageRepository(db);
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        packageRepository = new PackageRepository(db);
-
-        // Create the moderator
-        this.moderator = moderator;
-
-        // Create the attachment connector
-        attachmentConnector = new AttachmentConnector(client, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
-
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.packageDatabaseHandler = packageDatabaseHandler;
-        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
     }
 
     /////////////////////
@@ -327,7 +300,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public void addSelectLogs(Project project, User user) {
 
-        DatabaseHandlerUtil.addSelectLogs(project, user.getEmail(), attachmentConnector);
+        dbHandlerUtil.addSelectLogs(project, user.getEmail(), attachmentConnector);
     }
 
     public Project getProjectById(String id, User user) throws SW360Exception {
@@ -484,7 +457,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
             Set<Attachment> attachmentsAfter = project.getAttachments();
             Set<Attachment> attachmentsBefore = actual.getAttachments();
-            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
+            dbHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                     referenceDocLogList, user.getEmail(), project.getId(), Operation.PROJECT_UPDATE,
                     attachmentConnector, false);
 
@@ -1928,12 +1901,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, this, componentDatabaseHandler);
-                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                spdxBOMImporter.setUser(user);
                 return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent, user);
             }
         } catch (IOException e) {
@@ -1947,13 +1917,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector
                     .unsafeGetAttachmentStream(attachmentContent)) {
-                final CycloneDxBOMImporter cycloneDxBOMImporter = new CycloneDxBOMImporter(this,
-                        componentDatabaseHandler, packageDatabaseHandler, attachmentConnector, user);
+                cycloneDxBOMImporter.setUser(user);
                 return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user, doNotReplacePackageAndRelease);
             }
         } catch (IOException e) {
@@ -1964,7 +1931,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestSummary exportCycloneDxSbom(String projectId, String bomType, Boolean includeSubProjReleases, User user) throws SW360Exception {
         try {
-            final CycloneDxBOMExporter cycloneDxBOMExporter = new CycloneDxBOMExporter(this, componentDatabaseHandler, packageDatabaseHandler, user);
+            cycloneDxBOMExporter.setUser(user);
             return cycloneDxBOMExporter.exportSbom(projectId, bomType, includeSubProjReleases, user);
         } catch (Exception e) {
             log.error("Error while exporting CycloneDX SBOM! ", e);
@@ -1974,9 +1941,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public String getSbomImportInfoFromAttachmentAsString(String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector
                     .unsafeGetAttachmentStream(attachmentContent)) {
                 return IOUtils.toString(inputStream, Charset.defaultCharset());

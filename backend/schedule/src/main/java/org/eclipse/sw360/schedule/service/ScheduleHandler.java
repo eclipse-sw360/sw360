@@ -22,20 +22,19 @@ import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.schedule.timer.ScheduleConstants;
 import org.eclipse.sw360.schedule.timer.Scheduler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+@Component
 public class ScheduleHandler implements ScheduleService.Iface {
+    private static final Logger log = LogManager.getLogger(ScheduleHandler.class);
 
+    @Autowired
     ThriftClients thriftClients;
-    Logger log;
-
-    public ScheduleHandler() {
-        thriftClients = new ThriftClients();
-        log = LogManager.getLogger(ScheduleHandler.class);
-    }
 
     @FunctionalInterface
     public interface SupplierThrowingTException {

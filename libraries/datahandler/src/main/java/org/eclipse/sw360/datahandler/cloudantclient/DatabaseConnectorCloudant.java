@@ -50,8 +50,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.LUCENE_SEARCH_LIMIT;
-
 /**
  * Database Connector to a CouchDB database
  */
@@ -76,11 +74,14 @@ public class DatabaseConnectorCloudant {
             OPERATOR_EXISTS, OPERATOR_ELEM_MATCH
     );
 
-    public DatabaseConnectorCloudant(Cloudant client, String dbName) {
+    final int luceneSearchLimit;
+
+    public DatabaseConnectorCloudant(Cloudant client, String dbName, int luceneSearchLimit) {
         this.instance = new DatabaseInstanceCloudant(client);
         this.dbName = dbName;
         // Create the database if it does not exist yet
         instance.createDB(dbName);
+        this.luceneSearchLimit = luceneSearchLimit;
     }
 
     public String getDbName() {
@@ -655,7 +656,7 @@ public class DatabaseConnectorCloudant {
         final int rowsPerPage = pageData.getRowsPerPage();
         final int skip = pageData.getDisplayStart();
 
-        long rowQueryLimit = Math.max(rowsPerPage, LUCENE_SEARCH_LIMIT);
+        long rowQueryLimit = Math.max(rowsPerPage, this.luceneSearchLimit);
 
         PostFindOptions countQuery = qb.build().newBuilder()
                 .fields(Collections.singletonList("_id"))

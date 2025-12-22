@@ -33,7 +33,6 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -52,6 +51,7 @@ import com.github.packageurl.PackageURL;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
@@ -61,21 +61,17 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
  *
  * @author abdul.kapti@siemens-healthineers.com
  */
+@org.springframework.stereotype.Component
 public class CycloneDxBOMExporter {
 
     private static final Logger log = LogManager.getLogger(CycloneDxBOMExporter.class);
-    private final ProjectDatabaseHandler projectDatabaseHandler;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final PackageDatabaseHandler packageDatabaseHandler;
-    private final User user;
-
-    public CycloneDxBOMExporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
-            PackageDatabaseHandler packageDatabaseHandler, User user) {
-        this.projectDatabaseHandler = projectDatabaseHandler;
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.packageDatabaseHandler = packageDatabaseHandler;
-        this.user = user;
-    }
+    @Autowired
+    private ProjectDatabaseHandler projectDatabaseHandler;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
+    private PackageDatabaseHandler packageDatabaseHandler;
+    private User user;
 
     public RequestSummary exportSbom(String projectId, String bomType, Boolean includeSubProjReleases, User user) {
         final RequestSummary summary = new RequestSummary(RequestStatus.SUCCESS);
@@ -367,5 +363,9 @@ public class CycloneDxBOMExporter {
             }
         }
         return purlSet;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

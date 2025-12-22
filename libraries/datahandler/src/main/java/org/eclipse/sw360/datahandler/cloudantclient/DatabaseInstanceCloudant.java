@@ -24,10 +24,6 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
  */
 public class DatabaseInstanceCloudant {
 
-    public DatabaseInstanceCloudant() {
-        DatabaseInstanceTrackerCloudant.track(this);
-    }
-
     Cloudant client = null;
 
     private static Gson gson;

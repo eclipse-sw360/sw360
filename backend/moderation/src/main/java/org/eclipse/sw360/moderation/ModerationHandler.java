@@ -11,7 +11,6 @@
 package org.eclipse.sw360.moderation;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ModerationSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -32,8 +31,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,15 +47,13 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  * @author Johannes.Najjar@tngtech.com
  * @author alex.borodin@evosoft.com
  */
+@org.springframework.stereotype.Component
 public class ModerationHandler implements ModerationService.Iface {
 
-    private final ModerationDatabaseHandler handler;
-    private final ModerationSearchHandler modSearchHandler;
-
-    public ModerationHandler() throws IOException {
-        handler = new ModerationDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        modSearchHandler = new ModerationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-    }
+    @Autowired
+    private ModerationDatabaseHandler handler;
+    @Autowired
+    private ModerationSearchHandler modSearchHandler;
 
     @Override
     public RequestStatus createComponentRequest(Component component, User user) throws TException {

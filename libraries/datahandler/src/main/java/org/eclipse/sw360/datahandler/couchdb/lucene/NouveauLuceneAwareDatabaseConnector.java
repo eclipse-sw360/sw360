@@ -15,7 +15,6 @@ import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -74,10 +73,12 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     /**
      * Constructor using a Database connector
      */
-    public NouveauLuceneAwareDatabaseConnector(@NotNull DatabaseConnectorCloudant dbClient,
-                                               String ddoc, String db, Gson gson) throws IOException {
+    public NouveauLuceneAwareDatabaseConnector(
+            @NotNull DatabaseConnectorCloudant dbClient, String ddoc,
+            String db, Gson gson, int luceneSearchLimit
+    ) throws IOException {
         super(dbClient.getInstance().getClient(), ddoc, db, gson);
-        setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        setResultLimit(luceneSearchLimit);
         this.connector = dbClient;
     }
 
@@ -248,7 +249,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     private @Nullable NouveauResult callLuceneDirectly(String indexName, String queryString, boolean includeDocs,
                                                        @NotNull PaginationData pageData, String sortColumn,
                                                        boolean sortAscending) {
-        final int limit = pageData.getRowsPerPage() > 0 ? pageData.getRowsPerPage() : DatabaseSettings.LUCENE_SEARCH_LIMIT;
+        final int limit = pageData.getRowsPerPage() > 0 ? pageData.getRowsPerPage() : resultLimit;
         final int requiredPage = pageData.getDisplayStart() / limit;
 
         NouveauQuery query = new NouveauQuery(queryString);
@@ -403,12 +404,11 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     public static @NotNull String prepareWildcardQuery(@NotNull String query) {
-        String leadingWildcardChar = DatabaseSettings.LUCENE_LEADING_WILDCARD ? "*" : "";
         if (query.startsWith("\"") && query.endsWith("\"")) {
             return "(\"" + sanitizeQueryInput(query) + "\")";
         } else {
             String wildCardQuery = Arrays.stream(sanitizeQueryInput(query)
-                    .split(" ")).map(q -> leadingWildcardChar + q + "*")
+                    .split(" ")).map(q -> q + "*")
                     .collect(Collectors.joining(" "));
             return "(\"" + wildCardQuery + "\" " + wildCardQuery + ")";
         }

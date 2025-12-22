@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -19,7 +18,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
@@ -28,17 +26,19 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.ImmutableSet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Class for accessing the CouchDB database for Change logs objects
  *
  * @author: jaideep.palit@siemens.com
  */
+@Component
 public class ChangeLogsDatabaseHandler {
-    private final DatabaseConnectorCloudant db;
-    private final ChangeLogsRepository changeLogsRepository;
+    @Autowired
+    private ChangeLogsRepository changeLogsRepository;
     private static final ImmutableSet<String> setOfIgnoredFieldValues = ImmutableSet.<String>builder()
             .add("\"\"")
             .add("[]")
@@ -46,11 +46,6 @@ public class ChangeLogsDatabaseHandler {
     private static final ImmutableSet<String> setOfIgnoredFieldNames = ImmutableSet.<String>builder()
             .add("revision")
             .add("documentState").build();
-
-    public ChangeLogsDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(client, dbName);
-        changeLogsRepository = new ChangeLogsRepository(db);
-    }
 
     public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) {
         List<ChangeLogs> changeLogsByDocId = changeLogsRepository.getChangeLogsByDocId(docId);

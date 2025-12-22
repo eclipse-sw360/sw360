@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.authserver;
 import java.util.Properties;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.spring.DatabaseConfig;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
@@ -43,12 +44,13 @@ public class Sw360AuthorizationServer extends SpringBootServletInitializer {
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
         return builder
-            .sources(Sw360AuthorizationServer.class)
+            .sources(Sw360AuthorizationServer.class, DatabaseConfig.class)
             .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID));
     }
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(Sw360AuthorizationServer.class)
+            .sources(DatabaseConfig.class)
             .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID))
             .build()
             .run(args);

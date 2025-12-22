@@ -19,10 +19,14 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
  * CRUD access for the Obligation Element class
  */
+@Component
 public class ObligationElementRepository extends DatabaseRepositoryCloudantClient<ObligationElement> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'obligationElement') emit(null, doc._id) }";
@@ -30,8 +34,10 @@ public class ObligationElementRepository extends DatabaseRepositoryCloudantClien
     private static final String BYACTION = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.action, null) } }";
     private static final String BYOBJECT = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.object, null) } }";
 
-
-    public ObligationElementRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public ObligationElementRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, ObligationElement.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));

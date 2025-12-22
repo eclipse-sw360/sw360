@@ -11,7 +11,6 @@
 
 package org.eclipse.sw360.configurations;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.SW360ConfigsDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
@@ -19,14 +18,16 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.util.Map;
 
+@Component
 public class SW360ConfigsHandler implements SW360ConfigsService.Iface {
-    private final SW360ConfigsDatabaseHandler sw360ConfigsDatabaseHandler;
 
-    public SW360ConfigsHandler() {
-        sw360ConfigsDatabaseHandler = new SW360ConfigsDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_CONFIG);
-    }
+    @Autowired
+    private SW360ConfigsDatabaseHandler sw360ConfigsDatabaseHandler;
 
     @Override
     public RequestStatus createSW360Configs(ConfigContainer newConfig) {

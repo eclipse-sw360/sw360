@@ -10,9 +10,6 @@
  */
 package org.eclipse.sw360.datahandler.db.spdx.packageinfo;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
-
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
@@ -29,45 +26,30 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSpdxPackageInfo;
 
+@Component
 public class SpdxPackageInfoDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(SpdxPackageInfoDatabaseHandler.class);
-    private final DatabaseConnectorCloudant dbChangeLogs;
 
-    /**
-     * Connection to the couchDB database
-     */
-    private final DatabaseConnectorCloudant db;
-
-    private final SpdxPackageInfoRepository PackageInfoRepository;
-    private final SpdxDocumentRepository SPDXDocumentRepository;
+    @Autowired
+    private SpdxPackageInfoRepository PackageInfoRepository;
+    @Autowired
+    private SpdxDocumentRepository SPDXDocumentRepository;
+    @Autowired
     private DatabaseHandlerUtil dbHandlerUtil;
-    private final SpdxPackageInfoModerator moderator;
-
-    public SpdxPackageInfoDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(client, dbName);
-
-        // Create the repositories
-        PackageInfoRepository = new SpdxPackageInfoRepository(db);
-        SPDXDocumentRepository = new SpdxDocumentRepository(db);
-
-        // Create the moderator
-        moderator = new SpdxPackageInfoModerator();
-        // Create the changelogs
-        dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-    }
+    @Autowired
+    private SpdxPackageInfoModerator moderator;
 
     public List<PackageInformation> getPackageInformationSummary(User user) {
         return PackageInfoRepository.getPackageInformationSummary();

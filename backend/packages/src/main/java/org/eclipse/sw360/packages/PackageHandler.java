@@ -14,13 +14,11 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -30,21 +28,21 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Implementation of the Thrift service
  *
  * @author abdul.kapti@siemens-healthineers.com
  */
+@Component
 public class PackageHandler implements PackageService.Iface {
 
-    private final PackageDatabaseHandler handler;
-    private final PackageSearchHandler packageSearchHandler;
-
-    PackageHandler() throws IOException {
-        handler = new PackageDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        packageSearchHandler = new PackageSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-    }
+    @Autowired
+    private PackageDatabaseHandler handler;
+    @Autowired
+    private PackageSearchHandler packageSearchHandler;
 
     @Override
     public Package getPackageById(String packageId) throws SW360Exception {

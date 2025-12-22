@@ -17,6 +17,9 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.Map;
  *
  * @author birgit.heydenreich@tngtech.com
  */
+@Component
 public class CustomPropertiesRepository extends DatabaseRepositoryCloudantClient<CustomProperties> {
 
     private static final Logger log = LogManager.getLogger(CustomPropertiesRepository.class);
@@ -39,7 +43,10 @@ public class CustomPropertiesRepository extends DatabaseRepositoryCloudantClient
                     "}";
     private static final String ALL = "function(doc) { if (doc.type == 'customproperties') emit(null, doc._id) }";
 
-    public CustomPropertiesRepository(DatabaseConnectorCloudant db) {
+    @Autowired
+    public CustomPropertiesRepository(
+            @Qualifier("CLOUDANT_DB_CONNECTOR_DATABASE") DatabaseConnectorCloudant db
+    ) {
         super(db, CustomProperties.class);
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("customPropertiesByDocType", createMapReduce(CUSTOM_PROPERTIES_BY_DOCTYPE, null));

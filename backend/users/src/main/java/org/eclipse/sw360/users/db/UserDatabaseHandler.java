@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.users.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -20,7 +19,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -30,6 +28,10 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.text.DateFormat;
@@ -44,32 +46,35 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
  *
  * @author cedric.bodet@tngtech.com
  */
-public class UserDatabaseHandler {
+@Component
+public class UserDatabaseHandler implements InitializingBean {
 
     private static final String LAST_NAME_IS_MANDATORY = "Last Name is mandatory";
     private static final String GIVEN_NAME_IS_MANDATORY = "Given Name is mandatory";
     /**
      * Connection to the couchDB database
      */
+    @Autowired
+    @Qualifier("CLOUDANT_DB_CONNECTOR_USERS")
     private DatabaseConnectorCloudant db;
+    @Autowired
     private UserRepository repository;
+    @Autowired
     private UserSearchHandler userSearchHandler;
-    private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private ReadFileDepartmentConfig readFileDepartmentConfig;
+    private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private static final String SUCCESS = "SUCCESS";
     private static final String FAIL = "FAIL";
     private static final String TITLE = "IMPORT";
+    private static final DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
     private static boolean IMPORT_DEPARTMENT_STATUS = false;
     private List<String> departmentDuplicate;
     private List<String> emailDoNotExist;
-    DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
 
-    public UserDatabaseHandler(Cloudant client, String dbName) throws IOException {
+    @Override
+    public void afterPropertiesSet() {
         // Create the connector
-        db = new DatabaseConnectorCloudant(client, dbName);
-        repository = new UserRepository(db);
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
-        userSearchHandler = new UserSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
     }
 
     public User getByEmail(String email) {

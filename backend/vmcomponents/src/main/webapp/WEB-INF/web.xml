@@ -11,19 +11,4 @@
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
-
-    <listener>
-        <listener-class>org.eclipse.sw360.SW360ServiceContextListener</listener-class>
-    </listener>
-
-    <servlet>
-        <servlet-name>VMComponentService</servlet-name>
-        <servlet-class>org.eclipse.sw360.vmcomponents.VMComponentServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>VMComponentService</servlet-name>
-        <url-pattern>/thrift</url-pattern>
-    </servlet-mapping>
-
 </web-app>

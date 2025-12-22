@@ -10,13 +10,11 @@
 package org.eclipse.sw360.datahandler;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
@@ -24,6 +22,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.hamcrest.*;
 import org.hamcrest.collection.IsEmptyCollection;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -63,25 +62,16 @@ public class TestUtils {
         IS_BULK_RELEASE_DELETING_ENABLED = Boolean.parseBoolean(System.getProperty("RunBulkReleaseDeletingTest", "false"));
     }
 
-    private static final List<String> dbNames = ImmutableList.of(
-            DatabaseSettingsTest.COUCH_DB_DATABASE,
-            DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
-            DatabaseSettingsTest.COUCH_DB_USERS);
-
-    static {
-        assertTestDbNames();
-    }
-
-    public static void assertTestDbNames() {
+    public static void assertTestDbNames(Set<String> dbNames) {
         for (String dbName : dbNames) {
             assertTestString(dbName);
 
         }
     }
 
-    public static void deleteAllDatabases() throws MalformedURLException {
+    public static void deleteAllDatabases(Cloudant client, @NotNull Set<String> dbNames) throws MalformedURLException {
         for (String dbName : dbNames) {
-            deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+            deleteDatabase(client, dbName);
         }
     }
 
@@ -130,12 +120,6 @@ public class TestUtils {
         DatabaseInstanceCloudant instance = new DatabaseInstanceCloudant(httpClient);
         if (instance.checkIfDbExists(dbName))
             instance.deleteDatabase(dbName);
-
-        // Giving 500ms Delay between Deleting and Creating test Db
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-        }
     }
 
     public static void createDatabase(Cloudant httpClient, String dbName) throws MalformedURLException {

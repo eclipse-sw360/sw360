@@ -72,6 +72,7 @@ import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.eclipse.sw360.common.utils.RepositoryURL.*;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
@@ -83,6 +84,7 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.NON_PKG_MANAG
  *
  * @author abdul.kapti@siemens-healthineers.com
  */
+@org.springframework.stereotype.Component
 public class CycloneDxBOMImporter {
     private static final Logger log = LogManager.getLogger(CycloneDxBOMImporter.class);
     private static final String DOT_GIT = ".git";
@@ -111,22 +113,16 @@ public class CycloneDxBOMImporter {
     public static final String INVALID_VCS_COMPONENT = "invalidVcsComponent";
     private static final Predicate<ExternalReference.Type> typeFilter = Type.VCS::equals;
 
-    private final ProjectDatabaseHandler projectDatabaseHandler;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final PackageDatabaseHandler packageDatabaseHandler;
-    private final User user;
-    private final AttachmentConnector attachmentConnector;
-    private final RepositoryURL repositoryURL;
-
-    public CycloneDxBOMImporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
-            PackageDatabaseHandler packageDatabaseHandler, AttachmentConnector attachmentConnector, User user) {
-        this.projectDatabaseHandler = projectDatabaseHandler;
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.packageDatabaseHandler = packageDatabaseHandler;
-        this.attachmentConnector = attachmentConnector;
-        this.user = user;
-        this.repositoryURL = new RepositoryURL();
-    }
+    @Autowired
+    private ProjectDatabaseHandler projectDatabaseHandler;
+    @Autowired
+    private ComponentDatabaseHandler componentDatabaseHandler;
+    @Autowired
+    private PackageDatabaseHandler packageDatabaseHandler;
+    @Autowired
+    private AttachmentConnector attachmentConnector;
+    private final RepositoryURL repositoryURL = new RepositoryURL();
+    private User user;
 
     /**
      * Creating the Map of Sanitized VCS URLs to List of Component -> Grouping by VCS URLs
@@ -1124,5 +1120,9 @@ public class CycloneDxBOMImporter {
         projectPackageRelationship.setCreatedOn(SW360Utils.getCreatedOn());
         projectPackageRelationship.setComment(comment);
         return projectPackageRelationship;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

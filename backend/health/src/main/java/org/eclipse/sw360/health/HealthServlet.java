@@ -9,14 +9,16 @@
  */
 package org.eclipse.sw360.health;
 
-import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
-
+@Component
 public class HealthServlet extends Sw360ThriftServlet {
-    public HealthServlet() throws MalformedURLException {
-        super(new HealthService.Processor<>(new HealthHandler()), new TCompactProtocol.Factory());
+    @Autowired
+    public HealthServlet(HealthHandler healthHandler, TProtocolFactory thriftProtocolFactory) {
+        super(new HealthService.Processor<>(healthHandler), thriftProtocolFactory);
     }
 }
