@@ -100,7 +100,7 @@
     <byte-buddy.version>1.17.8</byte-buddy.version>
     <cloudantsdk.version>0.10.12</cloudantsdk.version>
     <commons-cli.version>1.9.0</commons-cli.version>
-    <commons-codec.version>1.19.0</commons-codec.version>
+    <commons-codec.version>1.20.0</commons-codec.version>
     <commons-collection4.version>4.5.0</commons-collection4.version>
     <commons-compress.version>1.28.0</commons-compress.version>
     <commons-configuration.version>1.10</commons-configuration.version>
