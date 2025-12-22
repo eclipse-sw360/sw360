@@ -19,6 +19,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -26,8 +27,11 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -37,6 +41,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -129,14 +134,6 @@ public class Sw360ClearingRequestService {
         return requestStatus;
     }
 
-    public void updateClearingRequestForChangeInClearingSize(String crId, ClearingRequestSize size) throws TException{
-        try {
-            getThriftModerationClient().updateClearingRequestForChangeInClearingSize(crId, size);
-        } catch (SW360Exception e) {
-            log.error("Error updating clearing request for change in clearing size: " + e.getMessage());
-        }
-    }
-
     public void convertTimestampAndEmail(ClearingRequest clearingRequest) throws TException {
         List<Comment> comments = clearingRequest.getComments();
         if (comments != null && !comments.isEmpty()) {
@@ -170,5 +167,39 @@ public class Sw360ClearingRequestService {
                 .withZone(ZoneOffset.UTC)
                 .format(instant);
         return iso8601Format;
+    }
+
+    public Map<PaginationData, List<ClearingRequest>> getRecentClearingRequestsWithPagination(
+            User sw360User, Pageable pageable) throws TException {
+        ModerationService.Iface sw360ModerationClient = getThriftModerationClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360ModerationClient.getRecentClearingRequestsWithPagination(sw360User, pageData);
+    }
+
+    public Map<PaginationData, List<ClearingRequest>> searchClearingRequestsByFilters(
+            User sw360User, Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
+        ModerationService.Iface sw360ModerationClient = getThriftModerationClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360ModerationClient.searchClearingRequestsByFilters(sw360User, filterMap, pageData);
+    }
+
+    /**
+     * Converts a Pageable object to a PaginationData object for clearing requests.
+     *
+     * @param pageable the Pageable object to convert
+     * @return a PaginationData object representing the pagination information
+     */
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+        boolean ascending = false;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            ascending = order.isAscending();
+        }
+
+        return new PaginationData()
+                .setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize())
+                .setAscending(ascending);
     }
 }
