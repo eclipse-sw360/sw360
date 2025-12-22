@@ -103,18 +103,20 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
-    @Operation(
-            summary = "Create a new package.",
-            description = "Create a new package.",
-            tags = {"Packages"}
-    )
+    @Operation(summary = "Create a new package.", description = "Create a new package.", tags = {
+            "Packages" }, responses = {
+                    @ApiResponse(responseCode = "201", description = "Package created successfully", content = @Content(mediaType = MediaTypes.HAL_JSON_VALUE, schema = @Schema(implementation = Package.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid request body or validation error"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - WRITE authority required"),
+                    @ApiResponse(responseCode = "409", description = "Package already exists"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            })
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PACKAGES_URL, method = RequestMethod.POST)
     public ResponseEntity<EntityModel<Package>> createPackage(
-            @Parameter(description = "The package to be created.",
-                    schema = @Schema(implementation = Package.class))
-            @RequestBody Map<String, Object> reqBodyMap
-    ) throws TException {
+            @Parameter(description = "The package to be created.", schema = @Schema(implementation = Package.class)) @RequestBody Map<String, Object> reqBodyMap)
+            throws TException {
         Package pkg = convertToPackage(reqBodyMap);
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -129,31 +131,19 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.created(location).body(halResource);
     }
 
-    //Edit a Package
-    @Operation(
-            summary = "Update a package.",
-            description = "Update a package.",
-            tags = {"Packages"},
-            responses = {@ApiResponse(
-                    responseCode = "200",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            schema = @Schema(implementation = Package.class))}
-            ), @ApiResponse(
-                    responseCode = "403",
-                    description = "User role not allowed",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            schema = @Schema(implementation = ResponseEntity.class))}
-            )}
-    )
+    @Operation(summary = "Update a package.", description = "Update a package.", tags = { "Packages" }, responses = {
+            @ApiResponse(responseCode = "200", description = "Package updated successfully", content = @Content(mediaType = MediaTypes.HAL_JSON_VALUE, schema = @Schema(implementation = Package.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Package not found")
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<?> patchPackage(
-            @Parameter(description = "The id of the package to be updated.")
-            @PathVariable("id") String id,
-            @Parameter(description = "The updated fields of package.",
-                    schema = @Schema(implementation = Package.class))
-            @RequestBody Map<String, Object> reqBodyMap
-    ) throws TException {
+            @Parameter(description = "The id of the package to be updated.") @PathVariable("id") String id,
+            @Parameter(description = "The updated fields of package.", schema = @Schema(implementation = Package.class)) @RequestBody Map<String, Object> reqBodyMap)
+            throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Package sw360Package = packageService.getPackageForUserById(id);
         Package updatePackage = convertToPackage(reqBodyMap);
@@ -168,43 +158,44 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(halPackage, HttpStatus.OK);
     }
 
-    //Delete a package
-    @Operation(
-            summary = "Delete a package.",
-            description = "Delete a package.",
-            tags = {"Packages"}
-    )
+    // Delete a package
+    @Operation(summary = "Delete a package.", description = "Delete a package.", tags = { "Packages" }, responses = {
+            @ApiResponse(responseCode = "200", description = "Package deleted successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Package not found"),
+            @ApiResponse(responseCode = "409", description = "Package is in use")
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PACKAGES_URL + "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity<?> deletePackage(
-            @Parameter(description = "The id of the package to be deleted.")
-            @PathVariable("id") String id
-    ) throws TException {
+            @Parameter(description = "The id of the package to be deleted.") @PathVariable("id") String id)
+            throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = packageService.deletePackage(id, sw360User);
-        if(requestStatus == RequestStatus.SUCCESS) {
+        if (requestStatus == RequestStatus.SUCCESS) {
             return new ResponseEntity<>(HttpStatus.OK);
-        } else if(requestStatus == RequestStatus.IN_USE) {
+        } else if (requestStatus == RequestStatus.IN_USE) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
-            throw new AccessDeniedException("Delete action is not allowed for the user. Minimum role required for deleting is: "
-                    + SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER));
+            throw new AccessDeniedException(
+                    "Delete action is not allowed for the user. Minimum role required for deleting is: "
+                            + SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER));
         } else {
             throw new SW360Exception();
         }
     }
 
-    //Get a single package
-    @Operation(
-            summary = "Get a package by id.",
-            description = "Get a package by id.",
-            tags = {"Packages"}
-    )
+    @Operation(summary = "Get a package by id.", description = "Get a package by id.", tags = {
+            "Packages" }, responses = {
+                    @ApiResponse(responseCode = "200", description = "Package retrieved successfully", content = @Content(mediaType = MediaTypes.HAL_JSON_VALUE, schema = @Schema(implementation = Package.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "404", description = "Package not found")
+            })
     @GetMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<EntityModel<Package>> getPackage(
-            @Parameter(description = "The id of the package to be retrieved.")
-            @PathVariable("id") String id
-    ) throws TException {
+            @Parameter(description = "The id of the package to be retrieved.") @PathVariable("id") String id)
+            throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         Package sw360Package = packageService.getPackageForUserById(id);
@@ -212,54 +203,35 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(halPackage, HttpStatus.OK);
     }
 
-    @Operation(
-            summary = "Get packages for user.",
-            description = "Get packages for user with filters.",
-            tags = {"Packages"},
-            responses = {@ApiResponse(
-                    responseCode = "200",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            array = @ArraySchema(schema = @Schema(implementation = Package.class)))}
-            ), @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid package manager type",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            schema = @Schema(implementation = ResponseEntity.class))}
-            )}
-    )
+    @Operation(summary = "Get packages for user.", description = "Get packages for user with filters.", tags = {
+            "Packages" }, responses = {
+                    @ApiResponse(responseCode = "200", description = "Packages retrieved successfully", content = @Content(mediaType = MediaTypes.HAL_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = Package.class)))),
+                    @ApiResponse(responseCode = "400", description = "Invalid package manager type or pagination parameters"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - security user not allowed"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            })
     @GetMapping(value = PACKAGES_URL)
     public ResponseEntity<?> getPackagesForUser(
-            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
-            Pageable pageable,
-            @Parameter(description = "The name of the package.")
-            @RequestParam(value = "name", required = false) String name,
-            @Parameter(description = "The version of the package.")
-            @RequestParam(value = "version", required = false) String version,
-            @Parameter(description = "The pURL of the package.")
-            @RequestParam(value = "purl", required = false) String purl,
-            @Parameter(description = "The package manager of the package.")
-            @RequestParam(value = "packageManager", required = false) String packageManager,
-            @Parameter(description = "Licenses to filter, as a comma separated list.")
-            @RequestParam(value = "licenses", required = false) String licenses,
-            @Parameter(description = "Created by user to filter (email).")
-            @RequestParam(value = "createdBy", required = false) String createdBy,
-            @Parameter(description = "Date package was created on (YYYY-MM-DD).",
-                    schema = @Schema(type = "string", format = "date"))
-            @RequestParam(value = "createdOn", required = false) String createdOn,
-            @Parameter(description = "Properties which should be present for each package in the result")
-            @RequestParam(value = "fields", required = false) List<String> fields,
-            @Parameter(description = "Get all details of the package.")
-            @RequestParam(value = "allDetails", required = false) boolean allDetails,
-            @Parameter(description = "Package which are not linked with any releases.")
-            @RequestParam(value = "orphanPackage", required = false) boolean orphanPackage,
-            @Parameter(description = "Use lucenesearch to filter the packages.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
-            HttpServletRequest request
-    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class)) Pageable pageable,
+            @Parameter(description = "The name of the package.") @RequestParam(value = "name", required = false) String name,
+            @Parameter(description = "The version of the package.") @RequestParam(value = "version", required = false) String version,
+            @Parameter(description = "The pURL of the package.") @RequestParam(value = "purl", required = false) String purl,
+            @Parameter(description = "The package manager of the package.") @RequestParam(value = "packageManager", required = false) String packageManager,
+            @Parameter(description = "Licenses to filter, as a comma separated list.") @RequestParam(value = "licenses", required = false) String licenses,
+            @Parameter(description = "Created by user to filter (email).") @RequestParam(value = "createdBy", required = false) String createdBy,
+            @Parameter(description = "Date package was created on (YYYY-MM-DD).", schema = @Schema(type = "string", format = "date")) @RequestParam(value = "createdOn", required = false) String createdOn,
+            @Parameter(description = "Properties which should be present for each package in the result") @RequestParam(value = "fields", required = false) List<String> fields,
+            @Parameter(description = "Get all details of the package.") @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "Package which are not linked with any releases.") @RequestParam(value = "orphanPackage", required = false) boolean orphanPackage,
+            @Parameter(description = "Use lucenesearch to filter the packages.") @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            HttpServletRequest request)
+            throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         List<Package> sw360Packages = new ArrayList<>();
-        Map<String, Set<String>> restrictions = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
+        Map<String, Set<String>> restrictions = getFilterMap(name, version, purl, packageManager, licenses, createdBy,
+                createdOn);
         if (luceneSearch) {
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
@@ -275,15 +247,19 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                         .filter(filterPackageMap(restrictions, orphanPackage)).toList());
             }
         }
-        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
+        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User,
+                sw360Packages);
     }
 
     /**
-     * Create a filter predicate to remove all packages which do not satisfy the restriction set.
+     * Create a filter predicate to remove all packages which do not satisfy the
+     * restriction set.
+     * 
      * @param restrictions Restrictions set to filter packages on
      * @return Filter predicate for stream.
      */
-    private static @NonNull Predicate<Package> filterPackageMap(Map<String, Set<String>> restrictions, boolean orphanPackage) {
+    private static @NonNull Predicate<Package> filterPackageMap(Map<String, Set<String>> restrictions,
+            boolean orphanPackage) {
         return packages -> {
             for (Map.Entry<String, Set<String>> restriction : restrictions.entrySet()) {
                 final Set<String> filterSet = restriction.getValue();
@@ -350,13 +326,14 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(
             String version, String purl, String packageManager, Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages
-    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages)
+            throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         Map<String, Package> mapOfPackages = new HashMap<>();
 
         sw360Packages.stream().forEach(pkg -> mapOfPackages.put(pkg.getId(), pkg));
         PaginationResult<Package> paginationResult;
-        paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE);
+        paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages,
+                SW360Constants.TYPE_PACKAGE);
 
         List<EntityModel<Package>> packageResources = new ArrayList<>();
         Consumer<Package> consumer = p -> {
@@ -368,7 +345,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                 try {
                     embeddedPackageResource = createHalPackage(p, sw360User);
                 } catch (TException e) {
-                    throw new RuntimeException("Unable to create package resource: "+e.getMessage());
+                    throw new RuntimeException("Unable to create package resource: " + e.getMessage());
                 }
                 if (embeddedPackageResource == null) {
                     return;
@@ -378,9 +355,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         };
 
         paginationResult.getResources().stream()
-        .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
-        .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
-        .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
+                .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
+                .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
+                .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
 
         CollectionModel<EntityModel<Package>> resources;
         if (packageResources.isEmpty()) {
@@ -394,13 +371,14 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     }
 
     /**
-     * Create a map of filters with the field name in the key and expected value in the value (as set).
+     * Create a map of filters with the field name in the key and expected value in
+     * the value (as set).
+     * 
      * @return Filter map from the user's request.
      */
     private @NonNull Map<String, Set<String>> getFilterMap(
             String name, String version, String purl, String packageManager,
-            String licenses, String createdBy, String createdOn
-    ) {
+            String licenses, String createdBy, String createdOn) {
         Map<String, Set<String>> filterMap = new HashMap<>();
         if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
             filterMap.put(Package._Fields.NAME.getFieldName(), CommonUtils.splitToSet(name));
@@ -412,7 +390,8 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             filterMap.put(Package._Fields.PURL.getFieldName(), CommonUtils.splitToSet(purl));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(packageManager)) {
-            filterMap.put(Package._Fields.PACKAGE_MANAGER.getFieldName(), CommonUtils.splitToSet(packageManager.toUpperCase()));
+            filterMap.put(Package._Fields.PACKAGE_MANAGER.getFieldName(),
+                    CommonUtils.splitToSet(packageManager.toUpperCase()));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(licenses)) {
             filterMap.put(Package._Fields.LICENSE_IDS.getFieldName(), CommonUtils.splitToSet(licenses));
@@ -426,34 +405,23 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         return filterMap;
     }
 
-    @Operation(
-            summary = "Check if a package is being used and get the count.",
-            description = "Returns whether the package is being used and the total count of usages.",
-            tags = {"Packages"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "Package usage information",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(
-                                                    example = """
-                                                            {
-                                                              isUsed: true,
-                                                              count: 5
-                                                            }
-                                                            """
-                                            )
-                                    )
+    @Operation(summary = "Check if a package is being used and get the count.", description = "Returns whether the package is being used and the total count of usages.", tags = {
+            "Packages" }, responses = {
+                    @ApiResponse(responseCode = "200", description = "Usage information retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(example = """
+                            {
+                              "isUsed": true,
+                              "count": 5
                             }
-                    )
-            }
-    )
+                            """))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+                    @ApiResponse(responseCode = "404", description = "Package not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            })
 
     @RequestMapping(value = PACKAGES_URL + "/{id}/usage", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getPackageUsageInfo(
-            @Parameter(description = "The id of the package to check usage for")
-            @PathVariable("id") String id
-    ) throws TException {
+            @Parameter(description = "The id of the package to check usage for") @PathVariable("id") String id)
+            throws TException {
 
         Map<String, Object> response = new HashMap<>();
         int usageCount = projectService.getProjectCountByPackageId(id);
