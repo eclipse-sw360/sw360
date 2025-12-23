@@ -80,7 +80,7 @@
     <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
     <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
-    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
@@ -98,9 +98,9 @@
     <!-- Dependencies version properties -->
     <assertj.version>3.27.5</assertj.version>
     <byte-buddy.version>1.17.8</byte-buddy.version>
-    <cloudantsdk.version>0.10.9</cloudantsdk.version>
+    <cloudantsdk.version>0.10.12</cloudantsdk.version>
     <commons-cli.version>1.9.0</commons-cli.version>
-    <commons-codec.version>1.19.0</commons-codec.version>
+    <commons-codec.version>1.20.0</commons-codec.version>
     <commons-collection4.version>4.5.0</commons-collection4.version>
     <commons-compress.version>1.28.0</commons-compress.version>
     <commons-configuration.version>1.10</commons-configuration.version>
@@ -137,11 +137,11 @@
     <joda-time.version>2.14.0</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
-    <log4j2.version>2.25.2</log4j2.version>
+    <log4j2.version>2.25.3</log4j2.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
     <mockito.version>5.20.0</mockito.version>
     <okhttp.version>4.12.0</okhttp.version>
-    <org.ow2.asm.version>9.9</org.ow2.asm.version>
+    <org.ow2.asm.version>9.9.1</org.ow2.asm.version>
     <org.spdx.java.spdx.library.version>2.0.1</org.spdx.java.spdx.library.version>
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
@@ -153,7 +153,7 @@
     <spring-boot.version>3.5.3</spring-boot.version>
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
-    <spring-security-oauth2-authorization-server.version>1.5.2</spring-security-oauth2-authorization-server.version>
+    <spring-security-oauth2-authorization-server.version>1.5.5</spring-security-oauth2-authorization-server.version>
     <spring-security.version>6.5.6</spring-security.version>
     <springdoc-openapi-stater-common.version>2.8.13</springdoc-openapi-stater-common.version>
     <springframework.version>6.2.12</springframework.version>
