@@ -44,10 +44,11 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
     public RequestStatus updateRelease(Release release, User user) {
 
+        RequestStatus requestStatus;
         try {
             ModerationService.Iface client = thriftClients.makeModerationClient();
-            client.createReleaseRequest(release, user);
-            return RequestStatus.SENT_TO_MODERATOR;
+            requestStatus=client.createReleaseRequest(release, user);
+            return requestStatus;
         } catch (TException e) {
             log.error("Could not moderate release " + release.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
