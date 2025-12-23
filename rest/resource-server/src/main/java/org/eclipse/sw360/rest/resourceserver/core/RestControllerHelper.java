@@ -116,15 +116,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -172,11 +163,11 @@ public class RestControllerHelper<T> {
     private final com.fasterxml.jackson.databind.Module sw360Module;
     public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
             .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
-    private static final ImmutableMap<Release._Fields,String> mapOfReleaseFieldsTobeEmbedded = ImmutableMap.of(
+    private static final ImmutableMap<Release._Fields, String> mapOfReleaseFieldsTobeEmbedded = ImmutableMap.of(
             Release._Fields.MODERATORS, "sw360:moderators",
             Release._Fields.ATTACHMENTS, "sw360:attachments",
             Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
-            Release._Fields.RELEASE_ID_TO_RELATIONSHIP,"sw360:releaseIdToRelationship",
+            Release._Fields.RELEASE_ID_TO_RELATIONSHIP, "sw360:releaseIdToRelationship",
             Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
 
     public User getSw360UserFromAuthentication() {
@@ -208,7 +199,8 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public PaginationResult<T> createPaginationResult(HttpServletRequest request, Pageable pageable, List<T> resources, String resourceType) throws ResourceClassNotFoundException, PaginationParameterException {
+    public PaginationResult<T> createPaginationResult(HttpServletRequest request, Pageable pageable, List<T> resources,
+            String resourceType) throws ResourceClassNotFoundException, PaginationParameterException {
         PaginationResult<T> paginationResult;
         if (requestContainsPaging(request)) {
             PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
@@ -220,7 +212,7 @@ public class RestControllerHelper<T> {
     }
 
     public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
-                                                                 List<T> resources, String resourceType, int totalCount)
+            List<T> resources, String resourceType, int totalCount)
             throws ResourceClassNotFoundException, PaginationParameterException {
         if (!requestContainsPaging(request)) {
             request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
@@ -232,10 +224,12 @@ public class RestControllerHelper<T> {
     }
 
     private boolean requestContainsPaging(HttpServletRequest request) {
-        return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
+        return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE)
+                || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
     }
 
-    public <T extends TBase<?, ? extends TFieldIdEnum>> CollectionModel<EntityModel<T>> generatePagesResource(PaginationResult paginationResult, List<EntityModel<T>> resources) throws URISyntaxException {
+    public <T extends TBase<?, ? extends TFieldIdEnum>> CollectionModel<EntityModel<T>> generatePagesResource(
+            PaginationResult paginationResult, List<EntityModel<T>> resources) throws URISyntaxException {
         if (paginationResult.isPagingActive()) {
             PagedModel.PageMetadata pageMetadata = createPageMetadata(paginationResult);
             List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
@@ -266,20 +260,25 @@ public class RestControllerHelper<T> {
         PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
         List<Link> paginationLinks = new ArrayList<>();
 
-        paginationLinks.add(Link.of(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
-        if(paginationOptions.getPageNumber() > 0) {
-            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
+        paginationLinks
+                .add(Link.of(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()), PAGINATION_KEY_FIRST));
+        if (paginationOptions.getPageNumber() > 0) {
+            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1,
+                    paginationOptions.getPageSize()), PAGINATION_KEY_PREVIOUS));
         }
-        if(paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
-            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
+        if (paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
+            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1,
+                    paginationOptions.getPageSize()), PAGINATION_KEY_NEXT));
         }
-        paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
+        paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1,
+                paginationOptions.getPageSize()), PAGINATION_KEY_LAST));
 
         return paginationLinks;
     }
 
     private String createPaginationLink(String baseUrl, int page, int pageSize) {
-        return baseUrl + "?" + PAGINATION_PARAM_PAGE + "=" + page + "&" + PAGINATION_PARAM_PAGE_ENTRIES + "=" + pageSize;
+        return baseUrl + "?" + PAGINATION_PARAM_PAGE + "=" + page + "&" + PAGINATION_PARAM_PAGE_ENTRIES + "="
+                + pageSize;
     }
 
     private String getAPIBaseUrl() throws URISyntaxException {
@@ -291,18 +290,21 @@ public class RestControllerHelper<T> {
                 uri.getFragment()).toString();
     }
 
-    private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
+    private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName)
+            throws ResourceClassNotFoundException {
         Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
         return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
     }
 
-    private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
+    private Comparator<T> comparatorFromPageable(Pageable pageable, String resourceClassName)
+            throws ResourceClassNotFoundException {
         Sort.Order order = firstOrderFromPageable(pageable);
-        if(order == null) {
+        if (order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
         }
-        Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
-        if(order.isDescending()) {
+        Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName,
+                order.getProperty());
+        if (order.isDescending()) {
             comparator = comparator.reversed();
         }
         return comparator;
@@ -310,11 +312,11 @@ public class RestControllerHelper<T> {
 
     private Sort.Order firstOrderFromPageable(Pageable pageable) {
         Sort sort = pageable.getSort();
-        if(sort == null) {
+        if (sort == null) {
             return null;
         }
         Iterator<Sort.Order> orderIterator = sort.iterator();
-        if(orderIterator.hasNext()) {
+        if (orderIterator.hasNext()) {
             return orderIterator.next();
         } else {
             return null;
@@ -325,7 +327,7 @@ public class RestControllerHelper<T> {
 
         for (String moderatorEmail : moderators) {
             User sw360User = getUserByEmail(moderatorEmail);
-            if(sw360User!=null)
+            if (sw360User != null)
                 addEmbeddedUser(halResource, sw360User, "sw360:moderators");
         }
     }
@@ -398,7 +400,7 @@ public class RestControllerHelper<T> {
     public void addEmbeddedCreatedByToHalResourceRelease(HalResource halRelease, String createdBy) {
         if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
             User releaseCreator = getUserByEmail(createdBy);
-            if (null != releaseCreator )
+            if (null != releaseCreator)
                 addEmbeddedUser(halRelease, releaseCreator, "sw360:createdBy");
         }
     }
@@ -442,7 +444,8 @@ public class RestControllerHelper<T> {
     public void addEmbeddedReleaseLinks(
             HalResource halResource,
             List<ReleaseLink> releaseLinks) {
-        List<ReleaseLink> releaseLinkInogreAttachments = releaseLinks.stream().map(releaseLink -> releaseLink.setAttachments(null)).collect(Collectors.toList());
+        List<ReleaseLink> releaseLinkInogreAttachments = releaseLinks.stream()
+                .map(releaseLink -> releaseLink.setAttachments(null)).collect(Collectors.toList());
         for (ReleaseLink releaseLink : releaseLinkInogreAttachments) {
             addEmbeddedReleaseLink(halResource, releaseLink);
         }
@@ -453,7 +456,8 @@ public class RestControllerHelper<T> {
         halResource.addEmbeddedResource("sw360:spdxDocument", halRelease);
     }
 
-    public void addEmbeddedDocumentCreationInformation(HalResource halResource, DocumentCreationInformation documentCreationInformation) {
+    public void addEmbeddedDocumentCreationInformation(HalResource halResource,
+            DocumentCreationInformation documentCreationInformation) {
         HalResource<DocumentCreationInformation> halRelease = new HalResource<>(documentCreationInformation);
         halResource.addEmbeddedResource("sw360:documentCreationInformation", halRelease);
     }
@@ -477,7 +481,8 @@ public class RestControllerHelper<T> {
         User embeddedUser = convertToEmbeddedUser(user);
         EntityModel<User> embeddedUserResource = EntityModel.of(embeddedUser);
         try {
-            Link userLink = linkTo(UserController.class).slash("api/users/byid/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
+            Link userLink = linkTo(UserController.class)
+                    .slash("api/users/byid/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             embeddedUserResource.add(userLink);
             halResource.addEmbeddedResource(relation, embeddedUserResource);
         } catch (UnsupportedEncodingException e) {
@@ -504,7 +509,8 @@ public class RestControllerHelper<T> {
         return embeddedRelease;
     }
 
-    public void addEmbeddedProjectAttachmentUsage(HalResource halResource, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
+    public void addEmbeddedProjectAttachmentUsage(HalResource halResource, List<Map<String, Object>> releases,
+            List<Map<String, Object>> attachmentUsageMap) {
         halResource.addEmbeddedResource("sw360:release", releases);
         halResource.addEmbeddedResource("sw360:attachmentUsages", attachmentUsageMap);
     }
@@ -514,7 +520,7 @@ public class RestControllerHelper<T> {
         HalResource<Vendor> halVendor = new HalResource<>(embeddedVendor);
         try {
             Vendor vendorByFullName = vendorService.getVendorByFullName(vendorFullName);
-            if(vendorByFullName != null) {
+            if (vendorByFullName != null) {
                 Link vendorSelfLink = linkTo(UserController.class)
                         .slash("api" + VendorController.VENDORS_URL + "/" + vendorByFullName.getId()).withSelfRel();
                 halVendor.add(vendorSelfLink);
@@ -531,7 +537,7 @@ public class RestControllerHelper<T> {
         HalResource<Vendor> halVendor = new HalResource<>(embeddedVendor);
         try {
             Vendor vendorByFullName = vendorService.getVendorByFullName(vendor.getFullname());
-            if(vendorByFullName != null) {
+            if (vendorByFullName != null) {
                 Link vendorSelfLink = linkTo(UserController.class)
                         .slash("api" + VendorController.VENDORS_URL + "/" + vendorByFullName.getId()).withSelfRel();
                 halVendor.add(vendorSelfLink);
@@ -552,8 +558,8 @@ public class RestControllerHelper<T> {
 
     public Set<String> getObligationIdsFromRequestWithValueTrue(Map<String, Boolean> reqBodyMaps) {
         Map<String, Boolean> obligationIdsRequest = reqBodyMaps.entrySet().stream()
-                .filter(reqBodyMap-> reqBodyMap.getValue().equals(true))
-                .collect(Collectors.toMap(reqBodyMap-> reqBodyMap.getKey(),reqBodyMap -> reqBodyMap.getValue()));
+                .filter(reqBodyMap -> reqBodyMap.getValue().equals(true))
+                .collect(Collectors.toMap(reqBodyMap -> reqBodyMap.getKey(), reqBodyMap -> reqBodyMap.getValue()));
         return obligationIdsRequest.keySet();
     }
 
@@ -568,7 +574,7 @@ public class RestControllerHelper<T> {
         try {
             License licenseById = licenseService.getLicenseById(licenseId);
             embeddedLicense.setFullname(licenseById.getFullname());
-            embeddedLicense.setShortname(licenseId);
+            embeddedLicense.setShortname(licenseById.getShortname());
             Link licenseSelfLink = linkTo(UserController.class)
                     .slash("api" + LicenseController.LICENSES_URL + "/" + licenseById.getId()).withSelfRel();
             halLicense.add(licenseSelfLink);
@@ -597,8 +603,7 @@ public class RestControllerHelper<T> {
     public void addEmbeddedRelease(HalResource halResource, Release release) {
         Release embeddedRelease = convertToEmbeddedRelease(release);
         HalResource<Release> halRelease = new HalResource<>(embeddedRelease);
-        Link releaseLink = linkTo(ReleaseController.class).
-                slash("api/releases/" + release.getId()).withSelfRel();
+        Link releaseLink = linkTo(ReleaseController.class).slash("api/releases/" + release.getId()).withSelfRel();
         halRelease.add(releaseLink);
         halResource.addEmbeddedResource("sw360:releases", halRelease);
     }
@@ -611,8 +616,7 @@ public class RestControllerHelper<T> {
     public void addEmbeddedSingleRelease(HalResource halResource, Release release) {
         Release embeddedRelease = convertToEmbeddedRelease(release);
         HalResource<Release> halRelease = new HalResource<>(embeddedRelease);
-        Link releaseLink = linkTo(ReleaseController.class).
-                slash("api/releases/" + release.getId()).withSelfRel();
+        Link releaseLink = linkTo(ReleaseController.class).slash("api/releases/" + release.getId()).withSelfRel();
         halRelease.add(releaseLink);
         halResource.addEmbeddedResource("sw360:release", halRelease);
     }
@@ -620,8 +624,7 @@ public class RestControllerHelper<T> {
     public void addEmbeddedPackage(HalResource<Package> halResource, Package pkg) {
         Package embeddedPackage = convertToEmbeddedPackage(pkg);
         HalResource<Package> halPackage = new HalResource<>(embeddedPackage);
-        Link packageLink = linkTo(PackageController.class).
-                slash("api/packages/" + pkg.getId()).withSelfRel();
+        Link packageLink = linkTo(PackageController.class).slash("api/packages/" + pkg.getId()).withSelfRel();
         halPackage.add(packageLink);
         halResource.addEmbeddedResource("sw360:packages", halPackage);
     }
@@ -647,7 +650,8 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public void addEmbeddedProject(HalResource<Project> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
+    public void addEmbeddedProject(HalResource<Project> halProject, Set<String> projectIds,
+            Sw360ProjectService sw360ProjectService, User user) throws TException {
         for (String projectId : projectIds) {
             final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
             addEmbeddedProject(halProject, project, false);
@@ -683,9 +687,9 @@ public class RestControllerHelper<T> {
 
     public Component updateComponent(Component componentToUpdate, ComponentDTO requestBodyComponent) {
         Component component = convertToComponent(requestBodyComponent);
-        for(Component._Fields field:Component._Fields.values()) {
+        for (Component._Fields field : Component._Fields.values()) {
             Object fieldValue = component.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
                 componentToUpdate.setFieldValue(field, fieldValue);
             }
         }
@@ -693,7 +697,7 @@ public class RestControllerHelper<T> {
     }
 
     public Package updatePackage(Package packageToUpdate, Package requestBodyPackage) {
-        for (Package._Fields field:Package._Fields.values()) {
+        for (Package._Fields field : Package._Fields.values()) {
             Object fieldValue = requestBodyPackage.getFieldValue(field);
             if (fieldValue != null) {
                 packageToUpdate.setFieldValue(field, fieldValue);
@@ -703,7 +707,7 @@ public class RestControllerHelper<T> {
     }
 
     public ClearingRequest updateClearingRequest(ClearingRequest crToUpdate, ClearingRequest requestBodyCR) {
-        for(ClearingRequest._Fields field: ClearingRequest._Fields.values()) {
+        for (ClearingRequest._Fields field : ClearingRequest._Fields.values()) {
             Object fieldValue = requestBodyCR.getFieldValue(field);
             if (fieldValue != null) {
                 crToUpdate.setFieldValue(field, fieldValue);
@@ -712,13 +716,15 @@ public class RestControllerHelper<T> {
         return crToUpdate;
     }
 
-    public User updateUserProfile(User userToUpdate, Map<String, Object> requestBodyUser, ImmutableSet<User._Fields> setOfUserProfileFields) {
+    public User updateUserProfile(User userToUpdate, Map<String, Object> requestBodyUser,
+            ImmutableSet<User._Fields> setOfUserProfileFields) {
         for (User._Fields field : setOfUserProfileFields) {
             Object fieldValue = requestBodyUser.get(field.getFieldName());
             if (fieldValue != null) {
                 switch (field) {
                     case NOTIFICATION_PREFERENCES:
-                        Object wantNotification = requestBodyUser.get(User._Fields.WANTS_MAIL_NOTIFICATION.getFieldName());
+                        Object wantNotification = requestBodyUser
+                                .get(User._Fields.WANTS_MAIL_NOTIFICATION.getFieldName());
                         if (wantNotification == null) {
                             if (userToUpdate.isWantsMailNotification()) {
                                 userToUpdate.setFieldValue(field, fieldValue);
@@ -739,7 +745,7 @@ public class RestControllerHelper<T> {
     }
 
     public User updateUser(User userToUpdate, User requestBodyUser) {
-        for (User._Fields field:User._Fields.values()) {
+        for (User._Fields field : User._Fields.values()) {
             Object fieldValue = requestBodyUser.getFieldValue(field);
             if (fieldValue != null) {
                 userToUpdate.setFieldValue(field, fieldValue);
@@ -853,7 +859,7 @@ public class RestControllerHelper<T> {
     }
 
     private void isObligationValid(Set<String> obligationIds) {
-        List <String> obligationIncorrect = new ArrayList<>();
+        List<String> obligationIncorrect = new ArrayList<>();
         if (CommonUtils.isNotEmpty(obligationIds)) {
             for (String obligationId : obligationIds) {
                 try {
@@ -864,7 +870,8 @@ public class RestControllerHelper<T> {
             }
         }
         if (!obligationIncorrect.isEmpty()) {
-            throw new BadRequestClientException("Obligation with ids " + obligationIncorrect + " does not exist in SW360 database.");
+            throw new BadRequestClientException(
+                    "Obligation with ids " + obligationIncorrect + " does not exist in SW360 database.");
         }
     }
 
@@ -950,10 +957,10 @@ public class RestControllerHelper<T> {
     public Component convertToEmbeddedComponent(Component component, List<String> fields) {
         Component embeddedComponent = this.convertToEmbeddedComponent(component);
         if (fields != null) {
-            for(String fieldName:fields) {
+            for (String fieldName : fields) {
                 String thriftField = PropertyKeyMapping.componentThriftKeyFromJSONKey(fieldName);
                 Component._Fields componentField = Component._Fields.findByName(thriftField);
-                if(componentField != null) {
+                if (componentField != null) {
                     embeddedComponent.setFieldValue(componentField, component.getFieldValue(componentField));
                 }
             }
@@ -996,7 +1003,8 @@ public class RestControllerHelper<T> {
     }
 
     public Release convertToEmbeddedReleaseWithDet(Release release) {
-        List<String> fields = List.of("id", "name", "version", "cpeid", "createdBy", "createdOn", "componentId","componentType",
+        List<String> fields = List.of("id", "name", "version", "cpeid", "createdBy", "createdOn", "componentId",
+                "componentType",
                 "additionalData", "clearingState", "mainLicenseIds", "binaryDownloadurl", "sourceCodeDownloadurl",
                 "releaseDate", "externalIds", "languages", "operatingSystems", "softwarePlatforms", "vendor",
                 "mainlineState", "packageIds");
@@ -1006,17 +1014,16 @@ public class RestControllerHelper<T> {
     public Release convertToEmbeddedRelease(Release release, List<String> fields) {
         Release embeddedRelease = this.convertToEmbeddedRelease(release);
         if (fields != null) {
-            for(String fieldName:fields) {
+            for (String fieldName : fields) {
                 String thriftField = PropertyKeyMapping.releaseThriftKeyFromJSONKey(fieldName);
                 Release._Fields releaseField = Release._Fields.findByName(thriftField);
-                if(releaseField != null) {
+                if (releaseField != null) {
                     embeddedRelease.setFieldValue(releaseField, release.getFieldValue(releaseField));
                 }
             }
         }
         return embeddedRelease;
     }
-
 
     public License convertToEmbeddedLicense(License license) {
         License embeddedLicense = new License();
@@ -1096,7 +1103,7 @@ public class RestControllerHelper<T> {
             halObligation.add(obligationSelfLink);
             return halObligation;
         } catch (Exception e) {
-            LOGGER.error("cannot create self link for obligation with id: " +obligation.getId());
+            LOGGER.error("cannot create self link for obligation with id: " + obligation.getId());
         }
         return null;
     }
@@ -1157,8 +1164,8 @@ public class RestControllerHelper<T> {
         return embeddedVulnerability;
     }
 
-
-    public boolean setDataVulApiDTO(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability, Set<Release> releaseList) {
+    public boolean setDataVulApiDTO(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability,
+            Set<Release> releaseList) {
         for (Vulnerability._Fields field : Vulnerability._Fields.values()) {
             for (VulnerabilityApiDTO._Fields fieldDTO : VulnerabilityApiDTO._Fields.values()) {
                 if (field.getThriftFieldId() == fieldDTO.getThriftFieldId()) {
@@ -1188,7 +1195,7 @@ public class RestControllerHelper<T> {
 
     private Set<String> convertCVEReferenceString(Set<CVEReference> cveReferences) {
         Set<String> cveReferenceString = new HashSet<String>();
-        for (CVEReference cveReference :cveReferences) {
+        for (CVEReference cveReference : cveReferences) {
             String cveInfo = cveReference.getYear() + "-" + cveReference.getNumber();
             cveReferenceString.add(cveInfo);
         }
@@ -1197,7 +1204,8 @@ public class RestControllerHelper<T> {
 
     public boolean setDataForVulnerability(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability) {
         for (Vulnerability._Fields field : Vulnerability._Fields.values()) {
-            if (field.equals(Vulnerability._Fields.REVISION) || field.equals(Vulnerability._Fields.ID) || field.equals(Vulnerability._Fields.TYPE)) {
+            if (field.equals(Vulnerability._Fields.REVISION) || field.equals(Vulnerability._Fields.ID)
+                    || field.equals(Vulnerability._Fields.TYPE)) {
                 continue;
             }
             for (VulnerabilityApiDTO._Fields fieldDTO : VulnerabilityApiDTO._Fields.values()) {
@@ -1207,12 +1215,14 @@ public class RestControllerHelper<T> {
                     }
                     if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVSS)) {
                         if (!setDataCVSS(vulnerabilityApiDTO.getCvss(), vulnerability)) {
-                            throw new RuntimeException(new SW360Exception("Invalid cvss: property 'cvss' should be a valid cvss.")
-                                    .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
+                            throw new RuntimeException(
+                                    new SW360Exception("Invalid cvss: property 'cvss' should be a valid cvss.")
+                                            .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                         }
                     } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.IS_SET_CVSS)) {
-                        if(!setDataIsSetCvss(vulnerabilityApiDTO.getIsSetCvss(), vulnerability)) {
-                            throw new RuntimeException(new SW360Exception("Invalid isSetCvss: property 'isSetCvss' should be a valid isSetCvss.")
+                        if (!setDataIsSetCvss(vulnerabilityApiDTO.getIsSetCvss(), vulnerability)) {
+                            throw new RuntimeException(new SW360Exception(
+                                    "Invalid isSetCvss: property 'isSetCvss' should be a valid isSetCvss.")
                                     .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                         }
                     } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVE_REFERENCES)) {
@@ -1261,17 +1271,20 @@ public class RestControllerHelper<T> {
             Set<CVEReference> cveReferenceList = new HashSet<CVEReference>();
             for (String cveReference : cveReferences) {
                 if (CommonUtils.isNullEmptyOrWhitespace(cveReference)) {
-                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' cannot be null, empty or whitespace.")
+                    throw new RuntimeException(new SW360Exception(
+                            "Invalid yearNumber: property 'yearNumber' cannot be null, empty or whitespace.")
                             .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                 }
                 if (!Pattern.matches("^\\d{4}-\\d*", cveReference)) {
-                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' is wrong format")
-                            .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
+                    throw new RuntimeException(
+                            new SW360Exception("Invalid yearNumber: property 'yearNumber' is wrong format")
+                                    .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                 }
                 String[] yearAndNumber = cveReference.split("-");
                 if (yearAndNumber.length != 2) {
-                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'year-Number' is wrong format")
-                            .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
+                    throw new RuntimeException(
+                            new SW360Exception("Invalid yearNumber: property 'year-Number' is wrong format")
+                                    .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                 }
                 CVEReference m_cVEReference = new CVEReference();
                 m_cVEReference.setYear(yearAndNumber[0]);
@@ -1293,7 +1306,8 @@ public class RestControllerHelper<T> {
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
         if (queryString != null && !queryString.isEmpty()) {
             UriComponentsBuilder builder = UriComponentsBuilder.newInstance().query(queryString);
-            builder.build().getQueryParams().forEach((key, values) -> values.forEach(value -> parameters.add(key, urlDecode(value))));
+            builder.build().getQueryParams()
+                    .forEach((key, values) -> values.forEach(value -> parameters.add(key, urlDecode(value))));
         }
         return parameters;
     }
@@ -1318,10 +1332,13 @@ public class RestControllerHelper<T> {
             throw new IllegalArgumentException("Unsupported encoding: " + e.getMessage());
         }
     }
+
     /**
-     * Generic Entity response method to get externalIds (projects, components, releases)
+     * Generic Entity response method to get externalIds (projects, components,
+     * releases)
      */
-    public <T> ResponseEntity searchByExternalIds(String queryString, AwareOfRestServices<T> service, User user) throws TException {
+    public <T> ResponseEntity searchByExternalIds(String queryString, AwareOfRestServices<T> service, User user)
+            throws TException {
 
         MultiValueMap<String, String> externalIdsMultiMap = parseQueryStringForExtIds(queryString);
         Map<String, Set<String>> externalIds = getExternalIdsFromMultiMap(externalIdsMultiMap);
@@ -1386,7 +1403,7 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public void addEmbeddedFields(String relation,Object value,HalResource<? extends TBase> halResource) {
+    public void addEmbeddedFields(String relation, Object value, HalResource<? extends TBase> halResource) {
         if (value instanceof String) {
             if (CommonUtils.isNotNullEmptyOrWhitespace((String) value)) {
                 halResource.addEmbeddedResource(relation, value);
@@ -1450,17 +1467,18 @@ public class RestControllerHelper<T> {
     }
 
     public void addEmbeddedModerationRequest(HalResource<ModerationRequest> halModerationRequest,
-                                             Set<String> moderationIds,
-                                             Sw360ModerationRequestService sw360ModerationRequestService)
+            Set<String> moderationIds,
+            Sw360ModerationRequestService sw360ModerationRequestService)
             throws TException {
         for (String moderationId : moderationIds) {
-            final ModerationRequest moderationRequest = sw360ModerationRequestService.getModerationRequestById(moderationId);
+            final ModerationRequest moderationRequest = sw360ModerationRequestService
+                    .getModerationRequestById(moderationId);
             addEmbeddedModerationRequest(halModerationRequest, moderationRequest, false);
         }
     }
 
     public void addEmbeddedModerationRequest(HalResource halResource, ModerationRequest moderationRequest,
-                                             boolean isSingleRequest) {
+            boolean isSingleRequest) {
         ModerationRequest embeddedRequest = convertToEmbeddedModerationRequest(moderationRequest);
         HalResource<ModerationRequest> halModerationRequest = new HalResource<>(embeddedRequest);
         Link moderationRequestLink = linkTo(ModerationRequest.class)
@@ -1472,9 +1490,9 @@ public class RestControllerHelper<T> {
     }
 
     public void addEmbeddedDataToComponent(HalResource halResource, Component sw360Component) {
-        addEmbeddedModifiedByToComponent(halResource,sw360Component);
-        addEmbeddedComponentOwnerToComponent(halResource,sw360Component);
-        addEmbeddedSubcribeToHalResourceComponent(halResource,sw360Component);
+        addEmbeddedModifiedByToComponent(halResource, sw360Component);
+        addEmbeddedComponentOwnerToComponent(halResource, sw360Component);
+        addEmbeddedSubcribeToHalResourceComponent(halResource, sw360Component);
     }
 
     public void addEmbeddedModifiedByToComponent(HalResource halResource, Component sw360Component) {
@@ -1508,7 +1526,8 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public void addEmbeddedProjectDTO(HalResource<ProjectDTO> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
+    public void addEmbeddedProjectDTO(HalResource<ProjectDTO> halProject, Set<String> projectIds,
+            Sw360ProjectService sw360ProjectService, User user) throws TException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -1553,15 +1572,15 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedProjectResponsible(HalResource<Project> halResource, String projectResponsible) {
         User sw360User = getUserByEmail(projectResponsible);
-        if(sw360User!=null) {
+        if (sw360User != null) {
             addEmbeddedUser(halResource, sw360User, "projectResponsible");
         }
     }
 
-    public void addEmbeddedSecurityResponsibles (HalResource<Project> halResource, Set<String> securityResponsibles) {
+    public void addEmbeddedSecurityResponsibles(HalResource<Project> halResource, Set<String> securityResponsibles) {
         for (String securityResponsible : securityResponsibles) {
             User sw360User = getUserByEmail(securityResponsible);
-            if(sw360User!=null) {
+            if (sw360User != null) {
                 addEmbeddedUser(halResource, sw360User, "securityResponsibles");
             }
         }
@@ -1569,7 +1588,7 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedClearingTeam(HalResource<Project> userHalResource, String clearingTeam, String resource) {
         User sw360User = getUserByEmail(clearingTeam);
-        if(sw360User!=null)
+        if (sw360User != null)
             addEmbeddedUser(userHalResource, sw360User, resource);
     }
 
@@ -1580,7 +1599,8 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public void addEmbeddedTimestampOfDecision(HalResource<ClearingRequest> halClearingRequest, long timestampOfDecision) {
+    public void addEmbeddedTimestampOfDecision(HalResource<ClearingRequest> halClearingRequest,
+            long timestampOfDecision) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
                 .withLocale(Locale.ENGLISH)
                 .withZone(ZoneId.systemDefault());
@@ -1610,10 +1630,14 @@ public class RestControllerHelper<T> {
         embeddedProject.setIntReleaseName(sw360Vul.getIntReleaseName());
         return embeddedProject;
     }
-    public void addEmbeddedDatesClearingRequest(HalResource<ClearingRequest> halClearingRequest, ClearingRequest clearingRequest, boolean isSingleRequest) {
-        halClearingRequest.addEmbeddedResource("createdOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getTimestamp()));
+
+    public void addEmbeddedDatesClearingRequest(HalResource<ClearingRequest> halClearingRequest,
+            ClearingRequest clearingRequest, boolean isSingleRequest) {
+        halClearingRequest.addEmbeddedResource("createdOn",
+                SW360Utils.convertEpochTimeToDate(clearingRequest.getTimestamp()));
         if (isSingleRequest) {
-            halClearingRequest.addEmbeddedResource("lastUpdatedOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getModifiedOn()));
+            halClearingRequest.addEmbeddedResource("lastUpdatedOn",
+                    SW360Utils.convertEpochTimeToDate(clearingRequest.getModifiedOn()));
         }
     }
 
@@ -1661,15 +1685,19 @@ public class RestControllerHelper<T> {
         release.unsetAttachments();
         return halRelease;
     }
-    public ClearingRequest updateCRSize(ClearingRequest clearingRequest, Project project, User sw360User) throws TException {
+
+    public ClearingRequest updateCRSize(ClearingRequest clearingRequest, Project project, User sw360User)
+            throws TException {
         int openReleaseCount = SW360Utils.getOpenReleaseCount(project.getReleaseClearingStateSummary());
         ClearingRequestSize currentSize = SW360Utils.determineCRSize(openReleaseCount);
         ClearingRequestSize initialSize = clearingRequest.getClearingSize();
-        if(initialSize == null) return clearingRequest;
-        if(!initialSize.equals(ClearingRequestSize.VERY_LARGE)) {
+        if (initialSize == null)
+            return clearingRequest;
+        if (!initialSize.equals(ClearingRequestSize.VERY_LARGE)) {
             int limit = SW360Utils.CLEARING_REQUEST_SIZE_MAP.get(initialSize);
-            if(openReleaseCount > limit){
-                clearingRequestService.updateClearingRequestForChangeInClearingSize(clearingRequest.getId(), currentSize);
+            if (openReleaseCount > limit) {
+                clearingRequestService.updateClearingRequestForChangeInClearingSize(clearingRequest.getId(),
+                        currentSize);
             }
         }
         return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
