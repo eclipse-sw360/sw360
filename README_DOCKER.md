@@ -133,7 +133,7 @@ So any external docker image can connect to internal couchdb  through this netwo
 ### Post setup configuration
 
 * Please read this page after you have initial screen:
-[SW360 Initial Setup Configuration](https://eclipse.dev/sw360/docs/deployment/legacy/deploy-liferay7.4/)
+ [SW360 Initial Setup Configuration](https://eclipse.dev/sw360/docs/deployment/)
 
 ## Fossology
 
