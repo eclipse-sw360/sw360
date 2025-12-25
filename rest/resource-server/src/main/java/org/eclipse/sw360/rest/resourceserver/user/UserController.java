@@ -23,6 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -38,6 +40,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.security.JwtBlacklistService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -50,6 +53,7 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -82,6 +86,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class UserController implements RepresentationModelProcessor<RepositoryLinksResource> {
+    private static final Logger log = LogManager.getLogger(UserController.class);
 
     protected final EntityLinks entityLinks;
 
@@ -95,6 +100,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
+
+    @Autowired
+    private JwtBlacklistService jwtBlacklistService;
 
     private static final ImmutableSet<User._Fields> setOfUserProfileFields =
             ImmutableSet.<User._Fields>builder().add(User._Fields.WANTS_MAIL_NOTIFICATION)
@@ -336,6 +344,36 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         sw360User.getRestApiTokens().removeIf(t -> t.getName().equals(tokenName));
         userService.updateUser(sw360User);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    @Operation(summary = "Logout user and blacklist JWT token.",
+            description = "Logout user and blacklist JWT token.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Logged out successfully."),
+                    @ApiResponse(responseCode = "400", description = "No valid Bearer token found."),
+                    @ApiResponse(responseCode = "500", description = "Logout failed.")},
+            tags = {"Users"})
+    @RequestMapping(value = USERS_URL + "/logout", method = RequestMethod.POST)
+    public ResponseEntity<?> logout(HttpServletRequest request) throws TException{
+        try {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String jwtToken = authHeader.substring(7);
+
+                // Add token to blacklist
+                jwtBlacklistService.blacklistToken(jwtToken);
+
+                // Clear security context
+                SecurityContextHolder.clearContext();
+
+                log.info("Token successfully blacklisted and user logged out");
+                return ResponseEntity.ok().body("Logged out successfully");
+            }
+            log.warn("Logout attempt with no valid Bearer token");
+            return ResponseEntity.badRequest().body("No valid Bearer token found");
+        } catch (Exception e) {
+            log.error("Error during logout: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Logout failed");
+        }
     }
 
     @Override
