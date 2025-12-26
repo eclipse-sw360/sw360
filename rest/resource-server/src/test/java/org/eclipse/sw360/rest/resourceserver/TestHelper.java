@@ -146,6 +146,8 @@ public class TestHelper {
         Attachment attachment1 = new Attachment();
         attachment1.setAttachmentContentId("a1");
         attachment1.setSha1(attachmentShaUsedMultipleTimes);
+        attachment1.setMd5("5d41402abc4b2a76b9719d911017c592");
+        attachment1.setSha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
         attachment1.setFilename("Attachment 1");
         attachment1.setAttachmentType(AttachmentType.BINARY);
         attachments.add(attachment1);
@@ -153,6 +155,8 @@ public class TestHelper {
         Attachment attachment2 = new Attachment();
         attachment2.setAttachmentContentId("a2");
         attachment2.setSha1(attachmentShaUsedMultipleTimes);
+        attachment2.setMd5("098f6bcd4621d373cade4e832627b4f6");
+        attachment2.setSha256("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3");
         attachment2.setFilename("Attachment 2");
         attachment2.setAttachmentType(AttachmentType.SOURCE);
         attachments.add(attachment2);

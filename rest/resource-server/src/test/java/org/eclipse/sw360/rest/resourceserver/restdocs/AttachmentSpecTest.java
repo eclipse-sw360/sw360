@@ -75,6 +75,8 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         attachment.setAttachmentContentId("76537653");
         attachment.setFilename("spring-core-4.3.4.RELEASE.jar");
         attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
+        attachment.setMd5("5d41402abc4b2a76b9719d911017c592");
+        attachment.setSha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
         attachment.setAttachmentType(AttachmentType.BINARY_SELF);
         attachment.setCreatedTeam("Clearing Team 1");
         attachment.setCreatedComment("please check before Christmas :)");
@@ -88,6 +90,8 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         attachment1.setAttachmentContentId("9eceeb5d511541c7853dec975d728731");
         attachment1.setFilename("bom.spdx.rdf");
         attachment1.setSha1("b39cee74077c578a16992defd565d5754cbf2c40");
+        attachment1.setMd5("098f6bcd4621d373cade4e832627b4f6");
+        attachment1.setSha256("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3");
         attachment1.setAttachmentType(AttachmentType.DOCUMENT);
         attachment1.setCreatedTeam("DEPARTMENT");
         attachment1.setCreatedOn("2023-07-20");
@@ -145,6 +149,10 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("attachmentContentId").description("The attachment content id"),
                                 fieldWithPath("filename").description("The filename of the attachment"),
                                 fieldWithPath("sha1").description("The attachment's file contents sha1 hash"),
+                                fieldWithPath("md5").description("The attachment's file contents md5 hash"),
+                                fieldWithPath("sha256").description("The attachment's file contents sha256 hash"),
+                                fieldWithPath("setMd5").description("Boolean flag indicating if MD5 hash is set").optional().type(Boolean.class),
+                                fieldWithPath("setSha256").description("Boolean flag indicating if SHA256 hash is set").optional().type(Boolean.class),
                                 fieldWithPath("attachmentType").description("The attachment type, possible values are " + Arrays.asList(AttachmentType.values())),
                                 fieldWithPath("createdTeam").description("The team who created this attachment"),
                                 fieldWithPath("createdComment").description("Comment of the creating team"),

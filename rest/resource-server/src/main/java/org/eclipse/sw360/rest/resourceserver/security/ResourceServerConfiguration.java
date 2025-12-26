@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
- *
+ * 
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -78,6 +78,9 @@ public class ResourceServerConfiguration {
                     auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
+                    // Handle filesearch endpoints 
+                    auth.requestMatchers("/filesearch").hasAnyAuthority("READ", "WRITE");
+                    auth.requestMatchers("/filesearch/**").hasAnyAuthority("READ", "WRITE");
                     auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/docs/**").permitAll();

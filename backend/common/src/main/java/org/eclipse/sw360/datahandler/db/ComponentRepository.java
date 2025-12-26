@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -163,6 +163,26 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "}";
 
     private static final String COMPONENT_BY_ALL_IDX = "ComponentByAllIdx";
+    private static final String BY_ATTACHMENT_CHECKSUM = "function(doc) {" +
+            "  if (doc.type == 'component' && doc.attachments) {" +
+            "    for(var i in doc.attachments) {" +
+            "      var att = doc.attachments[i];" +
+            "      if(att.sha1) emit(['sha1', att.sha1], doc._id);" +
+            "      if(att.md5) emit(['md5', att.md5], doc._id);" +
+            "      if(att.sha256) emit(['sha256', att.sha256], doc._id);" +
+            "    }" +
+            "  }" +
+            "}";
+
+    private static final String BY_FOSSOLOGY_UPLOAD_ID = "function(doc) {" +
+            "  if (doc.type == 'component' && doc.attachments) {" +
+            "    for(var i in doc.attachments) {" +
+            "      if(doc.attachments[i].fossologyUploadId) {" +
+            "        emit(doc.attachments[i].fossologyUploadId, doc._id);" +
+            "      }" +
+            "    }" +
+            "  }" +
+            "}";
 
     public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
         super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
@@ -184,6 +204,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         views.put("byvendor", createMapReduce(BY_VENDOR, null));
         views.put("byVCS", createMapReduce(BY_VCS, null));
         views.put("byVCSLowercase", createMapReduce(BY_VCS_LOWERCASE, null));
+        views.put("byAttachmentChecksum", createMapReduce(BY_ATTACHMENT_CHECKSUM, null));
+        views.put("byFossologyUploadId", createMapReduce(BY_FOSSOLOGY_UPLOAD_ID, null));
         initStandardDesignDocument(views, db);
 
         createIndex(COMPONENT_BY_ALL_IDX, "compByAll", new String[] {
@@ -372,6 +394,56 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     public List<Component> getComponentsByVCS() {
         return queryView("byVCS");
+    }
+
+    /**
+     * Get components by attachment checksum
+     */
+    public Set<Component> getComponentsByAttachmentChecksum(String checksum, String checksumType) {
+        List<Object> key = List.of(checksumType.toLowerCase(), checksum);
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(Component.class, "byAttachmentChecksum")
+                .includeDocs(false)
+                .keys(List.of(key))
+                .build();
+        Set<String> componentIds = queryForIdsAsValue(viewQuery);
+        return new HashSet<>(get(componentIds));
+    }
+
+    /**
+     * Get components by FOSSology upload ID
+     */
+    public Set<Component> getComponentsByFossologyUploadId(String fossologyUploadId) {
+        Set<String> componentIds = queryForIdsAsValue("byFossologyUploadId", fossologyUploadId);
+        return new HashSet<>(get(componentIds));
+    }
+
+    /**
+     * Find components with attachments that have checksums but no FOSSology upload ID
+     */
+    public List<Component> getComponentsWithUnprocessedAttachments() {
+        
+        List<Component> allComponents = getAll();
+        return allComponents.stream()
+                .filter(component -> component.getAttachments() != null)
+                .filter(component -> component.getAttachments().stream()
+                        .anyMatch(att -> (att.getSha1() != null || att.getMd5() != null || att.getSha256() != null) 
+                                      && att.getFossologyUploadId() == null))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Get components by multiple checksums for batch processing
+     */
+    public Map<String, Set<Component>> getComponentsByChecksums(Set<String> checksums, String checksumType) {
+        Map<String, Set<Component>> result = new HashMap<>();
+        for (String checksum : checksums) {
+            Set<Component> components = getComponentsByAttachmentChecksum(checksum, checksumType);
+            if (!components.isEmpty()) {
+                result.put(checksum, components);
+            }
+        }
+        return result;
     }
 
     private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
