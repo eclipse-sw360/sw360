@@ -24,20 +24,16 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Predicates.notNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.*;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
-import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  * Utility class to validate the data before inserting it in the database.
@@ -56,25 +52,7 @@ public class ThriftValidate {
     public static void prepareTodo(Obligation oblig) throws SW360Exception {
         // Check required fields
         assertNotNull(oblig);
-        // Check that either text or textNodes is present (for backward compatibility)
-        boolean hasText = oblig.isSetText() && !isNullOrEmpty(oblig.getText());
-        boolean hasTextNodes = oblig.isSetTextNodes() && !CommonUtils.isNullOrEmptyCollection(oblig.getTextNodes());
-        
-        if (!hasText && !hasTextNodes) {
-            throw new SW360Exception("Obligation must have either text or textNodes field set");
-        }
-        if (hasTextNodes && !hasText) {
-        String combinedText = String.join("\n", oblig.getTextNodes());
-        oblig.setText(combinedText);
-    } else if (hasText && !hasTextNodes) {
-        List<String> textNodes = Arrays.asList(oblig.getText().split("\n"))
-                                       .stream()
-                                       .filter(node -> !CommonUtils.isNullEmptyOrWhitespace(node.trim()))
-                                       .map(String::trim)
-                                       .collect(Collectors.toList());
-        oblig.setTextNodes(textNodes);
-    }
-    
+        assertNotEmpty(oblig.getText());
         assertNotNull(oblig.getTitle());
         assertNotNull(oblig.getObligationLevel());
 

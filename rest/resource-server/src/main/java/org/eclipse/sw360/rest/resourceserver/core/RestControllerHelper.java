@@ -20,7 +20,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Objects;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -99,7 +98,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -116,7 +114,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -128,7 +125,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -584,7 +580,7 @@ public class RestControllerHelper<T> {
             embeddedLicense.setFullname(null);
             return halLicense;
         } catch (Exception e) {
-            LOGGER.error("cannot create self link for license with id: " + licenseId); 
+            LOGGER.error("cannot create self link for license with id: " + licenseId);
         }
         return null;
     }
@@ -859,7 +855,7 @@ public class RestControllerHelper<T> {
         if (CommonUtils.isNotEmpty(obligationIds)) {
             for (String obligationId : obligationIds) {
                 try {
-                    obligationService.getObligationById(obligationId);
+                    obligationService.getObligationById(obligationId, null);
                 } catch (Exception e) {
                     obligationIncorrect.add(obligationId);
                 }
@@ -1105,22 +1101,12 @@ public class RestControllerHelper<T> {
 
     public Obligation convertToEmbeddedObligation(Obligation obligation) {
         Obligation embeddedObligation = new Obligation();
-        embeddedObligation.setId(obligation.getId());
         embeddedObligation.setTitle(obligation.getTitle());
-        embeddedObligation.setText(obligation.getText());
-    
-    if (obligation.isSetTextNodes() && !CommonUtils.isNullOrEmptyCollection(obligation.getTextNodes())) {
-        embeddedObligation.setTextNodes(obligation.getTextNodes());
-    } else if (obligation.isSetText() && !CommonUtils.isNullEmptyOrWhitespace(obligation.getText())) {
-        List<String> textNodes = Arrays.stream(obligation.getText().split("\n"))
-                                      .map(String::trim)
-                                      .filter(node -> !CommonUtils.isNullEmptyOrWhitespace(node))
-                                      .collect(Collectors.toList());
-        embeddedObligation.setTextNodes(textNodes);
-    }
         embeddedObligation.setObligationType(obligation.getObligationType());
         embeddedObligation.setObligationLevel(obligation.getObligationLevel());
+        embeddedObligation.setId(obligation.getId());
         embeddedObligation.setWhitelist(obligation.getWhitelist());
+        embeddedObligation.setText(obligation.getText());
         embeddedObligation.setType(null);
         return embeddedObligation;
     }

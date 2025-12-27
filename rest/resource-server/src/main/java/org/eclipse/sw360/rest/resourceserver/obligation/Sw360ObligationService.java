@@ -21,6 +21,8 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,34 +39,49 @@ public class Sw360ObligationService {
     private String thriftServerUrl;
 
     public List<Obligation> getObligations() {
+        List<Obligation> obligations;
         try {
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            return sw360LicenseClient.getObligations();
+            obligations = sw360LicenseClient.getObligations();
         } catch (TException e) {
             throw new RuntimeException(e);
         }
+        if (obligations != null) {
+            return obligations.stream().map(o -> o.setNode(null)).toList();
+        }
+        return null;
     }
 
-    public Obligation getObligationById(String obligationId) {
+    public Obligation getObligationById(String obligationId, User user) {
+        LicenseService.Iface sw360LicenseClient = null;
+        Obligation obligation = null;
         try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            return sw360LicenseClient.getObligationsById(obligationId);
+            sw360LicenseClient = getThriftLicenseClient();
+            obligation = sw360LicenseClient.getObligationsById(obligationId);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
+        if (user != null) {
+            try {
+                obligation = sw360LicenseClient.getWithTextNodes(obligation, user);
+            } catch (TException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return obligation;
     }
 
     public Obligation createObligation(Obligation obligation, User sw360User) {
         try {
             if (obligation.getTitle() != null && !obligation.getTitle().trim().isEmpty()
-            && hasValidText(obligation)
+            && obligation.getText() != null && !obligation.getText().trim().isEmpty()
             && obligation.getObligationLevel() != null) {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                 String obligationId = sw360LicenseClient.addObligations(obligation, sw360User);
                 obligation.setId(obligationId);
                 return obligation;
             } else {
-                throw new BadRequestClientException("Obligation Title, Text or TextNodes, Level are required. Obligation Title, Text cannot contain only space character.");
+                throw new BadRequestClientException("Obligation Title, Text, Level are required. Obligation Title, Text cannot contain only space character.");
             }
         } catch (TException e) {
             throw new RuntimeException(e);
@@ -84,7 +101,7 @@ public class Sw360ObligationService {
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {
         if (CommonUtils.isNotNullEmptyOrWhitespace(obligation.getTitle())
-                || hasValidText(obligation)) {
+                || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
             try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                 sw360LicenseClient.updateObligation(obligation, sw360User);
@@ -93,15 +110,31 @@ public class Sw360ObligationService {
                 throw new RuntimeException("Error updating obligation", e);
             }
         } else {
-            throw new BadRequestClientException("Obligation Title, Text or TextNodes are required. Obligation Title, Text cannot contain only space character.");
+            throw new BadRequestClientException("Obligation Title, Text are required. Obligation Title, Text cannot contain only space character.");
         }
     }
-    private boolean hasValidText(Obligation obligation) {
-        boolean hasText = CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText());
-        boolean hasTextNodes = obligation.getTextNodes() != null && 
-                              !obligation.getTextNodes().isEmpty() && 
-                              obligation.getTextNodes().stream().anyMatch(node -> !node.trim().isEmpty());
-        return hasText || hasTextNodes;
+
+    public List<ObligationNode> getObligationNodes() {
+        LicenseService.Iface sw360LicenseClient = null;
+        List<ObligationNode> obligationNodes = null;
+        try {
+            sw360LicenseClient = getThriftLicenseClient();
+            obligationNodes = sw360LicenseClient.getObligationNodes();
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+        return obligationNodes;
     }
 
+    public List<ObligationElement> getObligationElements() {
+        LicenseService.Iface sw360LicenseClient = null;
+        List<ObligationElement> obligationElements = null;
+        try {
+            sw360LicenseClient = getThriftLicenseClient();
+            obligationElements = sw360LicenseClient.getObligationElements();
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+        return obligationElements;
+    }
 }
