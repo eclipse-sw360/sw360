@@ -39,7 +39,6 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedResponseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -83,7 +82,7 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
         obligationList.add(obligation2);
 
         given(this.obligationServiceMock.getObligations()).willReturn(obligationList);
-        given(this.obligationServiceMock.getObligationById(eq(obligation.getId()))).willReturn(obligation);
+        given(this.obligationServiceMock.getObligationById(eq(obligation.getId()), any())).willReturn(obligation);
         given(this.obligationServiceMock.deleteObligation(eq(obligation.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
@@ -138,7 +137,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                         links(
                                 linkWithRel("self").description("The <<resources-obligations, Obligations resource>>")
                         ),
-                        relaxedResponseFields(
+                        responseFields(
+                                fieldWithPath("id").description("ID of the Obligation"),
                                 fieldWithPath("title").description("The title of the obligation"),
                                 fieldWithPath("text").description("The text of the obligation"),
                                 fieldWithPath("obligationLevel").description("The level of the obligation: [ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, COMPONENT_OBLIGATION, LICENSE_OBLIGATION]"),
@@ -168,7 +168,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("obligationLevel").description("The level of the obligation: [COMPONENT_OBLIGATION, ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, LICENSE_OBLIGATION]"),
                                 fieldWithPath("obligationType").description("The type of the obligation: [RESTRICTION, OBLIGATION, PERMISSION, EXCEPTION, RISK]")
                         ),
-                        relaxedResponseFields(
+                        responseFields(
+                                fieldWithPath("id").description("ID of the Obligation"),
                                 fieldWithPath("title").description("The title of the obligation"),
                                 fieldWithPath("text").description("The text of the obligation"),
                                 fieldWithPath("obligationLevel").description("The level of the obligation: [COMPONENT_OBLIGATION, ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, LICENSE_OBLIGATION]"),

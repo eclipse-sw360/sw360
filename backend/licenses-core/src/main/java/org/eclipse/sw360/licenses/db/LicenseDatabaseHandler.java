@@ -37,7 +37,9 @@ import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
@@ -282,7 +284,6 @@ public class LicenseDatabaseHandler {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
-        handleObligationTextCompatibility(obligs);
         prepareTodo(obligs);
         List<Obligation> obligations = getObligations();
         for (Obligation obligation : obligations) {
@@ -317,7 +318,6 @@ public class LicenseDatabaseHandler {
         if (! oblig.isSetObligationLevel() || oblig.getObligationLevel() == null) {
             oblig.setObligationLevel(oldObligation.getObligationLevel());
         }
-        handleObligationTextCompatibility(oblig);
         prepareTodo(oblig);
         obligRepository.update(oblig);
         oblig.setNode(null);
@@ -366,7 +366,7 @@ public class LicenseDatabaseHandler {
             obligationNodeRepository.add(obligationNode);
             return obligationNode.getId();
         } else {
-            return existedObligationNode.get(0).getId();
+            return existedObligationNode.getFirst().getId();
         }
     }
 
@@ -787,7 +787,6 @@ public class LicenseDatabaseHandler {
             return null;
         }
         for (Obligation Oblig : listOfObligations) {
-            handleObligationTextCompatibility(Oblig);
             prepareTodo(Oblig);
         }
 
@@ -890,15 +889,15 @@ public class LicenseDatabaseHandler {
 
         if (nodeType.equals("Obligation")) {
             String oblElementId = obligationNode.getOblElementId();
-            existedObligationElement = obligationNodeRepository.searchByObligationNodeType(nodeType);
+            existedObligationElement = new ArrayList<>(obligationNodeRepository.searchByObligationNodeType(nodeType));
             existedObligationElement.retainAll(obligationNodeRepository.searchByObligationNodeOblElementId(oblElementId));
         } else {
             String nodeText = obligationNode.getNodeText();
             if (!nodeText.isBlank() && !nodeType.isBlank()) {
-                existedObligationElement = obligationNodeRepository.searchByObligationNodeType(nodeType);
+                existedObligationElement = new ArrayList<>(obligationNodeRepository.searchByObligationNodeType(nodeType));
                 existedObligationElement.retainAll(obligationNodeRepository.searchByObligationNodeText(nodeText));
             } else if (nodeText.isBlank() && !nodeType.isBlank()) {
-                existedObligationElement = obligationNodeRepository.searchByObligationNodeType(nodeType);
+                existedObligationElement = new ArrayList<>(obligationNodeRepository.searchByObligationNodeType(nodeType));
                 List<ObligationNode> obligationElementNoText = new ArrayList<>();
                 for (ObligationNode oblE : existedObligationElement) {
                     if (oblE.getNodeText().equals(nodeText)) {
@@ -911,7 +910,7 @@ public class LicenseDatabaseHandler {
                     return Collections.emptyList();
                 }
             } else {
-                existedObligationElement = obligationNodeRepository.searchByObligationNodeText(nodeText);
+                existedObligationElement = new ArrayList<>(obligationNodeRepository.searchByObligationNodeText(nodeText));
                 List<ObligationNode> obligationElementNoType = new ArrayList<>();
                 for (ObligationNode oblE : existedObligationElement) {
                     if (oblE.getNodeType().isBlank()){
@@ -1162,6 +1161,30 @@ public class LicenseDatabaseHandler {
         return obligNode;
     }
 
+    /**
+     * Convert the nodes of Obligation with the actual values from DB. This
+     * first checks if the Obligation already has nodes set or calls
+     * convertTextToNodes() first. It then calls generateJsonObligationText()
+     * to get new node string and replace it in the Obligation object.
+     *
+     * @param obligation Obligation to update the node of
+     * @param user Requesting user object
+     * @return Obligation with node updated with value of elements from DB.
+     * @throws SW360Exception Throws if function cannot convert text into node.
+     */
+    public Obligation getWithTextNodes(@NotNull Obligation obligation, User user) throws SW360Exception {
+        String nodeString = null;
+        if (obligation.isSetNode()) {
+            nodeString = obligation.getNode();
+        } else {
+            nodeString = convertTextToNodes(obligation, user);
+        }
+        obligation.setNode(
+                generateJsonObligationText(nodeString)
+        );
+        return obligation;
+    }
+
     public RequestStatus deleteObligations(String id, User user) throws SW360Exception {
         Obligation oblig = obligRepository.get(id);
         assertNotNull(oblig);
@@ -1230,7 +1253,7 @@ public class LicenseDatabaseHandler {
             return jsonObject.toString();
         }
         catch (Exception e) {
-            log.error("Can not add nodes from json object: " + jsonObject);
+            log.error("Can not add nodes from json object: {}", jsonObject.toString());
             return null;
         }
     }
@@ -1325,19 +1348,51 @@ public class LicenseDatabaseHandler {
         return convertToLicenseSummary(results.stream().toList());
     }
 
-    // Helper method to handle textNodes to text conversion for backward compatibility
-    private void handleObligationTextCompatibility(Obligation obligation) {
-        if (obligation.isSetTextNodes() && !CommonUtils.isNullOrEmptyCollection(obligation.getTextNodes())) {
-            String combinedText = String.join("\n", obligation.getTextNodes());
-            obligation.setText(combinedText);
+    /**
+     * Take node of Obligation which contains ID of other ObligationElements.
+     * Fetch those elements from DB and put their values in the JSON object.
+     *
+     * @param obligationNode Obligation's node string
+     * @return New JSON object String for the Obligation's node with all
+     * Obligation Element with their values from DB.
+     */
+    private @Nullable String generateJsonObligationText(String obligationNode) {
+        try {
+            JSONObject jsonObject = new JSONObject(obligationNode);
+            return buildJsonObligationText(jsonObject, 0);
+        } catch (JSONException e) {
+            log.error("Unable to parse String to JSON: {}", obligationNode);
+            return null;
         }
-        else if (obligation.isSetText() && !CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
-                 && (!obligation.isSetTextNodes() || CommonUtils.isNullOrEmptyCollection(obligation.getTextNodes()))) {
-            List<String> textNodes = Arrays.asList(obligation.getText().split("\n"));
-            textNodes = textNodes.stream()
-                               .filter(node -> !CommonUtils.isNullEmptyOrWhitespace(node.trim()))
-                               .collect(Collectors.toList());
-            obligation.setTextNodes(textNodes);
+    }
+
+    private @Nullable String buildJsonObligationText(JSONObject jsonObject, int level) {
+        try {
+            ObligationNode obligationNode = getObligationNodeById(jsonObject.get("id").toString());
+            if (obligationNode != null && !obligationNode.getNodeType().equals("ROOT")) {
+                if (obligationNode.getNodeType().equals("Obligation")) {
+                    ObligationElement obligationElement = getObligationElementById(obligationNode.getOblElementId()); // add not null
+                    jsonObject.put("type", obligationElement.getType());
+                    jsonObject.put("langElement", obligationElement.getLangElement());
+                    jsonObject.put("action", obligationElement.getAction());
+                    jsonObject.put("object", obligationElement.getObject());
+                } else {
+                    jsonObject.put("type", obligationNode.getNodeType());
+                    jsonObject.put("text", obligationNode.getNodeText());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Can not build json obligation text", e);
+            return null;
         }
+
+        if (!jsonObject.getJSONArray("children").isEmpty()) {
+            for (int i = 0; i < jsonObject.getJSONArray("children").length(); i++) {
+                JSONObject contactObject = jsonObject.getJSONArray("children").getJSONObject(i);
+                buildJsonObligationText(contactObject, level + 1);
+            }
+        }
+
+        return jsonObject.toString();
     }
 }

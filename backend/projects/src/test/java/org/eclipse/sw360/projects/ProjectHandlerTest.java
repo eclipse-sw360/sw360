@@ -31,8 +31,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import com.ibm.cloud.sdk.core.service.exception.ConflictException;
-import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,130 +65,23 @@ public class ProjectHandlerTest {
         projects.get(1).addToContributors("user1");
         projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
 
-        // Retry Logic
-        int maxRetries = 5;
-        long baseRetryDelayMs = 1000;
-        long retryDelayMs = baseRetryDelayMs;
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-                break; 
-            } catch (ConflictException e) {
-                if (attempt == maxRetries) {
-                    fail("Failed to create database after " + maxRetries + 
-                         " attempts due to conflict: " + e.getMessage());
-                }
-                
-                System.out.println("Database creation conflict on attempt " + attempt + 
-                                 ", retrying in " + retryDelayMs + "ms...");
-                
-                try {
-                    Thread.sleep(retryDelayMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    fail("Setup interrupted: " + ie.getMessage());
-                }
-                retryDelayMs *= 2; 
-            } catch (Exception e) {
-                fail("Database creation failed with unexpected error: " + e.getMessage());
-            }
+        // Create the database
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+
+        // Prepare the database
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        for (Project project : projects) {
+            databaseConnector.add(project);
         }
-        DatabaseConnectorCloudant databaseConnector = null;
-        retryDelayMs = baseRetryDelayMs;
-        
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
-                
-                for (Project project : projects) {
-                    databaseConnector.add(project);
-                }
-                break; 
-            } catch (ConflictException e) {
-                if (attempt == maxRetries) {
-                    fail("Failed to initialize database connector after " + maxRetries + 
-                         " attempts due to conflict: " + e.getMessage());
-                }
-                
-                System.out.println("Database connector conflict on attempt " + attempt + 
-                                 ", retrying in " + retryDelayMs + "ms...");
-                
-                try {
-                    Thread.sleep(retryDelayMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    fail("Setup interrupted: " + ie.getMessage());
-                }
-                
-                retryDelayMs *= 2; 
-                
-            } catch (Exception e) {
-                fail("Database connector initialization failed: " + e.getMessage());
-            }
-        }
-        retryDelayMs = baseRetryDelayMs;
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName);
-                break;
-            } catch (ConflictException e) {
-                if (attempt == maxRetries) {
-                    fail("Failed to create ProjectHandler after " + maxRetries + 
-                         " attempts due to conflict: " + e.getMessage());
-                }
-                
-                System.out.println("ProjectHandler creation conflict on attempt " + attempt + 
-                                 ", retrying in " + retryDelayMs + "ms...");
-                
-                try {
-                    Thread.sleep(retryDelayMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    fail("Setup interrupted: " + ie.getMessage());
-                }
-                retryDelayMs *= 2; 
-            } catch (Exception e) {
-                fail("ProjectHandler creation failed: " + e.getMessage());
-            }
-        }
+
+        // Create the connector
+        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName);
     }
 
     @After
     public void tearDown() throws Exception {
-        if (handler != null) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        // Delete the database again with retry logic 
-        int maxRetries = 5;
-        long retryDelayMs = 500; 
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-                break;
-            } catch (ConflictException e) {
-                if (attempt == maxRetries) {
-                    System.err.println("Failed to delete database after " + maxRetries + 
-                                     " attempts, may need manual cleanup");
-                    return;
-                }
-                System.out.println("Database deletion conflict on attempt " + attempt + 
-                                 ", retrying in " + retryDelayMs + "ms...");
-                try {
-                    Thread.sleep(retryDelayMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    return; 
-                }
-                retryDelayMs = Math.min(retryDelayMs * 2, 5000);
-            } catch (Exception e) {
-                System.err.println("Database deletion failed: " + e.getMessage());
-                return;
-            }
-        }
+        // Delete the database
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test

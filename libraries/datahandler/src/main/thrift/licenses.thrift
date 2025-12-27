@@ -52,7 +52,7 @@ struct Obligation {
     1: optional string id,
     2: optional string revision,
     3: optional string type = "obligation",
-    4: optional string text,
+    4: required string text,
     5: optional set<string> whitelist,
     6: optional bool development,
     7: optional bool distribution,
@@ -70,7 +70,6 @@ struct Obligation {
     23: optional ObligationType obligationType,
     300: optional map<string, string> additionalData,
     97: optional string node,
-    98: optional list<string> textNodes,
 
 }
 
@@ -372,6 +371,11 @@ service LicenseService {
      * convert Text to Node in obligation
      **/
     string convertTextToNode(1:Obligation Obligation, 2: User user);
+
+    /**
+     * convert the Text to Node and return Obligation with the Node set
+     **/
+    Obligation getWithTextNodes(1:Obligation Obligation, 2: User user);
 
      /**
      * Search licenses by partial or full licenseType match (case-insensitive).

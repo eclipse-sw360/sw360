@@ -381,6 +381,11 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
+    public Obligation getWithTextNodes(Obligation obligation, User user) throws TException {
+        return handler.getWithTextNodes(obligation, user);
+    }
+
+    @Override
     public String updateObligation(Obligation oblig, User user) throws TException {
         return handler.updateObligation(oblig, user);
     }

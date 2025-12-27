@@ -34,6 +34,8 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
@@ -138,6 +140,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
             setMixInAnnotation(LicenseType.class, Sw360Module.LicenseTypeMixin.class);
             setMixInAnnotation(Obligation.class, Sw360Module.ObligationMixin.class);
+            setMixInAnnotation(ObligationNode.class, Sw360Module.ObligationNodeMixin.class);
             setMixInAnnotation(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
             setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
             setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
@@ -196,6 +199,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(License.class, LicenseMixin.class)
                     .replaceWithClass(LicenseType.class, Sw360Module.LicenseTypeMixin.class)
                     .replaceWithClass(Obligation.class, ObligationMixin.class)
+                    .replaceWithClass(ObligationNode.class, ObligationNodeMixin.class)
                     .replaceWithClass(Vulnerability.class, VulnerabilityMixin.class)
                     .replaceWithClass(VulnerabilityState.class, VulnerabilityStateMixin.class)
                     .replaceWithClass(ReleaseVulnerabilityRelationDTO.class, ReleaseVulnerabilityRelationDTOMixin.class)
@@ -1781,7 +1785,6 @@ public class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "id",
                 "revision",
                 "whitelistSize",
                 "whitelistIterator",
@@ -1795,7 +1798,6 @@ public class JacksonCustomizations {
                 "comments",
                 "additionalData",
                 "additionalDataSize",
-                "node",
                 "setId",
                 "setRevision",
                 "setType",
@@ -1832,6 +1834,36 @@ public class JacksonCustomizations {
                 "nodeIsSet"
         })
         static abstract class ObligationMixin extends Obligation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "revision",
+                "type",
+                "setId",
+                "setRevision",
+                "setType",
+                "setNodeType",
+                "setNodeText",
+                "setOblElementId",
+                "oblElementId",
+        })
+        static abstract class ObligationNodeMixin extends ObligationNode {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "revision",
+                "type",
+                "setId",
+                "setRevision",
+                "setLangElement",
+                "setObject",
+                "setAction",
+                "setStatus",
+                "setType",
+        })
+        static abstract class ObligationElementMixin extends ObligationElement {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -27,7 +27,9 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -46,7 +48,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -120,15 +121,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
     }
 
     private void filterObligationBasedOnSearchKey(String searchKeyWord, List<Obligation> obligations) {
-        obligations.removeIf(obligation -> {
-            boolean titleMatch = obligation.getTitle().toLowerCase().contains(searchKeyWord.toLowerCase());
-            boolean textMatch = obligation.getText() != null && 
-                               obligation.getText().toLowerCase().contains(searchKeyWord.toLowerCase());
-            boolean textNodesMatch = obligation.getTextNodes() != null && 
-                                   obligation.getTextNodes().stream()
-                                           .anyMatch(node -> node.toLowerCase().contains(searchKeyWord.toLowerCase()));
-            return !(titleMatch || textMatch || textNodesMatch);
-        });
+        obligations.removeIf(obligation ->
+                !obligation.getTitle().toLowerCase().contains(searchKeyWord.toLowerCase()) &&
+                        !obligation.getText().toLowerCase().contains(searchKeyWord.toLowerCase())
+        );
     }
 
     @Operation(
@@ -144,7 +140,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         try {
-            Obligation sw360Obligation = obligationService.getObligationById(id);
+            Obligation sw360Obligation = obligationService.getObligationById(id, sw360User);
             HalResource<Obligation> halResource = createHalObligation(sw360Obligation);
             return new ResponseEntity<>(halResource, HttpStatus.OK);
         } catch (Exception e) {
@@ -189,7 +185,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         List<MultiStatus> results = new ArrayList<>();
         for(String id : idsToDelete) {
             try {
-                Obligation obligation = obligationService.getObligationById(id);
+                Obligation obligation = obligationService.getObligationById(id, user);
                 RequestStatus requestStatus = obligationService.deleteObligation(obligation.getId(), user);
                 if(requestStatus == RequestStatus.SUCCESS) {
                     results.add(new MultiStatus(id, HttpStatus.OK));
@@ -231,7 +227,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             @RequestBody Obligation obligation
     ) throws SW360Exception {
         if (CommonUtils.isNullEmptyOrWhitespace(obligation.getTitle())
-                || (!hasValidObligationText(obligation))
+                || CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
         ) {
             log.error("Obligation title or text is empty");
             throw new BadRequestClientException("Obligation title or text is empty");
@@ -250,21 +246,37 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         }
     }
 
+    @Operation(
+            summary = "Get all Obligation Nodes of the server.",
+            description = "Get all Obligation Nodes from the server to render Obligations.",
+            tags = {"Obligations"}
+    )
+    @RequestMapping(value = OBLIGATION_URL + "/nodes", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<ObligationNode>> getObligationNodes() {
+        List<ObligationNode> obligationNodes = obligationService.getObligationNodes();
+        return new ResponseEntity<>(CollectionModel.of(obligationNodes), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get all Obligation Elements of the server.",
+            description = "Get all Obligation Elements from the server to render Obligation suggestions.",
+            tags = {"Obligations"}
+    )
+    @RequestMapping(value = OBLIGATION_URL + "/elements", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<ObligationElement>> getObligationElements() {
+        List<ObligationElement> obligationNodes = obligationService.getObligationElements();
+        return new ResponseEntity<>(CollectionModel.of(obligationNodes), HttpStatus.OK);
+    }
+
     private void checkIfObligationExists(String id) throws ResourceNotFoundException {
         try {
-            obligationService.getObligationById(id);
+            obligationService.getObligationById(id, null);
         } catch (Exception e) {
             log.error("Error getting obligation with id {}", id, e);
             throw new ResourceNotFoundException("Obligation not found");
         }
     }
-    private boolean hasValidObligationText(Obligation obligation) {
-        boolean hasText = !CommonUtils.isNullEmptyOrWhitespace(obligation.getText());
-        boolean hasTextNodes = obligation.getTextNodes() != null && 
-                              !obligation.getTextNodes().isEmpty() && 
-                              obligation.getTextNodes().stream().anyMatch(node -> !node.trim().isEmpty());
-        return hasText || hasTextNodes;
-    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ObligationController.class).slash("api" + OBLIGATION_URL).withRel("obligations"));
