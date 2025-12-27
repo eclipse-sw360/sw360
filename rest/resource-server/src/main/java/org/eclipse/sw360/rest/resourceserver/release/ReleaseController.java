@@ -1957,4 +1957,48 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 sw360User);
         return new ResponseEntity<>(requestStatus, HttpStatus.OK);
     }
+
+    @Operation(
+            summary = "Get usage information for release merge.",
+            description = "Get usage information for release merge including projects, attachment usages, releases, release vulnerabilities, and project ratings. " +
+                    "This information helps determine the impact of merging a release.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Usage information for the release.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                        {
+                                                          "projects": 5,
+                                                          "attachmentUsages": 3,
+                                                          "releases": 2,
+                                                          "releaseVulnerabilities": 1,
+                                                          "projectRatings": 4
+                                                        }
+                                                        """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404", description = "Release not found"
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Internal server error, while processing the request."
+                    )
+
+            }
+    )
+    @RequestMapping(value = RELEASES_URL + "/{id}/usageInformationForMerge", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> getUsageInformationForReleaseMerge(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String releaseId
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
+        Map<String, Integer> usageInfo = releaseService.getUsageInformationForReleaseMerge(releaseId, user);
+        Map<String, Object> result = new HashMap<>(usageInfo);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
 }
