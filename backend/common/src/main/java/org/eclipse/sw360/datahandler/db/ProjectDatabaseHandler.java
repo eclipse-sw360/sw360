@@ -336,6 +336,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return project;
     }
 
+    public Project getProjectByIdIgnoringVisibility(String id) throws SW360Exception {
+        Project project = repository.get(id);
+        assertNotNull(project);
+        return project;
+    }
+
     ////////////////////////////
     // ADD INDIVIDUAL OBJECTS //
     ////////////////////////////

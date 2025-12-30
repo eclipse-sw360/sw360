@@ -1826,10 +1826,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
 
         final String userEmail = sessionUser.getEmail();
-        Set<Project> projects = projectClient.searchByReleaseId(mergeSourceId, sessionUser);
+        Set<Project> projects = projectRepository.searchByReleaseId(mergeSourceId);
         for(Project project : projects) {
             // retrieve full document, other method only retrieves summary
-            project = projectClient.getProjectById(project.getId(), sessionUser);
+            project = projectClient.getProjectByIdIgnoringVisibility(project.getId());
             Project projectBefore=project.deepCopy();
             ProjectReleaseRelationship relationship = project.getReleaseIdToUsage().remove(mergeSourceId);
             // if the target release is also linked, keep this one, do not overwrite
@@ -1837,7 +1837,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 project.putToReleaseIdToUsage(mergeTargetId, relationship);
             }
             updateModifiedFields(project, userEmail);
-            projectClient.updateProject(project, sessionUser);
+            projectClient.updateProjectWithForceFlag(project, sessionUser, true);
 
             dbHandlerUtil.addChangeLogs(project, projectBefore, userEmail, Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
