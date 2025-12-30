@@ -238,7 +238,7 @@ public class SW360ReportService {
                 : null;
 
         List<ProjectLink> mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
-                projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, sw360User);
+                projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, true, sw360User);
 
         List<AttachmentUsage> attchmntUsg = attachmentService.getAttachemntUsages(id);
 

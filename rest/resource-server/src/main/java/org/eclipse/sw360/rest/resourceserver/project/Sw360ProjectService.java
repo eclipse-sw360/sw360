@@ -1039,6 +1039,30 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                         .collect(Collectors.toList())));
     }
 
+    public Function<ProjectLink, ProjectLink> filterAndSortAllAttachments(Collection<AttachmentType> attachmentTypes) {
+        Predicate<Attachment> filter = att -> attachmentTypes.contains(att.getAttachmentType());
+        return createProjectLinkMapper(rl -> {
+            List<Attachment> attachments = nullToEmptyList(rl.getAttachments()).stream().filter(filter)
+                    .collect(Collectors.toList());
+
+            if (attachments.size() > 1) {
+                Optional<Attachment> acceptedAttachment = attachments.stream()
+                        .filter(att -> att.getCheckStatus() == CheckStatus.ACCEPTED).findFirst();
+
+                if (acceptedAttachment.isPresent()) {
+                    attachments = List.of(acceptedAttachment.get());
+                } else {
+                    attachments = attachments.stream().filter(
+                                    att -> SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES.contains(att.getAttachmentType()))
+                            .limit(1).collect(Collectors.toList());
+                }
+            }
+
+            rl.setAttachments(attachments);
+            return rl;
+        });
+    }
+
     public Map<String, Integer> storeAttachmentUsageCount(List<ProjectLink> mappedProjectLinks, UsageData filter) throws TException {
         try {
             ThriftClients thriftClients = new ThriftClients();
@@ -1081,30 +1105,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return attachments;
     }
 
-    public Function<ProjectLink, ProjectLink> filterAndSortAllAttachments(Collection<AttachmentType> attachmentTypes) {
-        Predicate<Attachment> filter = att -> attachmentTypes.contains(att.getAttachmentType());
-        return createProjectLinkMapper(rl -> {
-            List<Attachment> attachments = nullToEmptyList(rl.getAttachments()).stream().filter(filter)
-                    .collect(Collectors.toList());
-
-            if (attachments.size() > 1) {
-                Optional<Attachment> acceptedAttachment = attachments.stream()
-                        .filter(att -> att.getCheckStatus() == CheckStatus.ACCEPTED).findFirst();
-
-                if (acceptedAttachment.isPresent()) {
-                    attachments = List.of(acceptedAttachment.get());
-                } else {
-                    attachments = attachments.stream().filter(
-                            att -> SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES.contains(att.getAttachmentType()))
-                            .limit(1).collect(Collectors.toList());
-                }
-            }
-
-            rl.setAttachments(attachments);
-            return rl;
-        });
-    }
-
     public Function<ProjectLink, ProjectLink> createProjectLinkMapper(
             Function<ReleaseLink, ReleaseLink> releaseLinkMapper) {
         return (projectLink) -> {
@@ -1116,9 +1116,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public List<ProjectLink> createLinkedProjects(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper,
-            boolean deep, User user) {
-        final Collection<ProjectLink> linkedProjects = SW360Utils
-                .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
+            boolean deep, boolean includeSubprojects, User user) {
+        ProjectLink parentProjectLink;
+        final Collection<ProjectLink> linkedProjects;
+        if(includeSubprojects) {
+            linkedProjects = SW360Utils.flattenProjectLinkTree(SW360Utils.
+                    getLinkedProjects(project, deep, new ThriftClients(), log, user));
+        }
+        else {
+            parentProjectLink = new ProjectLink(project.getId(), project.getName());
+            parentProjectLink.setLinkedReleases(SW360Utils.getLinkedReleasesWithAccessibility(project, new ThriftClients(), log, user));
+            linkedProjects = Collections.singletonList(parentProjectLink);
+        }
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
 
@@ -1551,7 +1560,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             Set<ProjectRelationship> listOfSelectedProjectRelationships, Set<Attachment> selectedAttachments, User user,
             Project project) {
         List<ProjectLink> filteredMappedProjectLinks = createLinkedProjects(project,
-                link -> filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES).apply(link), true, user);
+                link -> filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES).apply(link), true, true, user);
         Set<String> filteredProjectIds = filteredProjectIds(filteredMappedProjectLinks);
         Set<String> selectedAttachmentIdsWithPath = new HashSet<>();
 
