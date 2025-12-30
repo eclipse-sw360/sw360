@@ -2,7 +2,7 @@
  * Copyright Siemens AG, 2017-2019.
  * Copyright Bosch Software Innovations GmbH, 2017-2018.
  * Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -62,6 +62,8 @@ import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.eclipse.sw360.rest.resourceserver.filesearch.Sw360FileSearchService;
+import org.eclipse.sw360.datahandler.common.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -139,6 +141,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
+
+    @Autowired
+    private Sw360FileSearchService fileSearchService;
 
     @Operation(
             summary = "List all of the service's components.",
@@ -1336,5 +1341,87 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             }
             return true;
         };
+    }
+
+    @Operation(
+            summary = "Search files in component releases.",
+            description = "Search for files within all releases of a component using FOSSology file search capabilities.",
+            tags = {"Components", "File Search"}
+    )
+    @PostMapping(value = COMPONENTS_URL + "/{componentId}/filesearch")
+    @ApiResponse(
+            responseCode = "200", 
+            description = "File search results",
+            content = @Content(mediaType = "application/json")
+    )
+    public ResponseEntity<List<FileSearchResult>> searchFilesInComponent(
+            @Parameter(description = "The ID of the component.")
+            @PathVariable("componentId") String componentId,
+            @Parameter(description = "List of SHA1 checksums to search for")
+            @RequestBody List<String> sha1Values
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Component component = componentService.getComponentForUserById(componentId, user);
+        
+        Map<String, List<FileSearchResult>> results = fileSearchService.searchFilesBySha1(sha1Values, user);
+        
+        // Filter results to only include files from this component's releases
+        List<FileSearchResult> componentResults = results.values().stream()
+                .flatMap(List::stream)
+                .filter(result -> isFileFromComponent(result, component))
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(componentResults);
+    }
+
+    /**
+     * Helper method to check if a file search result belongs to the given component
+     */
+    private boolean isFileFromComponent(FileSearchResult result, Component component) {
+        if (result == null || component == null) {
+            return false;
+        }
+        
+        int uploadId = result.getUploadId();
+        if (uploadId <= 0) {
+            return false;
+        }
+        
+        // Check if the upload ID matches any external tool process in the component's releases
+        try {
+            User user = restControllerHelper.getSw360UserFromAuthentication();
+            
+            // Get all releases for this component
+            if (component.getReleaseIds() != null && !component.getReleaseIds().isEmpty()) {
+                for (String releaseId : component.getReleaseIds()) {
+                    try {
+                        Release release = releaseService.getReleaseForUserById(releaseId, user);
+                        
+                        // Check if this release has a FOSSology external tool process with matching upload ID
+                        if (release.getExternalToolProcesses() != null) {
+                            for (org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess process : release.getExternalToolProcesses()) {
+                                if (org.eclipse.sw360.datahandler.thrift.components.ExternalTool.FOSSOLOGY.equals(process.getExternalTool())) {
+                                    // Check if any process step has the matching upload ID as result
+                                    if (process.getProcessSteps() != null) {
+                                        for (org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep step : process.getProcessSteps()) {
+                                            if (step.getResult() != null && step.getResult().equals(String.valueOf(uploadId))) {
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Log and continue to next release if there's an issue accessing one release
+                        log.warn("Could not check release {} for upload ID {}: {}", releaseId, uploadId, e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error checking if file belongs to component {}: {}", component.getId(), e.getMessage());
+        }
+        
+        return false;
     }
 }

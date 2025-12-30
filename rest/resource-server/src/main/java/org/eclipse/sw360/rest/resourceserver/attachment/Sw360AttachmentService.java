@@ -2,7 +2,7 @@
  * Copyright Siemens AG, 2017-2018.
  * Copyright Bosch Software Innovations GmbH, 2017.
  * Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -95,12 +95,20 @@ public class Sw360AttachmentService {
     }
 
     public AttachmentInfo getAttachmentById(String id) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
-        if (attachments.isEmpty()) {
-            throw new ResourceNotFoundException("Attachment not found.");
+        try {
+            AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+            List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
+            if (attachments.isEmpty()) {
+                throw new ResourceNotFoundException("Attachment not found with ID: " + id);
+            }
+            return createAttachmentInfo(attachmentClient, attachments.get(0));
+        } catch (TException e) {
+            log.error("Error retrieving attachment by ID {}: {}", id, e.getMessage(), e);
+            throw new TException("Failed to retrieve attachment: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving attachment by ID {}: {}", id, e.getMessage(), e);
+            throw new TException("Internal error processing getAttachmentsByIds: " + e.getMessage());
         }
-        return createAttachmentInfo(attachmentClient, attachments.get(0));
     }
 
     public List<AttachmentUsage> getAttachmentUseById(String id) throws TException {
@@ -109,9 +117,68 @@ public class Sw360AttachmentService {
     }
 
     public List<AttachmentInfo> getAttachmentsBySha1(String sha1) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(Collections.singleton(sha1));
-        return createAttachmentInfos(attachmentClient, attachments);
+        try {
+            if (sha1 == null || sha1.trim().isEmpty()) {
+                log.warn("Empty or null SHA1 provided");
+                return Collections.emptyList();
+            }
+            
+            AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+            List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(Collections.singleton(sha1.trim()));
+            return createAttachmentInfos(attachmentClient, attachments != null ? attachments : Collections.emptyList());
+        } catch (TException e) {
+            log.error("Error retrieving attachments by SHA1 {}: {}", sha1, e.getMessage(), e);
+            throw new TException("Failed to retrieve attachments by SHA1: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving attachments by SHA1 {}: {}", sha1, e.getMessage(), e);
+            throw new TException("Internal error processing getAttachmentsBySha1s: " + e.getMessage());
+        }
+    }
+
+    public Map<String, List<AttachmentInfo>> getAttachmentsBySha1s(Collection<String> sha1s) throws TException {
+        try {
+            if (sha1s == null || sha1s.isEmpty()) {
+                log.warn("Empty or null SHA1 collection provided");
+                return Collections.emptyMap();
+            }
+            
+            // Filter out null/empty SHA1s
+            Set<String> validSha1s = sha1s.stream()
+                    .filter(sha1 -> sha1 != null && !sha1.trim().isEmpty())
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+                    
+            if (validSha1s.isEmpty()) {
+                log.warn("No valid SHA1s provided after filtering");
+                return Collections.emptyMap();
+            }
+            
+            AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+            List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(validSha1s);
+            
+            // Group attachments by SHA1
+            Map<String, List<AttachmentInfo>> result = new HashMap<>();
+            for (String sha1 : validSha1s) {
+                result.put(sha1, new ArrayList<>());
+            }
+            
+            if (attachments != null) {
+                for (Attachment attachment : attachments) {
+                    String sha1 = attachment.getSha1();
+                    if (sha1 != null && result.containsKey(sha1)) {
+                        result.get(sha1).add(createAttachmentInfo(attachmentClient, attachment));
+                    }
+                }
+            }
+            
+            return result;
+        } catch (TException e) {
+            log.error("Error retrieving attachments by SHA1s {}: {}", sha1s, e.getMessage(), e);
+            throw new TException("Failed to retrieve attachments by SHA1s: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving attachments by SHA1s {}: {}", sha1s, e.getMessage(), e);
+            throw new TException("Internal error processing getAttachmentsBySha1s: " + e.getMessage());
+        }
     }
 
     /**
@@ -233,7 +300,9 @@ public class Sw360AttachmentService {
 
         final AttachmentConnector attachmentConnector = getConnector();
         Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
-        attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
+        
+        // Compute all checksums for the uploaded attachment
+        attachmentConnector.setAllChecksumsForAttachment(attachment);
 
         AttachmentType attachmentType = newAttachment.getAttachmentType();
         if (attachmentType != null) {
@@ -271,7 +340,9 @@ public class Sw360AttachmentService {
         final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
         final AttachmentConnector attachmentConnector = getConnector();
         Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
-        attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
+        
+        // Compute all checksums for the uploaded attachment
+        attachmentConnector.setAllChecksumsForAttachment(attachment);
 
         return attachment;
     }
@@ -596,5 +667,21 @@ public class Sw360AttachmentService {
             log.error("Error reading file", e);
             return false;
         }
+    }
+
+    /**
+     * Validate attachment checksums against stored values
+     */
+    public boolean validateAttachmentChecksums(Attachment attachment) throws SW360Exception {
+        final AttachmentConnector attachmentConnector = getConnector();
+        return attachmentConnector.validateAttachmentChecksums(attachment);
+    }
+
+    /**
+     * Recompute and update all checksums for an attachment
+     */
+    public void recomputeAttachmentChecksums(Attachment attachment) throws SW360Exception {
+        final AttachmentConnector attachmentConnector = getConnector();
+        attachmentConnector.setAllChecksumsForAttachment(attachment);
     }
 }

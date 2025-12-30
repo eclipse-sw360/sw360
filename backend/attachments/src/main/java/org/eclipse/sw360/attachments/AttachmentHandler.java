@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
- *
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com>, 2025. Part of the SW360 Portal Project.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -258,5 +258,39 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotEmpty(attachmentContentId);
         assertNotNull(attachmentContentId);
         return handler.getAttachmentContentById(attachmentContentId);
+    }
+
+    @Override
+    public List<Attachment> getAttachmentsByChecksum(String checksum, String checksumType) throws TException {
+        assertNotEmpty(checksum);
+        assertNotEmpty(checksumType);
+        return handler.getAttachmentsByChecksum(checksum, checksumType);
+    }
+
+    @Override
+    public List<Attachment> getAttachmentsByFossologyUploadId(String fossologyUploadId) throws TException {
+        assertNotEmpty(fossologyUploadId);
+        return handler.getAttachmentsByFossologyUploadId(fossologyUploadId);
+    }
+
+    @Override
+    public String getFossologyUploadIdByChecksum(String checksum, String checksumType) throws TException {
+        assertNotEmpty(checksum);
+        assertNotEmpty(checksumType);
+        return handler.getFossologyUploadIdByChecksum(checksum, checksumType);
+    }
+
+    @Override
+    public Map<String, String> getChecksumsByFossologyUploadId(String fossologyUploadId) throws TException {
+        assertNotEmpty(fossologyUploadId);
+        return handler.getChecksumsByFossologyUploadId(fossologyUploadId);
+    }
+
+    @Override
+    public void mapChecksumToFossologyUploadId(String checksum, String checksumType, String fossologyUploadId) throws TException {
+        assertNotEmpty(checksum);
+        assertNotEmpty(checksumType);
+        assertNotEmpty(fossologyUploadId);
+        handler.mapChecksumToFossologyUploadId(checksum, checksumType, fossologyUploadId);
     }
 }

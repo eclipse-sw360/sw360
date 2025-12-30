@@ -43,6 +43,12 @@ public class FossologyRestConfig {
 
     // v2 API specific configuration keys
     public static final String CONFIG_KEY_DEFAULT_GROUP = "fossology.defaultGroup";
+    
+    // File search specific configuration keys
+    public static final String CONFIG_KEY_FILE_SEARCH_MAX_RESULTS = "fossology.fileSearch.maxResults";
+    public static final String CONFIG_KEY_FILE_SEARCH_TIMEOUT = "fossology.fileSearch.timeout";
+    public static final String CONFIG_KEY_FILE_SEARCH_CACHE_TTL = "fossology.fileSearch.cacheTtl";
+    public static final String CONFIG_KEY_FILE_SEARCH_ENABLED = "fossology.fileSearch.enabled";
 
     private final ConfigContainerRepository repository;
 
@@ -106,6 +112,35 @@ public class FossologyRestConfig {
      */
     public String getDefaultGroup() {
         return getFirstValue(CONFIG_KEY_DEFAULT_GROUP);
+    }
+
+    /**
+     * Get maximum number of results for file search operations
+     */
+    public String getFileSearchMaxResults() {
+        return getFirstValue(CONFIG_KEY_FILE_SEARCH_MAX_RESULTS);
+    }
+
+    /**
+     * Get timeout for file search operations
+     */
+    public String getFileSearchTimeout() {
+        return getFirstValue(CONFIG_KEY_FILE_SEARCH_TIMEOUT);
+    }
+
+    /**
+     * Get cache TTL for file search results
+     */
+    public String getFileSearchCacheTtl() {
+        return getFirstValue(CONFIG_KEY_FILE_SEARCH_CACHE_TTL);
+    }
+
+    /**
+     * Check if file search is enabled
+     */
+    public boolean isFileSearchEnabled() {
+        String enabled = getFirstValue(CONFIG_KEY_FILE_SEARCH_ENABLED);
+        return enabled == null || "true".equalsIgnoreCase(enabled);
     }
 
     private String getFirstValue(String key) {
