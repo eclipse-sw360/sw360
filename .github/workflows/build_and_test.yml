@@ -46,6 +46,11 @@ jobs:
         env:
           COUCHDB_USER: ${{ env.COUCHDB_USER }}
           COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+      couchdb-nouveau:
+        image: couchdb:3-nouveau
+        ports:
+          - 5987:5987
+          - 5988:5988
 
     steps:
       - name: Harden Runner
@@ -55,6 +60,11 @@ jobs:
 
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - uses: webiny/action-conventional-commits@8bc41ff4e7d423d56fa4905f6ff79209a78776c7 # v1.3.0
+
+      - name: Configure CouchDB for Nouveau communications
+        run: |
+          docker cp "${{ github.workspace }}/config/couchdb/nouveau.ini" "${{ job.services.couchdb.id }}":/opt/couchdb/etc/local.d/nouveau.ini
+          docker restart "${{ job.services.couchdb.id }}"
 
       - name: Verify license headers
         run: |
