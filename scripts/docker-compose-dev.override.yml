@@ -1,0 +1,4 @@
+services:
+  sw360:
+    volumes:
+      - ./tmp/webapps:/opt/tomcat/webapps

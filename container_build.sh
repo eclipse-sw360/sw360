@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # -----------------------------------------------------------------------------
 # Copyright BMW CarIT GmbH 2021
@@ -14,12 +14,17 @@
 # (execution of docker run cmd) starts couchdb and tomcat.
 # -----------------------------------------------------------------------------
 
-# Parse command-line arguments
+PODMAN_BUILD=""
+
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --cvesearch-host)
             shift
             cvesearch_host="$1"
+        ;;
+        --podman)
+            shift
+            PODMAN_BUILD="podman build"
         ;;
         *)
             other_args+=("$1")  # store other arguments
@@ -42,41 +47,18 @@ set -- "${other_args[@]}"  # restore other arguments
 
 set -e -o pipefail
 
-DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-ghcr.io/eclipse-sw360}"
+CONTAINER_BUILD="${PODMAN_BUILD:-docker buildx build}"
+CONTAINER_IMAGE_ROOT="${CONTAINER_IMAGE_ROOT:-ghcr.io/eclipse-sw360}"
 SECRETS=${SECRETS:-"$PWD/config/couchdb/default_secrets"}
 VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 GIT_REV=$(git rev-parse --short=8 HEAD)
 SW360_VERSION="$VERSION-$GIT_REV"
-export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SECRETS SW360_VERSION
 
-echo "Building docker image for SW360 ${SW360_VERSION}"
+echo "Building container image for SW360 ${SW360_VERSION} using ${CONTAINER_BUILD}."
 
-# ---------------------------
-# image_build function
-# Usage ( position paramenters):
-# image_build <target_name> <tag_name> <version> <extra_args...>
-
-image_build() {
-    local target
-    local name
-    local version
-    target="$1"
-    shift
-    name="$1"
-    shift
-    version="$1"
-    shift
-
-    docker buildx build \
-    --target "$target" \
-    --tag "${DOCKER_IMAGE_ROOT}/$name:$version" \
-    --tag "${DOCKER_IMAGE_ROOT}/$name:latest" \
-    --load \
+${CONTAINER_BUILD} \
+    --target sw360 \
+    --secret id=couchdb,src="$SECRETS" \
+    --tag "${CONTAINER_IMAGE_ROOT}/sw360:${SW360_VERSION}" \
+    --tag "${CONTAINER_IMAGE_ROOT}/sw360:latest" \
     "$@" .
-}
-
-image_build binaries sw360/binaries "$SW360_VERSION" \
---secret id=couchdb,src="$SECRETS"
-
-image_build sw360 sw360 "$SW360_VERSION" \
---build-context "binaries=docker-image://${DOCKER_IMAGE_ROOT}/sw360/binaries:latest" "$@"

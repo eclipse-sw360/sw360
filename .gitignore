@@ -72,3 +72,4 @@ scripts/docker-config/etc_sw360/couchdb-test.properties
 scripts/docker-config/etc_sw360/couchdb.properties
 **/*.versionsBackup
 output
+sw360-webapps

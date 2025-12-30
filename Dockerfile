@@ -23,8 +23,6 @@ ARG COUCHDB_HOST=localhost
 
 WORKDIR /build
 
-SHELL ["/bin/bash", "-c"]
-
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
@@ -33,39 +31,47 @@ RUN apt-get update -qq \
     unzip \
     zip
 
+# Copy external built and Check if thrift is installed
+COPY --from=ghcr.io/eclipse-sw360/thrift:0.20.0-noble /usr/local/bin/thrift /usr/bin
+RUN /usr/bin/thrift --version
+
+
+COPY . /build/sw360
+WORKDIR /build/sw360
+
 # Prepare maven from binary to avoid wrong java dependencies and proxy
-COPY scripts/docker-config/mvn-proxy-settings.xml /etc
-COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
+COPY config/container/mvn-proxy-settings.xml /etc
+COPY config/container/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
-COPY --from=ghcr.io/eclipse-sw360/thrift:0.20.0-noble /usr/local/bin/thrift /usr/bin
-
-# Check if thrift is installed
-RUN /usr/bin/thrift --version
-
-WORKDIR /build/sw360
-
-RUN --mount=type=bind,target=/build/sw360,rw \
-    --mount=type=cache,target=/root/.m2 \
-    --mount=type=secret,id=couchdb \
+# Configure credentials
+RUN --mount=type=secret,id=couchdb \
     set -a \
-    && source /run/secrets/couchdb \
-    && envsubst < scripts/docker-config/couchdb.properties.template | tee scripts/docker-config/etc_sw360/couchdb.properties \
+    && . /run/secrets/couchdb \
     && set +a \
-    && cp scripts/docker-config/etc_sw360/couchdb.properties build-configuration/resources/ \
-    && cp -a scripts/docker-config/etc_sw360 /etc/sw360 \
+    && cp -a config/container/etc_sw360 /etc/sw360 \
+    && envsubst \
+    '$COUCHDB_USER $COUCHDB_PASSWORD $COUCHDB_HOST' \
+    < config/couchdb/couchdb.properties.template \
+    > /etc/sw360/couchdb.properties \
     && mkdir /etc/sw360/manager \
-    && envsubst < scripts/docker-config/manager/tomcat-users.xml | tee /etc/sw360/manager/tomcat-users.xml \
-    && mvn clean package \
+    && envsubst \
+    '$COUCHDB_USER $COUCHDB_PASSWORD $COUCHDB_HOST' \
+    < config/container/manager/tomcat-users.xml \
+    > /etc/sw360/manager/tomcat-users.xml
+
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn clean package \
     -P deploy \
     -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -Dsurefire.failIfNoSpecifiedTests=false \
-    -Djars.deploy.dir=/sw360_deploy \
+    -Djars.deploy.dir=/sw360_tomcat_webapps \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
+
 
 # Generate slim war files
 WORKDIR /sw360_tomcat_webapps/
@@ -74,10 +80,7 @@ COPY scripts/create-slim-war-files.sh /bin/slim.sh
 
 RUN bash /bin/slim.sh
 
-FROM scratch AS binaries
-COPY --from=sw360build /etc/sw360 /etc/sw360
-COPY --from=sw360build /sw360_deploy /sw360_deploy
-COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
+RUN find /sw360_tomcat_webapps
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
@@ -88,18 +91,15 @@ FROM tomcat@sha256:ba0d8041e7c6d51bb8f82949ee77c1fdc8b01df8a8ff311e2f7c0e516105e
 ARG TOMCAT_DIR=/usr/local/tomcat
 
 # Modified etc
-COPY --from=binaries /etc/sw360 /etc/sw360
-# Streamlined wars
-COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${TOMCAT_DIR}/webapps/
+COPY --from=sw360build /etc/sw360 /etc/sw360
 # org.eclipse.sw360 jar artifacts
-COPY --from=binaries /sw360_tomcat_webapps/*.jar ${TOMCAT_DIR}/webapps/
-# Shared streamlined jar libs
-COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${TOMCAT_DIR}/lib/
+COPY --from=sw360build /sw360_tomcat_webapps/libs/*.jar ${TOMCAT_DIR}/lib/
+# Streamlined wars
+COPY --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war ${TOMCAT_DIR}/webapps/
 
 # Tomcat manager for debugging portlets
-RUN --mount=type=bind,target=/build/sw360,rw \
-    mv ${TOMCAT_DIR}/webapps.dist/manager ${TOMCAT_DIR}/webapps/manager \
-    && cp /etc/sw360/manager/tomcat-users.xml ${TOMCAT_DIR}/conf/tomcat-users.xml \
-    && cp /build/sw360/scripts/docker-config/manager/context.xml ${TOMCAT_DIR}/webapps/manager/META-INF/context.xml
+RUN mv ${TOMCAT_DIR}/webapps.dist/manager ${TOMCAT_DIR}/webapps/manager
+COPY --from=sw360build /etc/sw360/manager/tomcat-users.xml ${TOMCAT_DIR}/conf/tomcat-users.xml
+COPY --from=sw360build /build/sw360/config/container/manager/context.xml ${TOMCAT_DIR}/webapps/manager/META-INF/context.xml
 
 WORKDIR ${TOMCAT_DIR}

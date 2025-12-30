@@ -1,4 +1,5 @@
 # Copyright BMW CarIT GmbH, 2021.
+# Copyright Helio Chissini de Castro, 2025
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -8,25 +9,25 @@
 
 services:
   sw360:
-    image: "${SW360_IMAGE:-ghcr.io/eclipse-sw360/sw360}:${SW360_VERSION:-latest}"
+    image: '${SW360_IMAGE:-ghcr.io/eclipse-sw360/sw360}:${SW360_VERSION:-latest}'
     restart: unless-stopped
     container_name: sw360
     depends_on:
       - couchdb
     ports:
-      - "8080:8080"
-      - "11311:11311"
+      - '8080:8080'
+      - '11311:11311'
     stdin_open: true
     tty: true
     volumes:
       - etc:/etc/sw360
-      - ./config/sw360:/app/sw360/config
+      - ./config/container:/app/sw360/config
 
   couchdb-nouveau:
     image: couchdb:3.4-nouveau
     ports:
-      - "5987:5987"
-      - "5988:5988"
+      - '5987:5987'
+      - '5988:5988'
 
   couchdb:
     image: couchdb:3.4
@@ -34,7 +35,7 @@ services:
     environment:
       - COUCHDB_CREATE_DATABASE=yes
     ports:
-      - "5984:5984"
+      - '5984:5984'
     depends_on:
       - couchdb-nouveau
     volumes:
@@ -43,7 +44,7 @@ services:
       - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini
       - ./config/couchdb/nouveau.ini:/opt/couchdb/etc/local.d/nouveau.ini
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
+      test: ['CMD-SHELL', 'curl --fail -s http://couchdb:5984/_up']
       interval: 30s
       timeout: 5s
       retries: 5
