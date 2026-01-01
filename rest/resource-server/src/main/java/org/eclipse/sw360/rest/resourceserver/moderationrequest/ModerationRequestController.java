@@ -174,7 +174,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
 
     @Operation(
             summary = "Get moderation based on state.",
-            description = "List all the ModerationRequest visible to the user based on the state.",
+            description = "List all the ModerationRequest visible to the user based on the state and  respond with MR where user is a moderator",
             tags = {"Moderation Requests"}
     )
     @RequestMapping(value = MODERATION_REQUEST_URL + "/byState", method = RequestMethod.GET)
