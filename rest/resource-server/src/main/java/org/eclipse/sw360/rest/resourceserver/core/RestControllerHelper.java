@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.rest.resourceserver.core;
 
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
