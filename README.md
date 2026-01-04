@@ -71,12 +71,28 @@ requirements
   * Python environment ( to [pre-commit](https://pre-commit.com/) ) - SW360 use Eclipse formatting rules
   through [Spotless maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven)
 
-If you can't install thrift 0.20 runtime, you will need the following requirements:
+If you can't install the Thrift 0.20 runtime, you will need the following requirements:
+C++ development environment
+cmake
+Then run the current build script.
 
-* C++ dev environment
-* cmake
-Then run the current build script:
+Note for Windows users:
+If you are developing on Windows, shell scripts (*.sh) such as
+scripts/install-thrift.sh must be executed inside a Linux environment
+(for example, Ubuntu via WSL).
 
+These scripts will NOT run in PowerShell or Windows Command Prompt.
+
+Steps:
+Install and open Ubuntu using WSL
+Navigate to the project directory inside WSL
+Run the script using bash
+
+Example:
+
+bash scripts/install-thrift.sh
+
+For non-Windows environments:
 ```bash
 ./scripts/install-thrift.sh
 ```
@@ -96,9 +112,10 @@ pre-commit install
 
 ```bash
 mvn package -P deploy \
+    -Dbase.deploy.dir=deploy \
     -Dhelp-docs=false \
     -DskipTests \
-    -Djars.deploy.dir=deploy \
+    -Djars.deploy.dir=jars \
     -Drest.deploy.dir=webapps \
     -Dbackend.deploy.dir=webapps
 ```
