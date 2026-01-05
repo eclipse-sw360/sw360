@@ -292,8 +292,7 @@ public class Sw360LicenseService {
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            RequestSummary osdlLicenseStatus = sw360LicenseClient.importAllOSADLLicenses(sw360User);
-            return osdlLicenseStatus;
+            return sw360LicenseClient.importAllOSADLLicenses(sw360User);
         } else {
             throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
         }

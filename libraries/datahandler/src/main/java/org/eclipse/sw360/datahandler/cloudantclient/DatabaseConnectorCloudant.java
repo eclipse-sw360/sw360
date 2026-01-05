@@ -19,8 +19,10 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.*;
+import com.ibm.cloud.sdk.core.service.exception.ConflictException;
 import com.ibm.cloud.sdk.core.service.exception.NotFoundException;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
+import com.ibm.cloud.sdk.core.service.exception.TooManyRequestsException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
@@ -39,6 +41,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -113,7 +116,17 @@ public class DatabaseConnectorCloudant {
                     .document(doc)
                     .build();
 
-            resp = this.instance.getClient().putDocument(putDocumentOption).execute().getResult();
+            try {
+                resp = this.instance.getClient().putDocument(putDocumentOption).execute().getResult();
+            } catch (ConflictException | TooManyRequestsException e) {
+                // Retry one more time with a backoff 100 ms sleep. Then rethrow the exception
+                try {
+                    Thread.sleep(Duration.ofMillis(100));
+                    resp = this.instance.getClient().putDocument(putDocumentOption).execute().getResult();
+                } catch (InterruptedException ex) {
+                    throw e;
+                }
+            }
         }
         return resp;
     }
@@ -212,7 +225,18 @@ public class DatabaseConnectorCloudant {
                     .includeDocs(true)
                     .build();
 
-            ViewResult response = this.instance.getClient().postView(viewOptions).execute().getResult();
+            ViewResult response;
+            try {
+                response = this.instance.getClient().postView(viewOptions).execute().getResult();
+            } catch (ConflictException | TooManyRequestsException e) {
+                // Retry one more time with a backoff 100 ms sleep. Then rethrow the exception
+                try {
+                    Thread.sleep(Duration.ofMillis(100));
+                    response = this.instance.getClient().postView(viewOptions).execute().getResult();
+                } catch (InterruptedException ex) {
+                    throw e;
+                }
+            }
             List<ViewResultRow> rows = response.getRows();
 
             list = rows.stream().map(r -> this.getPojoFromDocument(r.getDoc(), type)).collect(Collectors.toList());
@@ -547,7 +571,18 @@ public class DatabaseConnectorCloudant {
                     .document(document)
                     .build();
 
-            DocumentResult createResp = this.instance.getClient().postDocument(postDocOption).execute().getResult();
+            DocumentResult createResp;
+            try {
+                createResp = this.instance.getClient().postDocument(postDocOption).execute().getResult();
+            } catch (ConflictException | TooManyRequestsException e) {
+                // Retry one more time with a backoff 100 ms sleep. Then rethrow the exception
+                try {
+                    Thread.sleep(Duration.ofMillis(100));
+                    createResp = this.instance.getClient().postDocument(postDocOption).execute().getResult();
+                } catch (InterruptedException ex) {
+                    throw e;
+                }
+            }
             InputStream in = new ByteArrayInputStream(content.getFilename()
                     .getBytes(StandardCharsets.UTF_8));
             createAttachment(createResp.getId(), content.getFilename(), in, content.getContentType());
@@ -769,7 +804,10 @@ public class DatabaseConnectorCloudant {
         return doc;
     }
 
-    public <T> T getPojoFromDocument(@NotNull Document document, Class<T> type) {
+    public <T> T getPojoFromDocument(Document document, Class<T> type) {
+        if (document == null) {
+            return null;
+        }
         T doc = null;
         try {
             if (type.getSimpleName().equals("OAuthClientEntity"))  {

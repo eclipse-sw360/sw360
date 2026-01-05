@@ -35,7 +35,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
  * @author alex.borodin@evosoft.com
  */
 public class ComponentCSVRecord extends ComponentAwareCSVRecord {
-//    private final String componentName;
     private final String componentDescription;
     private final String componentCreatedOn;
     private final String componentType;
@@ -49,9 +48,6 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
     private final String componentBlog;
     private final String componentWikipedia;
     private final String componentOpenHub;
-// TODO get rid of these picknick left overs (see also below)
-//    private final String releaseName;
-//    private final String releaseVersion;
     private final String releaseDate;
     private final String CPEId;
     private final String releaseCreatedOn;
@@ -125,11 +121,7 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
                        Integer cICountOfSecurityVn, String eccStatus, String eccAL, String eccECCN,
                        String eccMaterialIndexNumber, String eccComment, String eccAssessorContactPerson,
                        String eccAssessorDepartment, String eccAssessmentDate) {
-//        this.componentName = componentName;
-//        this.releaseName = releaseName;
-//        this.releaseVersion = releaseVersion;
-
-        super(componentName,releaseName,releaseVersion);
+        super(componentName, releaseName, releaseVersion);
 
         this.componentDescription = componentDescription;
         this.componentCreatedOn = componentCreatedOn;

@@ -433,7 +433,7 @@ public class DatabaseRepositoryCloudantClient<T> {
     public @NotNull List<T> getPojoFromViewResponse(@NotNull ViewResult response) {
         return response.getRows().stream()
                 .map(r -> connector.getPojoFromDocument(r.getDoc(), type))
-                .toList();
+                .collect(Collectors.toList()); // Simple .toList() is immutable
     }
 
     public List<Source> queryViewForSource(PostViewOptions req) {

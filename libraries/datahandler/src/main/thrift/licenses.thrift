@@ -372,6 +372,11 @@ service LicenseService {
      **/
     string convertTextToNode(1:Obligation Obligation, 2: User user);
 
+    /**
+     * convert the Text to Node and return Obligation with the Node set
+     **/
+    Obligation getWithTextNodes(1:Obligation Obligation, 2: User user);
+
      /**
      * Search licenses by partial or full licenseType match (case-insensitive).
      */

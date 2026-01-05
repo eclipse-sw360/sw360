@@ -82,14 +82,15 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
         obligationList.add(obligation2);
 
         given(this.obligationServiceMock.getObligations()).willReturn(obligationList);
-        given(this.obligationServiceMock.getObligationById(eq(obligation.getId()))).willReturn(obligation);
+        given(this.obligationServiceMock.getObligationById(eq(obligation.getId()), any())).willReturn(obligation);
         given(this.obligationServiceMock.deleteObligation(eq(obligation.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
 
         when(this.obligationServiceMock.createObligation(any(), any())).then(invocation ->
-        new Obligation("This is the text of my Test Obligation")
+        new Obligation()
                 .setId("1234567890")
+                .setText("This is the text of my Test Obligation")
                 .setTitle("Test Obligation")
                 .setObligationLevel(ObligationLevel.LICENSE_OBLIGATION)
                 .setObligationType(ObligationType.PERMISSION));
@@ -137,6 +138,7 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-obligations, Obligations resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("ID of the Obligation"),
                                 fieldWithPath("title").description("The title of the obligation"),
                                 fieldWithPath("text").description("The text of the obligation"),
                                 fieldWithPath("obligationLevel").description("The level of the obligation: [ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, COMPONENT_OBLIGATION, LICENSE_OBLIGATION]"),
@@ -167,6 +169,7 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("obligationType").description("The type of the obligation: [RESTRICTION, OBLIGATION, PERMISSION, EXCEPTION, RISK]")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("ID of the Obligation"),
                                 fieldWithPath("title").description("The title of the obligation"),
                                 fieldWithPath("text").description("The text of the obligation"),
                                 fieldWithPath("obligationLevel").description("The level of the obligation: [COMPONENT_OBLIGATION, ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, LICENSE_OBLIGATION]"),

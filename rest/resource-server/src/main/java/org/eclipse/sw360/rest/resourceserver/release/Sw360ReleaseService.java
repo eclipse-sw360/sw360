@@ -36,8 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -54,6 +53,9 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -74,7 +76,6 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 
 import com.google.common.collect.Sets;
@@ -95,6 +96,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
 
 @Service
@@ -1613,4 +1616,32 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
+
+    /**
+     * Get usage information for release merge
+     */
+    public Map<String, Integer> getUsageInformationForReleaseMerge(String releaseSourceId, User sessionUser) throws TException {
+        Map<String, Integer> usageInformation = new HashMap<>();
+        ThriftClients thriftClients = new ThriftClients();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
+        usageInformation.put("projects", projects.size());
+
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        List<AttachmentUsage> attachmentUsages = attachmentClient.getAttachmentUsagesByReleaseId(releaseSourceId);
+        usageInformation.put("attachmentUsages", attachmentUsages.size());
+
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        List<Release> releases = componentClient.getReferencingReleases(releaseSourceId);
+        usageInformation.put("releases", releases.size());
+
+        VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
+        List<ReleaseVulnerabilityRelation> releaseVulnerabilities = vulnerabilityClient.getReleaseVulnerabilityRelationsByReleaseId(releaseSourceId, sessionUser);
+        usageInformation.put("releaseVulnerabilities", releaseVulnerabilities.size());
+        List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
+        usageInformation.put("projectRatings", projectRatings.size());
+
+        return usageInformation;
+    }
+
 }

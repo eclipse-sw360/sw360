@@ -371,24 +371,31 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Component getComponent(String id, User user) throws SW360Exception {
-        Component component = componentRepository.get(id);
+        try {
+            Component component = componentRepository.get(id);
 
-        if (component == null) {
-            throw fail(404, "Could not fetch component from database! id=" + id);
+            if (component == null) {
+                log.error("Component not found in database. Component ID: {}", id);
+                throw fail(404, "Could not fetch component from database! id=" + id);
+            }
+
+            component.setReleases(releaseRepository.makeSummaryWithPermissions(SummaryType.SUMMARY, component.releaseIds, user));
+            component.unsetReleaseIds();
+
+            setMainLicenses(component);
+
+            vendorRepository.fillVendor(component);
+
+            makePermission(component, user).fillPermissions();
+
+            return component;
+        } catch (SW360Exception e) {
+            log.error("Error fetching component. Component ID: {}, Error: {}", id, e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while fetching component. Component ID: {}, Error: {}", id, e.getMessage(), e);
+            throw new SW360Exception("Failed to fetch component with id: " + id + ". " + e.getMessage());
         }
-
-        // Convert Ids to release summary
-        component.setReleases(releaseRepository.makeSummaryWithPermissions(SummaryType.SUMMARY, component.releaseIds, user));
-        component.unsetReleaseIds();
-
-        setMainLicenses(component);
-
-        vendorRepository.fillVendor(component);
-
-        // Set permissions
-        makePermission(component, user).fillPermissions();
-
-        return component;
     }
 
     public Component getAccessibleComponent(String id, User user) throws SW360Exception {
