@@ -139,7 +139,7 @@
     <junit.version>4.13.2</junit.version>
     <log4j2.version>2.25.3</log4j2.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
-    <mockito.version>5.20.0</mockito.version>
+    <mockito.version>5.21.0</mockito.version>
     <okhttp.version>4.12.0</okhttp.version>
     <org.ow2.asm.version>9.9.1</org.ow2.asm.version>
     <org.spdx.java.spdx.library.version>2.0.2</org.spdx.java.spdx.library.version>
