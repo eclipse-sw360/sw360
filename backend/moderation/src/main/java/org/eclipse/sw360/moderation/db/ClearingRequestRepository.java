@@ -219,14 +219,34 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
 
     private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
         List<Map<String, Object>> andConditions = new ArrayList<>();
+
         for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
-            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                String fieldValue = entry.getValue().stream().findFirst().orElse("");
-                if (!fieldValue.isEmpty()) {
-                    andConditions.add(eq(entry.getKey(), fieldValue));
-                }
+            String field = entry.getKey();
+            Set<String> values = entry.getValue();
+
+            if (values == null || values.isEmpty()) {
+                continue;
+            }
+            
+            List<String> nonEmptyValues = values.stream()
+                    .filter(v -> v != null && !v.isEmpty())
+                    .toList();
+
+            if (nonEmptyValues.isEmpty()) {
+                continue;
+            }
+
+            if (nonEmptyValues.size() == 1) {
+                andConditions.add(eq(field, nonEmptyValues.get(0)));
+            } else {
+                andConditions.add(
+                        or(nonEmptyValues.stream()
+                                .map(v -> eq(field, v))
+                                .toList())
+                );
             }
         }
+
         return and(andConditions);
     }
 }
