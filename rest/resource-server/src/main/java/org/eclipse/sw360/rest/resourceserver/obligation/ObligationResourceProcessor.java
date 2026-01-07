@@ -26,9 +26,9 @@ class ObligationResourceProcessor implements RepresentationModelProcessor<Entity
 
     @Override
     public EntityModel<Obligation> process(EntityModel<Obligation> resource) {
-        Obligation obliagtion = resource.getContent();
+        Obligation obligation = resource.getContent();
         Link selfLink = linkTo(ObligationController.class)
-                .slash("api" + ObligationController.OBLIGATION_URL + "/" + obliagtion.getId()).withSelfRel();
+                .slash("api" + ObligationController.OBLIGATION_URL + "/" + obligation.getId()).withSelfRel();
         resource.add(selfLink);
         return resource;
     }

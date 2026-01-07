@@ -187,7 +187,7 @@ public class Sw360LicenseService {
 
     public void checkObligationIds(Set<String> obligationIds) throws TException {
         if (obligationIds.isEmpty()) {
-            throw new BadRequestClientException("Cannot update because no obliagtion id input");
+            throw new BadRequestClientException("Cannot update because no obligation id input");
         }
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         ArrayList<String> obligationIdsIncorrect = new ArrayList<>();
