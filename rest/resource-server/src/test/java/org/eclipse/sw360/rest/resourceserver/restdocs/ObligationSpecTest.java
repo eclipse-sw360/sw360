@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
@@ -81,7 +82,15 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
         obligationList.add(obligation);
         obligationList.add(obligation2);
 
-        given(this.obligationServiceMock.getObligations()).willReturn(obligationList);
+        PaginationData pageData = new PaginationData();
+        pageData.setSortColumnNumber(0);
+        pageData.setDisplayStart(0);
+        pageData.setRowsPerPage(obligationList.size());
+        pageData.setTotalRowCount(obligationList.size());
+        pageData.setAscending(true);
+
+        // Setup service mocks
+        given(this.obligationServiceMock.getObligationsFiltered(any(), any(), any())).willReturn(Map.of(pageData, obligationList));
         given(this.obligationServiceMock.getObligationById(eq(obligation.getId()), any())).willReturn(obligation);
         given(this.obligationServiceMock.deleteObligation(eq(obligation.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(

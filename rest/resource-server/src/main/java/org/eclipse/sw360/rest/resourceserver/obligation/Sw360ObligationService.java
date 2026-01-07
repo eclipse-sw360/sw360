@@ -13,45 +13,33 @@ package org.eclipse.sw360.rest.resourceserver.obligation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ObligationService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
-    public List<Obligation> getObligations() {
-        List<Obligation> obligations;
-        try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            obligations = sw360LicenseClient.getObligations();
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-        if (obligations != null) {
-            return obligations.stream().map(o -> o.setNode(null)).toList();
-        }
-        return null;
-    }
-
     public Obligation getObligationById(String obligationId, User user) {
         LicenseService.Iface sw360LicenseClient = null;
         Obligation obligation = null;
@@ -94,9 +82,8 @@ public class Sw360ObligationService {
     }
 
     private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new LicenseService.Client(protocol);
+        ThriftClients thriftClients = new ThriftClients();
+        return thriftClients.makeLicenseClient();
     }
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {
@@ -136,5 +123,60 @@ public class Sw360ObligationService {
             throw new RuntimeException(e);
         }
         return obligationElements;
+    }
+
+    public Map<PaginationData, List<Obligation>> getObligationsFiltered(String searchText, String obligationLevel,
+                                                                        Pageable pageable) throws SW360Exception {
+        ObligationLevel level = null;
+        try {
+            if (!CommonUtils.isNullEmptyOrWhitespace(obligationLevel)) {
+                level = ObligationLevel.valueOf(obligationLevel);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestClientException("Illegal value for obligationLevel: " + obligationLevel, e);
+        }
+        try {
+            LicenseService.Iface licenseClient = getThriftLicenseClient();
+            PaginationData pageData = pageableToPaginationData(pageable,
+                    ObligationSortColumn.BY_TITLE, true);
+            return licenseClient.searchObligationTextPaginated(searchText, level, pageData);
+        } catch (TException e) {
+            throw new SW360Exception("Unable to fetch Obligations.");
+        }
+    }
+
+
+    /**
+     * Converts a Pageable object to a PaginationData object.
+     *
+     * @param pageable the Pageable object to convert
+     * @return a PaginationData object representing the pagination information
+     */
+    private static PaginationData pageableToPaginationData(
+            @NotNull Pageable pageable, ObligationSortColumn defaultSort, Boolean defaultAscending
+    ) {
+        ObligationSortColumn column = ObligationSortColumn.BY_TITLE;
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "text" -> ObligationSortColumn.BY_TEXT;
+                case "level" -> ObligationSortColumn.BY_LEVEL;
+                default -> column; // Default to BY_NAME if no match
+            };
+            ascending = order.isAscending();
+        } else {
+            if (defaultSort != null) {
+                column = defaultSort;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
+        }
+
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
 }
