@@ -360,6 +360,64 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         return OR.join(convertToRestrictiveQuery(type, text, subQueryRestrictions));
     }
 
+    /**
+     * Create query for complex scenarios based on "OR" or "AND" keys for Nouveau queries.
+     * For example input like bellow:<br />
+     * <pre>
+     * {@code
+     * {
+     *   "OR": {
+     *     "field1": ["val1"],
+     *     "field2": ["val1"]
+     *   },
+     *   "AND": {
+     *     "field3": ["val2", "val3"]
+     *   }
+     * }
+     * }
+     * </pre>
+     * You will get the output:
+     * <pre>
+     * {@code
+     * List<String> query = [
+     *   "(( field1:"val1*" val1* ) OR ( field2:"val1*" val1* ))",
+     *   "( field3:"val2*" val2* AND field3:"val3*" val3* )"
+     * ]
+     * }
+     * </pre>
+     * This can later be joined using another joiner like and to get final query:
+     * {@code (( field1:"val1*" val1* ) OR ( field2:"val1*" val1* )) AND
+     *  ( field3:"val2*" val2* AND field3:"val3*" val3* )}
+     * @param type Class for which filtering
+     * @param text Text to search
+     * @param subQueryRestrictions Restrictions with joiner. See description for example.
+     * @return List of queries
+     * @param <T> Class for which filtering
+     */
+    public static <T> @NotNull List<String> createComplexQuery(
+            Class<T> type, String text,
+            @NotNull Map<String, Map<String, Set<String>>> subQueryRestrictions
+    ) {
+        List<String> subQueries = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Set<String>>> restriction : subQueryRestrictions.entrySet()) {
+            boolean isPlural = restriction.getValue().size() > 1;
+            String query = switch (restriction.getKey()) {
+                case "OR" -> convertToRestrictiveQueryWithOr(type, text, restriction.getValue());
+                case "AND" -> convertToRestrictiveQueryWithAnd(type, text, restriction.getValue());
+                default -> null;
+            };
+            if (query == null) {
+                continue;
+            }
+            if (isPlural) {
+                subQueries.add("(" + query + ")");
+            } else {
+                subQueries.add(query);
+            }
+        }
+        return subQueries;
+    }
+
     private static <T> @NotNull List<String> convertToRestrictiveQuery(Class<T> type, String text, @NotNull Map<String, Set<String>> subQueryRestrictions) {
         List<String> subQueries = new ArrayList<>();
         for (Map.Entry<String, Set<String>> restriction : subQueryRestrictions.entrySet()) {

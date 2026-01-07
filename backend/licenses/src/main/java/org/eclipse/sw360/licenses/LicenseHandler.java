@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ObligationSearchHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -31,6 +32,7 @@ import org.apache.thrift.TException;
 import java.nio.ByteBuffer;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.io.IOException;
 
@@ -401,5 +403,15 @@ public class LicenseHandler implements LicenseService.Iface {
             return handler.getLicenseSummary();
         }
         return handler.searchLicense(searchText);
+    }
+
+    @Override
+    public Map<PaginationData, List<Obligation>> searchObligationTextPaginated(
+            String searchText, ObligationLevel obligationLevel, PaginationData pageData
+    ) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) || obligationLevel != null) {
+            return obligationSearchHandler.searchWithPagination(searchText, obligationLevel, pageData);
+        }
+        return handler.getObligationsPaginated(pageData);
     }
 }

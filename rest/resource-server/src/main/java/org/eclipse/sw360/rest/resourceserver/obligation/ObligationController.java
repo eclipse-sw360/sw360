@@ -23,9 +23,9 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
@@ -54,7 +54,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -79,7 +79,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel> getObligations(
+    public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request,
@@ -88,36 +88,41 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             @RequestParam(value = "obligationLevel", required = false) String obligationLevel,
             @Parameter(description = "Search obligations by title or text", required = false)
             @RequestParam(value = "search", required = false) String searchKeyWord
-    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, SW360Exception {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<Obligation> obligations;
-        if (!CommonUtils.isNullEmptyOrWhitespace(obligationLevel)) {
-            obligations = obligationService.getObligations().stream()
-                    .filter(obligation -> obligationLevel.equalsIgnoreCase(obligation.getObligationLevel().toString()))
-                    .collect(Collectors.toList());
+        List<Obligation> obligations = new ArrayList<>();
+        Map<PaginationData, List<Obligation>> paginatedObligations =
+                obligationService.getObligationsFiltered(searchKeyWord, obligationLevel, pageable);
+
+        PaginationResult<Obligation> paginationResult;
+        if (paginatedObligations != null && !paginatedObligations.isEmpty()) {
+            obligations.addAll(paginatedObligations.values().iterator().next());
+            int totalCount = Math.toIntExact(paginatedObligations.keySet().stream()
+                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, obligations, SW360Constants.TYPE_OBLIGATION, totalCount);
         } else {
-            obligations = obligationService.getObligations();
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    obligations, SW360Constants.TYPE_OBLIGATION);
         }
-        if(!CommonUtils.isNullEmptyOrWhitespace(searchKeyWord)){
-            filterObligationBasedOnSearchKey(searchKeyWord, obligations);
-        }
-        PaginationResult<Obligation> paginationResult = restControllerHelper.createPaginationResult(request, pageable, obligations, SW360Constants.TYPE_OBLIGATION);
+
         List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
-        paginationResult.getResources().stream()
+        paginationResult.getResources()
                 .forEach(obligation -> {
                     Obligation embeddedObligation = restControllerHelper.convertToEmbeddedObligation(obligation);
-                    EntityModel<Obligation> licenseResource = EntityModel.of(embeddedObligation);
-                    obligationResources.add(licenseResource);
+                    obligationResources.add(EntityModel.of(embeddedObligation));
                 });
-        CollectionModel resources;
-        if (obligationResources.size() == 0) {
-            resources = restControllerHelper.emptyPageResource(License.class, paginationResult);
+        CollectionModel<EntityModel<Obligation>> resources;
+        if (obligationResources.isEmpty()) {
+            resources = restControllerHelper.emptyPageResource(Obligation.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, obligationResources);
         }
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     private void filterObligationBasedOnSearchKey(String searchKeyWord, List<Obligation> obligations) {

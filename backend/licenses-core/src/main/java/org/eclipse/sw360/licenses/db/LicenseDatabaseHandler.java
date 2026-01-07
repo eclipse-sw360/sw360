@@ -1468,4 +1468,11 @@ public class LicenseDatabaseHandler {
 
         return jsonObject.toString();
     }
+
+    public Map<PaginationData, List<Obligation>> getObligationsPaginated(PaginationData pageData) {
+        if (pageData == null) {
+            throw new IllegalArgumentException("PaginationData cannot be null");
+        }
+        return obligRepository.getObligationsPaginated(pageData);
+    }
 }
