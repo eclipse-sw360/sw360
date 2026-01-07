@@ -1540,6 +1540,7 @@ public class JacksonCustomizations {
                 "setLayer",
                 "setDefaultValue",
                 "setProjectId",
+                "setReleaseMainLineState",
                 "setComponentId",
                 "setCreatedBy",
                 "createdByIsSet"
