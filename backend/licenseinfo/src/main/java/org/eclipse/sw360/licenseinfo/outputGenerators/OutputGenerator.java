@@ -15,6 +15,8 @@ package org.eclipse.sw360.licenseinfo.outputGenerators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.runtime.RuntimeConstants;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class OutputGenerator<T> {
+    private static final Logger log = LogManager.getLogger(OutputGenerator.class);
     protected static final String VELOCITY_TOOLS_FILE = "velocity-tools.xml";
     protected static final String LICENSE_REFERENCE_ID_MAP_CONTEXT_PROPERTY = "licenseNameWithTextToReferenceId";
     protected static final String ACKNOWLEDGEMENTS_CONTEXT_PROPERTY = "acknowledgements";
@@ -295,12 +298,20 @@ public abstract class OutputGenerator<T> {
         Map<Integer, String> seenLicTextWithId = new HashMap<>();
         Map<LicenseNameWithText, Integer> licenseToReferenceId = Maps.newHashMap();
         for (LicenseNameWithText licenseNamesWithText : licenseNamesWithTexts) {
-            if (!seenLicTextWithId.containsValue(licenseNamesWithText.getLicenseText())) {
+            final String licenseText = licenseNamesWithText.getLicenseText() == null ? "" : licenseNamesWithText.getLicenseText();
+
+            // Log if license text is null or empty
+            if (licenseText.trim().isEmpty()) {
+                String licenseName = licenseNamesWithText.getLicenseName();
+                log.warn("License '{}' has null or empty license text", licenseName != null ? licenseName : "Unknown");
+            }
+
+            if (!seenLicTextWithId.containsValue(licenseText)) {
                 licenseToReferenceId.put(licenseNamesWithText, referenceId++);
-                seenLicTextWithId.put(referenceId-1, licenseNamesWithText.getLicenseText());
+                seenLicTextWithId.put(referenceId-1, licenseText);
             } else {
                 licenseToReferenceId.put(licenseNamesWithText, seenLicTextWithId.entrySet().stream()
-                        .filter(entry -> entry.getValue().equals(licenseNamesWithText.getLicenseText()))
+                        .filter(entry -> licenseText.equals(entry.getValue()))
                         .map(Map.Entry::getKey)
                         .findFirst()
                         .orElse(referenceId));
