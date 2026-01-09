@@ -1,0 +1,102 @@
+# -----------------------------------------------------------------------------
+# Coverage for REST resource-server only: run tests, generate JaCoCo, comment PR
+# -----------------------------------------------------------------------------
+
+name: Coverage (REST resource-server)
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  COUCHDB_USER: sw360
+  COUCHDB_PASSWORD: sw360fossie
+  THRIFT_VERSION: "0.20.0"
+
+jobs:
+  coverage:
+    name: Generate coverage for resource-server
+    runs-on: ubuntu-24.04
+
+    services:
+      couchdb:
+        image: couchdb:3
+        ports:
+          - 5984:5984
+        env:
+          COUCHDB_USER: ${{ env.COUCHDB_USER }}
+          COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          check-latest: true
+
+      - name: Cache Thrift
+        id: cache-thrift
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
+          key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+
+      - name: Install Thrift
+        if: steps.cache-thrift.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake
+          chmod +x third-party/thrift/install-thrift.sh
+          DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
+
+      - name: Add Thrift to PATH
+        run: echo "${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin" >> $GITHUB_PATH
+
+      - name: Prepare CouchDB test config
+        run: |
+          sudo mkdir -p /etc/sw360
+          sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
+          sudo sed -i 's/^couchdb.user\s*=.*/couchdb.user='${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
+          sudo sed -i 's/^couchdb.password\s*=.*/couchdb.password='${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
+
+      - name: Test resource-server only
+        run: |
+          mvn -B -pl :resource-server -am clean test \
+            -Dbase.deploy.dir=. \
+            --no-transfer-progress
+
+      - name: Generate JaCoCo report (resource-server)
+        run: |
+          mvn -B -pl :resource-server jacoco:report --no-transfer-progress
+
+      - name: Coverage Summary (markdown + badge)
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: 'rest/resource-server/target/site/jacoco/jacoco.xml'
+          badge: true
+          fail_below_min: false
+          format: markdown
+          output: both
+          thresholds: '0 0 0 0'
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: code-coverage-results.md
