@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -95,7 +96,13 @@ public class VendorTest extends TestIntegrationBase {
 
         // Setup vendor service mocks
         List<Vendor> vendorList = Arrays.asList(testVendor, testVendor2);
-        given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
+        PaginationData pageData = new PaginationData();
+        pageData.setAscending(true);
+        pageData.setRowsPerPage(10);
+        pageData.setDisplayStart(0);
+        pageData.setSortColumnNumber(0);
+        Map<PaginationData, List<Vendor>> paginatedVendors = Map.of(pageData, vendorList);
+        given(this.vendorServiceMock.getVendors(any())).willReturn(paginatedVendors);
         given(this.vendorServiceMock.getVendorById(eq(testVendor.getId()))).willReturn(testVendor);
         given(this.vendorServiceMock.getVendorById(eq(testVendor2.getId()))).willReturn(testVendor2);
         given(this.vendorServiceMock.getAllReleaseList(eq(testVendor.getId()))).willReturn(testReleases);
@@ -154,7 +161,13 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_get_vendors_with_search() throws IOException {
         // Mock search functionality
-        given(this.vendorServiceMock.searchVendors("Google")).willReturn(Arrays.asList(testVendor));
+        PaginationData pageData = new PaginationData();
+        pageData.setAscending(true);
+        pageData.setRowsPerPage(10);
+        pageData.setDisplayStart(0);
+        pageData.setSortColumnNumber(0);
+        Map<PaginationData, List<Vendor>> paginatedVendors = Map.of(pageData, Collections.singletonList(testVendor));
+        given(this.vendorServiceMock.searchVendors(eq("Google"), any())).willReturn(paginatedVendors);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -553,4 +566,4 @@ public class VendorTest extends TestIntegrationBase {
         assertTrue("Response should contain error information",
                 responseBody.contains("error") || responseBody.contains("message"));
     }
-} 
+}

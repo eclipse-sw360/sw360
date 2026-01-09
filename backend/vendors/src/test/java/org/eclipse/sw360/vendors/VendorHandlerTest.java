@@ -13,14 +13,15 @@ import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -31,6 +32,7 @@ public class VendorHandlerTest {
 
     private VendorHandler vendorHandler;
     private List<Vendor> vendorList;
+    private PaginationData pageData;
 
     @Before
     public void setUp() throws Exception {
@@ -50,6 +52,11 @@ public class VendorHandlerTest {
         }
 
         vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        pageData = new PaginationData();
+        pageData.setSortColumnNumber(0);
+        pageData.setDisplayStart(0);
+        pageData.setRowsPerPage(10);
+        pageData.setAscending(true);
     }
 
     @After
@@ -95,32 +102,43 @@ public class VendorHandlerTest {
     }
 
     @Test
-    @Ignore
     public void testSearchVendors1() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("foundation");
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorHandler.searchVendors("foundation", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
+        int totalCount = Math.toIntExact(paginatedVendors.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         assertEquals(1, vendors.size());
-        assertEquals(vendorList.get(1), vendors.get(0));
+        assertEquals(vendorList.get(1), vendors.getFirst());
+        assertEquals(vendors.size(), totalCount);
     }
 
     @Test
-    @Ignore
     public void testSearchVendors2() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("http");
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorHandler.searchVendors("http", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
+        int totalCount = Math.toIntExact(paginatedVendors.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         assertEquals(0, vendors.size());
+        assertEquals(vendors.size(), totalCount);
     }
 
     @Test
-    @Ignore
     public void testSearchVendors3() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("soft");
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorHandler.searchVendors("soft", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
+        int totalCount = Math.toIntExact(paginatedVendors.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         assertEquals(1, vendors.size()); // Software but not Microsoft
+        assertEquals(vendors.size(), totalCount);
     }
 
     @Test
-    @Ignore
     public void testSearchVendors4() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("m");
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorHandler.searchVendors("m", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
+        int totalCount = Math.toIntExact(paginatedVendors.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         assertEquals(1, vendors.size());
+        assertEquals(vendors.size(), totalCount);
     }
-
 }
