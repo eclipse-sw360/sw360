@@ -488,8 +488,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 ));
         sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
 
+        Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
         List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
             final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
+            if (releaseIdToUsageMap != null) {
+                ProjectReleaseRelationship relationship = releaseIdToUsageMap.get(sw360Release.getId());
+                if (relationship != null) {
+                    embeddedRelease.setProjectMainlineState(relationship.getMainlineState());
+                }
+            }
             final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
             return releaseResource;
         })).collect(Collectors.toList());
