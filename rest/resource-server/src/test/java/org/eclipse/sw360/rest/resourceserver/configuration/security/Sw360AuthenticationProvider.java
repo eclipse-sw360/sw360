@@ -38,8 +38,6 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    // TODO Thomas Maier 15-12-2017
-    // Use Sw360GrantedAuthority from authorization server
     private final String GRANTED_AUTHORITY_READ = "READ";
     private final String GRANTED_AUTHORITY_WRITE = "WRITE";
 

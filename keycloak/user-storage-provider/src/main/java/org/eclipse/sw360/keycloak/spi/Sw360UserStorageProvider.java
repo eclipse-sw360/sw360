@@ -20,7 +20,6 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -34,12 +33,15 @@ public class Sw360UserStorageProvider implements UserStorageProvider, UserRegist
 	protected KeycloakSession session;
 	protected Sw360UserService sw360UserService;
 
-	BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
 	public Sw360UserStorageProvider(KeycloakSession session, ComponentModel model) {
 		this.session = session;
 		this.model = model;
-		sw360UserService = new Sw360UserService();
+		try {
+			sw360UserService = new Sw360UserService();
+		} catch (Exception e) {
+			logger.warnf("Failed to initialize SW360 user service: %s. Provider will operate in limited mode.", e.getMessage());
+			sw360UserService = null;
+		}
 	}
 
 	@Override
@@ -200,11 +202,6 @@ public class Sw360UserStorageProvider implements UserStorageProvider, UserRegist
 			return false;
 		}
 
-		String password = getPassword(user);
-		if(password != null) {
-			isValid = passwordEncoder.matches(credentialInput.getChallengeResponse(), password);
-		}
-		logger.debugf("Credential for user: %s in realm: %s with credential type: %s is valid: %s", user.getEmail(), realm.getName(), credentialInput.getType(), isValid);
 		return isValid;
 	}
 
@@ -332,7 +329,3 @@ public class Sw360UserStorageProvider implements UserStorageProvider, UserRegist
 		}
 	}
 }
-
-
-
-

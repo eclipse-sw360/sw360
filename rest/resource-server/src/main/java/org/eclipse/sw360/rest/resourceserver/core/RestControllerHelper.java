@@ -1019,6 +1019,7 @@ public class RestControllerHelper<T> {
     public License convertToEmbeddedLicense(License license) {
         License embeddedLicense = new License();
         embeddedLicense.setId(license.getId());
+        embeddedLicense.setShortname(license.getShortname());
         embeddedLicense.setFullname(license.getFullname());
         embeddedLicense.setChecked(license.isChecked());
         embeddedLicense.setLicenseType(license.getLicenseType());

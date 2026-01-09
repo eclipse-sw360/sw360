@@ -59,7 +59,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 public class Sw360LicenseService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
-    private static String CONTENT_TYPE = "application/zip";
+    private static final String CONTENT_TYPE = "application/zip";
     LicenseType lType = new LicenseType();
 
     public List<License> getLicenses() throws TException {
@@ -187,7 +187,7 @@ public class Sw360LicenseService {
 
     public void checkObligationIds(Set<String> obligationIds) throws TException {
         if (obligationIds.isEmpty()) {
-            throw new BadRequestClientException("Cannot update because no obliagtion id input");
+            throw new BadRequestClientException("Cannot update because no obligation id input");
         }
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         ArrayList<String> obligationIdsIncorrect = new ArrayList<>();

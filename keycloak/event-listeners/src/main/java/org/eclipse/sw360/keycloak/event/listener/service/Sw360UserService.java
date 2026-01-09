@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2024. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2024-2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,109 +10,145 @@
 
 package org.eclipse.sw360.keycloak.event.listener.service;
 
-import java.util.List;
-
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.db.UserRepository;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.jboss.logging.Logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Set;
+
+/**
+ * Service class for managing SW360 users in CouchDB for Keycloak event listeners.
+ *
+ * <p>This service provides efficient CRUD operations for user management during Keycloak
+ * event processing by using UserRepository.</p>
+ *
+ * <h3>Event Listener Context:</h3>
+ * <p>This service is specifically designed for Keycloak event processing, providing
+ * user management capabilities during authentication events, user registration,
+ * and profile updates.</p>
+ *
+ * @author SW360 Team
+ * @since 20.0.0
+ */
 public class Sw360UserService {
-    public static String thriftServerUrl = "http://localhost:8080";
-    private static final Logger logger = Logger.getLogger(Sw360UserService.class);
+    private static final Logger logger = LoggerFactory.getLogger(Sw360UserService.class);
 
-    public List<User> getAllUsers() {
+    private static final DatabaseConnectorCloudant connector;
+    private static final UserRepository repository;
+
+    static {
         try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getAllUsers();
+            connector = new DatabaseConnectorCloudant(
+                    DatabaseSettings.getConfiguredClient(),
+                    DatabaseSettings.COUCH_DB_USERS
+            );
+            repository = new UserRepository(connector);
+            logger.info("SW360 user service initialized successfully for event listener");
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            logger.error("Failed to initialize CouchDB connection for event listener", e);
+            throw new RuntimeException("Cannot initialize CouchDB connection: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Retrieves a user by email address using CouchDB view for efficient lookup.
+     *
+     * @param email the email address to search for
+     * @return User if found, null otherwise
+     */
     public User getUserByEmail(String email) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmail(email);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserByEmailOrExternalId(String userIdentifier) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUser(String id) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getUser(id);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserByApiToken(String token) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByApiToken(token);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserFromClientId(String clientId) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByOidcClientId(clientId);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User addUser(User user) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            if(user.getUserGroup() == null) {
-                user.setUserGroup(UserGroup.USER);
-            }
-            AddDocumentRequestSummary documentRequestSummary = sw360UserClient.addUser(user);
-            logger.info("Sw360UserService::addUser()::documentSummarry-->" + documentRequestSummary);
-            if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
-                user.setId(documentRequestSummary.getId());
-                return user;
-            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
-                logger.warn("Duplicate User");
-            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-                logger.warn("Invalid Input/Request");
-            }
-        } catch (Exception e) {
-            logger.error("Error Creating the user in sw360 database");
+        if (email == null || email.trim().isEmpty()) {
+            logger.warn("Event listener attempted to get user with null or empty email");
             return null;
         }
-        return null;
+
+        try {
+            User user = repository.getByEmail(email);
+            if (user == null) {
+                logger.debug("Event listener found no user for email: {}", email);
+            }
+            return user;
+        } catch (Exception e) {
+            logger.error("Event listener error retrieving user by email: {}", email, e);
+            return null;
+        }
     }
 
-    public RequestStatus updateUser(User user) throws Exception {
-        UserService.Iface sw360UserClient = getThriftUserClient();
-        RequestStatus requestStatus = sw360UserClient.updateUser(user);
-        return requestStatus;
+    /**
+     * The function first checks if the user exists with the email. If it does,
+     * it calls copyUserProperties() to get missing values (like id and rev) and
+     * calls the repo.update(). If the user does not exist, it calls repo.add()
+     * to create the new user.
+     * @param user User to be created or updated
+     * @return Created or updated user
+     */
+    public User createOrUpdateUser(User user) {
+        if (user == null) {
+            logger.warn("Event listener attempted to add null user");
+            return null;
+        }
+
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            logger.warn("Event listener attempted to add user without email");
+            return null;
+        }
+
+        try {
+            logger.info("Event listener creating or updating user to SW360 database: {}", user.getEmail());
+
+            // Check if user already exists
+            User existingUser = repository.getByEmail(user.getEmail());
+            if (existingUser != null) {
+                logger.debug("Event listener found user already exists with ID: {}", user.getId());
+                copyUserProperties(user, existingUser);
+                repository.update(user);
+                logger.debug("Event listener updated user with ID: {}", user.getId());
+                return user;
+            }
+
+            // Set defaults for the user if missing.
+            // Note: Do not set ID as it will be assigned by CouchDB
+            // Set default user group if not specified
+            if (!user.isSetUserGroup()) {
+                user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP);
+                logger.debug("Event listener set default user group to USER for user: {}", user.getEmail());
+            }
+
+            // Create the user
+            repository.add(user);
+            logger.info("Event listener successfully created user in SW360 database: {}", user.getEmail());
+            return user;
+        } catch (Exception e) {
+            logger.error("Event listener error creating user in SW360 database: {}", user.getEmail(), e);
+            return null;
+        }
     }
 
-    private UserService.Iface getThriftUserClient() throws Exception {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/users/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new UserService.Client(protocol);
+    /**
+     * Copies fields which are in existing user to new user, except the email.
+     * This makes sure ID and Rev are also carried over for updating the user
+     * in CouchDB.
+     * @param newUser      New user to be added
+     * @param existingUser Existing user to get properties from
+     */
+    private void copyUserProperties(User newUser, User existingUser) {
+        Set<User._Fields> ignoredFields = Set.of(
+                User._Fields.ID, User._Fields.REVISION, User._Fields.EMAIL
+        );
+        newUser.setId(existingUser.getId());
+        newUser.setRevision(existingUser.getRevision());
+        for (User._Fields field : User._Fields.values()) {
+            if (ignoredFields.contains(field)) {
+                continue;
+            }
+            if (!newUser.isSet(field) && existingUser.isSet(field)) {
+                newUser.setFieldValue(field, existingUser.getFieldValue(field));
+            }
+        }
     }
 }

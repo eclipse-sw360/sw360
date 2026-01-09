@@ -44,6 +44,8 @@ public class PermissionUtils {
             "phaseOutSince"
     );
 
+    public static final UserGroup DEFAULT_USER_GROUP = UserGroup.USER;
+
     public static boolean isNormalUser(User user) {
         return isInGroup(user, UserGroup.USER);
     }
