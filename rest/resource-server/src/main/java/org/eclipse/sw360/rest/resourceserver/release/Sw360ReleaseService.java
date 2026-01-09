@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018.
+ * Copyright Ritankar Saha<ritankar.saha786@gmail.com> , 2025.
  * Copyright Bosch Software Innovations GmbH, 2017.
  * Part of the SW360 Portal Project.
  *
@@ -893,6 +894,37 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return fossologyProcess;
     }
 
+    public ExternalToolProcess fossologyProcessWithOptions(String releaseId, User sw360User, String uploadDescription, ScanOptionsRequest scanOptionsRequest) throws TException {
+        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
+        ExternalToolProcess fossologyProcess = null;
+        try {
+            // Convert ScanOptionsRequest to ScanOptions thrift object
+            org.eclipse.sw360.datahandler.thrift.fossology.ScanOptions scanOptions = convertToThriftScanOptions(scanOptionsRequest);
+            fossologyProcess = sw360FossologyClient.processWithScanOptions(releaseId, sw360User, uploadDescription, scanOptions);
+        } catch (TException exp) {
+            throw new ResourceNotFoundException("Could not determine FOSSology state for this release with custom scan options!");
+        }
+        return fossologyProcess;
+    }
+
+    private org.eclipse.sw360.datahandler.thrift.fossology.ScanOptions convertToThriftScanOptions(ScanOptionsRequest request) {
+        if (request == null) {
+            return null;
+        }
+        
+        // Merge with defaults to ensure all required options are present
+        request.mergeWithDefaults();
+        
+        org.eclipse.sw360.datahandler.thrift.fossology.ScanOptions scanOptions = 
+            new org.eclipse.sw360.datahandler.thrift.fossology.ScanOptions();
+        
+        scanOptions.setAnalysis(request.getAnalysis());
+        scanOptions.setDecider(request.getDecider());
+        scanOptions.setReuse(request.getReuse());
+        
+        return scanOptions;
+    }
+
     private void markFossologyProcessOutdated(String releaseId, User sw360User) throws TException {
         FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
         RequestStatus markFossologyProcessOutdatedStatus = sw360FossologyClient.markFossologyProcessOutdated(releaseId,
@@ -982,6 +1014,58 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                         new Object[] { releaseId, exp.getMessage() }));
             } finally {
                 log.info("Release : " + releaseId + " .Fossology Process exited, removing lock.");
+                if (service != null)
+                    service.shutdownNow();
+                if (lockObj.isLocked())
+                    lockObj.unlock();
+                mapOfLocks.remove(releaseId);
+            }
+        });
+
+        Thread asyncThread = new Thread(asyncRunnable);
+        asyncThread.start();
+    }
+
+    public void executeFossologyProcessWithOptions(User user, Sw360AttachmentService attachmentService,
+            Map<String, ReentrantLock> mapOfLocks, String releaseId, boolean markFossologyProcessOutdated,
+            String uploadDescription, ScanOptionsRequest scanOptionsRequest)
+            throws TException, IOException {
+        String attachmentId = validateNumberOfSrcAttachedAndGetAttachmentId(releaseId, user);
+
+        if (markFossologyProcessOutdated) {
+            log.info("Marking FOSSology process outdated for Release : " + releaseId);
+            markFossologyProcessOutdated(releaseId, user);
+        }
+
+        Release release = getReleaseForUserById(releaseId, user);
+
+        ExternalToolProcess fossologyProcess = getExternalToolProcess(release);
+        if (fossologyProcess != null && isFOSSologyProcessCompleted(fossologyProcess)) {
+            log.info("FOSSology process for Release : " + releaseId + " already completed.");
+            return;
+        }
+
+        final ExternalToolProcess fossologyProcessFinal = fossologyProcess;
+        final Function<String, ReentrantLock> locks = relId -> {
+            mapOfLocks.putIfAbsent(relId, new ReentrantLock());
+            return mapOfLocks.get(relId);
+        };
+
+        Runnable asyncRunnable = () -> wrapTException(() -> {
+            ReentrantLock lockObj = locks.apply(releaseId);
+            ScheduledExecutorService service = null;
+
+            try {
+                if (lockObj.tryLock()) {
+                    service = Executors.newSingleThreadScheduledExecutor();
+                    triggerUploadScanAndReportStepWithOptions(attachmentService, service, fossologyProcessFinal, release, user,
+                            attachmentId, uploadDescription, scanOptionsRequest);
+                }
+            } catch (Exception exp) {
+                log.error(String.format("Release : %s .Error occured while triggering Fossology Process with custom options. %s",
+                        new Object[] { releaseId, exp.getMessage() }));
+            } finally {
+                log.info("Release : " + releaseId + " .Fossology Process with custom options exited, removing lock.");
                 if (service != null)
                     service.shutdownNow();
                 if (lockObj.isLocked())
@@ -1086,6 +1170,71 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             if (isReportTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
                 do {
                     log.info("Release : " + releaseId + " .Triggering Report Generation and attach to Release.");
+                    future = service.schedule(processRunnable, 10, TimeUnit.SECONDS);
+                    fossologyProcessLocal = getFutureResult(future);
+                } while (++reportGeneratestatusCheckCount < maxRetries
+                        && isReportGenerationInProgress(fossologyProcessLocal, releaseId));
+            }
+        }
+    }
+
+    private void triggerUploadScanAndReportStepWithOptions(Sw360AttachmentService attachmentService,
+            ScheduledExecutorService service, ExternalToolProcess fossologyProcess, Release release, User user,
+            String attachmentId, String uploadDescription, ScanOptionsRequest scanOptionsRequest) throws TException {
+
+        int scanTriggerRetriesCount = 0, reportGenerateTriggerRetries = 0, reportGeneratestatusCheckCount = 0,
+                maxRetries = 15;
+        ScheduledFuture<ExternalToolProcess> future = null;
+        String releaseId = release.getId();
+        ExternalToolProcess fossologyProcessLocal = fossologyProcess;
+
+        int attachmentSizeinMB = getAttachmentSizeInMB(attachmentService, attachmentId, release, user);
+
+        int timeIntervalToCheckUnpackScanStatus = attachmentSizeinMB <= 5 ? 10 : 2 * attachmentSizeinMB;
+
+        log.info(String.format(
+                "Release : %s .Size of source is %s MB, Time interval to check scan and unpack status %s sec (with custom scan options)",
+                new Object[] { releaseId, attachmentSizeinMB, timeIntervalToCheckUnpackScanStatus }));
+
+        Callable<ExternalToolProcess> processRunnable = new Callable<ExternalToolProcess>() {
+            public ExternalToolProcess call() throws Exception {
+                return fossologyProcessWithOptions(releaseId, user, uploadDescription, scanOptionsRequest);
+            }
+        };
+
+        if (fossologyProcessLocal == null || !isUploadStepCompletedSuccessfully(fossologyProcessLocal, releaseId)) {
+            log.info("Release : " + releaseId + " .Triggering Upload Step with custom scan options.");
+            fossologyProcessLocal = fossologyProcessWithOptions(releaseId, user, uploadDescription, scanOptionsRequest);
+        }
+
+        if (isUploadStepCompletedSuccessfully(fossologyProcessLocal, releaseId)
+                && isUnpackSuccessFull(service, fossologyProcessLocal.getProcessSteps().get(0).getResult(),
+                        timeIntervalToCheckUnpackScanStatus, releaseId)) {
+
+            if (!isScanStepInCompletedSuccessfully(fossologyProcessLocal, releaseId)) {
+                while (++scanTriggerRetriesCount < maxRetries
+                        && !isScanTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
+                    log.info("Release : " + releaseId + " .Triggering Scan Step with custom options.");
+                    future = service.schedule(processRunnable, 5, TimeUnit.SECONDS);
+                    fossologyProcessLocal = getFutureResult(future);
+                }
+            }
+
+            if (isScanTriggerSuccessfull(fossologyProcessLocal, releaseId) && isScanSuccessFull(service,
+                    fossologyProcessLocal.getProcessSteps().get(1).getProcessStepIdInTool(),
+                    timeIntervalToCheckUnpackScanStatus, releaseId)) {
+
+                while (++reportGenerateTriggerRetries < maxRetries
+                        && !isReportTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
+                    log.info("Release : " + releaseId + " .Triggering Report Step with custom scan options.");
+                    future = service.schedule(processRunnable, 5, TimeUnit.SECONDS);
+                    fossologyProcessLocal = getFutureResult(future);
+                }
+            }
+
+            if (isReportTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
+                do {
+                    log.info("Release : " + releaseId + " .Triggering Report Generation and attach to Release (with custom scan options).");
                     future = service.schedule(processRunnable, 10, TimeUnit.SECONDS);
                     fossologyProcessLocal = getFutureResult(future);
                 } while (++reportGeneratestatusCheckCount < maxRetries
