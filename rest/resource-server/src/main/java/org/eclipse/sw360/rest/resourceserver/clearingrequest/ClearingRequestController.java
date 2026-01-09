@@ -171,9 +171,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             Pageable pageable,
             @Parameter(description = "Project ID to filter")
             @RequestParam(value = "projectId", required = false) String projectId,
-            @Parameter(description = "Status of the clearing request",
-                    schema = @Schema(implementation = ClearingRequestState.class))
-            @RequestParam(value = "status", required = false) String status,
+            @Parameter(description = "Status of the clearing request (comma-separated for multiple values, e.g., 'NEW,ACCEPTED,IN_PROGRESS')")
+            @RequestParam(value = "status", required = false) Set<ClearingRequestState> status,
             @Parameter(description = "Requesting user email to filter")
             @RequestParam(value = "createdBy", required = false) String createdBy,
             @Parameter(description = "Date clearing request was created on (timestamp).")
@@ -222,14 +221,17 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     }
 
     private Map<String, Set<String>> getFilterMapForClearingRequests(
-            String projectId, String status, String createdBy, String createdOn) {
+            String projectId, Set<ClearingRequestState> status, String createdBy, String createdOn) {
         Map<String, Set<String>> filterMap = new HashMap<>();
         
         if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
             filterMap.put(ClearingRequest._Fields.PROJECT_ID.getFieldName(), Collections.singleton(projectId));
         }
-        if (CommonUtils.isNotNullEmptyOrWhitespace(status)) {
-            filterMap.put(ClearingRequest._Fields.CLEARING_STATE.getFieldName(), Collections.singleton(status));
+        if (status != null && !status.isEmpty()) {
+            Set<String> statusValues = status.stream()
+                    .map(ClearingRequestState::toString)
+                    .collect(Collectors.toSet());
+            filterMap.put(ClearingRequest._Fields.CLEARING_STATE.getFieldName(), statusValues);
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
             filterMap.put(ClearingRequest._Fields.REQUESTING_USER.getFieldName(), Collections.singleton(createdBy));
