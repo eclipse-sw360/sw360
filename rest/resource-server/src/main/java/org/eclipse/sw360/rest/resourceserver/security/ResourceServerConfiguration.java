@@ -10,12 +10,14 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
+import org.eclipse.sw360.rest.resourceserver.security.jwt.JwtBlacklistFilter;
 import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JWTAccessTokenConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +33,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
@@ -60,15 +63,27 @@ public class ResourceServerConfiguration {
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     String issuerUri;
 
+    private final JwtBlacklistService jwtBlacklistService;
+
+    // Constructor injection instead of field injection
+    public ResourceServerConfiguration(JwtBlacklistService jwtBlacklistService) {
+        this.jwtBlacklistService = jwtBlacklistService;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-        ApiTokenAuthenticationFilter apiTokenAuthenticationFilter = new ApiTokenAuthenticationFilter(authenticationManager, saep);
+        ApiTokenAuthenticationFilter apiTokenAuthenticationFilter =
+                new ApiTokenAuthenticationFilter(authenticationManager, saep, jwtBlacklistService);
+
+        JwtBlacklistFilter jwtBlacklistFilter = new JwtBlacklistFilter(jwtBlacklistService);
         return http
                 .addFilterBefore(apiTokenAuthenticationFilter, BasicAuthenticationFilter.class)
+                .addFilterBefore(jwtBlacklistFilter, BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
                                 .jwkSetUri(issuerUri)).authenticationEntryPoint(saep))
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.POST, "/resource/api/users/logout").authenticated(); // Add this line
                     auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
@@ -83,13 +98,28 @@ public class ResourceServerConfiguration {
                     auth.requestMatchers(HttpMethod.GET, "/docs/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/mkdocs/**").permitAll();
                 })
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .addLogoutHandler((request, response, authentication) -> {
+                            String authHeader = request.getHeader("Authorization");
+                            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                                String token = authHeader.substring(7);
+                                jwtBlacklistService.blacklistToken(token);
+                            }
+                        })
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.getWriter().write("Logged out successfully");
+                        })
+                )
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
-                .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                .headers(headers -> headers.xssProtection(xXssConfig ->
+                                xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                         .contentSecurityPolicy(cps -> cps.policyDirectives("script-src 'self'")))
-                .csrf(csrf -> csrf.disable()).build();
+                .csrf(csrf -> csrf.disable())
+                .build();
     }
-
 
     @Bean
     AuthenticationManager authenticationManager() {
