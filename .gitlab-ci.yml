@@ -9,7 +9,7 @@ stages:
 
 include:
   - project: awesome-ci/templates
-    ref: v2.7.0 # Insert desired version from https://code.siemens.com/awesome-ci/templates/-/releases
+    ref: v3.0.0 # Insert desired version from https://code.siemens.com/awesome-ci/templates/-/releases
     file:
       - docker/build-docker-image.gitlab-ci.yml
       - general/use-proxy.gitlab-ci.yml
