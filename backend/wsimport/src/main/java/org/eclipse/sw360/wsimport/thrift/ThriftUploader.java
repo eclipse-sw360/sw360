@@ -235,7 +235,7 @@ public class ThriftUploader {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        if (releases.size() != libraryList .size()) {
+        if (releases.size() != libraryList.size()) {
             LOGGER.warn("expected to get " + libraryList.size() + " different ids of releases but got " + releases.size());
         } else {
             LOGGER.info("The expected number of releases was imported or already found in database.");
