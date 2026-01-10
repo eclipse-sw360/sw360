@@ -262,11 +262,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (!(ProjectClearingState.CLOSED.equals(project.getClearingState()) || Visibility.PRIVATE.equals(project.getVisbility()))) {
             clearingRequest.setProjectBU(project.getBusinessUnit());
-            Project projectWithInfo = fillClearingStateSummaryIncludingSubprojectsForSingleProject(project, user);
-            int initialOpenReleases = SW360Utils.getOpenReleaseCount(projectWithInfo.releaseClearingStateSummary);
-            ClearingRequestSize initialSize = SW360Utils.determineCRSize(initialOpenReleases);
-            clearingRequest.setClearingSize(initialSize);
-            log.info(initialOpenReleases + " open releases found for project: " + project.getId() + "and initial size is: " + initialSize);
             String crId = moderator.createClearingRequest(clearingRequest, user);
             if (CommonUtils.isNotNullEmptyOrWhitespace(crId)) {
                 project.setClearingRequestId(crId);
@@ -338,6 +333,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             throw fail(403, "User: %s is not allowed to view the requested project: %s", user.getEmail(), project.getId());
         }
         vendorRepository.fillVendor(project);
+        return project;
+    }
+
+    public Project getProjectByIdIgnoringVisibility(String id) throws SW360Exception {
+        Project project = repository.get(id);
+        assertNotNull(project);
         return project;
     }
 

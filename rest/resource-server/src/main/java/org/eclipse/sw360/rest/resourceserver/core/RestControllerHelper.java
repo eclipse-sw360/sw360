@@ -98,7 +98,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -115,6 +114,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -125,7 +125,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -573,7 +572,7 @@ public class RestControllerHelper<T> {
             halLicense.add(licenseSelfLink);
             return halLicense;
         } catch (ResourceNotFoundException rne) {
-            LOGGER.error("cannot create a self link for license with id" + licenseId);
+            LOGGER.error("cannot create a self link for license with id " + licenseId);
             embeddedLicense.setShortname(licenseId);
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
@@ -807,19 +806,32 @@ public class RestControllerHelper<T> {
     }
 
     private void isLicenseValid(Set<String> licenses) {
-        List <String> licenseIncorrect = new ArrayList<>();
+        List<String> licenseIncorrect = new ArrayList<>();
         if (CommonUtils.isNotEmpty(licenses)) {
             for (String licenseId : licenses) {
                 try {
                     licenseService.getLicenseById(licenseId);
                 } catch (Exception e) {
-                    licenseIncorrect.add(licenseId);
+                    try {
+                        createMissingLicense(licenseId);
+                    } catch (Exception createException) {
+                        licenseIncorrect.add(licenseId);
+                    }
                 }
             }
         }
         if (!licenseIncorrect.isEmpty()) {
-            throw new BadRequestClientException("License with ids " + licenseIncorrect + " does not exist in SW360 database.");
+            throw new BadRequestClientException("License with ids " + licenseIncorrect + " does not exist in SW360 database and could not be created automatically.");
         }
+    }
+
+    private void createMissingLicense(String licenseId) throws Exception {
+        License newLicense = new License();
+        newLicense.setId(licenseId);
+        newLicense.setShortname(licenseId);
+        newLicense.setFullname(licenseId);
+        User user = getSw360UserFromAuthentication();
+        licenseService.createLicense(newLicense, user);
     }
 
     public License mapLicenseRequestToLicense(License licenseRequestBody, License licenseUpdate) {
@@ -843,7 +855,7 @@ public class RestControllerHelper<T> {
         if (CommonUtils.isNotEmpty(obligationIds)) {
             for (String obligationId : obligationIds) {
                 try {
-                    obligationService.getObligationById(obligationId);
+                    obligationService.getObligationById(obligationId, null);
                 } catch (Exception e) {
                     obligationIncorrect.add(obligationId);
                 }
@@ -1007,8 +1019,8 @@ public class RestControllerHelper<T> {
     public License convertToEmbeddedLicense(License license) {
         License embeddedLicense = new License();
         embeddedLicense.setId(license.getId());
-        embeddedLicense.setFullname(license.getFullname());
         embeddedLicense.setShortname(license.getShortname());
+        embeddedLicense.setFullname(license.getFullname());
         embeddedLicense.setChecked(license.isChecked());
         embeddedLicense.setLicenseType(license.getLicenseType());
         embeddedLicense.unsetOSIApproved();
@@ -1404,7 +1416,6 @@ public class RestControllerHelper<T> {
         embeddedClearingRequest.setType(null);
         embeddedClearingRequest.setClearingType(clearingRequest.getClearingType());
         embeddedClearingRequest.setTimestamp(clearingRequest.getTimestamp());
-        embeddedClearingRequest.setClearingSize(clearingRequest.getClearingSize());
         return embeddedClearingRequest;
     }
 
@@ -1599,7 +1610,8 @@ public class RestControllerHelper<T> {
     public void addEmbeddedDatesClearingRequest(HalResource<ClearingRequest> halClearingRequest, ClearingRequest clearingRequest, boolean isSingleRequest) {
         halClearingRequest.addEmbeddedResource("createdOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getTimestamp()));
         if (isSingleRequest) {
-            halClearingRequest.addEmbeddedResource("lastUpdatedOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getModifiedOn()));
+            long lastUpdatedOn = clearingRequest.getModifiedOn() > 0 ? clearingRequest.getModifiedOn() : clearingRequest.getTimestamp();
+            halClearingRequest.addEmbeddedResource("lastUpdatedOn", SW360Utils.convertEpochTimeToDate(lastUpdatedOn));
         }
     }
 
@@ -1646,19 +1658,6 @@ public class RestControllerHelper<T> {
         // Do not add attachment as it is an embedded field
         release.unsetAttachments();
         return halRelease;
-    }
-    public ClearingRequest updateCRSize(ClearingRequest clearingRequest, Project project, User sw360User) throws TException {
-        int openReleaseCount = SW360Utils.getOpenReleaseCount(project.getReleaseClearingStateSummary());
-        ClearingRequestSize currentSize = SW360Utils.determineCRSize(openReleaseCount);
-        ClearingRequestSize initialSize = clearingRequest.getClearingSize();
-        if(initialSize == null) return clearingRequest;
-        if(!initialSize.equals(ClearingRequestSize.VERY_LARGE)) {
-            int limit = SW360Utils.CLEARING_REQUEST_SIZE_MAP.get(initialSize);
-            if(openReleaseCount > limit){
-                clearingRequestService.updateClearingRequestForChangeInClearingSize(clearingRequest.getId(), currentSize);
-            }
-        }
-        return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
     }
 
     public boolean isWriteActionAllowed(Object object, User user) {

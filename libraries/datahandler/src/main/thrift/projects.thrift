@@ -472,6 +472,12 @@ service ProjectService {
     Project getProjectById(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
+      * get a project by id based on id irrespective of its visibility for the user
+      * (part of project CRUD support)
+      */
+    Project getProjectByIdIgnoringVisibility(1: string id) throws (1: SW360Exception exp);
+
+    /**
      * get multiple projects by id, if they are visible to the user
      * (part of project CRUD support)
      */

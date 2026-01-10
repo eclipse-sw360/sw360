@@ -80,7 +80,7 @@
     <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
     <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
-    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
@@ -88,7 +88,6 @@
     <versions-maven-plugin.version>2.19.1</versions-maven-plugin.version>
     <!-- JSON Libraries used in the project -->
     <gson.version>2.13.2</gson.version>
-    <json.version>20241224</json.version>
     <json-path.version>2.9.0</json-path.version>
     <json-smart.version>2.6.0</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
@@ -98,9 +97,9 @@
     <!-- Dependencies version properties -->
     <assertj.version>3.27.5</assertj.version>
     <byte-buddy.version>1.17.8</byte-buddy.version>
-    <cloudantsdk.version>0.10.9</cloudantsdk.version>
+    <cloudantsdk.version>0.10.12</cloudantsdk.version>
     <commons-cli.version>1.9.0</commons-cli.version>
-    <commons-codec.version>1.19.0</commons-codec.version>
+    <commons-codec.version>1.20.0</commons-codec.version>
     <commons-collection4.version>4.5.0</commons-collection4.version>
     <commons-compress.version>1.28.0</commons-compress.version>
     <commons-configuration.version>1.10</commons-configuration.version>
@@ -110,11 +109,11 @@
     <commons-text.version>1.14.0</commons-text.version>
     <sun.mail.version>2.0.2</sun.mail.version>
     <dom4j.version>2.2.0</dom4j.version>
-    <equalsverifier.version>4.1</equalsverifier.version>
+    <equalsverifier.version>4.2.5</equalsverifier.version>
     <failureaccess.version>1.0.3</failureaccess.version>
     <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
     <git-commit-id.version>9.0.2</git-commit-id.version>
-    <glassfish-jaxb.version>4.0.5</glassfish-jaxb.version>
+    <glassfish-jaxb.version>4.0.6</glassfish-jaxb.version>
     <guava.version>33.5.0-jre</guava.version>
     <hamcrest.version>1.3</hamcrest.version>
     <httpclient5.version>5.5.1</httpclient5.version>
@@ -125,6 +124,7 @@
     <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
     <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
     <jakarta.mail-api.version>2.0.2</jakarta.mail-api.version>
+    <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
     <jaxen.version>2.0.0</jaxen.version>
     <jboss-logging.version>3.6.1.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
@@ -137,12 +137,12 @@
     <joda-time.version>2.14.0</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
-    <log4j2.version>2.25.2</log4j2.version>
+    <log4j2.version>2.25.3</log4j2.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
-    <mockito.version>5.20.0</mockito.version>
+    <mockito.version>5.21.0</mockito.version>
     <okhttp.version>4.12.0</okhttp.version>
-    <org.ow2.asm.version>9.9</org.ow2.asm.version>
-    <org.spdx.java.spdx.library.version>2.0.1</org.spdx.java.spdx.library.version>
+    <org.ow2.asm.version>9.9.1</org.ow2.asm.version>
+    <org.spdx.java.spdx.library.version>2.0.2</org.spdx.java.spdx.library.version>
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
     <plexus-utils.version>4.0.2</plexus-utils.version>
@@ -153,13 +153,12 @@
     <spring-boot.version>3.5.3</spring-boot.version>
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
-    <spring-security-oauth2-authorization-server.version>1.5.2</spring-security-oauth2-authorization-server.version>
+    <spring-security-oauth2-authorization-server.version>1.5.5</spring-security-oauth2-authorization-server.version>
     <spring-security.version>6.5.6</spring-security.version>
     <springdoc-openapi-stater-common.version>2.8.13</springdoc-openapi-stater-common.version>
     <springframework.version>6.2.12</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <wiremock.version>3.13.1</wiremock.version>
-    <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
     <keycloak.version>26.4.1</keycloak.version>
     <org.owasp.encoder.version>1.3.1</org.owasp.encoder.version>
     <write.properties.file.version>2.0.0</write.properties.file.version>
@@ -569,6 +568,11 @@
         <artifactId>spring-boot-devtools</artifactId>
         <version>${spring-boot.version}</version>
       </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webflux</artifactId>
+        <version>${spring-boot.version}</version>
+    </dependency>
       <dependency>
         <groupId>jakarta.servlet</groupId>
         <artifactId>jakarta.servlet-api</artifactId>
@@ -599,6 +603,12 @@
       </dependency>
       <dependency>
         <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-common</artifactId>
+        <version>${keycloak.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
         <artifactId>keycloak-server-spi</artifactId>
         <scope>provided</scope>
         <version>${keycloak.version}</version>
@@ -606,6 +616,12 @@
       <dependency>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-server-spi-private</artifactId>
+        <version>${keycloak.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-model-storage</artifactId>
         <version>${keycloak.version}</version>
         <scope>provided</scope>
       </dependency>
@@ -620,13 +636,6 @@
         <artifactId>jboss-logging</artifactId>
         <version>${jboss-logging.version}</version>
         <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.arquillian.graphene</groupId>
-        <artifactId>graphene-webdriver</artifactId>
-        <version>${arquillian-graphene.version}</version>
-        <type>pom</type>
-        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>joda-time</groupId>

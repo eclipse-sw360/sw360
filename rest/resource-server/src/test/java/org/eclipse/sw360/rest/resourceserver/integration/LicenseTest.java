@@ -83,7 +83,9 @@ public class LicenseTest extends TestIntegrationBase {
         // Setup test request summary
         testRequestSummary = new RequestSummary();
         testRequestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        testRequestSummary.setMessage("Operation completed successfully");
+        testRequestSummary.setMessage("{\"licensesSuccess\":0,\"licensesMissing\":0}");
+        testRequestSummary.setTotalAffectedElements(0);
+        testRequestSummary.setTotalElements(0);
 
         // Setup object mapper
         objectMapper = new ObjectMapper();
@@ -421,7 +423,7 @@ public class LicenseTest extends TestIntegrationBase {
         String responseBody = response.getBody();
         assertTrue("Response should contain request status", responseBody.contains("requestStatus"));
         assertTrue("Response should contain SUCCESS status", responseBody.contains("SUCCESS"));
-        assertTrue("Response should contain OSADL import message", responseBody.contains("OSADL license has imported successfully"));
+        assertTrue("Response should contain OSADL import message", responseBody.contains("licensesSuccess"));
         assertTrue("Response should contain total elements", responseBody.contains("totalElements"));
         assertTrue("Response should contain total affected elements", responseBody.contains("totalAffectedElements"));
     }

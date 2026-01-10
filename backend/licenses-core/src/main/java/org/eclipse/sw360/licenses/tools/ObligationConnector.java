@@ -11,11 +11,12 @@
 package org.eclipse.sw360.licenses.tools;
 
 import org.json.JSONObject;
+import reactor.core.publisher.Mono;
 
 public abstract class ObligationConnector {
     protected abstract String generateURL(String licenseId);
 
-    protected abstract String getText(String licenseId);
+    protected abstract Mono<String> getText(String licenseId);
 
     public abstract JSONObject parseText(String obligationText);
 }

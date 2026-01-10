@@ -260,6 +260,14 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
+    public Project getProjectByIdIgnoringVisibility(String id) throws SW360Exception {
+        assertId(id);
+        Project project = handler.getProjectByIdIgnoringVisibility(id);
+        assertNotNull(project);
+        return project;
+    }
+
+    @Override
     public List<Project> getProjectsById(List<String> id, User user) throws TException {
         assertUser(user);
         assertNotNull(id);

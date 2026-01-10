@@ -801,9 +801,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(description = "Array of release IDs to be linked.",
                     examples = {
-                            @ExampleObject(value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
-                            @ExampleObject(value = "[\"/releases/5578999\"]")
-                            // TODO: Add example for MAP value
+                            @ExampleObject(name = "Array of IDs", value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
+                            @ExampleObject(name = "Array of paths", value = "[\"/releases/5578999\"]"),
+                            @ExampleObject(name = "Map with usage", value = "{\"releaseId1\":{\"releaseRelation\":\"DYNAMICALLY_LINKED\",\"mainlineState\":\"MAINLINE\"},\"releaseId2\":{\"releaseRelation\":\"STATICALLY_LINKED\"}}")
                     }
             )
             @RequestBody Object releasesInRequestBody,
@@ -835,8 +835,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(description = "Array of project IDs",
                     examples = {
-                            @ExampleObject(value = "[\"3765276512\",\"5578999\",\"3765276513\"]")
-                            // TODO: Add example for MAP value
+                            @ExampleObject(name = "Array of IDs", value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
+                            @ExampleObject(name = "Map with relation", value = "{\"projectId1\":\"CONTAINED\",\"projectId2\":\"REFERRED\"}")
                     }
             )
             @RequestBody List<String> projectIdsInRequestBody,
@@ -935,9 +935,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(description = "Array of release IDs to be linked.",
                     examples = {
-                            @ExampleObject(value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
-                            @ExampleObject(value = "[\"/releases/5578999\"]")
-                            // TODO: Add example for MAP value
+                            @ExampleObject(name = "Array of IDs", value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
+                            @ExampleObject(name = "Array of paths", value = "[\"/releases/5578999\"]"),
+                            @ExampleObject(name = "Map with usage", value = "{\"releaseId1\":{\"releaseRelation\":\"DYNAMICALLY_LINKED\",\"mainlineState\":\"MAINLINE\"},\"releaseId2\":{\"releaseRelation\":\"STATICALLY_LINKED\"}}")
                     }
             )
             @RequestBody Object releaseURIs,
@@ -3030,8 +3030,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(description = "Array of orphaned obligations title",
                     examples = {
-                            @ExampleObject(value = "[\"title1\",\"title2\",\"title3\"]")
-                            // TODO: Add example for MAP value
+                            @ExampleObject(name = "Array of titles", value = "[\"title1\",\"title2\",\"title3\"]"),
+                            @ExampleObject(name = "Map format", value = "{\"title1\":\"obligationStatus1\",\"title2\":\"obligationStatus2\"}")
                     }
             )
             @RequestBody List<String> obligationTitlesInRequestBody

@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
@@ -88,10 +89,17 @@ public class ObligationTest extends TestIntegrationBase {
 
         obligationList = Arrays.asList(obligation1, obligation2);
 
+        PaginationData pageData = new PaginationData();
+        pageData.setSortColumnNumber(0);
+        pageData.setDisplayStart(0);
+        pageData.setRowsPerPage(obligationList.size());
+        pageData.setTotalRowCount(obligationList.size());
+        pageData.setAscending(true);
+
         // Setup service mocks
-        given(obligationServiceMock.getObligations()).willReturn(obligationList);
-        given(obligationServiceMock.getObligationById(eq(obligation1.getId()))).willReturn(obligation1);
-        given(obligationServiceMock.getObligationById(eq(obligation2.getId()))).willReturn(obligation2);
+        given(obligationServiceMock.getObligationsFiltered(any(), any(), any())).willReturn(Map.of(pageData, obligationList));
+        given(obligationServiceMock.getObligationById(eq(obligation1.getId()), any())).willReturn(obligation1);
+        given(obligationServiceMock.getObligationById(eq(obligation2.getId()), any())).willReturn(obligation2);
         given(obligationServiceMock.deleteObligation(eq(obligation1.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(obligationServiceMock.deleteObligation(eq(obligation2.getId()), any())).willReturn(RequestStatus.SUCCESS);
 
@@ -257,7 +265,7 @@ public class ObligationTest extends TestIntegrationBase {
     @Test
     public void should_handle_obligation_not_found() throws IOException, TException {
         // Mock service to return null for non-existent obligation
-        given(obligationServiceMock.getObligationById("nonexistent-id")).willReturn(null);
+        given(obligationServiceMock.getObligationById(eq("nonexistent-id"), any())).willReturn(null);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -315,7 +323,7 @@ public class ObligationTest extends TestIntegrationBase {
     public void should_handle_exception_in_get_obligations() throws IOException, TException {
         // Mock service to throw exception
         doThrow(new RuntimeException("Failed to get obligations"))
-                .when(obligationServiceMock).getObligations();
+                .when(obligationServiceMock).getObligationsFiltered(any(), any(), any());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -331,7 +339,7 @@ public class ObligationTest extends TestIntegrationBase {
     public void should_handle_exception_in_get_obligation_by_id() throws IOException, TException {
         // Mock service to throw exception
         doThrow(new RuntimeException("Failed to get obligation"))
-                .when(obligationServiceMock).getObligationById(any());
+                .when(obligationServiceMock).getObligationById(any(), any());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -414,7 +422,7 @@ public class ObligationTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_delete_nonexistent_obligation() throws IOException, TException {
         // Mock service to throw exception for non-existent obligation
-        given(obligationServiceMock.getObligationById("nonexistent-id")).willReturn(null);
+        given(obligationServiceMock.getObligationById(eq("nonexistent-id"), any())).willReturn(null);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -429,4 +437,4 @@ public class ObligationTest extends TestIntegrationBase {
         String responseBody = response.getBody();
         assertTrue("Response should contain not found status", responseBody.contains("404"));
     }
-} 
+}
