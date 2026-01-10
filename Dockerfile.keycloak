@@ -26,6 +26,23 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
 # Copy the optimized KC
 FROM quay.io/keycloak/keycloak:${KC_VERSION}
 
-COPY --from=builder /opt/keycloak/ /opt/keycloak/
+# Create the /etc/sw360
+USER root
 
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+RUN mkdir -p /etc/sw360 \
+ && chown -R keycloak:keycloak /etc/sw360
+
+USER keycloak
+
+# Copy the configs required in /etc/sw360
+WORKDIR /app/docker-config
+
+# Copy the configs and entrypoint
+COPY --chown=keycloak ./scripts/docker-config .
+
+# Make entrypoint executable
+RUN chmod a+x ./docker-entrypoint-keycloak.sh
+
+ENTRYPOINT ["/app/docker-config/docker-entrypoint-keycloak.sh"]
+
+CMD ["start-dev", "--debug"]
