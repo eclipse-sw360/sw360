@@ -38,7 +38,7 @@ USER keycloak
 WORKDIR /app/docker-config
 
 # Copy the configs and entrypoint
-COPY --chown=keycloak ./scripts/docker-config .
+COPY --chown=keycloak ./scripts/docker-config/docker-entrypoint-keycloak.sh .
 
 # Make entrypoint executable
 RUN chmod a+x ./docker-entrypoint-keycloak.sh

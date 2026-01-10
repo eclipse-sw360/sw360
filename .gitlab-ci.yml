@@ -133,6 +133,8 @@ build:
         -fae \
         -Dmaven.plugin.validation=VERBOSE"
       eval $mvn_cmd
+    - mkdir -p "${BUILD_ARTIFACT_ROOT}/keycloak/scripts/docker-config"
+    - cp ./scripts/docker-config/docker-entrypoint-keycloak.sh "${BUILD_ARTIFACT_ROOT}/keycloak/scripts/docker-config/"
   cache:
     - key: maven
       paths:
