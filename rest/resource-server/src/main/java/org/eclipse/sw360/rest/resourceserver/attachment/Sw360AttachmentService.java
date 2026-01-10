@@ -227,7 +227,10 @@ public class Sw360AttachmentService {
     }
 
     public Attachment uploadAttachment(MultipartFile file, Attachment newAttachment, User sw360User) throws IOException, TException {
-        String fileName = file.getOriginalFilename(); // TODO: shouldn't the fileName be taken from newAttachment?
+        String attachmentFilename = newAttachment.getFilename();
+        String fileName = (attachmentFilename != null && !attachmentFilename.isEmpty())
+                ? attachmentFilename
+                : file.getOriginalFilename();
         String contentType = file.getContentType();
         final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
 
