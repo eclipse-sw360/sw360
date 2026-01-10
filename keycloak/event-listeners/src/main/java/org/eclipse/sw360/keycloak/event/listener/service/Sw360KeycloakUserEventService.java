@@ -6,6 +6,7 @@ package org.eclipse.sw360.keycloak.event.listener.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.keycloak.event.listener.utils.OrganizationMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.models.KeycloakSession;
@@ -127,15 +128,41 @@ public class Sw360KeycloakUserEventService {
 	}
 
 	/**
-	 * As there is a function in Keycloak to add multiple departments to a user and Keycloak is not supporting it,
-	 * Hence added this to find the first department from the list of departments
-	 * @param department
-	 * @return
+	 * Sanitizes and maps the department name.
+	 * <p>
+	 * This method performs two operations:
+	 * 1. Extracts the first word from the department string (for Keycloak multi-department support)
+	 * 2. Applies organization mapping if configured (via orgmapping.properties)
+	 * </p>
+	 * <p>
+	 * The organization mapping feature was previously available in the old OrganizationHelper.java
+	 * and has been restored to support mapping department names from identity providers to
+	 * internal SW360 organization names.
+	 * </p>
+	 * <p>
+	 * Example: If orgmapping.properties contains:
+	 * <pre>
+	 * enable.custom.mapping=true
+	 * mapping.1=Engineering Department
+	 * mapping.1.target=ENG
+	 * </pre>
+	 * Then "Engineering Department" will be mapped to "ENG"
+	 * </p>
+	 *
+	 * @param department The raw department string from Keycloak
+	 * @return The sanitized and mapped department name, or null if input is null
+	 * @see OrganizationMapper
 	 */
 	private String sanitizeDepartment(String department) {
 		String departmentSanitized = null;
 		if (department != null) {
-			departmentSanitized= department.trim().split("\\s+")[0];
+			// First, extract the first word (for Keycloak multi-department handling)
+			departmentSanitized = department.trim().split("\\s+")[0];
+
+			// Then, apply organization mapping if configured
+			departmentSanitized = OrganizationMapper.mapOrganizationName(departmentSanitized);
+
+			log.debug("Department mapping: '" + department + "' -> '" + departmentSanitized + "'");
 		}
 		return departmentSanitized;
 	}
