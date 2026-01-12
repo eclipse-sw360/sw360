@@ -124,7 +124,7 @@
     <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
     <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
     <jakarta.mail-api.version>2.0.2</jakarta.mail-api.version>
-    <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
+    <jakarta.ws.rs-api.version>4.0.0</jakarta.ws.rs-api.version>
     <jaxen.version>2.0.0</jaxen.version>
     <jboss-logging.version>3.6.1.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
