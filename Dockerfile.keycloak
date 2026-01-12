@@ -43,6 +43,9 @@ COPY --chown=keycloak ./scripts/docker-config/docker-entrypoint-keycloak.sh .
 # Make entrypoint executable
 RUN chmod a+x ./docker-entrypoint-keycloak.sh
 
+# Copy the optimized KC
+COPY --from=builder /opt/keycloak/ /opt/keycloak/
+
 ENTRYPOINT ["/app/docker-config/docker-entrypoint-keycloak.sh"]
 
 CMD ["start-dev", "--debug"]
