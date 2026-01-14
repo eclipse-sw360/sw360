@@ -2937,6 +2937,46 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            description = "Get license clearing info for multiple projects in a single request. " +
+                    "This is more efficient than calling the single project endpoint multiple times.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/licenseClearingCount", method = RequestMethod.POST)
+    public void getBatchLicenseClearingCount(
+            HttpServletResponse response,
+            @Parameter(description = "List of project IDs")
+            @RequestBody List<String> projectIds
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
+
+        List<Project> projects = projectService.getClearingInfoForProjects(projectIds, sw360User);
+
+        JsonObject result = new JsonObject();
+        for (Project proj : projects) {
+            ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
+            if (clearingInfo != null) {
+                int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool
+                        + clearingInfo.underClearing + clearingInfo.reportAvailable
+                        + clearingInfo.scanAvailable + clearingInfo.approved;
+                int approvedCount = clearingInfo.approved;
+
+                JsonObject row = new JsonObject();
+                row.addProperty("Release Count", releaseCount);
+                row.addProperty("Approved Count", approvedCount);
+                result.add(proj.getId(), row);
+            }
+        }
+
+        try {
+            response.setContentType("application/json");
+            response.getWriter().write(result.toString());
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    @Operation(
             description = "Get license  clearing details counts for `Clearing Detail` field " +
                     "at Administration tab of project detail page.",
             tags = {"Projects"}
