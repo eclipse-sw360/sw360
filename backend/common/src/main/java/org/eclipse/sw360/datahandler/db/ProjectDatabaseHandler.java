@@ -35,8 +35,7 @@ import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -80,8 +79,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
-import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
-import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAINLINE_STATE_ENABLED_FOR_USER;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
@@ -154,6 +152,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.LICENSE_INFO_HEADER_TEXT);
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
+    private final ThriftClients thriftClients;
 
     public ProjectDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
         this(client, dbName, attachmentDbName, new ProjectModerator(),
@@ -204,6 +203,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         this.packageDatabaseHandler = packageDatabaseHandler;
         DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
+
+        thriftClients = new ThriftClients();
     }
 
     /////////////////////
@@ -425,6 +426,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Add project to database and return ID
         repository.add(project);
 
+        if (SW360Utils.readConfig(INHERIT_ATTACHMENT_USAGES, false) && !CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
+            saveAttachmentUsages(project);
+        }
+
         dbHandlerUtil.addChangeLogs(project, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(),
                 null, null);
         sendMailNotificationsForNewProject(project, user.getEmail());
@@ -480,6 +485,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updateProjectDependentLinkedFields(project, actual);
             project.unsetVendor();
             updateModifiedFields(project, user.getEmail());
+
+            if (SW360Utils.readConfig(INHERIT_ATTACHMENT_USAGES, false)) {
+                Set<String> newLinkedProjects = CommonUtils.isNullOrEmptyMap(project.getLinkedProjects()) ? new HashSet<>() : new HashSet<>(project.getLinkedProjects().keySet());
+                Set<String> actualLinkedProjects = CommonUtils.isNullOrEmptyMap(actual.getLinkedProjects()) ? new HashSet<>() : actual.getLinkedProjects().keySet();
+
+                newLinkedProjects.removeAll(actualLinkedProjects);
+                if (!newLinkedProjects.isEmpty()) {
+                    saveAttachmentUsages(project);
+                }
+            }
             repository.update(project);
 
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
@@ -502,6 +517,62 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else {
             return moderator.updateProject(project, user);
         }
+    }
+
+    private void saveAttachmentUsages(Project project) {
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        String projectId = project.getId();
+        List<String> projectPaths = new ArrayList<>();
+
+        buildProjectPaths(project,null,projectPaths);
+        projectPaths.remove(project.getId());
+        try {
+            if (!projectPaths.isEmpty()) {
+                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths,projectId);
+                attachmentClient.makeAttachmentUsages(newAttachmentUsages);
+            }
+        } catch (TException e) {
+            log.error("Saving attachment usages for project " + projectId + " failed", e);
+        }
+    }
+
+    void buildProjectPaths(Project project, String parentPath, List<String> results) {
+        String currentPath = parentPath == null ? project.getId() : parentPath + ":" + project.getId();
+        if(CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
+            results.add(currentPath);
+        }
+        else {
+            for(Map.Entry<String,ProjectProjectRelationship> entry: project.getLinkedProjects().entrySet()) {
+                buildProjectPaths(repository.get(entry.getKey()), currentPath, results);
+            }
+            results.add(currentPath);
+        }
+    }
+
+    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId) {
+        List<AttachmentUsage> result = new ArrayList<>();
+        try {
+            for(String projectPath: projectPaths) {
+                String[] pathArray = projectPath.split(":");
+                String subProjectId = pathArray[pathArray.length-1];
+                List<AttachmentUsage> subProjectAttachmentUsages = thriftClients.makeAttachmentClient().getUsedAttachments(Source.projectId(subProjectId), null);
+
+                for(AttachmentUsage usage: subProjectAttachmentUsages) {
+                    String releaseId = usage.getOwner().getReleaseId();
+                    String attachmentContentId = usage.getAttachmentContentId();
+                    AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+                    final UsageData usageData;
+                    LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                    licenseInfoUsage.setProjectPath(projectPath);
+                    usageData = UsageData.licenseInfo(licenseInfoUsage);
+                    newUsage.setUsageData(usageData);
+                    result.add(newUsage);
+                }
+            }
+        } catch (TException e) {
+            log.error("Saving attachment usages for project " + projectId + " failed", e);
+        }
+        return result;
     }
 
     private void setRequestedDateAndTrimComment(Project project, Project actual, User user) {
@@ -862,7 +933,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final ProjectReleaseRelationship releaseRelation = new ProjectReleaseRelationship(ReleaseRelationship.UNKNOWN, MainlineState.OPEN);
         if (CommonUtils.isNotEmpty(linkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+                PackageService.Iface packageClient = thriftClients.makePackageClient();
                 List<Package> addedPackages = packageClient.getPackageByIds(linkedPacakgeIds);
 
                 Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = addedPackages.stream().map(Package::getReleaseId)
@@ -894,7 +965,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (CommonUtils.isNotEmpty(unlinkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+                PackageService.Iface packageClient = thriftClients.makePackageClient();
                 List<Package> removedPackages = packageClient.getPackageWithReleaseByPackageIds(unlinkedPacakgeIds);
 
                 Map<String, Set<String>> releaseIdToPackageIdsMap = removedPackages.stream()
@@ -2064,7 +2135,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Map<String, String> getGidsByEmail() throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
         Map<String, String> gidByEmail = new HashMap<>();
         userClient
@@ -2386,7 +2456,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
     private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
-    	ThriftClients thriftClients = new ThriftClients();
     	return new ProjectExporter(thriftClients.makeComponentClient(),
                 thriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
@@ -2409,7 +2478,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
      private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
          final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true,
-                 new ThriftClients(), log, user);
+                 thriftClients, log, user);
          if (projectLinks.isEmpty()) {
              throw new TException("For the projectId : " + projectId
                      + ", No data available. Please check the projectId and try again.");
@@ -2419,7 +2488,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
      public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
-        ThriftClients thriftClients = new ThriftClients();
         ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
 				thriftClients.makeProjectClient(), user, extendedByReleases);
 		try {
