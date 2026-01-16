@@ -11,6 +11,7 @@ package org.eclipse.sw360.vendors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
@@ -41,6 +42,11 @@ public class TestVendorClient {
         THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/vendorservice/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         VendorService.Iface client = new VendorService.Client(protocol);
+        PaginationData pageData = new PaginationData();
+        pageData.setAscending(true);
+        pageData.setRowsPerPage(10);
+        pageData.setDisplayStart(0);
+        pageData.setSortColumnNumber(0);
 
         List<Vendor> vendors = client.getAllVendors();
 
@@ -48,7 +54,7 @@ public class TestVendorClient {
 
         System.out.println("Now looking for matches starting with 'm' from vendor service");
 
-        reportFindings(client.searchVendors("m"));
+        reportFindings(client.searchVendors("m", pageData).values().iterator().next());
     }
 
     private static void reportFindings(List<Vendor> vendors) {

@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -25,10 +26,13 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -40,21 +44,23 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360VendorService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
-    public List<Vendor> getVendors() {
+    public Map<PaginationData, List<Vendor>> getVendors(Pageable pageable) {
         try {
-            return getAllVendorList();
+            VendorService.Iface sw360VendorClient = getThriftVendorClient();
+            PaginationData pageData = pageableToPaginationData(pageable,
+                    VendorSortColumn.BY_FULLNAME, true);
+            return sw360VendorClient.getAllVendorListPaginated(pageData);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public List<Vendor> searchVendors(String searchText) {
+    public Map<PaginationData, List<Vendor>> searchVendors(String searchText, Pageable pageable) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            return sw360VendorClient.searchVendors(searchText);
+            PaginationData pageData = pageableToPaginationData(pageable,
+                    VendorSortColumn.BY_FULLNAME, true);
+            return sw360VendorClient.searchVendors(searchText, pageData);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -104,21 +110,6 @@ public class Sw360VendorService {
         }
     }
 
-    public void updateVendor(Vendor vendor, User sw360User) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            RequestStatus requestStatus = sw360VendorClient.updateVendor(vendor, sw360User);
-            if (RequestStatus.SUCCESS.equals(requestStatus)) {
-                return;
-            } else if (RequestStatus.DUPLICATE.equals(requestStatus)) {
-                throw new DataIntegrityViolationException("A Vendor with same full name '" + vendor.getFullname() + "' and URL already exists!");
-            }
-            throw new RuntimeException("sw360 vendor with full name '" + vendor.getFullname() + " cannot be updated.");
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public RequestStatus vendorUpdate(Vendor vendor, User sw360User, String id) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
@@ -136,19 +127,6 @@ public class Sw360VendorService {
             }
             RequestStatus requestStatus = sw360VendorClient.updateVendor(existingVendor, sw360User);
             return requestStatus;
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void deleteVendor(Vendor vendor, User sw360User) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            RequestStatus requestStatus = sw360VendorClient.deleteVendor(vendor.getId(), sw360User);
-            if (requestStatus == RequestStatus.SUCCESS) {
-                return;
-            }
-            throw new RuntimeException("sw360 vendor with name '" + vendor.getFullname() + " cannot be deleted.");
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -227,5 +205,39 @@ public class Sw360VendorService {
         }
 
         return requestStatus;
+    }
+
+    /**
+     * Converts a Pageable object to a PaginationData object.
+     *
+     * @param pageable the Pageable object to convert
+     * @return a PaginationData object representing the pagination information
+     */
+    private static PaginationData pageableToPaginationData(
+            @NotNull Pageable pageable, VendorSortColumn defaultSort, Boolean defaultAscending
+    ) {
+        VendorSortColumn column = VendorSortColumn.BY_FULLNAME;
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "fullname" -> VendorSortColumn.BY_FULLNAME;
+                case "shortname" -> VendorSortColumn.BY_SHORTNAME;
+                default -> column; // Default to BY_NAME if no match
+            };
+            ascending = order.isAscending();
+        } else {
+            if (defaultSort != null) {
+                column = defaultSort;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
+        }
+
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
 }

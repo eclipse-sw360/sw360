@@ -43,6 +43,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+
 /**
  * Access the database in a CRUD manner, for a generic class
  *
@@ -85,6 +87,33 @@ public class DatabaseRepositoryCloudantClient<T> {
 
         db.createIndex(indexDefinitionBuilder.build(), ddocId, indexName,
                 "json");
+    }
+
+    /**
+     * Create partial indexes with a type filter for better and faster querying.
+     * @param ddocId Design ID for the index (used in query for `use_index` field)
+     * @param indexName Index name (can be paired with `ddocId` in `use_index`)
+     * @param type Type of the document to filter
+     * @param fields Fields to index
+     * @param db DB connector.
+     */
+    public void createPartialTypeIndex(
+            String ddocId, String indexName, String type, String @NotNull [] fields,
+            DatabaseConnectorCloudant db
+    ) {
+        IndexDefinition.Builder indexDefinitionBuilder = new IndexDefinition.
+                Builder();
+        for (String fieldName : fields) {
+            IndexField field = new IndexField.Builder()
+                    .add(fieldName, "asc")
+                    .build();
+            indexDefinitionBuilder.addFields(field);
+        }
+        indexDefinitionBuilder.partialFilterSelector(eq("type", type));
+
+        db.createIndex(
+                indexDefinitionBuilder.build(), ddocId, indexName, "json"
+        );
     }
 
     protected DatabaseConnectorCloudant getConnector() {

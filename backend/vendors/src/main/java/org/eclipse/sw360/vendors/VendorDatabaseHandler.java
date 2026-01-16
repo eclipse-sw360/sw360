@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -39,6 +40,7 @@ import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
@@ -67,6 +69,10 @@ public class VendorDatabaseHandler {
 
     public List<Vendor> getAllVendors() throws TException {
         return repository.getAll();
+    }
+
+    public Map<PaginationData, List<Vendor>> getAllVendors(PaginationData pageData) throws TException {
+        return repository.getVendorsWithPagination(pageData);
     }
 
     public AddDocumentRequestSummary addVendor(Vendor vendor) {
@@ -152,7 +158,7 @@ public class VendorDatabaseHandler {
     public RequestStatus mergeVendors(String mergeTargetId, String mergeSourceId, Vendor mergeSelection, User user) throws TException {
         Vendor mergeTarget = getByID(mergeTargetId);
         Vendor mergeSource = getByID(mergeSourceId);
-       
+
         if (!makePermission(mergeTarget, user).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, user).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, user).isActionAllowed(RequestedAction.DELETE)) {
@@ -173,18 +179,18 @@ public class VendorDatabaseHandler {
             if(status != RequestStatus.SUCCESS) {
                 return status;
             }
-           
+
             // now update the vendor in relating documents
             summary = updateComponents(mergeTarget, mergeSource, user);
             if(summary.getRequestStatus() != RequestStatus.SUCCESS) {
-                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements()) 
+                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements())
                     + "] of [" + summary.getTotalElements() + "] components: " + summary.getMessage());
                 return summary.getRequestStatus();
             }
 
             summary = updateReleases(mergeTarget, mergeSource, user);
             if(summary.getRequestStatus() != RequestStatus.SUCCESS) {
-                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements()) 
+                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements())
                     + "] of [" + summary.getTotalElements() + "] releases: " + summary.getMessage());
                 return summary.getRequestStatus();
             }
@@ -213,7 +219,7 @@ public class VendorDatabaseHandler {
         components.stream().forEach(component -> {
             component.setDefaultVendorId(mergeTarget.getId());
         });
-        
+
         return componentsClient.updateComponents(components, user);
     }
 

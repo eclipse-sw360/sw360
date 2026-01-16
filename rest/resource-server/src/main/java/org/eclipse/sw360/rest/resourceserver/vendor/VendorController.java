@@ -21,6 +21,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -55,6 +56,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -92,14 +94,26 @@ public class VendorController implements RepresentationModelProcessor<Repository
     ) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<Vendor> vendors = null;
+        List<Vendor> sw360Vendors = new ArrayList<>();
+        Map<PaginationData, List<Vendor>> paginatedVendors = null;
         if (!isNullOrEmpty(searchText)) {
-            vendors = vendorService.searchVendors(searchText);
+            paginatedVendors = vendorService.searchVendors(searchText, pageable);
         } else {
-            vendors = vendorService.getVendors();
+            paginatedVendors = vendorService.getVendors(pageable);
         }
 
-        PaginationResult<Vendor> paginationResult = restControllerHelper.createPaginationResult(request, pageable, vendors, SW360Constants.TYPE_VENDOR);
+        PaginationResult<Vendor> paginationResult;
+        if (paginatedVendors != null) {
+            sw360Vendors.addAll(paginatedVendors.values().iterator().next());
+            int totalCount = Math.toIntExact(paginatedVendors.keySet().stream()
+                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, sw360Vendors, SW360Constants.TYPE_VENDOR, totalCount);
+        } else {
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    sw360Vendors, SW360Constants.TYPE_VENDOR);
+        }
+
         List<EntityModel<Vendor>> vendorResources = new ArrayList<>();
         for (Vendor v: paginationResult.getResources()) {
             Vendor embeddedVendor = restControllerHelper.convertToEmbeddedVendor(v);
@@ -107,7 +121,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
         }
 
         CollectionModel<EntityModel<Vendor>> resources;
-        if (vendors.isEmpty()) {
+        if (vendorResources.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(Vendor.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, vendorResources);
