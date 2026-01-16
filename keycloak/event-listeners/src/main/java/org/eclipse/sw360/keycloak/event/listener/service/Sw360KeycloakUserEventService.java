@@ -127,15 +127,19 @@ public class Sw360KeycloakUserEventService {
 	}
 
 	/**
-	 * As there is a function in Keycloak to add multiple departments to a user and Keycloak is not supporting it,
-	 * Hence added this to find the first department from the list of departments
-	 * @param department
-	 * @return
+	 * Sanitizes and maps the department name from identity provider.
+	 * Applies organization name mapping if configured.
+	 *
+	 * @param department the department string from identity provider
+	 * @return the sanitized and mapped department name
+	 * @see OrganizationMapper#mapOrganizationName(String)
 	 */
 	private String sanitizeDepartment(String department) {
 		String departmentSanitized = null;
 		if (department != null) {
-			departmentSanitized= department.trim().split("\\s+")[0];
+			departmentSanitized = department.trim();
+			// Apply organization name mapping if configured
+			departmentSanitized = OrganizationMapper.mapOrganizationName(departmentSanitized);
 		}
 		return departmentSanitized;
 	}
