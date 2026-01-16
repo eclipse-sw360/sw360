@@ -70,6 +70,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -143,7 +144,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -1966,10 +1966,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
+
+
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            summary = "Save attachment usages",
-            description = "Pass an array of string in request body.",
+            summary = "Save attachment usages and ignored licenses",
+            description = "Pass an array of string in request body along with optional ignored license data.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -2013,10 +2015,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(
                     description = "Map of key-value pairs where keys are one of `selected`, `deselected`, " +
-                            "`selectedConcludedUsages` or `deselectedConcludedUsages`. The values are list of strings " +
+                            "`selectedConcludedUsages`, `deselectedConcludedUsages`, or `ignoredLicenses`. The values are list of strings " +
                             "in format `<release_id>_<usage_type>_<attachment_content_id>`. If the usage is of type " +
-                            "`licenseInfo`, you need to prepend `projectPath` with a `-`. Check the " +
-                            "`selectedConcludedUsages` from example data.",
+                            "`licenseInfo`, you need to prepend `projectPath` with a `-`. For `ignoredLicenses`, " +
+                            "provide a map with `<project_path>-<release_id>_<attachment_content_id>` as keys and an array of license IDs as values. " +
+                            "The project path supports hierarchy using colon separator (e.g., `parent:child:grandchild`). " +
+                            "If the project path doesn't start with the parent project ID (from URL path), it will be automatically prepended.",
                     schema = @Schema(
                             example = """
                             {
@@ -2033,12 +2037,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                                 ],
                                 "deselectedConcludedUsages": [
                                     "b43a13409ba08b1ac8a7471bf27eb1f3c-ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681", "value2"
-                                ]
+                                ],
+                                "ignoredLicenses": {
+                                    "<project_id>-<release_id>_<attachment_content_id>": ["MIT", "Apache-2.0"],
+                                    "<project_id>:<sub_proj>:<sub_sub_proj>-<release_id>_<attachment_content_id>": ["GPL-2.0"]
+                                }
                             }
                             """
                     )
             )
-            @RequestBody Map<String, List<String>> allUsages
+            @RequestBody Map<String, Object> allUsages
     ) throws TException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(id, user);
@@ -2050,14 +2058,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 List<String> selectedConcludedUsages = new ArrayList<>();
                 List<String> deselectedConcludedUsages = new ArrayList<>();
                 List<String> changedUsages = new ArrayList<>();
-                for (Map.Entry<String, List<String>> entry : allUsages.entrySet()) {
+                Map<String, List<String>> ignoredLicensesData = new HashMap<>();
+
+                for (Map.Entry<String, Object> entry : allUsages.entrySet()) {
                     String key = entry.getKey();
-                    List<String> list = entry.getValue();
+                    Object value = entry.getValue();
+
                     switch (key) {
-                        case "selected" -> selectedUsages.addAll(list);
-                        case "deselected" -> deselectedUsages.addAll(list);
-                        case "selectedConcludedUsages" -> selectedConcludedUsages.addAll(list);
-                        case "deselectedConcludedUsages" -> deselectedConcludedUsages.addAll(list);
+                        case "selected" -> selectedUsages.addAll((List<String>) value);
+                        case "deselected" -> deselectedUsages.addAll((List<String>) value);
+                        case "selectedConcludedUsages" -> selectedConcludedUsages.addAll((List<String>) value);
+                        case "deselectedConcludedUsages" -> deselectedConcludedUsages.addAll((List<String>) value);
+                        case "ignoredLicenses" -> ignoredLicensesData = (Map<String, List<String>>) value;
                     }
                 }
                 Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
@@ -2091,6 +2103,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 if (!usagesToCreate.isEmpty()) {
                     projectService.makeAttachmentUsages(usagesToCreate);
                 }
+
+                // Handle ignored licenses if provided
+                if (!ignoredLicensesData.isEmpty()) {
+                    projectService.handleIgnoredLicenses(id, ignoredLicensesData, project, user);
+                }
+
                 return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
             } else {
                 throw new AccessDeniedException("No write permission for project");
@@ -2100,6 +2118,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new SW360Exception("Saving attachment usages for project " + id + " failed");
         }
     }
+
+
+
 
     public Map<String, Integer> countMap(Collection<AttachmentType> attachmentTypes, UsageData filter, Project project, User sw360User, String id) throws TException {
         boolean projectWithSubProjects = project.getLinkedProjects() != null && !project.getLinkedProjects().isEmpty();
@@ -2964,6 +2985,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
     }
 
+    @PreAuthorize("hasAuthority('READ')")
     @Operation(
             description = "Get license obligations data from license database.",
             tags = {"Projects"}
