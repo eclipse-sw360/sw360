@@ -202,6 +202,22 @@ public class Sw360ModerationRequestService {
     }
 
     /**
+     * Get total count of moderation requests with user as a moderator and specific requesting user.
+     *
+     * @param moderator Moderator
+     * @param requestingUser Requesting user
+     * @return Count of moderation requests
+     * @throws TException Throws exception in case of error
+     */
+    public long getTotalCountByModerationStateAndRequestingUser(User moderator, User requestingUser) throws TException {
+        Map<String, Long> countInfo = getThriftModerationClient().getCountByModerationStateAndRequestingUser(moderator, requestingUser);
+        long totalCount = 0L;
+        totalCount += countInfo.getOrDefault("OPEN", 0L);
+        totalCount += countInfo.getOrDefault("CLOSED", 0L);
+        return totalCount;
+    }
+
+    /**
      * Convert Pageable from spring request to PaginationData
      *
      * @param pageable Pageable from request
