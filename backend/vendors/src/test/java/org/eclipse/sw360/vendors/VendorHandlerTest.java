@@ -13,14 +13,16 @@ import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -30,7 +32,9 @@ public class VendorHandlerTest {
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
 
     private VendorHandler vendorHandler;
+    private VendorRepository vendorRepository;
     private List<Vendor> vendorList;
+    private PaginationData pageData;
 
     @Before
     public void setUp() throws Exception {
@@ -50,6 +54,12 @@ public class VendorHandlerTest {
         }
 
         vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        vendorRepository = new VendorRepository(databaseConnector);
+        pageData = new PaginationData();
+        pageData.setSortColumnNumber(0);
+        pageData.setDisplayStart(0);
+        pageData.setRowsPerPage(10);
+        pageData.setAscending(true);
     }
 
     @After
@@ -95,32 +105,37 @@ public class VendorHandlerTest {
     }
 
     @Test
-    @Ignore
     public void testSearchVendors1() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("foundation");
+        pageData.setSortColumnNumber(0);
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("the", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
-        assertEquals(vendorList.get(1), vendors.get(0));
+        assertEquals(vendorList.get(1).getFullname(), vendors.getFirst().getFullname());
     }
 
     @Test
-    @Ignore
     public void testSearchVendors2() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("http");
+        pageData.setSortColumnNumber(0);
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("xyz", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(0, vendors.size());
     }
 
     @Test
-    @Ignore
     public void testSearchVendors3() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("soft");
-        assertEquals(1, vendors.size()); // Software but not Microsoft
+        pageData.setSortColumnNumber(0);
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("micro", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
+        assertEquals(1, vendors.size());
+        assertEquals(vendorList.get(0).getFullname(), vendors.getFirst().getFullname());
     }
 
     @Test
-    @Ignore
     public void testSearchVendors4() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("m");
+        pageData.setSortColumnNumber(1);
+        Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("a", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
+        assertEquals(vendorList.get(1).getShortname(), vendors.getFirst().getShortname());
     }
-
 }
