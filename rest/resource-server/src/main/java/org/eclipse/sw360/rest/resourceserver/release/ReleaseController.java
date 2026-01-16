@@ -986,6 +986,107 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Trigger FOSSology process with custom scan options.",
+            description = "Trigger FOSSology process with configurable analysis agents, decider agents, and reuse options.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    schema = @Schema(type = "object", implementation = Map.class),
+                                    examples = {
+                                            @ExampleObject(
+                                                    value =
+                                                            "{\"message\": \"FOSSology Process with custom options for Release Id : " +
+                                                                    "\\\"123\\\" has been triggered.\"}"
+                                            )
+                                    }
+                            )}
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value = "{\"message\": \"Invalid scan options provided.\"}"
+                                            )
+                                    }
+                            )}
+                    ),
+                    @ApiResponse(
+                            responseCode = "429",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value =
+                                                            "{\"message\": \"Max 10 FOSSology Process can be triggered simultaneously." +
+                                                                    " Please try after sometime.\"}"
+                                            )
+                                    }
+                            )}
+                    ),
+                    @ApiResponse(
+                            responseCode = "406",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value =
+                                                            "{\"message\": \"FOSSology Process for Release Id : " +
+                                                                    "\\\"123\\\" is already running. Please wait till" +
+                                                                    " it is completed.\"}"
+                                            )
+                                    }
+                            )}
+                    )
+            }
+    )
+    @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcessWithOptions", method = RequestMethod.POST)
+    public ResponseEntity<HalResource> triggerFossologyProcessWithOptions(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String releaseId,
+            @Parameter(description = "Mark previous FOSSology process outdated and generate new.")
+            @RequestParam(value = "markFossologyProcessOutdated", required = false) boolean markFossologyProcessOutdated,
+            @Parameter(description = "Upload description to FOSSology")
+            @RequestParam(value = "uploadDescription", required = false) String uploadDescription,
+            @Parameter(description = "Custom scan options for FOSSology agents")
+            @RequestBody ScanOptionsRequest scanOptionsRequest
+    ) throws TException, IOException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
+        releaseService.checkFossologyConnection();
+        
+        // Validate scan options
+        ScanOptionsValidator.validateComprehensive(scanOptionsRequest);
+        
+        ReentrantLock lock = mapOfLocks.get(releaseId);
+        Map<String, String> responseMap = new HashMap<>();
+        HttpStatus status = null;
+        if (lock == null || !lock.isLocked()) {
+            if (mapOfLocks.size() > 10) {
+                responseMap.put("message",
+                        "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
+                status = HttpStatus.TOO_MANY_REQUESTS;
+            } else {
+                releaseService.executeFossologyProcessWithOptions(user, attachmentService, mapOfLocks, releaseId,
+                        markFossologyProcessOutdated, uploadDescription, scanOptionsRequest);
+                responseMap.put("message", "FOSSology Process with custom options for Release Id : " + releaseId + " has been triggered.");
+                status = HttpStatus.OK;
+            }
+
+        } else {
+            status = HttpStatus.NOT_ACCEPTABLE;
+            responseMap.put("message", "FOSSology Process for Release Id : " + releaseId
+                    + " is already running. Please wait till it is completed.");
+        }
+        HalResource responseResource = new HalResource(responseMap);
+        Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL).slash(releaseId)
+                .slash("checkFossologyProcessStatus").withSelfRel();
+        responseResource.add(checkStatusLink);
+
+        return new ResponseEntity<HalResource>(responseResource, status);
+    }
+
+    @Operation(
             summary = "Re-generate fossology report.",
             description = "Re-generate fossology report.",
             tags = {"Releases"},
