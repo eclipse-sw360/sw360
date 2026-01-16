@@ -926,6 +926,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, sw360User);
     }
 
+    public List<Project> getClearingInfoForProjects(List<String> projectIds, User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        List<Project> projects = sw360ProjectClient.getProjectsById(projectIds, sw360User);
+        return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojects(projects, sw360User);
+    }
+
     public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(
             User sw360User, String name, Pageable pageable
     ) throws TException {

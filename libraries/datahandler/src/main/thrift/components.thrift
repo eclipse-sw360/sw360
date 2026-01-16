@@ -256,6 +256,7 @@ struct Release {
     // string details
     30: optional string createdBy, // person who created the release
     131: optional string creatorDepartment, // department of user in `createdBy`. transient
+    132: optional MainlineState projectMainlineState, // Project's mainline state for this release. transient
     32: optional set<string> contributors, // contributors to the release
     34: optional set<string> moderators, // people who can modify the data
     36: optional set<string> subscribers, // List of subscribers
