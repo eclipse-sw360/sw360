@@ -22,7 +22,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
@@ -101,7 +101,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String DEFAULT_ADMIN_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String SERVER_PATH_URL;
-    private static final String APPLICATION_NAME = "/resource";
     private static final Map<Object, Object> versionInfo;
     public static final String SVM_NOTIFICATION_URL;
 
@@ -174,9 +173,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        Server server = new Server();
-        server.setUrl(SERVER_PATH_URL + APPLICATION_NAME + REST_BASE_PATH);
-        server.setDescription("Current instance.");
         String restVersionString = getRestVersion();
         return new OpenAPI()
                 .components(new Components()
@@ -191,7 +187,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                 .info(new Info().title("SW360 API").license(new License().name("EPL-2.0")
                                 .url("https://github.com/eclipse-sw360/sw360/blob/main/LICENSE"))
                         .version(restVersionString))
-                .servers(List.of(server))
                 .path("/health", new PathItem().get(
                         new Operation().tags(Collections.singletonList("Health"))
                                 .summary("Health endpoint").operationId("health")
