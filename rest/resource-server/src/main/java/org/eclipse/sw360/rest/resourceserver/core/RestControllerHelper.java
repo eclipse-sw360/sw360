@@ -570,19 +570,15 @@ public class RestControllerHelper<T> {
             Link licenseSelfLink = linkTo(UserController.class)
                     .slash("api" + LicenseController.LICENSES_URL + "/" + licenseById.getId()).withSelfRel();
             halLicense.add(licenseSelfLink);
-            return halLicense;
-        } catch (ResourceNotFoundException rne) {
+        } catch (ResourceNotFoundException | Exception e) {
             LOGGER.error("cannot create a self link for license with id " + licenseId);
             embeddedLicense.setShortname(licenseId);
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
             embeddedLicense.setChecked(false);
             embeddedLicense.setFullname(null);
-            return halLicense;
-        } catch (Exception e) {
-            LOGGER.error("cannot create self link for license with id: " + licenseId);
         }
-        return null;
+        return halLicense;
     }
 
     public LicenseType convertToEmbeddedLicenseType(LicenseType licenseType) {
