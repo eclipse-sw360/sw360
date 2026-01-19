@@ -53,7 +53,7 @@ If you run in any issues with documentation or software, please be kind and repo
 
 ### Deployment
 
-Is recommended using the docker based setup,
+It is recommended to use the Docker-based setup,
 [described here](https://github.com/eclipse/sw360/blob/main/README_DOCKER.md).
 
 If you intend to install in a bare metal machine or use in your own virtualized system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).

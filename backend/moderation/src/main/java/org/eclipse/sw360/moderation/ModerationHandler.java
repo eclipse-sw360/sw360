@@ -387,6 +387,13 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
+    public Map<String, Long> getCountByModerationStateAndRequestingUser(User moderator, User requestingUser) throws TException {
+        assertUser(moderator);
+        assertUser(requestingUser);
+        return handler.getCountByModerationStateAndRequestingUser(moderator.getEmail(), requestingUser.getEmail());
+    }
+
+    @Override
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModeratorWithPagination(User user,
             PaginationData pageData, boolean open) throws TException {
         assertUser(user);

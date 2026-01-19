@@ -70,6 +70,24 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             "    }" +
             "}";
 
+
+    // Count by moderation state grouped by moderator and requesting user (OPEN/CLOSED)
+    private static final String COUNTBYMODERATIONSTATE_BY_MODERATOR_AND_REQUESTER = "function(doc) {" +
+            "    if (doc.type == 'moderation') {" +
+            "        var moderationState = doc.moderationState;" +
+            "        var stateBucket = (moderationState === \"INPROGRESS\" || moderationState === \"PENDING\") ? \"OPEN\" : \"CLOSED\";" +
+            "        if (doc.moderators || doc.requestingUser) {" +
+            "            if (doc.moderators) {" +
+            "                for (var i in doc.moderators) {" +
+            "                    emit([doc.moderators[i], (doc.requestingUser || null), stateBucket], null);" +
+            "                }" +
+            "            } else {" +
+            "                emit([null, doc.requestingUser, stateBucket], null);" +
+            "            }" +
+            "        }" +
+            "    }" +
+            "}";
+
     private static final String COUNTBYREQUESTER = "function(doc) {" +
             "    if (doc.type == 'moderation') {" +
             "        emit([doc.requestingUser], null);" +
@@ -92,6 +110,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         views.put("byRequestingUsersDeptView", createMapReduce(REQUESTING_USERS_VIEW, null));
         views.put("countByModerationState", createMapReduce(COUNTBYMODERATIONSTATE, "_count"));
         views.put("countByRequester", createMapReduce(COUNTBYREQUESTER, "_count"));
+        views.put("countByModerationStateModeratorAndRequester", createMapReduce(COUNTBYMODERATIONSTATE_BY_MODERATOR_AND_REQUESTER, "_count"));
         initStandardDesignDocument(views, db);
         createIndex(MR_BY_MODERATORS_IDX, "byModerators", new String[] {"moderators"}, db);
         createIndex(MR_BY_DATE_IDX, "byDate", new String[] {"timestamp"}, db);
@@ -257,6 +276,19 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return List.of(startKey, endKey);
     }
 
+    //Prepare keys with moderator and requestingUser
+    private List<String[]> prepareKeys(String moderator, String requestingUser, boolean ascending) {
+        String[] startKey, endKey;
+        if (ascending) {
+            startKey = new String[] { moderator, requestingUser };
+            endKey = new String[] { moderator, requestingUser, "\ufff0" };
+        } else {
+            startKey = new String[] { moderator, requestingUser, "\ufff0" };
+            endKey = new String[] { moderator, requestingUser };
+        }
+        return List.of(startKey, endKey);
+    }
+
     public List<ModerationRequest> getRequestsByRequestingUser(String user) {
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> filterByModeratorSelector = eq("requestingUser", user);
@@ -339,6 +371,34 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         }
         return countByModerationState;
     }
+    
+    public Map<String, Long> getCountByModerationStateAndRequestingUser(String moderator, String requestingUser) {
+        Map<String, Long> countByState = Maps.newHashMap();
+        List<String[]> keys = prepareKeys(moderator, requestingUser, true);
+        PostViewOptions countReq = getConnector()
+                .getPostViewQueryBuilder(ModerationRequest.class, "countByModerationStateModeratorAndRequester")
+                .startKey(keys.get(0))
+                .endKey(keys.get(1))
+                .group(true)
+                .groupLevel(3)
+                .descending(false)
+                .reduce(true)
+                .build();
+        try {
+            ViewResult response = getConnector().getPostViewQueryResponse(countReq);
+            if (response != null) {
+                countByState = response.getRows().stream().collect(Collectors.toMap(key -> {
+                    String json = key.getKey().toString();
+                    String cleaned = json.replace("[", "").replace("]", "").replaceAll("\"", "");
+                    List<String> parts = new ArrayList<>(Arrays.asList(cleaned.split(",")));
+                    return parts.get(2); // "OPEN" or "CLOSED"
+                }, val -> Long.parseLong(val.getValue().toString())));
+            }
+        } catch (ServiceResponseException e) {
+            log.error("Error getting count of moderation requests by state for moderator and requesting user", e);
+        }
+        return countByState;
+    }
 
     public Set<String> getRequestingUserDepts() {
         Set<String> requestingUserDepts = Sets.newHashSet();
@@ -356,5 +416,24 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             log.error("Error getting requesting users", e);
         }
         return requestingUserDepts;
+    }
+
+    public List<ModerationRequest> getRequestsByModeratorAndRequestingUserWithPaginationNoFilter(String moderator, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final boolean ascending = pageData.isAscending();
+        final int skip = pageData.getDisplayStart();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByRequestingUserSelector = eq("requestingUser", moderator);
+        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
+        final Map<String, Object> moderatorOrRequestingUser = or(List.of(filterByModeratorSelector, filterByRequestingUserSelector));
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, moderatorOrRequestingUser));
+        PostFindOptions qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .limit(rowsPerPage)
+                .skip(skip)
+                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
+                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
+                .build();
+        return getConnector().getQueryResult(qb, ModerationRequest.class);
     }
 }

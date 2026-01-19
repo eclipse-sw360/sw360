@@ -91,6 +91,8 @@ public class Sw360ObligationService {
                 || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
             try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+                String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), sw360User);
+                obligation.setNode(updatedNode);
                 sw360LicenseClient.updateObligation(obligation, sw360User);
                 return obligation;
             } catch (TException e) {

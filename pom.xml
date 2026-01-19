@@ -101,8 +101,8 @@
     <json-path.version>2.10.0</json-path.version>
     <json-smart.version>2.6.0</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
-    <jackson.version>2.20.1</jackson.version>
-    <jackson.annotation.version>2.20</jackson.annotation.version>
+    <jackson.version>2.21.0</jackson.version>
+    <jackson.annotation.version>2.21</jackson.annotation.version>
 
     <!-- Reproducible https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
     <project.build.outputTimestamp>2023-01-01T00:00:00Z</project.build.outputTimestamp>
@@ -122,7 +122,7 @@
     <commons-text.version>1.14.0</commons-text.version>
     <sun.mail.version>2.0.2</sun.mail.version>
     <dom4j.version>2.2.0</dom4j.version>
-    <equalsverifier.version>4.2.5</equalsverifier.version>
+    <equalsverifier.version>4.3</equalsverifier.version>
     <failureaccess.version>1.0.3</failureaccess.version>
     <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
     <git-commit-id.version>9.0.2</git-commit-id.version>

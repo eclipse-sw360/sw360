@@ -20,6 +20,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -28,6 +30,8 @@ import com.nimbusds.jose.jwk.RSAKey;
 
 @Component
 public class KeyManager {
+
+    private static final Logger log = LogManager.getLogger(KeyManager.class);
 
     @Value("${jwt.secretkey:sw360SecretKey}")
     private String secretKey;
@@ -48,20 +52,10 @@ public class KeyManager {
     private static KeyStore loadKeyStore(String keystoreFile, String password) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
         KeyStore keyStore = KeyStore.getInstance("JKS");
         keyStore.load(null, null);
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream(keystoreFile);
+        try (FileInputStream fileInputStream = new FileInputStream(keystoreFile)) {
             keyStore.load(fileInputStream, password.toCharArray());
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (fileInputStream != null) {
-                try {
-                    fileInputStream.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            log.error("Error loading keystore from {}", keystoreFile, e);
         }
         return keyStore;
     }

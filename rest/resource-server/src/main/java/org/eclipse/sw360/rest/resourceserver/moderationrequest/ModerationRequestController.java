@@ -129,7 +129,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
                 new HashMap<>();
         PaginationData paginationData = new PaginationData();
-        paginationData.setTotalRowCount(sw360ModerationRequestService.getTotalCountOfRequests(sw360User));
+        paginationData.setTotalRowCount(sw360ModerationRequestService.getTotalCountByModerationStateAndRequestingUser(sw360User,sw360User));
         modRequestsWithPageData.put(paginationData, moderationRequests);
 
         return getModerationResponseEntity(pageable, request, allDetails, modRequestsWithPageData);
@@ -174,7 +174,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
 
     @Operation(
             summary = "Get moderation based on state.",
-            description = "List all the ModerationRequest visible to the user based on the state.",
+            description = "List all the ModerationRequest visible to the user based on the state and  respond with MR where user is a moderator",
             tags = {"Moderation Requests"}
     )
     @RequestMapping(value = MODERATION_REQUEST_URL + "/byState", method = RequestMethod.GET)
