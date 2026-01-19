@@ -2962,8 +2962,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 int approvedCount = clearingInfo.approved;
 
                 JsonObject row = new JsonObject();
-                row.addProperty("Release Count", releaseCount);
-                row.addProperty("Approved Count", approvedCount);
+                row.addProperty("totalCount", releaseCount);
+                row.addProperty("approvedCount", approvedCount);
                 result.add(proj.getId(), row);
             }
         }
