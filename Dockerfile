@@ -17,7 +17,7 @@
 # is triggered by buildkit images
 
 # 3-eclipse-temurin-21-noble
-FROM maven@sha256:89086b81ff2ec9c65739b1763ffb729b59b48c569fe13e5c81a54e128b6827a7 AS sw360build
+FROM maven@sha256:618049ed0d807e989708b0b9de83fc645979a12ed66231af803389bfd315af08 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
