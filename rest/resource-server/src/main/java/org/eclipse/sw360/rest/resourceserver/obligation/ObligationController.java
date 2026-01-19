@@ -213,7 +213,35 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
      */
     @Operation(
             summary = "Edit an existing obligation.",
-            description = "Edit an existing obligation by id.",
+            description = """
+            Edit an existing obligation by id.
+            
+            The `node` property of the Obligation should be in following format as JSON encoded string:
+                    {
+                      "val": ["ROOT"],
+                      "children": [
+                        {
+                          "val": [
+                            "TYPE", "TEXT"
+                          ],
+                          "children": [
+                            {
+                              "val": [
+                                "TYPE", "TEXT"
+                              ],
+                              "children": []
+                            },
+                            {
+                              "val": [
+                                "Obligation", "LanguageElement", "Action", "Object"
+                              ],
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+            """,
             tags = {"Obligations"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully edited the obligation."),
