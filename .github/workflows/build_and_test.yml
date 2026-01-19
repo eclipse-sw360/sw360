@@ -1,4 +1,4 @@
-﻿# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2021.
 # Copyright Helio Chissini de Castro 2022-2025
 # Part of the SW360 Portal Project.
@@ -77,7 +77,7 @@ jobs:
 
       - name: Cache Thrift
         id: cache-thrift
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
