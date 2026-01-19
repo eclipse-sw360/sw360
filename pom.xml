@@ -92,7 +92,7 @@
     <json-smart.version>2.6.0</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
     <jackson.version>2.21.0</jackson.version>
-    <jackson.annotation.version>2.20</jackson.annotation.version>
+    <jackson.annotation.version>2.21</jackson.annotation.version>
 
     <!-- Dependencies version properties -->
     <assertj.version>3.27.5</assertj.version>
