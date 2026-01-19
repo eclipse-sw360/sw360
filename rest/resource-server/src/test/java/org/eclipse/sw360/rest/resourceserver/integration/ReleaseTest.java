@@ -1,5 +1,6 @@
 /*
  * Copyright Bosch Software Innovations GmbH, 2018.
+ * Copyright Ritankar Saha <ritankar.saha786@gmail.com> , 2025.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -833,5 +834,61 @@ public class ReleaseTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void should_trigger_fossology_process_with_custom_options() throws IOException, TException {
+        given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
+
+        String scanOptionsJson = "{\n" +
+                "  \"analysis\": {\n" +
+                "    \"bucket\": true,\n" +
+                "    \"copyrightEmailAuthor\": true,\n" +
+                "    \"monk\": true,\n" +
+                "    \"nomos\": true,\n" +
+                "    \"ojo\": true\n" +
+                "  },\n" +
+                "  \"decider\": {\n" +
+                "    \"nomosMonk\": true,\n" +
+                "    \"bulkReused\": true\n" +
+                "  },\n" +
+                "  \"reuse\": {\n" +
+                "    \"reuseMain\": true,\n" +
+                "    \"reuseCopyright\": true\n" +
+                "  }\n" +
+                "}";
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id + "/triggerFossologyProcessWithOptions?markFossologyProcessOutdated=true&uploadDescription=Test upload with custom options",
+                        HttpMethod.POST,
+                        new HttpEntity<>(scanOptionsJson, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void should_validate_scan_options_and_return_bad_request() throws IOException {
+        String invalidScanOptionsJson = "{\n" +
+                "  \"analysis\": {\n" +
+                "    \"invalidAgent\": true,\n" +
+                "    \"monk\": true\n" +
+                "  },\n" +
+                "  \"decider\": {\n" +
+                "    \"invalidDecider\": true\n" +
+                "  }\n" +
+                "}";
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id + "/triggerFossologyProcessWithOptions?uploadDescription=Test",
+                        HttpMethod.POST,
+                        new HttpEntity<>(invalidScanOptionsJson, headers),
+                        String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 }
