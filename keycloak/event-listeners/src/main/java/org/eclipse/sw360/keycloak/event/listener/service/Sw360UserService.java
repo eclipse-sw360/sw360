@@ -38,6 +38,13 @@ import java.util.Set;
 public class Sw360UserService {
     private static final Logger logger = LoggerFactory.getLogger(Sw360UserService.class);
 
+    // Commonly used constants
+    public static final String DEFAULT_DEPARTMENT = "DEPARTMENT";
+    public static final String DEFAULT_EXTERNAL_ID = "N/A";
+    public static final String CUSTOM_ATTR_DEPARTMENT = "Department";
+    public static final String CUSTOM_ATTR_EXTERNAL_ID = "externalId";
+    public static final String REALM = "sw360";
+
     private static final DatabaseConnectorCloudant connector;
     private static final UserRepository repository;
 
