@@ -93,6 +93,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1717,49 +1718,23 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
-        Map<ReleaseCLIInfo, List<Release>> updateStatus = new HashMap<>();
-        updateStatus.put(ReleaseCLIInfo.UPDATED, new ArrayList<>());
-        updateStatus.put(ReleaseCLIInfo.NOT_UPDATED, new ArrayList<>());
-        updateStatus.put(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS, new ArrayList<>());
+        Map<ReleaseCLIInfo, List<Release>> updateStatus = new ConcurrentHashMap<>();
+        updateStatus.put(ReleaseCLIInfo.UPDATED, Collections.synchronizedList(new ArrayList<>()));
+        updateStatus.put(ReleaseCLIInfo.NOT_UPDATED, Collections.synchronizedList(new ArrayList<>()));
+        updateStatus.put(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS, Collections.synchronizedList(new ArrayList<>()));
 
-        for (String releaseId : releaseIds) {
-            Release release = null;
-            try {
-                release = componentClient.getReleaseById(releaseId, sw360User);
-            } catch (TException e) {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.error("Error fetching release: {}", releaseId, e);
-                continue;
-            }
-            if (release == null) {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.error("Release with ID {} not found.", releaseId);
-                continue;
-            }
+        List<Callable<Void>> processingTasks = releaseIds.stream()
+                .map(releaseId -> (Callable<Void>) () -> {
+                    processReleaseForLicenseUpdate(releaseId, sw360User, componentClient,
+                            licenseInfoClient, updateStatus);
+                    return null;
+                })
+                .collect(Collectors.toList());
 
-            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
-            if (approvedCliAttachments.isEmpty()) {
-                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
-            }
-
-            if (approvedCliAttachments.size() > 1) {
-                updateStatus.get(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS).add(release);
-                log.info("Release {} has more than one attachment. Skipping update.", release.getId());
-                continue;
-            }
-
-            if (approvedCliAttachments.isEmpty()) {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.info("No CLX attachment found for release: {}. Skipping update.", release.getId());
-                continue;
-            }
-
-            if (processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User)) {
-                updateStatus.get(ReleaseCLIInfo.UPDATED).add(release);
-            } else {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.info("No changes done for release: {}", release.getId());
-            }
+        try {
+            releaseExecutor.invokeAll(processingTasks);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Error processing releases: " + e.getMessage());
         }
 
         for (Release release : updateStatus.get(ReleaseCLIInfo.UPDATED)) {
@@ -1768,6 +1743,61 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         return updateStatus;
+    }
+
+    /**
+     * Process a single release for license update.
+     *
+     * @param releaseId         Release ID to process
+     * @param sw360User         User
+     * @param componentClient   Component service client
+     * @param licenseInfoClient License info service client
+     * @param updateStatus      Map to collect results
+     */
+    private void processReleaseForLicenseUpdate(
+            String releaseId, User sw360User, ComponentService.Iface componentClient,
+            LicenseInfoService.Iface licenseInfoClient, Map<ReleaseCLIInfo, List<Release>> updateStatus) {
+        Release release;
+        try {
+            release = componentClient.getReleaseById(releaseId, sw360User);
+        } catch (TException e) {
+            log.error("Error fetching release: {}", releaseId, e);
+            Release failedRelease = new Release();
+            failedRelease.setId(releaseId);
+            updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(failedRelease);
+            return;
+        }
+        if (release == null) {
+            log.error("Release with ID {} not found.", releaseId);
+            Release notFoundRelease = new Release();
+            notFoundRelease.setId(releaseId);
+            updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(notFoundRelease);
+            return;
+        }
+
+        List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+        if (approvedCliAttachments.isEmpty()) {
+            approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+        }
+
+        if (approvedCliAttachments.size() > 1) {
+            updateStatus.get(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS).add(release);
+            log.info("Release {} has more than one attachment. Skipping update.", release.getId());
+            return;
+        }
+
+        if (approvedCliAttachments.isEmpty()) {
+            updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
+            log.info("No CLX attachment found for release: {}. Skipping update.", release.getId());
+            return;
+        }
+
+        if (processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User)) {
+            updateStatus.get(ReleaseCLIInfo.UPDATED).add(release);
+        } else {
+            updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
+            log.info("No changes done for release: {}", release.getId());
+        }
     }
 
     /**
