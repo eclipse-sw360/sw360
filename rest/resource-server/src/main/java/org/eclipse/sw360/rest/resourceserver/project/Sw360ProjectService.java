@@ -1701,7 +1701,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         ProjectService.Iface projectClient = getThriftProjectClient();
-        LicenseInfoService.Iface licenseInfoClient = new ThriftClients().makeLicenseInfoClient();
         ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
 
         Project project;
@@ -1722,44 +1721,36 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         updateStatus.put(ReleaseCLIInfo.NOT_UPDATED, new ArrayList<>());
         updateStatus.put(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS, new ArrayList<>());
 
+        List<Callable<ReleaseProcessResult>> tasks = new ArrayList<>(releaseIds.size());
         for (String releaseId : releaseIds) {
-            Release release = null;
+            tasks.add(() -> processReleaseForCliUpdate(releaseId, sw360User));
+        }
+
+        List<Future<ReleaseProcessResult>> futures;
+        try {
+            futures = releaseExecutor.invokeAll(tasks);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TException("Interrupted while processing releases", e);
+        }
+
+        for (Future<ReleaseProcessResult> future : futures) {
+            ReleaseProcessResult result;
             try {
-                release = componentClient.getReleaseById(releaseId, sw360User);
-            } catch (TException e) {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.error("Error fetching release: {}", releaseId, e);
-                continue;
-            }
-            if (release == null) {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.error("Release with ID {} not found.", releaseId);
+                result = future.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new TException("Interrupted while waiting for release processing", e);
+            } catch (ExecutionException e) {
+                log.error("Release processing failed", e);
                 continue;
             }
 
-            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
-            if (approvedCliAttachments.isEmpty()) {
-                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
-            }
-
-            if (approvedCliAttachments.size() > 1) {
-                updateStatus.get(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS).add(release);
-                log.info("Release {} has more than one attachment. Skipping update.", release.getId());
+            if (result == null || result.release == null) {
                 continue;
             }
 
-            if (approvedCliAttachments.isEmpty()) {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.info("No CLX attachment found for release: {}. Skipping update.", release.getId());
-                continue;
-            }
-
-            if (processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User)) {
-                updateStatus.get(ReleaseCLIInfo.UPDATED).add(release);
-            } else {
-                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
-                log.info("No changes done for release: {}", release.getId());
-            }
+            updateStatus.get(result.status).add(result.release);
         }
 
         for (Release release : updateStatus.get(ReleaseCLIInfo.UPDATED)) {
@@ -1768,6 +1759,67 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         return updateStatus;
+    }
+
+    private ReleaseProcessResult processReleaseForCliUpdate(String releaseId, User sw360User) {
+        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+        LicenseInfoService.Iface licenseInfoClient = new ThriftClients().makeLicenseInfoClient();
+
+        Release release = null;
+        try {
+            release = componentClient.getReleaseById(releaseId, sw360User);
+            if (release == null) {
+                log.error("Release with ID {} not found.", releaseId);
+                return ReleaseProcessResult.notUpdated(null);
+            }
+
+            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            if (approvedCliAttachments.isEmpty()) {
+                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+            }
+
+            if (approvedCliAttachments.size() > 1) {
+                log.info("Release {} has more than one attachment. Skipping update.", release.getId());
+                return ReleaseProcessResult.multipleAttachments(release);
+            }
+
+            if (approvedCliAttachments.isEmpty()) {
+                log.info("No CLX attachment found for release: {}. Skipping update.", release.getId());
+                return ReleaseProcessResult.notUpdated(release);
+            }
+
+            if (processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User)) {
+                return ReleaseProcessResult.updated(release);
+            }
+
+            log.info("No changes done for release: {}", release.getId());
+            return ReleaseProcessResult.notUpdated(release);
+        } catch (Exception e) {
+            log.error("Error processing release: {}", releaseId, e);
+            return ReleaseProcessResult.notUpdated(release);
+        }
+    }
+
+    private static final class ReleaseProcessResult {
+        private final ReleaseCLIInfo status;
+        private final Release release;
+
+        private ReleaseProcessResult(ReleaseCLIInfo status, Release release) {
+            this.status = status;
+            this.release = release;
+        }
+
+        private static ReleaseProcessResult updated(Release release) {
+            return new ReleaseProcessResult(ReleaseCLIInfo.UPDATED, release);
+        }
+
+        private static ReleaseProcessResult notUpdated(Release release) {
+            return new ReleaseProcessResult(ReleaseCLIInfo.NOT_UPDATED, release);
+        }
+
+        private static ReleaseProcessResult multipleAttachments(Release release) {
+            return new ReleaseProcessResult(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS, release);
+        }
     }
 
     /**
