@@ -443,9 +443,16 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
 
     private static @NotNull String formatSubquery(@NotNull Set<String> filterSet, final String fieldName) {
         final Function<String, String> addType = input -> {
-            if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible") || fieldName.equals("createdBy") || fieldName.equals("email")) {
+            // Handle pre-formatted queries from prepareWildcardQuery
+            if (input.startsWith("\"") && input.endsWith("\"")) {
+                // Exact phrase search - just prepend field name
+                return fieldName + ":" + input;
+            } else if (input.startsWith("(") && input.contains("\"")) {
+                // Wildcard query with parentheses - prepend field name
+                return fieldName + ":" + input;
+            } else if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible") || fieldName.equals("createdBy") || fieldName.equals("email")) {
                 return fieldName + ":\"" + input + "\"";
-            } if (fieldName.equals("createdOn") || fieldName.equals("timestamp")) {
+            } else if (fieldName.equals("createdOn") || fieldName.equals("timestamp")) {
                 try {
                     return fieldName + ":" + formatDateNouveauFormat(input);
                 } catch (ParseException e) {
@@ -463,7 +470,11 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     public static @NotNull String prepareWildcardQuery(@NotNull String query) {
         String leadingWildcardChar = DatabaseSettings.LUCENE_LEADING_WILDCARD ? "*" : "";
         if (query.startsWith("\"") && query.endsWith("\"")) {
-            return "(\"" + sanitizeQueryInput(query) + "\")";
+            // Exact phrase search - strip outer quotes first, sanitize, then add quotes back
+            String innerText = query.substring(1, query.length() - 1);
+            String sanitized = sanitizeQueryInput(innerText);
+            // Return just the quoted text without parentheses for exact phrase search
+            return "\"" + sanitized + "\"";
         } else {
             String wildCardQuery = Arrays.stream(sanitizeQueryInput(query)
                     .split(" ")).map(q -> leadingWildcardChar + q + "*")
