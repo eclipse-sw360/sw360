@@ -14,9 +14,11 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.keycloak.event.model.Group;
 import org.eclipse.sw360.keycloak.event.model.UserEntity;
 import org.jboss.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -25,16 +27,17 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.REALM;
 
 public class Sw360KeycloakAdminEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakAdminEventService.class);
 	private final ObjectMapper objectMapper;
 	private final Sw360UserService userService;
 	private final KeycloakSession keycloakSession;
-	private static final String REALM = "sw360";
-
-	private static final String CUSTOM_ATTR_DEPARTMENT = "Department";
-	private static final String CUSTOM_ATTR_EXTERNAL_ID = "externalId";
 
 	public Sw360KeycloakAdminEventService(Sw360UserService sw360UserService, ObjectMapper objectMapper, KeycloakSession keycloakSession) {
 		this.objectMapper = objectMapper;
@@ -86,6 +89,9 @@ public class Sw360KeycloakAdminEventService {
 	private String getUserIdfromResourcePath(String resourcePath) {
 		int startIndex = resourcePath.indexOf("users/") + "users/".length();
 		int endIndex = resourcePath.indexOf("/", startIndex);
+		if (endIndex == -1) {
+			return resourcePath.substring(startIndex);
+		}
 		return resourcePath.substring(startIndex, endIndex);
 	}
 
@@ -95,16 +101,23 @@ public class Sw360KeycloakAdminEventService {
 			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
             User sw360User = convertEntityToUserThriftObj(userEntity);
 			log.debugf("Converted Entity:: %s", sw360User);
+            // Set user group if exists in CouchDB
+            Optional<User> existingUser = Optional.ofNullable(userService.getUserByEmail(sw360User.getEmail()));
+            existingUser.ifPresent(eu -> {
+				sw360User.setUserGroup(eu.getUserGroup());
+				updateKeycloakUserGroup(event, eu.getUserGroup());
+			});
+
 			Optional<User> user = Optional.ofNullable(userService.createOrUpdateUser(sw360User));
 			user.ifPresentOrElse((u) -> {
-				log.infof("Saved User Couchdb Id:: %s" ,u.getId());
+				log.infof("Saved User Couchdb Id:: %s", u.getId());
 			}, () -> {
 				log.info("User not saved may be as it returned null!");
 			});
 		} catch (JsonMappingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error: %s" , e);
+			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error: %s", e);
 		} catch (JsonProcessingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error: %s" , e);
+			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error: %s", e);
 		}
 	}
 
@@ -166,12 +179,47 @@ public class Sw360KeycloakAdminEventService {
 	}
 
 	private static void setDepartment(UserEntity userEntity, User user) {
-        List<String> userDepartment = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_DEPARTMENT, List.of("Unknown"));
-        user.setDepartment(userDepartment.getFirst());
+        List<String> userDepartment = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_DEPARTMENT, List.of(DEFAULT_DEPARTMENT));
+        String department = Sw360KeycloakUserEventService.sanitizeDepartment(userDepartment.getFirst());
+        user.setDepartment(department);
 	}
 
 	private static void setExternalId(UserEntity userEntity, User user) {
-        List<String> userExternalId = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_EXTERNAL_ID, List.of("N/A"));
-        user.setExternalid(userExternalId.getFirst());
+        List<String> userExternalId = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_EXTERNAL_ID, List.of(DEFAULT_EXTERNAL_ID));
+        String externalId = Sw360KeycloakUserEventService.sanitizeExternalId(userExternalId.getFirst());
+        user.setExternalid(externalId);
 	}
+
+    /**
+     * User was created in CouchDB (prob by SW360 application). Update
+     * KeyCloak's user model to have the group membership from CouchDB values.
+     * @param event     Event which is triggered.
+     * @param userGroup New UserGroup to assign to KC user
+     */
+    private void updateKeycloakUserGroup(@NotNull AdminEvent event, @NotNull UserGroup userGroup) {
+        String resourcePath = event.getResourcePath();
+        RealmModel realm = keycloakSession.realms().getRealmByName(REALM);
+        UserModel userModel = getUserModelFromSession(event.getResourcePath());
+
+        if (userModel != null) {
+            String groupName = userGroup.toString();
+            Optional<GroupModel> groupModel = realm.getGroupsStream()
+                    .filter(g -> g.getName().equalsIgnoreCase(groupName))
+                    .findFirst();
+
+            groupModel.ifPresent(g -> {
+                if (!userModel.isMemberOf(g)) {
+                    userModel.getGroupsStream().forEach(userModel::leaveGroup);
+                    userModel.joinGroup(g);
+                    log.infof("Updated KeyCloak user group to %s for user %s", groupName, userModel.getEmail());
+                }
+            });
+
+            if (groupModel.isEmpty()) {
+                log.warnf("Group %s not found in KeyCloak", groupName);
+            }
+        } else {
+            log.warnf("User with id %s not found in Keycloak", getUserIdfromResourcePath(resourcePath));
+        }
+    }
 }

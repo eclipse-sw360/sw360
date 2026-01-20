@@ -45,6 +45,7 @@ public class JsonReleaseRelationSerializer extends JsonSerializer<Map<String, Pr
             ProjectReleaseRelationship projectReleaseRelationship = releaseRelation.getValue();
             linkedRelease.put("relation", projectReleaseRelationship.getReleaseRelation().name());
             linkedRelease.put("mainlineState", projectReleaseRelationship.getMainlineState().name());
+            linkedRelease.put("projectMainlineState", projectReleaseRelationship.getMainlineState().name());
             linkedRelease.put("comment", CommonUtils.nullToEmptyString(projectReleaseRelationship.getComment()));
             linkedRelease.put("createdBy", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedBy()));
             linkedRelease.put("createdOn", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedOn()));
