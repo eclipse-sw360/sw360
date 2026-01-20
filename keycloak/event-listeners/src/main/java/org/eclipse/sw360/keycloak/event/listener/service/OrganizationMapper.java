@@ -93,13 +93,13 @@ public class OrganizationMapper {
             return name;
         }
 
-        if (!customMappingEnabled) {
+        if (!isCustomMappingEnabled()) {
             log.debug("Custom organization mapping is disabled, returning original name: " + name);
             return name;
         }
 
         final Predicate<Map.Entry<String, String>> matcher;
-        if (matchPrefix) {
+        if (isMatchPrefixEnabled()) {
             matcher = e -> name.startsWith(e.getKey());
         } else {
             // match complete name
@@ -137,16 +137,6 @@ public class OrganizationMapper {
     public static boolean isMatchPrefixEnabled() {
         ensureInitialized();
         return matchPrefix;
-    }
-
-    /**
-     * Get the number of configured mappings.
-     *
-     * @return number of mappings
-     */
-    public static int getMappingCount() {
-        ensureInitialized();
-        return sortedOrganizationMappings.size();
     }
 
     private static void loadOrganizationMapperSettings() {
