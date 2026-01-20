@@ -6,8 +6,11 @@ package org.eclipse.sw360.keycloak.event.listener.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jboss.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.keycloak.events.Event;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -17,6 +20,7 @@ import org.keycloak.userprofile.DefaultUserProfile;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +48,14 @@ public class Sw360KeycloakUserEventService {
 	public void userRegistrationEvent(Event event) {
 		Map<String, String> details = event.getDetails();
 		User user = fillUserFromEvent(details);
+
+        // Set user group if exists in CouchDB
+        Optional<User> existingUser = Optional.ofNullable(userService.getUserByEmail(user.getEmail()));
+        existingUser.ifPresent(eu -> {
+			user.setUserGroup(eu.getUserGroup());
+			updateKeycloakUserGroup(event, eu.getUserGroup());
+		});
+
 		userService.createOrUpdateUser(user);
 	}
 
@@ -164,5 +176,38 @@ public class Sw360KeycloakUserEventService {
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(email);
 		return matcher.matches();
+	}
+
+    /**
+     * User was created in CouchDB (prob by SW360 application). Update
+     * KeyCloak's user model to have the group membership from CouchDB values.
+     * @param event     Event which is triggered.
+     * @param userGroup New UserGroup to assign to KC user
+     */
+	private void updateKeycloakUserGroup(@NotNull Event event, @NotNull UserGroup userGroup) {
+		String userId = event.getUserId();
+		RealmModel realm = keycloakSession.realms().getRealmByName(REALM);
+		UserModel userModel = keycloakSession.users().getUserById(realm, userId);
+
+		if (userModel != null) {
+            String groupName = userGroup.toString();
+			Optional<GroupModel> groupModel = realm.getGroupsStream()
+					.filter(g -> g.getName().equalsIgnoreCase(groupName))
+					.findFirst();
+
+			groupModel.ifPresent(g -> {
+				if (!userModel.isMemberOf(g)) {
+					userModel.getGroupsStream().forEach(userModel::leaveGroup);
+					userModel.joinGroup(g);
+					log.infof("Updated KeyCloak user group to %s for user %s", groupName, userModel.getEmail());
+				}
+			});
+
+			if (groupModel.isEmpty()) {
+				log.warnf("Group %s not found in KeyCloak", groupName);
+			}
+		} else {
+			log.warnf("User with id %s not found in KeyCloak", userId);
+		}
 	}
 }

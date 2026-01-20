@@ -14,9 +14,11 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.keycloak.event.model.Group;
 import org.eclipse.sw360.keycloak.event.model.UserEntity;
 import org.jboss.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -87,6 +89,9 @@ public class Sw360KeycloakAdminEventService {
 	private String getUserIdfromResourcePath(String resourcePath) {
 		int startIndex = resourcePath.indexOf("users/") + "users/".length();
 		int endIndex = resourcePath.indexOf("/", startIndex);
+		if (endIndex == -1) {
+			return resourcePath.substring(startIndex);
+		}
 		return resourcePath.substring(startIndex, endIndex);
 	}
 
@@ -96,6 +101,13 @@ public class Sw360KeycloakAdminEventService {
 			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
             User sw360User = convertEntityToUserThriftObj(userEntity);
 			log.debugf("Converted Entity:: %s", sw360User);
+            // Set user group if exists in CouchDB
+            Optional<User> existingUser = Optional.ofNullable(userService.getUserByEmail(sw360User.getEmail()));
+            existingUser.ifPresent(eu -> {
+				sw360User.setUserGroup(eu.getUserGroup());
+				updateKeycloakUserGroup(event, eu.getUserGroup());
+			});
+
 			Optional<User> user = Optional.ofNullable(userService.createOrUpdateUser(sw360User));
 			user.ifPresentOrElse((u) -> {
 				log.infof("Saved User Couchdb Id:: %s", u.getId());
@@ -177,4 +189,37 @@ public class Sw360KeycloakAdminEventService {
         String externalId = Sw360KeycloakUserEventService.sanitizeExternalId(userExternalId.getFirst());
         user.setExternalid(externalId);
 	}
+
+    /**
+     * User was created in CouchDB (prob by SW360 application). Update
+     * KeyCloak's user model to have the group membership from CouchDB values.
+     * @param event     Event which is triggered.
+     * @param userGroup New UserGroup to assign to KC user
+     */
+    private void updateKeycloakUserGroup(@NotNull AdminEvent event, @NotNull UserGroup userGroup) {
+        String resourcePath = event.getResourcePath();
+        RealmModel realm = keycloakSession.realms().getRealmByName(REALM);
+        UserModel userModel = getUserModelFromSession(event.getResourcePath());
+
+        if (userModel != null) {
+            String groupName = userGroup.toString();
+            Optional<GroupModel> groupModel = realm.getGroupsStream()
+                    .filter(g -> g.getName().equalsIgnoreCase(groupName))
+                    .findFirst();
+
+            groupModel.ifPresent(g -> {
+                if (!userModel.isMemberOf(g)) {
+                    userModel.getGroupsStream().forEach(userModel::leaveGroup);
+                    userModel.joinGroup(g);
+                    log.infof("Updated KeyCloak user group to %s for user %s", groupName, userModel.getEmail());
+                }
+            });
+
+            if (groupModel.isEmpty()) {
+                log.warnf("Group %s not found in KeyCloak", groupName);
+            }
+        } else {
+            log.warnf("User with id %s not found in Keycloak", getUserIdfromResourcePath(resourcePath));
+        }
+    }
 }
