@@ -127,7 +127,7 @@ public class Sw360KeycloakUserEventServiceTest {
         verify(sw360UserService).createOrUpdateUser(userCaptor.capture());
 
         User capturedUser = userCaptor.getValue();
-        assertEquals(Sw360KeycloakUserEventService.DEFAULT_DEPARTMENT, capturedUser.getDepartment());
+        assertEquals(Sw360UserService.DEFAULT_DEPARTMENT, capturedUser.getDepartment());
     }
 
     @Test
@@ -157,8 +157,8 @@ public class Sw360KeycloakUserEventServiceTest {
     public void testUserLoginEvent_WithNullDepartmentAttribute() {
         Event loginEvent = createLoginEvent();
         Map<String, List<String>> attributes = new HashMap<>();
-        attributes.put(Sw360KeycloakUserEventService.DEPARTMENT, Collections.singletonList(null));
-        attributes.put(Sw360KeycloakUserEventService.EXTERNAL_ID, Collections.singletonList("ext123"));
+        attributes.put(Sw360UserService.CUSTOM_ATTR_DEPARTMENT, Collections.singletonList(null));
+        attributes.put(Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
 
         when(userModel.getEmail()).thenReturn(TEST_EMAIL);
         when(userModel.getFirstName()).thenReturn(TEST_FIRST_NAME);
@@ -186,8 +186,8 @@ public class Sw360KeycloakUserEventServiceTest {
 
     private void setupUserModelMock(String department) {
         Map<String, List<String>> attributes = new HashMap<>();
-        attributes.put(Sw360KeycloakUserEventService.DEPARTMENT, Collections.singletonList(department));
-        attributes.put(Sw360KeycloakUserEventService.EXTERNAL_ID, Collections.singletonList("ext123"));
+        attributes.put(Sw360UserService.CUSTOM_ATTR_DEPARTMENT, Collections.singletonList(department));
+        attributes.put(Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
 
         when(userModel.getEmail()).thenReturn(TEST_EMAIL);
         when(userModel.getFirstName()).thenReturn(TEST_FIRST_NAME);
@@ -198,7 +198,7 @@ public class Sw360KeycloakUserEventServiceTest {
 
     private void setupUserModelMockWithoutDepartment() {
         Map<String, List<String>> attributes = new HashMap<>();
-        attributes.put(Sw360KeycloakUserEventService.EXTERNAL_ID, Collections.singletonList("ext123"));
+        attributes.put(Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
 
         when(userModel.getEmail()).thenReturn(TEST_EMAIL);
         when(userModel.getFirstName()).thenReturn(TEST_FIRST_NAME);

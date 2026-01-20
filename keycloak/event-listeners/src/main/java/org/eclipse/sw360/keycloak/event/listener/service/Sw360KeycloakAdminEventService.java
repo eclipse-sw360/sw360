@@ -25,16 +25,17 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.REALM;
 
 public class Sw360KeycloakAdminEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakAdminEventService.class);
 	private final ObjectMapper objectMapper;
 	private final Sw360UserService userService;
 	private final KeycloakSession keycloakSession;
-	private static final String REALM = "sw360";
-
-	private static final String CUSTOM_ATTR_DEPARTMENT = "Department";
-	private static final String CUSTOM_ATTR_EXTERNAL_ID = "externalId";
 
 	public Sw360KeycloakAdminEventService(Sw360UserService sw360UserService, ObjectMapper objectMapper, KeycloakSession keycloakSession) {
 		this.objectMapper = objectMapper;
@@ -97,14 +98,14 @@ public class Sw360KeycloakAdminEventService {
 			log.debugf("Converted Entity:: %s", sw360User);
 			Optional<User> user = Optional.ofNullable(userService.createOrUpdateUser(sw360User));
 			user.ifPresentOrElse((u) -> {
-				log.infof("Saved User Couchdb Id:: %s" ,u.getId());
+				log.infof("Saved User Couchdb Id:: %s", u.getId());
 			}, () -> {
 				log.info("User not saved may be as it returned null!");
 			});
 		} catch (JsonMappingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error: %s" , e);
+			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error: %s", e);
 		} catch (JsonProcessingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error: %s" , e);
+			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error: %s", e);
 		}
 	}
 
@@ -166,12 +167,14 @@ public class Sw360KeycloakAdminEventService {
 	}
 
 	private static void setDepartment(UserEntity userEntity, User user) {
-        List<String> userDepartment = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_DEPARTMENT, List.of("Unknown"));
-        user.setDepartment(userDepartment.getFirst());
+        List<String> userDepartment = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_DEPARTMENT, List.of(DEFAULT_DEPARTMENT));
+        String department = Sw360KeycloakUserEventService.sanitizeDepartment(userDepartment.getFirst());
+        user.setDepartment(department);
 	}
 
 	private static void setExternalId(UserEntity userEntity, User user) {
-        List<String> userExternalId = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_EXTERNAL_ID, List.of("N/A"));
-        user.setExternalid(userExternalId.getFirst());
+        List<String> userExternalId = userEntity.getAttributes().getOrDefault(CUSTOM_ATTR_EXTERNAL_ID, List.of(DEFAULT_EXTERNAL_ID));
+        String externalId = Sw360KeycloakUserEventService.sanitizeExternalId(userExternalId.getFirst());
+        user.setExternalid(externalId);
 	}
 }
