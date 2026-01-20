@@ -50,7 +50,7 @@ As a consequence, your very welcomed code contributions could be provided as pul
 * fork our repository in your space
 * create a new branch for your contribution
 * apply your contribution to the new branch
-* make are that all files have a proper license header (see below)
+* make sure that all files have a proper license header (see below)
 * make sure you include tests for testable stuff
 * very important: all existing tests need to pass after your changes
 * commit your changes into that branch
