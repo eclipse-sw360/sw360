@@ -101,6 +101,7 @@ build:
     - *setup_proxies
 
     - cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
+    - cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
     - sed -i 's/^\(couchdb.url\s*=\).*/\1 '${COUCHDB_URL//\//\\/}'/' /etc/sw360/couchdb-test.properties
     - sed -i 's/^\(couchdb.user\s*=\).*/\1 '${COUCHDB_TEST_USER}'/' /etc/sw360/couchdb-test.properties
     - sed -i 's/^\(couchdb.password\s*=\).*/\1 '${COUCHDB_TEST_PWD}'/' /etc/sw360/couchdb-test.properties
