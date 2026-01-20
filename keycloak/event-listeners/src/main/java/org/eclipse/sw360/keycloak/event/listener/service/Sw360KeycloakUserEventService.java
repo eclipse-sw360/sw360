@@ -21,20 +21,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.REALM;
 
 public class Sw360KeycloakUserEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakUserEventService.class);
 	public static final String USERNAME = "username";
-	public static final String DEPARTMENT = "Department";
-	public static final String EXTERNAL_ID = "externalId";
-	public static final String DEFAULT_DEPARTMENT = "DEPARTMENT";
-	public static final String DEFAULT_EXTERNAL_ID = "N/A";
-
 
 	private final Sw360UserService userService;
 	private final ObjectMapper objectMapper;
 	private final KeycloakSession keycloakSession;
-	private static final String REALM = "sw360";
 
 	public Sw360KeycloakUserEventService(Sw360UserService sw360UserService, ObjectMapper objectMapper, KeycloakSession keycloakSession) {
 		this.userService = sw360UserService;
@@ -50,29 +49,32 @@ public class Sw360KeycloakUserEventService {
 
 	private User fillUserFromEvent(Map<String, String> userDetails) {
 		log.debug("Event Details" + userDetails);
-		User user = setUserDepartmentFromSession();
+        User user = new User();
         user.setType(TYPE_USER);
 		user.setEmail(userDetails.get("email"));
 		user.setFullname(userDetails.get("first_name") + " " + userDetails.get("last_name"));
-		user.setExternalid(userDetails.get("username"));
 		user.setGivenname(userDetails.get("first_name"));
 		user.setLastname(userDetails.get("last_name"));
+        user.setDepartment(sanitizeDepartment(
+                getAttributeOrDefaultFromSession(CUSTOM_ATTR_DEPARTMENT, DEFAULT_DEPARTMENT)));
+        user.setExternalid(sanitizeExternalId(
+                getAttributeOrDefaultFromSession(CUSTOM_ATTR_EXTERNAL_ID, DEFAULT_EXTERNAL_ID)));
 		return user;
 	}
 
-	private User setUserDepartmentFromSession() {
-        User user = new User();
-		keycloakSession.getAttributes().forEach((key, up) -> {
-            if (up instanceof DefaultUserProfile usPro) {
-                usPro.getAttributes().toMap().forEach((key1, value) -> {
-                    if (key1.equalsIgnoreCase("department") && !value.isEmpty()) {
-                        user.setDepartment(value.getFirst());
-                    }
-                });
-            }
-        });
-		return user;
-	}
+    private String getAttributeOrDefaultFromSession(String attributeName, String defaultValue) {
+        return keycloakSession.getAttributes().values().stream()
+                .filter(DefaultUserProfile.class::isInstance)
+                .map(DefaultUserProfile.class::cast)
+                .flatMap(usPro -> usPro.getAttributes().toMap().entrySet().stream())
+                .filter(entry ->
+                        entry.getKey().equalsIgnoreCase(attributeName) &&
+                                !entry.getValue().isEmpty())
+                .findFirst()
+                .map(Map.Entry::getValue)
+                .map(List::getFirst)
+                .orElse(defaultValue);
+    }
 
 	public void userLoginEvent(Event event) {
 		UserProvider userProvider = keycloakSession.users();
@@ -113,7 +115,8 @@ public class Sw360KeycloakUserEventService {
 
 	private void mapSetDepartment(UserModel userModel, User user) {
 		log.debug("User Model Attributes" + userModel.getAttributes());
-		List<String> departments = userModel.getAttributes().getOrDefault(DEPARTMENT, Collections.singletonList(DEFAULT_DEPARTMENT));
+		List<String> departments = userModel.getAttributes().getOrDefault(
+                CUSTOM_ATTR_DEPARTMENT, Collections.singletonList(DEFAULT_DEPARTMENT));
 		String department = departments.getFirst();
 		String parentDepartment = sanitizeDepartment(department);
 		user.setDepartment(parentDepartment);
@@ -121,7 +124,8 @@ public class Sw360KeycloakUserEventService {
 
 	private void mapSetExternalId(UserModel userModel, User user) {
 		log.debug("User Model Attributes" + userModel.getAttributes());
-		List<String> externalIds = userModel.getAttributes().getOrDefault(EXTERNAL_ID, Collections.singletonList(DEFAULT_EXTERNAL_ID));
+		List<String> externalIds = userModel.getAttributes().getOrDefault(
+                CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList(DEFAULT_EXTERNAL_ID));
 		String externalId = externalIds.getFirst();
 		user.setExternalid(sanitizeExternalId(externalId));
 	}
@@ -134,10 +138,9 @@ public class Sw360KeycloakUserEventService {
 	 * @return the sanitized and mapped department name
 	 * @see OrganizationMapper#mapOrganizationName(String)
 	 */
-	private String sanitizeDepartment(String department) {
+	public static String sanitizeDepartment(String department) {
 		String departmentSanitized = null;
 		if (department != null) {
-			departmentSanitized = department.trim();
 			// Apply organization name mapping if configured
 			departmentSanitized = OrganizationMapper.mapOrganizationName(department.trim());
 		} else {
@@ -146,11 +149,13 @@ public class Sw360KeycloakUserEventService {
 		return departmentSanitized;
 	}
 
-	private String sanitizeExternalId(String externalId) {
+	public static String sanitizeExternalId(String externalId) {
 		String externalIdSanitized = null;
 		if (externalId != null) {
-			externalIdSanitized= externalId.trim();
-		}
+			externalIdSanitized = externalId.trim();
+		} else {
+            externalIdSanitized = DEFAULT_EXTERNAL_ID;
+        }
 		return externalIdSanitized;
 	}
 
