@@ -139,8 +139,10 @@ public class Sw360KeycloakUserEventService {
 		if (department != null) {
 			departmentSanitized = department.trim();
 			// Apply organization name mapping if configured
-			departmentSanitized = OrganizationMapper.mapOrganizationName(departmentSanitized);
-		}
+			departmentSanitized = OrganizationMapper.mapOrganizationName(department.trim());
+		} else {
+            departmentSanitized = DEFAULT_DEPARTMENT;
+        }
 		return departmentSanitized;
 	}
 
