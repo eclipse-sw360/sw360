@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018.
+ * Copyright Sandip Mandal<sandipmandal02.sm@gmail.com>, 2026.
  * Copyright Bosch Software Innovations GmbH, 2017.
  * Part of the SW360 Portal Project.
  *
@@ -1644,4 +1645,22 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return usageInformation;
     }
 
+    /**
+     * Get linked packages for a release
+     */
+    public List<org.eclipse.sw360.datahandler.thrift.packages.Package> getLinkedPackagesForRelease(String releaseId, User user) throws TException {
+        Release release = getReleaseForUserById(releaseId, user);
+
+        if (release.getPackageIds() == null || release.getPackageIds().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        try {
+            org.eclipse.sw360.datahandler.thrift.packages.PackageService.Iface packageClient =
+                new ThriftClients().makePackageClient();
+            return packageClient.getPackageWithReleaseByPackageIds(release.getPackageIds());
+        } catch (TTransportException e) {
+            throw new TException("Unable to get package client", e);
+        }
+    }
 }

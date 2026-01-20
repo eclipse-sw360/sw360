@@ -60,6 +60,9 @@ public class ResourceServerConfiguration {
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     String issuerUri;
 
+    @Value("${springdoc.swagger-ui.require-authentication:true}")
+    boolean swaggerRequireAuthentication;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         ApiTokenAuthenticationFilter apiTokenAuthenticationFilter = new ApiTokenAuthenticationFilter(authenticationManager, saep);
@@ -69,6 +72,16 @@ public class ResourceServerConfiguration {
                         jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
                                 .jwkSetUri(issuerUri)).authenticationEntryPoint(saep))
                 .authorizeHttpRequests(auth -> {
+                    // Swagger/OpenAPI endpoints - configurable authentication
+                    if (!swaggerRequireAuthentication) {
+                        auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
+                        auth.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
+                        auth.requestMatchers(HttpMethod.GET, "/index.html").permitAll();
+                        auth.requestMatchers(HttpMethod.GET, "/docs/**").permitAll();
+                        auth.requestMatchers(HttpMethod.GET, "/mkdocs/**").permitAll();
+                    }
+                    // API endpoints
+                    auth.requestMatchers(HttpMethod.GET, "/version").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
@@ -78,10 +91,6 @@ public class ResourceServerConfiguration {
                     auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
-                    auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/docs/**").permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/mkdocs/**").permitAll();
                 })
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))

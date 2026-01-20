@@ -1,4 +1,4 @@
-﻿# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2021.
 # Copyright Helio Chissini de Castro 2022-2025
 # Part of the SW360 Portal Project.
@@ -56,6 +56,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - uses: webiny/action-conventional-commits@8bc41ff4e7d423d56fa4905f6ff79209a78776c7 # v1.3.0
 
+
       - name: Verify license headers
         run: |
           chmod +x .github/testForLicenseHeaders.sh
@@ -68,6 +69,10 @@ jobs:
           sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
           sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
+      - name: Copy test configuration files
+        run: |
+          sudo cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
+
       - name: Set up JDK 21
         uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5.1.0
         with:
@@ -77,7 +82,7 @@ jobs:
 
       - name: Cache Thrift
         id: cache-thrift
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}

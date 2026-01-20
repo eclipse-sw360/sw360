@@ -70,6 +70,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -143,7 +144,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -488,8 +488,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 ));
         sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
 
+        Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
         List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
             final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
+            if (releaseIdToUsageMap != null) {
+                ProjectReleaseRelationship relationship = releaseIdToUsageMap.get(sw360Release.getId());
+                if (relationship != null) {
+                    embeddedRelease.setProjectMainlineState(relationship.getMainlineState());
+                }
+            }
             final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
             return releaseResource;
         })).collect(Collectors.toList());
@@ -1560,6 +1567,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "includeAllAttachments", required = false ) boolean includeAllAttachments,
             @Parameter(description = "Exclude release version from the license info file")
             @RequestParam(value = "excludeReleaseVersion", required = false, defaultValue = "false") boolean excludeReleaseVersion,
+            @Parameter(description = "Include subprojects")
+            @RequestParam(value = "includeSubprojects", required = false, defaultValue = "true") boolean includeSubprojects,
             HttpServletResponse response
     ) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1569,10 +1578,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         if (includeAllAttachments) {
             mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
-                    projectService.filterAndSortAllAttachments(SW360Constants.INITIAL_LICENSE_INFO_ATTACHMENT_TYPES), true, sw360User);
+                    projectService.filterAndSortAllAttachments(SW360Constants.INITIAL_LICENSE_INFO_ATTACHMENT_TYPES), true, includeSubprojects, sw360User);
         } else {
             mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
-                    projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, sw360User);
+                    projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, includeSubprojects, sw360User);
         }
 
         List<AttachmentUsage> attchmntUsg = attachmentService.getAttachemntUsages(id);
@@ -1964,10 +1973,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
+
+
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            summary = "Save attachment usages",
-            description = "Pass an array of string in request body.",
+            summary = "Save attachment usages and ignored licenses",
+            description = "Pass an array of string in request body along with optional ignored license data.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -2011,10 +2022,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(
                     description = "Map of key-value pairs where keys are one of `selected`, `deselected`, " +
-                            "`selectedConcludedUsages` or `deselectedConcludedUsages`. The values are list of strings " +
+                            "`selectedConcludedUsages`, `deselectedConcludedUsages`, or `ignoredLicenses`. The values are list of strings " +
                             "in format `<release_id>_<usage_type>_<attachment_content_id>`. If the usage is of type " +
-                            "`licenseInfo`, you need to prepend `projectPath` with a `-`. Check the " +
-                            "`selectedConcludedUsages` from example data.",
+                            "`licenseInfo`, you need to prepend `projectPath` with a `-`. For `ignoredLicenses`, " +
+                            "provide a map with `<project_path>-<release_id>_<attachment_content_id>` as keys and an array of license IDs as values. " +
+                            "The project path supports hierarchy using colon separator (e.g., `parent:child:grandchild`). " +
+                            "If the project path doesn't start with the parent project ID (from URL path), it will be automatically prepended.",
                     schema = @Schema(
                             example = """
                             {
@@ -2031,12 +2044,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                                 ],
                                 "deselectedConcludedUsages": [
                                     "b43a13409ba08b1ac8a7471bf27eb1f3c-ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681", "value2"
-                                ]
+                                ],
+                                "ignoredLicenses": {
+                                    "<project_id>-<release_id>_<attachment_content_id>": ["MIT", "Apache-2.0"],
+                                    "<project_id>:<sub_proj>:<sub_sub_proj>-<release_id>_<attachment_content_id>": ["GPL-2.0"]
+                                }
                             }
                             """
                     )
             )
-            @RequestBody Map<String, List<String>> allUsages
+            @RequestBody Map<String, Object> allUsages
     ) throws TException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(id, user);
@@ -2048,14 +2065,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 List<String> selectedConcludedUsages = new ArrayList<>();
                 List<String> deselectedConcludedUsages = new ArrayList<>();
                 List<String> changedUsages = new ArrayList<>();
-                for (Map.Entry<String, List<String>> entry : allUsages.entrySet()) {
+                Map<String, List<String>> ignoredLicensesData = new HashMap<>();
+
+                for (Map.Entry<String, Object> entry : allUsages.entrySet()) {
                     String key = entry.getKey();
-                    List<String> list = entry.getValue();
+                    Object value = entry.getValue();
+
                     switch (key) {
-                        case "selected" -> selectedUsages.addAll(list);
-                        case "deselected" -> deselectedUsages.addAll(list);
-                        case "selectedConcludedUsages" -> selectedConcludedUsages.addAll(list);
-                        case "deselectedConcludedUsages" -> deselectedConcludedUsages.addAll(list);
+                        case "selected" -> selectedUsages.addAll((List<String>) value);
+                        case "deselected" -> deselectedUsages.addAll((List<String>) value);
+                        case "selectedConcludedUsages" -> selectedConcludedUsages.addAll((List<String>) value);
+                        case "deselectedConcludedUsages" -> deselectedConcludedUsages.addAll((List<String>) value);
+                        case "ignoredLicenses" -> ignoredLicensesData = (Map<String, List<String>>) value;
                     }
                 }
                 Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
@@ -2089,6 +2110,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 if (!usagesToCreate.isEmpty()) {
                     projectService.makeAttachmentUsages(usagesToCreate);
                 }
+
+                // Handle ignored licenses if provided
+                if (!ignoredLicensesData.isEmpty()) {
+                    projectService.handleIgnoredLicenses(id, ignoredLicensesData, project, user);
+                }
+
                 return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
             } else {
                 throw new AccessDeniedException("No write permission for project");
@@ -2099,12 +2126,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
     }
 
+
+
+
     public Map<String, Integer> countMap(Collection<AttachmentType> attachmentTypes, UsageData filter, Project project, User sw360User, String id) throws TException {
         boolean projectWithSubProjects = project.getLinkedProjects() != null && !project.getLinkedProjects().isEmpty();
         List<ProjectLink> mappedProjectLinks =
                 (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP)
                         ? projectService.createLinkedProjects(project,
-                        projectService.filterAndSortAttachments(attachmentTypes), true, sw360User)
+                        projectService.filterAndSortAttachments(attachmentTypes), true, true, sw360User)
                         : projectService.createLinkedProjectsWithAllReleases(project,
                         projectService.filterAndSortAttachments(attachmentTypes), true, sw360User);
 
@@ -2930,6 +2960,46 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            description = "Get license clearing info for multiple projects in a single request. " +
+                    "This is more efficient than calling the single project endpoint multiple times.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/licenseClearingCount", method = RequestMethod.POST)
+    public void getBatchLicenseClearingCount(
+            HttpServletResponse response,
+            @Parameter(description = "List of project IDs")
+            @RequestBody List<String> projectIds
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
+
+        List<Project> projects = projectService.getClearingInfoForProjects(projectIds, sw360User);
+
+        JsonObject result = new JsonObject();
+        for (Project proj : projects) {
+            ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
+            if (clearingInfo != null) {
+                int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool
+                        + clearingInfo.underClearing + clearingInfo.reportAvailable
+                        + clearingInfo.scanAvailable + clearingInfo.approved;
+                int approvedCount = clearingInfo.approved;
+
+                JsonObject row = new JsonObject();
+                row.addProperty("totalCount", releaseCount);
+                row.addProperty("approvedCount", approvedCount);
+                result.add(proj.getId(), row);
+            }
+        }
+
+        try {
+            response.setContentType("application/json");
+            response.getWriter().write(result.toString());
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    @Operation(
             description = "Get license  clearing details counts for `Clearing Detail` field " +
                     "at Administration tab of project detail page.",
             tags = {"Projects"}
@@ -2962,6 +3032,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
     }
 
+    @PreAuthorize("hasAuthority('READ')")
     @Operation(
             description = "Get license obligations data from license database.",
             tags = {"Projects"}

@@ -133,7 +133,7 @@ public class ModerationDatabaseHandler {
     }
 
     public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(String moderator, PaginationData pageData) {
-        return repository.getRequestsByModeratorWithPaginationNoFilter(moderator, pageData);
+        return repository.getRequestsByModeratorAndRequestingUserWithPaginationNoFilter(moderator, pageData);
     }
 
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
@@ -945,6 +945,10 @@ public class ModerationDatabaseHandler {
 
     public Map<String, Long> getCountByRequester(String moderator) {
         return repository.getCountByRequester(moderator);
+    }
+
+    public Map<String, Long> getCountByModerationStateAndRequestingUser(String moderator, String requestingUser) {
+        return repository.getCountByModerationStateAndRequestingUser(moderator, requestingUser);
     }
 
     public Set<String> getRequestingUserDepts() {

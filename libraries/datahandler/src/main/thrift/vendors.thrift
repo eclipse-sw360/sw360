@@ -18,6 +18,7 @@ typedef sw360.RequestStatus RequestStatus
 typedef users.User User
 typedef users.RequestedAction RequestedAction
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
+typedef sw360.PaginationData PaginationData
 
 struct Vendor {
     1: optional string id,
@@ -28,6 +29,11 @@ struct Vendor {
     6: required string url
 
     200: optional map<RequestedAction, bool> permissions,
+}
+
+enum VendorSortColumn {
+    BY_FULLNAME = 0,
+    BY_SHORTNAME = 1,
 }
 
 service VendorService {
@@ -43,6 +49,11 @@ service VendorService {
     list<Vendor> getAllVendors();
 
     /**
+     * return list of all vendors in database, paginated
+     **/
+    map<PaginationData, list<Vendor>> getAllVendorListPaginated(1: PaginationData pageData);
+
+    /**
      * return set of names of all vendors in database, no duplicates
      **/
     set<string> getAllVendorNames();
@@ -50,7 +61,7 @@ service VendorService {
     /**
      * get lists of vendors whose fullname or shortname starts with searchText
      **/
-    list<Vendor> searchVendors(1: string searchText);
+    map<PaginationData, list<Vendor>> searchVendors(1: string searchText, 2: PaginationData pageData);
 
     /**
      * get set of vendorIds whose fullname or shortname starts with searchText

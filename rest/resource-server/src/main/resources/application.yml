@@ -95,6 +95,7 @@ springdoc:
     security:
       oauth2:
         enabled: true
+    require-authentication: false
   default-consumes-media-type: application/json
   default-produces-media-type: application/hal+json
   paths-to-exclude: /api/**
