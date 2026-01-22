@@ -91,9 +91,19 @@ public class Sw360ObligationService {
                 || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
             try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-                String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), sw360User);
-                obligation.setNode(updatedNode);
-                sw360LicenseClient.updateObligation(obligation, sw360User);
+                if (obligation.isSetNode() && CommonUtils.isNotNullEmptyOrWhitespace(obligation.getNode())) {
+                    String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), sw360User);
+                    if (updatedNode == null) {
+                        log.error("Failed to process obligation nodes for obligation: {} - user may lack CLEARING_ADMIN permission or node structure is invalid", obligation.getId());
+                        throw new RuntimeException("Failed to process obligation nodes - check user permissions and node structure");
+                    }
+                    obligation.setNode(updatedNode);
+                }
+                String result = sw360LicenseClient.updateObligation(obligation, sw360User);
+                if (result == null) {
+                    log.error("Failed to update obligation: {} - user may lack CLEARING_ADMIN permission", obligation.getId());
+                    throw new RuntimeException("Failed to update obligation - check user permissions");
+                }
                 return obligation;
             } catch (TException e) {
                 throw new RuntimeException("Error updating obligation", e);
