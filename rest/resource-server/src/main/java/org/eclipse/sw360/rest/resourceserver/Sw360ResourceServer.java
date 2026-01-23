@@ -89,6 +89,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final Boolean API_WRITE_TOKEN_GENERATOR_ENABLED;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+    public static final int API_TOKEN_LENGTH;
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Set<String> DEFAULT_DOMAINS;
     public static final String REPORT_FILENAME_MAPPING;
@@ -110,6 +111,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
+        API_TOKEN_LENGTH = Integer.parseInt(props.getProperty("rest.apitoken.length", "20"));
         API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
         DEFAULT_DOMAINS = CommonUtils.splitToSet(
                 "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics");
