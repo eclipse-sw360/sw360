@@ -31,6 +31,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.ReleaseExporter;
+import org.eclipse.sw360.exporter.ProjectExporter;
+import org.eclipse.sw360.exporter.ComponentExporter;
+import org.eclipse.sw360.exporter.LicenseExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -100,14 +103,28 @@ public class SW360ReportService {
     AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
-        /*
-            * If projectId is not null, then validate the project record for the given projectId
-            * If the projectId is null, then fetch the project details which are assigned with user
-         */
-        if (projectId != null && !validateProject(projectId, user)) {
-            throw new TException("No project record found for the project Id : " + projectId);
+        try {
+            List<Project> projects;
+            if (projectId != null && !projectId.equalsIgnoreCase("null")) {
+                if (!validateProject(projectId, user)) {
+                    throw new TException("No project record found for the project Id : " + projectId);
+                }
+                Project project = projectclient.getProjectById(projectId, user);
+                projects = Arrays.asList(project);
+            } else {
+                projects = projectclient.getAccessibleProjectsSummary(user);
+            }
+            ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+            InputStream stream = exporter.makeExcelExport(projects);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+
+        } catch (IOException e) {
+            log.error("Error generating project report using standard exporter", e);
+            throw new TException("Failed to generate project report: " + e.getMessage());
+        } catch (SW360Exception e) {
+            log.error("SW360 error generating project report", e);
+            throw new TException("SW360 error generating project report: " + e.getMessage());
         }
-        return projectclient.getReportDataStream(user, extendedByReleases, projectId);
     }
 
     private boolean validateProject(String projectId, User user) throws TException {
@@ -198,11 +215,44 @@ public class SW360ReportService {
     }
 
     public ByteBuffer getComponentBuffer(User sw360User, boolean withLinkedReleases) throws TException {
-        return componentclient.getComponentReportDataStream(sw360User, withLinkedReleases);
+        try {
+            List<org.eclipse.sw360.datahandler.thrift.components.Component> components = componentclient.getRecentComponentsSummary(-1, sw360User);
+
+            ComponentExporter exporter = new ComponentExporter(componentclient, components, sw360User, withLinkedReleases);
+            InputStream stream = exporter.makeExcelExport(components);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+
+        } catch (IOException e) {
+            log.error("Error generating component report using standard exporter", e);
+            throw new TException("Failed to generate component report: " + e.getMessage());
+        } catch (SW360Exception e) {
+            log.error("SW360 error generating component report", e);
+            throw new TException("SW360 error generating component report: " + e.getMessage());
+        }
     }
 
     public ByteBuffer getLicenseBuffer() throws TException {
-        return licenseClient.getLicenseReportDataStream();
+        try {
+            List<org.eclipse.sw360.datahandler.thrift.licenses.License> licenses = licenseClient.getLicenseSummary();
+
+            LicenseExporter exporter = new LicenseExporter(logger -> {
+                try {
+                    return licenseClient.getLicenseTypes();
+                } catch (TException e) {
+                    log.error("Failed to get license types", e);
+                    return new ArrayList<>();
+                }
+            });
+            InputStream stream = exporter.makeExcelExport(licenses);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+
+        } catch (IOException e) {
+            log.error("Error generating license report using standard exporter", e);
+            throw new TException("Failed to generate license report: " + e.getMessage());
+        } catch (SW360Exception e) {
+            log.error("SW360 error generating license report", e);
+            throw new TException("SW360 error generating license report: " + e.getMessage());
+        }
     }
 
     public ByteBuffer getComponentReportStreamFromURl(User user, boolean extendedByReleases, String token)
