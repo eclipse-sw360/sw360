@@ -26,7 +26,10 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.springframework.security.access.AccessDeniedException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -87,23 +90,20 @@ public class Sw360ObligationService {
     }
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)) {
+            throw new AccessDeniedException("User should be at least " + UserGroup.CLEARING_ADMIN);
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(obligation.getTitle())
                 || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
             try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-                if (obligation.isSetNode() && CommonUtils.isNotNullEmptyOrWhitespace(obligation.getNode())) {
-                    String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), sw360User);
-                    if (updatedNode == null) {
-                        log.error("Failed to process obligation nodes for obligation: {} - user may lack CLEARING_ADMIN permission or node structure is invalid", obligation.getId());
-                        throw new RuntimeException("Failed to process obligation nodes - check user permissions and node structure");
-                    }
-                    obligation.setNode(updatedNode);
+                String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), sw360User);
+                if (updatedNode == null) {
+                    log.error("Failed to process obligation nodes for obligation: {} - node structure is invalid", obligation.getId());
+                    throw new RuntimeException("Failed to process obligation nodes - node structure is invalid");
                 }
-                String result = sw360LicenseClient.updateObligation(obligation, sw360User);
-                if (result == null) {
-                    log.error("Failed to update obligation: {} - user may lack CLEARING_ADMIN permission", obligation.getId());
-                    throw new RuntimeException("Failed to update obligation - check user permissions");
-                }
+                obligation.setNode(updatedNode);
+                sw360LicenseClient.updateObligation(obligation, sw360User);
                 return obligation;
             } catch (TException e) {
                 throw new RuntimeException("Error updating obligation", e);
