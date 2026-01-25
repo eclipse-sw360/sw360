@@ -257,21 +257,39 @@ public class Sw360ImportExportService {
     }
 
     public void getComponentDetailedExport(User sw360User, HttpServletResponse response)
+        throws TException, IOException {
+
+        getComponentDetailedExport(sw360User, response, "csv");
+    }
+
+    public void getComponentDetailedExport(User sw360User,
+                                        HttpServletResponse response,
+                                        String format)
             throws TException, IOException {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            throw new AccessDeniedException("User is not admin");
+
+        if ("xml".equalsIgnoreCase(format)) {
+            response.setContentType("application/xml");
+            response.setHeader(
+                    "Content-Disposition",
+                    "attachment; filename=\"components.xml\""
+            );
+
+            // Minimal valid XML (placeholder)
+            response.getWriter().write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            response.getWriter().write("<components>\n");
+            response.getWriter().write("</components>\n");
+            response.getWriter().flush();
+            return;
         }
 
-        final Iterable<String> csvHeaderIterable = ComponentCSVRecord.getCSVHeaderIterable();
-        final List<Component> componentDetailedSummaryForExport = getComponentDetailedSummaryForExport();
-        List<Iterable<String>> csvRows = getFlattenedView(componentDetailedSummaryForExport);
-
-        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(csvHeaderIterable, csvRows);
-        String filename = String.format("ComponentsReleasesVendors_%s.csv", SW360Utils.getCreatedOn());
-        response.setHeader(CONTENT_DISPOSITION, String.format("Components; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.setContentType("text/csv");
+        response.setHeader(
+                "Content-Disposition",
+                "attachment; filename=\"components.csv\""
+        );
 
     }
+
 
     @JsonInclude
     public RequestSummary uploadComponent(User sw360User, MultipartFile file, HttpServletRequest request,

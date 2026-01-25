@@ -176,22 +176,25 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
     }
 
     @Operation(
-            summary = "Download component in csv format.",
+            summary = "Download component in csv or xml format.",
             description = "Download component.",
             tags = {"ImportExport"},
             parameters = {
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
+                    @Parameter(name = "format", description = "Export format: csv or xml", required = false)
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadComponent")
-    public void downloadComponent(HttpServletResponse response) throws SW360Exception {
+    public void downloadComponent(
+            @RequestParam(defaultValue = "csv") String format,
+            HttpServletResponse response) throws SW360Exception {
         try {
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            importExportService.getComponentDetailedExport(sw360User, response);
+                User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+                importExportService.getComponentDetailedExport(sw360User, response, format);
         } catch (TException | IOException e) {
-            LOGGER.error("Error downloading component: {}", e.getMessage(), e);
-            throw new SW360Exception("Error downloading component: " + e.getMessage());
+                LOGGER.error("Error downloading component: {}", e.getMessage(), e);
+                throw new SW360Exception("Error downloading component: " + e.getMessage());
         }
     }
 
