@@ -95,7 +95,7 @@
     <jackson.annotation.version>2.21</jackson.annotation.version>
 
     <!-- Dependencies version properties -->
-    <assertj.version>3.27.5</assertj.version>
+    <assertj.version>3.27.7</assertj.version>
     <byte-buddy.version>1.17.8</byte-buddy.version>
     <cloudantsdk.version>0.10.12</cloudantsdk.version>
     <commons-cli.version>1.9.0</commons-cli.version>
