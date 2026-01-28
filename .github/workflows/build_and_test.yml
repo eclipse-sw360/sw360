@@ -25,6 +25,10 @@ on:
       - .github/thrift_container.yml
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   COUCHDB_USER: sw360
   COUCHDB_PASSWORD: sw360fossie
@@ -35,17 +39,8 @@ permissions:
 
 jobs:
   build:
-    name: Build and Test
+    name: Build
     runs-on: ubuntu-24.04
-
-    services:
-      couchdb:
-        image: couchdb:3
-        ports:
-          - 5984:5984
-        env:
-          COUCHDB_USER: ${{ env.COUCHDB_USER }}
-          COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
 
     steps:
       - name: Harden Runner
@@ -62,13 +57,6 @@ jobs:
           chmod +x .github/testForLicenseHeaders.sh
           bash .github/testForLicenseHeaders.sh
 
-      - name: Update properties with DB credentials
-        run: |
-          sudo mkdir -p /etc/sw360
-          sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
-          sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
-          sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
-
       - name: Copy test configuration files
         run: |
           sudo cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
@@ -79,6 +67,7 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           check-latest: true
+          cache: "maven"
 
       - name: Cache Thrift
         id: cache-thrift
@@ -112,13 +101,84 @@ jobs:
             -DRunPrivateProjectAccessTest=false \
             -DRunRestForceUpdateTest=false \
             -fae \
+            -DskipTests=true \
             -Dmaven.plugin.validation=VERBOSE
 
-      - name: Run PrivateProjectAccessTest
-        run: |
-          mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
-          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=.
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@5d5d22e095adfc4bd6fe816fc97d1b6cf2c8f2c0 # v4.6.2
+        with:
+          name: sw360-deploy
+          path: |
+            deploy
 
-      - name: Run BulkReleaseDeletingTest
+  tests:
+    name: Tests (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    needs: build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: PrivateProjectAccessTest
+            command: |
+              mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
+              mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=.
+          - name: BulkReleaseDeletingTest
+            command: |
+              mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
+
+    services:
+      couchdb:
+        image: couchdb:3
+        ports:
+          - 5984:5984
+        env:
+          COUCHDB_USER: ${{ env.COUCHDB_USER }}
+          COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Update properties with DB credentials
         run: |
-          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
+          sudo mkdir -p /etc/sw360
+          sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
+          sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
+          sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5.1.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          check-latest: true
+          cache: "maven"
+
+      - name: Cache Thrift
+        id: cache-thrift
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        with:
+          path: |
+            ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
+          key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+
+      - name: Install Thrift
+        if: steps.cache-thrift.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake
+          chmod +x third-party/thrift/install-thrift.sh
+          DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
+
+      - name: Run tests
+        run: |
+          export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
+          ${{ matrix.command }}
