@@ -26,7 +26,10 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.springframework.security.access.AccessDeniedException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -87,11 +90,18 @@ public class Sw360ObligationService {
     }
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)) {
+            throw new AccessDeniedException("User should be at least " + UserGroup.CLEARING_ADMIN);
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(obligation.getTitle())
                 || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
             try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                 String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), sw360User);
+                if (updatedNode == null) {
+                    log.error("Failed to process obligation nodes for obligation: {} - node structure is invalid", obligation.getId());
+                    throw new RuntimeException("Failed to process obligation nodes - node structure is invalid");
+                }
                 obligation.setNode(updatedNode);
                 sw360LicenseClient.updateObligation(obligation, sw360User);
                 return obligation;
