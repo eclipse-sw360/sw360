@@ -133,6 +133,9 @@ public class SW360ReportService {
                         SW360Utils.getCreatedOn());
             }
             break;
+        case SW360Constants.COMPONENTS:
+            documentName = String.format("components-%s.xlsx", SW360Utils.getCreatedOn());
+            break;
         case SW360Constants.LICENSES:
             documentName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
             break;
