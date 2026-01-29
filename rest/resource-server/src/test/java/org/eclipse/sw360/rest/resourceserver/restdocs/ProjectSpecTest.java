@@ -2472,8 +2472,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                        responseFields(
-                               fieldWithPath("Release Count").description("Total count of releases of a project including sub-projects releases"),
-                               fieldWithPath("Approved Count").description("Approved license clearing state releases")
+                               fieldWithPath("releaseCount").description("Total count of releases of a project including sub-projects releases"),
+                               fieldWithPath("approvedCount").description("Approved license clearing state releases")
                        )));
     }
 

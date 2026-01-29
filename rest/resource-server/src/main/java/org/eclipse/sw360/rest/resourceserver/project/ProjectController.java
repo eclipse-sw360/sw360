@@ -2951,8 +2951,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         int approvedCount = clearingInfo.approved;
         try {
             JsonObject row = new JsonObject();
-            row.addProperty("Release Count", releaseCount);
-            row.addProperty("Approved Count", approvedCount);
+            row.addProperty("releaseCount", releaseCount);
+            row.addProperty("approvedCount", approvedCount);
             response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -2985,7 +2985,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 int approvedCount = clearingInfo.approved;
 
                 JsonObject row = new JsonObject();
-                row.addProperty("totalCount", releaseCount);
+                row.addProperty("releaseCount", releaseCount);
                 row.addProperty("approvedCount", approvedCount);
                 result.add(proj.getId(), row);
             }
