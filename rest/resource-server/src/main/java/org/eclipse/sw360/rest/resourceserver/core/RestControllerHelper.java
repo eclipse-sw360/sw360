@@ -767,6 +767,7 @@ public class RestControllerHelper<T> {
         component.setWiki(componentDTO.getWiki());
         component.setBlog(componentDTO.getBlog());
         component.setAttachments(componentDTO.getAttachments());
+        component.setVcs(componentDTO.getVcs());
 
         return component;
     }
