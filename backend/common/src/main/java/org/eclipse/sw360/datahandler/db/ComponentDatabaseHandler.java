@@ -1169,9 +1169,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Get actual document for members that should no change
         Release actual = releaseRepository.get(release.getId());
         assertNotNull(actual, "Could not find release to update");
+        ensureEccInformationIsSet(actual);
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 release.getAttachments(), user.getEmail(), release.getId());
-        if (actual.equals(release)) {
+
+        // Use comprehensive comparison instead of simple equals to handle normalized values
+        if (!hasReleaseChanges(release, actual)) {
+            log.info("No meaningful changes detected for release " + release.getId() + ". Skipping update.");
             return RequestStatus.SUCCESS;
         } else if (duplicateAttachmentExist(release)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
@@ -1381,6 +1385,297 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToRelationship()).keySet();
         Set<String> actualLinkedReleaseIds = nullToEmptyMap(actual.getReleaseIdToRelationship()).keySet();
         deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
+    }
+
+    /**
+     * Check if there are meaningful changes between two Release objects
+     * This method performs a deep comparison, normalizing empty values and ignoring
+     * auto-populated/immutable fields
+     *
+     * @param updateRelease The updated release from the user
+     * @param actualRelease The current release from database
+     * @return true if there are meaningful changes, false otherwise
+     */
+    private boolean hasReleaseChanges(Release updateRelease, Release actualRelease) {
+        // Normalize vendor IDs for consistent comparison
+        SW360Utils.setVendorId(updateRelease);
+        SW360Utils.setVendorId(actualRelease);
+
+        boolean hasChanges = false;
+
+        // Check main release fields
+        for (Release._Fields field : Release._Fields.values()) {
+            // Skip required fields and ignored fields that shouldn't trigger updates
+
+            if (field == Release._Fields.NAME ||
+                    field == Release._Fields.CREATED_BY ||
+                    field == Release._Fields.CREATED_ON ||
+                    field == Release._Fields.PERMISSIONS ||
+                    field == Release._Fields.VENDOR) {
+                continue;
+            }
+
+            // Get the actual values from both releases
+            Object updateValue = updateRelease.isSet(field) ? updateRelease.getFieldValue(field) : null;
+            Object actualValue = actualRelease.isSet(field) ? actualRelease.getFieldValue(field) : null;
+
+            // Check if this represents a real change
+            if (hasFieldChanged(updateValue, actualValue)) {
+                log.info("Field {} has changes. Update: {}, Actual: {}", field, updateValue, actualValue);
+                hasChanges = true;
+                // Don't return immediately - continue checking all fields for logging purposes
+            }
+        }
+
+        return hasChanges;
+    }
+
+    private boolean hasFieldChanged(Object addValue, Object delValue) {
+        // If both are null, no change
+        if (addValue == null && delValue == null) {
+            return false;
+        }
+
+        // Normalize empty collections/maps to null for comparison
+        addValue = normalizeEmptyToNull(addValue);
+        delValue = normalizeEmptyToNull(delValue);
+
+        // After normalization, check again
+        if (addValue == null && delValue == null) {
+            return false;
+        }
+
+        // Normalize empty Thrift objects to null
+        if (addValue instanceof org.apache.thrift.TBase) {
+            if (isThriftObjectEmpty((org.apache.thrift.TBase<?, ?>) addValue)) {
+                addValue = null;
+            }
+        }
+        if (delValue instanceof org.apache.thrift.TBase) {
+            if (isThriftObjectEmpty((org.apache.thrift.TBase<?, ?>) delValue)) {
+                delValue = null;
+            }
+        }
+
+        // After Thrift normalization, check again
+        if (addValue == null && delValue == null) {
+            return false;
+        }
+
+        // Handle Thrift objects (TBase) - do deep comparison treating empty strings as null
+        if (addValue instanceof org.apache.thrift.TBase && delValue instanceof org.apache.thrift.TBase) {
+            return hasThriftObjectChanged((org.apache.thrift.TBase<?, ?>) addValue, (org.apache.thrift.TBase<?, ?>) delValue);
+        }
+
+        // Handle collections containing Thrift objects (e.g., List<Attachment>)
+        if (addValue instanceof java.util.Collection && delValue instanceof java.util.Collection) {
+            return hasCollectionChanged((java.util.Collection<?>) addValue, (java.util.Collection<?>) delValue);
+        }
+
+        // If they're equal after normalization, no change
+        if (java.util.Objects.equals(addValue, delValue)) {
+            return false;
+        }
+
+        // They're different - there's a change
+        return true;
+    }
+
+    /**
+     * Deep comparison of collections, with special handling for Thrift objects
+     */
+    private boolean hasCollectionChanged(java.util.Collection<?> col1, java.util.Collection<?> col2) {
+        if (col1.size() != col2.size()) {
+            return true;
+        }
+
+        // Convert to lists for indexed comparison
+        java.util.List<?> list1 = new java.util.ArrayList<>(col1);
+        java.util.List<?> list2 = new java.util.ArrayList<>(col2);
+
+        for (int i = 0; i < list1.size(); i++) {
+            Object item1 = list1.get(i);
+            Object item2 = list2.get(i);
+
+            // If both items are Thrift objects, use deep comparison
+            if (item1 instanceof org.apache.thrift.TBase && item2 instanceof org.apache.thrift.TBase) {
+                if (hasThriftObjectChanged((org.apache.thrift.TBase<?, ?>) item1, (org.apache.thrift.TBase<?, ?>) item2)) {
+                    return true;
+                }
+            } else if (!java.util.Objects.equals(item1, item2)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Deep comparison of Thrift objects treating empty strings as null
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private boolean hasThriftObjectChanged(org.apache.thrift.TBase<?, ?> obj1, org.apache.thrift.TBase<?, ?> obj2) {
+        if (obj1 == null && obj2 == null) {
+            return false;
+        }
+        if (obj1 == null || obj2 == null) {
+            return true;
+        }
+
+        // If they're different types, they're different
+        if (!obj1.getClass().equals(obj2.getClass())) {
+            return true;
+        }
+
+        // Compare all fields of the Thrift object
+        try {
+            // Get the _Fields enum class (e.g., EccInformation._Fields)
+            Class<?>[] innerClasses = obj1.getClass().getDeclaredClasses();
+            Class<?> fieldsEnum = null;
+            for (Class<?> innerClass : innerClasses) {
+                if (innerClass.getSimpleName().equals("_Fields")) {
+                    fieldsEnum = innerClass;
+                    break;
+                }
+            }
+
+            if (fieldsEnum == null) {
+                // No _Fields enum found, fall back to equals
+                return !obj1.equals(obj2);
+            }
+
+            // Get all field values using the enum
+            Object[] fields = (Object[]) fieldsEnum.getMethod("values").invoke(null);
+            for (Object fieldObj : fields) {
+                org.apache.thrift.TFieldIdEnum field = (org.apache.thrift.TFieldIdEnum) fieldObj;
+
+                // Use raw types to avoid generic issues (suppressed by @SuppressWarnings above)
+                Object value1 = ((org.apache.thrift.TBase) obj1).isSet(field) ? ((org.apache.thrift.TBase) obj1).getFieldValue(field) : null;
+                Object value2 = ((org.apache.thrift.TBase) obj2).isSet(field) ? ((org.apache.thrift.TBase) obj2).getFieldValue(field) : null;
+
+                // Normalize empty strings and collections to null
+                value1 = normalizeValue(value1);
+                value2 = normalizeValue(value2);
+
+                if (!java.util.Objects.equals(value1, value2)) {
+                    log.info("Thrift object field difference in {}: [{}] vs [{}]", field, value1, value2);
+                    return true; // Found a difference
+                }
+            }
+        } catch (Exception e) {
+            // If reflection fails, fall back to equals comparison
+            log.error("Failed to compare Thrift objects using reflection: {}", e.getMessage(), e);
+            return !obj1.equals(obj2);
+        }
+
+        return false; // No differences found
+    }
+
+    /**
+     * Normalize a value for comparison: empty strings and empty collections become null
+     */
+    private Object normalizeValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        // Treat optional boolean false as equivalent to null
+        if (value instanceof Boolean && Boolean.FALSE.equals(value)) {
+            return null;
+        }
+
+        // Treat integer 0 as equivalent to null (default value in Thrift)
+        if (value instanceof Integer && ((Integer) value) == 0) {
+            return null;
+        }
+
+        // Normalize empty string to null
+        if (value instanceof String && ((String) value).isEmpty()) {
+            return null;
+        }
+
+        // Normalize empty collections to null
+        if (value instanceof Set && ((Set<?>) value).isEmpty()) {
+            return null;
+        }
+
+        if (value instanceof Map && ((Map<?, ?>) value).isEmpty()) {
+            return null;
+        }
+
+        if (value instanceof java.util.Collection && ((java.util.Collection<?>) value).isEmpty()) {
+            return null;
+        }
+
+        return value;
+    }
+
+    /**
+     * Normalize empty collections and maps to null for consistent comparison
+     * Delegates to {@link #normalizeValue(Object)} for implementation
+     */
+    private Object normalizeEmptyToNull(Object value) {
+        return normalizeValue(value);
+    }
+
+    /**
+     * Check if a Thrift object is "empty" - all fields are null, empty strings, empty collections, or false booleans
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private boolean isThriftObjectEmpty(org.apache.thrift.TBase<?, ?> thriftObj) {
+        if (thriftObj == null) {
+            return true;
+        }
+
+        try {
+            // Get the _Fields enum class
+            Class<?>[] innerClasses = thriftObj.getClass().getDeclaredClasses();
+            Class<?> fieldsEnum = null;
+            for (Class<?> innerClass : innerClasses) {
+                if (innerClass.getSimpleName().equals("_Fields")) {
+                    fieldsEnum = innerClass;
+                    break;
+                }
+            }
+
+            if (fieldsEnum == null) {
+                // No _Fields enum found, can't determine if empty
+                return false;
+            }
+
+            // Check all fields
+            Object[] fields = (Object[]) fieldsEnum.getMethod("values").invoke(null);
+            for (Object fieldObj : fields) {
+                org.apache.thrift.TFieldIdEnum field = (org.apache.thrift.TFieldIdEnum) fieldObj;
+
+                // Use raw types to avoid generic issues
+                if (!((org.apache.thrift.TBase) thriftObj).isSet(field)) {
+                    continue; // Field not set, treat as empty
+                }
+
+                Object value = ((org.apache.thrift.TBase) thriftObj).getFieldValue(field);
+
+                // Normalize and check if the value is non-empty
+                Object normalizedValue = normalizeValue(value);
+
+                // If we find any non-null normalized value, the object is not empty
+                if (normalizedValue != null) {
+                    // For nested Thrift objects, recursively check if they're empty
+                    if (normalizedValue instanceof org.apache.thrift.TBase) {
+                        if (!isThriftObjectEmpty((org.apache.thrift.TBase<?, ?>) normalizedValue)) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to check if Thrift object is empty: {}", e.getMessage(), e);
+            return false; // If we can't determine, assume it's not empty to be safe
+        }
+
+        return true; // All fields are empty/null/default
     }
 
     public boolean hasChangesInEccFields(Release release, Release actual) {

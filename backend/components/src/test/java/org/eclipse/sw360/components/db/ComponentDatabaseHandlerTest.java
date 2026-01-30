@@ -118,18 +118,18 @@ public class ComponentDatabaseHandlerTest {
         components.add(component3);
 
         releases = new ArrayList<>();
-        Release release1a = new Release().setId("R1A").setComponentId("C1").setName("component1").setVersion("releaseA").setCreatedBy(email1).setVendorId("V1");
+        Release release1a = new Release().setId("R1A").setComponentId("C1").setName("component1").setVersion("releaseA").setCreatedBy(email1).setVendorId("V1").setCpeid("1");
         releases.add(release1a);
-        Release release1b = new Release().setId("R1B").setComponentId("C1").setName("component1").setVersion("releaseB").setCreatedBy(email2).setVendorId("V2");
+        Release release1b = new Release().setId("R1B").setComponentId("C1").setName("component1").setVersion("releaseB").setCreatedBy(email2).setVendorId("V2").setCpeid("1");
         release1b.setEccInformation(new EccInformation().setAl("AL"));
         release1b.addToSubscribers(email1);
         releases.add(release1b);
-        Release release2a = new Release().setId("R2A").setComponentId("C2").setName("component2").setVersion("releaseA").setCreatedBy(email1).setVendorId("V3");
+        Release release2a = new Release().setId("R2A").setComponentId("C2").setName("component2").setVersion("releaseA").setCreatedBy(email1).setVendorId("V3").setCpeid("3");
         releases.add(release2a);
-        Release release2b = new Release().setId("R2B").setComponentId("C2").setName("component2").setVersion("releaseB").setCreatedBy(email2).setVendorId("V1");
+        Release release2b = new Release().setId("R2B").setComponentId("C2").setName("component2").setVersion("releaseB").setCreatedBy(email2).setVendorId("V1").setCpeid("1");
         releases.add(release2b);
         release2b.addToSubscribers(email2);
-        Release release2c = new Release().setId("R2C").setComponentId("C2").setName("component2").setVersion("releaseC").setCreatedBy(email1).setVendorId("V2");
+        Release release2c = new Release().setId("R2C").setComponentId("C2").setName("component2").setVersion("releaseC").setCreatedBy(email1).setVendorId("V2").setCpeid("2");
         releases.add(release2c);
 
         // Create the database
@@ -875,7 +875,7 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testUpdateRelease() throws Exception {
         Release expected = releases.get(1);
-        expected.setName("UPDATED");
+        expected.setCpeid("2");
 
         RequestStatus status = handler.updateRelease(expected, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
         Release actual = handler.getRelease("R1B", user1);
@@ -883,7 +883,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(RequestStatus.SUCCESS, status);
 
         assertEquals(expected.getId(), actual.getId());
-        assertEquals(expected.getName(), actual.getName());
+        assertEquals(expected.getCpeid(), actual.getCpeid());
         assertEquals(expected.getVersion(), actual.getVersion());
         assertEquals(expected.getComponentId(), actual.getComponentId());
         assertEquals(email2, actual.getCreatedBy());
@@ -909,15 +909,15 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testUpdateSentToModeration() throws Exception {
         Release release = releases.get(1);
-        String expected = release.getName();
-        release.setName("UPDATED");
+        String expected = release.getCpeid();
+        release.setCpeid("2");
 
         when(releaseModerator.updateRelease(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
-        assertEquals(expected, actual.getName());
+        assertEquals(expected, actual.getCpeid());
         verify(releaseModerator).updateRelease(release, user1);
     }
 
