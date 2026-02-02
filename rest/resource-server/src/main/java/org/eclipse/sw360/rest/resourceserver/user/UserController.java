@@ -25,6 +25,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -34,6 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
@@ -95,6 +97,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private final SW360ConfigurationsService sw360ConfigurationsService;
 
     private static final ImmutableSet<User._Fields> setOfUserProfileFields =
             ImmutableSet.<User._Fields>builder().add(User._Fields.WANTS_MAIL_NOTIFICATION)
@@ -307,7 +312,14 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
-        String token = RandomStringUtils.random(20, true, true);
+        String tokenLengthStr = sw360ConfigurationsService.getSW360Configs()
+                .get(SW360ConfigKeys.REST_API_TOKEN_LENGTH);
+        if (CommonUtils.isNullEmptyOrWhitespace(tokenLengthStr)) {
+            throw new BadRequestClientException(
+                    "API token length is not configured. Please set '" + SW360ConfigKeys.REST_API_TOKEN_LENGTH + "' in SW360 configurations.");
+        }
+        int tokenLength = Integer.parseInt(tokenLengthStr);
+        String token = RandomStringUtils.secure().nextAlphanumeric(tokenLength);
         restApiToken.setToken(BCrypt.hashpw(token, API_TOKEN_HASH_SALT));
         sw360User.addToRestApiTokens(restApiToken);
         userService.updateUser(sw360User);
