@@ -87,8 +87,8 @@ public class SW360ConfigsDatabaseHandler {
             .put(SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, getOrDefault(configContainer, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, SW360Constants.DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE))
             .put(RELEASE_FRIENDLY_URL, getOrDefault(configContainer, RELEASE_FRIENDLY_URL, "http://localhost:3000/components/releases/detail/releaseId"))
             .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
-                .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, ""))
-                .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
+                .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, "[]"))
+                .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, "[]"))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
     }
@@ -143,8 +143,11 @@ public class SW360ConfigsDatabaseHandler {
     }
 
     private boolean isValidSet(String value) {
-        if (value == null || value.isEmpty()) {
-            return false; // Null or empty string is not a valid set
+        if (value == null) {
+            return false; // Null is not a valid set
+        }
+        if (value.isEmpty()) {
+            return true; // Empty string is valid (treated as empty array for backwards compatibility)
         }
         try {
             JSONArray obj = new JSONArray(value);
