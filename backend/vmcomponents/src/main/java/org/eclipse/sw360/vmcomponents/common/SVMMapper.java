@@ -4,10 +4,12 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.common;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -39,6 +41,7 @@ public class SVMMapper {
 
     private static final String FORMAT_DATE_TIME = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // 2014-01-28T11:22:20Z
     public static final String NOT_FOUND = "NOT FOUND";
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private SVMMapper() {
     }
@@ -252,13 +255,18 @@ public class SVMMapper {
                     .setComponentName(NOT_FOUND)
                     .setVendorName(NOT_FOUND)
                     .setReleaseVersion(NOT_FOUND)
-                    .setReleaseSvmId(NOT_FOUND);
+                    .setReleaseSvmId(NOT_FOUND)
+                    .setReleasePurl(NOT_FOUND);
         } else {
             match.setReleaseId(release.getId())
                     .setReleaseCpe(release.getCpeid())
                     .setReleaseVersion(release.getVersion())
                     .setReleaseSvmId(nullToEmptyMap(release.getExternalIds())
                             .getOrDefault(SW360Constants.SVM_COMPONENT_ID, ""));
+
+            // Extract pURL from Release externalIds
+            String purl = extractPurlFromExternalIds(release.getExternalIds());
+            match.setReleasePurl(purl);
 
             String compName = release.getName();
             if (StringUtils.isEmpty(compName)){
@@ -282,6 +290,60 @@ public class SVMMapper {
             match.setMatchTypesUI(matchTypesUI);
         }
         return match;
+    }
+
+    /**
+     * Extracts pURL from Release externalIds.
+     * Checks both "package-url" and "purl.id" keys.
+     * Handles both single string values and JSON-encoded arrays.
+     *
+     * @param externalIds the external IDs map from Release
+     * @return comma-separated pURL string, or empty string if not found
+     */
+    private static String extractPurlFromExternalIds(Map<String, String> externalIds) {
+        if (CommonUtils.isNullOrEmptyMap(externalIds)) {
+            return "";
+        }
+
+        Set<String> purlSet = new LinkedHashSet<>();
+        String[] purlKeys = {SW360Constants.PACKAGE_URL, SW360Constants.PURL_ID};
+
+        for (String key : purlKeys) {
+            String value = externalIds.get(key);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(value)) {
+                purlSet.addAll(parsePurlValue(value));
+            }
+        }
+
+        return String.join(", ", purlSet);
+    }
+
+    /**
+     * Parses pURL value which can be either a plain string or a JSON-encoded array/set.
+     *
+     * @param value the pURL value from externalIds
+     * @return set of pURL strings
+     */
+    private static Set<String> parsePurlValue(String value) {
+        Set<String> result = new LinkedHashSet<>();
+        if (!CommonUtils.isNotNullEmptyOrWhitespace(value)) {
+            return result;
+        }
+
+        String trimmed = value.trim();
+        if (trimmed.startsWith("[")) {
+            try {
+                List<String> list = JSON_MAPPER.readValue(trimmed,
+                        JSON_MAPPER.getTypeFactory().constructCollectionType(List.class, String.class));
+                result.addAll(list);
+            } catch (Exception e) {
+                log.warn("Failed to parse pURL JSON array, treating as plain string: " + e.getMessage());
+                result.add(value);
+            }
+        } else {
+            result.add(value);
+        }
+        return result;
     }
 
 }
