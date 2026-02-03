@@ -12,12 +12,13 @@ package org.eclipse.sw360.common.utils;
 
 import java.net.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.VCS_HOSTS;
 
@@ -99,10 +100,21 @@ public class RepositoryURL {
             return new HashMap<>();
         }
 
-        return Arrays.stream(propertyValue.split(","))
-                .map(entry -> entry.split(":", 2)) // Split each key-value pair
-                .filter(parts -> parts.length == 2) // Ensure valid mappings
-                .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
+        try {
+            JSONArray jsonArray = new JSONArray(propertyValue);
+            Map<String, String> result = new HashMap<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                String entry = jsonArray.getString(i);
+                String[] parts = entry.split(":", 2);
+                if (parts.length == 2) {
+                    result.put(parts[0], parts[1]);
+                }
+            }
+            return result;
+        } catch (JSONException e) {
+            log.error("Failed to parse VCS_HOSTS config: {}", propertyValue, e);
+            return new HashMap<>();
+        }
     }
 
 }
