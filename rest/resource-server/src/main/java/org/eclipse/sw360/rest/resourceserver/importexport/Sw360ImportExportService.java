@@ -343,8 +343,7 @@ public class Sw360ImportExportService {
         List<User> users = userClient.getAllUsers();
 
         List<String> headers = Arrays.asList(
-                "GivenName", "Lastname", "Email", "Department", "UserGroup", "GID", "PasswdHash", "wantsMailNotification"
-        );
+                "GivenName", "Lastname", "Email", "Department", "UserGroup", "GID", "wantsMailNotification");
 
         List<Iterable<String>> csvRows = new ArrayList<>();
 
@@ -356,7 +355,6 @@ public class Sw360ImportExportService {
             row.add(user.getDepartment() != null ? user.getDepartment() : "");
             row.add(user.getUserGroup() != null ? user.getUserGroup().toString() : "");
             row.add(user.getExternalid() != null ? user.getExternalid() : "");
-            row.add(user.getPassword() != null ? user.getPassword() : "");
             row.add(user.isSetWantsMailNotification() ? "True" : "False");
 
             csvRows.add(row);
