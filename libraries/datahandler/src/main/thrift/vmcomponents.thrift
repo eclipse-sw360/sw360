@@ -128,6 +128,7 @@ struct VMMatch{
     24: optional string vendorName;
     25: optional string releaseVersion;
     26: optional string releaseSvmId;
+    27: optional string releasePurl;
 
     // matching information
     31: required set<VMMatchType> matchTypes,
