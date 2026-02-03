@@ -259,11 +259,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
             qb.useIndex(Collections.singletonList(USER_BY_ALL_IDX));
         }
 
-        try {
             users = getConnector().getQueryResultPaginated(qb, User.class, pageData, sortSelector);
-        } catch (Exception e) {
-            log.error("Error getting users", e);
-        }
         result.put(pageData, users);
         return result;
     }
