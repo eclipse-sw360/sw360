@@ -200,7 +200,8 @@ public class SW360ConfigsDatabaseHandler {
                  SKIP_DOMAINS_FOR_VALID_SOURCE_CODE,
                  RELEASE_FRIENDLY_URL,
                  COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
-                 NON_PKG_MANAGED_COMPS_PROP
+                 NON_PKG_MANAGED_COMPS_PROP,
+                 VCS_HOSTS
                     -> configValue != null;
 
             // validate int value
@@ -229,8 +230,7 @@ public class SW360ConfigsDatabaseHandler {
                  UI_PROJECT_TYPE,
                  UI_RELEASE_EXTERNALKEYS,
                  UI_SOFTWARE_PLATFORMS,
-                 UI_STATE,
-                 VCS_HOSTS
+                 UI_STATE
                     -> isValidSet(configValue);
             default -> false;
         };
