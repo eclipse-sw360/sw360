@@ -208,6 +208,10 @@ public class ThriftValidate {
         if (!eccInformation.isSetEccStatus()){
             eccInformation.setEccStatus(ECCStatus.OPEN);
         }
+        // Initialize optional boolean fields to prevent null vs false comparison issues
+        if (!eccInformation.isSetContainsCryptography()) {
+            eccInformation.setContainsCryptography(false);
+        }
         release.setEccInformation(eccInformation);
         return release;
     }

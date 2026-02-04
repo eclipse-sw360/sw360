@@ -1158,6 +1158,9 @@ public class ComponentDatabaseHandlerTest {
                         case ECC_STATUS:
                             changed.getEccInformation().setFieldValue(f, ECCStatus.IN_PROGRESS);
                             break;
+                        case CONTAINS_CRYPTOGRAPHY:
+                            changed.getEccInformation().setFieldValue(f, Boolean.TRUE);
+                            break;
                         default:
                             changed.getEccInformation().setFieldValue(f, "string value");
                     }
