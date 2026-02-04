@@ -23,3 +23,25 @@ repos:
     rev: v3.3.1
     hooks:
     -   id: pylint
+
+# Java code quality checks using Maven Checkstyle
+-   repo: local
+    hooks:
+    -   id: checkstyle
+        name: checkstyle (Java)
+        entry: mvn
+        args:
+          - checkstyle:check
+          - '-Dcheckstyle.config.location=scripts/lint/checkstyle.xml'
+          - '-Dcheckstyle.failOnViolation=false'
+          - '--no-transfer-progress'
+          - '-q'
+        language: system
+        files: \.java$
+        pass_filenames: false
+        stages: [pre-push]
+        exclude: |
+            (?x)^(
+                libraries/datahandler/src/main/java/org/eclipse/sw360/datahandler/thrift/.*|
+                .*/target/.*
+            )$
