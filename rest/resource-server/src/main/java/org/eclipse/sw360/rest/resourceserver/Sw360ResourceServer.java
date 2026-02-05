@@ -22,6 +22,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -175,6 +176,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public OpenAPI customOpenAPI() {
         String restVersionString = getRestVersion();
         return new OpenAPI()
+                .addServersItem(new Server().url("/resource/api").description("SW360 REST API Server"))
                 .components(new Components()
                         .addSecuritySchemes("tokenAuth",
                                 new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("Authorization")
