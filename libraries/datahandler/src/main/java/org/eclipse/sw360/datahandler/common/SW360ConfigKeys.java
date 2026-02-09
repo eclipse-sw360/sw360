@@ -65,6 +65,9 @@ public class SW360ConfigKeys {
 
     public static final String SKIP_DOMAINS_FOR_VALID_SOURCE_CODE = "release.sourcecodeurl.skip.domains";
 
+    // This property is used to configure the length of generated API tokens
+    public static final String REST_API_TOKEN_LENGTH = "rest.apitoken.length";
+
     //Properties used by the RepositoryURL class to handle VCS from SBOM
     public static final String VCS_HOSTS = "vcs.hosts";
     public static final String NON_PKG_MANAGED_COMPS_PROP = "non.pkg.managed.comps.prop";
@@ -124,7 +127,7 @@ public class SW360ConfigKeys {
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
             TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,
-            NON_PKG_MANAGED_COMPS_PROP,
+            NON_PKG_MANAGED_COMPS_PROP, REST_API_TOKEN_LENGTH,
             UI_CLEARING_TEAMS, UI_CLEARING_TEAM_UNKNOWN_ENABLED, UI_COMPONENT_CATEGORIES,
             UI_COMPONENT_EXTERNALKEYS, UI_CUSTOMMAP_COMPONENT_ROLES, UI_CUSTOMMAP_PROJECT_ROLES,
             UI_CUSTOMMAP_RELEASE_ROLES, UI_CUSTOM_WELCOME_PAGE_GUIDELINE, UI_DOMAINS,

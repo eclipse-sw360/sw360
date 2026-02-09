@@ -306,6 +306,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
         release.setName(componentById.getName());
+        release.setComponentType(componentById.getComponentType());
     }
 
     public RequestStatus updateRelease(Release release, User sw360User) throws TException {
