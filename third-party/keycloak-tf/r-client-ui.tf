@@ -1,7 +1,9 @@
-# SPDX-License-Identifier: Siemens-ISL-1.5
+# Copyright (c) Siemens AG 2025.
+# SPDX-License-Identifier: EPL-2.0
+# Part of the SW360 Portal Project.
 # Create client for SW360 UI
 
-# 1. Client for UI
+# 1. Client for SW360 UI to authenticate
 resource "keycloak_openid_client" "sw360_ui" {
   realm_id  = keycloak_realm.sw360.id
   client_id = "sw360ui"

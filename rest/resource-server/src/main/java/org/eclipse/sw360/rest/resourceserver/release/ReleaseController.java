@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018.
+ * Copyright Sandip Mandal<sandipmandal02.sm@gmail.com>, 2026.
  * Copyright Bosch Software Innovations GmbH, 2017.
  * Part of the SW360 Portal Project.
  *
@@ -68,6 +69,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -1228,6 +1230,108 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @Operation(
+            summary = "Get linked packages for a release.",
+            description = "Get linked packages for a release with pagination and optional filtering by vendor, package name, package manager, and licenses.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = {@Content(mediaType = "application/hal+json")},
+                            description = "List of linked packages"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Release not found"
+                    )
+            }
+    )
+    @RequestMapping(value = RELEASES_URL + "/{id}/linkedPackages", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Package>>> getLinkedPackages(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String id,
+            @Parameter(description = "Vendor name filter")
+            @RequestParam(value = "vendor", required = false) String vendor,
+            @Parameter(description = "Package name filter")
+            @RequestParam(value = "name", required = false) String packageName,
+            @Parameter(description = "Package manager filter")
+            @RequestParam(value = "packageManager", required = false) String packageManager,
+            @Parameter(description = "License IDs filter (comma-separated)")
+            @RequestParam(value = "licenseIds", required = false) String licenseIds,
+            Pageable pageable,
+            HttpServletRequest request
+    ) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(id, sw360User);
+
+        if (release.getPackageIds() == null || release.getPackageIds().isEmpty()) {
+            @SuppressWarnings("unchecked")
+            CollectionModel<EntityModel<Package>> emptyResponse =
+                (CollectionModel<EntityModel<Package>>) restControllerHelper.emptyPageResource(Package.class,
+                    restControllerHelper.createPaginationResult(request, pageable,
+                        new ArrayList<>(), SW360Constants.TYPE_PACKAGE));
+            return new ResponseEntity<>(emptyResponse, HttpStatus.OK);
+        }
+
+        List<Package> linkedPackages =
+            releaseService.getLinkedPackagesForRelease(id, sw360User);
+
+        List<Package> filteredPackages =
+            filterPackages(linkedPackages, vendor, packageName, packageManager, licenseIds);
+
+        @SuppressWarnings("unchecked")
+        PaginationResult<Package> paginationResult =
+            (PaginationResult<Package>) restControllerHelper.createPaginationResult(request, pageable, filteredPackages, SW360Constants.TYPE_PACKAGE);
+
+        List<EntityModel<Package>> packageResources =
+            paginationResult.getResources().stream()
+                .map(pkg -> {
+                    Package embeddedPackage = restControllerHelper.convertToEmbeddedPackage(pkg);
+                    return EntityModel.of(embeddedPackage);
+                })
+                .collect(Collectors.toList());
+
+        @SuppressWarnings("unchecked")
+        CollectionModel<EntityModel<Package>> resources;
+        if (packageResources.isEmpty()) {
+            resources = (CollectionModel<EntityModel<Package>>) restControllerHelper.emptyPageResource(Package.class, paginationResult);
+        } else {
+            resources = (CollectionModel<EntityModel<Package>>) restControllerHelper.generatePagesResource(paginationResult, packageResources);
+        }
+
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    private List<Package> filterPackages(
+            List<Package> packages,
+            String vendor,
+            String packageName,
+            String packageManager,
+            String licenseIds) {
+
+        return packages.stream()
+                .filter(pkg -> vendor == null || vendor.isEmpty() ||
+                    (pkg.getVendor() != null && pkg.getVendor().getShortname() != null &&
+                     pkg.getVendor().getShortname().toLowerCase().contains(vendor.toLowerCase())))
+                .filter(pkg -> packageName == null || packageName.isEmpty() ||
+                    (pkg.getName() != null && pkg.getName().toLowerCase().contains(packageName.toLowerCase())))
+                .filter(pkg -> packageManager == null || packageManager.isEmpty() ||
+                    (pkg.getPackageManager() != null && pkg.getPackageManager().toString().equals(packageManager)))
+                .filter(pkg -> {
+                    if (licenseIds == null || licenseIds.isEmpty()) {
+                        return true;
+                    }
+                    if (pkg.getLicenseIds() == null) {
+                        return false;
+                    }
+                    Set<String> filterLicenseIds = Arrays.stream(licenseIds.split(","))
+                            .map(String::trim)
+                            .collect(Collectors.toSet());
+                    return !Collections.disjoint(pkg.getLicenseIds(), filterLicenseIds);
+                })
+                .collect(Collectors.toList());
     }
 
     @Operation(

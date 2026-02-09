@@ -90,6 +90,17 @@ git clone https://github.com/eclipse-sw360/sw360.git
 cd sw360
 pip install pre-commit
 pre-commit install
+
+### Note on build requirements
+
+Please note that even partial or module-level Maven builds require deploy-related
+properties to be set due to enforced build rules.
+
+At a minimum, the `base.deploy.dir` property must be provided, otherwise the build
+will fail with a Maven Enforcer error.
+
+This applies even when building individual modules (for example, `libraries`).
+
 ```
 
 **Step 2**: Build the code

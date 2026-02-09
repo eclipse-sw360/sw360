@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Siemens-ISL-1.5
+# Copyright (c) Siemens AG 2025.
+# SPDX-License-Identifier: EPL-2.0
+# Part of the SW360 Portal Project.
 # Variables used by the TF scripts
 
 variable "kc_client_id" {
@@ -35,6 +37,18 @@ variable "smtp_password" {
   description = "SMTP login password"
   type        = string
   default     = null
+}
+
+variable "smtp_host" {
+  description = "SMTP Hostname"
+  type        = string
+  default     = null
+}
+
+variable "smtp_port" {
+  description = "SMTP Port"
+  type        = number
+  default     = 25
 }
 
 variable "redirect_uris" {

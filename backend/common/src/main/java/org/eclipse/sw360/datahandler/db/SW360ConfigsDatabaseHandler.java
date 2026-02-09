@@ -89,6 +89,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
                 .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, ""))
                 .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
+                .put(REST_API_TOKEN_LENGTH, getOrDefault(configContainer, REST_API_TOKEN_LENGTH, "20"))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
     }
@@ -137,6 +138,18 @@ public class SW360ConfigsDatabaseHandler {
         try {
             Integer.parseInt(value); // Try parsing the string as an integer
             return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private boolean isValidApiTokenLength(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        try {
+            int tokenLength = Integer.parseInt(value);
+            return tokenLength >= 20; // Minimum 20 characters for security reasons
         } catch (NumberFormatException e) {
             return false;
         }
@@ -206,6 +219,10 @@ public class SW360ConfigsDatabaseHandler {
             // validate int value
             case ATTACHMENT_DELETE_NO_OF_DAYS
                     -> isIntegerValue(configValue);
+
+            // validate API token length (minimum 20 characters for security)
+            case REST_API_TOKEN_LENGTH
+                    -> isValidApiTokenLength(configValue);
 
             // validate string in enum
             case SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,

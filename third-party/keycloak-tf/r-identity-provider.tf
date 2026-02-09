@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Siemens-ISL-1.5
+# Copyright (c) Siemens AG 2025.
+# SPDX-License-Identifier: EPL-2.0
+# Part of the SW360 Portal Project.
 # Generic OIDC identity providers for the realm, based on EntraID
 
 # 1. Identity provider
@@ -35,24 +37,24 @@ resource "keycloak_attribute_importer_identity_provider_mapper" "department" {
   claim_name              = "org_code"
 
   extra_config = {
-    syncMode = "INHERIT"
+    syncMode = "FORCE"
   }
 }
 
-# 3. Map `gid` from EntraID to `externalId` of user
-resource "keycloak_attribute_importer_identity_provider_mapper" "gid" {
+# 3. Map `uid` claim from EntraID to `externalId` of user
+resource "keycloak_attribute_importer_identity_provider_mapper" "uid" {
   realm                   = keycloak_realm.sw360.id
-  name                    = "GidToExternalIdMapper"
+  name                    = "UidToExternalIdMapper"
   identity_provider_alias = keycloak_oidc_identity_provider.entra_id.alias
   user_attribute          = "externalId"
-  claim_name              = "gid"
+  claim_name              = "uid"
 
   extra_config = {
-    syncMode = "INHERIT"
+    syncMode = "IMPORT"
   }
 }
 
-# 4. Map `mail` from EntraID to `email` of user
+# 4. Map `mail` claim from EntraID to `email` of user
 resource "keycloak_attribute_importer_identity_provider_mapper" "email" {
   realm                   = keycloak_realm.sw360.id
   name                    = "MailToEmailMapper"
@@ -61,11 +63,11 @@ resource "keycloak_attribute_importer_identity_provider_mapper" "email" {
   claim_name              = "mail"
 
   extra_config = {
-    syncMode = "INHERIT"
+    syncMode = "IMPORT"
   }
 }
 
-# 5. Map `mail` from EntraID to `username` of user
+# 5. Map `mail` claim from EntraID to `username` of user
 resource "keycloak_attribute_importer_identity_provider_mapper" "username" {
   realm                   = keycloak_realm.sw360.id
   name                    = "MailToUsernameMapper"
@@ -74,6 +76,6 @@ resource "keycloak_attribute_importer_identity_provider_mapper" "username" {
   claim_name              = "mail"
 
   extra_config = {
-    syncMode = "INHERIT"
+    syncMode = "IMPORT"
   }
 }

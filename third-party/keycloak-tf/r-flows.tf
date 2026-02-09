@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Siemens-ISL-1.5
+# Copyright (c) Siemens AG 2025.
+# SPDX-License-Identifier: EPL-2.0
+# Part of the SW360 Portal Project.
 # Keycloak Authentication flows to be used
 
 # 1. First login flow
@@ -9,7 +11,7 @@ resource "keycloak_authentication_flow" "first_login" {
   provider_id = "basic-flow"
 }
 
-# 1.1. Create user if new
+# 1.1. Create user if logging-in for the first time
 resource "keycloak_authentication_execution" "idp_create_unique" {
   realm_id          = keycloak_realm.sw360.id
   parent_flow_alias = keycloak_authentication_flow.first_login.alias

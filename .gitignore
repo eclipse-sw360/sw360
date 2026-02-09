@@ -73,9 +73,8 @@ scripts/docker-config/etc_sw360/couchdb.properties
 **/*.versionsBackup
 output
 
-# KeyCloak terraform
-/third-party/keycloak-tf/.terraform/
-/third-party/keycloak-tf/*.tfstate
-/third-party/keycloak-tf/*.backup
+# KeyCloak Terraform
 /third-party/keycloak-tf/*.auto.tfvars
-/third-party/keycloak-tf/plan.out
+/third-party/keycloak-tf/terraform.tfstate*
+/third-party/keycloak-tf/.terraform.lock.hcl
+/third-party/keycloak-tf/.terraform/**

@@ -1,6 +1,9 @@
-# SPDX-License-Identifier: Siemens-ISL-1.5
+# Copyright (c) Siemens AG 2025.
+# SPDX-License-Identifier: EPL-2.0
+# Part of the SW360 Portal Project.
 # Holds the information for clients created for SW360 users
 
+# OpenID Clients which can connect with SW360 REST API, authenticated via KC
 resource "keycloak_openid_client" "sw360_user_clients" {
   for_each = { for client in local.sw360_clients : client.user_email => client }
 
@@ -24,6 +27,7 @@ resource "keycloak_openid_client" "sw360_user_clients" {
   use_refresh_tokens           = false
 }
 
+# Default scopes given to all clients
 resource "keycloak_openid_client_default_scopes" "sw360_user_client_default_scope" {
   for_each = keycloak_openid_client.sw360_user_clients
 
@@ -41,6 +45,7 @@ resource "keycloak_openid_client_default_scopes" "sw360_user_client_default_scop
   ]
 }
 
+# Write scopes given to clients in `local.sw360_write_clients`
 resource "keycloak_openid_client_optional_scopes" "sw360_user_client_optional_scope" {
   for_each = { for client in local.sw360_write_clients : client.user_email => client }
 
@@ -52,6 +57,9 @@ resource "keycloak_openid_client_optional_scopes" "sw360_user_client_optional_sc
   ]
 }
 
+# Hardcoded email claim given to all clients as "client-secret" grant type does
+# not tell bearer token belongs to which user. This claim maps the user's email
+# as a hard coded "email" claim to the token which can then be read by SW360.
 resource "keycloak_openid_hardcoded_claim_protocol_mapper" "user_client_email_claim" {
   for_each = keycloak_openid_client.sw360_user_clients
 

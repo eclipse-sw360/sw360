@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Siemens-ISL-1.5
+# Copyright (c) Siemens AG 2025.
+# SPDX-License-Identifier: EPL-2.0
+# Part of the SW360 Portal Project.
 # The main SW360 realm
 
 # 1. sw360 realm in KeyCloak
@@ -20,8 +22,8 @@ resource "keycloak_realm" "sw360" {
   dynamic "smtp_server" {
     for_each = var.smtp_password != null ? [1] : []
     content {
-      host              = "smtp.siemens.com"
-      port              = 25
+      host              = var.smtp_host
+      port              = var.smtp_port
       from              = var.smtp_from
       from_display_name = "SW360 - Keycloak"
       starttls          = true

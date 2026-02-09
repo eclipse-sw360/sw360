@@ -9,6 +9,10 @@
     "java.compile.nullAnalysis.mode": "automatic",
     "peacock.color": "#42b883",
     "java.configuration.updateBuildConfiguration": "automatic",
-    "java.format.settings.url": ".vscode/java-formatter.xml"
+    "java.format.settings.url": ".vscode/java-formatter.xml",
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "chat.instructionFilesLocations": {
+      ".github/instructions": true
+    }
   }
 }
