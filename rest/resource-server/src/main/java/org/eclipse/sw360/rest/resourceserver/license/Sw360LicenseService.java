@@ -294,7 +294,7 @@ public class Sw360LicenseService {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             return sw360LicenseClient.importAllOSADLLicenses(sw360User);
         } else {
-            throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
+            throw new BadRequestClientException("Unable to import All OSADL license obligations. User is not admin");
         }
     }
 
