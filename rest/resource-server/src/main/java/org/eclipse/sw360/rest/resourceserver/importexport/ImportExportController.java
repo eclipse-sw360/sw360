@@ -202,6 +202,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true, description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data.")
             }
     )
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(
             value = IMPORTEXPORT_URL + "/uploadComponent",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -226,6 +227,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true,  description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data."),
             }
     )
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(
             value = IMPORTEXPORT_URL + "/uploadRelease",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -250,6 +252,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true,  description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data."),
             }
     )
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(
             value = IMPORTEXPORT_URL + "/componentAttachment",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -274,7 +277,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
-    @PreAuthorize("hasAuthority('WRITE')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadUsers", produces = {MediaType.TEXT_PLAIN_VALUE})
     public void downloadUsers(HttpServletResponse response) throws SW360Exception {
         try {

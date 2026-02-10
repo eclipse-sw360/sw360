@@ -673,4 +673,3 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.ok(response);
     }
 }
-
