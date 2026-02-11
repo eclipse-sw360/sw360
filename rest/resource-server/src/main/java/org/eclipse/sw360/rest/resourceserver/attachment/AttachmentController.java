@@ -126,7 +126,10 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             description = "Create an attachment.",
             tags = {"Attachments"}
     )
-    @RequestMapping(value = ATTACHMENTS_URL , method = RequestMethod.POST, consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(
+            value = ATTACHMENTS_URL,
+            consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE}
+    )
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> createAttachment(
             @Parameter(description = "List of files to attach",
                     schema = @Schema(

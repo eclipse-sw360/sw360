@@ -107,7 +107,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "List all of the service's users.",
             description = "List all of the service's users.", tags = {"Users"})
-    @RequestMapping(value = USERS_URL, method = RequestMethod.GET)
+    @GetMapping(value = USERS_URL)
     public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -170,7 +170,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     // for compatibility with older version of the REST API
     @Operation(summary = "Get a single user.", description = "Get a single user by email.",
             tags = {"Users"})
-    @RequestMapping(value = USERS_URL + "/{email:.+}", method = RequestMethod.GET)
+    @GetMapping(value = USERS_URL + "/{email:.+}")
     public ResponseEntity<EntityModel<User>> getUserByEmail(
             @Parameter(description = "The email of the user to be retrieved.")
             @PathVariable("email") String email
@@ -187,7 +187,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     // getUserByEmail())
     @Operation(summary = "Get a single user.", description = "Get a single user by id.",
             tags = {"Users"})
-    @RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
+    @GetMapping(value = USERS_URL + "/byid/{id:.+}")
     public ResponseEntity<EntityModel<User>> getUser(
             @Parameter(description = "The id of the user to be retrieved.")
             @PathVariable("id") String id
@@ -272,7 +272,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             description = "List all of rest api tokens of current user.",
             responses = {@ApiResponse(responseCode = "200", description = "List of tokens.")},
             tags = {"Users"})
-    @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.GET)
+    @GetMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<RestApiToken> restApiTokens = sw360User.getRestApiTokens();
@@ -294,7 +294,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     @ApiResponse(responseCode = "500", description = "Create token failure.")
             },
             tags = {"Users"})
-    @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.POST)
+    @PostMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<String> createUserRestApiToken(
             @Parameter(description = "Token request",
                     schema = @Schema(
@@ -333,7 +333,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     @ApiResponse(responseCode = "204", description = "Revoke token successfully."),
                     @ApiResponse(responseCode = "404", description = "Token name not found.")},
             tags = {"Users"})
-    @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.DELETE)
+    @DeleteMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<String> revokeUserRestApiToken(
             @Parameter(description = "Name of token to be revoked.",
                     example = "MyToken")
@@ -370,7 +370,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                                 "secondaryGrpList": ["DEPARTMENT1","DEPARTMENT2"]
                             }
                             """))})})
-    @RequestMapping(value = USERS_URL + "/groupList", method = RequestMethod.GET)
+    @GetMapping(value = USERS_URL + "/groupList")
     public ResponseEntity<Map<String, List<String>>> getGroupList() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<String> primaryGrpList = new ArrayList<>();
