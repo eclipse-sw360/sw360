@@ -36,12 +36,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
@@ -181,7 +179,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                     )
             )
     })
-    @RequestMapping(value = SW360_CONFIG_URL + "/container/{configFor}", method = RequestMethod.GET)
+    @GetMapping(value = SW360_CONFIG_URL + "/container/{configFor}")
     public ResponseEntity<Map<String, String>> getConfigForContainer(
             @Parameter(description = "The container for which the configuration is requested.",
                     required = true, schema = @Schema(
@@ -247,9 +245,10 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                     )
             )
     })
-    @RequestMapping(value = SW360_CONFIG_URL + "/container/{configFor}",
-            method = RequestMethod.PATCH,
-            consumes = {MediaType.APPLICATION_JSON_VALUE})
+    @PatchMapping(
+            value = SW360_CONFIG_URL + "/container/{configFor}",
+            consumes = {MediaType.APPLICATION_JSON_VALUE}
+    )
     public ResponseEntity<?> updateSW360ConfigurationsForContainer(
             @Parameter(description = "The container for which the configuration is requested.",
                     required = true, schema = @Schema(

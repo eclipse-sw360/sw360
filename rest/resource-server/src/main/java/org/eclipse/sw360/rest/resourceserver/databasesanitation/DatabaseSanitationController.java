@@ -30,8 +30,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -88,7 +87,7 @@ public class DatabaseSanitationController  implements RepresentationModelProcess
             @ApiResponse(responseCode = "403", description = "User is not Admin."),
             @ApiResponse(responseCode = "500", description = "Internal server error."),
     })
-    @RequestMapping(value = DATABASESANITATION_URL + "/searchDuplicate", method = RequestMethod.GET)
+    @GetMapping(value = DATABASESANITATION_URL + "/searchDuplicate")
     public ResponseEntity<Map<String, Map<String, List<String>>>> searchDuplicateIdentifiers()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Map<String, List<String>>> resource = dataSanitationService.duplicateIdentifiers(sw360User);
