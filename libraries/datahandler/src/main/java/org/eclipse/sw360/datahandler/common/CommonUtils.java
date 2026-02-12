@@ -52,6 +52,7 @@ import static org.apache.logging.log4j.LogManager.getLogger;
 public class CommonUtils {
 
     public static final String SYSTEM_CONFIGURATION_PATH = "/etc/sw360";
+    public static final String DEFAULT_ATTACHMENT_FILENAME = "comp_attachment";
     private static List<String> MULTIPLE_FILE_EXTENSIONS = Arrays.asList(".tar.gz", ".tar.bz2", ".tar.xz", ".tar.lz", ".tar.lzma");
 
     private CommonUtils() {
@@ -239,6 +240,30 @@ public class CommonUtils {
 
     public static boolean isNotEmpty(Collection collection) {
         return !isNullOrEmptyCollection(collection);
+    }
+
+    /**
+     * Sanitize filename to prevent path traversal attacks.
+     * Replaces path separators (/ and \) with underscores to prevent directory traversal.
+     * 
+     * @param filename the original filename that may contain path separators
+     * @return sanitized filename safe for file operations, or DEFAULT_ATTACHMENT_FILENAME if input is invalid
+     */
+    public static String sanitizeFilename(String filename) {
+        if (filename == null || filename.trim().isEmpty()) {
+            return DEFAULT_ATTACHMENT_FILENAME;
+        }
+        
+        // Replace path separators with underscores
+        // This prevents path traversal since sequences like "../" become ".._"
+        String sanitized = filename.replace("/", "_").replace("\\", "_");
+        
+        // If filename becomes empty after sanitization, use default
+        if (sanitized.trim().isEmpty()) {
+            return DEFAULT_ATTACHMENT_FILENAME;
+        }
+        
+        return sanitized;
     }
 
     public static boolean allAreEmptyOrNull(Collection... collections) {
