@@ -531,6 +531,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Import OSADL information.",
             tags = {"Licenses"}
     )
+    @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -671,3 +672,4 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.ok(response);
     }
 }
+
