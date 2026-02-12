@@ -38,7 +38,8 @@ public class RepositoryURL {
 
         List<String> extractedParams = new ArrayList<>();
         for (int i = 3; i < urlParts.length && extractedParams.size() < paramCount; i++) {
-            String part = urlParts[i].replaceAll("\\.git.*|#.*", "");
+            String part = urlParts[i];
+            if(i == urlParts.length-1) part = part.replaceAll("\\.git.*|#.*", "");
 
             if (part.equals("+") || part.equals("-") || CommonUtils.isNullEmptyOrWhitespace(part)) {
                 break;
