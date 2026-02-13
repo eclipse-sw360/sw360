@@ -17,7 +17,6 @@ import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthentic
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JWTAccessTokenConverter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,25 +42,30 @@ import java.util.List;
 @EnableMethodSecurity
 public class ResourceServerConfiguration {
 
-    @Autowired
-    SimpleAuthenticationEntryPoint saep;
-
     private final Logger log = LogManager.getLogger(this.getClass());
 
-    @Autowired
-    Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
+    private final SimpleAuthenticationEntryPoint saep;
+    private final Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
+    private final ApiTokenAuthenticationProvider authProvider;
+    private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    private final String issuerUri;
+    private final boolean swaggerRequireAuthentication;
 
-    @Autowired
-    private ApiTokenAuthenticationProvider authProvider;
-
-    @Autowired
-    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
-
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    String issuerUri;
-
-    @Value("${springdoc.swagger-ui.require-authentication:true}")
-    boolean swaggerRequireAuthentication;
+    public ResourceServerConfiguration(
+            SimpleAuthenticationEntryPoint saep,
+            Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter,
+            ApiTokenAuthenticationProvider authProvider,
+            Sw360UserAuthenticationProvider sw360UserAuthenticationProvider,
+            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
+            @Value("${springdoc.swagger-ui.require-authentication:true}") boolean swaggerRequireAuthentication
+    ) {
+        this.saep = saep;
+        this.sw360JWTAccessTokenConverter = sw360JWTAccessTokenConverter;
+        this.authProvider = authProvider;
+        this.sw360UserAuthenticationProvider = sw360UserAuthenticationProvider;
+        this.issuerUri = issuerUri;
+        this.swaggerRequireAuthentication = swaggerRequireAuthentication;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {

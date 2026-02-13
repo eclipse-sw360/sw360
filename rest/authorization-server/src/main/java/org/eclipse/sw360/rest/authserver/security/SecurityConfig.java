@@ -13,12 +13,10 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360OidcUserInfoService;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -45,14 +43,21 @@ import java.util.UUID;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    @SuppressWarnings("unused")
+    private final Sw360ClientDetailsService sw360ClientDetailsService;
+    @SuppressWarnings("unused")
+    private final Sw360OidcUserInfoService sw360OidcUserInfoService;
 
-    @Autowired
-    Sw360ClientDetailsService sw360ClientDetailsService;
-
-    @Autowired
-    private Sw360OidcUserInfoService sw360OidcUserInfoService;
+    public SecurityConfig(
+            Sw360UserAuthenticationProvider sw360UserAuthenticationProvider,
+            Sw360ClientDetailsService sw360ClientDetailsService,
+            Sw360OidcUserInfoService sw360OidcUserInfoService
+    ) {
+        this.sw360UserAuthenticationProvider = sw360UserAuthenticationProvider;
+        this.sw360ClientDetailsService = sw360ClientDetailsService;
+        this.sw360OidcUserInfoService = sw360OidcUserInfoService;
+    }
 
     @Bean
     @Order(1)
@@ -63,6 +68,7 @@ public class SecurityConfig {
 
         httpSecurity
                 .securityMatcher(endpointsMatcher)
+                .authenticationProvider(sw360UserAuthenticationProvider)
                 .with(authorizationServerConfigurer, Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")))
@@ -75,7 +81,9 @@ public class SecurityConfig {
     @Order(2)
     @Bean
     public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(
+        httpSecurity
+                .authenticationProvider(sw360UserAuthenticationProvider)
+                .authorizeHttpRequests(
                 authz -> authz
                 .requestMatchers("/client-management/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
@@ -112,11 +120,6 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-    }
-
-    @Autowired
-    public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) {
-        authenticationManagerBuilder.authenticationProvider(sw360UserAuthenticationProvider);
     }
 
     @Bean

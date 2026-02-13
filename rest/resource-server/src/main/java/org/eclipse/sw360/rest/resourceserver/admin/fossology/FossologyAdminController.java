@@ -30,7 +30,6 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -48,7 +47,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class FossologyAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
@@ -58,7 +57,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
     private final RestControllerHelper restControllerHelper;
 
     @NonNull
-    Sw360FossologyAdminServices sw360FossologyAdminServices;
+    private final Sw360FossologyAdminServices sw360FossologyAdminServices;
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {

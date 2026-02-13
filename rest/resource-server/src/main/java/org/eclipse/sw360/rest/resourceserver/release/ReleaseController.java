@@ -87,7 +87,6 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -112,7 +111,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -136,10 +135,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             .put("message", "Moderation request is created").build();
 
     @NonNull
-    private Sw360ReleaseService releaseService;
+    private final Sw360ReleaseService releaseService;
 
     @NonNull
-    private SW360PackageService packageService;
+    private final SW360PackageService packageService;
 
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
@@ -148,16 +147,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     private final Sw360VendorService vendorService;
 
     @NonNull
-    private Sw360AttachmentService attachmentService;
+    private final Sw360AttachmentService attachmentService;
 
     @NonNull
-    private RestControllerHelper restControllerHelper;
+    private final RestControllerHelper restControllerHelper;
 
     @NonNull
-    private Sw360LicenseInfoService sw360LicenseInfoService;
+    private final Sw360LicenseInfoService sw360LicenseInfoService;
 
     @NonNull
-    private SW360SPDXDocumentService sw360SPDXDocumentService;
+    private final SW360SPDXDocumentService sw360SPDXDocumentService;
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;

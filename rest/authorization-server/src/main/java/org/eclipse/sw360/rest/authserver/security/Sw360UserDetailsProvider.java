@@ -16,7 +16,6 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -28,8 +27,11 @@ public class Sw360UserDetailsProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
 
-    @Autowired
-    private ThriftClients thriftClients;
+    private final ThriftClients thriftClients;
+
+    public Sw360UserDetailsProvider(ThriftClients thriftClients) {
+        this.thriftClients = thriftClients;
+    }
 
     public User provideUserDetails(String email, String extId) {
         User result = null;
