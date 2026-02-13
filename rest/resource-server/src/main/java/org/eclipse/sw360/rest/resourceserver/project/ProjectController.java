@@ -135,10 +135,12 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -252,7 +254,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "204", description = "No content - no projects found matching the criteria"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL, method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -395,7 +397,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "204", description = "No content - no projects found for the user"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL + "/myprojects", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/myprojects")
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsFilteredForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -458,7 +460,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearing", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/licenseClearing")
     public ResponseEntity<HalResource<Project>> licenseClearing(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -531,7 +533,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> getProject(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -552,7 +554,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/packages", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/packages")
     public ResponseEntity<List<HalResource<Project>>> getPackagesByProjectId(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -611,7 +613,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/linkedProjects", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/linkedProjects")
     public ResponseEntity<CollectionModel<EntityModel>> getLinkedProject(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -667,7 +669,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/linkedProjects/releases", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/linkedProjects/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesOfLinkedProject(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -730,7 +732,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity deleteProject(
             @Parameter(description = "Project ID")
             @PathVariable("id") String id,
@@ -767,7 +769,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects")
     })
-    @RequestMapping(value = PROJECTS_URL, method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL)
     public ResponseEntity createProject(
             @Parameter(schema = @Schema(implementation = Project.class))
             @RequestBody Map<String, Object> reqBodyMap
@@ -813,7 +815,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to duplicate projects"),
         @ApiResponse(responseCode = "404", description = "Source project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/duplicate/{id}", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/duplicate/{id}")
     public ResponseEntity<EntityModel<Project>> createDuplicateProject(
             @Parameter(description = "Project ID to copy.")
             @PathVariable("id") String id,
@@ -862,7 +864,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/{id}/releases")
     public ResponseEntity linkReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -904,7 +906,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/linkProjects", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/{id}/linkProjects")
     public ResponseEntity linkToProjects(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1012,7 +1014,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/releases")
     public ResponseEntity patchReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1056,7 +1058,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
-    @RequestMapping(value = PROJECTS_URL + "/{id}/link/packages", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/link/packages")
     public ResponseEntity<?> linkPackages(
             @Parameter(description = "Project ID.", example = "376576")
             @PathVariable("id") String id,
@@ -1099,7 +1101,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
-    @RequestMapping(value = PROJECTS_URL + "/{id}/unlink/packages", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/unlink/packages")
     public ResponseEntity<?> patchPackages(
             @Parameter(description = "Project ID.", example = "376576")
             @PathVariable("id") String id,
@@ -1137,7 +1139,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1190,7 +1192,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "200", description = "Releases successfully retrieved"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL + "/releases", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectsReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1247,7 +1249,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/releases/ecc", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/releases/ecc")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1298,7 +1300,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
 
-    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilitySummary", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/vulnerabilitySummary")
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilitySummary>>> getAllVulnerabilities(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1397,7 +1399,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1480,7 +1482,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.PATCH, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> updateVulnerabilitiesOfReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1547,7 +1549,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project or release not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}")
     public ResponseEntity<EntityModel<ProjectReleaseRelationship>> patchProjectReleaseUsage(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1638,7 +1640,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/licenses", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/licenses")
     public ResponseEntity<CollectionModel<EntityModel<License>>> getLicensesOfReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id
@@ -1690,7 +1692,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseinfo", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/licenseinfo")
     public void downloadLicenseInfo(
             @Parameter(description = "Project ID.", example = "376576")
             @PathVariable("id") String id,
@@ -1820,7 +1822,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/attachments", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/attachments")
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getProjectAttachments(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id
@@ -1845,7 +1847,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project or attachment not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/attachment/{attachmentId}")
     public ResponseEntity<EntityModel<Attachment>> patchProjectAttachmentInfo(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1886,7 +1888,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project or attachment not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromProject(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
@@ -1914,7 +1916,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments/clearingReports", method = RequestMethod.GET, produces = "application/zip")
+    @GetMapping(value = PROJECTS_URL + "/{projectId}/attachments/clearingReports", produces = "application/zip")
     public void downloadClearingReports(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
@@ -1955,7 +1957,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> patchProject(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2006,7 +2008,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
+    @PostMapping(value = PROJECTS_URL + "/{projectId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToProject(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
@@ -2128,7 +2130,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "204", description = "No content - no projects found matching external IDs"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/searchByExternalIds")
     public ResponseEntity searchByExternalIds(
             @Parameter(description = "External ID map for filter.",
                     example = "{\"project-ext\": \"515432\", \"project-ext\": \"7657\", \"portal-id\": \"13319-XX3\"}"
@@ -2150,7 +2152,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/usedBy/{id}", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/usedBy/{id}")
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getUsedByProjectDetails(
             @Parameter(description = "Project ID to search.")
             @PathVariable("id") String id
@@ -2212,7 +2214,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     }
             )
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages")
     public ResponseEntity<?> saveAttachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2353,7 +2355,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/attachmentUsage", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/attachmentUsage")
     public ResponseEntity attachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2622,7 +2624,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects")
     })
-    @RequestMapping(value = PROJECTS_URL + "/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(value = PROJECTS_URL + "/import/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> importSBOM(
             @Parameter(description = "Type of SBOM", example = "SPDX")
             @RequestParam(value = "type", required = true) String type,
@@ -2711,7 +2713,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "409", description = "Conflict - duplicate project exists")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(value = PROJECTS_URL + "/{id}/import/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> importSBOMonProject(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable(value = "id", required = true) String id,
@@ -2788,7 +2790,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/{id}", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/network/{id}")
     public ResponseEntity<?> getProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -2815,7 +2817,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL+ "/network", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL+ "/network")
     public ResponseEntity createProjectWithNetwork(
             @Parameter(description = "Project with `dependencyNetwork` set.",
                     schema = @Schema(implementation = Project.class))
@@ -2862,7 +2864,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/{id}", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/network/{id}")
     public ResponseEntity<?> patchProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -3142,7 +3144,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "200", description = "Project count successfully retrieved"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL + "/projectcount", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/projectcount")
     public void getUserProjectCount(HttpServletResponse response) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         try {
@@ -3163,7 +3165,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "200", description = "License info header text successfully retrieved"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL + "/licenseInfoHeader", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/licenseInfoHeader")
     public void getLicenseInfoheaderText(HttpServletResponse response) throws TException {
         try {
             response.setContentType("application/json; charset=UTF-8");
@@ -3187,7 +3189,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount")
     public void getlicenseClearingCount(
             HttpServletResponse response ,
             @Parameter(description = "Project ID", example = "376521")
@@ -3219,7 +3221,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "200", description = "License clearing counts successfully retrieved"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL + "/licenseClearingCount", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/licenseClearingCount")
     public void getBatchLicenseClearingCount(
             HttpServletResponse response,
             @Parameter(description = "List of project IDs")
@@ -3265,7 +3267,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/clearingDetailsCount", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/clearingDetailsCount")
     public void getlicenseClearingDetailsCount(
             HttpServletResponse response ,
             @Parameter(description = "Project ID", example = "376521")
@@ -3305,7 +3307,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations")
     public ResponseEntity<?> getLicObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -3370,7 +3372,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found or no linked obligation found"),
         @ApiResponse(responseCode = "500", description = "Failed to remove orphaned obligation")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/orphanObligation", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/orphanObligation")
     public ResponseEntity<?> removeOrphanObligation(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -3412,7 +3414,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/licenseObligations")
     public ResponseEntity<Object> getLicenseObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -3488,7 +3490,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/obligation", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/obligation")
     public ResponseEntity<HalResource> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -3580,7 +3582,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project"),
         @ApiResponse(responseCode = "404", description = "Project not found or failed to add/update obligation")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligation", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/{id}/licenseObligation")
     public ResponseEntity<?> addLicenseObligations(
             @Parameter(description = "License Obligation ID.")
             @PathVariable("id") String id,
@@ -3647,7 +3649,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "409", description = "Conflict - cannot update license obligation due to data integrity violation")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation")
     public ResponseEntity<?> patchLicenseObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
             @Parameter(description = "Map of obligation status info")
@@ -3807,7 +3809,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "409", description = "Conflict - cannot update obligation due to data integrity violation")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/updateObligation", method = RequestMethod.PATCH)
+    @PatchMapping(value = PROJECTS_URL + "/{id}/updateObligation")
     public ResponseEntity<?> patchObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
             @Parameter(description = "Map of obligation status info")
@@ -3903,7 +3905,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/summaryAdministration", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/summaryAdministration")
     public ResponseEntity<EntityModel<Project>> getAdministration(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -3940,7 +3942,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/{id}/listView", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/network/{id}/listView")
     public ResponseEntity<?> getListViewDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId
@@ -3965,7 +3967,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedResources", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/network/{id}/linkedResources")
     public ResponseEntity<ProjectLink> getLinkedResourcesOfProjectForDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -3991,7 +3993,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled or runtime error")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/{id}/releases", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/network/{id}/releases")
     public ResponseEntity<CollectionModel<ReleaseLink>> getLinkedReleasesInDependencyNetworkByIndexPath(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId,
@@ -4246,7 +4248,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create clearing requests"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/clearingRequest", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/{id}/clearingRequest")
     public ResponseEntity<?> createClearingRequest(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -4316,7 +4318,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "404", description = "Project not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases")
     public ResponseEntity<?> getLinkedReleasesInNetwork(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String projectId
@@ -4339,7 +4341,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "404", description = "Project not found")
     })
-    @RequestMapping(value = PROJECTS_URL + "/{id}/subProjects/releases", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/{id}/subProjects/releases")
     public ResponseEntity<?> getLinkedReleasesOfLinkedProjects(
             @Parameter(description = "Project ID.") @PathVariable("id") String projectId
     ) throws TException {
@@ -4362,7 +4364,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork")
     public ResponseEntity<?> compareDependencyNetworkWithDefaultNetwork(
             @RequestBody List<ReleaseNode> dependencyNetwork
     ) throws SW360Exception {
@@ -4390,7 +4392,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects"),
         @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled")
     })
-    @RequestMapping(value = PROJECTS_URL + "/network/duplicate/{id}", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/network/duplicate/{id}")
     public ResponseEntity<?> createDuplicateProjectWithDependencyNetwork(
             @Parameter(description = "Project ID to copy.")
             @PathVariable("id") String id,
@@ -4497,7 +4499,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses", method = RequestMethod.POST)
+    @PostMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses")
     public ResponseEntity<HalResource<EntityModel<Map<String, List<String>>>>> addLicenseToLinkedReleases(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId
@@ -4546,7 +4548,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "200", description = "Project groups successfully retrieved"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
     })
-    @RequestMapping(value = PROJECTS_URL + "/groups", method = RequestMethod.GET)
+    @GetMapping(value = PROJECTS_URL + "/groups")
     public Set<String> getAllProjectGroups() {
         Set<String> groups;
         try {
