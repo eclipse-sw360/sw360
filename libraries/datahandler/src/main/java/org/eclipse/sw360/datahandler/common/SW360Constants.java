@@ -165,6 +165,7 @@ public class SW360Constants {
     public static final String CONTENT_TYPE_OPENXML_SPREADSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     public static final String CONTENT_TYPE_XML = "application/xml";
     public static final String CONTENT_TYPE_JSON = "application/json";
+    public static final String CONTENT_TYPE_CSV = "text/csv";
 
     public static final String NOTIFICATION_CLASS_RELEASE = "release";
     public static final String NOTIFICATION_CLASS_MODERATION_REQUEST = "moderation";
