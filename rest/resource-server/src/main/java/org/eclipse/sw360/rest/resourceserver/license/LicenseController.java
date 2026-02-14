@@ -508,6 +508,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Upload license archive.",
             tags = {"Licenses"}
     )
+    @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/upload", consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> uploadLicenses(
             @Parameter(description = "The license archive file to be uploaded.")
@@ -558,6 +559,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                     }
             )
     })
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = LICENSES_URL + "/addLicenseType")
     public ResponseEntity<RequestStatus> createLicenseType(
             @Parameter(description = "The license type name.")
