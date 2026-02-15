@@ -23,7 +23,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -105,6 +104,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler.ErrorMessage;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
@@ -127,6 +127,7 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -147,7 +148,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -162,7 +162,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
@@ -249,6 +248,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's projects with various filters.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Projects successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - no projects found matching the criteria",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -372,21 +379,27 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         paginationResult.getResources().forEach(consumer);
 
-        CollectionModel resources;
         if (projectResources.isEmpty()) {
-            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
-        } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
+            return ResponseEntity.noContent().build();
         }
 
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(resources, status);
+        CollectionModel resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @Operation(
+            summary = "Get projects for current user",
             description = "List all projects associated to the user.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Projects successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - no projects found for the user",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/myprojects")
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsFilteredForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -441,9 +454,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project license clearing releases",
             description = "Get all releases of license clearing.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "License clearing information successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/licenseClearing")
     public ResponseEntity<HalResource<Project>> licenseClearing(
             @Parameter(description = "Project ID", example = "376576")
@@ -508,9 +532,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get single project by id",
             description = "Get a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> getProject(
             @Parameter(description = "Project ID", example = "376576")
@@ -523,9 +558,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get packages for project",
             description = "Get a package with project id.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Packages successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Package.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/packages")
     public ResponseEntity<List<HalResource<Project>>> getPackagesByProjectId(
             @Parameter(description = "Project ID", example = "376576")
@@ -576,9 +622,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get linked projects",
             description = "Get linked projects of a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Linked projects successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No linked projects found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/linkedProjects")
     public ResponseEntity<CollectionModel<EntityModel>> getLinkedProject(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -626,9 +685,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get releases of linked projects",
             description = "Get releases of linked projects of a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No releases found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/linkedProjects/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesOfLinkedProject(
             @Parameter(description = "Project ID", example = "376576")
@@ -668,28 +740,27 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Delete single project",
             description = "Delete a single project.",
             tags = {"Projects"},
             responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "Project deleted."
-                    ),
-                    @ApiResponse(
-                            responseCode = "202", description = "Request sent for moderation.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            examples = @ExampleObject(
-                                                    value = "{\"message\": \"Moderation request is created\"}"
-                                            ))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "409",
-                            description = "The project is used as a linked project. Cannot delete it."
-                    ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Failed to delete project."
-                    )
+                    @ApiResponse(responseCode = "200", description = "Project deleted.",
+                            content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+                    @ApiResponse(responseCode = "202", description = "Request sent for moderation.",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - missing comment for moderation",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to delete this project",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Project not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "409", description = "The project is used as a linked project. Cannot delete it.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Failed to delete project.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
             }
     )
     @DeleteMapping(value = PROJECTS_URL + "/{id}")
@@ -720,9 +791,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
+            summary = "Create project",
             description = "Create a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Project successfully created",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid project data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL)
     public ResponseEntity createProject(
             @Parameter(schema = @Schema(implementation = Project.class))
@@ -760,9 +842,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            description = "Create a duplicate project.",
+            summary = "Duplicate project",
+            description = "Duplicate a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Project successfully duplicated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to duplicate projects",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Source project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/duplicate/{id}")
     public ResponseEntity<EntityModel<Project>> createDuplicateProject(
             @Parameter(description = "Project ID to copy.")
@@ -804,6 +897,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of release ids to be linked as request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Releases successfully linked",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - linking requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid release data or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/{id}/releases")
     public ResponseEntity linkReleases(
             @Parameter(description = "Project ID.")
@@ -838,6 +945,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of project ids to be linked as request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Projects successfully linked",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - linking requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid project data or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/{id}/linkProjects")
     public ResponseEntity linkToProjects(
             @Parameter(description = "Project ID.")
@@ -938,6 +1059,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of release ids or a map of release id to usage to be linked as request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Releases successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid release data or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}/releases")
     public ResponseEntity patchReleases(
             @Parameter(description = "Project ID.")
@@ -972,8 +1107,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Add/link packages to the project.",
             description = "Pass a set of package ids to be linked as request body.",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Packages are linked to the project."),
-                    @ApiResponse(responseCode = "202", description = "Moderation request is created.")
+                    @ApiResponse(responseCode = "201", description = "Packages are linked to the project.",
+                            content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+                    @ApiResponse(responseCode = "202", description = "Moderation request is created.",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - invalid package data or missing comment for moderation",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Project not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
             },
             tags = {"Projects"}
     )
@@ -1010,8 +1157,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Remove/unlink packages from the project.",
             description = "Pass a set of package ids to be unlinked as request body.",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Packages are unlinked from the project."),
-                    @ApiResponse(responseCode = "202", description = "Moderation request is created.")
+                    @ApiResponse(responseCode = "201", description = "Packages are unlinked from the project.",
+                            content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+                    @ApiResponse(responseCode = "202", description = "Moderation request is created.",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - invalid package data or missing comment for moderation",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Project not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
             },
             tags = {"Projects"}
     )
@@ -1044,9 +1203,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project releases",
             description = "Get releases of a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No releases found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -1093,9 +1265,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get releases for multiple projects",
             description = "Get releases of multiple projects.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No releases found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectsReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -1144,9 +1325,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project ECC release information",
             description = "Get all releases with ECC information of a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ECC information successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No ECC information found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/releases/ecc")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -1188,9 +1382,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get vulnerabilities for all projects",
             description = "Get vulnerabilities of all projects including parent and directly linked projects.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerability summary successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No vulnerability summary found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
 
     @GetMapping(value = PROJECTS_URL + "/{id}/vulnerabilitySummary")
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilitySummary>>> getAllVulnerabilities(
@@ -1282,9 +1489,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project vulnerabilities",
             description = "Get vulnerabilities of a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerabilities successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No vulnerabilities found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -1357,9 +1577,26 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Update project vulnerabilities",
             description = "Patch vulnerabilities of a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerabilities successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "204", description = "No content",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid vulnerability data or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> updateVulnerabilitiesOfReleases(
             @Parameter(description = "Project ID.")
@@ -1419,6 +1656,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass a map of release id to usage to be linked as request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release usage successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ProjectReleaseRelationship.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - release update requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid release data or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project or release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}")
     public ResponseEntity<EntityModel<ProjectReleaseRelationship>> patchProjectReleaseUsage(
             @Parameter(description = "Project ID.")
@@ -1501,9 +1752,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project release licenses",
             description = "Get license of releases of a single project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Licenses successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No licenses found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/licenses")
     public ResponseEntity<CollectionModel<EntityModel<License>>> getLicensesOfReleases(
             @Parameter(description = "Project ID.")
@@ -1549,6 +1813,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     `DocxGenerator`.""",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "License info successfully generated and downloaded",
+                content = @Content(mediaType = "application/octet-stream", schema = @Schema(description = "Binary file content"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid generator class or variant",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/licenseinfo")
     public void downloadLicenseInfo(
             @Parameter(description = "Project ID.", example = "376576")
@@ -1636,7 +1912,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final String projectName = sw360Project.getName();
         final String projectVersion = sw360Project.getVersion();
         final String timestamp = SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_");
-        String outputGeneratorClassNameWithVariant = generatorClassName+"::"+variant;
+        String outputGeneratorClassNameWithVariant = generatorClassName+"::".concat(variant);
         final OutputFormatInfo outputFormatInfo = licenseInfoService.getOutputFormatInfoForGeneratorClass(generatorClassName);
         final String filename = String.format("%s-%s%s-%s.%s", Strings.nullToEmpty(variant).equals("DISCLOSURE") ? "LicenseInfo" : "ProjectClearingReport", projectName,
                 StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
@@ -1670,9 +1946,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project attachments",
             description = "Get all attachment information of a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachments successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/attachments")
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getProjectAttachments(
             @Parameter(description = "Project ID.")
@@ -1687,9 +1974,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            description = "Update and attachment usage for project.",
+            summary = "Update project attachment",
+            description = "Update an attachment of a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Attachment.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid attachment data or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project or attachment not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}/attachment/{attachmentId}")
     public ResponseEntity<EntityModel<Attachment>> patchProjectAttachmentInfo(
             @Parameter(description = "Project ID.")
@@ -1725,6 +2027,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             ),
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment successfully downloaded",
+                content = @Content(mediaType = "application/octet-stream", schema = @Schema(description = "Binary file content"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project or attachment not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromProject(
             @Parameter(description = "Project ID.")
@@ -1740,12 +2052,23 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            description = "Download clearing reports as a zip.",
+            summary = "Download clearing reports of a project.",
+            description = "Download all clearing reports of a project as a zip file.",
             responses = @ApiResponse(
                     content = {@Content(mediaType = "application/zip")}
             ),
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Clearing reports successfully downloaded",
+                content = @Content(mediaType = "application/zip", schema = @Schema(description = "ZIP file of clearing reports"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{projectId}/attachments/clearingReports", produces = "application/zip")
     public void downloadClearingReports(
             @Parameter(description = "Project ID.")
@@ -1776,9 +2099,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
+            summary = "Update project",
             description = "Update a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid project data or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> patchProject(
             @Parameter(description = "Project ID.")
@@ -1820,9 +2158,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Add attachments to project",
             description = "Add attachments to a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Attachments successfully added",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid attachment data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/{projectId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToProject(
             @Parameter(description = "Project ID.")
@@ -1940,6 +2291,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     "values). It's possible to search for projects only by the external id key by leaving the value.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Projects successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - no projects found matching external IDs",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/searchByExternalIds")
     public ResponseEntity searchByExternalIds(
             @Parameter(description = "External ID map for filter.",
@@ -1953,9 +2312,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get projects using this project",
             description = "Get all the projects where the project is used.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Projects successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - no projects found using this project",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/usedBy/{id}")
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getUsedByProjectDetails(
             @Parameter(description = "Project ID to search.")
@@ -1985,38 +2355,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "AttachmentUsages Saved Successfully.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"AttachmentUsages Saved Successfully\"}"
-                                    ))
-                    }),
-            @ApiResponse(
-                    responseCode = "403", description = "No write permission for project.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"No write permission for project\"}"
-                                    ))
-                    }),
-            @ApiResponse(
-                    responseCode = "409", description = "Not a valid attachment type OR release does not belong to project.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"Not a valid attachment type OR release does not belong to project\"}"
-                                    ))
-                    }
-            ),
-            @ApiResponse(
-                    responseCode = "500", description = "Internal Server Error.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"Saving attachment usages for project 123456 failed\"}"
-                                    ))
-                    }
-            )
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"AttachmentUsages Saved Successfully\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "No write permission for project.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+            @ApiResponse(responseCode = "409", description = "Not a valid attachment type OR release does not belong to project.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PostMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages")
     public ResponseEntity<?> saveAttachmentUsages(
@@ -2150,9 +2497,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project attachment usages",
             description = "Get all attachmentUsages of the projects.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment usages successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/attachmentUsage")
     public ResponseEntity attachmentUsages(
             @Parameter(description = "Project ID.")
@@ -2413,9 +2771,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            description = "Import SBOM in SPDX format.",
+            summary = "Import SBOM to create project",
+            description = "Import SBOM to create a new project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Project successfully created from SBOM",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid SBOM file or data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/import/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> importSBOM(
             @Parameter(description = "Type of SBOM", example = "SPDX")
@@ -2497,6 +2866,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "SBOM successfully imported to existing project",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid SBOM file or project mismatch",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "409", description = "Conflict - duplicate project exists",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/{id}/import/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> importSBOMonProject(
             @Parameter(description = "Project ID", example = "376576")
@@ -2567,6 +2950,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project with network successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/network/{id}")
     public ResponseEntity<?> getProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
@@ -2587,6 +2982,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Create a project with dependencies network.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Project with network successfully created",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid dependency network format",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL+ "/network")
     public ResponseEntity createProjectWithNetwork(
             @Parameter(description = "Project with `dependencyNetwork` set.",
@@ -2626,6 +3033,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Update a project with dependencies network.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project with network successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update requires moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid dependency network format or missing comment for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/network/{id}")
     public ResponseEntity<?> patchProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
@@ -2899,9 +3322,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project count for user",
             description = "Get project count of a user.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project count successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with status and count fields"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/projectcount")
     public void getUserProjectCount(HttpServletResponse response) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -2916,9 +3346,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            description = "Get the default license info header text.",
+            summary = "Get license info header text",
+            description = "Get license info header text.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "License info header text successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with licenseInfoHeaderText field"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/licenseInfoHeader")
     public void getLicenseInfoheaderText(HttpServletResponse response) throws TException {
         try {
@@ -2934,9 +3371,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project license clearing info",
             description = "Get license clearing info for a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "License clearing count successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with releaseCount and approvedCount fields"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount")
     public void getlicenseClearingCount(
             HttpServletResponse response ,
@@ -2962,10 +3410,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            description = "Get license clearing info for multiple projects in a single request. " +
-                    "This is more efficient than calling the single project endpoint multiple times.",
+            summary = "Get license clearing count for projects",
+            description = "Get license clearing count for multiple projects.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "License clearing counts successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON map of project IDs to clearing counts"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/licenseClearingCount")
     public void getBatchLicenseClearingCount(
             HttpServletResponse response,
@@ -3002,10 +3456,21 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get license clearing detail counts",
             description = "Get license  clearing details counts for `Clearing Detail` field " +
                     "at Administration tab of project detail page.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Clearing details count successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with newClearing, underClearing, sentToClearingTool, reportAvailable, approved, totalReleases fields"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/clearingDetailsCount")
     public void getlicenseClearingDetailsCount(
             HttpServletResponse response ,
@@ -3036,9 +3501,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('READ')")
     @Operation(
+            summary = "Get license obligations from database",
             description = "Get license obligations data from license database.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "License obligations data successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with page and obligations fields"))),
+        @ApiResponse(responseCode = "204", description = "No content - no release linked or no approved CLI/licenseInfo attachment usage",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations")
     public ResponseEntity<?> getLicObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -3097,6 +3575,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of orphan obligation titles in request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Orphaned obligation removed successfully",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Orphaned Obligation Removed Successfully\"}"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found or no linked obligation found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Failed to remove orphaned obligation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}/orphanObligation")
     public ResponseEntity<?> removeOrphanObligation(
             @Parameter(description = "Project ID.")
@@ -3130,9 +3620,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            description = "Get license obligation data of project tab.",
+            summary = "Get project license obligations",
+            description = "Get license obligation data for a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "License obligation data successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(description = "HAL resource with obligation data"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/licenseObligations")
     public ResponseEntity<Object> getLicenseObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -3199,9 +3700,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project tab obligation data",
             description = "Get obligation data of project tab.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Obligation data successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(description = "HAL resource with obligation data"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid obligation level",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/obligation")
     public ResponseEntity<HalResource> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -3287,6 +3801,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of obligation ids in request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "License obligation added successfully",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"License obligation added successfully\"}"))),
+        @ApiResponse(responseCode = "204", description = "No content - no license obligations present",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found or failed to add/update obligation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/{id}/licenseObligation")
     public ResponseEntity<?> addLicenseObligations(
             @Parameter(description = "License Obligation ID.")
@@ -3347,6 +3873,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass a map of obligations in request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "License obligation updated successfully",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"License obligation updated successfully\"}"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "409", description = "Conflict - cannot update license obligation due to data integrity violation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation")
     public ResponseEntity<?> patchLicenseObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
@@ -3499,6 +4037,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass a map of obligations in request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Obligation updated successfully",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Obligation updated successfully\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid obligation level or data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "409", description = "Conflict - cannot update obligation due to data integrity violation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}/updateObligation")
     public ResponseEntity<?> patchObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
@@ -3586,9 +4138,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project summary and administration",
             description = "Get summary and administration page of project tab.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project summary and administration data successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with project summary and administration data"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/summaryAdministration")
     public ResponseEntity<EntityModel<Project>> getAdministration(
             @Parameter(description = "Project ID", example = "376576")
@@ -3619,6 +4182,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Get a list view of dependency network for a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Dependency network list view successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with dependency network list view"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/network/{id}/listView")
     public ResponseEntity<?> getListViewDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
@@ -3634,9 +4209,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project linked resources",
             description = "Get linked resources (projects, releases) of a project",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Linked resources successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with linked resources for dependency network"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/network/{id}/linkedResources")
     public ResponseEntity<ProjectLink> getLinkedResourcesOfProjectForDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
@@ -3653,9 +4241,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get indirect linked releases by path",
             description = "Get indirect linked releases of a project in dependency network by release's index path",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Linked releases successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with linked releases by index path"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled or runtime error",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/network/{id}/releases")
     public ResponseEntity<CollectionModel<ReleaseLink>> getLinkedReleasesInDependencyNetworkByIndexPath(
             @Parameter(description = "Project ID", example = "376576")
@@ -3768,6 +4369,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor.getFullname());
             halProject.addEmbeddedResource("sw360:vendors", vendorHalResource);
             projectDTO.setVendor(null);
+        }
+
+        if (sw360Project.getPackageIdsSize() > 0) {
+            restControllerHelper.addEmbeddedPackages(halProject, sw360Project.getPackageIds().keySet(), packageService);
         }
 
         return halProject;
@@ -3900,6 +4505,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Create a clearing request for a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Clearing request successfully created",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(description = "HAL resource with ClearingRequest"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid clearing request data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create clearing requests",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/{id}/clearingRequest")
     public ResponseEntity<?> createClearingRequest(
             @Parameter(description = "Project ID", example = "376576")
@@ -3960,9 +4577,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get project dependency network releases",
             description = "Get linked releases information in project's dependency network.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Linked releases information successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "JSON with linked releases in dependency network"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases")
     public ResponseEntity<?> getLinkedReleasesInNetwork(
             @Parameter(description = "Project ID.")
@@ -3977,9 +4607,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get linked projects release information",
             description = "Get linked releases information of linked projects.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Linked releases of sub-projects successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/{id}/subProjects/releases")
     public ResponseEntity<?> getLinkedReleasesOfLinkedProjects(
             @Parameter(description = "Project ID.") @PathVariable("id") String projectId
@@ -3994,9 +4635,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Compare project dependency networks",
             description = "Compare dependency network with default network (relationships between releases).",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Dependency network comparison successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "List of compared network objects"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork")
     public ResponseEntity<?> compareDependencyNetworkWithDefaultNetwork(
             @RequestBody List<ReleaseNode> dependencyNetwork
@@ -4015,9 +4667,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            description = "Create a duplicate project with dependency network.",
+            summary = "Create project with dependency network",
+            description = "Create a new project with dependencies network.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Project with network successfully created",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid dependency network format or missing name/version",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create projects",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - flexible project release relationship not enabled",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = PROJECTS_URL + "/network/duplicate/{id}")
     public ResponseEntity<?> createDuplicateProjectWithDependencyNetwork(
             @Parameter(description = "Project ID to copy.")
@@ -4113,14 +4778,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                                     )
                             )
                     ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Project not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
                     @ApiResponse(
                             responseCode = "500",
                             description = "Error occurred while processing license information for linked releases.",
                             content = @Content(
                                     mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\n  \"error\": \"Error adding license info to linked releases.\"\n}"
-                                    )
+                                    schema = @Schema(implementation = ErrorMessage.class)
                             )
                     )
             }
@@ -4170,6 +4839,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get all the unique groups used by projects.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project groups successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(description = "Set of unique project group names"))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = PROJECTS_URL + "/groups")
     public Set<String> getAllProjectGroups() {
         Set<String> groups;
