@@ -48,8 +48,9 @@ jobs:
           COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
           COUCHDB_DEFAULT_NUM_SHARDS: 1
           COUCHDB_DEFAULT_NUM_REPLICAS: 1
-          COUCHDB_CLUSTER_SIZE: 1              # <-- ADD THIS LINE
-        options: --health-cmd "curl -f http://localhost:5984/" --health-interval 30s --health-timeout 10s --health-retries 5  # <-- ADD THIS LINE
+          COUCHDB_CLUSTER_SIZE: 1
+        options: --health-cmd "curl -f http://localhost:5984/" --health-interval 30s --health-timeout 10s --health-retries 5
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2

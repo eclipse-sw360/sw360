@@ -45,6 +45,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -57,6 +59,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360LicenseService {
+    private static final Logger log = LoggerFactory.getLogger(Sw360LicenseService.class);
+    
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
     private static final String CONTENT_TYPE = "application/zip";
@@ -312,22 +316,19 @@ public class Sw360LicenseService {
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (StringUtils.isNotEmpty(licenseType)) {
-             lType.setLicenseType(licenseType);
+            lType.setLicenseType(licenseType);
+        } else {
+            throw new BadRequestClientException("license type is empty");
         }
-        else {
-              throw new BadRequestClientException("license type is empty");
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new BadRequestClientException("Unable to create License Type. User is not admin");
         }
         try {
-            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-                RequestStatus status = sw360LicenseClient.addLicenseType(lType, sw360User);
-            } else {
-                throw new BadRequestClientException("Unable to create License Type. User is not admin");
-            }
-         } catch ( Exception e) {
-                 throw new TException(e.getMessage());
-         }
-         return RequestStatus.SUCCESS;
-     }
+            return sw360LicenseClient.addLicenseType(lType, sw360User);
+        } catch (TException e) {
+            throw new TException(e.getMessage());
+        }
+    }
 
      public List<LicenseType> quickSearchLicenseType(String searchElem) {
          try {
