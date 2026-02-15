@@ -274,7 +274,7 @@ public class Sw360LicenseService {
         FileCopyUtils.copy(buffer, response.getOutputStream());
     }
 
-public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
+    public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
         final HashMap<String, InputStream> inputMap = new HashMap<>();
 
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
