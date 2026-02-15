@@ -200,7 +200,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
                     "Invalid ModerationRequest state '%s', possible values are: %s", state, stateOptions));
         }
 
-        boolean stateOpen = stateOptions.get(0).equalsIgnoreCase(state);
+        boolean stateOpen = "open".equalsIgnoreCase(state);
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
                 sw360ModerationRequestService.getRequestsByState(sw360User, pageable, stateOpen, allDetails);
         return getModerationResponseEntity(pageable, request, allDetails, modRequestsWithPageData);
