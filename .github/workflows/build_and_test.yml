@@ -48,7 +48,8 @@ jobs:
           COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
           COUCHDB_DEFAULT_NUM_SHARDS: 1
           COUCHDB_DEFAULT_NUM_REPLICAS: 1
-
+          COUCHDB_CLUSTER_SIZE: 1              # <-- ADD THIS LINE
+        options: --health-cmd "curl -f http://localhost:5984/" --health-interval 30s --health-timeout 10s --health-retries 5  # <-- ADD THIS LINE
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
@@ -87,14 +88,14 @@ jobs:
             sleep 2
           done
           
-          # Create _users database
-          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_users
+          # Create _users database if not exists
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_users || true
           
           # Configure cluster for single node (n=1, q=1, r=1, w=1)
-          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/n -d "1"
-          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/q -d "1"
-          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/r -d "1"
-          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/w -d "1"
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/n -d '"1"' || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/q -d '"1"' || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/r -d '"1"' || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/w -d '"1"' || true
           
           echo "CouchDB configured for single-node operation"
 
