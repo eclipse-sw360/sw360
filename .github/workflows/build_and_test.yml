@@ -46,6 +46,8 @@ jobs:
         env:
           COUCHDB_USER: ${{ env.COUCHDB_USER }}
           COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+          COUCHDB_DEFAULT_NUM_SHARDS: 1
+          COUCHDB_DEFAULT_NUM_REPLICAS: 1
 
     steps:
       - name: Harden Runner
@@ -72,6 +74,29 @@ jobs:
       - name: Copy test configuration files
         run: |
           sudo cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
+
+      - name: Configure CouchDB for single-node
+        run: |
+          # Wait for CouchDB to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:5984/; then
+              echo "CouchDB is up"
+              break
+            fi
+            echo "Waiting for CouchDB..."
+            sleep 2
+          done
+          
+          # Create _users database
+          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_users
+          
+          # Configure cluster for single node (n=1, q=1, r=1, w=1)
+          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/n -d "1"
+          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/q -d "1"
+          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/r -d "1"
+          curl -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/w -d "1"
+          
+          echo "CouchDB configured for single-node operation"
 
       - name: Set up JDK 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
