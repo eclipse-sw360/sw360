@@ -1,0 +1,151 @@
+# -----------------------------------------------------------------------------
+# Copyright Siemens AG, 2021.
+# Copyright Helio Chissini de Castro 2022-2025
+# Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# -----------------------------------------------------------------------------
+
+name: SW360 Build and Test
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - third-party/**
+      - Dockerfile
+      - docker_build.sh
+      - .github/sw360_container.yml
+      - .github/thrift_container.yml
+  workflow_dispatch:
+
+env:
+  COUCHDB_USER: sw360
+  COUCHDB_PASSWORD: sw360fossie
+  THRIFT_VERSION: "0.20.0"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-24.04
+
+    services:
+      couchdb:
+        image: couchdb:3
+        ports:
+          - 5984:5984
+        env:
+          COUCHDB_USER: ${{ env.COUCHDB_USER }}
+          COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+          COUCHDB_DEFAULT_NUM_SHARDS: 1
+          COUCHDB_DEFAULT_NUM_REPLICAS: 1
+          COUCHDB_CLUSTER_SIZE: 1
+        options: --health-cmd "curl -f http://localhost:5984/" --health-interval 30s --health-timeout 10s --health-retries 5
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: webiny/action-conventional-commits@faccb24fc2550dd15c0390d944379d2d8ed9690e # v1.3.1
+
+
+      - name: Verify license headers
+        run: |
+          chmod +x .github/testForLicenseHeaders.sh
+          bash .github/testForLicenseHeaders.sh
+
+      - name: Update properties with DB credentials
+        run: |
+          sudo mkdir -p /etc/sw360
+          sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
+          sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
+          sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
+
+      - name: Copy test configuration files
+        run: |
+          sudo cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
+
+      - name: Configure CouchDB for single-node
+        run: |
+          # Wait for CouchDB to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:5984/; then
+              echo "CouchDB is up"
+              break
+            fi
+            echo "Waiting for CouchDB..."
+            sleep 2
+          done
+          
+          # Create _users database if not exists
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_users || true
+          
+          # Configure cluster for single node (n=1, q=1, r=1, w=1)
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/n -d '"1"' || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/q -d '"1"' || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/r -d '"1"' || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/w -d '"1"' || true
+          
+          echo "CouchDB configured for single-node operation"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          check-latest: true
+
+      - name: Cache Thrift
+        id: cache-thrift
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: |
+            ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
+          key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+
+      - name: Install Thrift
+        if: steps.cache-thrift.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake
+          chmod +x third-party/thrift/install-thrift.sh
+          DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
+
+      - name: Build SW360
+        run: |
+          export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
+          mvn clean install \
+            --no-transfer-progress \
+            -P deploy -Dhelp-docs=true \
+            -Dbase.deploy.dir=. \
+            -Djars.deploy.dir=${PWD}/deploy \
+            -Dbackend.deploy.dir=${PWD}/deploy/webapps \
+            -Drest.deploy.dir=${PWD}/deploy/webapps \
+            -DRunComponentVisibilityRestrictionTest=false \
+            -DRunPrivateProjectAccessTest=false \
+            -DRunRestForceUpdateTest=false \
+            -fae \
+            -Dmaven.plugin.validation=VERBOSE
+
+      - name: Run PrivateProjectAccessTest
+        run: |
+          mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
+          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=.
+
+      - name: Run BulkReleaseDeletingTest
+        run: |
+          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
