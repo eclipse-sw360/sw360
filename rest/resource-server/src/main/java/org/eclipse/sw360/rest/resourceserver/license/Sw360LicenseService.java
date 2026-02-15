@@ -303,28 +303,12 @@ public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteI
             }
         }
 	}
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/main
+
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
             final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
-<<<<<<< HEAD
-
-        }finally {
-            for (InputStream inputStream : inputMap.values()) {
-                if (inputStream != null) {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e) {
-                        // Log the exception but don't mask the original error
-                        log.warn("Failed to close input stream: {}", e.getMessage());
-                    }
-                }
-=======
         } finally {
             IOException closeFailure = null;
             for (InputStream in : inputMap.values()) {
@@ -340,7 +324,6 @@ public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteI
             }
             if (closeFailure != null) {
                 throw closeFailure;
->>>>>>> origin/main
             }
         }
 	}
@@ -357,22 +340,19 @@ public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteI
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (StringUtils.isNotEmpty(licenseType)) {
-             lType.setLicenseType(licenseType);
+            lType.setLicenseType(licenseType);
+        } else {
+            throw new BadRequestClientException("license type is empty");
         }
-        else {
-              throw new BadRequestClientException("license type is empty");
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new BadRequestClientException("Unable to create License Type. User is not admin");
         }
         try {
-            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-                RequestStatus status = sw360LicenseClient.addLicenseType(lType, sw360User);
-            } else {
-                throw new BadRequestClientException("Unable to create License Type. User is not admin");
-            }
-         } catch ( Exception e) {
-                 throw new TException(e.getMessage());
-         }
-         return RequestStatus.SUCCESS;
-     }
+            return sw360LicenseClient.addLicenseType(lType, sw360User);
+        } catch (TException e) {
+            throw new TException(e.getMessage());
+        }
+    }
 
      public List<LicenseType> quickSearchLicenseType(String searchElem) {
          try {
