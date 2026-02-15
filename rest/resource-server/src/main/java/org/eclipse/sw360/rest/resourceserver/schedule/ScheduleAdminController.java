@@ -27,6 +27,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,6 +46,7 @@ import java.util.Map;
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
+@PreAuthorize("hasAuthority('ADMIN')")
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
