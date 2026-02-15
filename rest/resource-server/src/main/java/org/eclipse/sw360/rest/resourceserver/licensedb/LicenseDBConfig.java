@@ -15,7 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "sw360.licensedb")
+@ConfigurationProperties(prefix = "licensedb")
 @Getter
 @Setter
 public class LicenseDBConfig {

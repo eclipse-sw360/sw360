@@ -12,30 +12,34 @@ package org.eclipse.sw360.rest.resourceserver.licensedb;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class LicenseDBRestClient {
 
     private final LicenseDBConfig config;
     private final ObjectMapper objectMapper;
-    private final RestTemplateBuilder restTemplateBuilder;
+    private final RestTemplate restTemplate;
 
     @Getter
     private String accessToken;
+
+    @Autowired
+    public LicenseDBRestClient(LicenseDBConfig config, ObjectMapper objectMapper, RestTemplate restTemplate) {
+        this.config = config;
+        this.objectMapper = objectMapper;
+        this.restTemplate = restTemplate;
+    }
 
     public boolean isEnabled() {
         return config.isEnabled() && 
@@ -54,11 +58,6 @@ public class LicenseDBRestClient {
         try {
             String tokenUrl = config.getApiUrl() + "/oauth/token";
             
-            RestTemplate restTemplate = restTemplateBuilder
-                    .setConnectTimeout(Duration.ofMillis(config.getConnection().getTimeout()))
-                    .setReadTimeout(Duration.ofMillis(config.getConnection().getReadTimeout()))
-                    .build();
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -113,11 +112,6 @@ public class LicenseDBRestClient {
         }
 
         try {
-            RestTemplate restTemplate = restTemplateBuilder
-                    .setConnectTimeout(Duration.ofMillis(config.getConnection().getTimeout()))
-                    .setReadTimeout(Duration.ofMillis(config.getConnection().getReadTimeout()))
-                    .build();
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(accessToken);
