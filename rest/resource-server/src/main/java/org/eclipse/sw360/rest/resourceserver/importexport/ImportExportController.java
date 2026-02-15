@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +84,15 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "CSV component template stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Download failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadComponentTemplate")
     public void downloadComponentTemplate(HttpServletResponse response) throws SW360Exception {
@@ -102,6 +113,15 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "CSV attachment sample stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Download failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadAttachmentSample")
     public void downloadAttachmentSample(HttpServletResponse response) throws SW360Exception {
@@ -122,6 +142,15 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "CSV attachment info stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Download failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadAttachmentInfo")
     public void downloadAttachmentInfo(HttpServletResponse response) throws TTransportException, SW360Exception {
@@ -142,6 +171,15 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "CSV release sample stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Download failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadReleaseSample")
     public void downloadReleaseSample(HttpServletResponse response) throws SW360Exception {
@@ -162,6 +200,15 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "CSV release link stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Download failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadReleaseLink")
     public void downloadReleaseLink(HttpServletResponse response) throws SW360Exception {
@@ -182,6 +229,15 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Component CSV export stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Download failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadComponent")
     public void downloadComponent(HttpServletResponse response) throws SW360Exception {
@@ -202,6 +258,18 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true, description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data.")
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Component import summary.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid file or format",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Upload failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PostMapping(
             value = IMPORTEXPORT_URL + "/uploadComponent",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -226,6 +294,18 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true,  description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data."),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Release import summary.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid file or format",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Upload failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PostMapping(
             value = IMPORTEXPORT_URL + "/uploadRelease",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -250,6 +330,18 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true,  description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data."),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Component attachment import summary.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid file or format",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Upload failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PostMapping(
             value = IMPORTEXPORT_URL + "/componentAttachment",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -274,6 +366,15 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Users CSV export stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Export failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadUsers", produces = {MediaType.TEXT_PLAIN_VALUE})
     public void downloadUsers(HttpServletResponse response) throws SW360Exception {
@@ -297,34 +398,22 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                                     "Supported values: " + MediaType.MULTIPART_MIXED_VALUE + " or " +
                                     MediaType.MULTIPART_FORM_DATA_VALUE + "."
                     )
-            },
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "Users imported successfully.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = RequestSummary.class))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "207", description = "Partial import done, some users failed to import. More " +
-                            "information in the `message` field of response.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = RequestSummary.class))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "400", description = "The uploaded CSV is in bad format."
-                    ),
-                    @ApiResponse(
-                            responseCode = "403", description = "User is not an admin."
-                    ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Failed to upload the file."
-                    )
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Users imported successfully.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "207", description = "Partial import; some users failed. See message in response.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "400", description = "The uploaded CSV is in bad format.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "User is not an admin.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Failed to upload the file.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(
             value = IMPORTEXPORT_URL + "/usersCsv",
