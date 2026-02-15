@@ -400,7 +400,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             schema = @Schema(implementation = String.class,
                                     example = "Service name is required"))),
     })
-    @RequestMapping(value = SCHEDULE_URL + "/status", method = RequestMethod.GET)
+    @GetMapping(value = SCHEDULE_URL + "/status")
     public ResponseEntity<Map<String, Object>> checkServiceStatus(
             @Parameter(description = "Name of the service")
             @RequestParam(value = "serviceName", required = true) String serviceName
@@ -432,7 +432,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             schema = @Schema(implementation = Boolean.class,
                                     example = "true")))
     })
-    @RequestMapping(value = SCHEDULE_URL + "/isAnyServiceScheduled", method = RequestMethod.GET)
+    @GetMapping(value = SCHEDULE_URL + "/isAnyServiceScheduled")
     public ResponseEntity<Boolean> isAnyServiceScheduled() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         boolean isAnyServiceScheduled = scheduleService.isAnyServiceScheduled(sw360User) == RequestStatus.SUCCESS;

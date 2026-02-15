@@ -23,8 +23,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +53,7 @@ public class AttachmentCleanUpController implements RepresentationModelProcessor
             description = "Cleanup all the unused attachments.",
             tags = {"Admin"}
     )
-    @RequestMapping(value = ATTACHMENT_CLEANUP_URL + "/deleteAll", method = RequestMethod.DELETE)
+    @DeleteMapping(value = ATTACHMENT_CLEANUP_URL + "/deleteAll")
     public ResponseEntity<RequestSummary> cleanUpAttachment() throws TException  {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = attachmentCleanUpService.cleanUpAttachments(sw360User);

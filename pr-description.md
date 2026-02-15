@@ -1,3 +1,4 @@
+SPDX-License-Identifier: EPL-2.0
 ## Summary
 This PR adds the foundational configuration infrastructure for LicenseDB integration as specified in issue #3685.
 

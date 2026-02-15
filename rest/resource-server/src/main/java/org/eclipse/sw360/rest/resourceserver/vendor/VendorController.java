@@ -84,7 +84,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "List all of the service's vendors.",
             tags = {"Vendor"}
     )
-    @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
+    @GetMapping(value = VENDORS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors(
             @Parameter(description = "Search text")
             @RequestParam(value = "searchText", required = false) String searchText,
@@ -136,7 +136,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Get a single vendor by id.",
             tags = {"Vendor"}
     )
-    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.GET)
+    @GetMapping(value = VENDORS_URL + "/{id}")
     public ResponseEntity<EntityModel<Vendor>> getVendor(
             @Parameter(description = "The id of the vendor to get.")
             @PathVariable("id") String id
@@ -153,7 +153,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Get the releases by vendor id.",
             tags = {"Vendor"}
     )
-    @RequestMapping(value = VENDORS_URL + "/{id}/releases", method = RequestMethod.GET)
+    @GetMapping(value = VENDORS_URL + "/{id}/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleases(
             @Parameter(description = "The id of the vendor to get.")
             @PathVariable("id") String id
@@ -184,7 +184,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Delete vendor by id.",
             tags = {"Vendor"}
     )
-    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = VENDORS_URL + "/{id}")
     public ResponseEntity<?> deleteVendor(
             @Parameter(description = "The id of the vendor to be deleted.")
             @PathVariable("id") String id
@@ -207,7 +207,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             tags = {"Vendor"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = VENDORS_URL, method = RequestMethod.POST)
+    @PostMapping(value = VENDORS_URL)
     public ResponseEntity<?> createVendor(
             @Parameter(description = "The vendor to be created.")
             @RequestBody Vendor vendor
@@ -254,7 +254,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             )
     })
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.PATCH)
+    @PatchMapping(value = VENDORS_URL + "/{id}")
     public ResponseEntity<?> updateVendor(
             @Parameter(description = "The id of the vendor")
             @PathVariable("id") String id,
@@ -347,7 +347,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             },
             tags = {"Vendor"}
     )
-    @RequestMapping(value = VENDORS_URL + "/mergeVendors", method = RequestMethod.PATCH)
+    @PatchMapping(value = VENDORS_URL + "/mergeVendors")
     public ResponseEntity<RequestStatus> mergeVendors(
             @Parameter(description = "The id of the merge target vendor.")
             @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,

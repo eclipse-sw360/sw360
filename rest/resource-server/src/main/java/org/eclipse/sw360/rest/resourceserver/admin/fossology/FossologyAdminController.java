@@ -40,8 +40,7 @@ import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -126,7 +125,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Make a test call and check the FOSSology server connection.",
             tags = {"Admin"}
     )
-    @RequestMapping(value = FOSSOLOGY_URL + "/reServerConnection", method = RequestMethod.GET)
+    @GetMapping(value = FOSSOLOGY_URL + "/reServerConnection")
     public ResponseEntity<?> checkServerConnection() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         sw360FossologyAdminServices.serverConnection(sw360User);
@@ -158,7 +157,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             )
     }
     )
-    @RequestMapping(value = FOSSOLOGY_URL + "/configData", method = RequestMethod.GET)
+    @GetMapping(value = FOSSOLOGY_URL + "/configData")
     public ResponseEntity<?> getConnectionConfigurationData()throws TException {
         Map<String, Object> configData = new HashMap<>();
         try {
