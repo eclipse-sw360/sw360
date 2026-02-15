@@ -17,7 +17,6 @@ import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
@@ -52,7 +51,6 @@ public class FossologyRestConfig {
 
     private static final String BASEURL_VERSION_SUFFIX = "/api/v2";
 
-    @Autowired
     public FossologyRestConfig(ConfigContainerRepository repository) throws SW360Exception {
         this.repository = repository;
         // eager loading (or initial insert)

@@ -7,7 +7,6 @@ package org.eclipse.sw360.rest.resourceserver.security.basic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
@@ -15,13 +14,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360CustomUserDetailsService implements UserDetailsService {
 
     private static final Logger log = LogManager.getLogger(Sw360CustomUserDetailsService.class);
 
-    @Autowired
-    Sw360UserDetailsProvider sw360UserDetailsProvider;
+    private final Sw360UserDetailsProvider sw360UserDetailsProvider;
 
     @Override
     public UserDetails loadUserByUsername(String userid) {

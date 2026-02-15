@@ -10,8 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.license;
 
-import lombok.RequiredArgsConstructor;
-
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
@@ -35,7 +33,6 @@ import org.eclipse.sw360.exporter.LicsExporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
 import org.eclipse.sw360.importer.LicsImporter;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
@@ -55,7 +52,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360LicenseService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
