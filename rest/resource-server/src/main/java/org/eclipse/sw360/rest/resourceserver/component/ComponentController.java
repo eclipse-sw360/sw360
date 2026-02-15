@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -145,6 +146,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "List all of the service's components.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of components.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getComponents(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -255,6 +262,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all the resources where the component is used.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Projects and components using this component.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Project.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}")
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(
             @Parameter(description = "The id of the component.")
@@ -288,6 +303,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get a single component by its id.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Single component with embedded resources.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this component",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Component>> getComponent(
             @Parameter(description = "The id of the component to be retrieved.")
@@ -305,6 +330,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Return 5 of the service's most recently created components.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Up to 5 recent components.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/recentComponents")
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getRecentComponent() throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -325,6 +356,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "List all of the service's mysubscriptions components.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of subscribed components.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+            @ApiResponse(responseCode = "204", description = "No subscriptions; no response body.",
+                    content = @Content(schema = @Schema(implementation = Void.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/mySubscriptions")
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getMySubscriptions() throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -346,6 +385,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Subscribes or unsubscribes the user to a specified component based on their current subscription status.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Subscription toggled; message string in body.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PostMapping(value = COMPONENTS_URL + "/{id}/subscriptions")
     public ResponseEntity<String> toggleComponentSubscription(
             @Parameter(description = "The ID of the component.")
@@ -371,6 +418,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get components by external ID.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Components matching external IDs.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/searchByExternalIds")
     public ResponseEntity<CollectionModel<EntityModel<Component>>> searchByExternalIds(
             @Parameter(
@@ -391,12 +444,18 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                          "Include a 'comment' field in the request body when submitting moderation requests.",
             tags = {"Components"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Component updated successfully"),
-                    @ApiResponse(responseCode = "202", description = "Moderation request created"),
-                    @ApiResponse(responseCode = "400", description = "Invalid input or missing required fields"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Write access forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Component not found")
+                    @ApiResponse(responseCode = "200", description = "Component updated successfully",
+                            content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+                    @ApiResponse(responseCode = "202", description = "Moderation request created",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+                    @ApiResponse(responseCode = "400", description = "Invalid input or missing required fields",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Component not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             }
     )
     @PatchMapping(value = COMPONENTS_URL + "/{id}")
@@ -473,6 +532,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Delete existing components by ids.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "207", description = "Multi-status - per-component delete result",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = MultiStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to delete",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @DeleteMapping(value = COMPONENTS_URL + "/{ids}")
     public ResponseEntity<List<MultiStatus>> deleteComponents(
             @Parameter(description = "The ids of the components to be deleted.")
@@ -506,6 +573,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Create a new component.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Component created successfully",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or missing required fields",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PostMapping(value = COMPONENTS_URL)
     public ResponseEntity<EntityModel<Component>> createComponent(
             @Parameter(description = "The component to be created.")
@@ -549,6 +626,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all attachment information of a component.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Component attachments successfully retrieved",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Attachment.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/{id}/attachments")
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getComponentAttachments(
             @Parameter(description = "The id of the component.")
@@ -566,6 +651,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all releases of a component.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Component releases successfully retrieved",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ReleaseLink.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/{id}/releases")
     public ResponseEntity<CollectionModel<ReleaseLink>> getReleaseLinksByComponentId(
             @Parameter(description = "The id of the component.")
@@ -583,6 +676,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Update attachment info a component.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment updated successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Attachment.class))),
+            @ApiResponse(responseCode = "202", description = "Moderation request created",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or missing comment for moderation",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component or attachment not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PatchMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}")
     public ResponseEntity<EntityModel<Attachment>> patchComponentAttachmentInfo(
             @Parameter(description = "The id of the component.")
@@ -619,23 +726,21 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             responses = {
                     @ApiResponse(
                             responseCode = "200", description = "Updated component.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = Component.class))
-                            }
+                            content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))
                     ),
                     @ApiResponse(
                             responseCode = "202", description = "Request sent for moderation.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            examples = @ExampleObject(
-                                                    value = "{\"message\": \"Moderation request is created\"}"
-                                            ))
-                            }
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))
                     ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Failed to upload attachment."
-                    )
+                    @ApiResponse(responseCode = "400", description = "Invalid request or missing comment for moderation",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Failed to upload attachment.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             },
             tags = {"Components"}
     )
@@ -681,6 +786,13 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             },
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment file stream"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component or attachment not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/{componentId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromComponent(
             @Parameter(description = "The id of the component.")
@@ -703,6 +815,13 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             },
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment bundle (ZIP) stream"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/{componentId}/attachments/download", produces="application/zip")
     public void downloadAttachmentBundleFromComponent(
             @Parameter(description = "The id of the component.")
@@ -723,9 +842,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                     "Requests that cannot delete any of the attachments specified fail with response\n" +
                     "status 500.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Attachments deleted successfully"),
-                    @ApiResponse(responseCode = "202", description = "Deletion sent for moderation"),
-                    @ApiResponse(responseCode = "500", description = "Attachment in use, can't delete")
+                    @ApiResponse(responseCode = "200", description = "Attachments deleted successfully",
+                            content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+                    @ApiResponse(responseCode = "202", description = "Deletion sent for moderation",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+                    @ApiResponse(responseCode = "400", description = "Invalid request or missing comment for moderation",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Component not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Attachment in use, can't delete",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             },
             tags = {"Components"}
     )
@@ -769,6 +899,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get vulnerabilities of a single component.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Component vulnerabilities successfully retrieved",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = VulnerabilityDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfComponent(
             @Parameter(description = "The id of the component.")
@@ -843,6 +981,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all components associated to the user.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of user's components.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+            @ApiResponse(responseCode = "204", description = "No components; no response body.",
+                    content = @Content(schema = @Schema(implementation = Void.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = COMPONENTS_URL + "/mycomponents")
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getMyComponents(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -876,6 +1022,18 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Update the vulnerability of a component.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vulnerability state updated successfully",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = VulnerabilityDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid vulnerability data or missing required fields",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PatchMapping(value = COMPONENTS_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(
             @Parameter(description = "The id of the component.")
@@ -1018,16 +1176,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             summary = "Import SBOM in SPDX format.",
             description = "Import SBOM in SPDX format.",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "Import successful.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = ImportBomRequestPreparation.class))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Failed to upload attachment."
-                    )
+                    @ApiResponse(responseCode = "200", description = "Import successful; component with created release.",
+                            content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Component.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid or unsupported SBOM file",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Failed to upload or process attachment.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             },
             tags = {"Components"}
     )
@@ -1072,16 +1230,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             summary = "Import SBOM in SPDX format.",
             description = "Import SBOM in SPDX format.",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "Import successful.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = ImportBomRequestPreparation.class))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Failed to upload attachment."
-                    )
+                    @ApiResponse(responseCode = "200", description = "Import preparation result.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImportBomRequestPreparation.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid or unsupported SBOM file",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Failed to upload or process attachment.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             },
             tags = {"Components"}
     )
@@ -1132,6 +1288,18 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Merge source component into target component.",
             tags = {"Components"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Components merged successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or missing required parameters",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Source or target component not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PatchMapping(value = COMPONENTS_URL + "/mergecomponents")
     public ResponseEntity<RequestStatus> mergeComponents(
             @Parameter(description = "The id of the merge target component.")
@@ -1174,37 +1342,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Split source component into target component.",
             tags = {"Components"},
             responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "Request completed successfully."
-                    ),
-                    @ApiResponse(
-                            responseCode = "404", description = "Source or target component not found.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "403", description = "Don't have permission to perform the action.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "409", description = "Source or target component has a Moderation Request open.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Internal server error.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
-                            }
-                    )
+                    @ApiResponse(responseCode = "200", description = "Request completed successfully.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+                    @ApiResponse(responseCode = "403", description = "Don't have permission to perform the action.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Source or target component not found.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "409", description = "Source or target component has a Moderation Request open.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             }
     )
     @PatchMapping(value = COMPONENTS_URL + "/splitComponents")

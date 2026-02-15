@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -68,10 +69,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Request accepted.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/unscheduleAllServices")
     public ResponseEntity<?> unscheduleAllServices()throws TException {
@@ -87,10 +90,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "CVE service scheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/cveService")
     public ResponseEntity<?> scheduleCve() throws TException {
@@ -106,10 +111,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "SVM sync scheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/scheduleSvmSync")
     public ResponseEntity<?> scheduleSvmSync()throws TException {
@@ -125,10 +132,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "CVE service unscheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/unscheduleCve")
     public ResponseEntity<?> unscheduleCveSearch() throws TException {
@@ -144,10 +153,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "SVM sync cancelled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @DeleteMapping(SCHEDULE_URL + "/unscheduleSvmSync")
     public ResponseEntity<?> unscheduleSvmSync() throws TException {
@@ -163,10 +174,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Attachment deletion scheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/deleteAttachment")
     public ResponseEntity<?> scheduleDeleteAttachment() throws TException {
@@ -182,10 +195,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "SVM reverse match scheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/svmReverseMatch")
     public ResponseEntity<?> svmReverseMatch() throws TException {
@@ -201,10 +216,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Attachment deletion unscheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/unScheduleDeleteAttachment")
     public ResponseEntity<?> unscheduleDeleteAttachment()throws TException {
@@ -220,10 +237,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "SVM reverse match cancelled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @DeleteMapping(SCHEDULE_URL + "/unscheduleSvmReverseMatch")
     public ResponseEntity<?> unscheduleSvmReverseMatch()throws TException {
@@ -239,10 +258,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Attachment deletion cancelled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/cancelAttachmentDeletion")
     public ResponseEntity<?> attachmentDeleteLocalFS() throws TException {
@@ -258,10 +279,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Release tracking feedback triggered.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/trackingFeedback")
     public ResponseEntity<?> svmTrackingFeedback()throws TException {
@@ -277,10 +300,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "SVM monitoring list update scheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/monitoringListUpdate")
     public ResponseEntity<?> monitoringListUpdate()throws TException {
@@ -296,10 +321,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "SVM monitoring list update cancelled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @DeleteMapping(SCHEDULE_URL + "/cancelMonitoringListUpdate")
     public ResponseEntity<?> cancelMonitoringListUpdate()throws TException {
@@ -315,10 +342,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "CVE search triggered.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/cveSearch")
     public ResponseEntity<?> cveSearch()throws TException {
@@ -334,10 +363,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Source upload scheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/srcUpload")
     public ResponseEntity<?> srcUpload()throws TException {
@@ -353,10 +384,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Source upload cancelled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @DeleteMapping(SCHEDULE_URL + "/cancelSrcUpload")
     public ResponseEntity<?> cancelsrcUpload()throws TException {
@@ -372,10 +405,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             tags = {"Admin"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the response body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
+            @ApiResponse(responseCode = "202", description = "Source upload for release components scheduled.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(SCHEDULE_URL + "/scheduleSourceUploadForReleaseComponents")
     public ResponseEntity<?> scheduleSourceUploadForReleaseComponents()throws TException {
@@ -399,6 +434,10 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class,
                                     example = "Service name is required"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @GetMapping(value = SCHEDULE_URL + "/status")
     public ResponseEntity<Map<String, Object>> checkServiceStatus(
@@ -430,7 +469,11 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             @ApiResponse(responseCode = "200", description = "Returns true if a service is scheduled, otherwise false.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = Boolean.class,
-                                    example = "true")))
+                                    example = "true"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @GetMapping(value = SCHEDULE_URL + "/isAnyServiceScheduled")
     public ResponseEntity<Boolean> isAnyServiceScheduled() throws TException {
