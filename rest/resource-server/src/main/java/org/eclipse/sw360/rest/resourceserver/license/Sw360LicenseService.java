@@ -303,11 +303,6 @@ public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteI
             }
         }
     }
-            if (closeFailure != null) {
-                throw closeFailure;
-            }
-        }
-	}
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
