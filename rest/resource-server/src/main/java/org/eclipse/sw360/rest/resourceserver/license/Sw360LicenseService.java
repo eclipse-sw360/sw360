@@ -274,36 +274,12 @@ public class Sw360LicenseService {
         FileCopyUtils.copy(buffer, response.getOutputStream());
     }
 
-public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
+    public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
         final HashMap<String, InputStream> inputMap = new HashMap<>();
 
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to upload license file. User is not admin");
         }
-        try (InputStream inputStream = file.getInputStream()) {
-            ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
-            licsImporter.importLics(sw360User, inputMap);
-        } finally {
-            IOException closeFailure = null;
-            for (InputStream in : inputMap.values()) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    if (closeFailure == null) {
-                        closeFailure = e;
-                    } else {
-                        closeFailure.addSuppressed(e);
-                    }
-                }
-            }
-            if (closeFailure != null) {
-                throw closeFailure;
-            }
-        }
-	}
-
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
