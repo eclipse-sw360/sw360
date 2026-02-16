@@ -40,6 +40,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -52,8 +53,10 @@ import static org.apache.logging.log4j.LogManager.getLogger;
 public class CommonUtils {
 
     public static final String SYSTEM_CONFIGURATION_PATH = "/etc/sw360";
-    public static final String DEFAULT_ATTACHMENT_FILENAME = "comp_attachment";
     private static List<String> MULTIPLE_FILE_EXTENSIONS = Arrays.asList(".tar.gz", ".tar.bz2", ".tar.xz", ".tar.lz", ".tar.lzma");
+    public static final String DEFAULT_ATTACHMENT_FILENAME = "comp_attachment";
+    private static final Pattern FILENAME_SANITIZE_PATTERN =
+            Pattern.compile("(?i)/|\\\\|%2f|%5c");
 
     private CommonUtils() {
         // Utility class with only static functions
@@ -245,7 +248,7 @@ public class CommonUtils {
     /**
      * Sanitize filename to prevent path traversal attacks.
      * Replaces path separators (/ and \) with underscores to prevent directory traversal.
-     * 
+     *
      * @param filename the original filename that may contain path separators
      * @return sanitized filename safe for file operations, or DEFAULT_ATTACHMENT_FILENAME if input is invalid
      */
@@ -253,16 +256,16 @@ public class CommonUtils {
         if (filename == null || filename.trim().isEmpty()) {
             return DEFAULT_ATTACHMENT_FILENAME;
         }
-        
+
         // Replace path separators with underscores
         // This prevents path traversal since sequences like "../" become ".._"
-        String sanitized = filename.replace("/", "_").replace("\\", "_");
-        
+        String sanitized = FILENAME_SANITIZE_PATTERN.matcher(filename).replaceAll("_");
+
         // If filename becomes empty after sanitization, use default
         if (sanitized.trim().isEmpty()) {
             return DEFAULT_ATTACHMENT_FILENAME;
         }
-        
+
         return sanitized;
     }
 
