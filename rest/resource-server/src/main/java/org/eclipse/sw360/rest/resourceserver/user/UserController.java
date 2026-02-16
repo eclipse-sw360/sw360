@@ -19,7 +19,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -81,12 +82,12 @@ import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.EXPIRA
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@Slf4j
 @RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class UserController implements RepresentationModelProcessor<RepositoryLinksResource> {
+    private static final Logger log = LogManager.getLogger(UserController.class);
 
     protected final EntityLinks entityLinks;
 

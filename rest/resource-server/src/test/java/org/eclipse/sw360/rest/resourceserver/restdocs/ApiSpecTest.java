@@ -178,6 +178,7 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("sw360:importExport").description("The <<resources-importExport,ImportExport resource>>"),
                                 linkWithRel("sw360:department").description("The <<resources-department,Department resource>>"),
                                 linkWithRel("sw360:configurations").description("The <<resources-configurations,configurations resource>>"),
+                                linkWithRel("sw360:cacheAdmin").description("The <<resources-cacheAdmin,Cache Admin resource>>"),
                                 linkWithRel("curies").description("The Curies for documentation"),
                                 linkWithRel("profile").description("The profiles of the REST resources")
                         ),
