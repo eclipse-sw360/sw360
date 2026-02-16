@@ -76,6 +76,9 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.cache.ApiResponseCacheManager;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedResponse;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -162,13 +165,17 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
+    @NonNull
+    private final ApiResponseCacheManager cacheManager;
+
     @Operation(
             summary = "List all of the service's releases.",
             description = "List all of the service's releases.",
             tags = {"Releases"}
     )
+    @CachedResponse(endpoints = {CachedEndpoint.RELEASES_ALL_DETAILS, CachedEndpoint.RELEASES_WITHOUT_DETAILS})
     @GetMapping(value = RELEASES_URL)
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
+    public ResponseEntity<?> getReleasesForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "sha1 of the release attachment")
@@ -457,6 +464,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
             }
         }
+
+        // Invalidate both release caches when releases are deleted
+        invalidateReleaseCaches();
+
         return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
     }
 
@@ -481,6 +492,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
+
+        // Invalidate both release caches when a release is updated
+        invalidateReleaseCaches();
+
         sw360Release = releaseService.getReleaseForUserById(id, user);
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -621,6 +636,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         release.unsetClearingState();
         Release sw360Release = releaseService.createRelease(release, sw360User);
         HalResource<Release> halResource = createHalReleaseResource(sw360Release, true);
+
+        // Invalidate both release caches when a new release is created
+        invalidateReleaseCaches();
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -1891,6 +1909,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         User user = restControllerHelper.getSw360UserFromAuthentication();
         BulkOperationNode result = releaseService.deleteBulkRelease(id, user, isPreview);
 
+        // Invalidate both release caches when releases are bulk deleted (only if not preview)
+        if (!isPreview) {
+            invalidateReleaseCaches();
+        }
+
         return new ResponseEntity<BulkOperationNode>(result, HttpStatus.OK);
     }
 
@@ -2106,5 +2129,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Map<String, Integer> usageInfo = releaseService.getUsageInformationForReleaseMerge(releaseId, user);
         Map<String, Object> result = new HashMap<>(usageInfo);
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    /**
+     * Invalidate all release caches (both with and without details).
+     * Call this after any mutation that changes release data.
+     */
+    private void invalidateReleaseCaches() {
+        cacheManager.invalidate(CachedEndpoint.RELEASES_ALL_DETAILS);
+        cacheManager.invalidate(CachedEndpoint.RELEASES_WITHOUT_DETAILS);
     }
 }
