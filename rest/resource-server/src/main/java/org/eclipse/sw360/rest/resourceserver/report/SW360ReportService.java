@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -31,7 +32,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.ReleaseExporter;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -39,6 +42,11 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import lombok.RequiredArgsConstructor;
 
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
+
+import org.eclipse.sw360.exporter.CSVExport;
+import org.eclipse.sw360.exporter.JsonExport;
+import org.eclipse.sw360.exporter.ProjectExporter;
+import org.eclipse.sw360.exporter.XmlExport;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -93,6 +101,7 @@ public class SW360ReportService {
     private final Sw360LicenseInfoService licenseInfoService;
 
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
+    private static final Set<String> SUPPORTED_FORMATS = Set.of("xlsx", "csv", "json", "xml");
     ThriftClients thriftClients = new ThriftClients();
     ProjectService.Iface projectclient = thriftClients.makeProjectClient();
     ComponentService.Iface componentclient = thriftClients.makeComponentClient();
@@ -110,6 +119,59 @@ public class SW360ReportService {
         return projectclient.getReportDataStream(user, extendedByReleases, projectId);
     }
 
+    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
+        String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
+        validateFormat(fmt);
+        if ("xlsx".equals(fmt)) {
+            if (projectId != null && !validateProject(projectId, user)) {
+                throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
+            }
+            return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+        }
+        try {
+            List<Project> projects;
+            if (projectId != null) {
+                Project project = projectclient.getProjectById(projectId, user);
+                if (project == null) {
+                    throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
+                }
+                projects = List.of(project);
+            } else {
+                projects = projectclient.getAccessibleProjectsSummary(user);
+            }
+            ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+            List<Map<String, String>> records = exporter.makeRecords(projects);
+            List<String> headers = extendedByReleases ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
+            return convertToFormat(records, headers, fmt);
+        } catch (TException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TException("Failed to export projects in format " + fmt + ": " + e.getMessage(), e);
+        }
+    }
+
+    private ByteBuffer convertToFormat(List<Map<String, String>> records, List<String> headers, String format) throws IOException {
+        switch (format) {
+            case "csv":
+                List<List<String>> rows = new ArrayList<>();
+                for (Map<String, String> record : records) {
+                    List<String> row = new ArrayList<>();
+                    for (String header : headers) {
+                        row.add(record.getOrDefault(header, ""));
+                    }
+                    rows.add(row);
+                }
+                Iterable<Iterable<String>> iterableRows = rows.stream().map(row -> (Iterable<String>) row).collect(Collectors.toList());
+                return ByteBuffer.wrap(IOUtils.toByteArray(CSVExport.createCSV(headers, iterableRows)));
+            case "json":
+                return ByteBuffer.wrap(IOUtils.toByteArray(JsonExport.toJson(records)));
+            case "xml":
+                return ByteBuffer.wrap(IOUtils.toByteArray(XmlExport.toXml(records)));
+            default:
+                throw new BadRequestClientException("Unsupported format: " + format);
+        }
+    }
+
     private boolean validateProject(String projectId, User user) throws TException {
         boolean validProject = true;
         try {
@@ -124,32 +186,59 @@ public class SW360ReportService {
     }
 
     public String getDocumentName(User user, String projectId, String module) throws TException {
-        String documentName = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+        return getDocumentName(user, projectId, module, "xlsx");
+    }
+
+    public String getDocumentName(User user, String projectId, String module, String format) throws TException {
+        String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
+        validateFormat(fmt);
+        String extension = getFileExtension(fmt);
+        String documentName = String.format("projects-%s.%s", SW360Utils.getCreatedOn(), extension);
         switch (module) {
         case SW360Constants.PROJECTS:
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
                 Project project = projectclient.getProjectById(projectId, user);
-                documentName = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
-                        SW360Utils.getCreatedOn());
+                documentName = String.format("project-%s-%s-%s.%s", project.getName(), project.getVersion(),
+                        SW360Utils.getCreatedOn(), extension);
             }
             break;
         case SW360Constants.COMPONENTS:
-            documentName = String.format("components-%s.xlsx", SW360Utils.getCreatedOn());
+            documentName = String.format("components-%s.%s", SW360Utils.getCreatedOn(), extension);
             break;
         case SW360Constants.LICENSES:
-            documentName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
+            documentName = String.format("licenses-%s.%s", SW360Utils.getCreatedOn(), extension);
             break;
         case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
                 Project project = projectclient.getProjectById(projectId, user);
-                documentName = String.format("releases-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
-                        SW360Utils.getCreatedOn());
+                documentName = String.format("releases-%s-%s-%s.%s", project.getName(), project.getVersion(),
+                        SW360Utils.getCreatedOn(), extension);
             }
             break;
         default:
             break;
         }
         return documentName;
+    }
+
+    private void validateFormat(String format) {
+        if (!SUPPORTED_FORMATS.contains(format)) {
+            throw new IllegalArgumentException("Unsupported export format: " + format + ". Supported formats: " + SUPPORTED_FORMATS);
+        }
+    }
+
+    private String getFileExtension(String format) {
+        switch (format) {
+            case "csv":
+                return "csv";
+            case "json":
+                return "json";
+            case "xml":
+                return "xml";
+            case "xlsx":
+            default:
+                return "xlsx";
+        }
     }
 
     public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)

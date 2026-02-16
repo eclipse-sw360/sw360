@@ -16,6 +16,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Locale;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,6 +68,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private static final String ZIP_CONTENT_TYPE = "application/zip";
     private static final String EXPORT_CREATE_PROJ_CLEARING_REPORT = "exportCreateProjectClearingReport";
     private static final List<String> GENERATOR_MODULES = List.of(LICENSE_INFO, EXPORT_CREATE_PROJ_CLEARING_REPORT);
+    private static final List<String> SUPPORTED_FORMATS = List.of("xlsx", "csv", "json", "xml");
     public static final String ATTACHMENT_FILENAME_S = "attachment; filename=\"%s\"";
     @NonNull
     private final RestControllerHelper restControllerHelper;
@@ -124,6 +126,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "bomType", required = false) String bomType,
             @Parameter(description = "Selected release relationships. Can be supplied with modules [" + LICENSE_INFO + "]", example = "CONTAINED,UNKNOWN")
             @RequestParam(value = "selectedRelRelationship", required = false) List<ReleaseRelationship> selectedRelRelationship,
+            @Parameter(description = "Export format for projects module. Supported values: xlsx, csv, json, xml. Default is xlsx.",
+                    schema = @Schema(allowableValues = {"xlsx", "csv", "json", "xml"}))
+            @RequestParam(value = "format", required = false, defaultValue = "xlsx") String format,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws TException {
@@ -132,8 +137,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }
+        format = format.toLowerCase(Locale.ROOT);
+        if (!SUPPORTED_FORMATS.contains(format)) {
+            throw new BadRequestClientException("Unsupported format: " + format + ". Supported formats: " + SUPPORTED_FORMATS);
+        }
         SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
-                template, externalIds, withSubProject, bomType, selectedRelRelationship);
+                template, externalIds, withSubProject, bomType, selectedRelRelationship, format);
         String baseUrl = getBaseUrl(request);
         switch (module) {
             case SW360Constants.PROJECTS:
@@ -177,11 +186,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
      * @param withSubProject          whether to include sub-projects
      * @param bomType                 the type of SBOM file
      * @param selectedRelRelationship selected release relationships
+     * @param format                  export format (xlsx, csv, json, xml)
      * @return a SW360ReportBean object with the specified parameters
      */
     private SW360ReportBean createReportBeanObject(boolean withLinkedReleases, boolean excludeReleaseVersion, String generatorClassName,
                                                    String variant, String template, String externalIds, boolean withSubProject, String bomType,
-                                                   List<ReleaseRelationship> selectedRelRelationship) {
+                                                   List<ReleaseRelationship> selectedRelRelationship, String format) {
         SW360ReportBean reportBean = new SW360ReportBean();
         reportBean.setWithLinkedReleases(withLinkedReleases);
         reportBean.setExcludeReleaseVersion(excludeReleaseVersion);
@@ -192,6 +202,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         reportBean.setWithSubProject(withSubProject);
         reportBean.setBomType(bomType);
         reportBean.setSelectedRelRelationship(selectedRelRelationship);
+        reportBean.setFormat(format);
         return reportBean;
     }
 
@@ -287,8 +298,10 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
             switch (module) {
                 case SW360Constants.PROJECTS:
-                    buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId);
-                    fileName = sw360ReportService.getDocumentName(user, projectId, module);
+                    String format = reportBean.getFormat();
+                    buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId, format);
+                    fileName = sw360ReportService.getDocumentName(user, projectId, module, format);
+                    setContentTypeForFormat(response, format);
                     break;
                 case SW360Constants.COMPONENTS:
                     buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases());
@@ -340,6 +353,24 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
     private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
         FileCopyUtils.copy(buffer.array(), response.getOutputStream());
+    }
+
+    private void setContentTypeForFormat(HttpServletResponse response, String format) {
+        String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
+        switch (fmt) {
+            case "csv":
+                response.setContentType(SW360Constants.CONTENT_TYPE_CSV);
+                break;
+            case "json":
+                response.setContentType(SW360Constants.CONTENT_TYPE_JSON);
+                break;
+            case "xml":
+                response.setContentType(SW360Constants.CONTENT_TYPE_XML);
+                break;
+            default:
+                response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
+                break;
+        }
     }
 
     @Operation(

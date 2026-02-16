@@ -32,7 +32,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -50,6 +53,28 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
 
     public ExcelExporter(U helper) {
         this.helper = helper;
+    }
+
+    public List<Map<String, String>> makeRecords(List<T> documents) throws SW360Exception {
+        List<String> headers = helper.getHeaders();
+        List<Map<String, String>> records = new ArrayList<>();
+        if (documents == null) {
+            return records;
+        }
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                Map<String, String> record = new LinkedHashMap<>();
+                for (int j = 0; j < headers.size(); j++) {
+                    String header = headers.get(j);
+                    String value = (j < row.size()) ? row.get(j) : "";
+                    record.put(header, value != null ? value : "");
+                }
+                records.add(record);
+            }
+        }
+        return records;
     }
 
     public InputStream makeExcelExport(List<T> documents) throws IOException, SW360Exception {
