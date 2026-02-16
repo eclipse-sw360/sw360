@@ -162,13 +162,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
+    @NonNull
+    private final ReleaseResponseCacheHandler releaseResponseCacheHandler;
+
     @Operation(
             summary = "List all of the service's releases.",
             description = "List all of the service's releases.",
             tags = {"Releases"}
     )
     @GetMapping(value = RELEASES_URL)
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
+    public ResponseEntity<?> getReleasesForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "sha1 of the release attachment")
@@ -185,6 +188,23 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+
+        // Check if this request can be served from cache
+        if (releaseResponseCacheHandler.isCacheableRequest(allDetails, sha1, name, luceneSearch, isNewClearingWithSourceAvailable)) {
+            // Try to get from cache - only serve if cache is already present
+            Optional<ResponseEntity<?>> cachedResponse = releaseResponseCacheHandler.getCachedResponse();
+            if (cachedResponse.isPresent()) {
+                log.debug("Cache hit for releases?allDetails=true - serving from cache");
+                return cachedResponse.get();
+            }
+
+            // Cache miss: Trigger async cache build in background and fall through to standard processing
+            // User gets current request via slow path, but cache will be ready for next request
+            log.info("Cache miss for releases?allDetails=true - triggering async cache build and proceeding with standard processing");
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            releaseResponseCacheHandler.triggerAsyncCacheBuild(sw360User);
+            // Fall through to standard processing below (user context already retrieved)
+        }
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<PaginationData, List<Release>> paginatedReleases = null;
@@ -455,6 +475,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
             }
         }
+
+        // Invalidate cache when releases are deleted
+        releaseResponseCacheHandler.invalidateCache();
+
         return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
     }
 
@@ -479,6 +503,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
+
+        // Invalidate cache when a release is updated
+        releaseResponseCacheHandler.invalidateCache();
+
         sw360Release = releaseService.getReleaseForUserById(id, user);
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -619,6 +647,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         release.unsetClearingState();
         Release sw360Release = releaseService.createRelease(release, sw360User);
         HalResource<Release> halResource = createHalReleaseResource(sw360Release, true);
+
+        // Invalidate cache when a new release is created
+        releaseResponseCacheHandler.invalidateCache();
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -1888,6 +1919,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         BulkOperationNode result = releaseService.deleteBulkRelease(id, user, isPreview);
+
+        // Invalidate cache when releases are bulk deleted (only if not preview)
+        if (!isPreview) {
+            releaseResponseCacheHandler.invalidateCache();
+        }
 
         return new ResponseEntity<BulkOperationNode>(result, HttpStatus.OK);
     }
