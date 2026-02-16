@@ -270,6 +270,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             @ApiResponse(responseCode = "500", description = "Upload failed",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(
             value = IMPORTEXPORT_URL + "/uploadComponent",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -306,6 +307,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             @ApiResponse(responseCode = "500", description = "Upload failed",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(
             value = IMPORTEXPORT_URL + "/uploadRelease",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -342,6 +344,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             @ApiResponse(responseCode = "500", description = "Upload failed",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(
             value = IMPORTEXPORT_URL + "/componentAttachment",
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
@@ -376,6 +379,7 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PreAuthorize("hasAuthority('WRITE')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadUsers", produces = {MediaType.TEXT_PLAIN_VALUE})
     public void downloadUsers(HttpServletResponse response) throws SW360Exception {
         try {

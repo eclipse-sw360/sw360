@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -52,6 +53,7 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -232,11 +234,16 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = USERS_URL)
     public ResponseEntity<EntityModel<User>> createUser(
             @Parameter(description = "The user to be created.")
             @RequestBody User user
     ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (!PermissionUtils.isAdmin(sw360User)) {
+            throw new AccessDeniedException("User is not authorized to create users");
+        }
         if (CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
             throw new BadRequestClientException(
                     "Password can not be null or empty or whitespace!");
