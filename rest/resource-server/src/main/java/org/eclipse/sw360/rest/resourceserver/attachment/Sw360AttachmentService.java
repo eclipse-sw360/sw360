@@ -421,11 +421,10 @@ public class Sw360AttachmentService {
     private File renameFile(File sourceFile, String filename) throws IOException {
         // Sanitize filename to prevent path traversal
         String sanitizedFilename = CommonUtils.sanitizeFilename(filename);
-        String pathFile = sourceFile.getPath().substring(0,sourceFile.getPath().lastIndexOf("/"));
-        StringBuilder newName = new StringBuilder(pathFile);
-        newName.append("/");
-        newName.append(sanitizedFilename);
-        File file = new File(newName.toString());
+        String pathFile = sourceFile.getPath().substring(0,
+                sourceFile.getPath().lastIndexOf(File.separator));
+        String newName = pathFile + File.separator + sanitizedFilename;
+        File file = new File(newName);
         FileUtils.copyFile(sourceFile, file);
         return file;
     }
