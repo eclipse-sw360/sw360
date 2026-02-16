@@ -8,13 +8,13 @@ applyTo: "**"
 
 ## Project Overview
 
-| Attribute | Details |
-|-----------|---------|
-| **Purpose** | Eclipse SW360 - SBOM and license compliance management platform for open source software |
-| **Version** | 20.0.0-beta |
-| **Stack** | Java 21, Spring Boot 3.5.x, Maven, CouchDB (Cloudant SDK), Thrift 0.20.0, Docker |
-| **License** | EPL-2.0 |
-| **Repository** | [github.com/eclipse-sw360/sw360](https://github.com/eclipse-sw360/sw360) |
+| Attribute      | Details                                                                                  |
+|----------------|------------------------------------------------------------------------------------------|
+| **Purpose**    | Eclipse SW360 - SBOM and license compliance management platform for open source software |
+| **Version**    | 20.0.0-rc-1                                                                              |
+| **Stack**      | Java 21, Spring Boot 3.5.x, Maven, CouchDB (Cloudant SDK), Thrift 0.20.0, Docker         |
+| **License**    | EPL-2.0                                                                                  |
+| **Repository** | [github.com/eclipse-sw360/sw360](https://github.com/eclipse-sw360/sw360)                 |
 
 ### Module Structure
 ```
@@ -1258,7 +1258,7 @@ class ControllerIntegrationTest {
 ---
 
 ## Recent Development Context (Jan 2026)
-- Version 20.0.0-beta in development
+- Version 20.0.0-rc-1 in development
 - Spring Boot 3.5.x with Spring Security 6.5.x
 - Keycloak 26.x integration for authentication
 - DB-side pagination for components, projects, vulnerabilities
