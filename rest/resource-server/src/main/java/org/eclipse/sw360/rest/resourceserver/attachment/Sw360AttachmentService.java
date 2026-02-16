@@ -213,7 +213,9 @@ public class Sw360AttachmentService {
         response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
         ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());
         for (File file : files) {
-            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            // Sanitize filename for ZIP entry to prevent path traversal
+            String sanitizedName = CommonUtils.sanitizeFilename(file.getName());
+            zipOutputStream.putNextEntry(new ZipEntry(sanitizedName));
             FileInputStream fileInputStream = new FileInputStream(file);
             IOUtils.copy(fileInputStream, zipOutputStream);
             fileInputStream.close();
@@ -231,8 +233,11 @@ public class Sw360AttachmentService {
         String fileName = (attachmentFilename != null && !attachmentFilename.isEmpty())
                 ? attachmentFilename
                 : file.getOriginalFilename();
+
+        // Sanitize filename to prevent path traversal
+        String sanitizedFileName = CommonUtils.sanitizeFilename(fileName);
         String contentType = file.getContentType();
-        final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
+        final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
 
         final AttachmentConnector attachmentConnector = getConnector();
         Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
@@ -414,11 +419,12 @@ public class Sw360AttachmentService {
     }
 
     private File renameFile(File sourceFile, String filename) throws IOException {
-        String pathFile = sourceFile.getPath().substring(0,sourceFile.getPath().lastIndexOf("/"));
-        StringBuilder newName = new StringBuilder(pathFile);
-        newName.append("/");
-        newName.append(filename);
-        File file = new File(newName.toString());
+        // Sanitize filename to prevent path traversal
+        String sanitizedFilename = CommonUtils.sanitizeFilename(filename);
+        String pathFile = sourceFile.getPath().substring(0,
+                sourceFile.getPath().lastIndexOf(File.separator));
+        String newName = pathFile + File.separator + sanitizedFilename;
+        File file = new File(newName);
         FileUtils.copyFile(sourceFile, file);
         return file;
     }

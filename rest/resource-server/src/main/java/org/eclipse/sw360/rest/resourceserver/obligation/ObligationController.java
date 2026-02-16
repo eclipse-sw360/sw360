@@ -215,7 +215,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             summary = "Edit an existing obligation.",
             description = """
             Edit an existing obligation by id.
-            
+
             The `node` property of the Obligation should be in following format as JSON encoded string:
                     {
                       "val": ["ROOT"],
