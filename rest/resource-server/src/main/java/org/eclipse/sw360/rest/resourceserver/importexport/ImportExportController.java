@@ -378,7 +378,6 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             @ApiResponse(responseCode = "500", description = "Export failed",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
-    @PreAuthorize("hasAuthority('WRITE')")
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadUsers", produces = {MediaType.TEXT_PLAIN_VALUE})
     public void downloadUsers(HttpServletResponse response) throws SW360Exception {
