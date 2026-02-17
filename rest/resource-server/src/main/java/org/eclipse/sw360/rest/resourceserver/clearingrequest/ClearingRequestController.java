@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.time.format.DateTimeFormatter;
 
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
@@ -43,6 +44,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,6 +98,17 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Get a clearing request by id.",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clearing request found.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ClearingRequest.class))),
+            @ApiResponse(responseCode = "204", description = "No content."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Clearing request not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = CLEARING_REQUEST_URL + "/{id}")
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(
             @Parameter(description = "id of the clearing request")
@@ -114,6 +127,17 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Get the ClearingRequest based on the project id.",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clearing request found.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ClearingRequest.class))),
+            @ApiResponse(responseCode = "204", description = "No content."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Clearing request or project not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = CLEARING_REQUEST_URL + "/project/{id}")
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(
             @Parameter(description = "id of the project")
@@ -165,6 +189,14 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "List all clearing requests visible to user",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of clearing requests."),
+            @ApiResponse(responseCode = "204", description = "No clearing requests found."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = CLEARING_REQUESTS_URL)
     public ResponseEntity<CollectionModel<?>> getClearingRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -252,8 +284,13 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @ApiResponse(responseCode = "200", description = "Successfully retrieved the comments",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = Comment.class))),
-            @ApiResponse(responseCode = "404", description = "Clearing request not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "204", description = "No comments found."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Clearing request not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @GetMapping(value = CLEARING_REQUEST_URL + "/{id}/comments")
     public ResponseEntity<CollectionModel<?>> getCommentsByClearingRequestId(
@@ -294,6 +331,20 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Create a new comment for the clearing request.",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Comment added successfully.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Clearing request not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = CLEARING_REQUEST_URL + "/{id}/comments")
     public ResponseEntity<?> addComment(
@@ -348,6 +399,20 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Update a clearing request by id.",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clearing request updated successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ClearingRequest.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input - invalid date, invalid user, or invalid clearing date",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - user role not allowed or field update not allowed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Clearing request not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PatchMapping(value = CLEARING_REQUEST_URL + "/{id}")
     public ResponseEntity<HalResource<ClearingRequest>> patchClearingRequest(
             @Parameter(description = "id of the clearing request")

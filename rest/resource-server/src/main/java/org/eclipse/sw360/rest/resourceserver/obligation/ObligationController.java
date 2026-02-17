@@ -11,8 +11,10 @@ package org.eclipse.sw360.rest.resourceserver.obligation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
@@ -36,6 +38,7 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -78,6 +81,14 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "List all of the service's obligations.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of obligations."),
+            @ApiResponse(responseCode = "204", description = "No obligations found."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = OBLIGATION_URL)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -137,6 +148,16 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get an obligation by id.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation found.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Obligation.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Obligation not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = OBLIGATION_URL + "/{id}")
     public ResponseEntity<EntityModel<Obligation>> getObligation(
             @Parameter(description = "The id of the obligation to be retrieved.")
@@ -158,6 +179,18 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Create an obligation.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Obligation created successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Obligation.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = OBLIGATION_URL)
     public ResponseEntity<HalResource<Obligation>> createObligation(
@@ -180,6 +213,18 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Delete existing obligations.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "207", description = "Multi-status response with deletion results.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(type = "array", implementation = MultiStatus.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "One or more obligations not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @DeleteMapping(value = OBLIGATION_URL + "/{ids}")
     public ResponseEntity<List<MultiStatus>> deleteObligations(
@@ -245,10 +290,16 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully edited the obligation."),
-                    @ApiResponse(responseCode = "400", description = "Bad request when obligation title or text is empty."),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized access."),
-                    @ApiResponse(responseCode = "404", description = "Obligation not found."),
-                    @ApiResponse(responseCode = "500", description = "Internal server error.")
+            @ApiResponse(responseCode = "400", description = "Bad request when obligation title or text is empty.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Obligation not found.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
@@ -284,6 +335,14 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Nodes from the server to render Obligations.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation nodes retrieved successfully.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = CollectionModel.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = OBLIGATION_URL + "/nodes")
     public ResponseEntity<CollectionModel<ObligationNode>> getObligationNodes() {
         List<ObligationNode> obligationNodes = obligationService.getObligationNodes();
@@ -295,6 +354,14 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Elements from the server to render Obligation suggestions.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation elements retrieved successfully.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = CollectionModel.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = OBLIGATION_URL + "/elements")
     public ResponseEntity<CollectionModel<ObligationElement>> getObligationElements() {
         List<ObligationElement> obligationNodes = obligationService.getObligationElements();
