@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
+import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -52,6 +53,9 @@ abstract public class TestIntegrationBase {
 
     @MockitoBean
     protected Sw360UserService userServiceMock;
+
+    @MockitoBean
+    protected SW360ConfigurationsService sw360ConfigurationsServiceMock;
 
 
 

@@ -42,6 +42,10 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
         documentDeletions.setComponentId(actualRelease.getComponentId());
 
         for (Release._Fields field : Release._Fields.values()) {
+            // Skip ignored fields completely - don't add them to additions or deletions
+            if (field == Release._Fields.PERMISSIONS ) {
+                continue;
+            }
 
             if(actualRelease.getFieldValue(field) == null){
                     documentAdditions.setFieldValue(field, updateRelease.getFieldValue(field));
@@ -50,7 +54,6 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
             } else if(!actualRelease.getFieldValue(field).equals(updateRelease.getFieldValue(field))) {
                 switch (field) {
                     //ignored fields and concluded fields
-                    case PERMISSIONS:
                     case DOCUMENT_STATE:
                     case VENDOR:
                         break;
