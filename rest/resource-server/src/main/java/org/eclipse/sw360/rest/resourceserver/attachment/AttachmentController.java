@@ -12,7 +12,11 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +85,26 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             description = "Get attachment information.",
             tags = {"Attachments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Attachment.class))),
+            @ApiResponse(responseCode = "404", description = "Attachment not found",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Attachment not found\"}"
+                            ))),
+            @ApiResponse(responseCode = "403", description = "Access denied",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Internal server error\"}"
+                            )))
+    })
     @GetMapping(value = ATTACHMENTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Attachment>> getAttachmentForId(
             @Parameter(description = "id of the attachment")
@@ -98,6 +122,28 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             description = "Get attachment information by sha1 and the resource having it.",
             tags = {"Attachments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachments found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CollectionModel.class))),
+            @ApiResponse(responseCode = "204", description = "No attachments found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Invalid sha1 parameter",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"sha1 parameter is required\"}"
+                            ))),
+            @ApiResponse(responseCode = "403", description = "Access denied",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Internal server error\"}"
+                            )))
+    })
     @GetMapping(value = ATTACHMENTS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getAttachments(
             @Parameter(description = "sha1 of the attachment", required = true)
@@ -126,6 +172,21 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             description = "Create an attachment.",
             tags = {"Attachments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CollectionModel.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid file or missing files",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"You must select at least one file for uploading\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Failed to create attachment\"}"
+                            )))
+    })
     @PostMapping(
             value = ATTACHMENTS_URL,
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE}
