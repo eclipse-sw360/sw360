@@ -23,8 +23,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,17 +86,29 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
     @Operation(
             summary = "Get change logs for a document.",
             description = "List all the changelog based on the document id and parent document id.",
-            tags = {"Changelog"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {
-                                    @Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                                            schema = @Schema(implementation = ChangeLogs.class))
-                            }
-                    ),
-            }
+            tags = {"Changelog"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200", description = "Change logs retrieved successfully",
+                    content = {
+                            @Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                                    schema = @Schema(implementation = ChangeLogs.class))
+                    }
+            ),
+            @ApiResponse(responseCode = "204", description = "No change logs found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Document not found",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Document not found\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Internal server error\"}"
+                            )))
+    })
     @GetMapping(value = CHANGE_LOG_URL + "/document/{id}")
     public ResponseEntity getChangeLogForDocument(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))

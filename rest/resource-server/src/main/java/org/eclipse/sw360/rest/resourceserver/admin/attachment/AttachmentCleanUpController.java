@@ -13,6 +13,11 @@ package org.eclipse.sw360.rest.resourceserver.admin.attachment;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -53,6 +58,21 @@ public class AttachmentCleanUpController implements RepresentationModelProcessor
             description = "Cleanup all the unused attachments.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment cleanup completed successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Failed to cleanup attachments\"}"
+                            )))
+    })
     @DeleteMapping(value = ATTACHMENT_CLEANUP_URL + "/deleteAll")
     public ResponseEntity<RequestSummary> cleanUpAttachment() throws TException  {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
