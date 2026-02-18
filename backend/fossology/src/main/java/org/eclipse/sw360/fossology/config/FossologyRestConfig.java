@@ -191,7 +191,8 @@ public class FossologyRestConfig {
             try {
                 config = repository.getByConfigFor(ConfigFor.FOSSOLOGY_REST);
                 outdated = false;
-            } catch (IllegalStateException e) {
+            } 
+            catch (IllegalStateException e) {
                 ConfigContainer newConfig = new ConfigContainer(ConfigFor.FOSSOLOGY_REST, new HashMap<>());
                 repository.add(newConfig);
                 config = newConfig;   // ✅ FIX ADDED HERE
