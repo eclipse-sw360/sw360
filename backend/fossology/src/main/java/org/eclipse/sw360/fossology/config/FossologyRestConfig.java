@@ -98,7 +98,6 @@ public class FossologyRestConfig {
     public String getDownloadTimeoutUnit() {
         return getFirstValue(CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT);
     }
-
     /**
      * Get default group name for operations
      */
