@@ -39,11 +39,11 @@ The reference platform is the Ubuntu server 22.04 (which is an LTS version).
 
 ### Project structure
 
-This is a multi module maven file. please consider that we have the following modules:
+This is a multi-module Maven project. Please note that it has the following modules:
 
 * backend: For the thrift based services.
 * libraries: For general stuff that is reused among the above, for example, couchdb access.
-* scripts: Auxiliary scripts to help build, deploy and config system
+* scripts: Auxiliary scripts to help build, deploy, and configure the system.
 * rest: For the REST API which contains an authorization and resource server.
 
 ### Issues
@@ -60,16 +60,16 @@ If you intend to install in a bare metal machine or use in your own virtualized 
 
 ### Development
 
-If you intend to develop over SW360, few steps are needed as equal you need have base
-requirements
+If you intend to develop on SW360, a few steps are needed, and you must have the following base requirements:
+
 
 * Base build requirements
   * Java 21
   * Maven 3.8.7
   * pre-commit
   * thrift 0.20.0 runtime
-  * Python environment ( to [pre-commit](https://pre-commit.com/) ) - SW360 use Eclipse formatting rules
-  through [Spotless maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven)
+  * Python environment (to [pre-commit](https://pre-commit.com/) ) - SW360 uses Eclipse formatting rules
+  through [Spotless Maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven).
 
 If you can't install thrift 0.20 runtime, you will need the following requirements:
 
@@ -114,7 +114,8 @@ mvn package -P deploy \
     -Dbackend.deploy.dir=webapps
 ```
 
-If you want to run the tests, we need start a local couchdb server and Docker is required:
+If you want to run the tests, you need to start a local CouchDB server, and Docker is required.
+
 
 ### License
 
