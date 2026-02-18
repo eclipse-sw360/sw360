@@ -26,9 +26,10 @@ import java.net.MalformedURLException;
 public class FossologyServlet extends SpringTServlet {
 
     @Autowired
-    public FossologyServlet(FossologyHandler fossologyHandler) throws MalformedURLException {
-        // Create a service processor using the provided handler
-        super(new FossologyService.Processor<>(fossologyHandler), new TCompactProtocol.Factory());
-    }
+    public FossologyServlet(FossologyHandler fossologyHandler)
+            throws MalformedURLException {
 
+        super(new FossologyService.Processor<>(fossologyHandler),
+              new TCompactProtocol.Factory());
+    }
 }

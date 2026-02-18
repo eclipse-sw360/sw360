@@ -17,7 +17,6 @@ import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
@@ -52,7 +51,6 @@ public class FossologyRestConfig {
 
     private static final String BASEURL_VERSION_SUFFIX = "/api/v2";
 
-    @Autowired
     public FossologyRestConfig(ConfigContainerRepository repository) throws SW360Exception {
         this.repository = repository;
         // eager loading (or initial insert)
@@ -144,13 +142,13 @@ public class FossologyRestConfig {
             throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid folder id.");
         }
 
-        // Validate v2 configuration options
         if (!url.contains(BASEURL_VERSION_SUFFIX)) {
             throw new IllegalStateException("Base URL for API must be 'v2'.");
         }
 
-        String downloadTimeout = newConfig.getConfigKeyToValues().getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT, new HashSet<>()).stream()
-                .findFirst().orElse("");
+        String downloadTimeout = newConfig.getConfigKeyToValues()
+                .getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT, new HashSet<>())
+                .stream().findFirst().orElse("");
         try {
             if (!downloadTimeout.isEmpty()) {
                 Long.parseLong(downloadTimeout);
@@ -160,8 +158,9 @@ public class FossologyRestConfig {
                     "The new FOSSology REST configuration does not contain a valid download timeout.");
         }
 
-        String downloadTimeoutUnit = newConfig.getConfigKeyToValues().getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT, new HashSet<>()).stream()
-                .findFirst().orElse("");
+        String downloadTimeoutUnit = newConfig.getConfigKeyToValues()
+                .getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT, new HashSet<>())
+                .stream().findFirst().orElse("");
         try {
             if (!downloadTimeoutUnit.isEmpty()) {
                 TimeUnit.valueOf(downloadTimeoutUnit.toUpperCase());
@@ -196,6 +195,8 @@ public class FossologyRestConfig {
             } catch (IllegalStateException e) {
                 ConfigContainer newConfig = new ConfigContainer(ConfigFor.FOSSOLOGY_REST, new HashMap<>());
                 repository.add(newConfig);
+                config = newConfig;   // ✅ FIX ADDED HERE
+                outdated = false;
             }
         }
         return config;
