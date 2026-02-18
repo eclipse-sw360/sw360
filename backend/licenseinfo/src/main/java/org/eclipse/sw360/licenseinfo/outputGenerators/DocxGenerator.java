@@ -107,8 +107,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             switch (getOutputVariant()) {
                 case DISCLOSURE:
                     docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_FILE);
-                    xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
                     if (docxTemplateFile.isPresent()) {
+                        xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
                         fillDisclosureDocument(
                                 xwpfDocument,
                                 projectLicenseInfoResults,
@@ -129,8 +129,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                         docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class,
                                 System.getProperty("file.separator") + fileName + "." + DOCX_OUTPUT_TYPE);
                     }
-                    xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
                     if (docxTemplateFile.isPresent()) {
+                        xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
                         fillReportDocument(
                                 xwpfDocument,
                                 projectLicenseInfoResults,
