@@ -1,27 +1,27 @@
-
 ## SW360 Multi-Language System
 
 ### Introduction
 
-SW360 multi-language can support multiple languages. In this way, SW360 can internationalize. With each localization, user can select the appropriate language and contribute more local translations.
+SW360 multi-language supports multiple languages. In this way, SW360 can be internationalized. With each localization, users can select the appropriate language and contribute additional local translations.
 
-### Language Extension 
+### Language Extension
 
-By the default SW360 language is English, language extensions are added and based on English.
-With each language, it will have a special language extension that is language for local.
+By default, the SW360 language is English. Language extensions are added and are based on English. Each language has a specific language extension for the locale.
 
-Language extension contains a pair key and value:
-* Key: used to get value of key and replace text to key in source code.
-* Value: the local language translation.
+A language extension contains a key-value pair:
+* Key: Used to retrieve the value and replace the corresponding text in the source code.
+* Value: The local language translation.
 
-### How to create new language
+### How to Create a New Language
 
-#### Add new language extension
+#### Add New Language Extension
 
-Add new language properties file in the folder 
+Add a new language properties file in the folder:
 `${SW360_REPOSITORY}/frontend/sw360-portlet/src/main/resources/content`
 
 Example:
+
+
 
 ```     
     resources
@@ -33,14 +33,17 @@ Example:
 
 ```
 
-Create any translations you want in additional language properties files ( base on Language.properties ), append the locale’s ID to the file name (`Language_xx.properties`).
+
+Create any translations you want in additional language properties files (based on `Language.properties`) and append the locale ID to the file name (`Language_xx.properties`).
 
 Example:
 
 * Language.properties
 
 ```
-    welcome.to.sw360=Welcome to SW360!
+   
+* Language_vi.properties
+
 ```
 
 * Language_vi.properties
@@ -49,46 +52,47 @@ Example:
     welcome.to.sw360=Chào mừng bạn đến với SW360!
 ```
 
-### How to deploy
+### How to Deploy
 
 Refer to the document:
 https://github.com/eclipse/sw360/wiki/Deploy-Natively
 
-### Setting page languages
+### Setting Page Languages
 
-After deploy SW360 success:
+After deploying SW360 successfully:
 
 1. Open the panel on the left side by clicking the button at the top left.
 2. Go to SW360 -> Site Builder -> Pages > Public Pages.
-    * Press one by one portlet.
-    * Click icon "Show actions".
-    * Click "Configure".
-3. On the left of field "Name" select your language.
-4. Enter the translation base on default language.
+   * Click each portlet one by one.
+   * Click the "Show Actions" icon.
+   * Click "Configure".
+3. On the left side of the "Name" field, select your language.
+4. Enter the translation based on the default language.
 5. Click "Save".
-6. Repeat step 1.-5. with Private Pages.
+6. Repeat steps 1–5 for Private Pages.
 
-**Note:** 
+**Note:**
 
-* Some languages are not available so need to be added:
-    - Go to Control Panel > Configuration > Instance Setting.
-    - Click "Localization".
-    - Select available language and move to current language.
-    - Click "Save".
-* Some portlets contain sub-portlet, example "Projects".
- 
-### Setting user language
+* Some languages may not be available and need to be added:
+  - Go to Control Panel > Configuration > Instance Settings.
+  - Click "Localization".
+  - Select the available language and move it to the current languages list.
+  - Click "Save".
+* Some portlets contain sub-portlets, for example, "Projects".
+
+### Setting User Language
 
 1. Go to Account Settings.
-2. Select language.
+2. Select a language.
 3. Click "Save".
 
-### Export LAR files:
+### Export LAR Files
 
-If you want share LAR files, export to the folder 
+If you want to share LAR files, export them to the folder:
 `${SW360_REPOSITORY}/frontend/configuration/`
 
 Example:
+
 
 ```
     configuration
@@ -103,22 +107,23 @@ Example:
         |__...
 ```
 
-Export LAR file:
+To export LAR files:
 
-1. Go to SW360 > Publishing > Export
-2. Click icon "+".
-3. Select "Pages Options" and "Pages to Export".
+1. Go to SW360 > Publishing > Export.
+2. Click the "+" icon.
+3. Select "Page Options" and "Pages to Export".
 4. Click "Export".
-5. Repeat step 1.-4. with Public Pages.
+5. Repeat steps 1–4 for Public Pages.
 
-**Note:** 
+**Note:**
 
-* Pages Options and Page Export are selected follow:
-    - Private_Pages
-    - Public_Pages
-    - Private_Pages_BDP_Import
-    - Private_Pages_WS_Import
+* Page Options and Pages to Export should be selected as follows:
+  - Private_Pages
+  - Public_Pages
+  - Private_Pages_BDP_Import
+  - Private_Pages_WS_Import
 
-Now, new language is add to SW360.
+Now, the new language is added to SW360.
+
 
 
