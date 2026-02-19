@@ -106,6 +106,7 @@ public class CycloneDxBOMImporter {
     private static final String INVALID_RELEASE = "invalidRel";
     private static final String NON_PKG_MANAGED_COMP_WITHOUT_VCS = "nonPkgManagedCompWithoutVCS";
     private static final String INVALID_PACKAGE = "invalidPkg";
+    private static final String COMPONENT_IMPORT_ERROR_COUNT_KEY = "compImportErrorCount";
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
     public static final String INVALID_VCS_COMPONENT = "invalidVcsComponent";
@@ -422,6 +423,7 @@ public class CycloneDxBOMImporter {
         } catch (SW360Exception e) {
             log.error("An error occured while importing project from SBOM: " + e.getMessage());
             summary.setMessage("An error occured while importing project from SBOM!");
+            summary.setRequestStatus(RequestStatus.FAILURE);
             return summary;
         }
 
@@ -434,9 +436,22 @@ public class CycloneDxBOMImporter {
         if (RequestStatus.SUCCESS.equals(updateStatus)) {
             log.info("project updated successfully: " + project.getId());
         } else {
-            log.info("failed to update project with status: " + updateStatus);
+            log.error("Failed to update project: " + project.getId() + " with status: " + updateStatus);
+            summary.setMessage("Failed to update project after SBOM import!");
+            summary.setRequestStatus(RequestStatus.FAILURE);
+            return summary;
         }
+
+        int importErrorCount = 0;
+        String errorCountStr = messageMap.get(COMPONENT_IMPORT_ERROR_COUNT_KEY);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(errorCountStr)) {
+            importErrorCount = Integer.parseInt(errorCountStr);
+        }
+
         summary.setMessage(convertCollectionToJSONString(messageMap));
+        if (importErrorCount > 0) {
+            log.warn("SBOM import completed with " + importErrorCount + " component error(s) for project: " + project.getId());
+        }
         summary.setRequestStatus(RequestStatus.SUCCESS);
         return summary;
     }
@@ -452,6 +467,7 @@ public class CycloneDxBOMImporter {
         countMap.put(COMP_CREATION_COUNT_KEY, 0); countMap.put(COMP_REUSE_COUNT_KEY, 0);
         countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
         int compCreationCount = 0, compReuseCount = 0, relCreationCount = 0, relReuseCount = 0;
+        int compImportErrorCount = 0;
 
         final List<org.cyclonedx.model.Component> components = vcsToComponentMap.get("");
         for (org.cyclonedx.model.Component bomComp : components) {
@@ -511,6 +527,7 @@ public class CycloneDxBOMImporter {
                     releaseRelationMap.putIfAbsent(release.getId(), getDefaultRelation());
                 } catch (SW360Exception e) {
                     log.error("An error occured while creating/adding release from SBOM: " + e.getMessage());
+                    compImportErrorCount++;
                     continue;
                 }
 
@@ -543,9 +560,12 @@ public class CycloneDxBOMImporter {
                 RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
                 if (RequestStatus.SUCCESS.equals(updateStatus)) {
                     log.info("updating component successfull: " + comp.getName());
+                } else {
+                    log.error("Failed to update component: " + comp.getName() + " with status: " + updateStatus);
                 }
             } catch (SW360Exception e) {
                 log.error("An error occured while creating/adding component from SBOM: " + e.getMessage());
+                compImportErrorCount++;
                 continue;
             }
         }
@@ -562,6 +582,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(COMP_REUSE_COUNT_KEY, String.valueOf(compReuseCount));
         messageMap.put(REL_CREATION_COUNT_KEY, String.valueOf(relCreationCount));
         messageMap.put(REL_REUSE_COUNT_KEY, String.valueOf(relReuseCount));
+        messageMap.put(COMPONENT_IMPORT_ERROR_COUNT_KEY, String.valueOf(compImportErrorCount));
         return messageMap;
     }
 
@@ -581,6 +602,7 @@ public class CycloneDxBOMImporter {
         countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
         countMap.put(PKG_CREATION_COUNT_KEY, 0); countMap.put(PKG_REUSE_COUNT_KEY, 0);
         int relCreationCount = 0, relReuseCount = 0, pkgCreationCount = 0, pkgReuseCount = 0;
+        int compImportErrorCount = 0;
 
         if (!doNotReplacePackageAndRelease) {
             releaseRelationMap.clear();
@@ -646,6 +668,7 @@ public class CycloneDxBOMImporter {
                         releaseRelationMap.putIfAbsent(release.getId(), getDefaultRelation());
                     } catch (SW360Exception e) {
                         log.error("An error occured while creating/adding release from SBOM: " + e.getMessage());
+                        compImportErrorCount++;
                         continue;
                     }
 
@@ -674,6 +697,8 @@ public class CycloneDxBOMImporter {
                     RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
+                    } else {
+                        log.error("Failed to update component: " + comp.getName() + " with status: " + updateStatus);
                     }
 
                     releaseRelationMap.putIfAbsent(release.getId(), getDefaultRelation());
@@ -715,11 +740,13 @@ public class CycloneDxBOMImporter {
                         project.setPackageIds(linkedPackages);
                     } catch (SW360Exception e) {
                         log.error("An error occured while creating/adding package from SBOM: " + e.getMessage());
+                        compImportErrorCount++;
                         continue;
                     }
                 }
             } catch (SW360Exception e) {
                 log.error("An error occured while creating/adding component from SBOM: " + e.getMessage());
+                compImportErrorCount++;
                 continue;
             }
         }
@@ -776,6 +803,7 @@ public class CycloneDxBOMImporter {
                         releaseRelationMap.putIfAbsent(release.getId(), getDefaultRelation());
                     } catch (SW360Exception e) {
                         log.error("An error occured while creating/adding release from SBOM: " + e.getMessage());
+                        compImportErrorCount++;
                         continue;
                     }
 
@@ -792,10 +820,13 @@ public class CycloneDxBOMImporter {
                     RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
+                    } else {
+                        log.error("Failed to update component: " + comp.getName() + " with status: " + updateStatus);
                     }
 
                 } catch (SW360Exception e) {
                     log.error("An error occured while creating/adding component from SBOM: " + e.getMessage());
+                    compImportErrorCount++;
                 }
             } else {
                 nonPkgManagedCompWithoutVCS.add(bomComp.getName());
@@ -817,6 +848,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(REL_REUSE_COUNT_KEY, String.valueOf(relReuseCount));
         messageMap.put(PKG_CREATION_COUNT_KEY, String.valueOf(pkgCreationCount));
         messageMap.put(PKG_REUSE_COUNT_KEY, String.valueOf(pkgReuseCount));
+        messageMap.put(COMPONENT_IMPORT_ERROR_COUNT_KEY, String.valueOf(compImportErrorCount));
         return messageMap;
     }
 
