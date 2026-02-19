@@ -26,9 +26,9 @@ import java.util.List;
 
 @Configuration
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public abstract class Sw360CORSFilter implements Filter {
+public class Sw360CORSFilter implements Filter {
 
-    @Value("${sw360.cors.allowed-origin:}")
+    @Value("${sw360.cors.allowed-origin:#{null}}")
     private String allowedOrigin;
     @Value("${sw360.cors.max-age:3600}")
     private String accessControlMaxAge;
@@ -43,12 +43,13 @@ public abstract class Sw360CORSFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        if(allowedOrigin != null) {
+        if (allowedOrigin != null && !allowedOrigin.isBlank()) {
             HttpServletRequest httpServletRequest = (HttpServletRequest)servletRequest;
             HttpServletResponse httpServletResponse = (HttpServletResponse)servletResponse;
             setCORSHeader(httpServletResponse);
             if(httpServletRequest.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
                 httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+                return;
             } else {
                 filterChain.doFilter(servletRequest, servletResponse);
             }
@@ -72,8 +73,10 @@ public abstract class Sw360CORSFilter implements Filter {
         List<String> httpMethods = new ArrayList<>();
         httpMethods.add(HttpMethod.GET.name());
         httpMethods.add(HttpMethod.POST.name());
+        httpMethods.add(HttpMethod.PUT.name());
         httpMethods.add(HttpMethod.DELETE.name());
         httpMethods.add(HttpMethod.PATCH.name());
+        httpMethods.add(HttpMethod.OPTIONS.name());
         return String.join(",", httpMethods);
     }
 
