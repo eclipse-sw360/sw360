@@ -74,6 +74,21 @@ sw360:
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+  licensedb:
+    enabled: ${LICENSEDB_ENABLED:false}
+    api:
+      url: ${LICENSEDB_API_URL:http://localhost:8080}
+      version: ${LICENSEDB_API_VERSION:v1}
+    oauth:
+      client:
+        id: ${LICENSEDB_OAUTH_CLIENT_ID:}
+        secret: ${LICENSEDB_OAUTH_CLIENT_SECRET:}
+    sync:
+      cron: ${LICENSEDB_SYNC_CRON:0 0 2 * * ?}
+      batch-size: ${LICENSEDB_SYNC_BATCH_SIZE:100}
+    connection:
+      timeout: ${LICENSEDB_CONNECTION_TIMEOUT:30000}
+      read-timeout: ${LICENSEDB_CONNECTION_READ_TIMEOUT:60000}
 
 blacklist:
   sw360:
