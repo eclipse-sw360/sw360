@@ -56,7 +56,6 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -78,7 +77,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -92,7 +91,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     private final Sw360ProjectService projectService;
 
     @NonNull
-    private Sw360ReleaseService releaseService;
+    private final Sw360ReleaseService releaseService;
 
     @NonNull
     private final Sw360UserService userService;

@@ -45,7 +45,6 @@ import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -64,7 +63,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -76,8 +75,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
 
     private static final Logger log = LogManager.getLogger(ClearingRequestController.class);
 
-    @Autowired
-    private Sw360ClearingRequestService sw360ClearingRequestService;
+    @NonNull
+    private final Sw360ClearingRequestService sw360ClearingRequestService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;

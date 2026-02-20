@@ -28,7 +28,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -45,10 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ClearingRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ClearingRequestService.class);
 

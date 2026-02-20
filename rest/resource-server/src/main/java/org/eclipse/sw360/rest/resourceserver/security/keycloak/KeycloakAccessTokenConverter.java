@@ -19,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.JwtAccessTokenConverterConfigurer;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,8 +27,11 @@ import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConv
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
+
 @Profile("!SECURITY_MOCK")
 @Component
+@RequiredArgsConstructor
 public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter implements JwtAccessTokenConverterConfigurer {
 
     private static final Logger log = LogManager.getLogger(KeycloakAccessTokenConverter.class);
@@ -38,8 +40,7 @@ public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter im
     private static final String JWT_ROLES = "roles";
     private static final String JWT_AUTHORITIES = "authorities";
 
-    @Autowired
-    private Sw360UserService userService;
+    private final Sw360UserService userService;
 
     @Override
     public void configure(JwtAccessTokenConverter converter) {
