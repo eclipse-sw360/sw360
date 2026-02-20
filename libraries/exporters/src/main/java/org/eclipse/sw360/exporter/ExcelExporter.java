@@ -85,11 +85,11 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
     public String makeExcelExportForProject(List<T> documents, User user) throws IOException, SW360Exception {
         final SXSSFWorkbook workbook = new SXSSFWorkbook();
         String token = UUID.randomUUID().toString();
-        String filePath = TMP_EXPORTEDFILES + user.getEmail() + SLASH;
+        String filePath = TMP_EXPORTEDFILES + user.getEmail() + SLASH + "file" + SLASH;
         File file;
         try {
             File dir = new File(filePath);
-            dir.mkdir();
+            dir.mkdirs();
             file = new File(dir.getPath() + SLASH + SW360Utils.getCreatedOn() + "_" + token);
             file.createNewFile();
             SXSSFSheet sheet = workbook.createSheet("Data");
