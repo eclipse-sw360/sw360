@@ -120,6 +120,17 @@ public class SW360Constants {
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
     public static final String PREFERRED_CLEARING_DATE_LIMIT;
 
+    // LicenseDB Configuration
+    public static final String LICENSEDB_ENABLED;
+    public static final String LICENSEDB_API_URL;
+    public static final String LICENSEDB_API_VERSION;
+    public static final String LICENSEDB_OAUTH_CLIENT_ID;
+    public static final String LICENSEDB_OAUTH_CLIENT_SECRET;
+    public static final String LICENSEDB_SYNC_CRON;
+    public static final String LICENSEDB_SYNC_BATCH_SIZE;
+    public static final String LICENSEDB_CONNECTION_TIMEOUT;
+    public static final String LICENSEDB_CONNECTION_READ_TIMEOUT;
+
     public static final String COMPONENTS = "components";
     public static final String PROJECTS = "projects";
     public static final String LICENSES = "licenses";
@@ -244,6 +255,17 @@ public class SW360Constants {
         SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.email", "");
         SRC_ATTACHMENT_DOWNLOAD_LOCATION = props.getProperty("src.attachment.download.location", "");
         PREFERRED_CLEARING_DATE_LIMIT =  props.getProperty("preferred.clearing.date.limit","");
+
+        // LicenseDB Configuration
+        LICENSEDB_ENABLED = props.getProperty("licensedb.enabled", "false");
+        LICENSEDB_API_URL = props.getProperty("licensedb.api.url", "http://localhost:8080");
+        LICENSEDB_API_VERSION = props.getProperty("licensedb.api.version", "v1");
+        LICENSEDB_OAUTH_CLIENT_ID = props.getProperty("licensedb.oauth.client.id", "");
+        LICENSEDB_OAUTH_CLIENT_SECRET = props.getProperty("licensedb.oauth.client.secret", "");
+        LICENSEDB_SYNC_CRON = props.getProperty("licensedb.sync.cron", "0 0 2 * * ?");
+        LICENSEDB_SYNC_BATCH_SIZE = props.getProperty("licensedb.sync.batch-size", "100");
+        LICENSEDB_CONNECTION_TIMEOUT = props.getProperty("licensedb.connection.timeout", "30000");
+        LICENSEDB_CONNECTION_READ_TIMEOUT = props.getProperty("licensedb.connection.read-timeout", "60000");
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName) {
