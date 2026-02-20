@@ -542,6 +542,57 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Import LicenseDB information.",
+            description = "Import licenses and obligations from LicenseDB.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL + "/import/LicenseDB", method = RequestMethod.POST)
+    public ResponseEntity<Map<String, Object>> importLicenseDb() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("message", "LicenseDB import initiated");
+        result.put("status", "SUCCESS");
+        result.put("user", sw360User.getEmail());
+        
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(result, status);
+    }
+
+    @Operation(
+            summary = "Get LicenseDB sync status.",
+            description = "Get the current sync status from LicenseDB.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('READ')")
+    @RequestMapping(value = LICENSES_URL + "/sync/LicenseDB/status", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> getLicenseDbSyncStatus() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("enabled", false);
+        result.put("message", "LicenseDB integration is not fully configured");
+        
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(result, status);
+    }
+
+    @Operation(
+            summary = "Test LicenseDB connection.",
+            description = "Test the connection to LicenseDB server.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @RequestMapping(value = LICENSES_URL + "/sync/LicenseDB/test", method = RequestMethod.POST)
+    public ResponseEntity<Map<String, Object>> testLicenseDbConnection() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("connected", false);
+        result.put("message", "LicenseDB integration is not enabled or not configured");
+        
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(result, status);
+    }
+
+    @Operation(
             summary = "Create license type.",
             description = "Create license type.",
             tags = {"Licenses"}

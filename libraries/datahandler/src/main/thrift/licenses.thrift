@@ -75,6 +75,12 @@ struct Obligation {
     21: optional string comments,
     22: optional ObligationLevel obligationLevel,
     23: optional ObligationType obligationType,
+
+    // LicenseDB integration fields
+    24: optional string licenseDbId,
+    25: optional string lastSyncTime,
+    26: optional string syncStatus,
+
     300: optional map<string, string> additionalData,
     97: optional string node,
 
@@ -140,6 +146,11 @@ struct License {
     21: optional set<string> obligationDatabaseIds,
     22: optional string obligationListId,
     25: optional string text,
+
+    // LicenseDB integration fields
+    26: optional string licenseDbId,
+    27: optional string lastSyncTime,
+    28: optional string syncStatus,
 
     30: optional bool checked = true;
 
