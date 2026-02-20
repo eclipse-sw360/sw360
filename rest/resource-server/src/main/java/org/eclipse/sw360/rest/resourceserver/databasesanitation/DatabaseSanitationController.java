@@ -29,6 +29,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +42,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class DatabaseSanitationController  implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String DATABASESANITATION_URL = "/databaseSanitation";

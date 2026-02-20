@@ -308,22 +308,20 @@ public class Sw360LicenseService {
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (StringUtils.isNotEmpty(licenseType)) {
-             lType.setLicenseType(licenseType);
+            lType.setLicenseType(licenseType);
+        } else {
+            throw new BadRequestClientException("license type is empty");
         }
-        else {
-              throw new BadRequestClientException("license type is empty");
-        }
-        try {
-            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-                RequestStatus status = sw360LicenseClient.addLicenseType(lType, sw360User);
-            } else {
-                throw new BadRequestClientException("Unable to create License Type. User is not admin");
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            try {
+                return sw360LicenseClient.addLicenseType(lType, sw360User);
+            } catch (Exception e) {
+                throw new TException(e.getMessage());
             }
-         } catch ( Exception e) {
-                 throw new TException(e.getMessage());
-         }
-         return RequestStatus.SUCCESS;
-     }
+        } else {
+            throw new AccessDeniedException("Unable to create License Type. User is not admin");
+        }
+    }
 
      public List<LicenseType> quickSearchLicenseType(String searchElem) {
          try {
