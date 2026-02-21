@@ -42,11 +42,19 @@ services:
       - ./config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini
       - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini
       - ./config/couchdb/nouveau.ini:/opt/couchdb/etc/local.d/nouveau.ini
+      - ./config/couchdb/sw360_cluster.ini:/opt/couchdb/etc/local.d/sw360_cluster.ini
     healthcheck:
       test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
       interval: 30s
       timeout: 5s
       retries: 5
+
+  couchdb-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - couchdb
+    restart: "no"
+    entrypoint: [ "sh", "-c", "sleep 20 && curl -sf --retry 10 --retry-delay 5 --retry-connrefused http://sw360:sw360fossie@couchdb:5984/ && curl -X POST http://sw360:sw360fossie@couchdb:5984/_cluster_setup -H 'Content-Type: application/json' -d '{\"action\":\"enable_single_node\",\"username\":\"sw360\",\"password\":\"sw360fossie\",\"bind_address\":\"0.0.0.0\",\"port\":5984,\"singlenode\":true}' && curl -X PUT http://sw360:sw360fossie@couchdb:5984/_users && curl -X PUT http://sw360:sw360fossie@couchdb:5984/_replicator && curl -X PUT http://sw360:sw360fossie@couchdb:5984/_global_changes && echo CouchDB init done" ]
 
 volumes:
   couchdb: null
