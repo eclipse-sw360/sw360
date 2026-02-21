@@ -57,9 +57,6 @@ public class ResourceServerConfiguration {
     @Autowired
     Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    String issuerUri;
-
     @Value("${springdoc.swagger-ui.require-authentication:true}")
     boolean swaggerRequireAuthentication;
 
@@ -70,7 +67,7 @@ public class ResourceServerConfiguration {
                 .addFilterBefore(apiTokenAuthenticationFilter, BasicAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
-                                .jwkSetUri(issuerUri)).authenticationEntryPoint(saep))
+                ).authenticationEntryPoint(saep))
                 .authorizeHttpRequests(auth -> {
                     // Swagger/OpenAPI endpoints - configurable authentication
                     if (!swaggerRequireAuthentication) {
