@@ -648,9 +648,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                                 .anyMatch(mlid -> mlid.equals(lid.replace("\n", "").replace("\r", "")))))
                 .forEach(o -> {
                     o.getLicenseIDs().stream().forEach(lid -> {
-                        Map<String, String> oblTopicText = new HashMap<String, String>();
-                        oblTopicText.put(o.getTopic(), o.getText());
-                        licenseIdToOblTopicText.put(lid, oblTopicText);
+                        licenseIdToOblTopicText
+                                .computeIfAbsent(lid, k -> new LinkedHashMap<>())
+                                .put(o.getTopic(), o.getText());
                     });
                 });
 
