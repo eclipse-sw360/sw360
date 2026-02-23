@@ -139,7 +139,7 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     }
 
     protected Document getDocument(InputStream attachmentStream) throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newDefaultInstance();
 
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
