@@ -23,7 +23,7 @@ Visit the [official project homepage](https://eclipse.dev/sw360/) for more infor
 
 A software component catalogue application.
 
-SW360 is a Backend server with a REST API to maintain your projects / products and the software components within.
+SW360 provides a backend server with a REST API to maintain projects, products, and software components.
 
 It can manage SPDX files for maintaining the license conditions and maintain license information.
 
@@ -79,6 +79,7 @@ Then run the current build script:
 
 ```bash
 ./third-party/thrift/install-thrift.sh
+
 ```
 
 #### Local Building
