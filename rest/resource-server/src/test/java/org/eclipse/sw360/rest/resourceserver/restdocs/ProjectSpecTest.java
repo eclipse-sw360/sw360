@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
+import org.eclipse.sw360.datahandler.thrift.ImportBomDryRunReport;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -593,6 +594,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         RequestSummary requestSummaryForCycloneDX = new RequestSummary();
         requestSummaryForCycloneDX.setMessage("{\"projectId\":\"" + cycloneDXProject.getId() + "\"}");
+        ImportBomDryRunReport dryRunReport = new ImportBomDryRunReport();
+        dryRunReport.setRequestStatus(RequestStatus.SUCCESS);
+        dryRunReport.setNewComponents(new HashSet<>(Collections.singleton("new-component")));
+        dryRunReport.setExistingComponents(new HashSet<>(Collections.singleton("existing-component")));
+        dryRunReport.setLicenseConflicts(new HashSet<>());
+        dryRunReport.setWarnings(new HashSet<>());
 
         String projectName="project_name_version_createdOn.xlsx";
 
@@ -615,6 +622,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.projectServiceMock.getLicenseInfoHeaderText()).willReturn("Default License Info Header Text");
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
+        given(this.projectServiceMock.dryRunImportSPDX(any(), any(), any(byte[].class))).willReturn(dryRunReport);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any())).willReturn(projectName);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
@@ -2429,6 +2437,18 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
         MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
+                .content(file.getBytes())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("type", "SPDX");
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_import_spdx_dry_run() throws Exception {
+        given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
+        MockMultipartFile file = new MockMultipartFile("file", "file=@/bom.spdx.rdf".getBytes());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM/dry-run")
                 .content(file.getBytes())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))

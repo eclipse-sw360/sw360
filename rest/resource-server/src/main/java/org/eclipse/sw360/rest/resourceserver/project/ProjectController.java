@@ -55,6 +55,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
+import org.eclipse.sw360.datahandler.thrift.ImportBomDryRunReport;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
@@ -2469,6 +2470,37 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project project = projectService.getProjectForUserById(projectId, sw360User);
         HalResource<Project> halResource = createHalProject(project, sw360User);
         return new ResponseEntity<HalResource<Project>>(halResource, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Dry-run SPDX SBOM import.",
+            description = "Simulate SPDX import and return impact analysis without persisting data.",
+            tags = {"Projects"}
+    )
+    @PostMapping(value = PROJECTS_URL + "/import/SBOM/dry-run", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<ImportBomDryRunReport> dryRunImportSBOM(
+            @Parameter(description = "Type of SBOM", example = "SPDX")
+            @RequestParam(value = "type", required = true) String type,
+            @Parameter(description = "SBOM file")
+            @RequestBody MultipartFile file
+    ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (!"SPDX".equalsIgnoreCase(type) || !attachmentService.isValidSbomFile(file, type)) {
+            throw new BadRequestClientException("Invalid SBOM file. Only SPDX(.rdf/.spdx) files are supported for dry-run.");
+        }
+
+        try {
+            String filename = file.getOriginalFilename();
+            if (CommonUtils.isNullEmptyOrWhitespace(filename)) {
+                filename = "sbom.spdx";
+            }
+            ImportBomDryRunReport report = projectService.dryRunImportSPDX(sw360User, filename, file.getBytes());
+            return new ResponseEntity<>(report, HttpStatus.OK);
+        } catch (IOException e) {
+            log.error("failed to read SBOM file for dry-run import", e);
+            throw new RuntimeException("failed to read SBOM file for dry-run import", e);
+        }
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

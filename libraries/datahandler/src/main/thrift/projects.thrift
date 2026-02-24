@@ -20,6 +20,7 @@ namespace php sw360.thrift.projects
 
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
+typedef sw360.ImportBomDryRunReport ImportBomDryRunReport
 typedef sw360.DocumentState DocumentState
 typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
@@ -651,6 +652,11 @@ service ProjectService {
      * parse a bom file and write the information to SW360
      **/
     RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
+
+    /**
+     * Parse an SPDX SBOM file in dry-run mode without persisting data and report impact.
+     */
+    ImportBomDryRunReport dryRunImportBom(1: User user, 2: string filename, 3: binary bomContent) throws (1: SW360Exception exp);
 
     /**
      * Parse a CycloneDx SBoM file (XML or JSON) and write the information to SW360 as Project / Component / Release / Package

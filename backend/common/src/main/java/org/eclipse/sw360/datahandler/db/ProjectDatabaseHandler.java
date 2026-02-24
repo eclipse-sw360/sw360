@@ -57,6 +57,13 @@ import org.apache.logging.log4j.LogManager;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
+import org.spdx.core.InvalidSPDXAnalysisException;
+import org.spdx.library.SpdxModelFactory;
+import org.spdx.library.model.v2.SpdxConstantsCompatV2;
+import org.spdx.library.model.v2.SpdxDocument;
+import org.spdx.library.model.v2.SpdxPackage;
+import org.spdx.tools.InvalidFileNameException;
+import org.spdx.tools.SpdxToolsHelper;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -74,6 +81,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
@@ -2110,6 +2118,204 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             throw new SW360Exception(e.getMessage());
         }
     }
+
+    public ImportBomDryRunReport dryRunImportBom(User user, String filename, ByteBuffer bomContent) throws SW360Exception {
+        ImportBomDryRunReport report = new ImportBomDryRunReport();
+        report.setRequestStatus(RequestStatus.FAILURE);
+        report.setNewComponents(new HashSet<>());
+        report.setExistingComponents(new HashSet<>());
+        report.setLicenseConflicts(new HashSet<>());
+        report.setWarnings(new HashSet<>());
+
+        if (isNullEmptyOrWhitespace(filename)) {
+            report.getWarnings().add("Filename is required for SPDX dry-run import.");
+            return report;
+        }
+        if (bomContent == null || !bomContent.hasRemaining()) {
+            report.getWarnings().add("SBOM content is empty.");
+            return report;
+        }
+
+        String fileType = getFileType(filename);
+        if (!"rdf".equals(fileType) && !"spdx".equals(fileType)) {
+            report.getWarnings().add("Invalid SBOM file. Only SPDX(.rdf/.spdx) files are supported in dry-run mode.");
+            return report;
+        }
+
+        String ext = "." + fileType;
+        byte[] content = getByteArrayFromByteBuffer(bomContent);
+        try (InputStream inputStream = new ByteArrayInputStream(content)) {
+            File sourceFile = DatabaseHandlerUtil.saveAsTempFile(inputStream, "spdx-dry-run", ext);
+            List<SpdxPackageDryRunData> packageData = getSpdxPackageDryRunData(sourceFile, report.getWarnings());
+
+            if (packageData.isEmpty()) {
+                if (report.getWarnings().isEmpty()) {
+                    report.getWarnings().add("No SPDX packages were detected in the uploaded file.");
+                }
+                return report;
+            }
+
+            Set<String> uniqueReleasesInBom = new HashSet<>();
+            for (SpdxPackageDryRunData pkg : packageData) {
+                if (isNullEmptyOrWhitespace(pkg.name())) {
+                    report.getWarnings().add("Encountered an SPDX package entry without name.");
+                    continue;
+                }
+
+                if (isNullEmptyOrWhitespace(pkg.version())) {
+                    report.getWarnings().add(String.format("Package '%s' does not declare a version.", pkg.name()));
+                }
+
+                String releaseKey = pkg.name() + ":" + pkg.version();
+                if (!uniqueReleasesInBom.add(releaseKey)) {
+                    report.getWarnings().add(String.format("Duplicate package entry in SPDX file: %s %s", pkg.name(), pkg.version()));
+                }
+
+                if (componentDatabaseHandler.isDuplicate(pkg.name(), true)) {
+                    report.getExistingComponents().add(pkg.name());
+                } else {
+                    report.getNewComponents().add(pkg.name());
+                }
+
+                List<Release> existingReleases = releaseRepository.searchByNameAndVersion(pkg.name(), pkg.version(), true);
+                if (!existingReleases.isEmpty()) {
+                    report.getWarnings().add(String.format("Existing release detected: %s %s", pkg.name(), pkg.version()));
+                    checkLicenseConflict(pkg, existingReleases, report.getLicenseConflicts());
+                }
+            }
+
+            report.setRequestStatus(RequestStatus.SUCCESS);
+            return report;
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    private List<SpdxPackageDryRunData> getSpdxPackageDryRunData(File sourceFile, Set<String> warnings) throws SW360Exception {
+        SpdxDocument spdxDocument = openAsSpdx(sourceFile);
+        if (spdxDocument == null) {
+            return Collections.emptyList();
+        }
+
+        try {
+            List<SpdxPackage> describedPackages = spdxDocument.getDocumentDescribes().stream()
+                    .filter(SpdxPackage.class::isInstance)
+                    .map(SpdxPackage.class::cast)
+                    .collect(Collectors.toList());
+            if (describedPackages.isEmpty()) {
+                warnings.add("The provided BOM did not contain any top level packages.");
+                return Collections.emptyList();
+            }
+            if (describedPackages.size() > 1) {
+                warnings.add("The provided BOM file contained multiple described top level packages. This is not allowed here.");
+                return Collections.emptyList();
+            }
+        } catch (InvalidSPDXAnalysisException e) {
+            warnings.add("Failed to inspect SPDX document structure.");
+            return Collections.emptyList();
+        }
+
+        try (@SuppressWarnings("unchecked")
+             Stream<SpdxPackage> allPackagesStream = (Stream<SpdxPackage>) SpdxModelFactory.getSpdxObjects(
+                     spdxDocument.getModelStore(),
+                     spdxDocument.getCopyManager(),
+                     SpdxConstantsCompatV2.CLASS_SPDX_PACKAGE,
+                     spdxDocument.getDocumentUri(),
+                     null)) {
+            List<SpdxPackageDryRunData> packageData = new ArrayList<>();
+            allPackagesStream.forEach(spdxPackage -> packageData.add(toDryRunData(spdxPackage, warnings)));
+            return packageData;
+        } catch (InvalidSPDXAnalysisException e) {
+            warnings.add("Failed to parse SPDX packages from the document.");
+            return Collections.emptyList();
+        }
+    }
+
+    private SpdxDocument openAsSpdx(File file) throws SW360Exception {
+        try {
+            return SpdxToolsHelper.deserializeDocumentCompatV2(file);
+        } catch (InvalidSPDXAnalysisException | IOException | InvalidFileNameException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    private String getConcludedLicense(SpdxPackage spdxPackage) {
+        try {
+            return String.valueOf(spdxPackage.getLicenseConcluded());
+        } catch (InvalidSPDXAnalysisException e) {
+            return "";
+        }
+    }
+
+    private SpdxPackageDryRunData toDryRunData(SpdxPackage spdxPackage, Set<String> warnings) {
+        try {
+            return new SpdxPackageDryRunData(
+                    normalizeSpdxValue(spdxPackage.getName()),
+                    normalizeSpdxValue(spdxPackage.getVersionInfo()),
+                    normalizeSpdxValue(getConcludedLicense(spdxPackage)));
+        } catch (InvalidSPDXAnalysisException e) {
+            warnings.add("Failed to read metadata from an SPDX package entry.");
+            return new SpdxPackageDryRunData("", "", "");
+        }
+    }
+
+    private String normalizeSpdxValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = String.valueOf(value).trim();
+        if ("Optional.empty".equalsIgnoreCase(normalized)) {
+            return "";
+        }
+        if (normalized.startsWith("Optional[") && normalized.endsWith("]")) {
+            normalized = normalized.substring("Optional[".length(), normalized.length() - 1);
+        }
+        return normalized;
+    }
+
+    private byte[] getByteArrayFromByteBuffer(ByteBuffer byteBuffer) {
+        ByteBuffer duplicate = byteBuffer.duplicate();
+        byte[] bytes = new byte[duplicate.remaining()];
+        duplicate.get(bytes);
+        return bytes;
+    }
+
+    private void checkLicenseConflict(SpdxPackageDryRunData pkg, List<Release> existingReleases, Set<String> conflicts) {
+        if (isNullEmptyOrWhitespace(pkg.declaredLicense()) || isNoAssertionLicense(pkg.declaredLicense())) {
+            return;
+        }
+
+        for (Release existingRelease : existingReleases) {
+            Set<String> mainLicenseIds = nullToEmptySet(existingRelease.getMainLicenseIds());
+            if (mainLicenseIds.isEmpty()) {
+                continue;
+            }
+
+            boolean matched = mainLicenseIds.stream()
+                    .filter(Objects::nonNull)
+                    .anyMatch(licenseId -> pkg.declaredLicense().equalsIgnoreCase(licenseId));
+            if (!matched) {
+                conflicts.add(String.format(
+                        "Release '%s %s' has existing licenses %s but SPDX declares '%s'.",
+                        pkg.name(),
+                        pkg.version(),
+                        mainLicenseIds,
+                        pkg.declaredLicense()));
+            }
+        }
+    }
+
+    private boolean isNoAssertionLicense(String licenseExpression) {
+        if (licenseExpression == null) {
+            return true;
+        }
+        String normalized = licenseExpression.trim();
+        return normalized.isEmpty()
+                || "NOASSERTION".equalsIgnoreCase(normalized)
+                || "Optional[NOASSERTION]".equalsIgnoreCase(normalized);
+    }
+
+    private record SpdxPackageDryRunData(String name, String version, String declaredLicense) { }
 
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId) throws SW360Exception {
         return importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId, false);
