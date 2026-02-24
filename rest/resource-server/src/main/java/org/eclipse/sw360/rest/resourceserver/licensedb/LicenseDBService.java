@@ -14,10 +14,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -29,6 +31,7 @@ public class LicenseDBService {
 
     private final LicenseDBRestClient restClient;
     private final LicenseDBConfig config;
+    private final Sw360LicenseService licenseService;
 
     public boolean isEnabled() {
         return config.isEnabled();
@@ -47,6 +50,8 @@ public class LicenseDBService {
             log.info("Starting license sync from LicenseDB");
             int licensesCreated = 0;
             int licensesUpdated = 0;
+            int licensesSkipped = 0;
+            long currentTime = System.currentTimeMillis();
 
             JsonNode licensesResponse = restClient.getLicenses();
             
@@ -62,8 +67,22 @@ public class LicenseDBService {
                 try {
                     License license = mapToSw360License(licenseNode);
                     
-                    if (license != null) {
-                        licensesCreated++;
+                    if (license != null && license.getShortname() != null && license.getFullname() != null) {
+                        license.setLicenseDbId(licenseNode.has("id") ? licenseNode.get("id").asText() : null);
+                        license.setLastSyncTime(currentTime);
+                        license.setSyncStatus("SYNCED");
+                        
+                        try {
+                            License created = licenseService.createLicense(license, admin);
+                            if (created != null) {
+                                licensesCreated++;
+                            } else {
+                                licensesSkipped++;
+                            }
+                        } catch (Exception e) {
+                            log.debug("License may already exist: {} - {}", license.getShortname(), e.getMessage());
+                            licensesSkipped++;
+                        }
                     }
                 } catch (Exception e) {
                     log.error("Error processing license: {}", e.getMessage());
@@ -73,7 +92,8 @@ public class LicenseDBService {
             result.put("status", "success");
             result.put("licensesCreated", licensesCreated);
             result.put("licensesUpdated", licensesUpdated);
-            log.info("License sync completed: {} created, {} updated", licensesCreated, licensesUpdated);
+            result.put("licensesSkipped", licensesSkipped);
+            log.info("License sync completed: {} created, {} updated, {} skipped", licensesCreated, licensesUpdated, licensesSkipped);
             
         } catch (Exception e) {
             log.error("License sync failed: {}", e.getMessage());
