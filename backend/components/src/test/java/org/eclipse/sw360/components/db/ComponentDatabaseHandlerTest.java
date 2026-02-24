@@ -24,6 +24,9 @@ import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -891,6 +894,27 @@ public class ComponentDatabaseHandlerTest {
         // Check releases
         assertEquals(1, actual.getSubscribersSize());
         assertTrue(actual.getSubscribers().contains(email1));
+    }
+
+    @Test
+    public void testUpdateReleaseClearingState() throws Exception {
+        Release expected = releases.get(1);
+
+        // To trigger autosetReleaseClearingState
+        Attachment clearingReport = new Attachment("clearing-report.pdf", "doc-9999");
+        clearingReport.setAttachmentType(AttachmentType.CLEARING_REPORT);
+        clearingReport.setCheckStatus(CheckStatus.ACCEPTED);
+        clearingReport.setSha1("1234567890abcdef1234567890abcdef12345678");
+        expected.addToAttachments(clearingReport);
+
+        handler.updateRelease(expected, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+
+        expected.setClearingState(ClearingState.UNDER_CLEARING);
+
+        RequestStatus status = handler.updateRelease(expected, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        Release actual = handler.getRelease("R1B", user1);
+
+        assertEquals(ClearingState.UNDER_CLEARING, actual.getClearingState());
     }
 
     @Test

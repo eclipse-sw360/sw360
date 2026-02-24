@@ -1159,6 +1159,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         removeLeadingTrailingWhitespace(release);
         String name = release.getName();
         String version = release.getVersion();
+        ClearingState cs = release.isSetClearingState() ? release.getClearingState() : null;
         if (name == null || name.isEmpty() || version == null || version.isEmpty()) {
             return RequestStatus.NAMINGERROR;
         }
@@ -1206,6 +1207,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.setAttachments(
                         getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), release.getAttachments()));
                 autosetReleaseClearingState(release, actual);
+
+                if(cs != null) release.setClearingState(cs);
 
                 List<ChangeLogs> referenceDocLogList = new LinkedList<>();
                 Set<Attachment> attachmentsAfter = release.getAttachments();
