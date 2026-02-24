@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class HalResource<T> extends EntityModel<T> {
@@ -75,10 +76,15 @@ public class HalResource<T> extends EntityModel<T> {
         // if a relation is plural, the content will always be rendered as an array
         if (isPluralRelation) {
             if (embeddedResources == null) {
-                embeddedResources = new ArrayList<>();
+                if (embeddedResource instanceof Collection) {
+                    embeddedResources = new ArrayList<>((Collection<?>) embeddedResource);
+                } else {
+                    embeddedResources = new ArrayList<>();
+                    ((List<Object>) embeddedResources).add(embeddedResource);
+                }
+            } else {
+                ((List<Object>) embeddedResources).add(embeddedResource);
             }
-            ((List<Object>) embeddedResources).add(embeddedResource);
-
             // if a relation is singular, it would be a single object if there is only one object available
             // Otherwise it would be rendered as array
         } else {
