@@ -716,7 +716,7 @@ public class LicenseTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         String.class);
 
-assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
