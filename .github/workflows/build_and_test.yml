@@ -25,10 +25,6 @@ on:
       - .github/thrift_container.yml
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 env:
   COUCHDB_USER: sw360
   COUCHDB_PASSWORD: sw360fossie
@@ -50,18 +46,16 @@ jobs:
         env:
           COUCHDB_USER: ${{ env.COUCHDB_USER }}
           COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
-          COUCHDB_DEFAULT_NUM_SHARDS: 1
-          COUCHDB_DEFAULT_NUM_REPLICAS: 1
-          COUCHDB_CLUSTER_SIZE: 1              # <-- ADD THIS LINE
-        options: --health-cmd "curl -f http://localhost:5984/" --health-interval 30s --health-timeout 10s --health-retries 5  # <-- ADD THIS LINE
+
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: audit
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: webiny/action-conventional-commits@faccb24fc2550dd15c0390d944379d2d8ed9690e # v1.3.1
+
 
       - name: Verify license headers
         run: |
@@ -79,29 +73,6 @@ jobs:
         run: |
           sudo cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
 
-      - name: Configure CouchDB for single-node
-        run: |
-          # Wait for CouchDB to be ready
-          for i in {1..30}; do
-            if curl -s http://localhost:5984/; then
-              echo "CouchDB is up"
-              break
-            fi
-            echo "Waiting for CouchDB..."
-            sleep 2
-          done
-          
-          # Create _users database if not exists
-          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_users || true
-          
-          # Configure cluster for single node (n=1, q=1, r=1, w=1)
-          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/n -d '"1"' || true
-          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/q -d '"1"' || true
-          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/r -d '"1"' || true
-          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/w -d '"1"' || true
-          
-          echo "CouchDB configured for single-node operation"
-
       - name: Set up JDK 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
@@ -111,7 +82,7 @@ jobs:
 
       - name: Cache Thrift
         id: cache-thrift
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
