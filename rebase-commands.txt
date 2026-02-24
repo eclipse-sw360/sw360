@@ -1,4 +1,0 @@
-pick 34e3aa26c feat(config): Add LicenseDB connection configuration properties
-pick 6148c3dac feat(integration): Add LicenseDB REST client and service (Phase 2)
-pick b4e9aa2f9 fix(integration): Fix LicenseDB client to use RestTemplate bean
-pick 69de898a0 fix(ci): Improve CouchDB single-node configuration
