@@ -734,15 +734,15 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ThriftClients thriftClients = new ThriftClients();
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
-        if (oblLevel.equalsIgnoreCase("Project")) {
+        if ("Project".equalsIgnoreCase(oblLevel)) {
             updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
                     obligationStatusMap, obligations, ObligationLevel.PROJECT_OBLIGATION, true);
             return updatedObligationStatusMap;
-        } else if (oblLevel.equalsIgnoreCase("Organization")) {
+        } else if ("Organization".equalsIgnoreCase(oblLevel)) {
             updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
                     obligationStatusMap, obligations, ObligationLevel.ORGANISATION_OBLIGATION, true);
             return updatedObligationStatusMap;
-        } else if (oblLevel.equalsIgnoreCase("Component")) {
+        } else if ("Component".equalsIgnoreCase(oblLevel)) {
             updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
                     obligationStatusMap, obligations, ObligationLevel.COMPONENT_OBLIGATION, true);
             return updatedObligationStatusMap;

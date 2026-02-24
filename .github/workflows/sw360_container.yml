@@ -20,12 +20,15 @@ on:
   pull_request:
     paths:
       - 'Dockerfile'
-
   push:
     branches:
       - main
     paths-ignore:
       - '**.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -112,7 +115,6 @@ jobs:
           context: .
           target: sw360
           push: true
-          #platforms: linux/amd64,linux/arm64
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

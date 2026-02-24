@@ -12,26 +12,33 @@ package org.eclipse.sw360.common.utils;
 
 import java.net.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.VCS_HOSTS;
 
 public class RepositoryURL {
     private static final Logger log = LogManager.getLogger(RepositoryURL.class);
     private static final String SCHEMA_PATTERN = ".+://(\\w*(?:[\\-@.\\\\s,_:/][/(.\\-)A-Za-z0-9]+)*)";
-    private static final String VCS_HOSTS_STRING = SW360Utils.readConfig(VCS_HOSTS,"");
-    private static final Map<String, String> KNOWN_VCS_HOSTS = parseVCSHosts(VCS_HOSTS_STRING);
+    private static String VCS_HOSTS_STRING = SW360Utils.readConfig(VCS_HOSTS,"[]");
+    private static Map<String, String> KNOWN_VCS_HOSTS = parseVCSHosts(VCS_HOSTS_STRING);
 
     public String processURL(String url) {
         return sanitizeVCS(url);
     }
 
     private static String formatVCSUrl(String host, String[] urlParts) {
+        if (VCS_HOSTS_STRING != null &&
+                !VCS_HOSTS_STRING.equals(SW360Utils.readConfig(VCS_HOSTS, "[]"))) {
+            // Config has updated, update the cache
+            VCS_HOSTS_STRING = SW360Utils.readConfig(VCS_HOSTS,"[]");
+            KNOWN_VCS_HOSTS = parseVCSHosts(VCS_HOSTS_STRING);
+        }
         String formatString = KNOWN_VCS_HOSTS.get(host);
 
         int paramCount = formatString.split("%s", -1).length - 1;
@@ -99,10 +106,21 @@ public class RepositoryURL {
             return new HashMap<>();
         }
 
-        return Arrays.stream(propertyValue.split(","))
-                .map(entry -> entry.split(":", 2)) // Split each key-value pair
-                .filter(parts -> parts.length == 2) // Ensure valid mappings
-                .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
+        try {
+            JSONArray jsonArray = new JSONArray(propertyValue);
+            Map<String, String> result = new HashMap<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                String entry = jsonArray.getString(i);
+                String[] parts = entry.split(":", 2);
+                if (parts.length == 2) {
+                    result.put(parts[0], parts[1]);
+                }
+            }
+            return result;
+        } catch (JSONException e) {
+            log.error("Failed to parse VCS_HOSTS config: {}", propertyValue, e);
+            return new HashMap<>();
+        }
     }
 
 }
