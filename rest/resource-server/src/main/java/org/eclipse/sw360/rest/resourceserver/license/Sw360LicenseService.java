@@ -320,6 +320,17 @@ public class Sw360LicenseService {
         } else {
             throw new BadRequestClientException("license type is empty");
         }
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            try {
+                return sw360LicenseClient.addLicenseType(lType, sw360User);
+            } catch (Exception e) {
+                throw new TException(e.getMessage());
+            }
+        } else {
+            throw new AccessDeniedException("Unable to create License Type. User is not admin");
+        }
+    }
+<<<<<<< HEAD
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to create License Type. User is not admin");
         }
@@ -327,6 +338,16 @@ public class Sw360LicenseService {
             return sw360LicenseClient.addLicenseType(lType, sw360User);
         } catch (TException e) {
             throw new TException(e.getMessage());
+=======
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            try {
+                return sw360LicenseClient.addLicenseType(lType, sw360User);
+            } catch (Exception e) {
+                throw new TException(e.getMessage());
+            }
+        } else {
+            throw new AccessDeniedException("Unable to create License Type. User is not admin");
+>>>>>>> upstream/main
         }
     }
 
