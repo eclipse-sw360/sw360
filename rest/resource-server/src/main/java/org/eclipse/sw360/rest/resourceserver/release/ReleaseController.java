@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler.ErrorMessage;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
@@ -94,6 +96,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
@@ -167,6 +170,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - no releases found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -273,6 +284,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get a single release by ID.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}")
     public ResponseEntity<EntityModel<Release>> getRelease(
             @Parameter(description = "The ID of the release to be retrieved.")
@@ -315,6 +336,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get 5 of the service's most recently created releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Recent releases successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - no recent releases found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/recentReleases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getRecentRelease() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -336,6 +365,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get vulnerabilities of a single release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerabilities successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfReleases(
             @Parameter(description = "The ID of the release.")
@@ -352,6 +391,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get service's releases subscription.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release subscriptions successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - no subscriptions found",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/mySubscriptions")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleaseSubscription() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -373,6 +420,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get all the resources where the release is used.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Resources using this release successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = PagedModel.class))),
+        @ApiResponse(responseCode = "204", description = "No content - release not used by any resource",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/usedBy" + "/{id}")
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
@@ -419,6 +476,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             }
 
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases matching external IDs successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
     public ResponseEntity<Release> searchByExternalIds(
             HttpServletRequest request
@@ -433,6 +496,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Delete existing releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "207", description = "Multi-status - per-release delete result",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to delete",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @DeleteMapping(value = RELEASES_URL + "/{ids}")
     public ResponseEntity<List<MultiStatus>> deleteReleases(
             @Parameter(description = "The IDs of the releases to be deleted.")
@@ -466,6 +537,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Update an existing release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}")
     public ResponseEntity<EntityModel<Release>> patchRelease(
             @Parameter(description = "The ID of the release to be updated.")
@@ -495,6 +578,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Update vulnerabilities of an existing release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerabilities successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid vulnerability data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(
             @Parameter(description = "The ID of the release to be updated.")
@@ -585,6 +680,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Create a new release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Release successfully created",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid release data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to create releases",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = RELEASES_URL)
     public ResponseEntity<EntityModel<Release>> createRelease(
             @Parameter(description = "The release object to be created.",
@@ -634,6 +739,20 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Update SPDX document of a release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "SPDX document successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid SPDX data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = RELEASES_URL + "/{id}/spdx")
     public ResponseEntity<?> updateSPDX(
@@ -708,6 +827,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get all attachment information of a release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release attachments successfully retrieved",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/attachments")
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getReleaseAttachments(
             @Parameter(description = "The ID of the release.")
@@ -734,6 +863,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment bundle (zip) successfully retrieved",
+                content = @Content(mediaType = "application/zip")),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{releaseId}/attachments/download", produces="application/zip")
     public void downloadAttachmentBundleFromRelease(
             @Parameter(description = "The ID of the release.")
@@ -753,6 +892,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Update an attachment information of a release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment successfully updated",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Attachment.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release or attachment not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}/attachment/{attachmentId}")
     public ResponseEntity<EntityModel<Attachment>> patchReleaseAttachmentInfo(
             @Parameter(description = "The ID of the release.")
@@ -779,6 +930,20 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Create a new attachment for the release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment successfully added",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid attachment data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to add attachments",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = RELEASES_URL + "/{releaseId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource<Release>> addAttachmentToRelease(
             @Parameter(description = "The ID of the release.")
@@ -821,6 +986,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment file successfully retrieved",
+                content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release or attachment not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{releaseId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromRelease(
             @Parameter(description = "The ID of the release.")
@@ -840,6 +1015,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Delete attachments from a release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachments successfully deleted",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "202", description = "Accepted - delete sent for moderation",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to delete attachments",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @DeleteMapping(RELEASES_URL + "/{releaseId}/attachments/{attachmentIds}")
     public ResponseEntity<HalResource<Release>> deleteAttachmentsFromRelease(
             @Parameter(description = "The ID of the release.")
@@ -881,6 +1068,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus")
     public ResponseEntity<Map<String, Object>> checkFossologyProcessStatus(
             @Parameter(description = "The ID of the release.")
@@ -949,6 +1144,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess")
     public ResponseEntity<HalResource> triggerFossologyProcess(
             @Parameter(description = "The ID of the release.")
@@ -1039,6 +1242,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport")
     public ResponseEntity<HalResource> triggerReloadFossologyReport(
             @Parameter(description = "The ID of the release.")
@@ -1122,6 +1333,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid or empty input",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = RELEASES_URL + "/{id}/releases")
     public ResponseEntity linkReleases(
@@ -1176,6 +1397,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release or package not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}/link/packages")
     public ResponseEntity<?> linkPackages(
             @Parameter(description = "The ID of the release.")
@@ -1217,6 +1446,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}/unlink/packages")
     public ResponseEntity<?> unlinkPackages(
             @Parameter(description = "The ID of the release.")
@@ -1250,6 +1487,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/linkedPackages")
     public ResponseEntity<CollectionModel<EntityModel<Package>>> getLinkedPackages(
             @Parameter(description = "The ID of the release.")
@@ -1359,6 +1602,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to update",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = RELEASES_URL + "/{id}/spdxLicenses")
     public ResponseEntity writeSpdxLicenseInfoIntoRelease(
             @Parameter(description = "The ID of the release.")
@@ -1413,6 +1664,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Load SPDX License Information from the attachment of the release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "SPDX license info successfully retrieved",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release or attachment not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - cannot retrieve license info",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/spdxLicensesInfo")
     public ResponseEntity<?> loadSpdxLicensesInfo(
             @Parameter(description = "The ID of the release.")
@@ -1555,6 +1818,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/releases")
     public ResponseEntity<CollectionModel<HalResource<ReleaseLink>>> getLinkedReleases(
             @Parameter(description = "The ID of the release.")
@@ -1626,6 +1897,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "No content - no assessment summary",
+                content = @Content(schema = @Schema(implementation = Void.class, hidden = true))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error - invalid CLI attachment count",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/assessmentSummaryInfo")
     public ResponseEntity loadAssessmentSummaryInfo(
             @Parameter(description = "The ID of the release.")
@@ -1679,10 +1962,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                                                     }
                                                 ]
                                             """
-                                    ))}
+                                    )                                    )}
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PostMapping(value = RELEASES_URL + "/{id}/checkCyclicLink")
     public ResponseEntity<?> checkForCyclicReleaseLink(
             @Parameter(description = "The ID of the checking release.")
@@ -1763,6 +2054,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Handle release subscription for requesting user.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Subscription updated successfully",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = RELEASES_URL + "/{id}/subscriptions")
     public ResponseEntity<String> handleReleaseSubscriptions(
@@ -1881,6 +2182,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Bulk delete existing releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Bulk delete completed - see response body for per-release status",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to delete",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @DeleteMapping(value = RELEASES_URL + "/{id}/bulkDelete")
     public ResponseEntity<BulkOperationNode> bulkDeleteReleases(
             @Parameter(description = "The release id to be bulk-deleted.")
@@ -1932,6 +2243,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}")
     public ResponseEntity<List<Map<String,String>>> getReleaseLicenseInfo(
             @Parameter(description = "The ID of the release.")
@@ -2008,6 +2325,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/licenseFileList")
     public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
             @Parameter(description = "The ID of the release.")
@@ -2028,6 +2351,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Merge source release into target release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully merged",
+                content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Release.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid merge data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to merge",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "404", description = "Source or target release not found",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = RELEASES_URL + "/mergereleases")
     public ResponseEntity<RequestStatus> mergeReleases(
             @Parameter(description = "The id of the merge target release.")
@@ -2096,6 +2431,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
             }
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/usageInformationForMerge")
     public ResponseEntity<Map<String, Object>> getUsageInformationForReleaseMerge(
             @Parameter(description = "The ID of the release.")
