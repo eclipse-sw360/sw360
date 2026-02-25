@@ -43,7 +43,8 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import lombok.NonNull;
@@ -75,7 +76,7 @@ public class SearchController implements RepresentationModelProcessor<Repository
                 "Name for Project, Component and Release, Fullname for License, User and Vendor, Title for Obligation",
             tags = {"Search"}
     )
-    @GetMapping(value = SEARCH_URL)
+    @RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,

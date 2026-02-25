@@ -45,8 +45,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.springframework.web.multipart.MultipartFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -59,8 +57,6 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360LicenseService {
-    private static final Logger log = LoggerFactory.getLogger(Sw360LicenseService.class);
-    
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
     private static final String CONTENT_TYPE = "application/zip";
@@ -248,14 +244,13 @@ public class Sw360LicenseService {
             String fileConstant="LicensesBackup.lics";
             Map<String, InputStream> fileNameToStreams = (new LicsExporter(sw360LicenseClient)).getFilenameToCSVStreams();
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
-                for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
-                    try (InputStream in = entry.getValue()) {
-                        ZipTools.addToZip(zipOutputStream, entry.getKey(), in);
-                    }
-                }
-                zipOutputStream.finish();
+            final ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
+
+            for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
+                 ZipTools.addToZip(zipOutputStream, entry.getKey(), entry.getValue());
             }
+            zipOutputStream.flush();
+            zipOutputStream.close();
             final ByteArrayInputStream zipFile = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
             String filename = String.format(fileConstant, SW360Utils.getCreatedOn());
             response.setContentType(CONTENT_TYPE);
@@ -280,26 +275,16 @@ public class Sw360LicenseService {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to upload license file. User is not admin");
         }
-        try (InputStream inputStream = file.getInputStream()) {
+        try {
+            InputStream inputStream = file.getInputStream();
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
             final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
-        } finally {
-            IOException closeFailure = null;
-            for (InputStream in : inputMap.values()) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    if (closeFailure == null) {
-                        closeFailure = e;
-                    } else {
-                        closeFailure.addSuppressed(e);
-                    }
-                }
-            }
-            if (closeFailure != null) {
-                throw closeFailure;
+
+        }finally {
+            for (InputStream inputStream : inputMap.values()) {
+                inputStream.close();
             }
         }
 	}
@@ -309,47 +294,29 @@ public class Sw360LicenseService {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             return sw360LicenseClient.importAllOSADLLicenses(sw360User);
         } else {
-            throw new BadRequestClientException("Unable to import All OSADL license obligations. User is not admin");
+            throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
         }
     }
 
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (StringUtils.isNotEmpty(licenseType)) {
-            lType.setLicenseType(licenseType);
-        } else {
-            throw new BadRequestClientException("license type is empty");
+             lType.setLicenseType(licenseType);
         }
-        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            try {
-                return sw360LicenseClient.addLicenseType(lType, sw360User);
-            } catch (Exception e) {
-                throw new TException(e.getMessage());
-            }
-        } else {
-            throw new AccessDeniedException("Unable to create License Type. User is not admin");
-        }
-    }
-<<<<<<< HEAD
-        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            throw new BadRequestClientException("Unable to create License Type. User is not admin");
+        else {
+              throw new BadRequestClientException("license type is empty");
         }
         try {
-            return sw360LicenseClient.addLicenseType(lType, sw360User);
-        } catch (TException e) {
-            throw new TException(e.getMessage());
-=======
-        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            try {
-                return sw360LicenseClient.addLicenseType(lType, sw360User);
-            } catch (Exception e) {
-                throw new TException(e.getMessage());
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestStatus status = sw360LicenseClient.addLicenseType(lType, sw360User);
+            } else {
+                throw new BadRequestClientException("Unable to create License Type. User is not admin");
             }
-        } else {
-            throw new AccessDeniedException("Unable to create License Type. User is not admin");
->>>>>>> upstream/main
-        }
-    }
+         } catch ( Exception e) {
+                 throw new TException(e.getMessage());
+         }
+         return RequestStatus.SUCCESS;
+     }
 
      public List<LicenseType> quickSearchLicenseType(String searchElem) {
          try {

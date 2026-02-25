@@ -142,12 +142,6 @@ public class ResourceComparatorGenerator<T> {
         eccInfoMap.put(EccInformation._Fields.ECC_STATUS,
                 Comparator.comparing(r -> CommonUtils.nullToEmptyString(r.getEccInformation().getEccStatus()),
                         Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        // Add comparator for containsCryptography using a local nullsFirst Boolean comparator
-        eccInfoMap.put(EccInformation._Fields.CONTAINS_CRYPTOGRAPHY,
-                Comparator.comparing(r -> Optional.ofNullable(r.getEccInformation())
-                                .map(e -> e.isSetContainsCryptography() ? (Boolean) e.isContainsCryptography() : null)
-                                .orElse(null),
-                        Comparator.nullsFirst(Boolean::compareTo)));
         return Collections.unmodifiableMap(eccInfoMap);
     }
 

@@ -59,12 +59,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
@@ -108,7 +107,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's licenses. Supports quick filtering.",
             tags = {"Licenses"}
     )
-    @GetMapping(value = LICENSES_URL)
+    @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<License>> getLicenses(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -148,7 +147,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all obligations of a license.",
             tags = {"Licenses"}
     )
-    @GetMapping(value = LICENSES_URL + "/{id}/obligations")
+    @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligationsByLicenseId(
             @PathVariable("id") String id
     ) throws TException {
@@ -169,7 +168,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's licenseTypes.",
             tags = {"Licenses"}
     )
-    @GetMapping(value = LICENSE_TYPES_URL)
+    @RequestMapping(value = LICENSE_TYPES_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<LicenseType>>> getLicenseTypes(
             @Parameter(description = "The search license type text.")
             @RequestParam(value = "search", required = false) String searchElem) throws TException {
@@ -196,7 +195,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Get a specific license.",
             tags = {"Licenses"}
     )
-    @GetMapping(value = LICENSES_URL + "/{id:.+}")
+    @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<License>> getLicense(
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id
@@ -214,7 +213,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @DeleteMapping(value = LICENSES_URL + "/{id:.+}")
+    @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.DELETE)
     public ResponseEntity deleteLicense(
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id
@@ -230,7 +229,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = LICENSES_URL)
+    @RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
     public ResponseEntity<EntityModel<License>> createLicense(
             @Parameter(description = "The license to be created.")
             @RequestBody License license
@@ -271,7 +270,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                     description = "Reject license update due to: an already checked license is not allowed" +
                             " to become unchecked again")
     })
-    @PatchMapping(value = LICENSES_URL + "/{id}")
+    @RequestMapping(value = LICENSES_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<License>> updateLicense(
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id,
@@ -313,7 +312,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             ),
             @ApiResponse(responseCode = "500", description = "Update Whitelist to Obligation Fail!")
     })
-    @PatchMapping(value = LICENSES_URL+ "/{id}/whitelist")
+    @RequestMapping(value = LICENSES_URL+ "/{id}/whitelist", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<License>> updateWhitelist(
             @Parameter(description = "ID of the license.")
             @PathVariable("id") String licenseId,
@@ -376,7 +375,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             )
     })
     @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = LICENSES_URL + "/{id}/obligations")
+    @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.POST)
     public ResponseEntity linkObligation(
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id,
@@ -406,7 +405,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             )
     })
     @PreAuthorize("hasAuthority('WRITE')")
-    @PatchMapping(value = LICENSES_URL + "/{id}/obligations")
+    @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.PATCH)
     public ResponseEntity unlinkObligation(
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id,
@@ -461,7 +460,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @DeleteMapping(value = LICENSES_URL + "/deleteAll")
+    @RequestMapping(value = LICENSES_URL + "/deleteAll", method = RequestMethod.DELETE)
     public ResponseEntity deleteAllLicense() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.deleteAllLicenseInfo(sw360User);
@@ -474,7 +473,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = LICENSES_URL + "/import/SPDX")
+    @RequestMapping(value = LICENSES_URL + "/import/SPDX", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importSPDX() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importSpdxInformation(sw360User);
@@ -492,7 +491,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @GetMapping(value = LICENSES_URL + "/downloadLicenses", produces = "application/zip")
+    @RequestMapping(value = LICENSES_URL + "/downloadLicenses", method = RequestMethod.GET, produces = "application/zip")
     public void downloadLicenseArchive(
             HttpServletRequest request,
             HttpServletResponse response
@@ -508,7 +507,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Upload license archive.",
             tags = {"Licenses"}
     )
-    @PostMapping(value = LICENSES_URL + "/upload", consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
+    @RequestMapping(value = LICENSES_URL + "/upload", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> uploadLicenses(
             @Parameter(description = "The license archive file to be uploaded.")
             @RequestParam("licenseFile") MultipartFile file,
@@ -532,8 +531,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Import OSADL information.",
             tags = {"Licenses"}
     )
-    @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = LICENSES_URL + "/import/OSADL")
+    @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importOsadlInformation(sw360User);
@@ -558,7 +556,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                     }
             )
     })
-    @PostMapping(value = LICENSES_URL + "/addLicenseType")
+    @RequestMapping(value = LICENSES_URL + "/addLicenseType", method = RequestMethod.POST)
     public ResponseEntity<RequestStatus> createLicenseType(
             @Parameter(description = "The license type name.")
             @RequestParam(value = "licenseType", required = true) String licenseType,
@@ -604,7 +602,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @DeleteMapping(value = LICENSE_TYPES_URL + "/{id}")
+    @RequestMapping(value = LICENSE_TYPES_URL + "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity deleteLicenseType(
             @Parameter(description = "The id of the license type.")
             @PathVariable("id") String id

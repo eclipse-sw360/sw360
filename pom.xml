@@ -15,7 +15,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.eclipse.sw360</groupId>
   <artifactId>sw360</artifactId>
-  <version>20.0.0-rc-1</version>
+  <version>20.0.0-beta</version>
   <packaging>pom</packaging>
   <name>Eclipse SW360</name>
   <description>Eclipse SW360 compliance management application</description>
@@ -106,7 +106,7 @@
     <commons-csv.version>1.14.1</commons-csv.version>
     <commons-io.version>2.20.0</commons-io.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
-    <commons-text.version>1.15.0</commons-text.version>
+    <commons-text.version>1.14.0</commons-text.version>
     <sun.mail.version>2.0.2</sun.mail.version>
     <dom4j.version>2.2.0</dom4j.version>
     <equalsverifier.version>4.3</equalsverifier.version>

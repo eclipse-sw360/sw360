@@ -30,8 +30,8 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -43,7 +43,6 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
-@PreAuthorize("hasAuthority('ADMIN')")
 public class DatabaseSanitationController  implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String DATABASESANITATION_URL = "/databaseSanitation";
@@ -89,7 +88,7 @@ public class DatabaseSanitationController  implements RepresentationModelProcess
             @ApiResponse(responseCode = "403", description = "User is not Admin."),
             @ApiResponse(responseCode = "500", description = "Internal server error."),
     })
-    @GetMapping(value = DATABASESANITATION_URL + "/searchDuplicate")
+    @RequestMapping(value = DATABASESANITATION_URL + "/searchDuplicate", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Map<String, List<String>>>> searchDuplicateIdentifiers()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Map<String, List<String>>> resource = dataSanitationService.duplicateIdentifiers(sw360User);

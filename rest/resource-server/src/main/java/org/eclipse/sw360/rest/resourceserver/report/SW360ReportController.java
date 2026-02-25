@@ -395,7 +395,10 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private String getBaseUrl(HttpServletRequest request) {
-        return restControllerHelper.getBaseUrl(request) + "/";
+        StringBuffer url = request.getRequestURL();
+        String uri = request.getRequestURI();
+        String ctx = request.getContextPath();
+        return url.substring(0, url.length() - uri.length() + ctx.length()) + "/";
     }
 
     private void exportSBOM(

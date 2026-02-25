@@ -314,8 +314,8 @@ public class LicenseDatabaseHandler {
      * @return ID of the added obligations.
      */
     public String updateObligation(@NotNull Obligation oblig, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
-            throw new SW360Exception("User should be at least " + UserGroup.CLEARING_ADMIN);
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+            return null;
         }
         Obligation oldObligation = getObligationsById(oblig.getId());
         // Setting the revision to avoid the document update conflict exception
@@ -339,7 +339,7 @@ public class LicenseDatabaseHandler {
      */
     public String addObligationElements(@NotNull ObligationElement obligationElement, User user) throws SW360Exception {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
-            throw new SW360Exception("User should be at least " + UserGroup.CLEARING_ADMIN);
+            return null;
         }
         prepareObligationElement(obligationElement);
         // check existed obligation element
@@ -361,7 +361,7 @@ public class LicenseDatabaseHandler {
      */
     public String addObligationNodes(@NotNull ObligationNode obligationNode, User user) throws SW360Exception {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
-            throw new SW360Exception("User should be at least " + UserGroup.CLEARING_ADMIN);
+            return null;
         }
         prepareObligationNode(obligationNode);
         // check existed node

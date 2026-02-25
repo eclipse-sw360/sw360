@@ -1587,21 +1587,9 @@ public class RestControllerHelper<T> {
         halClearingRequest.addEmbeddedResource("requestClosedOn", humanReadableDate);
     }
 
-    @org.springframework.beans.factory.annotation.Value("${sw360.base-url:http://localhost:8080}")
-    private String configuredBaseUrl;
-
-    /**
-     * Returns the configured base URL for generating hyperlinks in emails.
-     * <p>
-     * This method uses a hardcoded configuration value instead of deriving
-     * the URL from the HTTP request to prevent HTTP header injection
-     * attacks via X-Forwarded-Host or similar headers.
-     *
-     * @param request the HTTP request (ignored, kept for API compatibility)
-     * @return the configured base URL
-     */
     public String getBaseUrl(HttpServletRequest request) {
-        return configuredBaseUrl;
+        String requestURL = request.getRequestURL().toString();
+        return requestURL.substring(0, requestURL.indexOf(request.getRequestURI()));
     }
 
     public VulnerabilitySummary convertToEmbeddedVulnerabilitySumm(VulnerabilitySummary sw360Vul) {

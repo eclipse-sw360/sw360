@@ -78,7 +78,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "List all of the service's obligations.",
             tags = {"Obligations"}
     )
-    @GetMapping(value = OBLIGATION_URL)
+    @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -137,7 +137,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get an obligation by id.",
             tags = {"Obligations"}
     )
-    @GetMapping(value = OBLIGATION_URL + "/{id}")
+    @RequestMapping(value = OBLIGATION_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<Obligation>> getObligation(
             @Parameter(description = "The id of the obligation to be retrieved.")
             @PathVariable("id") String id
@@ -159,7 +159,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = OBLIGATION_URL)
+    @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.POST)
     public ResponseEntity<HalResource<Obligation>> createObligation(
             @Parameter(description = "The obligation to be created.")
             @RequestBody Obligation obligation
@@ -181,7 +181,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @DeleteMapping(value = OBLIGATION_URL + "/{ids}")
+    @RequestMapping(value = OBLIGATION_URL + "/{ids}", method = RequestMethod.DELETE)
     public ResponseEntity<List<MultiStatus>> deleteObligations(
             @Parameter(description = "The ids of the obligations to be deleted.")
             @PathVariable("ids") List<String> idsToDelete
@@ -215,7 +215,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             summary = "Edit an existing obligation.",
             description = """
             Edit an existing obligation by id.
-
+            
             The `node` property of the Obligation should be in following format as JSON encoded string:
                     {
                       "val": ["ROOT"],
@@ -284,7 +284,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Nodes from the server to render Obligations.",
             tags = {"Obligations"}
     )
-    @GetMapping(value = OBLIGATION_URL + "/nodes")
+    @RequestMapping(value = OBLIGATION_URL + "/nodes", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ObligationNode>> getObligationNodes() {
         List<ObligationNode> obligationNodes = obligationService.getObligationNodes();
         return new ResponseEntity<>(CollectionModel.of(obligationNodes), HttpStatus.OK);
@@ -295,7 +295,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Elements from the server to render Obligation suggestions.",
             tags = {"Obligations"}
     )
-    @GetMapping(value = OBLIGATION_URL + "/elements")
+    @RequestMapping(value = OBLIGATION_URL + "/elements", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ObligationElement>> getObligationElements() {
         List<ObligationElement> obligationNodes = obligationService.getObligationElements();
         return new ResponseEntity<>(CollectionModel.of(obligationNodes), HttpStatus.OK);

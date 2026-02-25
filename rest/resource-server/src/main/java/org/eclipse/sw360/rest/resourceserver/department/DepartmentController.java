@@ -34,10 +34,9 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -73,7 +72,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Manually active the service.",
             tags = {"Departments"}
     )
-    @PostMapping(value = DEPARTMENT_URL + "/manuallyactive")
+    @RequestMapping(value = DEPARTMENT_URL + "/manuallyactive", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importDepartmentManually() throws SW360Exception {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         return processAction(sw360User);
@@ -93,7 +92,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Schedule import.",
             tags = {"Departments"}
     )
-    @PostMapping(value = DEPARTMENT_URL + "/scheduleImport")
+    @RequestMapping(value = DEPARTMENT_URL + "/scheduleImport", method = RequestMethod.POST)
     public ResponseEntity<Map<String, String>> scheduleImportDepartment() throws SW360Exception {
         try {
             User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -122,7 +121,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
     @Operation(summary = "Unschedule Department Import",
             description = "Cancels the scheduled import task for the department.",
             tags = {"Departments"})
-    @PostMapping(value = DEPARTMENT_URL + "/unscheduleImport")
+    @RequestMapping(value = DEPARTMENT_URL + "/unscheduleImport", method = RequestMethod.POST)
     public ResponseEntity<Map<String, String>> unScheduleImportDepartment() throws SW360Exception {
 
         try {
@@ -145,7 +144,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Updates the department folder path configuration.",
             tags = {"Departments"}
     )
-    @PostMapping(value = DEPARTMENT_URL + "/writePathFolder")
+    @RequestMapping(value = DEPARTMENT_URL + "/writePathFolder", method = RequestMethod.POST)
     public ResponseEntity<String> updatePath(
             @Parameter(description = "The path of the folder")
             @RequestParam String pathFolder
@@ -164,7 +163,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Get information about importing the department (import path folder, interval, last run time, next run time, and whether the scheduler is started or not)",
             tags = {"Departments"}
     )
-    @GetMapping(value = DEPARTMENT_URL + "/importInformation")
+    @RequestMapping(value = DEPARTMENT_URL + "/importInformation", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getImportInformation() throws TException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         return new ResponseEntity<>(departmentService.getImportInformation(user), HttpStatus.OK);
@@ -175,7 +174,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Get log file list",
             tags = {"Departments"}
     )
-    @GetMapping(value = DEPARTMENT_URL + "/logFiles")
+    @RequestMapping(value = DEPARTMENT_URL + "/logFiles", method = RequestMethod.GET)
     public ResponseEntity<Set<String>> getLogFileList() throws TException {
         return new ResponseEntity<>(departmentService.getLogFileList(), HttpStatus.OK);
     }
@@ -185,7 +184,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Get log file content by date",
             tags = {"Departments"}
     )
-    @GetMapping(value = DEPARTMENT_URL + "/logFileContent")
+    @RequestMapping(value = DEPARTMENT_URL + "/logFileContent", method = RequestMethod.GET)
     public ResponseEntity<List<String>> getLogFileContentByDate(
             @RequestParam(value = "date") String date
     ) throws TException {
@@ -194,7 +193,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(summary = "Fetch a list of members' emails from each department.",
             description = "Fetch a list of members' emails from each department.", tags = {"Users"})
-    @GetMapping(value = DEPARTMENT_URL + "/members")
+    @RequestMapping(value = DEPARTMENT_URL + "/members", method = RequestMethod.GET)
     public ResponseEntity<Map<String, List<String>>> getMembersEmailsOfSecondaryDepartments(
             @Parameter(description = "departmentName") @RequestParam(value = "departmentName", required = false) String departmentName
     ) {
@@ -206,7 +205,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(summary = "Update members of a secondary department.",
             description = "Update members of a secondary department.", tags = {"Users"})
-    @PatchMapping(value = DEPARTMENT_URL + "/members")
+    @RequestMapping(value = DEPARTMENT_URL + "/members", method = RequestMethod.PATCH)
     public ResponseEntity<Map<String, List<String>>> updateMembersOfSecondaryDepartment(
             @Parameter(description = "Department name") @RequestParam(value = "departmentName", required = false) String departmentName,
             @Parameter(description = "New email list of members in department") @RequestBody List<String> emailsList

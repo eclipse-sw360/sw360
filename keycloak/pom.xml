@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>sw360</artifactId>
-        <version>20.0.0-rc-1</version>
+        <version>20.0.0-beta</version>
     </parent>
 
     <build>

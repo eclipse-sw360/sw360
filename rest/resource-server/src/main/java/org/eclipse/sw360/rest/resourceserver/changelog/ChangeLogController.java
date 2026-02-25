@@ -51,8 +51,9 @@ import org.springframework.hateoas.server.core.Relation;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -95,7 +96,7 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
                     ),
             }
     )
-    @GetMapping(value = CHANGE_LOG_URL + "/document/{id}")
+    @RequestMapping(value = CHANGE_LOG_URL + "/document/{id}", method = RequestMethod.GET)
     public ResponseEntity getChangeLogForDocument(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,

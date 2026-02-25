@@ -114,7 +114,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all of the service's moderation requests.",
             tags = {"Moderation Requests"}
     )
-    @GetMapping(value = MODERATION_REQUEST_URL)
+    @RequestMapping(value = MODERATION_REQUEST_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -140,7 +140,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "Get a single moderation request by id.",
             tags = {"Moderation Requests"}
     )
-    @GetMapping(value = MODERATION_REQUEST_URL + "/{id}")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<HalResource<Map<String, Object>>> getModerationRequestById(
             @Parameter(description = "The id of the moderation request to be retrieved.")
             @PathVariable String id
@@ -177,7 +177,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all the ModerationRequest visible to the user based on the state and  respond with MR where user is a moderator",
             tags = {"Moderation Requests"}
     )
-    @GetMapping(value = MODERATION_REQUEST_URL + "/byState")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/byState", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequestsByState(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -254,7 +254,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
                     )}
             )}
     )
-    @PatchMapping(value = MODERATION_REQUEST_URL + "/{id}")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<HalResource<Map<String, String>>> updateModerationRequestById(
             @Parameter(description = "The id of the moderation request to be updated.")
             @PathVariable String id,
@@ -581,7 +581,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
                 }
             )
         })
-    @PostMapping(value = MODERATION_REQUEST_URL + "/validate")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/validate", method = RequestMethod.POST)
     public ResponseEntity<String> validateModerationRequest(
             @Parameter(description = "Entity type", example = "PROJECT",
                     schema = @Schema(allowableValues = {"PROJECT", "COMPONENT", "RELEASE"}))
@@ -635,7 +635,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             tags = {"Moderation Requests"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @DeleteMapping(value = MODERATION_REQUEST_URL + "/delete")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/delete", method = RequestMethod.DELETE)
     public ResponseEntity<?> deleteModerationRequest(
             @Parameter(description = "List of moderation request IDs to delete")
             @RequestBody List<String> ids
