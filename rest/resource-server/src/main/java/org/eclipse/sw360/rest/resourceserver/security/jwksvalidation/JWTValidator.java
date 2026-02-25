@@ -16,31 +16,48 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 
+@Profile("!SECURITY_MOCK")
+@Component
 public class JWTValidator {
-    JwtConsumer jwtConsumer;
+    private final JwtConsumer jwtConsumer;
 
     /**
-     * Creates a validator for JWT access tokens issued by the given PF instance.
-     *
-     * @param pfBaseUrl the base URL of the PF instance including the trailing
-     *                  slash.
+     * Creates a validator for JWT access tokens issued by the configured JWKS endpoint.
+     * This constructor is automatically called by Spring when JWKS validation is enabled.
+     * The validator is created as a singleton bean for optimal performance.
      */
-    public JWTValidator(String issuerUrl, String jwksurl, String aud) {
-        HttpsJwks httpsJkws = new HttpsJwks(jwksurl);
+    @Autowired
+    public JWTValidator() {
+        if (!Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED) {
+            this.jwtConsumer = null;
+            return;
+        }
+        
+        String issuerUrl = Sw360ResourceServer.JWKS_ISSUER_URL;
+        String jwksUrl = Sw360ResourceServer.JWKS_ENDPOINT_URL;
+        String aud = Sw360ResourceServer.JWT_CLAIM_AUD;
+        
+        HttpsJwks httpsJkws = new HttpsJwks(jwksUrl);
         HttpsJwksVerificationKeyResolver httpsJwksKeyResolver = new HttpsJwksVerificationKeyResolver(httpsJkws);
         JwtConsumerBuilder jwtConsumerBuilder = new JwtConsumerBuilder()
-                //TODO:Recheck
-//                .setRequireExpirationTime()
-//                .setAllowedClockSkewInSeconds(30)
+                .setRequireExpirationTime() // Enforce expiration time (exp claim)
+                .setRequireIssuedAt() // Enforce issued at time (iat claim)
+                .setAllowedClockSkewInSeconds(30) // Allow 30 seconds clock skew for time-based claims
                 .setExpectedIssuer(issuerUrl)
                 .setVerificationKeyResolver(httpsJwksKeyResolver);
-        if (aud.isEmpty()) {
-            jwtConsumerBuilder.setExpectedAudience(false);
+        
+        if (aud == null || aud.isEmpty()) {
+            jwtConsumerBuilder.setSkipDefaultAudienceValidation();
         } else {
             jwtConsumerBuilder.setExpectedAudience(aud);
         }
-        jwtConsumer = jwtConsumerBuilder.build();
+        
+        this.jwtConsumer = jwtConsumerBuilder.build();
     }
 
     /**

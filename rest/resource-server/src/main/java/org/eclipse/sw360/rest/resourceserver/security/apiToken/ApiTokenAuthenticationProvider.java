@@ -58,6 +58,8 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     @NotNull
     private final Sw360UserService userService;
+    
+    private final JWTValidator jwtValidator;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -71,11 +73,9 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         String tokenFromAuthentication = (String) authentication.getCredentials();
         if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && authentication instanceof ApiTokenAuthentication
                 && ((ApiTokenAuthentication) authentication).getType() == AuthType.JWKS) {
-            JWTValidator validator = new JWTValidator(Sw360ResourceServer.JWKS_ISSUER_URL,
-                    Sw360ResourceServer.JWKS_ENDPOINT_URL, Sw360ResourceServer.JWT_CLAIM_AUD);
             JwtClaims jwtClaims = null;
             try {
-                jwtClaims = validator.validateJWT(tokenFromAuthentication);
+                jwtClaims = jwtValidator.validateJWT(tokenFromAuthentication);
             } catch (InvalidJwtException exp) {
                 throw new BadCredentialsException(exp.getMessage());
             }

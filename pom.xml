@@ -84,6 +84,7 @@
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+    <maven-thrift-plugin.version>0.1.11</maven-thrift-plugin.version>
     <maven-war-plugin.version>3.5.0</maven-war-plugin.version>
     <versions-maven-plugin.version>2.19.1</versions-maven-plugin.version>
     <!-- JSON Libraries used in the project -->
@@ -647,6 +648,26 @@
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.thrift.tools</groupId>
+          <artifactId>maven-thrift-plugin</artifactId>
+          <version>${maven-thrift-plugin.version}</version>
+          <configuration>
+            <thriftExecutable>thrift</thriftExecutable>
+            <generator>java:generated_annotations=suppress</generator>
+            <checkStaleness>true</checkStaleness>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>${build-helper-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin.version}</version>
+        </plugin>
         <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
