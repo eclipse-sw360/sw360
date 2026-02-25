@@ -228,6 +228,8 @@ public class CycloneDxBOMImporter {
                         Integer relReuseCount = Integer.valueOf(messageMap.get(REL_REUSE_COUNT_KEY));
                         Integer pkgReuseCount = Integer.valueOf(messageMap.get(PKG_REUSE_COUNT_KEY));
                         Integer pkgCreationCount = Integer.valueOf(messageMap.get(PKG_CREATION_COUNT_KEY));
+                        String errorCountStr = messageMap.get(COMPONENT_IMPORT_ERROR_COUNT_KEY);
+                        int compImportErrorCount = CommonUtils.isNullEmptyOrWhitespace(errorCountStr) ? 0 : Integer.parseInt(errorCountStr);
 
                         String packages = messageMap.get(DUPLICATE_PACKAGE);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(packages)) {
@@ -253,6 +255,7 @@ public class CycloneDxBOMImporter {
                                 if (pkg == null || CommonUtils.isNullEmptyOrWhitespace(pkg.getName()) || CommonUtils.isNullEmptyOrWhitespace(pkg.getVersion())
                                         || CommonUtils.isNullEmptyOrWhitespace(pkg.getPurl())) {
                                     invalidPackages.add(fullName);
+                                    compImportErrorCount++;
                                     log.error(String.format("Invalid package '%s' found in SBoM, missing name or version or purl! ", fullName));
                                     continue;
                                 }
@@ -287,6 +290,7 @@ public class CycloneDxBOMImporter {
                                     project.setPackageIds(linkedPackages);
                                 } catch (SW360Exception e) {
                                     log.error("An error occured while creating/adding package from SBOM: " + e.getMessage());
+                                    compImportErrorCount++;
                                     continue;
                                 }
                             }
@@ -305,6 +309,7 @@ public class CycloneDxBOMImporter {
                         messageMap.put(REL_REUSE_COUNT_KEY, String.valueOf(relReuseCount));
                         messageMap.put(PKG_CREATION_COUNT_KEY, String.valueOf(pkgCreationCount));
                         messageMap.put(PKG_REUSE_COUNT_KEY, String.valueOf(pkgReuseCount));
+                        messageMap.put(COMPONENT_IMPORT_ERROR_COUNT_KEY, String.valueOf(compImportErrorCount));
                         requestSummary.setMessage(convertCollectionToJSONString(messageMap));
                     }
                 } else {
@@ -505,6 +510,7 @@ public class CycloneDxBOMImporter {
                 if (CommonUtils.isNullEmptyOrWhitespace(release.getVersion()) ) {
                     log.error("release version is not present in SBoM for component: " + comp.getName());
                     invalidReleases.add(comp.getName());
+                    compImportErrorCount++;
                     continue;
                 }
                 relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
@@ -645,6 +651,7 @@ public class CycloneDxBOMImporter {
                     if (CommonUtils.isNullEmptyOrWhitespace(release.getVersion()) ) {
                         log.error("release version is not present in SBoM for component: " + comp.getName());
                         invalidReleases.add(comp.getName());
+                        compImportErrorCount++;
                         continue;
                     }
                     String relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
@@ -707,6 +714,7 @@ public class CycloneDxBOMImporter {
                     if (pkg == null || CommonUtils.isNullEmptyOrWhitespace(pkg.getName()) || CommonUtils.isNullEmptyOrWhitespace(pkg.getVersion())
                             || CommonUtils.isNullEmptyOrWhitespace(pkg.getPurl())) {
                         invalidPackages.add(pkgName);
+                        compImportErrorCount++;
                         log.error(String.format("Invalid package '%s' found in SBoM, missing name or version or purl! ", pkgName));
                         continue;
                     }
@@ -781,6 +789,7 @@ public class CycloneDxBOMImporter {
                     if (CommonUtils.isNullEmptyOrWhitespace(release.getVersion()) ) {
                         log.error("release version is not present in SBoM for component: " + comp.getName());
                         invalidReleases.add(comp.getName());
+                        compImportErrorCount++;
                         continue;
                     }
 
