@@ -23,8 +23,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -93,6 +95,26 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     `DocxGenerator`.""",
             tags = {"Reports"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Report generated successfully",
+                    content = @Content(mediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            schema = @Schema(type = "string", format = "binary"))),
+            @ApiResponse(responseCode = "400", description = "Bad request - Invalid parameters",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Error : GeneratorClassName and Variant is required for module licenseInfo\"}"
+                            ))),
+            @ApiResponse(responseCode = "403", description = "Access denied",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Failed to generate report\"}"
+                            )))
+    })
     @GetMapping(value = REPORTS_URL)
     public void getProjectReport(
             @Parameter(description = "Projects with linked releases.")
@@ -345,14 +367,29 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     @Operation(
             summary = "Download reports.",
             description = "Download reports.",
-            tags = {"Reports"},
-            responses = {@ApiResponse(
-                    responseCode = "200",
+            tags = {"Reports"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
                     description = "Generated report.",
                     content = @Content(mediaType = CONTENT_TYPE_OPENXML_SPREADSHEET,
-                            schema = @Schema(type = "string", format = "binary"))
-            )}
-    )
+                            schema = @Schema(type = "string", format = "binary"))),
+            @ApiResponse(responseCode = "400", description = "Invalid token or module",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Invalid token or module\"}"
+                            ))),
+            @ApiResponse(responseCode = "404", description = "Report not found",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"No data available for the user\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Failed to download report\"}"
+                            )))
+    })
     @GetMapping(value = REPORTS_URL + "/download")
     public void downloadExcel(
             HttpServletRequest request,

@@ -22,8 +22,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -73,6 +75,28 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Save the FOSSology service configuration.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Configuration saved successfully",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "SUCCESSFUL"
+                            ))),
+            @ApiResponse(responseCode = "400", description = "Invalid configuration parameters",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Invalid configuration parameters\"}"
+                            ))),
+            @ApiResponse(responseCode = "403", description = "Access denied. User is not an admin",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Internal server error\"}"
+                            )))
+    })
     @PostMapping(value = FOSSOLOGY_URL + "/saveConfig", consumes  = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> saveConfigration(
             @Parameter(description = "Request body containing the configuration parameters. The parameters are:\n" +
@@ -127,6 +151,23 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Make a test call and check the FOSSology server connection.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Server connection check successful",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "SUCCESSFUL"
+                            ))),
+            @ApiResponse(responseCode = "403", description = "Access denied. User is not an admin",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Server connection failed",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Failed to connect to FOSSology server\"}"
+                            )))
+    })
     @GetMapping(value = FOSSOLOGY_URL + "/reServerConnection")
     public ResponseEntity<?> checkServerConnection() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -155,7 +196,18 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
                     }
             ),
             @ApiResponse(
-                    responseCode = "403", description = "Don't have permission to perform the action. User is not an admin"
+                    responseCode = "403", description = "Don't have permission to perform the action. User is not an admin",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))
+            ),
+            @ApiResponse(
+                    responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Internal server error\"}"
+                            ))
             )
     }
     )

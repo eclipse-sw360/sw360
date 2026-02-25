@@ -12,7 +12,11 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -67,6 +71,23 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
             description = "List all of the service's ECC.",
             tags = {"ECC"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "ECC details retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CollectionModel.class))),
+            @ApiResponse(responseCode = "204", description = "No ECC details found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Access denied",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Access denied\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Internal server error\"}"
+                            )))
+    })
     @GetMapping(value = ECC_URL)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getEccDetails(
             HttpServletRequest request,

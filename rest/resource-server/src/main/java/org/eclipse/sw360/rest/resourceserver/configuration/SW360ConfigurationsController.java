@@ -88,7 +88,12 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                                 """
                             )
                     )
-            )
+            ),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Failed to retrieve configurations\"}"
+                            )))
     })
     public ResponseEntity<?> getSW360Configurations(
             @Parameter(
@@ -177,7 +182,17 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                                 """
                             )
                     )
-            )
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid container type",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Invalid container type\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Failed to retrieve configurations\"}"
+                            )))
     })
     @GetMapping(value = SW360_CONFIG_URL + "/container/{configFor}")
     public ResponseEntity<Map<String, String>> getConfigForContainer(
