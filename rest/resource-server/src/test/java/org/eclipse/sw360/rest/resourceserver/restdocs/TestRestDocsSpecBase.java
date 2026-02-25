@@ -26,7 +26,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -87,9 +86,6 @@ public abstract class TestRestDocsSpecBase {
     @MockitoBean
     protected Sw360UserService userServiceMock;
 
-    @MockitoBean
-    protected SW360ConfigurationsService sw360ConfigurationsServiceMock;
-
     @Before
     public void setupRestDocs() {
         this.documentationHandler = document("{method-name}",
@@ -107,15 +103,6 @@ public abstract class TestRestDocsSpecBase {
                 .build();
 
         when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenReturn(new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
-
-        // Default config for API token length
-        try {
-            java.util.Map<String, String> defaultConfigs = new java.util.HashMap<>();
-            defaultConfigs.put("rest.apitoken.length", "20");
-            when(sw360ConfigurationsServiceMock.getSW360Configs()).thenReturn(defaultConfigs);
-        } catch (Exception e) {
-            // Ignore exception during mock setup
-        }
     }
 
     public void testAttachmentUpload(String url, String id) throws Exception {

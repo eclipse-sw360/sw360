@@ -124,11 +124,6 @@ public class UserTest extends TestIntegrationBase {
         given(this.userServiceMock.getExistingPrimaryDepartments()).willReturn(Set.of("SW360 Administration"));
         given(this.userServiceMock.getExistingSecondaryDepartments()).willReturn(Set.of("SW360 BA"));
 
-        // Default config for API token length
-        Map<String, String> defaultConfigs = new HashMap<>();
-        defaultConfigs.put("rest.apitoken.length", "20");
-        given(this.sw360ConfigurationsServiceMock.getSW360Configs()).willReturn(defaultConfigs);
-
     }
 
     @Test
@@ -312,65 +307,6 @@ public class UserTest extends TestIntegrationBase {
                 String.class
         );
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-    }
-
-    @Test
-    public void should_return_bad_request_when_db_config_is_empty() throws Exception {
-        // Simulate DB not having the rest.apitoken.length value (empty config)
-        Map<String, String> emptyConfigs = new HashMap<>();
-        given(this.sw360ConfigurationsServiceMock.getSW360Configs()).willReturn(emptyConfigs);
-
-        String url = "/api/users/tokens";
-        Map<String, Object> tokenRequest = new HashMap<>();
-        tokenRequest.put("name", "TokenWithDefaultLength");
-        tokenRequest.put("expirationDate", "2027-12-31");
-        tokenRequest.put("authorities", List.of("READ"));
-
-        HttpHeaders headers = getHeaders(port);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        ResponseEntity<String> response = new TestRestTemplate().exchange(
-                "http://localhost:" + port + url,
-                HttpMethod.POST,
-                new HttpEntity<>(objectMapper.writeValueAsString(tokenRequest), headers),
-                String.class
-        );
-        // When DB config is empty, we should get a BAD_REQUEST since token length must be configured
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-
-    @Test
-    public void should_create_user_token_with_length_from_db_config() throws Exception {
-        // Simulate DB having the rest.apitoken.length value set to 32
-        int dbConfiguredTokenLength = 32;
-        Map<String, String> dbConfigs = new HashMap<>();
-        dbConfigs.put("rest.apitoken.length", String.valueOf(dbConfiguredTokenLength));
-        given(this.sw360ConfigurationsServiceMock.getSW360Configs()).willReturn(dbConfigs);
-
-        String url = "/api/users/tokens";
-        Map<String, Object> tokenRequest = new HashMap<>();
-        tokenRequest.put("name", "TokenWithDbConfigLength");
-        tokenRequest.put("expirationDate", "2027-12-31");
-        tokenRequest.put("authorities", List.of("READ"));
-
-        HttpHeaders headers = getHeaders(port);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        ResponseEntity<String> response = new TestRestTemplate().exchange(
-                "http://localhost:" + port + url,
-                HttpMethod.POST,
-                new HttpEntity<>(objectMapper.writeValueAsString(tokenRequest), headers),
-                String.class
-        );
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-
-        // Verify the token length matches the DB configured value
-        String responseBody = response.getBody();
-        assertFalse("Response body should not be null or empty",
-                responseBody == null || responseBody.isEmpty());
-
-        String generatedToken = objectMapper.readValue(responseBody, String.class);
-        assertEquals("Token length should match DB configured value of " + dbConfiguredTokenLength,
-                dbConfiguredTokenLength, generatedToken.length());
     }
 
     @Test

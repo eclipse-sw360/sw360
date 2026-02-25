@@ -120,6 +120,21 @@ public class SW360Constants {
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
     public static final String PREFERRED_CLEARING_DATE_LIMIT;
 
+    // LicenseDB Configuration Properties
+    public static final String LICENSEDB_ENABLED = "licensedb.enabled";
+    public static final String LICENSEDB_API_URL = "licensedb.api.url";
+    public static final String LICENSEDB_API_VERSION = "licensedb.api.version";
+    public static final String LICENSEDB_OAUTH_CLIENT_ID = "licensedb.oauth.client.id";
+    public static final String LICENSEDB_OAUTH_CLIENT_SECRET = "licensedb.oauth.client.secret";
+    public static final String LICENSEDB_SYNC_CRON = "licensedb.sync.cron";
+    public static final String LICENSEDB_SYNC_BATCH_SIZE = "licensedb.sync.batch-size";
+    public static final String LICENSEDB_SYNC_ON_STARTUP = "licensedb.sync.on-startup";
+    public static final String LICENSEDB_CONNECTION_TIMEOUT = "licensedb.connection.timeout";
+    public static final String LICENSEDB_READ_TIMEOUT = "licensedb.connection.read-timeout";
+    public static final String LICENSEDB_ID = "licensedb_id";
+    public static final String LICENSEDB_LAST_SYNC_TIME = "licensedb_last_sync_time";
+    public static final String LICENSEDB_SYNC_STATUS = "licensedb_sync_status";
+
     public static final String COMPONENTS = "components";
     public static final String PROJECTS = "projects";
     public static final String LICENSES = "licenses";

@@ -38,10 +38,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +52,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
-@PreAuthorize("hasAuthority('ADMIN')")
 public class FossologyAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String FOSSOLOGY_URL = "/fossology";
 
@@ -127,7 +126,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Make a test call and check the FOSSology server connection.",
             tags = {"Admin"}
     )
-    @GetMapping(value = FOSSOLOGY_URL + "/reServerConnection")
+    @RequestMapping(value = FOSSOLOGY_URL + "/reServerConnection", method = RequestMethod.GET)
     public ResponseEntity<?> checkServerConnection() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         sw360FossologyAdminServices.serverConnection(sw360User);
@@ -159,7 +158,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             )
     }
     )
-    @GetMapping(value = FOSSOLOGY_URL + "/configData")
+    @RequestMapping(value = FOSSOLOGY_URL + "/configData", method = RequestMethod.GET)
     public ResponseEntity<?> getConnectionConfigurationData()throws TException {
         Map<String, Object> configData = new HashMap<>();
         try {

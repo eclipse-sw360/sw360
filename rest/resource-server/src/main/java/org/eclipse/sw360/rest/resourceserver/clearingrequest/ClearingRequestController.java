@@ -96,7 +96,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Get a clearing request by id.",
             tags = {"ClearingRequest"}
     )
-    @GetMapping(value = CLEARING_REQUEST_URL + "/{id}")
+    @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(
             @Parameter(description = "id of the clearing request")
             @PathVariable("id") String docId
@@ -114,7 +114,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Get the ClearingRequest based on the project id.",
             tags = {"ClearingRequest"}
     )
-    @GetMapping(value = CLEARING_REQUEST_URL + "/project/{id}")
+    @RequestMapping(value = CLEARING_REQUEST_URL + "/project/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(
             @Parameter(description = "id of the project")
             @PathVariable("id") String projectId
@@ -165,7 +165,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "List all clearing requests visible to user",
             tags = {"ClearingRequest"}
     )
-    @GetMapping(value = CLEARING_REQUESTS_URL)
+    @RequestMapping(value = CLEARING_REQUESTS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<?>> getClearingRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -295,7 +295,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             tags = {"ClearingRequest"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = CLEARING_REQUEST_URL + "/{id}/comments")
+    @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}/comments", method = RequestMethod.POST)
     public ResponseEntity<?> addComment(
             @Parameter(description = "ID of the clearing request")
             @PathVariable("id") String crId,
@@ -348,7 +348,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Update a clearing request by id.",
             tags = {"ClearingRequest"}
     )
-    @PatchMapping(value = CLEARING_REQUEST_URL + "/{id}")
+    @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<HalResource<ClearingRequest>> patchClearingRequest(
             @Parameter(description = "id of the clearing request")
             @PathVariable("id") String id,

@@ -54,7 +54,6 @@ security:
 
 sw360:
   thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
-  base-url: ${SW360_BASE_URL:http://localhost:8080}
   test-user-id: admin@sw360.org
   test-user-password: sw360-password
   couchdb-url: ${SW360_COUCHDB_URL:http://couchdb:5984}

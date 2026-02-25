@@ -135,12 +135,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -249,7 +247,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's projects with various filters.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL)
+    @RequestMapping(value = PROJECTS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -387,7 +385,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "List all projects associated to the user.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/myprojects")
+    @RequestMapping(value = PROJECTS_URL + "/myprojects", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsFilteredForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -444,7 +442,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get all releases of license clearing.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/licenseClearing")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearing", method = RequestMethod.GET)
     public ResponseEntity<HalResource<Project>> licenseClearing(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -511,7 +509,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get a single project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<Project>> getProject(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -526,7 +524,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get a package with project id.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/packages")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/packages", method = RequestMethod.GET)
     public ResponseEntity<List<HalResource<Project>>> getPackagesByProjectId(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -579,7 +577,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get linked projects of a single project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/linkedProjects")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/linkedProjects", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel>> getLinkedProject(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -629,7 +627,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get releases of linked projects of a single project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/linkedProjects/releases")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/linkedProjects/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesOfLinkedProject(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -692,7 +690,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @DeleteMapping(value = PROJECTS_URL + "/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity deleteProject(
             @Parameter(description = "Project ID")
             @PathVariable("id") String id,
@@ -723,7 +721,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Create a project.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL)
+    @RequestMapping(value = PROJECTS_URL, method = RequestMethod.POST)
     public ResponseEntity createProject(
             @Parameter(schema = @Schema(implementation = Project.class))
             @RequestBody Map<String, Object> reqBodyMap
@@ -763,7 +761,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Create a duplicate project.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/duplicate/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/duplicate/{id}", method = RequestMethod.POST)
     public ResponseEntity<EntityModel<Project>> createDuplicateProject(
             @Parameter(description = "Project ID to copy.")
             @PathVariable("id") String id,
@@ -804,7 +802,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of release ids to be linked as request body.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/{id}/releases")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.POST)
     public ResponseEntity linkReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -838,7 +836,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of project ids to be linked as request body.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/{id}/linkProjects")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/linkProjects", method = RequestMethod.POST)
     public ResponseEntity linkToProjects(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -938,7 +936,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of release ids or a map of release id to usage to be linked as request body.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/releases")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.PATCH)
     public ResponseEntity patchReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -977,7 +975,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/link/packages")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/link/packages", method = RequestMethod.PATCH)
     public ResponseEntity<?> linkPackages(
             @Parameter(description = "Project ID.", example = "376576")
             @PathVariable("id") String id,
@@ -1015,7 +1013,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/unlink/packages")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/unlink/packages", method = RequestMethod.PATCH)
     public ResponseEntity<?> patchPackages(
             @Parameter(description = "Project ID.", example = "376576")
             @PathVariable("id") String id,
@@ -1047,7 +1045,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get releases of a single project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/releases")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1096,7 +1094,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get releases of multiple projects.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/releases")
+    @RequestMapping(value = PROJECTS_URL + "/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectsReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1147,7 +1145,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get all releases with ECC information of a single project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/releases/ecc")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/releases/ecc", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1192,7 +1190,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
 
-    @GetMapping(value = PROJECTS_URL + "/{id}/vulnerabilitySummary")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilitySummary", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilitySummary>>> getAllVulnerabilities(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1285,7 +1283,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get vulnerabilities of a single project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/vulnerabilities")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1360,7 +1358,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Patch vulnerabilities of a single project.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.PATCH, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> updateVulnerabilitiesOfReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1419,7 +1417,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass a map of release id to usage to be linked as request body.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<ProjectReleaseRelationship>> patchProjectReleaseUsage(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1504,7 +1502,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get license of releases of a single project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/licenses")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenses", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<License>>> getLicensesOfReleases(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id
@@ -1549,7 +1547,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     `DocxGenerator`.""",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/licenseinfo")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseinfo", method = RequestMethod.GET)
     public void downloadLicenseInfo(
             @Parameter(description = "Project ID.", example = "376576")
             @PathVariable("id") String id,
@@ -1673,7 +1671,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get all attachment information of a project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/attachments")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/attachments", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getProjectAttachments(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id
@@ -1690,7 +1688,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Update and attachment usage for project.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/attachment/{attachmentId}")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<Attachment>> patchProjectAttachmentInfo(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1725,7 +1723,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             ),
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromProject(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
@@ -1746,7 +1744,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             ),
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{projectId}/attachments/clearingReports", produces = "application/zip")
+    @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments/clearingReports", method = RequestMethod.GET, produces = "application/zip")
     public void downloadClearingReports(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
@@ -1779,7 +1777,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Update a project.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<Project>> patchProject(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -1823,7 +1821,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Add attachments to a project.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/{projectId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
+    @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToProject(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
@@ -1940,7 +1938,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     "values). It's possible to search for projects only by the external id key by leaving the value.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/searchByExternalIds")
+    @RequestMapping(value = PROJECTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
     public ResponseEntity searchByExternalIds(
             @Parameter(description = "External ID map for filter.",
                     example = "{\"project-ext\": \"515432\", \"project-ext\": \"7657\", \"portal-id\": \"13319-XX3\"}"
@@ -1956,7 +1954,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get all the projects where the project is used.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/usedBy/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/usedBy/{id}", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getUsedByProjectDetails(
             @Parameter(description = "Project ID to search.")
             @PathVariable("id") String id
@@ -2018,7 +2016,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     }
             )
     })
-    @PostMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages", method = RequestMethod.POST)
     public ResponseEntity<?> saveAttachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2153,7 +2151,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get all attachmentUsages of the projects.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/attachmentUsage")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/attachmentUsage", method = RequestMethod.GET)
     public ResponseEntity attachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2416,7 +2414,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Import SBOM in SPDX format.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/import/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @RequestMapping(value = PROJECTS_URL + "/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> importSBOM(
             @Parameter(description = "Type of SBOM", example = "SPDX")
             @RequestParam(value = "type", required = true) String type,
@@ -2497,7 +2495,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/{id}/import/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @RequestMapping(value = PROJECTS_URL + "/{id}/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> importSBOMonProject(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable(value = "id", required = true) String id,
@@ -2567,7 +2565,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             },
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/network/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}", method = RequestMethod.GET)
     public ResponseEntity<?> getProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -2587,7 +2585,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Create a project with dependencies network.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL+ "/network")
+    @RequestMapping(value = PROJECTS_URL+ "/network", method = RequestMethod.POST)
     public ResponseEntity createProjectWithNetwork(
             @Parameter(description = "Project with `dependencyNetwork` set.",
                     schema = @Schema(implementation = Project.class))
@@ -2626,7 +2624,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Update a project with dependencies network.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/network/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<?> patchProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -2902,7 +2900,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get project count of a user.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/projectcount")
+    @RequestMapping(value = PROJECTS_URL + "/projectcount", method = RequestMethod.GET)
     public void getUserProjectCount(HttpServletResponse response) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         try {
@@ -2919,7 +2917,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get the default license info header text.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/licenseInfoHeader")
+    @RequestMapping(value = PROJECTS_URL + "/licenseInfoHeader", method = RequestMethod.GET)
     public void getLicenseInfoheaderText(HttpServletResponse response) throws TException {
         try {
             response.setContentType("application/json; charset=UTF-8");
@@ -2937,7 +2935,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get license clearing info for a project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount", method = RequestMethod.GET)
     public void getlicenseClearingCount(
             HttpServletResponse response ,
             @Parameter(description = "Project ID", example = "376521")
@@ -2966,7 +2964,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     "This is more efficient than calling the single project endpoint multiple times.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/licenseClearingCount")
+    @RequestMapping(value = PROJECTS_URL + "/licenseClearingCount", method = RequestMethod.POST)
     public void getBatchLicenseClearingCount(
             HttpServletResponse response,
             @Parameter(description = "List of project IDs")
@@ -3006,7 +3004,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     "at Administration tab of project detail page.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/clearingDetailsCount")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/clearingDetailsCount", method = RequestMethod.GET)
     public void getlicenseClearingDetailsCount(
             HttpServletResponse response ,
             @Parameter(description = "Project ID", example = "376521")
@@ -3039,7 +3037,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get license obligations data from license database.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
     public ResponseEntity<?> getLicObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -3097,7 +3095,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of orphan obligation titles in request body.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/orphanObligation")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/orphanObligation", method = RequestMethod.PATCH)
     public ResponseEntity<?> removeOrphanObligation(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -3133,7 +3131,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get license obligation data of project tab.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/licenseObligations")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
     public ResponseEntity<Object> getLicenseObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -3202,7 +3200,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get obligation data of project tab.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/obligation")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/obligation", method = RequestMethod.GET)
     public ResponseEntity<HalResource> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -3287,7 +3285,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass an array of obligation ids in request body.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/{id}/licenseObligation")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligation", method = RequestMethod.POST)
     public ResponseEntity<?> addLicenseObligations(
             @Parameter(description = "License Obligation ID.")
             @PathVariable("id") String id,
@@ -3347,7 +3345,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass a map of obligations in request body.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation", method = RequestMethod.PATCH)
     public ResponseEntity<?> patchLicenseObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
             @Parameter(description = "Map of obligation status info")
@@ -3499,7 +3497,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Pass a map of obligations in request body.",
             tags = {"Projects"}
     )
-    @PatchMapping(value = PROJECTS_URL + "/{id}/updateObligation")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/updateObligation", method = RequestMethod.PATCH)
     public ResponseEntity<?> patchObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
             @Parameter(description = "Map of obligation status info")
@@ -3589,7 +3587,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get summary and administration page of project tab.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/summaryAdministration")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/summaryAdministration", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<Project>> getAdministration(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id
@@ -3619,7 +3617,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Get a list view of dependency network for a project.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/network/{id}/listView")
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/listView", method = RequestMethod.GET)
     public ResponseEntity<?> getListViewDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId
@@ -3637,7 +3635,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get linked resources (projects, releases) of a project",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/network/{id}/linkedResources")
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedResources", method = RequestMethod.GET)
     public ResponseEntity<ProjectLink> getLinkedResourcesOfProjectForDependencyNetwork(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -3656,7 +3654,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get indirect linked releases of a project in dependency network by release's index path",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/network/{id}/releases")
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ReleaseLink>> getLinkedReleasesInDependencyNetworkByIndexPath(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId,
@@ -3900,7 +3898,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Create a clearing request for a project.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/{id}/clearingRequest")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/clearingRequest", method = RequestMethod.POST)
     public ResponseEntity<?> createClearingRequest(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
@@ -3963,7 +3961,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get linked releases information in project's dependency network.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases")
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases", method = RequestMethod.GET)
     public ResponseEntity<?> getLinkedReleasesInNetwork(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String projectId
@@ -3980,7 +3978,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get linked releases information of linked projects.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/{id}/subProjects/releases")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/subProjects/releases", method = RequestMethod.GET)
     public ResponseEntity<?> getLinkedReleasesOfLinkedProjects(
             @Parameter(description = "Project ID.") @PathVariable("id") String projectId
     ) throws TException {
@@ -3997,7 +3995,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Compare dependency network with default network (relationships between releases).",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork")
+    @RequestMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork", method = RequestMethod.POST)
     public ResponseEntity<?> compareDependencyNetworkWithDefaultNetwork(
             @RequestBody List<ReleaseNode> dependencyNetwork
     ) throws SW360Exception {
@@ -4018,7 +4016,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Create a duplicate project with dependency network.",
             tags = {"Projects"}
     )
-    @PostMapping(value = PROJECTS_URL + "/network/duplicate/{id}")
+    @RequestMapping(value = PROJECTS_URL + "/network/duplicate/{id}", method = RequestMethod.POST)
     public ResponseEntity<?> createDuplicateProjectWithDependencyNetwork(
             @Parameter(description = "Project ID to copy.")
             @PathVariable("id") String id,
@@ -4125,7 +4123,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @PostMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses", method = RequestMethod.POST)
     public ResponseEntity<HalResource<EntityModel<Map<String, List<String>>>>> addLicenseToLinkedReleases(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId
@@ -4170,7 +4168,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Get all the unique groups used by projects.",
             tags = {"Projects"}
     )
-    @GetMapping(value = PROJECTS_URL + "/groups")
+    @RequestMapping(value = PROJECTS_URL + "/groups", method = RequestMethod.GET)
     public Set<String> getAllProjectGroups() {
         Set<String> groups;
         try {

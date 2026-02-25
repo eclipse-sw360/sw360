@@ -120,17 +120,14 @@ public class AttachmentStreamConnector {
                     ZipEntry zipEntry;
 
                     String originalFileName = attachment.getFilename();
-                    // Sanitize filename to prevent path traversal
-                    String sanitizedFileName = CommonUtils.sanitizeFilename(originalFileName);
-                    
-                    if (!fileNameUsageMap.containsKey(sanitizedFileName)) {
-                        fileNameUsageMap.put(sanitizedFileName, 0);
-                        zipEntry = new ZipEntry(sanitizedFileName);
+                    if (!fileNameUsageMap.containsKey(originalFileName)) {
+                        fileNameUsageMap.put(originalFileName, 0);
+                        zipEntry = new ZipEntry(originalFileName);
                     } else {
-                        int count = fileNameUsageMap.get(sanitizedFileName);
+                        int count = fileNameUsageMap.get(originalFileName);
                         count += 1;
-                        fileNameUsageMap.put(sanitizedFileName, count);
-                        zipEntry = getDeduplicatedZipEntry(sanitizedFileName, fileNameUsageMap);
+                        fileNameUsageMap.put(originalFileName, count);
+                        zipEntry = getDeduplicatedZipEntry(originalFileName, fileNameUsageMap);
                     }
 
                     zip.putNextEntry(zipEntry);

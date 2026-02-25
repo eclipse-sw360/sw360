@@ -295,13 +295,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 sw360SPDXDocumentService.sortSectionForDocumentCreation(documentCreationInformation);
                 restControllerHelper.addEmbeddedDocumentCreationInformation(halRelease, documentCreationInformation);
             }
-            if (!CommonUtils.isNullOrEmptyCollection(spdxDocument.getSpdxPackageInfoIds())) {
-                String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
-                if (CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
-                    PackageInformation packageInformation = releaseService.getPackageInformationById(spdxPackageInfoId, sw360User);
-                    sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
-                    restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
-                }
+            String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
+            if(CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
+                PackageInformation packageInformation = releaseService.getPackageInformationById(spdxPackageInfoId, sw360User);
+                sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
+                restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
             }
         }
         if (linkedReleaseRelations != null) {
@@ -373,7 +371,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get all the resources where the release is used.",
             tags = {"Releases"}
     )
-    @GetMapping(value = RELEASES_URL + "/usedBy" + "/{id}")
+    @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
@@ -881,7 +879,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus")
+    @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> checkFossologyProcessStatus(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId
@@ -949,7 +947,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess")
+    @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess", method = RequestMethod.GET)
     public ResponseEntity<HalResource> triggerFossologyProcess(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId,
@@ -1039,7 +1037,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport")
+    @RequestMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport", method = RequestMethod.GET)
     public ResponseEntity<HalResource> triggerReloadFossologyReport(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId
@@ -1123,7 +1121,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @PostMapping(value = RELEASES_URL + "/{id}/releases")
+    @RequestMapping(value = RELEASES_URL + "/{id}/releases", method = RequestMethod.POST)
     public ResponseEntity linkReleases(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1176,7 +1174,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @PatchMapping(value = RELEASES_URL + "/{id}/link/packages")
+    @RequestMapping(value = RELEASES_URL + "/{id}/link/packages", method = RequestMethod.PATCH)
     public ResponseEntity<?> linkPackages(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1217,7 +1215,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @PatchMapping(value = RELEASES_URL + "/{id}/unlink/packages")
+    @RequestMapping(value = RELEASES_URL + "/{id}/unlink/packages", method = RequestMethod.PATCH)
     public ResponseEntity<?> unlinkPackages(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1250,7 +1248,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/linkedPackages")
+    @RequestMapping(value = RELEASES_URL + "/{id}/linkedPackages", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Package>>> getLinkedPackages(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1683,7 +1681,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @PostMapping(value = RELEASES_URL + "/{id}/checkCyclicLink")
+    @RequestMapping(value = RELEASES_URL + "/{id}/checkCyclicLink", method = RequestMethod.POST)
     public ResponseEntity<?> checkForCyclicReleaseLink(
             @Parameter(description = "The ID of the checking release.")
             @PathVariable("id") String releaseId,
@@ -1932,7 +1930,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}")
+    @RequestMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}", method = RequestMethod.GET)
     public ResponseEntity<List<Map<String,String>>> getReleaseLicenseInfo(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String relId,
@@ -2008,7 +2006,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/licenseFileList")
+    @RequestMapping(value = RELEASES_URL + "/{id}/licenseFileList", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String relId,
@@ -2028,7 +2026,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Merge source release into target release.",
             tags = {"Releases"}
     )
-    @PatchMapping(value = RELEASES_URL + "/mergereleases")
+    @RequestMapping(value = RELEASES_URL + "/mergereleases", method = RequestMethod.PATCH)
     public ResponseEntity<RequestStatus> mergeReleases(
             @Parameter(description = "The id of the merge target release.")
             @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
@@ -2096,7 +2094,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
             }
     )
-    @GetMapping(value = RELEASES_URL + "/{id}/usageInformationForMerge")
+    @RequestMapping(value = RELEASES_URL + "/{id}/usageInformationForMerge", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getUsageInformationForReleaseMerge(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId

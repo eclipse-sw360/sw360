@@ -145,7 +145,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "List all of the service's components.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL)
+    @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getComponents(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -255,7 +255,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all the resources where the component is used.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}")
+    @RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(
             @Parameter(description = "The id of the component.")
             @PathVariable("id") String id
@@ -288,7 +288,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get a single component by its id.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/{id}")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<Component>> getComponent(
             @Parameter(description = "The id of the component to be retrieved.")
             @PathVariable("id") String id
@@ -305,7 +305,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Return 5 of the service's most recently created components.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/recentComponents")
+    @RequestMapping(value = COMPONENTS_URL + "/recentComponents", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getRecentComponent() throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<Component> sw360Components = componentService.getRecentComponents(user);
@@ -325,7 +325,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "List all of the service's mysubscriptions components.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/mySubscriptions")
+    @RequestMapping(value = COMPONENTS_URL + "/mySubscriptions", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getMySubscriptions() throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<Component> sw360Components = componentService.getComponentSubscriptions(user);
@@ -346,7 +346,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Subscribes or unsubscribes the user to a specified component based on their current subscription status.",
             tags = {"Components"}
     )
-    @PostMapping(value = COMPONENTS_URL + "/{id}/subscriptions")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/subscriptions", method = RequestMethod.POST)
     public ResponseEntity<String> toggleComponentSubscription(
             @Parameter(description = "The ID of the component.")
             @PathVariable("id") String componentId
@@ -371,7 +371,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get components by external ID.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/searchByExternalIds")
+    @RequestMapping(value = COMPONENTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> searchByExternalIds(
             @Parameter(
                     description = "The external IDs of the components to be retrieved.",
@@ -399,7 +399,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                     @ApiResponse(responseCode = "404", description = "Component not found")
             }
     )
-    @PatchMapping(value = COMPONENTS_URL + "/{id}")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<Component>> patchComponent(
             @Parameter(description = "The id of the component to be updated.")
             @PathVariable("id") String id,
@@ -473,7 +473,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Delete existing components by ids.",
             tags = {"Components"}
     )
-    @DeleteMapping(value = COMPONENTS_URL + "/{ids}")
+    @RequestMapping(value = COMPONENTS_URL + "/{ids}", method = RequestMethod.DELETE)
     public ResponseEntity<List<MultiStatus>> deleteComponents(
             @Parameter(description = "The ids of the components to be deleted.")
             @PathVariable("ids") List<String> idsToDelete,
@@ -506,7 +506,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Create a new component.",
             tags = {"Components"}
     )
-    @PostMapping(value = COMPONENTS_URL)
+    @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.POST)
     public ResponseEntity<EntityModel<Component>> createComponent(
             @Parameter(description = "The component to be created.")
             @RequestBody Component component
@@ -549,7 +549,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all attachment information of a component.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/{id}/attachments")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getComponentAttachments(
             @Parameter(description = "The id of the component.")
             @PathVariable("id") String id
@@ -566,7 +566,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all releases of a component.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/{id}/releases")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ReleaseLink>> getReleaseLinksByComponentId(
             @Parameter(description = "The id of the component.")
             @PathVariable("id") String id
@@ -583,7 +583,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Update attachment info a component.",
             tags = {"Components"}
     )
-    @PatchMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<Attachment>> patchComponentAttachmentInfo(
             @Parameter(description = "The id of the component.")
             @PathVariable("id") String id,
@@ -639,7 +639,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             },
             tags = {"Components"}
     )
-    @PostMapping(value = COMPONENTS_URL + "/{componentId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
+    @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToComponent(
             @Parameter(description = "The id of the component.")
             @PathVariable("componentId") String componentId,
@@ -681,7 +681,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             },
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/{componentId}/attachments/{attachmentId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromComponent(
             @Parameter(description = "The id of the component.")
             @PathVariable("componentId") String componentId,
@@ -843,7 +843,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Get all components associated to the user.",
             tags = {"Components"}
     )
-    @GetMapping(value = COMPONENTS_URL + "/mycomponents")
+    @RequestMapping(value = COMPONENTS_URL + "/mycomponents", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getMyComponents(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -1031,7 +1031,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             },
             tags = {"Components"}
     )
-    @PostMapping(value = COMPONENTS_URL + "/import/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @RequestMapping(value = COMPONENTS_URL + "/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> importSBOM(
             @Parameter(description = "Type of SBOM being uploaded.",
                     schema = @Schema(type = "string", allowableValues = {"SPDX"})
@@ -1085,7 +1085,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             },
             tags = {"Components"}
     )
-    @PostMapping(value = COMPONENTS_URL + "/prepareImport/SBOM", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @RequestMapping(value = COMPONENTS_URL + "/prepareImport/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> prepareImportSBOM(
             @Parameter(description = "Type of SBOM being uploaded.",
                     schema = @Schema(type = "string", allowableValues = {"SPDX"})
@@ -1132,7 +1132,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             description = "Merge source component into target component.",
             tags = {"Components"}
     )
-    @PatchMapping(value = COMPONENTS_URL + "/mergecomponents")
+    @RequestMapping(value = COMPONENTS_URL + "/mergecomponents", method = RequestMethod.PATCH)
     public ResponseEntity<RequestStatus> mergeComponents(
             @Parameter(description = "The id of the merge target component.")
             @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
@@ -1207,7 +1207,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                     )
             }
     )
-    @PatchMapping(value = COMPONENTS_URL + "/splitComponents")
+    @RequestMapping(value = COMPONENTS_URL + "/splitComponents", method = RequestMethod.PATCH)
     public ResponseEntity<RequestStatus> splitComponents(
             @Parameter(description = "Source and target components.",
                     schema = @Schema(

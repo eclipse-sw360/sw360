@@ -78,6 +78,10 @@ struct Obligation {
     300: optional map<string, string> additionalData,
     97: optional string node,
 
+    // LicenseDB sync fields
+    98: optional string licenseDbId,
+    99: optional i64 lastSyncTime,
+    100: optional string syncStatus,
 }
 
 struct LicenseType {
@@ -145,7 +149,12 @@ struct License {
 
     90: optional DocumentState documentState,
 
-	200: optional map<RequestedAction, bool> permissions
+	200: optional map<RequestedAction, bool> permissions,
+
+    // LicenseDB sync fields
+    301: optional string licenseDbId,
+    302: optional i64 lastSyncTime,
+    303: optional string syncStatus,
 }
 
 service LicenseService {

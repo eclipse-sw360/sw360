@@ -41,7 +41,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -202,12 +203,9 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true, description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data.")
             }
     )
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(
-            value = IMPORTEXPORT_URL + "/uploadComponent",
-            consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = {MediaType.APPLICATION_JSON_VALUE}
-    )
+    @RequestMapping(value = IMPORTEXPORT_URL + "/uploadComponent", method = RequestMethod.POST, consumes = {
+            MediaType.MULTIPART_MIXED_VALUE,
+            MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<RequestSummary> uploadComponentCsv(
             @Parameter(description = "The component csv file to be uploaded.")
             @RequestParam("componentFile") MultipartFile file,
@@ -227,12 +225,9 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true,  description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data."),
             }
     )
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(
-            value = IMPORTEXPORT_URL + "/uploadRelease",
-            consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = {MediaType.APPLICATION_JSON_VALUE}
-    )
+    @RequestMapping(value = IMPORTEXPORT_URL + "/uploadRelease", method = RequestMethod.POST, consumes = {
+            MediaType.MULTIPART_MIXED_VALUE,
+            MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<RequestSummary> uploadReleaseCsv(
             @Parameter(description = "The release csv file to be uploaded.")
             @RequestParam("releaseFile") MultipartFile file,
@@ -252,12 +247,9 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true,  description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data."),
             }
     )
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(
-            value = IMPORTEXPORT_URL + "/componentAttachment",
-            consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = {MediaType.APPLICATION_JSON_VALUE}
-    )
+    @RequestMapping(value = IMPORTEXPORT_URL + "/componentAttachment", method = RequestMethod.POST, consumes = {
+            MediaType.MULTIPART_MIXED_VALUE,
+            MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<RequestSummary> uploadComponentAttachment(
             @Parameter(description = "The component attachment csv file to be uploaded.")
             @RequestParam("attachmentFile") MultipartFile file,
@@ -277,8 +269,8 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
             }
     )
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping(value = IMPORTEXPORT_URL + "/downloadUsers", produces = {MediaType.TEXT_PLAIN_VALUE})
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = IMPORTEXPORT_URL + "/downloadUsers", method = RequestMethod.GET, produces = { MediaType.TEXT_PLAIN_VALUE })
     public void downloadUsers(HttpServletResponse response) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -329,11 +321,9 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             }
     )
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(
-            value = IMPORTEXPORT_URL + "/usersCsv",
+    @RequestMapping(value = IMPORTEXPORT_URL + "/usersCsv", method = RequestMethod.POST,
             consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = {MediaType.APPLICATION_JSON_VALUE}
-    )
+            produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<RequestSummary> uploadUsersCsv(
             @Parameter(
                     description = "The users CSV file to be uploaded. " +

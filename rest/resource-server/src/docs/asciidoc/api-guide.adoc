@@ -262,9 +262,6 @@ Token response elements
 | `API Token / Write Validity`
 | rest.apitoken.write.validity.days
 | 30
-| `API Token / Length`
-| rest.apitoken.length
-| 20
 |===
 
 [[resources]]

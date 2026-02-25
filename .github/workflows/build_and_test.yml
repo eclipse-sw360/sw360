@@ -25,10 +25,6 @@ on:
       - .github/thrift_container.yml
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 env:
   COUCHDB_USER: sw360
   COUCHDB_PASSWORD: sw360fossie
@@ -53,17 +49,24 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: audit
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: webiny/action-conventional-commits@faccb24fc2550dd15c0390d944379d2d8ed9690e # v1.3.1
 
+
       - name: Verify license headers
         run: |
           chmod +x .github/testForLicenseHeaders.sh
           bash .github/testForLicenseHeaders.sh
+
+      - name: Create CouchDB required databases
+        run: |
+          for db in "_users" "_replicator" "_global"; do
+            curl -s -u $COUCHDB_USER:$COUCHDB_PASSWORD -X PUT http://localhost:5984/$db || true
+          done
 
       - name: Update properties with DB credentials
         run: |
@@ -85,7 +88,7 @@ jobs:
 
       - name: Cache Thrift
         id: cache-thrift
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
