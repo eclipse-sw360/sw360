@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.StringTransformer;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -55,14 +54,21 @@ public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationPr
     @Value("${security.customheader.headername.enabled:#{false}}")
     private boolean customHeaderEnabled;
 
-    @Autowired
-    private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
+    private final Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
 
-    @Autowired
-    private RegisteredClientRepository clientDetailsService;
+    private final RegisteredClientRepository clientDetailsService;
 
-    @Autowired
-    private Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator;
+    private final Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator;
+
+    public Sw360CustomHeaderAuthenticationProvider(
+            Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider,
+            RegisteredClientRepository clientDetailsService,
+            Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator
+    ) {
+        this.sw360CustomHeaderUserDetailsProvider = sw360CustomHeaderUserDetailsProvider;
+        this.clientDetailsService = clientDetailsService;
+        this.sw360UserAndClientAuthoritiesCalculator = sw360UserAndClientAuthoritiesCalculator;
+    }
 
     private boolean active;
 

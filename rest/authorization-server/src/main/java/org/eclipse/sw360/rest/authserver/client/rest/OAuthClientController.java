@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,11 +56,14 @@ public class OAuthClientController {
     @Value("${security.oauth2.resource.id}")
     private String resourceId;
 
-    @Autowired
-    private KeyManager keyManager;
+    private final KeyManager keyManager;
 
-    @Autowired
-    private OAuthClientRepository repo;
+    private final OAuthClientRepository repo;
+
+    public OAuthClientController(KeyManager keyManager, OAuthClientRepository repo) {
+        this.keyManager = keyManager;
+        this.repo = repo;
+    }
 
     @GetMapping(path = "")
     public ResponseEntity<List<OAuthClientResource>> getAllClients() {

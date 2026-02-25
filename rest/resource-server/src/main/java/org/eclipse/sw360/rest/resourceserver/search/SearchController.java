@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -51,7 +50,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -61,8 +60,8 @@ public class SearchController implements RepresentationModelProcessor<Repository
 
     public static final String SEARCH_URL = "/search";
 
-    @Autowired
-    private Sw360SearchService sw360SearchService;
+    @NonNull
+    private final Sw360SearchService sw360SearchService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;

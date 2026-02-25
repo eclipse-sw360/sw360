@@ -21,7 +21,6 @@ import org.eclipse.sw360.fossology.rest.model.FossologyV2Models.CombinedUploadJo
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -92,7 +91,6 @@ public class FossologyRestClient {
 
     private final String expectedVersionPrefix = "2.";
 
-    @Autowired
     public FossologyRestClient(ObjectMapper objectMapper, FossologyRestConfig restConfig, RestTemplate restTemplate) {
         this.objectMapper = objectMapper;
         this.restConfig = restConfig;
