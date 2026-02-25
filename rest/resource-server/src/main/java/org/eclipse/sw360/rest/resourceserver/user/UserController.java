@@ -41,6 +41,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -109,6 +110,14 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "List all of the service's users.",
             description = "List all of the service's users.", tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of users.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "204", description = "No users; no response body.",
+                    content = @Content(schema = @Schema(implementation = Void.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL)
     public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -172,6 +181,14 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     // for compatibility with older version of the REST API
     @Operation(summary = "Get a single user.", description = "Get a single user by email.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User with given email.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL + "/{email:.+}")
     public ResponseEntity<EntityModel<User>> getUserByEmail(
             @Parameter(description = "The email of the user to be retrieved.")
@@ -189,6 +206,14 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     // getUserByEmail())
     @Operation(summary = "Get a single user.", description = "Get a single user by id.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User with given id.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL + "/byid/{id:.+}")
     public ResponseEntity<EntityModel<User>> getUser(
             @Parameter(description = "The id of the user to be retrieved.")
@@ -201,6 +226,14 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Create a new user.", description = "Create a user (not in Liferay).",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User created successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input (e.g. empty password)",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = USERS_URL)
     public ResponseEntity<EntityModel<User>> createUser(
@@ -227,6 +260,12 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Get current user's profile.", description = "Get current user's profile.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Current user profile.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> getUserProfile() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -236,6 +275,14 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Update user's profile.", description = "Update user's profile.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid profile input",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PatchMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> updateUserProfile(
             @Parameter(description = "Updated user profile", schema = @Schema(example = """
@@ -277,8 +324,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "List all of rest api tokens.",
             description = "List all of rest api tokens of current user.",
-            responses = {@ApiResponse(responseCode = "200", description = "List of tokens.")},
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of REST API tokens.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = RestApiToken.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -295,12 +347,18 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Create rest api token.",
             description = "Create rest api token for current user.",
-            responses = {
-                    @ApiResponse(responseCode = "201", description = "Create token successfully."),
-                    @ApiResponse(responseCode = "403", description = "API token requested with write authority when not allowed"),
-                    @ApiResponse(responseCode = "500", description = "Create token failure.")
-            },
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Token created; response body is the raw token (store it once)."),
+            @ApiResponse(responseCode = "400", description = "Invalid request or token length not configured",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "API token requested with write authority when not allowed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Create token failure",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PostMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<String> createUserRestApiToken(
             @Parameter(description = "Token request",
@@ -336,10 +394,15 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Delete rest api token.",
             description = "Delete rest api token by name for current user.",
-            responses = {
-                    @ApiResponse(responseCode = "204", description = "Revoke token successfully."),
-                    @ApiResponse(responseCode = "404", description = "Token name not found.")},
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Token revoked successfully.",
+                    content = @Content(schema = @Schema(implementation = Void.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Token name not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @DeleteMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<String> revokeUserRestApiToken(
             @Parameter(description = "Name of token to be revoked.",
@@ -369,14 +432,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Fetch group list of a user.",
             description = "Fetch the list of group for a particular user.", tags = {"Users"})
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "User and its groups.",
-            content = {
-                    @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                            {
-                                "primaryGrpList": ["DEPARTMENT"],
-                                "secondaryGrpList": ["DEPARTMENT1","DEPARTMENT2"]
-                            }
-                            """))})})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User and its groups.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\"primaryGrpList\": [\"DEPARTMENT\"], \"secondaryGrpList\": [\"DEPARTMENT1\",\"DEPARTMENT2\"]}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL + "/groupList")
     public ResponseEntity<Map<String, List<String>>> getGroupList() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -399,6 +461,16 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Update an existing user.", description = "Update an existing user",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User updated successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Admin authority required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PatchMapping(value = USERS_URL + "/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<EntityModel<User>> patchUser(
@@ -424,6 +496,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Get existing departments.", description = "Get existing departments from all users",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of departments (or primary/secondary based on type param)."),
+            @ApiResponse(responseCode = "400", description = "Invalid type parameter (must be primary or secondary)",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL + "/departments")
     public ResponseEntity<?> getExistingDepartments(
             @Parameter(description = "Type of department (primary, secondary)")
