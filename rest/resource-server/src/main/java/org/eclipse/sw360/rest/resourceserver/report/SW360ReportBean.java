@@ -23,4 +23,5 @@ public class SW360ReportBean{
     boolean withSubProject;
     String bomType;
     List<ReleaseRelationship> selectedRelRelationship;
+    String format;
 }
