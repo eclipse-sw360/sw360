@@ -26,7 +26,7 @@ import java.util.List;
 
 @Configuration
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class Sw360CORSFilter implements Filter {
+public abstract class Sw360CORSFilter implements Filter {
 
     @Value("${sw360.cors.allowed-origin:#{null}}")
     private String allowedOrigin;
