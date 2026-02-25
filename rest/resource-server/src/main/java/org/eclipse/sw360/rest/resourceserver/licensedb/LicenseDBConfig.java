@@ -11,11 +11,13 @@ package org.eclipse.sw360.rest.resourceserver.licensedb;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties(prefix = "licensedb")
+@ConditionalOnProperty(name = "licensedb.enabled", havingValue = "true", matchIfMissing = false)
 @Getter
 @Setter
 public class LicenseDBConfig {
