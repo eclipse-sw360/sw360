@@ -78,7 +78,7 @@ If you can't install thrift 0.20 runtime, you will need the following requiremen
 Then run the current build script:
 
 ```bash
-./scripts/install-thrift.sh
+./third-party/thrift/install-thrift.sh
 ```
 
 #### Local Building

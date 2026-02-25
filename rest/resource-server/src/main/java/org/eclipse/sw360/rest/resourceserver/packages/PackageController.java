@@ -109,7 +109,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             tags = {"Packages"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PACKAGES_URL, method = RequestMethod.POST)
+    @PostMapping(value = PACKAGES_URL)
     public ResponseEntity<EntityModel<Package>> createPackage(
             @Parameter(description = "The package to be created.",
                     schema = @Schema(implementation = Package.class))
@@ -175,7 +175,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             tags = {"Packages"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PACKAGES_URL + "/{id}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<?> deletePackage(
             @Parameter(description = "The id of the package to be deleted.")
             @PathVariable("id") String id
@@ -449,7 +449,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             }
     )
 
-    @RequestMapping(value = PACKAGES_URL + "/{id}/usage", method = RequestMethod.GET)
+    @GetMapping(value = PACKAGES_URL + "/{id}/usage")
     public ResponseEntity<Map<String, Object>> getPackageUsageInfo(
             @Parameter(description = "The id of the package to check usage for")
             @PathVariable("id") String id

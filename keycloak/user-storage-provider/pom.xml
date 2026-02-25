@@ -13,7 +13,7 @@
     <parent>
         <artifactId>keycloak</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.0.0-beta</version>
+        <version>20.0.0-rc-1</version>
     </parent>
 
     <properties>
