@@ -356,8 +356,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                     schema = @Schema(implementation = ClearingRequest.class))
             @RequestBody Map<String, Object> reqBodyMap,
             HttpServletRequest request
-    ) {
-        try{
+    ) throws TException {
+        try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
             ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(id, sw360User);
@@ -408,7 +408,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                         throw new BadRequestClientException("Invalid agreed clearing date requested");
                     }
                 } else {
-                    throw new AccessDeniedException("Update not allowed for field Agreed Clearing Date with user role");
+                    throw new BadRequestClientException("Update not allowed for field Agreed Clearing Date with user role");
                 }
             }
 
@@ -419,19 +419,30 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
 
             if (updateCRStatus == RequestStatus.ACCESS_DENIED) {
-                throw new AccessDeniedException("Edit action is not allowed for this user role");
+                throw new BadRequestClientException("Edit action is not allowed for this user role");
             }
 
             return new ResponseEntity<>(halClearingRequest, HttpStatus.OK);
-        } catch (Exception e) {
+        } catch (AccessDeniedException e) {
+            log.error("Access denied in clearing request update for id {}: {}", id, e.getMessage());
+            throw new BadRequestClientException(e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid argument in clearing request update for id {}: {}", id, e.getMessage());
             throw new BadRequestClientException(e.getMessage(), e);
         }
     }
 
     private ClearingRequest convertToClearingRequest(Map<String, Object> requestBody){
+        Map<String, Object> sanitizedBody = new HashMap<>();
+        requestBody.forEach((key, value) -> {
+            if (value != null && !(value instanceof String && ((String) value).isEmpty())) {
+                sanitizedBody.put(key, value);
+            }
+        });
+
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
-        return mapper.convertValue(requestBody, ClearingRequest.class);
+        return mapper.convertValue(sanitizedBody, ClearingRequest.class);
     }
 }
