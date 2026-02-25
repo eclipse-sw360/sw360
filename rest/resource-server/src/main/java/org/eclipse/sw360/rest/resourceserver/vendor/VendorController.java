@@ -30,6 +30,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -86,6 +87,14 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "List all of the service's vendors.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of vendors."),
+            @ApiResponse(responseCode = "204", description = "No vendors found."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = VENDORS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors(
             @Parameter(description = "Search text")
@@ -138,6 +147,16 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Get a single vendor by id.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vendor found.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Vendor.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Vendor not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = VENDORS_URL + "/{id}")
     public ResponseEntity<EntityModel<Vendor>> getVendor(
             @Parameter(description = "The id of the vendor to get.")
@@ -155,6 +174,16 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Get the releases by vendor id.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of releases."),
+            @ApiResponse(responseCode = "204", description = "No releases found."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Vendor not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = VENDORS_URL + "/{id}/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleases(
             @Parameter(description = "The id of the vendor to get.")
@@ -186,6 +215,19 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Delete vendor by id.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vendor deleted successfully."),
+            @ApiResponse(responseCode = "400", description = "Vendor cannot be deleted",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - ADMIN authority required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Vendor not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping(value = VENDORS_URL + "/{id}")
     public ResponseEntity<?> deleteVendor(
@@ -212,6 +254,18 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Create a new vendor.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Vendor created successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Vendor.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - ADMIN authority required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = VENDORS_URL)
     public ResponseEntity<?> createVendor(
@@ -249,19 +303,27 @@ public class VendorController implements RepresentationModelProcessor<Repository
                     responseCode = "400", description = "Vendor body is empty.",
                     content = {
                             @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class),
                                     examples = @ExampleObject(
                                             value = "{\"message\": \"Value cannot be null\"}"
                                     ))
                     }),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - ADMIN authority required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
             @ApiResponse(
                     responseCode = "409", description = "A Vendor with same fullname already exists!",
                     content = {
                             @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class),
                                     examples = @ExampleObject(
                                             value = "{\"message\": \"A Vendor with same fullname 'ABC_XYZ' already exists!\"}"
                                     ))
                     }
-            )
+            ),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping(value = VENDORS_URL + "/{id}")
@@ -307,7 +369,13 @@ public class VendorController implements RepresentationModelProcessor<Repository
             @ApiResponse(responseCode = "200", description = "Vendor spreadsheet.",
                     content = {
                             @Content(mediaType = CONTENT_TYPE_OPENXML_SPREADSHEET)
-                    })
+                    }),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - ADMIN authority required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Export failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = VENDORS_URL + "/exportVendorDetails")
@@ -342,22 +410,27 @@ public class VendorController implements RepresentationModelProcessor<Repository
                     @ApiResponse(responseCode = "400", description = "Vendor used as source or target has an open MR..",
                             content = {
                                     @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class),
                                             examples = @ExampleObject(
                                                     value = "{\"message\": \"Vendor used as source or target has an open MR.\"}"
+                                            ))
+                            }),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Access denied.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class),
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Access denied.\"}"
                                             ))
                             }),
                     @ApiResponse(responseCode = "500", description = "Internal server error while merging the vendors.",
                             content = {
                                     @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class),
                                             examples = @ExampleObject(
                                                     value = "{\"message\": \"Internal server error while merging the vendors.\"}"
-                                            ))
-                            }),
-                    @ApiResponse(responseCode = "403", description = "Access denied.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            examples = @ExampleObject(
-                                                    value = "{\"message\": \"Access denied.\"}"
                                             ))
                             })
             },

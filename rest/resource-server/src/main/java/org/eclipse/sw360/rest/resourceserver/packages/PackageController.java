@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.thrift.TException;
@@ -52,6 +53,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -108,6 +110,18 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             description = "Create a new package.",
             tags = {"Packages"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Package created successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Package.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = PACKAGES_URL)
     public ResponseEntity<EntityModel<Package>> createPackage(
@@ -134,16 +148,36 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             summary = "Update a package.",
             description = "Update a package.",
             tags = {"Packages"},
-            responses = {@ApiResponse(
-                    responseCode = "200",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            schema = @Schema(implementation = Package.class))}
-            ), @ApiResponse(
-                    responseCode = "403",
-                    description = "User role not allowed",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            schema = @Schema(implementation = ResponseEntity.class))}
-            )}
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                                    schema = @Schema(implementation = Package.class))},
+                            description = "Package updated successfully."
+                    ),
+                    @ApiResponse(
+                            responseCode = "400", description = "Invalid input",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "User role not allowed",
+                            content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                                    schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))}
+                    ),
+                    @ApiResponse(
+                            responseCode = "404", description = "Package not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Internal server error",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                    )
+            }
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = PACKAGES_URL + "/{id}")
@@ -174,6 +208,19 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             description = "Delete a package.",
             tags = {"Packages"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Package deleted successfully."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - user role not allowed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Package not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "409", description = "Conflict - package is in use",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @DeleteMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<?> deletePackage(
@@ -200,6 +247,16 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             description = "Get a package by id.",
             tags = {"Packages"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Package found.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Package.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Package not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<EntityModel<Package>> getPackage(
             @Parameter(description = "The id of the package to be retrieved.")
@@ -216,16 +273,31 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             summary = "Get packages for user.",
             description = "Get packages for user with filters.",
             tags = {"Packages"},
-            responses = {@ApiResponse(
-                    responseCode = "200",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            array = @ArraySchema(schema = @Schema(implementation = Package.class)))}
-            ), @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid package manager type",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            schema = @Schema(implementation = ResponseEntity.class))}
-            )}
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                                    array = @ArraySchema(schema = @Schema(implementation = Package.class)))},
+                            description = "List of packages."
+                    ),
+                    @ApiResponse(
+                            responseCode = "204", description = "No packages found."
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid package manager type",
+                            content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                                    schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))}
+                    ),
+                    @ApiResponse(
+                            responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Internal server error",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))
+                    )
+            }
     )
     @GetMapping(value = PACKAGES_URL)
     public ResponseEntity<?> getPackagesForUser(
@@ -445,7 +517,13 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                                             )
                                     )
                             }
-                    )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Package not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             }
     )
 

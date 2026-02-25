@@ -48,6 +48,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -114,6 +115,14 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all of the service's moderation requests.",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of moderation requests."),
+            @ApiResponse(responseCode = "204", description = "No moderation requests found."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = MODERATION_REQUEST_URL)
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -140,6 +149,17 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "Get a single moderation request by id.",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation request found.",
+                    content = @Content(mediaType = "application/hal+json")),
+            @ApiResponse(responseCode = "204", description = "No content."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "Moderation request not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = MODERATION_REQUEST_URL + "/{id}")
     public ResponseEntity<HalResource<Map<String, Object>>> getModerationRequestById(
             @Parameter(description = "The id of the moderation request to be retrieved.")
@@ -177,6 +197,16 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all the ModerationRequest visible to the user based on the state and  respond with MR where user is a moderator",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of moderation requests by state."),
+            @ApiResponse(responseCode = "204", description = "No moderation requests found."),
+            @ApiResponse(responseCode = "400", description = "Invalid state parameter",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = MODERATION_REQUEST_URL + "/byState")
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequestsByState(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -244,15 +274,26 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "Perform actions on the moderation request, save the comment by the reviewer and send email " +
                     "notifications.",
             tags = {"Moderation Requests"},
-            responses = {@ApiResponse(
-                    responseCode = "200",
-                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                            schemaProperties = {@SchemaProperty(
-                                    name = "status",
-                                    schema = @Schema(implementation = ModerationState.class)
-                            )}
-                    )}
-            )}
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                                    schemaProperties = {@SchemaProperty(
+                                            name = "status",
+                                            schema = @Schema(implementation = ModerationState.class)
+                                    )}
+                            )},
+                            description = "Moderation request updated successfully."
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request - invalid action or user not a moderator",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "405", description = "Method not allowed - moderation request is already closed",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+            }
     )
     @PatchMapping(value = MODERATION_REQUEST_URL + "/{id}")
     public ResponseEntity<HalResource<Map<String, String>>> updateModerationRequestById(
@@ -342,6 +383,14 @@ public class ModerationRequestController implements RepresentationModelProcessor
                     "\"timestamp\", \"documentName\" and \"moderationState\".",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of user's moderation requests."),
+            @ApiResponse(responseCode = "204", description = "No moderation requests found."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = MODERATION_REQUEST_URL + "/mySubmissions")
     public ResponseEntity<CollectionModel<ModerationRequest>> getSubmissions(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -634,6 +683,20 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "Delete delete moderation request of the service.",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All specified moderation requests were successfully deleted.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request - no valid moderation requests found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "409", description = "Conflict - some requests are in open state or user doesn't have permission",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @DeleteMapping(value = MODERATION_REQUEST_URL + "/delete")
     public ResponseEntity<?> deleteModerationRequest(
