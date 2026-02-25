@@ -295,11 +295,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 sw360SPDXDocumentService.sortSectionForDocumentCreation(documentCreationInformation);
                 restControllerHelper.addEmbeddedDocumentCreationInformation(halRelease, documentCreationInformation);
             }
-            String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
-            if(CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
-                PackageInformation packageInformation = releaseService.getPackageInformationById(spdxPackageInfoId, sw360User);
-                sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
-                restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
+            if (!CommonUtils.isNullOrEmptyCollection(spdxDocument.getSpdxPackageInfoIds())) {
+                String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
+                if (CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
+                    PackageInformation packageInformation = releaseService.getPackageInformationById(spdxPackageInfoId, sw360User);
+                    sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
+                    restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
+                }
             }
         }
         if (linkedReleaseRelations != null) {

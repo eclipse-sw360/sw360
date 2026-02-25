@@ -87,7 +87,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, getOrDefault(configContainer, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, SW360Constants.DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE))
             .put(RELEASE_FRIENDLY_URL, getOrDefault(configContainer, RELEASE_FRIENDLY_URL, "http://localhost:3000/components/releases/detail/releaseId"))
             .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
-                .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, ""))
+                .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, "[]"))
                 .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
                 .put(REST_API_TOKEN_LENGTH, getOrDefault(configContainer, REST_API_TOKEN_LENGTH, "20"))
             .build();
