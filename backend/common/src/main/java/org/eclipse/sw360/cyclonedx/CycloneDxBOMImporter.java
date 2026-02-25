@@ -619,7 +619,7 @@ public class CycloneDxBOMImporter {
 
                 for (org.cyclonedx.model.Component bomComp : entry.getValue()) {
                     Set<String> licenses = getLicenseFromBomComponent(bomComp);
-                    Release release = createRelease(bomComp.getVersion(), comp, licenses);
+                    Release release = createRelease(bomComp, comp, licenses);
                     if (CommonUtils.isNullEmptyOrWhitespace(release.getVersion()) ) {
                         log.error("release version is not present in SBoM for component: " + comp.getName());
                         invalidReleases.add(comp.getName());
