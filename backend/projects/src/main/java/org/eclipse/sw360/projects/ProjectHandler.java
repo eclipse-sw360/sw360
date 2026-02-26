@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ImportBomDryRunReport;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -310,6 +311,14 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(attachmentContentId);
         assertUser(user);
         return handler.importBomFromAttachmentContent(user, attachmentContentId);
+    }
+
+    @Override
+    public ImportBomDryRunReport dryRunImportBom(User user, String filename, ByteBuffer bomContent) throws SW360Exception {
+        assertUser(user);
+        assertNotNull(filename);
+        assertNotNull(bomContent);
+        return handler.dryRunImportBom(user, filename, bomContent);
     }
 
     @Override
