@@ -85,7 +85,9 @@ public class SvmConnector {
             String javaKeystoreFilename = System
                     .getProperties()
                     .getProperty("java.home") + File.separator + "lib" + File.separator + "security" + File.separator + "cacerts";
-            trustStore.load(new FileInputStream(javaKeystoreFilename), JAVA_KEYSTORE_PASSWORD);
+            try (InputStream javaKeystoreStream = new FileInputStream(javaKeystoreFilename)) {
+                trustStore.load(javaKeystoreStream, JAVA_KEYSTORE_PASSWORD);
+            }
 
             // Loading KeyStore, i.e., PKCS #12 bundle
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
