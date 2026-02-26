@@ -2447,13 +2447,18 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_import_spdx_dry_run() throws Exception {
         given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
-        MockMultipartFile file = new MockMultipartFile("file", "file=@/bom.spdx.rdf".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM/dry-run")
-                .content(file.getBytes())
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+        MockMultipartFile file = new MockMultipartFile("file", "bom.spdx.rdf",
+                MediaType.APPLICATION_OCTET_STREAM_VALUE, "file=@/bom.spdx.rdf".getBytes());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/projects/import/SBOM/dry-run")
+                .file(file)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("type", "SPDX");
-        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+        this.mockMvc.perform(builder)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestStatus", Matchers.is("SUCCESS")))
+                .andExpect(jsonPath("$.newComponents[0]", Matchers.is("new-component")))
+                .andExpect(jsonPath("$.existingComponents[0]", Matchers.is("existing-component")))
+                .andDo(this.documentationHandler.document());
     }
 
     @Test

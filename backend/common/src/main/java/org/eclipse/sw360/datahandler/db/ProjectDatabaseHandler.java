@@ -58,10 +58,11 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.core.InvalidSPDXAnalysisException;
-import org.spdx.library.SpdxModelFactory;
-import org.spdx.library.model.v2.SpdxConstantsCompatV2;
+import org.spdx.library.model.v2.Relationship;
+import org.spdx.library.model.v2.SpdxElement;
 import org.spdx.library.model.v2.SpdxDocument;
 import org.spdx.library.model.v2.SpdxPackage;
+import org.spdx.library.model.v2.enumerations.RelationshipType;
 import org.spdx.tools.InvalidFileNameException;
 import org.spdx.tools.SpdxToolsHelper;
 
@@ -81,7 +82,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
@@ -2149,8 +2149,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<SpdxPackageDryRunData> packageData = getSpdxPackageDryRunData(sourceFile, report.getWarnings());
 
             if (packageData.isEmpty()) {
-                if (report.getWarnings().isEmpty()) {
-                    report.getWarnings().add("No SPDX packages were detected in the uploaded file.");
+                if (!report.getWarnings().stream().anyMatch(this::isFatalDryRunWarning)) {
+                    report.getWarnings().add("No release packages linked via CONTAINS relationships were found.");
+                    report.setRequestStatus(RequestStatus.SUCCESS);
                 }
                 return report;
             }
@@ -2191,8 +2192,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    private List<SpdxPackageDryRunData> getSpdxPackageDryRunData(File sourceFile, Set<String> warnings) throws SW360Exception {
-        SpdxDocument spdxDocument = openAsSpdx(sourceFile);
+    private List<SpdxPackageDryRunData> getSpdxPackageDryRunData(File sourceFile, Set<String> warnings) {
+        SpdxDocument spdxDocument = openAsSpdx(sourceFile, warnings);
         if (spdxDocument == null) {
             return Collections.emptyList();
         }
@@ -2210,32 +2211,58 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 warnings.add("The provided BOM file contained multiple described top level packages. This is not allowed here.");
                 return Collections.emptyList();
             }
+
+            SpdxPackage topLevelPackage = describedPackages.get(0);
+            List<SpdxPackage> relatedPackages = collectPackagesFromContainsRelationships(topLevelPackage, warnings);
+            return relatedPackages.stream()
+                    .map(spdxPackage -> toDryRunData(spdxPackage, warnings))
+                    .collect(Collectors.toList());
         } catch (InvalidSPDXAnalysisException e) {
             warnings.add("Failed to inspect SPDX document structure.");
             return Collections.emptyList();
         }
-
-        try (@SuppressWarnings("unchecked")
-             Stream<SpdxPackage> allPackagesStream = (Stream<SpdxPackage>) SpdxModelFactory.getSpdxObjects(
-                     spdxDocument.getModelStore(),
-                     spdxDocument.getCopyManager(),
-                     SpdxConstantsCompatV2.CLASS_SPDX_PACKAGE,
-                     spdxDocument.getDocumentUri(),
-                     null)) {
-            List<SpdxPackageDryRunData> packageData = new ArrayList<>();
-            allPackagesStream.forEach(spdxPackage -> packageData.add(toDryRunData(spdxPackage, warnings)));
-            return packageData;
-        } catch (InvalidSPDXAnalysisException e) {
-            warnings.add("Failed to parse SPDX packages from the document.");
-            return Collections.emptyList();
-        }
     }
 
-    private SpdxDocument openAsSpdx(File file) throws SW360Exception {
+    private List<SpdxPackage> collectPackagesFromContainsRelationships(SpdxPackage topLevelPackage, Set<String> warnings) {
+        List<SpdxPackage> relatedPackages = new ArrayList<>();
+        Set<String> visitedSpdxIds = new HashSet<>();
+        Deque<SpdxPackage> pendingPackages = new ArrayDeque<>();
+        pendingPackages.push(topLevelPackage);
+        visitedSpdxIds.add(topLevelPackage.getId());
+
+        while (!pendingPackages.isEmpty()) {
+            SpdxPackage currentPackage = pendingPackages.pop();
+            try {
+                for (Relationship relationship : currentPackage.getRelationships()) {
+                    if (!RelationshipType.CONTAINS.equals(relationship.getRelationshipType())) {
+                        continue;
+                    }
+
+                    Optional<SpdxElement> relatedElement = relationship.getRelatedSpdxElement();
+                    if (relatedElement.isEmpty() || !(relatedElement.get() instanceof SpdxPackage relatedPackage)) {
+                        continue;
+                    }
+
+                    if (!visitedSpdxIds.add(relatedPackage.getId())) {
+                        continue;
+                    }
+                    relatedPackages.add(relatedPackage);
+                    pendingPackages.push(relatedPackage);
+                }
+            } catch (InvalidSPDXAnalysisException e) {
+                warnings.add("Failed to inspect package relationships in SPDX document.");
+                return Collections.emptyList();
+            }
+        }
+        return relatedPackages;
+    }
+
+    private SpdxDocument openAsSpdx(File file, Set<String> warnings) {
         try {
             return SpdxToolsHelper.deserializeDocumentCompatV2(file);
         } catch (InvalidSPDXAnalysisException | IOException | InvalidFileNameException e) {
-            throw new SW360Exception(e.getMessage());
+            warnings.add("Failed to parse SPDX file: " + e.getMessage());
+            return null;
         }
     }
 
@@ -2325,6 +2352,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return normalized.isEmpty()
                 || "NOASSERTION".equalsIgnoreCase(normalized)
                 || "Optional[NOASSERTION]".equalsIgnoreCase(normalized);
+    }
+
+    private boolean isFatalDryRunWarning(String warning) {
+        return warning != null && (
+                warning.startsWith("Failed to")
+                        || warning.startsWith("The provided BOM did not contain any top level packages.")
+                        || warning.startsWith("The provided BOM file contained multiple described top level packages."));
     }
 
     private record SpdxPackageDryRunData(String name, String version, String declaredLicense) { }
