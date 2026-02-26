@@ -2273,6 +2273,18 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return normalized;
     }
 
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+        }
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        if ("xml".equals(ext) && fileName.endsWith("rdf.xml")) {
+            ext = "rdf";
+        }
+        return ext;
+    }
+
     private byte[] getByteArrayFromByteBuffer(ByteBuffer byteBuffer) {
         ByteBuffer duplicate = byteBuffer.duplicate();
         byte[] bytes = new byte[duplicate.remaining()];
