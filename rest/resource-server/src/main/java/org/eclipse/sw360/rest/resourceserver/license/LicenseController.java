@@ -100,6 +100,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    @NonNull
+    private final LicenseDbIntegrationService licenseDbIntegrationService;
+
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
 
@@ -470,15 +473,16 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Import SPDX information.",
-            description = "Import SPDX information.",
-            tags = {"Licenses"}
+            description = "Import SPDX information. DEPRECATED: Use LicenseDB integration instead.",
+            tags = {"Licenses"},
+            deprecated = true
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/import/SPDX")
     public ResponseEntity<RequestSummary> importSPDX() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importSpdxInformation(sw360User);
-        requestSummary.setMessage("SPDX license has imported successfully");
+        requestSummary.setMessage("SPDX license has imported successfully. DEPRECATED: Please use /import/LicenseDB instead.");
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestSummary, status);
     }
@@ -529,14 +533,18 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Import OSADL information.",
-            description = "Import OSADL information.",
-            tags = {"Licenses"}
+            description = "Import OSADL information. DEPRECATED: Use LicenseDB integration instead.",
+            tags = {"Licenses"},
+            deprecated = true
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/import/OSADL")
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importOsadlInformation(sw360User);
+        requestSummary.setMessage(requestSummary.getRequestStatus() == RequestStatus.SUCCESS ? 
+            "OSADL information imported successfully. DEPRECATED: Please use /import/LicenseDB instead." : 
+            "Failed to import OSADL information");
         HttpStatus status = requestSummary.getRequestStatus() == RequestStatus.SUCCESS ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
         return new ResponseEntity<>(requestSummary, status);
     }
@@ -551,12 +559,13 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<Map<String, Object>> importLicenseDb() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         
-        Map<String, Object> result = new HashMap<>();
-        result.put("message", "LicenseDB import initiated");
-        result.put("status", "SUCCESS");
+        Map<String, Object> result = licenseDbIntegrationService.fullSync();
         result.put("user", sw360User.getEmail());
         
         HttpStatus status = HttpStatus.OK;
+        if ("FAILED".equals(result.get("status"))) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
         return new ResponseEntity<>(result, status);
     }
 
@@ -568,9 +577,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @PreAuthorize("hasAuthority('READ')")
     @RequestMapping(value = LICENSES_URL + "/sync/LicenseDB/status", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getLicenseDbSyncStatus() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("enabled", false);
-        result.put("message", "LicenseDB integration is not fully configured");
+        Map<String, Object> result = licenseDbIntegrationService.getSyncStatus();
         
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(result, status);
@@ -584,11 +591,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @PreAuthorize("hasAuthority('ADMIN')")
     @RequestMapping(value = LICENSES_URL + "/sync/LicenseDB/test", method = RequestMethod.POST)
     public ResponseEntity<Map<String, Object>> testLicenseDbConnection() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("connected", false);
-        result.put("message", "LicenseDB integration is not enabled or not configured");
+        Map<String, Object> result = licenseDbIntegrationService.testConnection();
         
         HttpStatus status = HttpStatus.OK;
+        if (!Boolean.TRUE.equals(result.get("connected"))) {
+            status = HttpStatus.SERVICE_UNAVAILABLE;
+        }
         return new ResponseEntity<>(result, status);
     }
 

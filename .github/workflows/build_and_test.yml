@@ -72,6 +72,36 @@ jobs:
           sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
           sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
+      - name: Setup CouchDB test databases
+        run: |
+          # Wait for CouchDB to be ready
+          echo "Waiting for CouchDB to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:5984/_up > /dev/null 2>&1; then
+              echo "CouchDB is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+          # Create required test databases with single node (N=1) configuration
+          echo "Creating test databases..."
+          COUCH_URL="http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984"
+          
+          # Create _users database for authentication
+          curl -s -X PUT "${COUCH_URL}/_users" || true
+          
+          # Create test databases with N=1 (single node) to avoid replication issues
+          for db in sw360_test_db sw360_test_users sw360_test_attachments sw360_test_config sw360_test_vm; do
+            curl -s -X PUT "${COUCH_URL}/${db}" -H "Content-Type: application/json" -d '{"q":1,"n":1}' || true
+            echo "Created database: ${db}"
+          done
+          
+          # Verify databases were created
+          echo "Listing databases:"
+          curl -s "${COUCH_URL}/_all_dbs"
+
       - name: Copy test configuration files
         run: |
           sudo cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
