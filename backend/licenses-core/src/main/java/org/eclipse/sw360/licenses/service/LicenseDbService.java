@@ -152,9 +152,46 @@ public class LicenseDbService {
                     obligation.setLastSyncTime(Instant.now().toString());
                     obligation.setSyncStatus("SYNCED");
                     
-                    // Store the obligation - in SW360, obligations are typically stored as part of license
-                    // Here we just log that it would be stored
-                    log.debug("Would store obligation: {} - {}", obligationDbId, obligation.getTitle());
+                    // Get associated license IDs from LicenseDB
+                    List<String> licenseIds = (List<String>) obligationData.get("license_ids");
+                    
+                    // Store the obligation by linking it to the associated licenses
+                    if (licenseIds != null && !licenseIds.isEmpty()) {
+                        for (String licenseShortName : licenseIds) {
+                            try {
+                                List<License> licenses = licenseRepository.searchByShortName(licenseShortName);
+                                for (License license : licenses) {
+                                    // Add obligation to license's obligations list
+                                    List<Obligation> obligationsList = license.getObligations();
+                                    if (obligationsList == null) {
+                                        obligationsList = new ArrayList<>();
+                                    }
+                                    obligationsList.add(obligation);
+                                    license.setObligations(obligationsList);
+                                    
+                                    // Add to obligation database IDs if not present
+                                    Set<String> oblDbIds = license.getObligationDatabaseIds();
+                                    if (oblDbIds == null) {
+                                        oblDbIds = new HashSet<>();
+                                    }
+                                    // Generate a simple ID for the obligation
+                                    String oblId = "OBL_" + obligationDbId;
+                                    oblDbIds.add(oblId);
+                                    license.setObligationDatabaseIds(oblDbIds);
+                                    
+                                    // Save/update the license with the new obligation
+                                    licenseRepository.update(license);
+                                    updated++;
+                                    log.debug("Linked obligation {} to license {}", obligationDbId, licenseShortName);
+                                }
+                            } catch (Exception e) {
+                                log.error("Failed to link obligation {} to license {}: {}", obligationDbId, licenseShortName, e.getMessage());
+                            }
+                        }
+                    } else {
+                        // No associated licenses, just log
+                        log.debug("Obligation {} has no associated licenses", obligationDbId);
+                    }
                     imported++;
                 } catch (Exception e) {
                     log.error("Failed to sync obligation {}: {}", obligationDbId, e.getMessage());

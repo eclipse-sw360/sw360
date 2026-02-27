@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Service
@@ -75,32 +77,40 @@ public class LicenseDbIntegrationService {
         try {
             String authUrl = apiUrl + "/api/v1/login";
             
+            // Use OAuth2 client credentials format (RFC 6749)
             Map<String, String> credentials = new HashMap<>();
-            credentials.put("username", clientId);
-            credentials.put("password", clientSecret);
+            credentials.put("grant_type", "client_credentials");
+            credentials.put("client_id", clientId);
+            credentials.put("client_secret", clientSecret);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, String>> request = new HttpEntity<>(credentials, headers);
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            
+            // Build URL-encoded body
+            String body = String.format("grant_type=client_credentials&client_id=%s&client_secret=%s",
+                URLEncoder.encode(clientId, StandardCharsets.UTF_8),
+                URLEncoder.encode(clientSecret, StandardCharsets.UTF_8));
+            
+            HttpEntity<String> request = new HttpEntity<>(body, headers);
 
             ResponseEntity<JsonNode> response = restTemplate.postForEntity(authUrl, request, JsonNode.class);
             
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                JsonNode body = response.getBody();
+                JsonNode responseBody = response.getBody();
                 
-                if (body.has("token")) {
-                    this.accessToken = body.get("token").asText();
-                } else if (body.has("access_token")) {
-                    this.accessToken = body.get("access_token").asText();
+                if (responseBody.has("token")) {
+                    this.accessToken = responseBody.get("token").asText();
+                } else if (responseBody.has("access_token")) {
+                    this.accessToken = responseBody.get("access_token").asText();
                 } else {
                     throw new LicenseDbIntegrationException("No token found in authentication response");
                 }
                 
-                if (body.has("expires_in")) {
-                    int expiresIn = body.get("expires_in").asInt();
+                if (responseBody.has("expires_in")) {
+                    int expiresIn = responseBody.get("expires_in").asInt();
                     this.tokenExpiry = Instant.now().plusSeconds(expiresIn - 60);
-                } else if (body.has("expires_at")) {
-                    long expiresAt = body.get("expires_at").asLong();
+                } else if (responseBody.has("expires_at")) {
+                    long expiresAt = responseBody.get("expires_at").asLong();
                     this.tokenExpiry = Instant.ofEpochSecond(expiresAt - 60);
                 } else {
                     this.tokenExpiry = Instant.now().plusSeconds(3540);

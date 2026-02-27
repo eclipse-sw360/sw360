@@ -58,16 +58,24 @@ public class LicenseDbClient {
         }
 
         try {
-            // Try OAuth2 client credentials flow first
+            // OAuth2 client credentials flow
             String authUrl = properties.getApiUrl() + "/api/v1/login";
             
+            // Use OAuth2 client credentials format (RFC 6749)
             Map<String, String> credentials = new HashMap<>();
-            credentials.put("username", properties.getOAuthClientId());
-            credentials.put("password", properties.getOAuthClientSecret());
+            credentials.put("grant_type", "client_credentials");
+            credentials.put("client_id", properties.getOAuthClientId());
+            credentials.put("client_secret", properties.getOAuthClientSecret());
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, String>> request = new HttpEntity<>(credentials, headers);
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            
+            // Build URL-encoded body
+            String body = String.format("grant_type=client_credentials&client_id=%s&client_secret=%s",
+                URLEncoder.encode(properties.getOAuthClientId(), StandardCharsets.UTF_8),
+                URLEncoder.encode(properties.getOAuthClientSecret(), StandardCharsets.UTF_8));
+            
+            HttpEntity<String> request = new HttpEntity<>(body, headers);
 
             ResponseEntity<JsonNode> response = restTemplate.postForEntity(authUrl, request, JsonNode.class);
             
