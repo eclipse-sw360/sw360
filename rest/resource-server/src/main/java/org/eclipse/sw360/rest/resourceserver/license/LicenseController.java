@@ -38,9 +38,10 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.licenses.service.LicenseDbService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
@@ -99,6 +100,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private final LicenseDbIntegrationService licenseDbIntegrationService;
+
+    @NonNull
+    private final LicenseDbService licenseDbService;
 
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
@@ -470,15 +477,16 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Import SPDX information.",
-            description = "Import SPDX information.",
-            tags = {"Licenses"}
+            description = "Import SPDX information. DEPRECATED: Use LicenseDB integration instead.",
+            tags = {"Licenses"},
+            deprecated = true
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/import/SPDX")
     public ResponseEntity<RequestSummary> importSPDX() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importSpdxInformation(sw360User);
-        requestSummary.setMessage("SPDX license has imported successfully");
+        requestSummary.setMessage("SPDX license has imported successfully. DEPRECATED: Please use /import/LicenseDB instead.");
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestSummary, status);
     }
@@ -529,16 +537,71 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Import OSADL information.",
-            description = "Import OSADL information.",
-            tags = {"Licenses"}
+            description = "Import OSADL information. DEPRECATED: Use LicenseDB integration instead.",
+            tags = {"Licenses"},
+            deprecated = true
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/import/OSADL")
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importOsadlInformation(sw360User);
+        requestSummary.setMessage(requestSummary.getRequestStatus() == RequestStatus.SUCCESS ? 
+            "OSADL information imported successfully. DEPRECATED: Please use /import/LicenseDB instead." : 
+            "Failed to import OSADL information");
         HttpStatus status = requestSummary.getRequestStatus() == RequestStatus.SUCCESS ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
         return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @Operation(
+            summary = "Import LicenseDB information.",
+            description = "Import licenses and obligations from LicenseDB.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL + "/import/LicenseDB", method = RequestMethod.POST)
+    public ResponseEntity<Map<String, Object>> importLicenseDb() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        
+        Map<String, Object> result = licenseDbService.fullSync();
+        result.put("user", sw360User.getEmail());
+        
+        HttpStatus status = HttpStatus.OK;
+        if ("FAILED".equals(result.get("status"))) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return new ResponseEntity<>(result, status);
+    }
+
+    @Operation(
+            summary = "Get LicenseDB sync status.",
+            description = "Get the current sync status from LicenseDB.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('READ')")
+    @RequestMapping(value = LICENSES_URL + "/sync/LicenseDB/status", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> getLicenseDbSyncStatus() {
+        Map<String, Object> result = licenseDbIntegrationService.getSyncStatus();
+        
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(result, status);
+    }
+
+    @Operation(
+            summary = "Test LicenseDB connection.",
+            description = "Test the connection to LicenseDB server.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @RequestMapping(value = LICENSES_URL + "/sync/LicenseDB/test", method = RequestMethod.POST)
+    public ResponseEntity<Map<String, Object>> testLicenseDbConnection() {
+        Map<String, Object> result = licenseDbIntegrationService.testConnection();
+        
+        HttpStatus status = HttpStatus.OK;
+        if (!Boolean.TRUE.equals(result.get("connected"))) {
+            status = HttpStatus.SERVICE_UNAVAILABLE;
+        }
+        return new ResponseEntity<>(result, status);
     }
 
     @Operation(
