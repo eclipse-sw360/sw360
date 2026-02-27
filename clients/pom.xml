@@ -49,6 +49,7 @@
     <modules>
         <module>http-support</module>
         <module>client</module>
+        <module>client-cli</module>
     </modules>
 
 </project>
