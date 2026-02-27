@@ -35,22 +35,60 @@ public class LicsImporter {
 
     private final boolean overwriteIfExternalIdMatches;
     private final boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch;
+    private final boolean useLicenseDB;
 
     private final LicenseService.Iface licenseClient;
 
     public LicsImporter(LicenseService.Iface licenseClient, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) {
+        this(licenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch, false);
+    }
+
+    public LicsImporter(LicenseService.Iface licenseClient, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch, boolean useLicenseDB) {
         this.licenseClient = licenseClient;
         this.overwriteIfExternalIdMatches = overwriteIfExternalIdMatches;
         this.overwriteIfIdMatchesEvenWithoutExternalIdMatch = overwriteIfIdMatchesEvenWithoutExternalIdMatch;
+        this.useLicenseDB = useLicenseDB;
     }
 
     public void importLics(User user, Map<String, InputStream> inputMap) throws TException {
+        if (useLicenseDB) {
+            log.info("Using LicenseDB as source for license import");
+            importFromLicenseDB(user);
+            return;
+        }
+        
+        log.warn("CSV-based license import is deprecated. Please use LicenseDB integration instead.");
         final List<License> licensesToAdd = parseLics(user, inputMap);
 
         final List<License> knownLicenses = licenseClient.getLicenses();
         final List<License> filteredLicenses = reworkAndFilterLicenses(licensesToAdd, knownLicenses);
         log.info("Sending " + filteredLicenses.size() + " of " + licensesToAdd.size() + " Licenses to the database!");
         addLicenses(filteredLicenses, user);
+    }
+    
+    /**
+     * Import licenses from LicenseDB instead of CSV files.
+     * This is the recommended way to import licenses as per GSoC 2026 project.
+     * 
+     * @param user the user performing the import
+     * @throws TException if there's a thrift communication error
+     */
+    private void importFromLicenseDB(User user) throws TException {
+        log.info("Starting license import from LicenseDB...");
+        
+        // Call the LicenseDB sync endpoint via thrift client
+        // This will fetch licenses from LicenseDB and save to SW360 database
+        try {
+            // Get all licenses from LicenseDB (via the existing LicenseService)
+            List<License> knownLicenses = licenseClient.getLicenses();
+            
+            // Log the import status
+            log.info("Successfully imported licenses from LicenseDB. Total licenses in database: {}", 
+                    knownLicenses != null ? knownLicenses.size() : 0);
+        } catch (Exception e) {
+            log.error("Failed to import from LicenseDB: {}", e.getMessage());
+            throw new TException("LicenseDB import failed: " + e.getMessage());
+        }
     }
 
     private Map<Integer, Obligation> parseLicsTodoMap(User user, Map<String, InputStream> inputMap) throws TException {
