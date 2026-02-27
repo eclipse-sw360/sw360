@@ -38,9 +38,10 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.licenses.service.LicenseDbService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
@@ -102,6 +103,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final LicenseDbIntegrationService licenseDbIntegrationService;
+
+    @NonNull
+    private final LicenseDbService licenseDbService;
 
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
@@ -559,7 +563,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<Map<String, Object>> importLicenseDb() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         
-        Map<String, Object> result = licenseDbIntegrationService.fullSync();
+        Map<String, Object> result = licenseDbService.fullSync();
         result.put("user", sw360User.getEmail());
         
         HttpStatus status = HttpStatus.OK;
