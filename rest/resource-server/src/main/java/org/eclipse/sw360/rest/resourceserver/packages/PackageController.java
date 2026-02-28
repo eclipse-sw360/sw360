@@ -183,7 +183,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = packageService.deletePackage(id, sw360User);
         if(requestStatus == RequestStatus.SUCCESS) {
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else if(requestStatus == RequestStatus.IN_USE) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
