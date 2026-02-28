@@ -108,7 +108,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final boolean WITH_ALL_RELEASES = true;
     private static final boolean WITH_ROOT_RELEASES_ONLY = false;
 
-    private ExecutorService projectExecutor;
+
 
     private final ProjectRepository repository;
     private final ProjectVulnerabilityRatingRepository pvrRepository;
@@ -2568,14 +2568,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         projectOrigin.put(projectId, SW360Utils.printName(projectById));
         LinkedHashMap<String, String> releaseOrigin = new LinkedHashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = projectById.getLinkedProjects();
-        projectExecutor = Executors.newFixedThreadPool(5);
+        ExecutorService projectExecutor = Executors.newFixedThreadPool(5);
         String releaseNetwork = projectById.getReleaseRelationNetwork();
         List<ReleaseNode> listReleaseLinkJson;
         if (releaseNetwork != null) {
             try {
                 listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
                 });
-                flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked);
+                flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
             } catch (JsonProcessingException e) {
                 log.error("JsonProcessingException: " + e);
             }
@@ -2584,7 +2584,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (linkedProjects != null && !linkedProjects.isEmpty()) {
             try {
                 flattenDependencyNetworkForLinkedProject(linkedProjects, projectOrigin, releaseOrigin, clearingStatusList,
-                        user, isInaccessibleLinkMasked);
+                        user, isInaccessibleLinkMasked, projectExecutor);
             } catch (WrappedException.WrappedSW360Exception exception) {
                 throw new SW360Exception(exception.getCause());
             }
@@ -2595,7 +2595,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private void flattenLinkedReleaseOfRelease(List<ReleaseNode>  listReleaseLinkJson,
                                                LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
-                                               List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) {
+                                               List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked, ExecutorService projectExecutor) {
         final List<Callable<Void>> callables = new ArrayList<>();
         listReleaseLinkJson.forEach(rl -> {
             Callable<Void> callableTask = () -> {
@@ -2613,7 +2613,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Map<String, String> row = createReleaseCSRow(relation, projectMailLineState, rel, clearingStatusList, user, comment);
                     if (CommonUtils.isNotEmpty(listLinkedRelease)) {
                         flattenLinkedReleaseOfRelease(listLinkedRelease, projectOrigin, cpReleaseOrigin,
-                                clearingStatusList, user, isInaccessibleLinkMasked);
+                                clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
                     }
                     cpReleaseOrigin.remove(releaseId);
                     row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
@@ -2636,7 +2636,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private void flattenDependencyNetworkForLinkedProject(Map<String, ProjectProjectRelationship> linkedProjects,
                                                           LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
-                                                          List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) throws WrappedException.WrappedSW360Exception {
+                                                          List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked, ExecutorService projectExecutor) throws WrappedException.WrappedSW360Exception {
 
         linkedProjects.entrySet().stream().forEach(lp -> wrapSW360Exception(() -> {
             String projId = lp.getKey();
@@ -2654,7 +2654,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 try {
                     listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
                     });
-                    flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked);
+                    flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
                 } catch (JsonProcessingException e) {
                     log.error("JsonProcessingException: " + e);
                 }
@@ -2663,7 +2663,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (subprojects != null && !subprojects.isEmpty()) {
                 try {
                     flattenDependencyNetworkForLinkedProject(subprojects, projectOrigin, releaseOrigin, clearingStatusList,
-                            user, isInaccessibleLinkMasked);
+                            user, isInaccessibleLinkMasked, projectExecutor);
                 } catch (WrappedException.WrappedSW360Exception exception) {
                     throw new SW360Exception(exception.getCause());
                 }
