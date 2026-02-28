@@ -35,6 +35,7 @@ import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -59,7 +60,7 @@ public class UserDatabaseHandler {
     private static final String SUCCESS = "SUCCESS";
     private static final String FAIL = "FAIL";
     private static final String TITLE = "IMPORT";
-    private static boolean IMPORT_DEPARTMENT_STATUS = false;
+    private static final AtomicBoolean IMPORT_DEPARTMENT_STATUS = new AtomicBoolean(false);
     private List<String> departmentDuplicate;
     private List<String> emailDoNotExist;
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
@@ -169,10 +170,9 @@ public class UserDatabaseHandler {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         String pathFolderLog = configDTO.getPathFolderLog();
         Map<String, List<String>> mapArrayList = new HashMap<>();
-        if (IMPORT_DEPARTMENT_STATUS) {
+        if (!IMPORT_DEPARTMENT_STATUS.compareAndSet(false, true)) {
             return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
         }
-        IMPORT_DEPARTMENT_STATUS = true;
         Calendar calendar = Calendar.getInstance(Locale.getDefault());
         String lastRunningTime = dateFormat.format(calendar.getTime());
         readFileDepartmentConfig.writeLastRunningTimeConfig(lastRunningTime);
@@ -207,16 +207,16 @@ public class UserDatabaseHandler {
                     listFileFail.add(fileName);
                 }
             }
-            IMPORT_DEPARTMENT_STATUS = false;
             requestSummary.setTotalAffectedElements(listFileSuccess.size());
             requestSummary.setTotalElements(listFileSuccess.size() + listFileFail.size());
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         } catch (IOException e) {
-            IMPORT_DEPARTMENT_STATUS = false;
             String msg = "Failed to import department";
             requestSummary.setMessage(msg);
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
             FileUtil.writeLogToFile(TITLE, "FILE ERROR: " + e.getMessage(), "", pathFolderLog);
+        } finally {
+            IMPORT_DEPARTMENT_STATUS.set(false);
         }
         FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listFileSuccess.size() + " - " + "FILE FAIL: " + listFileFail.size() + " - " + "TOTAL FILE: " + (listFileSuccess.size() + listFileFail.size()) + " ]", "Complete The File Import", pathFolderLog);
         FileUtil.writeLogToFile(TITLE, "END IMPORT DEPARTMENT", "", pathFolderLog);
