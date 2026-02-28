@@ -456,7 +456,7 @@ public class ImportExportTest extends TestIntegrationBase {
                         requestEntity,
                         String.class);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
@@ -475,7 +475,7 @@ public class ImportExportTest extends TestIntegrationBase {
                         requestEntity,
                         String.class);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
@@ -494,7 +494,7 @@ public class ImportExportTest extends TestIntegrationBase {
                         requestEntity,
                         String.class);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
@@ -651,8 +651,8 @@ public class ImportExportTest extends TestIntegrationBase {
                         String.class);
 
         // Verify error response
-        assertEquals("HTTP status should be INTERNAL_SERVER_ERROR",
-                HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals("HTTP status should be BAD_REQUEST",
+                HttpStatus.BAD_REQUEST, response.getStatusCode());
 
         // Verify error response body
         String responseBody = response.getBody();
