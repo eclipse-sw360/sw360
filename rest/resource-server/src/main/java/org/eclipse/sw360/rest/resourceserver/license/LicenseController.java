@@ -221,7 +221,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.deleteLicenseById(id, sw360User);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @Operation(
