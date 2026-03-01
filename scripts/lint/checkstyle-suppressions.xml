@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  -->
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+  ============================================================================
+  SW360 Checkstyle Suppressions
+  ============================================================================
+  This file allows gradual adoption of checkstyle rules by suppressing
+  violations in existing code while enforcing rules for new code.
+
+  Strategy for Technical Debt Reduction:
+  1. Start with all legacy code suppressed
+  2. Remove suppressions module-by-module as code is refactored
+  3. New code must comply with all rules (no suppressions)
+  4. Prioritize suppressions removal based on severity and impact
+-->
+<suppressions>
+
+    <!-- ====================================================================
+         GENERATED CODE - Always suppress (not maintainable)
+         ==================================================================== -->
+
+    <!-- Thrift-generated code -->
+    <suppress files="[\\/]thrift[\\/]" checks=".*"/>
+
+    <!-- Build output -->
+    <suppress files="[\\/]target[\\/]" checks=".*"/>
+
+    <!-- Generated sources -->
+    <suppress files="[\\/]generated[\\/]" checks=".*"/>
+    <suppress files="[\\/]generated-sources[\\/]" checks=".*"/>
+
+    <!-- ====================================================================
+         LEGACY CODE SUPPRESSIONS - Remove gradually as code is refactored
+         ==================================================================== -->
+
+    <!--
+    ==========================================================================
+    PHASE 1: Large file suppressions (technical debt - refactor incrementally)
+    These files exceed 2000 lines and should be split into smaller classes
+    ==========================================================================
+    -->
+
+    <!-- REST Controllers with 4000+ lines - need to be split -->
+    <suppress files="ProjectController\.java$" checks="FileLength"/>
+    <suppress files="ComponentController\.java$" checks="FileLength"/>
+    <suppress files="ReleaseController\.java$" checks="FileLength"/>
+
+    <!-- Database handlers with 2500+ lines - need refactoring -->
+    <suppress files="ProjectDatabaseHandler\.java$" checks="FileLength"/>
+    <suppress files="ComponentDatabaseHandler\.java$" checks="FileLength"/>
+
+    <!-- Services with complex business logic -->
+    <suppress files="Sw360ProjectService\.java$" checks="FileLength"/>
+
+    <!-- JacksonCustomizations contains all Jackson mixins for REST API serialization -->
+    <!-- Cannot be split as mixins must be registered together in one place -->
+    <suppress files="JacksonCustomizations\.java$" checks="FileLength"/>
+
+    <!--
+    ==========================================================================
+    PHASE 2: Complexity suppressions (reduce over time)
+    These methods have high cyclomatic/NPath complexity
+    ==========================================================================
+    -->
+
+    <!-- CycloneDX importers have complex parsing logic -->
+    <suppress files="CycloneDxBOMImporter\.java$" checks="CyclomaticComplexity|NPathComplexity|MethodLength"/>
+    <suppress files="CycloneDxBOMExporter\.java$" checks="CyclomaticComplexity|NPathComplexity|MethodLength"/>
+
+    <!-- SPDX handlers -->
+    <suppress files="SpdxBOMImporter\.java$" checks="CyclomaticComplexity|NPathComplexity|MethodLength"/>
+
+    <!-- License info parsing is inherently complex -->
+    <suppress files="[\\/]licenseinfo[\\/]" checks="CyclomaticComplexity|NPathComplexity"/>
+
+    <!-- REST controllers have long annotation lines - acceptable -->
+    <suppress files="[\\/]resourceserver[\\/].*Controller\.java$"
+              checks="LineLength"
+              lines="1-200"/>
+
+    <!--
+    ==========================================================================
+    TEST CODE - More lenient rules
+    ==========================================================================
+    -->
+
+    <!-- Test files can have longer methods for setup/verification -->
+    <suppress files="[\\/]test[\\/]" checks="MethodLength|MagicNumber|FileLength"/>
+
+    <!-- Test classes don't need Javadoc -->
+    <suppress files="[\\/]test[\\/]" checks="MissingJavadoc.*"/>
+
+    <!-- Test method names can be more descriptive (longer) -->
+    <suppress files="[\\/]test[\\/]" checks="MethodName"/>
+
+    <!--
+    ==========================================================================
+    THIRD-PARTY INTEGRATION CODE
+    ==========================================================================
+    -->
+
+    <!-- Keycloak integration follows Keycloak patterns -->
+    <suppress files="[\\/]keycloak[\\/]" checks="MissingJavadoc.*"/>
+
+
+</suppressions>
