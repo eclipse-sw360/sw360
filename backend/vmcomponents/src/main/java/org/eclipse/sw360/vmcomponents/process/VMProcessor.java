@@ -38,6 +38,7 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
     private String url;
     private boolean triggerNextStep;
     private int priority;
+    private boolean isDeltaSync = false;
 
     public VMProcessor(Class<T> elementType, List<String> input, VMProcessType task, String url, boolean triggerNextStep) {
         this.elementType = elementType;
@@ -85,22 +86,33 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
             switch (task){
 
                 case GET_IDS:
-                    // get element ids
+                    // get element ids (full or delta if modified_after present)
                     VMResult idsResult = syncHandler.getSMVElementIds(this.url);
-                    // trigger cleanup of missing elements and storing new elements
+                    // Check if this was a delta sync based on message
+                    if (idsResult != null && idsResult.requestSummary != null && idsResult.requestSummary.message != null) {
+                        this.isDeltaSync = idsResult.requestSummary.message.contains("delta");
+                    }
                     if (triggerNextStep
                             && idsResult != null
                             && RequestStatus.SUCCESS.equals(idsResult.requestSummary.requestStatus)
                             && idsResult.elements != null
                             && !idsResult.elements.isEmpty()) {
-                        // clean up old
-                        VMProcessHandler.cleanupMissingElements(this.elementType, idsResult.elements);
-                        // store new
+                        // only clean up for full sync of non-vulnerability types
+                        if (!this.isDeltaSync && !Vulnerability.class.isAssignableFrom(this.elementType)) {
+                            VMProcessHandler.cleanupMissingElements(this.elementType, idsResult.elements);
+                        } else if (this.isDeltaSync) {
+                            log.debug("Skipping cleanup for incremental sync of " + elementType.getSimpleName());
+                        }
                         VMProcessHandler.storeElements(this.elementType, idsResult.elements, this.url, triggerNextStep);
                     }
                     break;
 
                 case CLEAN_UP:
+                    // Skip cleanup for incremental runs to avoid deleting unchanged entities
+                    if (this.isDeltaSync) {
+                        log.info("Skipping cleanup for incremental sync run");
+                        break;
+                    }
                     // delete VM elements which are not in the new vmid list anymore
                     VMResult deletionResult = syncHandler.deleteMissingElements(this.input);
                     // delete corresponding matches out of db
@@ -115,13 +127,17 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                 case STORE_NEW:
                     // save element into DB
                     VMResult storeResult = syncHandler.storeNewElement(this.input.get(0));
-                    // re-queue element for getting Master Data
                     if (triggerNextStep
                             && storeResult != null
                             && RequestStatus.SUCCESS.equals(storeResult.requestSummary.requestStatus)
                             && storeResult.elements != null
                             && !storeResult.elements.isEmpty()){
-                        VMProcessHandler.getMasterData(this.elementType, SVMUtils.getId(elementType.cast(storeResult.elements.get(0))), url, triggerNextStep);
+                        // sanitize base URL (strip query params like modified_after) for master data calls
+                        String baseUrl = this.url;
+                        if (baseUrl != null && baseUrl.contains("?")) {
+                            baseUrl = baseUrl.substring(0, baseUrl.indexOf('?'));
+                        }
+                        VMProcessHandler.getMasterData(this.elementType, SVMUtils.getId(elementType.cast(storeResult.elements.get(0))), baseUrl, triggerNextStep);
                     }
                     break;
 
