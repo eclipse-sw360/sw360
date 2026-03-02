@@ -46,6 +46,7 @@ import java.util.Map;
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
+@PreAuthorize("hasAuthority('ADMIN')")
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 @PreAuthorize("hasAuthority('ADMIN')")
