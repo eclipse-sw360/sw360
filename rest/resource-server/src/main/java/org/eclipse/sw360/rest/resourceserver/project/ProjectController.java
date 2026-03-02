@@ -64,6 +64,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -81,6 +82,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
@@ -706,6 +708,36 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (!isWriteAllowed && (comment == null || comment.isBlank())) {
             return ResponseEntity.badRequest().body(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT);
         }
+
+        // Check for clearing request and delete if it exists and is open
+        ThriftClients thriftClients = new ThriftClients();
+        ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
+        ClearingRequest clearingRequest = null;
+
+        try {
+            clearingRequest = moderationClient.getClearingRequestByProjectId(id, sw360User);
+        } catch (TException e) {
+            log.info("No clearing request found for project: " + id + " (exception: " + e.getMessage() + ")");
+        }
+
+        if (clearingRequest != null && !isClosedClearingRequest(clearingRequest)) {
+            log.warn("Project has an open clearing request. Attempting to delete the clearing request and then the project.");
+
+            try {
+                RequestStatus clearingRequestStatus = moderationClient.deleteClearingRequest(clearingRequest.getId(), sw360User);
+                if (clearingRequestStatus != RequestStatus.SUCCESS) {
+                    log.error("Failed to delete clearing request for project: " + id);
+                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+                log.info("Successfully deleted the open clearing request for project: " + id);
+            } catch (TException e) {
+                log.error("Error deleting clearing request for project: " + id, e);
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else if (clearingRequest != null) {
+            log.info("The clearing request for project is already closed. Proceeding with project deletion.");
+        }
+
         RequestStatus requestStatus = projectService.deleteProject(id, sw360User);
         if (requestStatus == RequestStatus.SUCCESS) {
             return new ResponseEntity<>(HttpStatus.OK);
@@ -716,6 +748,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } else {
             throw new SW360Exception("Something went wrong.");
         }
+    }
+
+    private boolean isClosedClearingRequest(ClearingRequest clearingRequest) {
+        if (clearingRequest == null) {
+            return true;
+        }
+        ClearingRequestState state = clearingRequest.getClearingState();
+        return state == ClearingRequestState.CLOSED || state == ClearingRequestState.REJECTED;
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -1788,6 +1828,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
+
         boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState().name(), user, reqBodyMap, sw360Project);
         if (!editPermitted) {
             log.error("No write permission for project");
