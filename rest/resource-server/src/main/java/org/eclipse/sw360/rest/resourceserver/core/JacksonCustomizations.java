@@ -168,6 +168,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class);
             setMixInAnnotation(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class);
             setMixInAnnotation(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class);
+            setMixInAnnotation(SpdxImportDryRunResult.class, Sw360Module.SpdxImportDryRunResultMixin.class);
             setMixInAnnotation(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class);
             setMixInAnnotation(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
             setMixInAnnotation(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class);
@@ -2738,6 +2739,18 @@ public class JacksonCustomizations {
                 "setRequestStatus"
         })
         public static abstract class ImportBomRequestPreparationMixin extends ImportBomRequestPreparation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setRequestStatus",
+                "setNewComponents",
+                "setExistingComponents",
+                "setLicenseConflicts",
+                "setWarnings",
+                "setMessage"
+        })
+        public static abstract class SpdxImportDryRunResultMixin extends SpdxImportDryRunResult {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

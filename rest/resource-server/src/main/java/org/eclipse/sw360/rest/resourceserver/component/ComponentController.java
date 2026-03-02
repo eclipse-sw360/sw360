@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
+import org.eclipse.sw360.datahandler.thrift.SpdxImportDryRunResult;
 import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
@@ -1066,6 +1067,58 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         HttpStatus status = HttpStatus.OK;
         HalResource<Component> halResource = createHalComponent(component, sw360User);
         return new ResponseEntity<>(halResource, status);
+    }
+
+    @Operation(
+            summary = "Dry-run SPDX import to analyze impact without persisting data.",
+            description = "Performs a dry-run import of an SPDX/SBOM file to analyze the impact without writing to the database.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Dry-run analysis completed.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = SpdxImportDryRunResult.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400", description = "Invalid SBOM file."
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Internal server error."
+                    )
+            },
+            tags = {"Components"}
+    )
+    @RequestMapping(value = COMPONENTS_URL + "/import/SBOM/dryRun", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> dryRunImportSBOM(
+            @Parameter(description = "Type of SBOM being uploaded.",
+                    schema = @Schema(type = "string", allowableValues = {"SPDX"})
+            )
+            @RequestParam(value = "type", required = true) String type,
+            @Parameter(description = "The file to be uploaded.")
+            @RequestBody MultipartFile file
+    ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Attachment attachment;
+        final SpdxImportDryRunResult dryRunResult;
+        if(!type.equalsIgnoreCase("SPDX") || !attachmentService.isValidSbomFile(file, type)) {
+            throw new IllegalArgumentException("SBOM file is not valid. It currently only supports SPDX(.rdf/.spdx) files.");
+        }
+        try {
+            attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
+            try {
+                dryRunResult = componentService.dryRunImportSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        } catch (IOException e) {
+            log.error("failed to upload attachment", e);
+            throw new RuntimeException("failed to upload attachment", e);
+        }
+        if (!(dryRunResult.getRequestStatus() == RequestStatus.SUCCESS)) {
+            throw new BadRequestClientException("Invalid SBOM file: " + dryRunResult.getMessage());
+        }
+        return new ResponseEntity<>(dryRunResult, HttpStatus.OK);
     }
 
     @Operation(
