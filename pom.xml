@@ -91,7 +91,7 @@
     <json-path.version>2.10.0</json-path.version>
     <json-smart.version>2.6.0</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
-    <jackson.version>2.21.0</jackson.version>
+    <jackson.version>2.21.1</jackson.version>
     <jackson.annotation.version>2.21</jackson.annotation.version>
 
     <!-- Dependencies version properties -->
