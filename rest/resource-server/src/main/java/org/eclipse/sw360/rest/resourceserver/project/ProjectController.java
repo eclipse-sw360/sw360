@@ -709,7 +709,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return ResponseEntity.badRequest().body(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT);
         }
 
-        // Check for clearing request and delete if it exists and is open
+        // Fetch the clearing request before deletion attempt, but do NOT delete it yet.
+        // The CR must only be removed after confirming the project deletion succeeded;
+        // deleting it first and then discovering the project is IN_USE causes permanent
+        // data loss — the project remains but its clearing history is gone.
         ThriftClients thriftClients = new ThriftClients();
         ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
         ClearingRequest clearingRequest = null;
@@ -720,26 +723,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             log.info("No clearing request found for project: " + id + " (exception: " + e.getMessage() + ")");
         }
 
-        if (clearingRequest != null && !isClosedClearingRequest(clearingRequest)) {
-            log.warn("Project has an open clearing request. Attempting to delete the clearing request and then the project.");
-
-            try {
-                RequestStatus clearingRequestStatus = moderationClient.deleteClearingRequest(clearingRequest.getId(), sw360User);
-                if (clearingRequestStatus != RequestStatus.SUCCESS) {
-                    log.error("Failed to delete clearing request for project: " + id);
-                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-                log.info("Successfully deleted the open clearing request for project: " + id);
-            } catch (TException e) {
-                log.error("Error deleting clearing request for project: " + id, e);
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        } else if (clearingRequest != null) {
-            log.info("The clearing request for project is already closed. Proceeding with project deletion.");
-        }
-
         RequestStatus requestStatus = projectService.deleteProject(id, sw360User);
         if (requestStatus == RequestStatus.SUCCESS) {
+            if (clearingRequest != null && !isClosedClearingRequest(clearingRequest)) {
+                try {
+                    RequestStatus clearingRequestStatus = moderationClient.deleteClearingRequest(clearingRequest.getId(), sw360User);
+                    if (clearingRequestStatus != RequestStatus.SUCCESS) {
+                        log.error("Project deleted but failed to delete open clearing request for project: " + id);
+                    } else {
+                        log.info("Successfully deleted the open clearing request for project: " + id);
+                    }
+                } catch (TException e) {
+                    log.error("Project deleted but error while deleting clearing request for project: " + id, e);
+                }
+            }
             return new ResponseEntity<>(HttpStatus.OK);
         } else if (requestStatus == RequestStatus.IN_USE) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
