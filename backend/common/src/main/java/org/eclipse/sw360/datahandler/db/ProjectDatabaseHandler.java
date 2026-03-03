@@ -1144,7 +1144,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 
@@ -2772,7 +2772,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 
@@ -2801,7 +2801,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     parentNodeId, visitedIds, maxDepth, user, true, WITH_ALL_RELEASES);
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 
