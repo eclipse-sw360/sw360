@@ -40,6 +40,14 @@ import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
 
 import com.google.common.collect.Sets;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * This REST controller can be accessed by users having the authority
  * {@link Sw360GrantedAuthority#ADMIN}. Such users can perform CRUD operations
@@ -48,6 +56,9 @@ import com.google.common.collect.Sets;
 @RestController
 @RequestMapping(path = "/" + OAuthClientController.ENDPOINT_URL)
 @PreAuthorize("hasAuthority('ADMIN')")
+@Tag(name = "OAuth Client Management", description = "CRUD operations for OAuth client registrations. Requires ADMIN authority.")
+@SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class OAuthClientController {
 
     public static final String ENDPOINT_URL = "client-management";
@@ -63,6 +74,22 @@ public class OAuthClientController {
     @Autowired
     private OAuthClientRepository repo;
 
+    @Operation(
+            summary = "Get all OAuth clients.",
+            description = "Retrieve a list of all registered OAuth client configurations.",
+            tags = {"Client Management"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all clients.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OAuthClientResource.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized.",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied - ADMIN authority required.",
+                    content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error.",
+                    content = @Content)
+    })
     @GetMapping(path = "")
     public ResponseEntity<List<OAuthClientResource>> getAllClients() {
         List<OAuthClientResource> clientResources;
@@ -77,6 +104,27 @@ public class OAuthClientController {
         return new ResponseEntity<List<OAuthClientResource>>(clientResources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Create or update an OAuth client.",
+            description = "If clientId is provided in the request body, updates the existing client. "
+                    + "If clientId is empty, creates a new client with an auto-generated clientId and secret.",
+            tags = {"Client Management"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Client successfully created or updated.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OAuthClientResource.class))),
+            @ApiResponse(responseCode = "400", description = "No client found for the given clientId.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized.",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied - ADMIN authority required.",
+                    content = @Content),
+            @ApiResponse(responseCode = "500", description = "Unable to add client.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping(path = "", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createOrUpdateClient(@RequestBody OAuthClientResource clientResource) {
         OAuthClientEntity clientEntity = null;
@@ -109,6 +157,25 @@ public class OAuthClientController {
                 new OAuthClientResource(repo.getByClientId(clientEntity.getClientId())), HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Delete an OAuth client.",
+            description = "Delete a registered OAuth client by its clientId.",
+            tags = {"Client Management"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Client successfully deleted.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OAuthClientResource.class))),
+            @ApiResponse(responseCode = "400", description = "No client found for the given clientId.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized.",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied - ADMIN authority required.",
+                    content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error.",
+                    content = @Content)
+    })
     @DeleteMapping(path = "/{clientId}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> deleteClient(@PathVariable("clientId") String clientId) {
         OAuthClientEntity clientEntity = null;
