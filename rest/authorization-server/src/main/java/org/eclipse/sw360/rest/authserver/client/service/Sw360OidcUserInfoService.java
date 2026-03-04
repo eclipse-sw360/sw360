@@ -6,7 +6,6 @@ package org.eclipse.sw360.rest.authserver.client.service;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.stereotype.Service;
 
@@ -23,8 +22,11 @@ public class Sw360OidcUserInfoService {
 	public static final String USER_GROUP = "userGroup";
 	public static final String DEPARTMENT = "department";
 	public static final String PRIMARY_ROLES = "primaryRoles";
-	@Autowired
-	private Sw360UserDetailsProvider sw360UserDetailsProvider;
+	private final Sw360UserDetailsProvider sw360UserDetailsProvider;
+
+	public Sw360OidcUserInfoService(Sw360UserDetailsProvider sw360UserDetailsProvider) {
+		this.sw360UserDetailsProvider = sw360UserDetailsProvider;
+	}
 
 	public OidcUserInfo loadUser(String username) {
 

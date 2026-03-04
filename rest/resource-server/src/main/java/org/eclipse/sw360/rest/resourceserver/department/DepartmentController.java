@@ -27,7 +27,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -48,7 +47,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
