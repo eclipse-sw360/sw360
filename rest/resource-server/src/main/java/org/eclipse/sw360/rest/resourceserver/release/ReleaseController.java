@@ -48,6 +48,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -376,8 +377,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @GetMapping(value = RELEASES_URL + "/usedBy" + "/{id}")
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        // VIEWER must not see which projects use this release
+        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = PermissionUtils.isViewer(user)
+                ? Collections.emptySet()
+                : releaseService.getProjectsByRelease(id, user);
         Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
 
         List<EntityModel> resources = new ArrayList<>();
@@ -888,6 +892,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        restControllerHelper.throwIfViewerUser(user); // VIEWER has no access to Fossology operations
         Release release = releaseService.getReleaseForUserById(releaseId, user);
         Map<String, Object> responseMap = new HashMap<>();
         ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
@@ -960,6 +965,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException, IOException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        restControllerHelper.throwIfViewerUser(user); // VIEWER has no access to Fossology operations
         releaseService.checkFossologyConnection();
         ReentrantLock lock = mapOfLocks.get(releaseId);
         Map<String, String> responseMap = new HashMap<>();
@@ -1046,6 +1052,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        restControllerHelper.throwIfViewerUser(user); // VIEWER has no access to Fossology operations
         releaseService.checkFossologyConnection();
         Map<String, String> responseMap = new HashMap<>();
         String errorMsg = "Could not trigger report generation for this release";
