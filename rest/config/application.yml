@@ -1,0 +1,104 @@
+#
+# Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+# Copyright Bosch.IO GmbH 2020
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+server:
+  port: 8091
+  servlet:
+    context-path: /resource/api
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,info
+      path-mapping:
+        health: /api/health
+        info: /api/info
+  endpoint:
+    health:
+      show-details: always
+      enabled: true
+    info:
+      enabled: true
+  security:
+    enabled: true
+  health:
+    diskspace:
+      enabled: true    # Disable to hide sensitive system information
+    ping:
+      enabled: true
+    ssl:
+      enabled: false   # Disabled as not used
+
+spring:
+  application:
+    name: resource
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 600MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          #issuer-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
+          #jwk-set-uri: https://localhost:8083/realms/sw360/protocol/openid-connect/certs
+          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
+          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
+
+#logging:
+#  level:
+#    org.springframework.web: DEBUG
+#    org.eclipse.sw360: debug
+
+
+jwt:
+  auth:
+    converter:
+      resource-id: sw360-rest-api
+      principle-attribute: email
+
+sw360:
+  thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
+  base-url: ${SW360_BASE_URL:http://localhost:8080}
+  test-user-id: admin@sw360.org
+  test-user-password: 12345
+  couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
+  cors:
+    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+
+blacklist:
+  sw360:
+    rest:
+      api:
+        endpoints:
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+    security:
+      oauth2:
+        enabled: true
+    version: openapi_3_1
+  swagger-ui:
+    enabled: true
+    path: /index.html
+    security:
+      oauth2:
+        enabled: true
+    require-authentication: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/hal+json
+  paths-to-exclude: /api/**
+  show-actuator: true
+  show-oauth2-endpoints: true

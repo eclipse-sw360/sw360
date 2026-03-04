@@ -32,11 +32,23 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import java.time.Instant;
 
 @ControllerAdvice
 public class RestExceptionHandler {
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorMessage> handleMissingParams(MissingServletRequestParameterException ex) {
+        // Build the error message object
+        ErrorMessage errorMessage = new ErrorMessage(
+                new Exception("Missing required parameter: " + ex.getParameterName()),
+                HttpStatus.BAD_REQUEST
+        );
+        // Return 400 Bad Request
+        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+
 
     @ExceptionHandler({Exception.class, TException.class, ResourceClassNotFoundException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception e) {

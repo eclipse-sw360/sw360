@@ -1,0 +1,167 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ([2.72])
+AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
+AC_CONFIG_SRCDIR([config.h])
+AC_CONFIG_HEADERS([config.h])
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_AR
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+# Checks for libraries.
+# FIXME: Replace 'main' with a function in '-lboost_filesystem':
+AC_CHECK_LIB([boost_filesystem], [main])
+# FIXME: Replace 'main' with a function in '-lboost_program_options':
+AC_CHECK_LIB([boost_program_options], [main])
+# FIXME: Replace 'main' with a function in '-lboost_system':
+AC_CHECK_LIB([boost_system], [main])
+# FIXME: Replace 'main' with a function in '-levent':
+AC_CHECK_LIB([event], [main])
+# FIXME: Replace 'main' with a function in '-lib':
+AC_CHECK_LIB([ib], [main])
+# FIXME: Replace 'main' with a function in '-lm':
+AC_CHECK_LIB([m], [main])
+# FIXME: Replace 'main' with a function in '-lthrift':
+AC_CHECK_LIB([thrift], [main])
+# FIXME: Replace 'main' with a function in '-lz':
+AC_CHECK_LIB([z], [main])
+# FIXME: Replace 'main' with a function in '-lzmq':
+AC_CHECK_LIB([zmq], [main])
+
+# Checks for header files.
+AC_FUNC_ALLOCA
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h libintl.h malloc.h netdb.h netinet/in.h stdint.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+AC_C_INLINE
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+AC_TYPE_INT8_T
+AC_TYPE_MODE_T
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_C_RESTRICT
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_UINT8_T
+AC_CHECK_TYPES([ptrdiff_t])
+
+# Checks for library functions.
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_FUNC_STRERROR_R
+AC_CHECK_FUNCS([alarm ftruncate gethostbyname gettimeofday memmove memset pow realpath select setlocale socket sqrt strchr strdup strerror strstr])
+
+AC_CONFIG_FILES([Makefile
+                 compiler/cpp/Makefile
+                 compiler/cpp/src/Makefile
+                 compiler/cpp/test/Makefile
+                 contrib/async-test/Makefile
+                 contrib/transport-sample/Makefile
+                 contrib/zeromq/Makefile
+                 lib/Makefile
+                 lib/c_glib/Makefile
+                 lib/c_glib/test/Makefile
+                 lib/cl/Makefile
+                 lib/cpp/Makefile
+                 lib/cpp/test/Makefile
+                 lib/d/Makefile
+                 lib/d/test/Makefile
+                 lib/dart/Makefile
+                 lib/erl/Makefile
+                 lib/go/Makefile
+                 lib/go/test/Makefile
+                 lib/go/test/fuzz/Makefile
+                 lib/haxe/test/Makefile
+                 lib/java/Makefile
+                 lib/js/Makefile
+                 lib/js/test/Makefile
+                 lib/json/Makefile
+                 lib/json/test/Makefile
+                 lib/kotlin/Makefile
+                 lib/lua/Makefile
+                 lib/netstd/Makefile
+                 lib/nodejs/Makefile
+                 lib/nodejs/examples/Makefile
+                 lib/nodets/Makefile
+                 lib/ocaml/src/Makefile
+                 lib/perl/Makefile
+                 lib/perl/t/Makefile
+                 lib/php/Makefile
+                 lib/php/test/Makefile
+                 lib/py/Makefile
+                 lib/rb/Makefile
+                 lib/rs/Makefile
+                 lib/rs/test/Makefile
+                 lib/rs/test_recursive/Makefile
+                 lib/rs/test_recursive/src/Makefile
+                 lib/rs/test_recursive/src/maintenance/Makefile
+                 lib/rs/test_recursive/src/transit/Makefile
+                 lib/rs/test_recursive/src/transit/light/Makefile
+                 lib/rs/test_recursive/src/transit/services/Makefile
+                 lib/swift/Makefile
+                 lib/ts/Makefile
+                 lib/xml/Makefile
+                 lib/xml/test/Makefile
+                 test/Makefile
+                 test/c_glib/Makefile
+                 test/cl/Makefile
+                 test/cpp/Makefile
+                 test/dart/Makefile
+                 test/erl/Makefile
+                 test/features/Makefile
+                 test/go/Makefile
+                 test/haxe/Makefile
+                 test/lua/Makefile
+                 test/netstd/Makefile
+                 test/ocaml/Makefile
+                 test/ocaml/client/Makefile
+                 test/ocaml/server/Makefile
+                 test/perl/Makefile
+                 test/php/Makefile
+                 test/py.tornado/Makefile
+                 test/py.twisted/Makefile
+                 test/py/Makefile
+                 test/rb/Makefile
+                 test/rs/Makefile
+                 test/swift/CrossTests/Makefile
+                 test/swift/Makefile
+                 test/threads/Makefile
+                 tutorial/Makefile
+                 tutorial/c_glib/Makefile
+                 tutorial/cl/Makefile
+                 tutorial/cpp/Makefile
+                 tutorial/d/Makefile
+                 tutorial/dart/Makefile
+                 tutorial/go/Makefile
+                 tutorial/haxe/Makefile
+                 tutorial/java/Makefile
+                 tutorial/js/Makefile
+                 tutorial/netstd/Makefile
+                 tutorial/nodejs/Makefile
+                 tutorial/perl/Makefile
+                 tutorial/php/Makefile
+                 tutorial/py.tornado/Makefile
+                 tutorial/py.twisted/Makefile
+                 tutorial/py/Makefile
+                 tutorial/rb/Makefile
+                 tutorial/rs/Makefile
+                 tutorial/swift/Makefile])
+AC_CONFIG_SUBDIRS([contrib/fb303])
+AC_OUTPUT
