@@ -520,57 +520,61 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void saveAttachmentUsages(Project project) {
-        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
         String projectId = project.getId();
         List<String> projectPaths = new ArrayList<>();
-
-        buildProjectPaths(project,null,projectPaths);
-        projectPaths.remove(project.getId());
         try {
+            buildProjectPaths(project, null, projectPaths);
+            projectPaths.remove(projectId);
             if (!projectPaths.isEmpty()) {
-                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths,projectId);
+                AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths, projectId, attachmentClient);
                 attachmentClient.makeAttachmentUsages(newAttachmentUsages);
             }
-        } catch (TException e) {
+        } catch (TException | RuntimeException e) {
             log.error("Saving attachment usages for project " + projectId + " failed", e);
         }
     }
 
     void buildProjectPaths(Project project, String parentPath, List<String> results) {
-        String currentPath = parentPath == null ? project.getId() : parentPath + ":" + project.getId();
-        if(CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
-            results.add(currentPath);
+        if (project == null || project.getId() == null) {
+            log.warn("Skipping missing sub-project during attachment usage path traversal{}",
+                    parentPath != null ? " under parent path: " + parentPath : "");
+            return;
         }
-        else {
-            for(Map.Entry<String,ProjectProjectRelationship> entry: project.getLinkedProjects().entrySet()) {
+        String currentPath = parentPath == null ? project.getId() : parentPath + ":" + project.getId();
+        if (CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
+            results.add(currentPath);
+        } else {
+            for (Map.Entry<String, ProjectProjectRelationship> entry : project.getLinkedProjects().entrySet()) {
                 buildProjectPaths(repository.get(entry.getKey()), currentPath, results);
             }
             results.add(currentPath);
         }
     }
 
-    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId) {
+    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId,
+            AttachmentService.Iface attachmentClient) throws TException {
         List<AttachmentUsage> result = new ArrayList<>();
-        try {
-            for(String projectPath: projectPaths) {
-                String[] pathArray = projectPath.split(":");
-                String subProjectId = pathArray[pathArray.length-1];
-                List<AttachmentUsage> subProjectAttachmentUsages = thriftClients.makeAttachmentClient().getUsedAttachments(Source.projectId(subProjectId), null);
+        for (String projectPath : projectPaths) {
+            String[] pathArray = projectPath.split(":");
+            String subProjectId = pathArray[pathArray.length - 1];
+            List<AttachmentUsage> subProjectAttachmentUsages =
+                    attachmentClient.getUsedAttachments(Source.projectId(subProjectId), null);
 
-                for(AttachmentUsage usage: subProjectAttachmentUsages) {
-                    String releaseId = usage.getOwner().getReleaseId();
-                    String attachmentContentId = usage.getAttachmentContentId();
-                    AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
-                    final UsageData usageData;
-                    LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
-                    licenseInfoUsage.setProjectPath(projectPath);
-                    usageData = UsageData.licenseInfo(licenseInfoUsage);
-                    newUsage.setUsageData(usageData);
-                    result.add(newUsage);
+            for (AttachmentUsage usage : subProjectAttachmentUsages) {
+                if (!usage.getOwner().isSetReleaseId()) {
+                    log.warn("Skipping attachment usage with non-release owner for sub-project {}", subProjectId);
+                    continue;
                 }
+                String releaseId = usage.getOwner().getReleaseId();
+                String attachmentContentId = usage.getAttachmentContentId();
+                AttachmentUsage newUsage = new AttachmentUsage(
+                        Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                licenseInfoUsage.setProjectPath(projectPath);
+                newUsage.setUsageData(UsageData.licenseInfo(licenseInfoUsage));
+                result.add(newUsage);
             }
-        } catch (TException e) {
-            log.error("Saving attachment usages for project " + projectId + " failed", e);
         }
         return result;
     }
