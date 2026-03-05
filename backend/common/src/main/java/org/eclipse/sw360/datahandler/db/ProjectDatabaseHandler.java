@@ -459,7 +459,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         Project actual = repository.get(project.getId());
 
-        assertNotNull(project);
+        assertNotNull(actual);
 
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 project.getAttachments(), user.getEmail(), project.getId());
