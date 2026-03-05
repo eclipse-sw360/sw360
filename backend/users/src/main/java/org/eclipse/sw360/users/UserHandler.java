@@ -123,6 +123,20 @@ public class UserHandler implements UserService.Iface {
         if (user != null && user.isDeactivated()) {
             return null;
         }
+        if (user != null
+                && externalId != null
+                && !externalId.isEmpty()) {
+            String currentExternalId = user.getExternalid();
+            if (currentExternalId == null
+                    || currentExternalId.isEmpty()
+                    || !currentExternalId.equals(externalId)) {
+                log.info("Updating differing externalId for user: {} | was: {} | now: {}",
+                        email, currentExternalId, externalId);
+                user.setExternalid(externalId);
+                db.updateUser(user);
+            }
+        }
+
         return user;
     }
 
