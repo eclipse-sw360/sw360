@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ImportBomDryRunReport;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
@@ -90,6 +91,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1324,6 +1326,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public RequestSummary importSPDX(User user, String attachmentContentId) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.importBomFromAttachmentContent(user, attachmentContentId);
+    }
+
+    public ImportBomDryRunReport dryRunImportSPDX(User user, String filename, byte[] bomContent) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.dryRunImportBom(user, filename, ByteBuffer.wrap(bomContent));
     }
 
     /**

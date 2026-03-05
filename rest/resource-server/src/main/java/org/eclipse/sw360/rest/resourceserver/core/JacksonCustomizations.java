@@ -168,6 +168,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class);
             setMixInAnnotation(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class);
             setMixInAnnotation(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class);
+            setMixInAnnotation(ImportBomDryRunReport.class, Sw360Module.ImportBomDryRunReportMixin.class);
             setMixInAnnotation(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class);
             setMixInAnnotation(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
             setMixInAnnotation(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class);
@@ -229,6 +230,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(ModerationRequest.class, ModerationRequestMixin.class)
                     .replaceWithClass(EmbeddedModerationRequest.class, EmbeddedModerationRequestMixin.class)
                     .replaceWithClass(ImportBomRequestPreparation.class, ImportBomRequestPreparationMixin.class)
+                    .replaceWithClass(ImportBomDryRunReport.class, ImportBomDryRunReportMixin.class)
                     .replaceWithClass(ModerationPatch.class, ModerationPatchMixin.class)
                     .replaceWithClass(ProjectDTO.class, ProjectDTOMixin.class)
                     .replaceWithClass(EmbeddedProjectDTO.class, EmbeddedProjectDTOMixin.class)
@@ -2738,6 +2740,16 @@ public class JacksonCustomizations {
                 "setRequestStatus"
         })
         public static abstract class ImportBomRequestPreparationMixin extends ImportBomRequestPreparation {
+        }
+
+        @JsonIgnoreProperties({
+                "setRequestStatus",
+                "setNewComponents",
+                "setExistingComponents",
+                "setLicenseConflicts",
+                "setWarnings"
+        })
+        public static abstract class ImportBomDryRunReportMixin extends ImportBomDryRunReport {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
