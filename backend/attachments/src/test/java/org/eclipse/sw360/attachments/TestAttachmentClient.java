@@ -10,12 +10,12 @@
 package org.eclipse.sw360.attachments;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
-import org.apache.thrift.TException;
+
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 
-import java.io.IOException;
+
 
 /**
  * Small client for testing a service
