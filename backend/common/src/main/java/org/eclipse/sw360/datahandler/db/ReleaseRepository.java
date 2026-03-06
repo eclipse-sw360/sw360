@@ -142,28 +142,28 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                     "}";
     private static final String BY_STATUS_VIEW =
             "function(doc) {" +
-                    "  if (doc.type == 'release') {" +
+                    "  if (doc.type == 'release' && doc.eccInformation !== undefined && doc.eccInformation != null) {" +
                     "    emit(doc.eccInformation.eccStatus, doc._id);" +
                     "  } " +
                     "}";
 
     private static final String BY_ASSESSOR_CONTACT_PERSON_VIEW =
             "function(doc) {" +
-                    "  if (doc.type == 'release') {" +
+                    "  if (doc.type == 'release' && doc.eccInformation !== undefined && doc.eccInformation != null) {" +
                     "    emit(doc.eccInformation.assessorContactPerson, doc._id);" +
                     "  } " +
                     "}";
 
     private static final String BY_ASSESSOR_DEPARTMENT_VIEW =
             "function(doc) {" +
-                    "  if (doc.type == 'release') {" +
+                    "  if (doc.type == 'release' && doc.eccInformation !== undefined && doc.eccInformation != null) {" +
                     "    emit(doc.eccInformation.assessorDepartment, doc._id);" +
                     "  } " +
                     "}";
 
     private static final String BY_ASSESSMENT_DATE_VIEW =
             "function(doc) {" +
-                    "  if (doc.type == 'release') {" +
+                    "  if (doc.type == 'release' && doc.eccInformation !== undefined && doc.eccInformation != null) {" +
                     "    emit(doc.eccInformation.assessmentDate, doc._id);" +
                     "  } " +
                     "}";

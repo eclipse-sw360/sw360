@@ -279,6 +279,12 @@ service ModerationService {
      **/
     RequestStatus deleteModerationRequest(1: string id, 2: User user);
 
+     /**
+     * delete clearing request specified by id if user is requesting user of the clearing request
+     *or has sufficient permissions.
+     **/
+    RequestStatus deleteClearingRequest(1: string id, 2: User user);
+
     /**
      * write clearing request for project to database
      **/

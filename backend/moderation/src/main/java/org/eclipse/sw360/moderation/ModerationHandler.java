@@ -430,4 +430,12 @@ public class ModerationHandler implements ModerationService.Iface {
 
         return handler.searchClearingRequestsByFilters(user, filterMap, pageData);
     }
+
+    @Override
+    public RequestStatus deleteClearingRequest(String id, User user) throws TException {
+        assertId(id);
+        assertUser(user);
+
+        return handler.deleteClearingRequest(id, user);
+    }
 }

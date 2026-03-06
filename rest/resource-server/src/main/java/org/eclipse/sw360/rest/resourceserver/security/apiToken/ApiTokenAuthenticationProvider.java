@@ -58,6 +58,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     @NotNull
     private final Sw360UserService userService;
+    private volatile JWTValidator jwtValidator;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -71,8 +72,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         String tokenFromAuthentication = (String) authentication.getCredentials();
         if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && authentication instanceof ApiTokenAuthentication
                 && ((ApiTokenAuthentication) authentication).getType() == AuthType.JWKS) {
-            JWTValidator validator = new JWTValidator(Sw360ResourceServer.JWKS_ISSUER_URL,
-                    Sw360ResourceServer.JWKS_ENDPOINT_URL, Sw360ResourceServer.JWT_CLAIM_AUD);
+            JWTValidator validator = getJwtValidator();
             JwtClaims jwtClaims = null;
             try {
                 jwtClaims = validator.validateJWT(tokenFromAuthentication);
@@ -117,6 +117,21 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
             log.debug("Could not find any user for the entered token, hash " + tokenHash);
             throw new AuthenticationServiceException("Your entered API token is not valid.");
         }
+    }
+
+    private JWTValidator getJwtValidator() {
+        JWTValidator localValidator = jwtValidator;
+        if (localValidator == null) {
+            synchronized (this) {
+                localValidator = jwtValidator;
+                if (localValidator == null) {
+                    localValidator = new JWTValidator(Sw360ResourceServer.JWKS_ISSUER_URL,
+                            Sw360ResourceServer.JWKS_ENDPOINT_URL, Sw360ResourceServer.JWT_CLAIM_AUD);
+                    jwtValidator = localValidator;
+                }
+            }
+        }
+        return localValidator;
     }
 
     private User getUserFromClientId(String clientId) {
