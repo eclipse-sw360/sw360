@@ -18,10 +18,18 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Supplier;
 
+/**
+ * Client for interacting with LicenseDB API
+ * Provides OAuth2 authentication, retry handling, and data sync capabilities
+ */
 public class LicenseDbClient {
 
     private static final Logger log = LogManager.getLogger(LicenseDbClient.class);
+    private static final int DEFAULT_MAX_RETRIES = 3;
+    private static final long INITIAL_BACKOFF_MS = 1000;
+    private static final double BACKOFF_MULTIPLIER = 2.0;
 
     private final LicenseDBProperties properties;
     private final RestTemplate restTemplate;
@@ -46,9 +54,66 @@ public class LicenseDbClient {
     }
 
     /**
+     * Execute a operation with retry logic and exponential backoff
+     *
+     * @param operation the operation to execute
+     * @param <T> return type
+     * @return result of the operation
+     * @throws LicenseDbException if all retries fail
+     */
+    private <T> T executeWithRetry(Supplier<T> operation) throws LicenseDbException {
+        return executeWithRetry(operation, DEFAULT_MAX_RETRIES);
+    }
+
+    /**
+     * Execute a operation with retry logic and exponential backoff
+     *
+     * @param operation the operation to execute
+     * @param maxRetries maximum number of retry attempts
+     * @param <T> return type
+     * @return result of the operation
+     * @throws LicenseDbException if all retries fail
+     */
+    private <T> T executeWithRetry(Supplier<T> operation, int maxRetries) throws LicenseDbException {
+        LicenseDbException lastException = null;
+        long backoffMs = INITIAL_BACKOFF_MS;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                log.debug("Executing operation, attempt {}/{}", attempt, maxRetries);
+                return operation.get();
+            } catch (LicenseDbException e) {
+                lastException = e;
+                log.warn("Attempt {}/{} failed: {}", attempt, maxRetries, e.getMessage());
+
+                if (attempt < maxRetries) {
+                    try {
+                        log.debug("Waiting {}ms before retry...", backoffMs);
+                        Thread.sleep(backoffMs);
+                        backoffMs = (long) (backoffMs * BACKOFF_MULTIPLIER);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new LicenseDbException("Retry interrupted", ie);
+                    }
+                }
+            }
+        }
+
+        log.error("All {} retry attempts failed", maxRetries);
+        throw lastException;
+    }
+
+    /**
+     * Execute authentication with retry logic
+     */
+    private void authenticateWithRetry() throws LicenseDbException {
+        executeWithRetry(this::authenticate);
+    }
+
+    /**
      * Authenticate using OAuth2 client credentials flow
      */
-    private void authenticate() throws LicenseDbException {
+    private void authenticateWithRetry() throws LicenseDbException {
         if (!isEnabled()) {
             throw new LicenseDbException("LicenseDB integration is not enabled");
         }
@@ -141,7 +206,7 @@ public class LicenseDbClient {
         boolean hasMore = true;
 
         try {
-            authenticate();
+            authenticateWithRetry();
             
             while (hasMore) {
                 String url = properties.getFullApiUrl() + "/licenses?page=" + page + "&limit=" + limit;
@@ -257,7 +322,7 @@ public class LicenseDbClient {
         }
 
         try {
-            authenticate();
+            authenticateWithRetry();
             
             String url = properties.getFullApiUrl() + "/licenses/" + licenseDbId;
             HttpEntity<?> request = new HttpEntity<>(getAuthHeaders());
@@ -293,7 +358,7 @@ public class LicenseDbClient {
         boolean hasMore = true;
 
         try {
-            authenticate();
+            authenticateWithRetry();
             
             while (hasMore) {
                 String url = properties.getFullApiUrl() + "/obligations?page=" + page + "&limit=" + limit;
@@ -397,7 +462,7 @@ public class LicenseDbClient {
         }
 
         try {
-            authenticate();
+            authenticateWithRetry();
             
             String url = properties.getFullApiUrl() + "/licenses?page=1&limit=1";
             HttpHeaders headers = getAuthHeaders();
