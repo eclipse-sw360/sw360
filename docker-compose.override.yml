@@ -1,0 +1,5 @@
+services:
+  couchdb:
+    environment:
+      - COUCHDB_USER=sw360
+      - COUCHDB_PASSWORD=sw360fossie
