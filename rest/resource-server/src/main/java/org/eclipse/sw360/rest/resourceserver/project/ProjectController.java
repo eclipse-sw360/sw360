@@ -2548,6 +2548,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "doNotReplacePackageAndRelease", required = false) boolean doNotReplacePackageAndRelease
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        // Check write permission before any processing
+        Project project = projectService.getProjectForUserById(id, sw360User);
+        if (!restControllerHelper.isWriteActionAllowed(project, sw360User)) {
+            throw new BadCredentialsException("You do not have sufficient permissions to update this project.");
+        }
+
         Attachment attachment = null;
         final RequestSummary requestSummary;
         String projectId = null;
