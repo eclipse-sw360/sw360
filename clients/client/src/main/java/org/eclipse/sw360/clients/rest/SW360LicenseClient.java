@@ -52,6 +52,21 @@ public class SW360LicenseClient extends SW360Client {
      */
     static final String TAG_DELETE_LICENSE = "delete_license";
 
+    /**
+     * Tag for the request to import from LicenseDB.
+     */
+    static final String TAG_IMPORT_LICENSE_DB = "import_license_db";
+
+    /**
+     * Tag for the request to get LicenseDB sync status.
+     */
+    static final String TAG_GET_LICENSE_DB_STATUS = "get_license_db_status";
+
+    /**
+     * Tag for the request to test LicenseDB connection.
+     */
+    static final String TAG_TEST_LICENSE_DB_CONNECTION = "test_license_db_connection";
+
     private static final String LICENSES_ENDPOINT = "licenses";
 
     /**
@@ -119,6 +134,38 @@ public class SW360LicenseClient extends SW360Client {
         return executeRequest(builder -> builder.uri(url).method(RequestBuilder.Method.DELETE),
                 HttpUtils.checkResponse(response -> response.statusCode(), HttpUtils.hasStatus(HttpConstants.STATUS_OK), TAG_DELETE_LICENSE),
                 TAG_DELETE_LICENSE);
+    }
+
+    /**
+     * Triggers import of licenses from LicenseDB.
+     *
+     * @return a future with the status code returned by the server
+     */
+    public CompletableFuture<Integer> importFromLicenseDB() {
+        String url = resourceUrl(LICENSES_ENDPOINT, "import/LicenseDB");
+        return executeRequest(builder -> builder.uri(url).method(RequestBuilder.Method.POST),
+                HttpUtils.checkResponse(response -> response.statusCode(), HttpUtils.hasStatus(HttpConstants.STATUS_OK), TAG_IMPORT_LICENSE_DB),
+                TAG_IMPORT_LICENSE_DB);
+    }
+
+    /**
+     * Gets the LicenseDB sync status.
+     *
+     * @return a future with the sync status map
+     */
+    public CompletableFuture<Object> getLicenseDBSyncStatus() {
+        String url = resourceUrl(LICENSES_ENDPOINT, "sync/LicenseDB/status");
+        return executeJsonRequest(HttpUtils.get(url), Object.class, TAG_GET_LICENSE_DB_STATUS);
+    }
+
+    /**
+     * Tests the connection to LicenseDB.
+     *
+     * @return a future with the test result
+     */
+    public CompletableFuture<Object> testLicenseDBConnection() {
+        String url = resourceUrl(LICENSES_ENDPOINT, "sync/LicenseDB/test");
+        return executeJsonRequest(HttpUtils.get(url), Object.class, TAG_TEST_LICENSE_DB_CONNECTION);
     }
 
 }
