@@ -234,6 +234,31 @@ struct ImportBomRequestPreparation {
     7: optional string message;
 }
 
+struct SpdxImportDryRunResult {
+    1: required RequestStatus requestStatus;
+    2: optional list<SpdxComponentInfo> newComponents;
+    3: optional list<SpdxComponentInfo> existingComponents;
+    4: optional list<LicenseConflictInfo> licenseConflicts;
+    5: optional list<string> warnings;
+    6: optional string message;
+}
+
+struct SpdxComponentInfo {
+    1: optional string name;
+    2: optional string version;
+    3: optional string componentType;
+    4: optional string spdxId;
+    5: optional set<string> licenseConcluded;
+    6: optional set<string> licenseDeclared;
+}
+
+struct LicenseConflictInfo {
+    1: optional string componentName;
+    2: optional string existingLicense;
+    3: optional string proposedLicense;
+    4: optional string conflictType;
+}
+
 struct CustomProperties {
     1: optional string id,
     2: optional string revision,

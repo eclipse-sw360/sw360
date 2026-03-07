@@ -3034,6 +3034,21 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
+    public SpdxImportDryRunResult dryRunImportBom(User user, String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                return spdxBOMImporter.dryRunImportSpdxBOMAsRelease(inputStream, attachmentContent);
+            }
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
     private String getFileType(String fileName) {
         if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
             log.error("Can not get file type from file name - no file extension");
