@@ -71,6 +71,7 @@ import com.github.packageurl.PackageURL;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 import static org.eclipse.sw360.common.utils.RepositoryURL.*;
@@ -118,6 +119,9 @@ public class CycloneDxBOMImporter {
     private final AttachmentConnector attachmentConnector;
     private final RepositoryURL repositoryURL;
 
+    private Map<String, String> bomRefToReleaseIdMap;
+    private Map<String, String> bomRefToComponentNameMap;
+
     public CycloneDxBOMImporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
             PackageDatabaseHandler packageDatabaseHandler, AttachmentConnector attachmentConnector, User user) {
         this.projectDatabaseHandler = projectDatabaseHandler;
@@ -126,6 +130,29 @@ public class CycloneDxBOMImporter {
         this.attachmentConnector = attachmentConnector;
         this.user = user;
         this.repositoryURL = new RepositoryURL();
+    }
+
+
+    private static class DependencyNode {
+        public String releaseId;
+        public String releaseRelationship;
+        public String mainlineState;
+        public String createdOn;
+        public String createdBy;
+        public String comment;
+        public List<DependencyNode> releaseLink;
+
+        public DependencyNode() {
+            this.releaseLink = new ArrayList<>();
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "DependencyNode(releaseId=%s, relation=%s, children=%d)",
+                releaseId, releaseRelationship, releaseLink.size()
+            );
+        }
     }
 
     /**
@@ -155,6 +182,125 @@ public class CycloneDxBOMImporter {
                         AbstractMap.SimpleEntry::getKey,
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())
                 ));
+    }
+
+
+    private String buildReleaseRelationNetwork(
+            List<org.cyclonedx.model.Dependency> dependencies,
+            Map<String, String> bomRefToReleaseIdMap,
+            Project project) {
+
+        try {
+            if (CommonUtils.isNullOrEmptyCollection(dependencies)) {
+                log.debug("No dependencies found in BOM");
+                return null;
+            }
+
+            Map<String, List<String>> parentToChildrenMap = new HashMap<>();
+            for (org.cyclonedx.model.Dependency dep : dependencies) {
+                String parentRef = dep.getRef();
+
+                List<String> dependsOn = new ArrayList<>();
+                for (org.cyclonedx.model.Dependency childDep : CommonUtils.nullToEmptyList(dep.getDependencies())) {
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(childDep.getRef())) {
+                        dependsOn.add(childDep.getRef());
+                    }
+                }
+
+                if (CommonUtils.isNotNullEmptyOrWhitespace(parentRef)) {
+                    parentToChildrenMap.put(parentRef, dependsOn);
+                    log.debug("Added dependency parent '{}' with {} children",
+                        parentRef, dependsOn.size());
+                }
+            }
+
+            Set<String> allDependentRefs = parentToChildrenMap.values()
+                .stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
+
+            List<String> rootRefs = parentToChildrenMap.keySet()
+                .stream()
+                .filter(ref -> !allDependentRefs.contains(ref))
+                .collect(Collectors.toList());
+
+            log.debug("Found {} root components out of {}",
+                rootRefs.size(), parentToChildrenMap.size());
+
+            List<DependencyNode> dependencyNetwork = new ArrayList<>();
+            for (String rootRef : rootRefs) {
+                if (bomRefToReleaseIdMap.containsKey(rootRef)) {
+                    DependencyNode rootNode = buildDependencyNode(
+                        rootRef, parentToChildrenMap, bomRefToReleaseIdMap, project);
+                    if (rootNode != null) {
+                        dependencyNetwork.add(rootNode);
+                        log.debug("Added root node: {}", rootNode);
+                    }
+                } else {
+                    log.warn("Root component with bom-ref '{}' not found in import mapping - may have failed to import", rootRef);
+                }
+            }
+
+            if (CommonUtils.isNullOrEmptyCollection(dependencyNetwork)) {
+                log.warn("No valid nodes could be built from dependency graph");
+                return null;
+            }
+
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Map<String, Object> networkMap = new HashMap<>();
+            networkMap.put("dependencyNetwork", dependencyNetwork);
+
+            String jsonString = gson.toJson(networkMap);
+            log.info("Generated releaseRelationNetwork with {} top-level nodes",
+                dependencyNetwork.size());
+
+            return jsonString;
+
+        } catch (Exception e) {
+            log.error("Error building releaseRelationNetwork: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+
+    private DependencyNode buildDependencyNode(
+            String bomRef,
+            Map<String, List<String>> parentToChildrenMap,
+            Map<String, String> bomRefToReleaseIdMap,
+            Project project) {
+
+        String releaseId = bomRefToReleaseIdMap.get(bomRef);
+        if (CommonUtils.isNullEmptyOrWhitespace(releaseId)) {
+            log.warn("Could not resolve bom-ref '{}' to Release ID - skipping", bomRef);
+            return null;
+        }
+
+        DependencyNode node = new DependencyNode();
+        node.releaseId = releaseId;
+        node.releaseRelationship = ReleaseRelationship.CONTAINED.toString();
+        node.mainlineState = MainlineState.OPEN.toString();
+        node.createdOn = SW360Utils.getCreatedOn();
+        node.createdBy = user.getEmail();
+        node.comment = "";
+        node.releaseLink = new ArrayList<>();
+
+        List<String> childRefs = parentToChildrenMap.getOrDefault(
+            bomRef, new ArrayList<>());
+
+        for (String childRef : childRefs) {
+            DependencyNode childNode = buildDependencyNode(
+                childRef, parentToChildrenMap, bomRefToReleaseIdMap, project);
+
+            if (childNode != null) {
+                childNode.releaseRelationship = ReleaseRelationship.REFERRED.toString();
+                node.releaseLink.add(childNode);
+                log.debug("Added child {} to parent {}", childRef, bomRef);
+            } else {
+                log.warn("Failed to add child dependency {} of {}", childRef, bomRef);
+            }
+        }
+
+        return node;
     }
 
     @SuppressWarnings("unchecked")
@@ -191,6 +337,9 @@ public class CycloneDxBOMImporter {
             // Getting List of org.cyclonedx.model.Component from the Bom
             List<org.cyclonedx.model.Component> components = CommonUtils.nullToEmptyList(bom.getComponents());
 
+            List<org.cyclonedx.model.Dependency> dependencies = CommonUtils.nullToEmptyList(bom.getDependencies());
+            log.debug("BOM contains {} dependency entries", dependencies.size());
+
             long vcsCount = getVcsToComponentMap(components).size();
             long componentsCount = components.size();
             org.cyclonedx.model.Component compMetadata = bomMetadata.getComponent();
@@ -198,7 +347,7 @@ public class CycloneDxBOMImporter {
 
             if (!SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true)) {
                 vcsToComponentMap.put("", components);
-                requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, new ArrayList<>(), projectId, attachmentContent, doNotReplacePackageAndRelease);
+                requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, new ArrayList<>(), projectId, attachmentContent, doNotReplacePackageAndRelease, dependencies);
             } else {
                 vcsToComponentMap = getVcsToComponentMap(components);
                 List<org.cyclonedx.model.Component> nonPkgManagedComponents = components.stream()
@@ -207,9 +356,9 @@ public class CycloneDxBOMImporter {
                         .collect(Collectors.toList());
 
                 if (componentsCount == vcsCount) {
-                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, nonPkgManagedComponents, projectId, attachmentContent, doNotReplacePackageAndRelease);
+                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, nonPkgManagedComponents, projectId, attachmentContent, doNotReplacePackageAndRelease, dependencies);
                 } else if (componentsCount > vcsCount) {
-                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, nonPkgManagedComponents, projectId, attachmentContent, doNotReplacePackageAndRelease);
+                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, nonPkgManagedComponents, projectId, attachmentContent, doNotReplacePackageAndRelease, dependencies);
 
                     if (requestSummary.requestStatus.equals(RequestStatus.SUCCESS)) {
 
@@ -374,7 +523,7 @@ public class CycloneDxBOMImporter {
     }
 
     public RequestSummary importSbomAsProject(org.cyclonedx.model.Component compMetadata,
-            Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, List<org.cyclonedx.model.Component> nonPkgManagedComponents, String projectId, AttachmentContent attachmentContent, boolean doNotReplacePackageAndRelease)
+            Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, List<org.cyclonedx.model.Component> nonPkgManagedComponents, String projectId, AttachmentContent attachmentContent, boolean doNotReplacePackageAndRelease, List<org.cyclonedx.model.Dependency> dependencies)
                     throws SW360Exception {
         final RequestSummary summary = new RequestSummary();
         summary.setRequestStatus(RequestStatus.FAILURE);
@@ -426,9 +575,9 @@ public class CycloneDxBOMImporter {
         }
 
         if (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true)) {
-            messageMap = importAllComponentsAsPackages(vcsToComponentMap, nonPkgManagedComponents, project, doNotReplacePackageAndRelease);
+            messageMap = importAllComponentsAsPackages(vcsToComponentMap, nonPkgManagedComponents, project, doNotReplacePackageAndRelease, dependencies);
         } else {
-            messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);
+            messageMap = importAllComponentsAsReleases(vcsToComponentMap, project, dependencies);
         }
         RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
         if (RequestStatus.SUCCESS.equals(updateStatus)) {
@@ -441,7 +590,10 @@ public class CycloneDxBOMImporter {
         return summary;
     }
 
-    private Map<String, String> importAllComponentsAsReleases(Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, Project project) {
+    private Map<String, String> importAllComponentsAsReleases(Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, Project project, List<org.cyclonedx.model.Dependency> dependencies) {
+
+        this.bomRefToReleaseIdMap = new HashMap<>();
+        this.bomRefToComponentNameMap = new HashMap<>();
 
         final var countMap = new HashMap<String, Integer>();
         final Set<String> duplicateComponents = new HashSet<>();
@@ -497,6 +649,15 @@ public class CycloneDxBOMImporter {
                     AddDocumentRequestSummary relAddSummary = componentDatabaseHandler.addRelease(release, user);
                     if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                         release.setId(relAddSummary.getId());
+
+                        String bomRef = bomComp.getBomRef();
+                        if (CommonUtils.isNotNullEmptyOrWhitespace(bomRef)) {
+                            bomRefToReleaseIdMap.put(bomRef, release.getId());
+                            bomRefToComponentNameMap.put(bomRef, release.getName());
+                            log.debug("Mapped CycloneDX component '{}' (bom-ref='{}') -> ReleaseId='{}'",
+                                bomComp.getName(), bomRef, release.getId());
+                        }
+
                         if (AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
                             relCreationCount++;
                         } else {
@@ -550,6 +711,21 @@ public class CycloneDxBOMImporter {
             }
         }
 
+        if (!CommonUtils.isNullOrEmptyCollection(dependencies)) {
+            String releaseRelationNetworkJson = buildReleaseRelationNetwork(
+                dependencies, bomRefToReleaseIdMap, project);
+
+            if (CommonUtils.isNotNullEmptyOrWhitespace(releaseRelationNetworkJson)) {
+                project.setReleaseRelationNetwork(releaseRelationNetworkJson);
+                log.info("Successfully set releaseRelationNetwork for project '{}'",
+                    project.getName());
+            } else {
+                log.warn("Could not build releaseRelationNetwork - no valid dependencies");
+            }
+        } else {
+            log.debug("No dependencies provided in BOM");
+        }
+
         project.setReleaseIdToUsage(releaseRelationMap);
         final Map<String, String> messageMap = new HashMap<>();
         messageMap.put(DUPLICATE_COMPONENT, String.join(JOINER, duplicateComponents));
@@ -567,7 +743,10 @@ public class CycloneDxBOMImporter {
 
     private Map<String, String> importAllComponentsAsPackages(Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap,
                                                               List<org.cyclonedx.model.Component> nonPkgManagedComponents, Project project,
-                                                              boolean doNotReplacePackageAndRelease) {
+                                                              boolean doNotReplacePackageAndRelease, List<org.cyclonedx.model.Dependency> dependencies) {
+        this.bomRefToReleaseIdMap = new HashMap<>();
+        this.bomRefToComponentNameMap = new HashMap<>();
+
         final var countMap = new HashMap<String, Integer>();
         final Set<String> duplicateComponents = new HashSet<>();
         final Set<String> duplicateReleases = new HashSet<>();
@@ -632,6 +811,15 @@ public class CycloneDxBOMImporter {
 
                         if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                             release.setId(relAddSummary.getId());
+
+                            String bomRef = bomComp.getBomRef();
+                            if (CommonUtils.isNotNullEmptyOrWhitespace(bomRef)) {
+                                bomRefToReleaseIdMap.put(bomRef, release.getId());
+                                bomRefToComponentNameMap.put(bomRef, release.getName());
+                                log.debug("Mapped CycloneDX component '{}' (bom-ref='{}') -> ReleaseId='{}'",
+                                    bomComp.getName(), bomRef, release.getId());
+                            }
+
                             if (AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
                                 relCreationCount = releaseRelationMap.containsKey(release.getId()) ? relCreationCount : relCreationCount + 1;
                             } else {
@@ -799,6 +987,15 @@ public class CycloneDxBOMImporter {
                 }
             } else {
                 nonPkgManagedCompWithoutVCS.add(bomComp.getName());
+            }
+        }
+
+        if (!CommonUtils.isNullOrEmptyCollection(dependencies)) {
+            String releaseRelationNetworkJson = buildReleaseRelationNetwork(
+                dependencies, bomRefToReleaseIdMap, project);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(releaseRelationNetworkJson)) {
+                project.setReleaseRelationNetwork(releaseRelationNetworkJson);
+                log.info("Successfully set releaseRelationNetwork for project '{}'", project.getName());
             }
         }
 
