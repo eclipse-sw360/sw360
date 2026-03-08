@@ -60,6 +60,8 @@ public class SW360ConfigKeys {
     public static final String PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE = "package.portlet.write.access.usergroup";
     // This property is used to create URLs in Doc reports
     public static final String RELEASE_FRIENDLY_URL = "release.friendly.url";
+    //This property is used to inherit attachmentUsages of subproject by default
+    public static final String INHERIT_ATTACHMENT_USAGES = "inherit.attachment.usages";
 
     public static final String IS_ADMIN_PRIVATE_ACCESS_ENABLED = "admin.private.project.access.enabled";
 
@@ -125,7 +127,7 @@ public class SW360ConfigKeys {
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_PROJECT_REPORT,
             MAIL_REQUEST_FOR_COMPONENT_REPORT, IS_BULK_RELEASE_DELETING_ENABLED,
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
-            TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE,
+            TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, INHERIT_ATTACHMENT_USAGES,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,
             NON_PKG_MANAGED_COMPS_PROP, REST_API_TOKEN_LENGTH,
             UI_CLEARING_TEAMS, UI_CLEARING_TEAM_UNKNOWN_ENABLED, UI_COMPONENT_CATEGORIES,
