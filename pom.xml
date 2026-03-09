@@ -664,11 +664,35 @@
               </goals>
             </execution>
             <execution>
+              <id>prepare-agent-integration</id>
+              <goals>
+                <goal>prepare-agent-integration</goal>
+              </goals>
+            </execution>
+            <execution>
               <id>report</id>
               <goals>
                 <goal>report</goal>
               </goals>
               <phase>prepare-package</phase>
+            </execution>
+            <execution>
+              <id>report-aggregate</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>report-aggregate</goal>
+              </goals>
+              <configuration>
+                <dataFileSets>
+                  <dataFileSet>
+                    <directory>${project.basedir}</directory>
+                    <includes>
+                      <include>**/target/jacoco.exec</include>
+                      <include>**/target/jacoco-it.exec</include>
+                    </includes>
+                  </dataFileSet>
+                </dataFileSets>
+              </configuration>
             </execution>
           </executions>
         </plugin>
