@@ -2623,6 +2623,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_import_cyclonedx_on_project() throws Exception {
+        given(this.attachmentServiceMock.isValidSbomFile(any(), eq("CycloneDX"))).willReturn(true);
         MockMultipartFile file = new MockMultipartFile("file","file=@/sampleBOM.xml".getBytes());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/"+project.getId()+"/import/SBOM")
                 .content(file.getBytes())
