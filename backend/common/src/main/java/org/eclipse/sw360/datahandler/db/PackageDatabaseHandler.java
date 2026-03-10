@@ -139,11 +139,10 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Set<Package> getPackagesByReleaseIds(Set<String> ids) {
-        Set<Package> packages = Sets.newHashSet();
-        for (String id : ids) {
-            packages.addAll(packageRepository.getPackagesByReleaseId(id));
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptySet();
         }
-        return packages;
+        return Sets.newHashSet(packageRepository.getPackagesByReleaseIds(ids));
     }
 
     public List<Package> getAllPackages() {
