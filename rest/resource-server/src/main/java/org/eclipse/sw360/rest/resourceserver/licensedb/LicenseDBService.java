@@ -17,6 +17,8 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.stereotype.Service;
 
@@ -207,7 +209,7 @@ public class LicenseDBService {
         if (obligationNode.has("obligation_type")) {
             String type = obligationNode.get("obligation_type").asText();
             try {
-                obligation.setObligationType(Obligation.ObligationType.valueOf(type.toUpperCase()));
+                obligation.setObligationType(ObligationType.valueOf(type.toUpperCase()));
             } catch (IllegalArgumentException e) {
                 log.warn("Unknown obligation type: {}", type);
             }
@@ -216,7 +218,7 @@ public class LicenseDBService {
         if (obligationNode.has("obligation_level")) {
             String level = obligationNode.get("obligation_level").asText();
             try {
-                obligation.setObligationLevel(Obligation.ObligationLevel.valueOf(level.toUpperCase()));
+                obligation.setObligationLevel(ObligationLevel.valueOf(level.toUpperCase()));
             } catch (IllegalArgumentException e) {
                 log.warn("Unknown obligation level: {}", level);
             }
