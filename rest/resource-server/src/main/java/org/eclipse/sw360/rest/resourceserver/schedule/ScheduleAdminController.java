@@ -49,7 +49,6 @@ import java.util.Map;
 @PreAuthorize("hasAuthority('ADMIN')")
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
-@PreAuthorize("hasAuthority('ADMIN')")
 public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String SCHEDULE_URL = "/schedule";
 
