@@ -18,7 +18,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -74,8 +73,11 @@ public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
 
     private boolean active;
 
-    @Autowired
-    private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
+    private final Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
+
+    public Sw360CustomHeaderAuthenticationFilter(Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider) {
+        this.sw360CustomHeaderUserDetailsProvider = sw360CustomHeaderUserDetailsProvider;
+    }
 
     @PostConstruct
     public void postSw360CustomHeaderAuthenticationFilterConstruction() {

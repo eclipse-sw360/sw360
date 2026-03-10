@@ -39,7 +39,6 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -57,7 +56,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     @NonNull

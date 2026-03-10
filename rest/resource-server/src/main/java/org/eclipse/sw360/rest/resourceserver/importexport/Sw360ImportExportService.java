@@ -59,7 +59,6 @@ import org.eclipse.sw360.rest.resourceserver.user.UserCSV;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -75,11 +74,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 
-import lombok.RequiredArgsConstructor;
-
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ImportExportService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;

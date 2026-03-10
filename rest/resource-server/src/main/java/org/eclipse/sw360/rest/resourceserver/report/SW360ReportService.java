@@ -33,7 +33,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.ReleaseExporter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -76,7 +75,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class SW360ReportService {
 
     @NonNull

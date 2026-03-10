@@ -28,7 +28,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -50,7 +49,7 @@ import java.util.Map;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -62,7 +61,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
     private final RestControllerHelper restControllerHelper;
 
     @NonNull
-    SW360ConfigurationsService sw360ConfigurationsService;
+    private final SW360ConfigurationsService sw360ConfigurationsService;
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {

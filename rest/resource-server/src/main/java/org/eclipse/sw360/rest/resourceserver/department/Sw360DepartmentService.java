@@ -36,15 +36,12 @@ import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360DepartmentService {
     private static final Logger log = LogManager.getLogger(Sw360DepartmentService.class);
     @Value("${sw360.thrift-server-url:http://localhost:8080}")

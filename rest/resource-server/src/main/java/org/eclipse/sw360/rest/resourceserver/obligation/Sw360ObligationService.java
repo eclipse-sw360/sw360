@@ -10,7 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.obligation;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
@@ -31,7 +30,6 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.security.access.AccessDeniedException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -41,7 +39,6 @@ import java.util.Map;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ObligationService {
     public Obligation getObligationById(String obligationId, User user) {
         LicenseService.Iface sw360LicenseClient = null;
