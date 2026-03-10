@@ -68,16 +68,10 @@ public class LicenseDbService {
                 List<License> existingList = licenseRepository.searchByShortName(licenseDbId);
                 if (!existingList.isEmpty()) {
                     License license = existingList.get(0);
-                    license.setLicenseDbId(licenseDbId);
-                    license.setLastSyncTime(Instant.now().toString());
-                    license.setSyncStatus("SYNCED");
                     licenseRepository.update(license);
                     updated++;
                 } else {
                     License license = createLicenseFromData(licenseData);
-                    license.setLicenseDbId(licenseDbId);
-                    license.setLastSyncTime(Instant.now().toString());
-                    license.setSyncStatus("SYNCED");
                     licenseRepository.add(license);
                     imported++;
                 }
@@ -126,9 +120,6 @@ public class LicenseDbService {
                 Obligation obligation = new Obligation();
                 obligation.setText((String) obligationData.get("obligation_text"));
                 obligation.setTitle((String) obligationData.get("obligation_title"));
-                obligation.setLicenseDbId(obligationDbId);
-                obligation.setLastSyncTime(Instant.now().toString());
-                obligation.setSyncStatus("SYNCED");
 
                 imported++;
             }

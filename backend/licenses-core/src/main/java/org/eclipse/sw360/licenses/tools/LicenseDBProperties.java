@@ -35,7 +35,7 @@ public class LicenseDBProperties {
         this.syncCron = SW360Constants.LICENSEDB_SYNC_CRON;
         this.syncBatchSize = Integer.parseInt(SW360Constants.LICENSEDB_SYNC_BATCH_SIZE);
         this.connectionTimeout = Integer.parseInt(SW360Constants.LICENSEDB_CONNECTION_TIMEOUT);
-        this.connectionReadTimeout = Integer.parseInt(SW360Constants.LICENSEDB_CONNECTION_READ_TIMEOUT);
+        this.connectionReadTimeout = Integer.parseInt(SW360Constants.LICENSEDB_READ_TIMEOUT);
     }
 
     public boolean isEnabled() {

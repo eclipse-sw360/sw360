@@ -272,24 +272,6 @@ public class Sw360LicenseService {
 
     private void copyDataStreamToResponse(HttpServletResponse response, ByteArrayInputStream buffer) throws IOException {
         FileCopyUtils.copy(buffer, response.getOutputStream());
-        }
-
-        try (InputStream inputStream = file.getInputStream()) {
-            ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
-            licsImporter.importLics(sw360User, inputMap);
-        } finally {
-            for (InputStream inputStream : inputMap.values()) {
-                if (inputStream != null) {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e) {
-                        log.warn("Failed to close input stream: {}", e.getMessage());
-                    }
-                }
-            }
-        }
     }
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
