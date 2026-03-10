@@ -418,6 +418,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER cannot own/moderate projects
 
         ImmutableMap<String, Boolean> userRoles = ImmutableMap.<String, Boolean>builder()
                 .put(Project._Fields.CREATED_BY.toString(), createdBy)
@@ -462,6 +463,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER can only see summary + attachments tabs
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         //check the below condition when releaseRelation is not null
@@ -520,6 +522,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        // VIEWER sees only summary + attachments, strip non-permitted fields
+        if (PermissionUtils.isViewer(sw360User)) {
+            stripProjectForViewer(sw360Project);
+        }
         HalResource<Project> userHalResource = createHalProject(sw360Project, sw360User);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
@@ -592,6 +598,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not see linked projects
         Project sw360Proj = projectService.getProjectForUserById(id, sw360User);
         final Set<String> projectIdsInBranch = new HashSet<>();
 
@@ -641,6 +648,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not see linked projects
         List<Map<String, String>> result = new ArrayList<>();
         final Set<String> directReleaseIds = projectService.getReleaseIds(id, sw360User, false);
         final Set<String> allReleaseIds = projectService.getReleaseIds(id, sw360User, true);
@@ -4220,5 +4228,17 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             groups = Collections.emptySet();
         }
         return groups;
+    }
+
+    /**
+     * Strips non-summary fields from a project for VIEWER role.
+     * VIEWER can only see: summary tab fields (minus "Used in Projects") + attachments.
+     */
+    private void stripProjectForViewer(Project project) {
+        project.unsetLinkedProjects();
+        project.unsetReleaseIdToUsage();
+        project.unsetReleaseRelationNetwork();
+        project.unsetSecurityResponsibles();
+        project.unsetLinkedObligationId();
     }
 }
