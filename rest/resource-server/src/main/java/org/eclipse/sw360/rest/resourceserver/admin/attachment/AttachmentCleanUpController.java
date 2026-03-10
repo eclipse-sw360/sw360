@@ -28,11 +28,15 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 
 @RestController
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@PreAuthorize("hasAuthority('ADMIN')")
+
 public class AttachmentCleanUpController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String ATTACHMENT_CLEANUP_URL = "/attachmentCleanUp";
 
