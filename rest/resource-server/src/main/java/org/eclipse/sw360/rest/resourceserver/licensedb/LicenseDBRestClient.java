@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @Component
+@ConditionalOnProperty(name = "licensedb.enabled", havingValue = "true")
 @Slf4j
 public class LicenseDBRestClient {
 
