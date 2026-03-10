@@ -45,6 +45,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -57,6 +59,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Service
 @RequiredArgsConstructor
 public class Sw360LicenseService {
+    private static final Logger log = LoggerFactory.getLogger(Sw360LicenseService.class);
+    
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
     private static final String CONTENT_TYPE = "application/zip";
@@ -268,37 +272,25 @@ public class Sw360LicenseService {
 
     private void copyDataStreamToResponse(HttpServletResponse response, ByteArrayInputStream buffer) throws IOException {
         FileCopyUtils.copy(buffer, response.getOutputStream());
-    }
-
-    public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
-        final HashMap<String, InputStream> inputMap = new HashMap<>();
-
-        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            throw new BadRequestClientException("Unable to upload license file. User is not admin");
         }
+
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
             final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
         } finally {
-            IOException closeFailure = null;
-            for (InputStream in : inputMap.values()) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    if (closeFailure == null) {
-                        closeFailure = e;
-                    } else {
-                        closeFailure.addSuppressed(e);
+            for (InputStream inputStream : inputMap.values()) {
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e) {
+                        log.warn("Failed to close input stream: {}", e.getMessage());
                     }
                 }
             }
-            if (closeFailure != null) {
-                throw closeFailure;
-            }
         }
-	}
+    }
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
