@@ -20,7 +20,11 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,6 +79,28 @@ public class SearchController implements RepresentationModelProcessor<Repository
                 "Name for Project, Component and Release, Fullname for License, User and Vendor, Title for Obligation",
             tags = {"Search"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search results found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CollectionModel.class))),
+            @ApiResponse(responseCode = "204", description = "No search results found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Invalid search parameters",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Invalid search parameters\"}"
+                            ))),
+            @ApiResponse(responseCode = "404", description = "Resource class not found",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Resource class not found\"}"
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"message\": \"Internal server error\"}"
+                            )))
+    })
     @GetMapping(value = SEARCH_URL)
     public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
