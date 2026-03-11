@@ -54,7 +54,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -135,33 +135,22 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
                 template, externalIds, withSubProject, bomType, selectedRelRelationship);
         String baseUrl = getBaseUrl(request);
-        switch (module) {
-            case SW360Constants.PROJECTS:
-                getProjectReports(response, sw360User, module, projectId, baseUrl, reportBean);
-                break;
-            case SW360Constants.COMPONENTS:
-                getComponentsReports(response, sw360User, module, baseUrl, reportBean);
-                break;
-            case SW360Constants.LICENSES:
-                getLicensesReports(response, sw360User, module, reportBean);
-                break;
-            case LICENSE_INFO:
-                getLicensesInfoReports(response, sw360User, module, projectId, reportBean);
-                break;
-            case LICENSES_RESOURCE_BUNDLE:
-                getLicenseResourceBundleReports(projectId, response, sw360User, module, reportBean);
-                break;
-            case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
-                getProjectReleaseWithEccSpreadSheet(response, sw360User, module, projectId, reportBean);
-                break;
-            case EXPORT_CREATE_PROJ_CLEARING_REPORT:
-                exportProjectCreateClearingRequest(response, sw360User, module, projectId, reportBean);
-                break;
-            case SW360Constants.SBOM:
-                exportSBOM(response, sw360User, module, projectId, reportBean);
-                break;
-            default:
-                break;
+        if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
+            getProjectReports(response, sw360User, module, projectId, baseUrl, reportBean);
+        } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
+            getComponentsReports(response, sw360User, module, baseUrl, reportBean);
+        } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
+            getLicensesReports(response, sw360User, module, reportBean);
+        } else if (LICENSE_INFO.equals(module)) {
+            getLicensesInfoReports(response, sw360User, module, projectId, reportBean);
+        } else if (LICENSES_RESOURCE_BUNDLE.equals(module)) {
+            getLicenseResourceBundleReports(projectId, response, sw360User, module, reportBean);
+        } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
+            getProjectReleaseWithEccSpreadSheet(response, sw360User, module, projectId, reportBean);
+        } else if (EXPORT_CREATE_PROJ_CLEARING_REPORT.equals(module)) {
+            exportProjectCreateClearingRequest(response, sw360User, module, projectId, reportBean);
+        } else if (SW360Constants.SBOM.equalsIgnoreCase(module)) {
+            exportSBOM(response, sw360User, module, projectId, reportBean);
         }
     }
 
@@ -285,35 +274,26 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             String fileName = sw360ReportService.getDocumentName(user, null, module);
             response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
 
-            switch (module) {
-                case SW360Constants.PROJECTS:
-                    buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId);
-                    fileName = sw360ReportService.getDocumentName(user, projectId, module);
-                    break;
-                case SW360Constants.COMPONENTS:
-                    buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases());
-                    break;
-                case SW360Constants.LICENSES:
-                    buff = sw360ReportService.getLicenseBuffer();
-                    fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
-                    break;
-                case LICENSES_RESOURCE_BUNDLE:
-                    buff = buffer;
-                    response.setContentType(ZIP_CONTENT_TYPE);
-                    fileName = sw360ReportService.getSourceCodeBundleName(projectId, user);
-                    break;
-                case LICENSE_INFO:
-                case EXPORT_CREATE_PROJ_CLEARING_REPORT:
-                    buff = sw360ReportService.getLicenseInfoBuffer(user, projectId, reportBean);
-                    fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId, reportBean.getGeneratorClassName(),
-                            reportBean.getVariant());
-                    break;
-                case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
-                    buff = sw360ReportService.getProjectReleaseSpreadSheetWithEcc(user, projectId);
-                    fileName = sw360ReportService.getDocumentName(user, projectId, module);
-                    break;
-                default:
-                    break;
+            if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
+                buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId);
+                fileName = sw360ReportService.getDocumentName(user, projectId, module);
+                response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
+            } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
+                buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases());
+            } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
+                buff = sw360ReportService.getLicenseBuffer();
+                fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
+            } else if (LICENSES_RESOURCE_BUNDLE.equals(module)) {
+                buff = buffer;
+                response.setContentType(ZIP_CONTENT_TYPE);
+                fileName = sw360ReportService.getSourceCodeBundleName(projectId, user);
+            } else if (LICENSE_INFO.equals(module) || EXPORT_CREATE_PROJ_CLEARING_REPORT.equals(module)) {
+                buff = sw360ReportService.getLicenseInfoBuffer(user, projectId, reportBean);
+                fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId, reportBean.getGeneratorClassName(),
+                        reportBean.getVariant());
+            } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
+                buff = sw360ReportService.getProjectReleaseSpreadSheetWithEcc(user, projectId);
+                fileName = sw360ReportService.getDocumentName(user, projectId, module);
             }
             if (null == buff) {
                 throw new TException("No data available for the user " + user.getEmail());

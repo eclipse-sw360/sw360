@@ -388,4 +388,5 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         assertTrue(match.getMatchTypes().contains(VMMatchType.VERSION_RC));
         assertEquals(VMMatchState.MATCHING_LEVEL_3, match.getState());
     }
+
 }
