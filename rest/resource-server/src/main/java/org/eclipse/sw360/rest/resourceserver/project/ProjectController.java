@@ -2590,7 +2590,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     "Project name or version present in SBOM metadata tag is not same as the current SW360 project!");
         }
 
-        Project project = projectService.getProjectForUserById(projectId, sw360User);
+        project = projectService.getProjectForUserById(projectId, sw360User);
         HalResource<Project> halResource = createHalProject(project, sw360User);
         return new ResponseEntity<HalResource<Project>>(halResource, HttpStatus.OK);
     }
