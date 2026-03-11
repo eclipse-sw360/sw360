@@ -5,9 +5,9 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.http;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +44,6 @@ class NewRequestBuilderImpl implements RequestBuilder {
     /**
      * The body of the request.
      */
-
     private BodyPublisher body;
 
     /**
@@ -67,11 +66,7 @@ class NewRequestBuilderImpl implements RequestBuilder {
 
     @Override
     public RequestBuilder uri(String uri) {
-        try {
-            requestBuilder.uri(new URI(uri));
-        } catch (URISyntaxException e) {
-
-        }
+        requestBuilder.uri(URI.create(uri));
         return this;
     }
 
@@ -110,8 +105,8 @@ class NewRequestBuilderImpl implements RequestBuilder {
      * @return the request constructed by this builder
      */
     public HttpRequest build() {
-        BodyPublisher requestBody = getBody();
-        return requestBuilder.method(httpMethod, requestBody).header("Content-Type", "application/json").build();
+        BodyPublisher requestBody = (getBody() != null) ? getBody() : BodyPublishers.noBody();
+        return requestBuilder.method(httpMethod, requestBody).build();
     }
 
     /**
