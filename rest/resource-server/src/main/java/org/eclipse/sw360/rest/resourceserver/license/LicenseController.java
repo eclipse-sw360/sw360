@@ -29,6 +29,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
@@ -102,6 +104,10 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_LICENSE_CREATION_DISABLED = ImmutableMap.<String, String>builder()
+            .put("message", "Manual license creation is disabled. Please sync licenses from LicenseDB.").build();
+    private static final String LICENSE_CREATION_DEPRECATION_WARNING =
+            "299 - \"Manual license creation is deprecated; sync from LicenseDB.\"";
 
     @Operation(
             summary = "List all of the service's licenses.",
@@ -231,14 +237,21 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL)
-    public ResponseEntity<EntityModel<License>> createLicense(
+    public ResponseEntity<?> createLicense(
             @Parameter(description = "The license to be created.")
             @RequestBody License license
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (!SW360Utils.readConfig(SW360ConfigKeys.LICENSE_MANUAL_CREATION_ENABLED, false)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .header("Warning", LICENSE_CREATION_DEPRECATION_WARNING)
+                    .body(RESPONSE_BODY_FOR_LICENSE_CREATION_DISABLED);
+        }
         List<License> sw360Licenses = licenseService.getLicenses();
         if(restControllerHelper.checkDuplicateLicense(sw360Licenses, license.shortname)) {
-            return new ResponseEntity("sw360 license with name " + license.shortname + " already exists.", HttpStatus.CONFLICT);
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .header("Warning", LICENSE_CREATION_DEPRECATION_WARNING)
+                    .body("sw360 license with name " + license.shortname + " already exists.");
         }
         license = licenseService.createLicense(license, sw360User);
         HalResource<License> halResource = createHalLicense(license);
@@ -247,7 +260,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(license.getId()).toUri();
 
-        return ResponseEntity.created(location).body(halResource);
+        return ResponseEntity.created(location)
+                .header("Warning", LICENSE_CREATION_DEPRECATION_WARNING)
+                .body(halResource);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

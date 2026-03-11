@@ -21,6 +21,7 @@ import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
@@ -823,6 +824,9 @@ public class RestControllerHelper<T> {
     }
 
     private void createMissingLicense(String licenseId) throws Exception {
+        if (!SW360Utils.readConfig(SW360ConfigKeys.LICENSE_MANUAL_CREATION_ENABLED, false)) {
+            throw new BadRequestClientException("Manual license creation is disabled. Please sync licenses from LicenseDB.");
+        }
         License newLicense = new License();
         newLicense.setId(licenseId);
         newLicense.setShortname(licenseId);
