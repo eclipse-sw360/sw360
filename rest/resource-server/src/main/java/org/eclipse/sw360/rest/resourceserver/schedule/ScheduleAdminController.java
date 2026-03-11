@@ -44,12 +44,11 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
-@PreAuthorize("hasAuthority('ADMIN')")
 public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String SCHEDULE_URL = "/schedule";
 

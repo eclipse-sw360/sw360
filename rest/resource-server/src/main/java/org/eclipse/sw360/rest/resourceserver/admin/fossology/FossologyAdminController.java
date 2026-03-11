@@ -49,7 +49,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 @PreAuthorize("hasAuthority('ADMIN')")
