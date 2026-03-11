@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ClearingRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ClearingRequestService.class);
 
