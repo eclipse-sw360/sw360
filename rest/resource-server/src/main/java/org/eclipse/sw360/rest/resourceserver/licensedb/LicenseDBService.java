@@ -20,6 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +35,8 @@ public class LicenseDBService {
 
     private final LicenseDBRestClient restClient;
     private final LicenseDBConfig config;
+    private final Sw360LicenseService sw360LicenseService;
+    private final Sw360ObligationService sw360ObligationService;
 
     public boolean isEnabled() {
         return config.isEnabled();
@@ -67,7 +71,17 @@ public class LicenseDBService {
                     License license = mapToSw360License(licenseNode);
                     
                     if (license != null) {
-                        licensesCreated++;
+                        try {
+                            License createdLicense = sw360LicenseService.createLicense(license, admin);
+                            if (createdLicense != null) {
+                                licensesCreated++;
+                                log.debug("Created license: {}", license.getShortname());
+                            }
+                        } catch (Exception e) {
+                            log.warn("License already exists or error creating: {} - {}", 
+                                license.getShortname(), e.getMessage());
+                            licensesUpdated++;
+                        }
                     }
                 } catch (Exception e) {
                     log.error("Error processing license: {}", e.getMessage());
@@ -117,7 +131,17 @@ public class LicenseDBService {
                     Obligation obligation = mapToSw360Obligation(obligationNode);
                     
                     if (obligation != null) {
-                        obligationsCreated++;
+                        try {
+                            Obligation createdObligation = sw360ObligationService.createObligation(obligation, admin);
+                            if (createdObligation != null) {
+                                obligationsCreated++;
+                                log.debug("Created obligation: {}", obligation.getTitle());
+                            }
+                        } catch (Exception e) {
+                            log.warn("Obligation already exists or error creating: {} - {}", 
+                                obligation.getTitle(), e.getMessage());
+                            obligationsUpdated++;
+                        }
                     }
                 } catch (Exception e) {
                     log.error("Error processing obligation: {}", e.getMessage());
