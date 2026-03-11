@@ -174,7 +174,7 @@ Here's some extra configurations that can be useful to fix some details.
 
 ### CouchDB
 
-CouchDB in compose runs with one standard admin user in a single node setup, user **sw360** and password **sw360fossy**
+CouchDB in compose runs with one standard admin user in a single node setup, user **sw360** and password **sw360fossie**
 
 To modify the entries and setup, you have two possible options:
 

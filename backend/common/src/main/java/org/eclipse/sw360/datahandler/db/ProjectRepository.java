@@ -425,6 +425,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                 break;
             case ProjectSortColumn.BY_CREATEDON:
                 qb.useIndex(Collections.singletonList(PROJECT_BY_CREATED_ON_IDX));
+                break;
             case ProjectSortColumn.BY_STATE:
                 queryViewName = "byState";
                 break;
