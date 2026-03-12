@@ -460,6 +460,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project actual = repository.get(project.getId());
 
         assertNotNull(project);
+        assertNotNull(actual);
 
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 project.getAttachments(), user.getEmail(), project.getId());
@@ -1149,8 +1150,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project project = repository.get(id);
             if (project != null
                     && (user == null || !makePermission(project, user).isActionAllowed(RequestedAction.READ))) {
-                log.error("User " + user == null ? ""
-                        : user.getEmail() + " requested not accessible project " + printName(project));
+                log.error("User {} requested not accessible project {}",
+                        user == null ? "" : user.getEmail(), printName(project));
                 project = null;
             }
             if (project != null) {

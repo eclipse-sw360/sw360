@@ -36,6 +36,12 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
     private BodyPublisher body;
 
     /**
+     * Stores the name of a file to be uploaded. This field is only defined if
+     * a body of type file has been set.
+     */
+    private String fileName;
+
+    /**
      * Creates a new {@code RequestBodyBuilderImpl} object and initializes it
      * with the JSON object mapper.
      *
@@ -83,6 +89,16 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
             throw new IllegalStateException("A RequestBodyBuilder was requested, but no body was defined.");
         }
         return body;
+    }
+
+    /**
+     * Returns the file name for a file upload request. A file name is only
+     * defined if the {@code file()} method was called.
+     *
+     * @return a file name for an upload request
+     */
+    public String getFileName() {
+        return fileName;
     }
 
     /**
