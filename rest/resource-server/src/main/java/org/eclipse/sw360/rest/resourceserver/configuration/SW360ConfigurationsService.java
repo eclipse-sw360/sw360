@@ -14,7 +14,9 @@ package org.eclipse.sw360.rest.resourceserver.configuration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -31,7 +33,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class SW360ConfigurationsService {
     private SW360ConfigsService.Iface getThriftConfigsClient() {
         return new ThriftClients().makeSW360ConfigsClient();
@@ -85,5 +87,23 @@ public class SW360ConfigurationsService {
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }
+    }
+
+    /**
+     * Filters out admin-only configuration keys from the given config map
+     * if the user is not an ADMIN or SW360_ADMIN.
+     *
+     * @param configs The configuration map to filter.
+     * @param user    The current user requesting the configurations.
+     * @return A filtered map without admin-only keys for non-admin users,
+     *         or the original map if the user is an admin.
+     */
+    public Map<String, String> filterAdminOnlyKeys(Map<String, String> configs, User user) {
+        if (PermissionUtils.isAdmin(user)) {
+            return configs;
+        }
+        Map<String, String> filtered = new HashMap<>(configs);
+        SW360ConfigKeys.ADMIN_ONLY_CONFIG_KEYS.forEach(filtered::remove);
+        return filtered;
     }
 }

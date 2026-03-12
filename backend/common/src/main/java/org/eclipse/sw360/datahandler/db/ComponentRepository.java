@@ -119,7 +119,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "  }" +
             "}";
     private static final String BY_DEFAULT_VENDOR_ID = "function(doc) {" +
-            "  if (doc.type == 'component') {" +
+            "  if (doc.type == 'component' && doc.defaultVendorId) {" +
             "       emit( doc.defaultVendorId , doc._id);" +
             "  }" +
             "}";
@@ -157,7 +157,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "}";
 
     private static final String BY_VCS_LOWERCASE = "function(doc) {" +
-            "  if (doc.type == 'component') {" +
+            "  if (doc.type == 'component' && doc.vcs && typeof(doc.vcs) == 'string') {" +
             "    emit(doc.vcs.toLowerCase().trim(), doc._id);" +
             "  } " +
             "}";
