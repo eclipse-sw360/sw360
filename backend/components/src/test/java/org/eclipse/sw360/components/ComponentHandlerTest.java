@@ -11,6 +11,9 @@ package org.eclipse.sw360.components;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
+import org.eclipse.sw360.datahandler.db.ReleaseSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -43,9 +46,14 @@ public class ComponentHandlerTest {
     public void setUp() throws Exception {
         assertTestDbNames();
         deleteAllDatabases();
-        componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredClient(),
+        ComponentDatabaseHandler handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(),
                 DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_CHANGELOGS,
                 DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
+        ComponentSearchHandler componentSearchHandler = new ComponentSearchHandler(
+                DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+        ReleaseSearchHandler releaseSearchHandler = new ReleaseSearchHandler(
+                DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+        componentHandler = new ComponentHandler(handler, componentSearchHandler, releaseSearchHandler);
     }
 
     @After
