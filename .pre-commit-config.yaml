@@ -7,7 +7,7 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: fab6a95091c567b872099a98cad586c122f55dc8 # v3.6.0
+    rev: 91ab4bf57e58b32adf1a122681f6ebe164d081c8 # v4.4.0
     hooks:
       - id: conventional-pre-commit
         stages: [ commit-msg ]
