@@ -209,15 +209,6 @@ public class LicenseDBService {
         if (obligationNode.has("obligation_type")) {
             String type = obligationNode.get("obligation_type").asText();
             try {
-                obligation.setObligationType(Obligation.ObligationType.valueOf(type.toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                log.warn("Unknown obligation type: {}", type);
-            }
-        }
-
-        if (obligationNode.has("obligation_type")) {
-            String type = obligationNode.get("obligation_type").asText();
-            try {
                 obligation.setObligationType(ObligationType.valueOf(type.toUpperCase()));
             } catch (IllegalArgumentException e) {
                 log.warn("Unknown obligation type: {}", type);
