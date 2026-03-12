@@ -16,6 +16,8 @@ name: SW360 Thrift Resource Container
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - 'third-party/thrift/Dockerfile'
 
@@ -74,14 +76,16 @@ jobs:
             type=raw,value=${{ env.THRIFT_VERSION }}-noble
             type=raw,value=latest
             type=ref,event=tag
-          labels: sw360,thrift
+          labels: |
+            sw360,thrift
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: Build image
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           load: false
           file: third-party/thrift/Dockerfile
           build-args: |

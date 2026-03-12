@@ -23,6 +23,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '*'
     paths-ignore:
       - '**.md'
 
@@ -103,22 +105,23 @@ jobs:
           tags: |
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=schedule,pattern=nightly
-            type=semver,pattern={{version}}
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-          labels: org.opencontainers.image.licenses=EPL-2.0
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+          labels: |
+            org.opencontainers.image.licenses=EPL-2.0
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: Assembly image
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           context: .
           target: sw360
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: mode=max
           sbom: true
-          secret-files: |
-            "couchdb=./config/couchdb/default_secrets"
