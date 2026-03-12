@@ -76,7 +76,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class SW360ReportService {
 
     @NonNull

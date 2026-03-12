@@ -44,7 +44,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class SW360SPDXDocumentService {
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;

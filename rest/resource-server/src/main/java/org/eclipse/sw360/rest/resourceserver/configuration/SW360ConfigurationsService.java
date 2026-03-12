@@ -33,7 +33,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class SW360ConfigurationsService {
     private SW360ConfigsService.Iface getThriftConfigsClient() {
         return new ThriftClients().makeSW360ConfigsClient();
