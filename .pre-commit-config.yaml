@@ -20,7 +20,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/pylint-dev/pylint
-    rev: 76bce72bc57cc8089e439cc9d22fed5806341ed4 # v3.3.1
+    rev: 88e1ab7545a4af4aea15c305a154c164a95ab842 # v4.0.5
     hooks:
       - id: pylint
 
