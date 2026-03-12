@@ -1,26 +1,26 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b # v5.0.0
     hooks:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
     -   id: check-merge-conflict
 
 -   repo: https://github.com/compilerla/conventional-pre-commit
-    rev: 'v3.6.0'
+    rev: fab6a95091c567b872099a98cad586c122f55dc8 # v3.6.0
     hooks:
     -   id: conventional-pre-commit
         stages: [commit-msg]
 -   repo: https://github.com/gitleaks/gitleaks
-    rev: v8.21.2
+    rev: 43fae355e6fe4d99d2a7b240a224b85e2903aeb4 # v8.21.2
     hooks:
     -   id: gitleaks
 -   repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
+    rev: 38980559e3a605691d6579f96222c30778e5a69e # 3.0.0
     hooks:
     -   id: shellcheck
 -   repo: https://github.com/pylint-dev/pylint
-    rev: v3.3.1
+    rev: 76bce72bc57cc8089e439cc9d22fed5806341ed4 # v3.3.1
     hooks:
     -   id: pylint
 
