@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.licensedb;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ import java.util.Map;
 @RequestMapping("/api/license-db")
 @Slf4j
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "licensedb.enabled", havingValue = "true")
 public class LicenseDBController {
 
     private final LicenseDBService licenseDBService;
