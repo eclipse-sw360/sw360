@@ -1,4 +1,3 @@
-
 # Copyright Helio Chisisni de Castro, 2023. Part of the SW360 Portal Project.
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
 # Copyright BMW CarIT GmbH, 2021.
@@ -13,7 +12,8 @@
 #--------------------------------------------------------------------------------------------------
 # Thrift
 # Ubuntu Noble image
-FROM ubuntu@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 AS build
+# FROM ubuntu:24.04
+FROM ubuntu@sha256:98ff7968124952e719a8a69bb3cccdd217f5fe758108ac4f21ad22e1df44d237 AS build
 
 ARG BASEDIR="/build"
 ARG DESTDIR="/"
@@ -35,8 +35,8 @@ RUN apt-get -qq update \
 
 COPY ./third-party/thrift/install-thrift.sh install_thrift.sh
 
-RUN --mount=type=cache,target=/var/cache/deps \
-    ./install_thrift.sh
+RUN --mount=type=cache,target=$BASEDIR/cache \
+    bash ./install_thrift.sh
 
 FROM scratch
 COPY --from=build /usr/local/bin/thrift /usr/local/bin/thrift
