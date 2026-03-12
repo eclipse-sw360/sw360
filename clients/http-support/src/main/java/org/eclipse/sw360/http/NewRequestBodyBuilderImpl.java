@@ -4,6 +4,7 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.http;
 
+import java.io.IOException;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.file.Path;
@@ -52,7 +53,11 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
 
     @Override
     public void file(Path path, String mediaType) {
-        //TODO: implementation pending.
+        try {
+            initBody(BodyPublishers.ofFile(path));
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
