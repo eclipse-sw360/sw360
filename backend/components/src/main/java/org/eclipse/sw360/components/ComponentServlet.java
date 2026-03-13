@@ -26,6 +26,6 @@ public class ComponentServlet extends Sw360ThriftServlet {
 
     public ComponentServlet() throws IOException {
         // Create a service processor using the provided handler
-        super(new ComponentService.Processor<>(new ComponentHandler()), new TCompactProtocol.Factory());
+        super(new ComponentService.Processor<>(ComponentHandlerFactory.createDefault()), new TCompactProtocol.Factory());
     }
 }
