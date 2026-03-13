@@ -307,9 +307,9 @@ public class CycloneDxBOMImporter {
                         requestSummary.setMessage(convertCollectionToJSONString(messageMap));
                     }
                 } else {
-                    requestSummary.setMessage(String.format(String.format(
+                    requestSummary.setMessage(String.format(
                             "SBOM import aborted with error: Multiple vcs information found in components, vcs found: %s and total components: %s",
-                            vcsCount, componentsCount)));
+                            vcsCount, componentsCount));
                     return requestSummary;
                 }
             }
