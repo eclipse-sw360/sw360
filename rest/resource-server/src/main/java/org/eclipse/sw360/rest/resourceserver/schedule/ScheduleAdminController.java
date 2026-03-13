@@ -46,7 +46,6 @@ import java.util.Map;
 @BasePathAwareController
 @RequiredArgsConstructor
 @RestController
-@PreAuthorize("hasAuthority('ADMIN')")
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
