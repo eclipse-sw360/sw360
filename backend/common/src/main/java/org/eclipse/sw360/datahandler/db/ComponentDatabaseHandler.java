@@ -250,12 +250,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
             }
 
-            if (newSecondBestCR.isPresent() &&  (newSecondBestCR.get().getCheckStatus() == CheckStatus.ACCEPTED)) {
-                releaseAfter.setClearingState(ClearingState.INTERNAL_USE_SCAN_AVAILABLE);
-            }
-
             if (isrCountAfter > 0) {
                 releaseAfter.setClearingState(ClearingState.SCAN_AVAILABLE);
+            }
+
+            if (newSecondBestCR.isPresent() &&  (newSecondBestCR.get().getCheckStatus() == CheckStatus.ACCEPTED)) {
+                releaseAfter.setClearingState(ClearingState.INTERNAL_USE_SCAN_AVAILABLE);
             }
         }
     }

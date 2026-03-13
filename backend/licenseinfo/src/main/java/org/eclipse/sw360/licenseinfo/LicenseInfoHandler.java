@@ -703,7 +703,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 .filter(obligation -> !(SW360Constants.OBLIGATION_TOPIC_UNKNOWN.equals(obligation.getTopic())))
                 // sort the obligations by topic in ascending order
                 .sorted(Comparator.comparing(ObligationAtProject::getTopic, String.CASE_INSENSITIVE_ORDER))
-                .collect(Collectors.toList()).stream()
                 // create a Map<licenseId, Set<ObligationAtProject>>
                 .flatMap(obligation -> obligation.getLicenseIDs().stream()
                         .map(id -> new AbstractMap.SimpleEntry<>(obligation, id)))
