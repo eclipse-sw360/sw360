@@ -1,0 +1,78 @@
+# -----------------------------------------------------------------------------
+# Copyright SW360 Contributors, 2026.
+# Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# -----------------------------------------------------------------------------
+
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.java'
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - uses: coderabbitai/ai-pr-reviewer@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          debug: false
+          review_simple_changes: false
+          review_comment_lgtm: false
+          openai_light_model: gpt-4o-mini
+          openai_heavy_model: gpt-4o
+          openai_timeout_ms: 300000
+          language: en-US
+          path_filters: |
+            !**/*.md
+            !**/*.yml
+            !**/*.xml
+            !**/*.json
+            !**/*.properties
+            !**/test/**
+          system_message: |
+            You are a senior Java code reviewer focused ONLY on finding:
+            1. Logical bugs (wrong variable used, unreachable/dead code, incorrect conditions)
+            2. Null pointer risks (wrong null checks, missing null checks before dereference)
+            3. Race conditions and concurrency issues
+            4. Off-by-one errors and boundary issues
+
+            Rules:
+            - Do NOT comment on code style, formatting, naming conventions, or documentation
+            - Do NOT suggest refactoring or design improvements
+            - Do NOT comment on missing tests
+            - Do NOT add praise or LGTM comments
+            - ONLY flag actual bugs or high-risk logical issues
+            - Keep comments short and actionable with the fix suggestion
+            - If you find no bugs, do not comment at all
+          summarize: |
+            Provide a brief summary of changes in 2-3 bullet points.
+            Then list any logical bugs or null-safety issues found.
+            If no issues found, just say "No logical issues detected."
