@@ -45,6 +45,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -108,6 +109,14 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's licenses. Supports quick filtering.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of licenses.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = License.class))),
+            @ApiResponse(responseCode = "204", description = "No licenses; no response body.",
+                    content = @Content(schema = @Schema(implementation = Void.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = LICENSES_URL)
     public ResponseEntity<CollectionModel<License>> getLicenses(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -148,6 +157,14 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all obligations of a license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of obligations.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Obligation.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "License not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = LICENSES_URL + "/{id}/obligations")
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligationsByLicenseId(
             @PathVariable("id") String id
@@ -169,6 +186,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's licenseTypes.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of license types.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = LicenseType.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = LICENSE_TYPES_URL)
     public ResponseEntity<CollectionModel<EntityModel<LicenseType>>> getLicenseTypes(
             @Parameter(description = "The search license type text.")
@@ -196,6 +219,14 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Get a specific license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License with embedded obligations.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = License.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "License not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = LICENSES_URL + "/{id:.+}")
     public ResponseEntity<EntityModel<License>> getLicense(
             @Parameter(description = "The id of the license.")
@@ -213,6 +244,15 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Delete a specific license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License deleted successfully."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "License not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @DeleteMapping(value = LICENSES_URL + "/{id:.+}")
     public ResponseEntity deleteLicense(
@@ -229,6 +269,18 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Create a new license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "License created successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = License.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "409", description = "License with same shortname already exists.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL)
     public ResponseEntity<EntityModel<License>> createLicense(
@@ -257,19 +309,19 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "License updated successfully."),
-            @ApiResponse(
-                    responseCode = "202", description = "Request sent for moderation.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"Moderation request is created\"}"
-                                    ))
-                    }
-            ),
-            @ApiResponse(responseCode = "405",
-                    description = "Reject license update due to: an already checked license is not allowed" +
-                            " to become unchecked again")
+            @ApiResponse(responseCode = "200", description = "License updated successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = License.class))),
+            @ApiResponse(responseCode = "202", description = "Request sent for moderation.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "License not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "405", description = "Reject license update: checked license not allowed to become unchecked.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PatchMapping(value = LICENSES_URL + "/{id}")
     public ResponseEntity<EntityModel<License>> updateLicense(
@@ -301,17 +353,21 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "License updated successfully."),
-            @ApiResponse(
-                    responseCode = "202", description = "Request sent for moderation.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"Moderation request is created\"}"
-                                    ))
-                    }
-            ),
-            @ApiResponse(responseCode = "500", description = "Update Whitelist to Obligation Fail!")
+            @ApiResponse(responseCode = "200", description = "License updated successfully.",
+                    content = @Content(mediaType = "application/hal+json", schema = @Schema(implementation = License.class))),
+            @ApiResponse(responseCode = "202", description = "Request sent for moderation.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
+            @ApiResponse(responseCode = "400", description = "Obligation IDs not in license.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "License not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Update whitelist to obligation failed.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PatchMapping(value = LICENSES_URL+ "/{id}/whitelist")
     public ResponseEntity<EntityModel<License>> updateWhitelist(
@@ -365,15 +421,15 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Obligations linked to license."),
-            @ApiResponse(
-                    responseCode = "400", description = "Obligation ids which failed to linked with license.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"Obligation ids: ob001 are not linked to license\"}"
-                                    ))
-                    }
-            )
+            @ApiResponse(responseCode = "400", description = "Obligation ids which failed to link with license.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\"message\": \"Obligation ids: ob001 are not linked to license\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "License not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/{id}/obligations")
@@ -395,15 +451,15 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Obligations unlinked from license."),
-            @ApiResponse(
-                    responseCode = "400", description = "Obligation ids which failed to unlinked from license.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"Obligation ids: ob001 are not linked to license\"}"
-                                    ))
-                    }
-            )
+            @ApiResponse(responseCode = "400", description = "Obligation ids which failed to unlink from license.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\"message\": \"Obligation ids: ob001 are not linked to license\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "404", description = "License not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = LICENSES_URL + "/{id}/obligations")
@@ -460,6 +516,13 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Delete all licenses of the service.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All licenses deleted successfully."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @DeleteMapping(value = LICENSES_URL + "/deleteAll")
     public ResponseEntity deleteAllLicense() throws TException {
@@ -473,6 +536,16 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Import SPDX information.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "SPDX license imported successfully.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Import failed.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/import/SPDX")
     public ResponseEntity<RequestSummary> importSPDX() throws TException {
@@ -491,6 +564,13 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                     @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = "application/zip"),
             }
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License archive (ZIP) stream."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = LICENSES_URL + "/downloadLicenses", produces = "application/zip")
     public void downloadLicenseArchive(
@@ -508,6 +588,17 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Upload license archive.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License archive uploaded successfully."),
+            @ApiResponse(responseCode = "400", description = "Invalid file or upload failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Upload failed.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PostMapping(value = LICENSES_URL + "/upload", consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> uploadLicenses(
             @Parameter(description = "The license archive file to be uploaded.")
@@ -532,6 +623,16 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Import OSADL information.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "OSADL information imported successfully.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "Write access forbidden",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "500", description = "Import failed.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = LICENSES_URL + "/import/OSADL")
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
@@ -547,16 +648,15 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "License Type created successfully."),
-            @ApiResponse(
-                    responseCode = "400", description = "Bad request if license type is empty or user is not admin.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = "{\"message\": \"Unable to create License Type. User is not admin\"}"
-                                    ))
-                    }
-            )
+            @ApiResponse(responseCode = "200", description = "License type created successfully.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RequestStatus.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request if license type is empty or user is not admin.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\"message\": \"Unable to create License Type. User is not admin\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+            @ApiResponse(responseCode = "403", description = "User is not admin.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
     })
     @PostMapping(value = LICENSES_URL + "/addLicenseType")
     public ResponseEntity<RequestStatus> createLicenseType(
@@ -575,32 +675,19 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Delete a specific license type.",
             tags = {"Licenses"},
             responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "License type deleted successfully.",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(
-                                                    example = """
-                                                    {
-                                                        "status": "SECCESS",
-                                                        "message": "License type deleted successfully."
-                                                    }
-                                                    """
-                                            ))
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "403", description = "User does not have permission to delete license type."
-                    ),
-                    @ApiResponse(
-                            responseCode = "404", description = "License type with the given ID was not found."
-                    ),
-                    @ApiResponse(
-                            responseCode = "409", description = "Cannot delete license type because it is currently in use."
-                    ),
-                    @ApiResponse(
-                            responseCode = "500", description = "Unexpected error occurred while deleting license type."
-                    )
+                    @ApiResponse(responseCode = "200", description = "License type deleted successfully.",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(example = "{\"status\": \"SUCCESS\", \"message\": \"License type deleted successfully.\"}"))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "User does not have permission to delete license type.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "License type with the given ID was not found.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "409", description = "Cannot delete license type because it is currently in use.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "500", description = "Unexpected error occurred while deleting license type.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
@@ -639,24 +726,13 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Returns whether the license type is being used and the total count of such licenses.",
             tags = {"License Types"},
             responses = {
-                    @ApiResponse(
-                            responseCode = "200", description = "LicenseType usage information",
-                            content = {
-                                    @Content(mediaType = "application/json",
-                                            schema = @Schema(
-                                                    example = """
-                                                            {
-                                                              isUsed: true,
-                                                              count: 5
-                                                            }
-                                                            """
-                                            )
-                                    )
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = " 403", description = "User is not an admin"
-                    )
+                    @ApiResponse(responseCode = "200", description = "License type usage information.",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(example = "{\"isUsed\": true, \"count\": 5}"))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "User is not an admin.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
             }
     )
     @GetMapping(value = LICENSE_TYPES_URL + "/{licenseTypeId}/usage", produces = MediaType.APPLICATION_JSON_VALUE)
