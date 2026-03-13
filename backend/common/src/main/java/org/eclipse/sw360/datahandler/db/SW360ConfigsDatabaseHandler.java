@@ -78,6 +78,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(IS_BULK_RELEASE_DELETING_ENABLED, getOrDefault(configContainer, IS_BULK_RELEASE_DELETING_ENABLED, "false"))
             .put(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, getOrDefault(configContainer, DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, "false"))
             .put(IS_FORCE_UPDATE_ENABLED, getOrDefault(configContainer, IS_FORCE_UPDATE_ENABLED, "false"))
+            .put(LICENSE_MANUAL_CREATION_ENABLED, getOrDefault(configContainer, LICENSE_MANUAL_CREATION_ENABLED, "false"))
             .put(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, getOrDefault(configContainer, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER.name()))
             .put(TOOL_NAME, getOrDefault(configContainer, TOOL_NAME, SW360Constants.DEFAULT_SBOM_TOOL_NAME))
             .put(TOOL_VENDOR, getOrDefault(configContainer, TOOL_VENDOR, SW360Constants.DEFAULT_SBOM_TOOL_VENDOR))
@@ -197,6 +198,7 @@ public class SW360ConfigsDatabaseHandler {
                  MAIL_REQUEST_FOR_PROJECT_REPORT,
                  MAIL_REQUEST_FOR_COMPONENT_REPORT,
                  IS_FORCE_UPDATE_ENABLED,
+                 LICENSE_MANUAL_CREATION_ENABLED,
                  DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
                  IS_BULK_RELEASE_DELETING_ENABLED,
                  IS_PACKAGE_PORTLET_ENABLED,

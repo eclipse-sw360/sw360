@@ -239,18 +239,10 @@ public class LicenseTest extends TestIntegrationBase {
                         requestEntity,
                         String.class);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertNotNull(response.getBody());
-
-        String responseBody = response.getBody();
-        assertTrue("Response should contain created license fullName", responseBody.contains("fullName"));
-        assertTrue("Response should contain created license shortName", responseBody.contains("shortName"));
-        assertTrue("Response should contain Apache 3.0", responseBody.contains("Apache 3.0"));
-        assertTrue("Response should contain Apache License 3.0", responseBody.contains("Apache License 3.0"));
-        assertTrue("Response should contain checked field", responseBody.contains("checked"));
-        assertTrue("Response should contain OSIApproved field", responseBody.contains("OSIApproved"));
-        assertTrue("Response should contain FSFLibre field", responseBody.contains("FSFLibre"));
-        assertTrue("Response should contain _links", responseBody.contains("_links"));
+        assertTrue("Response should instruct to sync licenses from LicenseDB",
+                response.getBody().contains("LicenseDB"));
     }
 
     @Test
@@ -529,7 +521,7 @@ public class LicenseTest extends TestIntegrationBase {
                         requestEntity,
                         String.class);
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     @Test
