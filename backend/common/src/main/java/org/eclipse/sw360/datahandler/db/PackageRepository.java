@@ -11,10 +11,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -166,5 +163,11 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
         }
         result.put(pageData, packages);
         return result;
+    }
+    public List<Package> getPackagesByReleaseIds(Set<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return queryByIds("byReleaseId", ids);
     }
 }
