@@ -103,7 +103,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
