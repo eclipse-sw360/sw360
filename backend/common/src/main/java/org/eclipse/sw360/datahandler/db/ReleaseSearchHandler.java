@@ -24,7 +24,10 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
@@ -37,11 +40,22 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESI
 public class ReleaseSearchHandler {
 
     private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    private static final Pattern DIGIT_SEQUENCE_PATTERN = Pattern.compile("\\d+");
 
     private static final NouveauIndexDesignDocument luceneSearchView
         = new NouveauIndexDesignDocument("releases",
             new NouveauIndexFunction(
                 "function(doc) {" +
+                "  function normalizeVersionForSort(version) {" +
+                "    if (!version || typeof(version) !== 'string') { return ''; }" +
+                "    var lower = version.toLowerCase();" +
+                "    return lower.replace(/\\d+/g, function(match) {" +
+                "      var normalized = match.replace(/^0+(?!$)/, '');" +
+                "      var length = normalized.length.toString();" +
+                "      while (length.length < 6) { length = '0' + length; }" +
+                "      return '{' + length + normalized + '}';" +
+                "    });" +
+                "  }" +
                 "  if(doc.type == 'release') {" +
                 "    if (doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
                 "      index('text', 'name', doc.name, {'store': true});" +
@@ -49,7 +63,7 @@ public class ReleaseSearchHandler {
                 "    }" +
                 "    if (doc.version && typeof(doc.version) == 'string' && doc.version.length > 0) {" +
                 "      index('text', 'version', doc.version, {'store': true});" +
-                "      index('string', 'version_sort', doc.version);" +
+                "      index('string', 'version_sort', normalizeVersionForSort(doc.version));" +
                 "    }" +
                 "    if(doc.createdOn && doc.createdOn.length) {"+
                 "      var dt = new Date(doc.createdOn);"+
@@ -101,5 +115,41 @@ public class ReleaseSearchHandler {
             case null -> "createdOn";
             default -> "createdOn";
         };
+    }
+
+    static String normalizeVersionForSort(String version) {
+        if (version == null || version.isEmpty()) {
+            return "";
+        }
+        String lower = version.toLowerCase(Locale.ROOT);
+        Matcher matcher = DIGIT_SEQUENCE_PATTERN.matcher(lower);
+        StringBuilder normalized = new StringBuilder(lower.length() + 16);
+        int cursor = 0;
+        while (matcher.find()) {
+            normalized.append(lower, cursor, matcher.start());
+            appendNumericToken(normalized, matcher.group());
+            cursor = matcher.end();
+        }
+        normalized.append(lower, cursor, lower.length());
+        return normalized.toString();
+    }
+
+    private static void appendNumericToken(StringBuilder output, String rawNumber) {
+        int significantStart = 0;
+        while (significantStart < rawNumber.length() - 1 && rawNumber.charAt(significantStart) == '0') {
+            significantStart++;
+        }
+        String significant = rawNumber.substring(significantStart);
+        output.append('{');
+        appendZeroPaddedLength(output, significant.length());
+        output.append(significant).append('}');
+    }
+
+    private static void appendZeroPaddedLength(StringBuilder output, int length) {
+        String lengthAsString = Integer.toString(length);
+        for (int i = lengthAsString.length(); i < 6; i++) {
+            output.append('0');
+        }
+        output.append(lengthAsString);
     }
 }
