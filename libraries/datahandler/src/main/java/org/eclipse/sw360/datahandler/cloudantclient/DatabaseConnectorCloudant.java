@@ -617,10 +617,26 @@ public class DatabaseConnectorCloudant {
                 .ddoc(ddoc)
                 .build();
 
-        DocumentResult response =
-            this.instance.getClient()
-                .putDesignDocument(designDocumentOptions).execute()
-                .getResult();
+        DocumentResult response;
+        try {
+            response = this.instance.getClient()
+                    .putDesignDocument(designDocumentOptions).execute()
+                    .getResult();
+        } catch (ConflictException | TooManyRequestsException e) {
+            try {
+                Thread.sleep(Duration.ofMillis(100));
+                existingDoc = getDesignDocument(ddoc);
+                if (existingDoc != null) {
+                    designDocument.setId(existingDoc.getId());
+                    designDocument.setRev(existingDoc.getRev());
+                }
+                response = this.instance.getClient()
+                        .putDesignDocument(designDocumentOptions).execute()
+                        .getResult();
+            } catch (InterruptedException ex) {
+                throw e;
+            }
+        }
         boolean success = response.isOk();
         if (!success) {
             log.error("Unable to put design document {} to {}. Error: {}",
