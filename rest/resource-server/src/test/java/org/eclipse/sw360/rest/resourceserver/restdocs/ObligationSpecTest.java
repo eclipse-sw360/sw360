@@ -153,9 +153,9 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("obligationLevel").description("The level of the obligation: [ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, COMPONENT_OBLIGATION, LICENSE_OBLIGATION]"),
                                 fieldWithPath("obligationType").description("The type of the obligation: [PERMISSION, RISK, EXCEPTION, RESTRICTION, OBLIGATION]"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                subsectionWithPath("licenseDbId").description("The LicenseDB ID of the obligation, optional"),
-                                subsectionWithPath("lastSyncTime").description("The last sync time from LicenseDB, optional"),
-                                subsectionWithPath("syncStatus").description("The sync status from LicenseDB, optional")
+                                fieldWithPath("setLicenseDbId").description("Whether LicenseDB ID is set, optional"),
+                                fieldWithPath("setLastSyncTime").description("Whether last sync time is set, optional"),
+                                fieldWithPath("setSyncStatus").description("Whether sync status is set, optional")
                         )));
     }
 
@@ -187,9 +187,9 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("obligationLevel").description("The level of the obligation: [COMPONENT_OBLIGATION, ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, LICENSE_OBLIGATION]"),
                                 fieldWithPath("obligationType").description("The type of the obligation: [RESTRICTION, OBLIGATION, PERMISSION, EXCEPTION, RISK]"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                subsectionWithPath("licenseDbId").description("The LicenseDB ID of the obligation, optional"),
-                                subsectionWithPath("lastSyncTime").description("The last sync time from LicenseDB, optional"),
-                                subsectionWithPath("syncStatus").description("The sync status from LicenseDB, optional")
+                                fieldWithPath("setLicenseDbId").description("Whether LicenseDB ID is set, optional"),
+                                fieldWithPath("setLastSyncTime").description("Whether last sync time is set, optional"),
+                                fieldWithPath("setSyncStatus").description("Whether sync status is set, optional")
                         )));
     }
 
