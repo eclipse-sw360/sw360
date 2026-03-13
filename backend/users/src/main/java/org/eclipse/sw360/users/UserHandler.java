@@ -127,9 +127,9 @@ public class UserHandler implements UserService.Iface {
                 && externalId != null
                 && !externalId.isEmpty()) {
             String currentExternalId = user.getExternalid();
-            if (currentExternalId == null
-                    || currentExternalId.isEmpty()
-                    || !currentExternalId.equals(externalId)) {
+            if (!externalId.equals(email)
+                    && (CommonUtils.isNullEmptyOrWhitespace(currentExternalId)
+                    || !currentExternalId.equals(externalId))) {
                 log.info("Updating differing externalId for user: {} | was: {} | now: {}",
                         email, currentExternalId, externalId);
                 user.setExternalid(externalId);
