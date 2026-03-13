@@ -2548,6 +2548,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "doNotReplacePackageAndRelease", required = false) boolean doNotReplacePackageAndRelease
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        Project project = projectService.getProjectForUserById(id, sw360User);
+        if (!restControllerHelper.isWriteActionAllowed(project, sw360User)) {
+            throw new BadCredentialsException("You do not have sufficient permissions to update this project.");
+        }
+
+        if (!attachmentService.isValidSbomFile(file, "CycloneDX")) {
+            throw new BadRequestClientException("Invalid SBOM file. Only CycloneDX(.xml/.json) files are supported.");
+        }
+
         Attachment attachment = null;
         final RequestSummary requestSummary;
         String projectId = null;
@@ -2580,7 +2590,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     "Project name or version present in SBOM metadata tag is not same as the current SW360 project!");
         }
 
-        Project project = projectService.getProjectForUserById(projectId, sw360User);
+        project = projectService.getProjectForUserById(projectId, sw360User);
         HalResource<Project> halResource = createHalProject(project, sw360User);
         return new ResponseEntity<HalResource<Project>>(halResource, HttpStatus.OK);
     }
