@@ -264,6 +264,7 @@ struct Release {
 
     65: optional set<string> mainLicenseIds,
     66: optional set<string> otherLicenseIds,
+    67: optional string declaredLicense,
 
     40: optional Vendor vendor,
     41: optional string vendorId,

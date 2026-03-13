@@ -992,7 +992,7 @@ public class RestControllerHelper<T> {
 
     public Release convertToEmbeddedReleaseWithDet(Release release) {
         List<String> fields = List.of("id", "name", "version", "cpeid", "createdBy", "createdOn", "componentId","componentType",
-                "additionalData", "clearingState", "mainLicenseIds", "binaryDownloadurl", "sourceCodeDownloadurl",
+                "additionalData", "clearingState", "declaredLicense", "mainLicenseIds", "binaryDownloadurl", "sourceCodeDownloadurl",
                 "releaseDate", "externalIds", "languages", "operatingSystems", "softwarePlatforms", "vendor",
                 "mainlineState", "packageIds");
         return convertToEmbeddedRelease(release, fields);

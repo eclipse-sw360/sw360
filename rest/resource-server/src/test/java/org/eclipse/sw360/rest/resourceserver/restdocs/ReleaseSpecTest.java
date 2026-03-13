@@ -284,6 +284,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
         release.setMainLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0-or-later", "Apache-2.0")));
         release.setOtherLicenseIds(new HashSet<>(Arrays.asList("MIT", "BSD-3-Clause")));
+        release.setDeclaredLicense("MIT OR GPL-2.0-or-later");
         release.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         release.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
         release.setEccInformation(eccInformation);
@@ -759,6 +760,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]additionalData").description("A place to store additional data used by external tools").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]releaseIdToRelationship").description("Release Id To Relationship of Release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]languages").description("The language of the component"),
+                                subsectionWithPath("_embedded.sw360:releases.[]declaredLicense").description("The declared SPDX license expression").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]mainLicenseIds").description("An array of all main licenses").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]otherLicenseIds").description("An array of all other licenses associated with the release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]operatingSystems").description("The OS on which the release operates"),
@@ -910,6 +912,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("releaseDate").description("The date of this release"),
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("declaredLicense").description("The declared SPDX license expression").optional(),
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                                 subsectionWithPath("eccInformation").description("The eccInformation of this release"),
                                 fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
@@ -1457,6 +1460,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("version").description("The version of the release"),
                         fieldWithPath("createdBy").description("Email of the release creator"),
                         fieldWithPath("cpeid").description("CpeId of the release"),
+                        fieldWithPath("declaredLicense").description("The declared SPDX license expression").optional(),
                         fieldWithPath("mainLicenseIds").description("An array of all main licenses"),
                         fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                         fieldWithPath("releaseDate").description("The date of this release"),
