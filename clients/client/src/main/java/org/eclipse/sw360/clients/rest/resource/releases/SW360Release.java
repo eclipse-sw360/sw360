@@ -44,6 +44,7 @@ public final class SW360Release extends SW360HalResource<SW360ReleaseLinkObjects
     private boolean isProprietary;
     private String name;
     private String version;
+    private String declaredLicense;
     private String createdOn;
     private String cpeId;
     private String downloadurl;
@@ -175,13 +176,13 @@ public final class SW360Release extends SW360HalResource<SW360ReleaseLinkObjects
         return this;
     }
 
-    @JsonIgnore
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getDeclaredLicense() {
-        return additionalData.get(DECLARED_LICENSE_KEY);
+        return declaredLicense != null ? declaredLicense : additionalData.get(DECLARED_LICENSE_KEY);
     }
 
     public SW360Release setDeclaredLicense(String declaredLicense) {
-        additionalData.put(DECLARED_LICENSE_KEY, declaredLicense);
+        this.declaredLicense = declaredLicense;
         return this;
     }
 
@@ -326,6 +327,7 @@ public final class SW360Release extends SW360HalResource<SW360ReleaseLinkObjects
     public SW360Release mergeWith(SW360Release releaseWithPrecedence) {
         name = getDominantGetterFromVariableMergeOrNull(releaseWithPrecedence, SW360Release::getName);
         version = getDominantGetterFromVariableMergeOrNull(releaseWithPrecedence, SW360Release::getVersion);
+        declaredLicense = getDominantGetterFromVariableMergeOrNull(releaseWithPrecedence, SW360Release::getDeclaredLicense);
         cpeId = getDominantGetterFromVariableMergeOrNull(releaseWithPrecedence, SW360Release::getCpeId);
         downloadurl = getDominantGetterFromVariableMergeOrNull(releaseWithPrecedence, SW360Release::getDownloadurl);
         if (releaseWithPrecedence.isSetMainLicenseIds()) {
@@ -385,13 +387,14 @@ public final class SW360Release extends SW360HalResource<SW360ReleaseLinkObjects
                 Objects.equals(externalIds, release.externalIds) &&
                 Objects.equals(additionalData, release.additionalData) &&
                 Objects.equals(createdOn, release.createdOn) &&
+                Objects.equals(declaredLicense, release.declaredLicense) &&
                 Objects.equals(sw360ClearingState, release.sw360ClearingState) &&
                 isProprietary == release.isProprietary;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, version, cpeId, downloadurl, externalIds, additionalData,
+        return Objects.hash(super.hashCode(), name, version, declaredLicense, cpeId, downloadurl, externalIds, additionalData,
                 isProprietary, createdOn, sw360ClearingState);
     }
 
