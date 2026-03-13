@@ -723,6 +723,13 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public SpdxImportDryRunResult dryRunImportBom(User user, String attachmentContentId) throws TException {
+        assertNotNull(attachmentContentId);
+        assertUser(user);
+        return handler.dryRunImportBom(user, attachmentContentId);
+    }
+
+    @Override
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
         assertNotNull(attachmentContentId);
         assertUser(user);
