@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360VendorService {
     public Map<PaginationData, List<Vendor>> getVendors(Pageable pageable) {
         try {

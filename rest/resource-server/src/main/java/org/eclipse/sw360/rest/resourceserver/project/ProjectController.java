@@ -174,7 +174,7 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_F
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -1562,7 +1562,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final List<EntityModel<License>> licenseResources = new ArrayList<>();
         final Set<String> allLicenseIds = new HashSet<>();
 
-        final Set<String> releaseIdToUsage = project.getReleaseIdToUsage().keySet();
+        final Set<String> releaseIdToUsage = CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
         for (final String releaseId : releaseIdToUsage) {
             final Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             final Set<String> licenseIds = sw360Release.getMainLicenseIds();
@@ -3198,7 +3198,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Release> releases = new ArrayList<>();
         ObligationList obligation = new ObligationList();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
-        List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+        List<String> releaseIds = new ArrayList<>(CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet());
         for (final String releaseId : releaseIds) {
             Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             if (sw360Release.getAttachmentsSize() > 0) {
@@ -3270,7 +3270,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, ObligationStatusInfo> oblData = Maps.newHashMap();
         Map<String, ObligationStatusInfo> filterData = Maps.newHashMap();
 
-        List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+        List<String> releaseIds = new ArrayList<>(CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet());
         for (final String releaseId : releaseIds) {
             Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             if (sw360Release.getAttachmentsSize() > 0) {
@@ -3357,7 +3357,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, ObligationStatusInfo> obligationStatusMapFromReport = Maps.newHashMap();
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
         List<Release> releases = new ArrayList<>();
-        List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+        List<String> releaseIds = new ArrayList<>(CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet());
         for (final String releaseId : releaseIds) {
             Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             if (sw360Release.getAttachmentsSize() > 0) {
@@ -3528,7 +3528,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
      * @throws TException If there is an error during the Thrift operation.
      */
     private List<Release> getReleasesWithAttachments(Project project, User user) throws TException {
-        return project.getReleaseIdToUsage().keySet().stream()
+        return CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet().stream()
                 .map(releaseId -> {
                     try {
                         Release release = releaseService.getReleaseForUserById(releaseId, user);
