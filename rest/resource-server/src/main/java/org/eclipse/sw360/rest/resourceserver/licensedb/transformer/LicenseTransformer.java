@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.licensedb.transformer;
 
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.springframework.stereotype.Component;
 
@@ -58,18 +59,18 @@ public class LicenseTransformer {
         license.setShortname(getStringValue(licenseDbData, "shortname"));
         license.setFullname(getStringValue(licenseDbData, "fullname"));
         license.setText(getStringValue(licenseDbData, "text"));
-        license.setUrl(getStringValue(licenseDbData, "url"));
+        license.setExternalLicenseLink(getStringValue(licenseDbData, "url"));
         
-        // Map license type
-        String licenseType = getStringValue(licenseDbData, "licenseType");
-        if (licenseType != null) {
-            license.setLicenseType(licenseType);
+        // Map license type database ID
+        String licenseTypeId = getStringValue(licenseDbData, "licenseTypeId");
+        if (licenseTypeId != null) {
+            license.setLicenseTypeDatabaseId(licenseTypeId);
         }
         
-        // Map OSI approved flag
+        // Map OSI approved flag to Quadratic enum
         Boolean osiApproved = getBooleanValue(licenseDbData, "osiApproved");
         if (osiApproved != null) {
-            license.setOsiApproved(osiApproved);
+            license.setOSIApproved(osiApproved ? Quadratic.YES : Quadratic.NA);
         }
         
         return license;

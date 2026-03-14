@@ -10,6 +10,8 @@
 package org.eclipse.sw360.rest.resourceserver.licensedb.transformer;
 
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -56,16 +58,24 @@ public class ObligationTransformer {
         obligation.setText(getStringValue(obligationDbData, "text"));
         obligation.setTitle(getStringValue(obligationDbData, "title"));
         
-        // Map obligation type if present
+        // Map obligation type enum if present
         String type = getStringValue(obligationDbData, "type");
-        if (type != null) {
-            obligation.setObligationType(type);
+        if (type != null && !type.isEmpty()) {
+            try {
+                obligation.setObligationType(ObligationType.valueOf(type.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                // Unknown obligation type - skip field
+            }
         }
         
-        // Map obligation level if present
+        // Map obligation level enum if present
         String level = getStringValue(obligationDbData, "level");
-        if (level != null) {
-            obligation.setObligationLevel(level);
+        if (level != null && !level.isEmpty()) {
+            try {
+                obligation.setObligationLevel(ObligationLevel.valueOf(level.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                // Unknown obligation level - skip field
+            }
         }
         
         return obligation;
