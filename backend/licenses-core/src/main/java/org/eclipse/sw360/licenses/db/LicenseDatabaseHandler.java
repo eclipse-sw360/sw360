@@ -613,12 +613,20 @@ public class LicenseDatabaseHandler {
                     }
                 } else if (oblig.isSetId()) {
                     Obligation dbTodo = obligRepository.get(oblig.id);
-                    if (oblig.whitelist.contains(businessUnit) && !dbTodo.whitelist.contains(businessUnit)) {
+                    if (dbTodo == null) {
+                        log.error("Obligation with id {} not found in database.", oblig.id);
+                        continue;
+                    }
+                    Set<String> obligWhitelist = oblig.whitelist != null ? oblig.whitelist : new HashSet<>();
+                    Set<String> dbTodoWhitelist = dbTodo.whitelist != null ? dbTodo.whitelist : new HashSet<>();
+                    if (obligWhitelist.contains(businessUnit) && !dbTodoWhitelist.contains(businessUnit)) {
                         dbTodo.addToWhitelist(businessUnit);
                         obligRepository.update(dbTodo);
                     }
-                    if (!oblig.whitelist.contains(businessUnit) && dbTodo.whitelist.contains(businessUnit)) {
-                        dbTodo.whitelist.remove(businessUnit);
+                    if (!obligWhitelist.contains(businessUnit) && dbTodoWhitelist.contains(businessUnit)) {
+                        Set<String> updated = new HashSet<>(dbTodoWhitelist);
+                        updated.remove(businessUnit);
+                        dbTodo.setWhitelist(updated);
                         obligRepository.update(dbTodo);
                     }
                 }
@@ -864,7 +872,13 @@ public class LicenseDatabaseHandler {
 
     public List<Obligation> getObligationsByLicenseId(String id) throws SW360Exception {
         License license = licenseRepository.get(id);
+        if (license == null) {
+            throw fail(404,"License not found with ID:" + id);
+        }
         Set<String> ids = license.getObligationDatabaseIds();
+        if (ids == null) {
+            return Collections.emptyList();
+        }
         return getObligationsByIds(ids);
     }
 
@@ -1444,7 +1458,11 @@ public class LicenseDatabaseHandler {
             ObligationNode obligationNode = getObligationNodeById(jsonObject.get("id").toString());
             if (obligationNode != null && !obligationNode.getNodeType().equals("ROOT")) {
                 if (obligationNode.getNodeType().equals("Obligation")) {
-                    ObligationElement obligationElement = getObligationElementById(obligationNode.getOblElementId()); // add not null
+                    ObligationElement obligationElement = getObligationElementById(obligationNode.getOblElementId());// add not null
+                    if (obligationElement == null) {
+                        log.error("Obligation element with id {} not found in DB", obligationNode.getOblElementId());
+                        return null;
+                    }
                     jsonObject.put("type", obligationElement.getType());
                     jsonObject.put("langElement", obligationElement.getLangElement());
                     jsonObject.put("action", obligationElement.getAction());
