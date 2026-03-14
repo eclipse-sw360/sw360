@@ -4,6 +4,7 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.resourceserver.security.basic;
 
+import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -15,11 +16,13 @@ import org.apache.thrift.TException;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class Sw360UserDetailsProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
 
-    private ThriftClients thriftClients = new ThriftClients();
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
 
     public User provideUserDetails(String email, String extId) {
         User result = null;

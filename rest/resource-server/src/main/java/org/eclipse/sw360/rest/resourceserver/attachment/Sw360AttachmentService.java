@@ -74,6 +74,9 @@ public class Sw360AttachmentService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     @Value("${sw360.couchdb-url:http://localhost:5984}")
     private String couchdbUrl;
 
@@ -517,7 +520,6 @@ public class Sw360AttachmentService {
     }
 
     private SPDXDocumentService.Iface getThriftSpdxDocumentClient() {
-        ThriftClients thriftClients = new ThriftClients();
         return thriftClients.makeSPDXClient();
     }
 

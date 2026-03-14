@@ -114,6 +114,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     @NonNull
     private final Sw360ProjectService projectService;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     private static FossologyService.Iface fossologyClient;
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String RESPONSE_STATUS_VALUE_FAILED = "Failed";
@@ -339,7 +342,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdxDocumentRequest, String releaseId, User user) throws TException {
-        SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
+        SPDXDocumentService.Iface spdxClient = thriftClients.makeSPDXClient();
         if (null == spdxDocumentRequest) {
             return null;
         }
@@ -600,7 +603,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInformationRequest, String spdxId, User user) throws TException {
-        DocumentCreationInformationService.Iface documentClient = new ThriftClients().makeSPDXDocumentInfoClient();
+        DocumentCreationInformationService.Iface documentClient = thriftClients.makeSPDXDocumentInfoClient();
         if (isNullOrEmpty(documentCreationInformationRequest.getSpdxDocumentId())) {
             documentCreationInformationRequest.setSpdxDocumentId(spdxId);
         }
@@ -719,7 +722,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public RequestStatus updatePackageInformation(PackageInformation packageInformationRequest, String spdxId, User user) throws TException {
-        PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
+        PackageInformationService.Iface packageClient = thriftClients.makeSPDXPackageInfoClient();
         if (isNullOrEmpty(packageInformationRequest.getSpdxDocumentId())) {
             packageInformationRequest.setSpdxDocumentId(spdxId);
         }
@@ -1289,7 +1292,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         return componentClient;
     }
 
@@ -1411,7 +1414,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public List<Map<String,String>> getReleaseLicenseInfo(Release rel, User sw360User, String attachContentId) throws TException{
-        ThriftClients thriftClients = new ThriftClients();
         LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
         List<LicenseInfoParsingResult> licenseInfos = licenseClient.getLicenseInfoForAttachment(rel, attachContentId, false, sw360User);
         List<Map<String, String>> licenses = Lists.newArrayList();
@@ -1455,7 +1457,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User, String attachmentId) throws TException{
-        ThriftClients thriftClients = new ThriftClients();
         LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
         final Predicate<Attachment> isSupportedAttachment = attachment ->
                 AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
@@ -1624,7 +1625,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<String, Integer> getUsageInformationForReleaseMerge(String releaseSourceId, User sessionUser) throws TException {
         Map<String, Integer> usageInformation = new HashMap<>();
-        ThriftClients thriftClients = new ThriftClients();
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projects", projects.size());
@@ -1658,7 +1658,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
         try {
             org.eclipse.sw360.datahandler.thrift.packages.PackageService.Iface packageClient =
-                new ThriftClients().makePackageClient();
+                thriftClients.makePackageClient();
             return packageClient.getPackageWithReleaseByPackageIds(release.getPackageIds());
         } catch (TTransportException e) {
             throw new TException("Unable to get package client", e);
