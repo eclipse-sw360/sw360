@@ -33,16 +33,19 @@ public class Sw360AttachmentCleanUpService {
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     ComponentService.Iface componentClient;
     AttachmentService.Iface attachmentClient;
 
     private ComponentService.Iface getThriftComponentClient() {
-        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         return componentClient;
     }
 
     private AttachmentService.Iface getThriftAttachmentClient() {
-        AttachmentService.Iface attachmentClient = new ThriftClients().makeAttachmentClient();
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
         return attachmentClient;
     }
 

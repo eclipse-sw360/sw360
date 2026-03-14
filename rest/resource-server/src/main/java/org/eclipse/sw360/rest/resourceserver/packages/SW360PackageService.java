@@ -48,6 +48,9 @@ public class SW360PackageService {
     @NonNull
     private final RestControllerHelper<Package> rch;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     public Package createPackage(Package pkg, User sw360User) throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
         AddDocumentRequestSummary documentRequestSummary = sw360PackageClient.addPackage(pkg, sw360User);
@@ -93,7 +96,7 @@ public class SW360PackageService {
     }
 
     public PackageService.Iface getThriftPackageClient() throws TTransportException {
-        PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+        PackageService.Iface packageClient = thriftClients.makePackageClient();
         return packageClient;
     }
 

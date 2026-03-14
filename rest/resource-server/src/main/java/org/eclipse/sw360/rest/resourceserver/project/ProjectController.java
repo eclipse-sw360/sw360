@@ -210,6 +210,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final Sw360ProjectService projectService;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     @NonNull
     private final SW360PackageService packageService;
 
@@ -710,7 +713,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         // Check for clearing request and delete if it exists and is open
-        ThriftClients thriftClients = new ThriftClients();
         ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
         ClearingRequest clearingRequest = null;
 

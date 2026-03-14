@@ -30,9 +30,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Sw360SearchService {
     private static final Logger log = LogManager.getLogger(Sw360SearchService.class);
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
 
     private SearchService.Iface getThriftSearchClient() {
-        return new ThriftClients().makeSearchClient();
+        return thriftClients.makeSearchClient();
     }
 
     public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional) throws TException {

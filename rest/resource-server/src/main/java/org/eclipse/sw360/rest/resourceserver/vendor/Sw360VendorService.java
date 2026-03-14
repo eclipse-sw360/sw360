@@ -44,6 +44,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class Sw360VendorService {
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     public Map<PaginationData, List<Vendor>> getVendors(Pageable pageable) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
@@ -167,11 +170,11 @@ public class Sw360VendorService {
     }
 
     private VendorService.Iface getThriftVendorClient() throws TTransportException {
-        return new ThriftClients().makeVendorClient();
+        return thriftClients.makeVendorClient();
     }
 
     public ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        return new ThriftClients().makeComponentClient();
+        return thriftClients.makeComponentClient();
     }
 
     public ByteBuffer exportExcel() throws TException {

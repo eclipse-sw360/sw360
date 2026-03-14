@@ -43,6 +43,8 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class Sw360ObligationService {
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
     public Obligation getObligationById(String obligationId, User user) {
         LicenseService.Iface sw360LicenseClient = null;
         Obligation obligation = null;
@@ -85,7 +87,6 @@ public class Sw360ObligationService {
     }
 
     private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        ThriftClients thriftClients = new ThriftClients();
         return thriftClients.makeLicenseClient();
     }
 
