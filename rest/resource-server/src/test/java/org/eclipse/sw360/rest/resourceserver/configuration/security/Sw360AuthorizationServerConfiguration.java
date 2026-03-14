@@ -28,7 +28,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile("SECURITY_MOCK")
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360AuthorizationServerConfiguration {
 
 	@Autowired

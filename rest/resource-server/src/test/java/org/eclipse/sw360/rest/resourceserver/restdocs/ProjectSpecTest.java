@@ -2427,10 +2427,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_import_spdx() throws Exception {
         given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
-        MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
-                .content(file.getBytes())
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+        MockMultipartFile file = new MockMultipartFile("file", "sampleBOM.rdf", MediaType.APPLICATION_XML_VALUE, "sample content".getBytes());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/projects/import/SBOM")
+                .file(file)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("type", "SPDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
@@ -2612,10 +2611,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_import_cyclonedx() throws Exception {
         given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
-        MockMultipartFile file = new MockMultipartFile("file","file=@/sampleBOM.xml".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
-                .content(file.getBytes())
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+        MockMultipartFile file = new MockMultipartFile("file", "sampleBOM.xml", MediaType.APPLICATION_XML_VALUE, "sample content".getBytes());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/projects/import/SBOM")
+                .file(file)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("type", "CycloneDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
@@ -2623,10 +2621,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_import_cyclonedx_on_project() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file","file=@/sampleBOM.xml".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/"+project.getId()+"/import/SBOM")
-                .content(file.getBytes())
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+        given(this.attachmentServiceMock.isValidSbomFile(any(), any())).willReturn(true);
+        MockMultipartFile file = new MockMultipartFile("file", "sampleBOM.xml", MediaType.APPLICATION_XML_VALUE, "sample content".getBytes());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/projects/"+project.getId()+"/import/SBOM")
+                .file(file)
                 .queryParam("doNotReplacePackageAndRelease", "false")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());

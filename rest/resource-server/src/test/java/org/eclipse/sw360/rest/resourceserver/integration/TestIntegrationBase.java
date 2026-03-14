@@ -61,7 +61,10 @@ abstract public class TestIntegrationBase {
 
     @Before
     public void setupMockerUser(){
-        when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenReturn(new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
+        when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenAnswer(invocation ->
+            new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"),
+                List.of(new SimpleGrantedAuthority("ADMIN"), new SimpleGrantedAuthority("WRITE"), new SimpleGrantedAuthority("READ")))
+        );
     }
 
     public HttpHeaders getHeaders(int port) throws IOException {

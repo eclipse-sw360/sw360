@@ -2462,7 +2462,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Type of SBOM", example = "SPDX")
             @RequestParam(value = "type", required = true) String type,
             @Parameter(description = "SBOM file")
-            @RequestBody MultipartFile file
+            @RequestParam("file") MultipartFile file
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Attachment attachment = null;
@@ -2495,7 +2495,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 throw new BadRequestClientException((requestSummary.getMessage()!=null)? requestSummary.getMessage() : "Invalid SBOM file");
             }
             else if (requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED) {
-                throw new BadCredentialsException("You do not have sufficient permissions.");
+                throw new AccessDeniedException("You do not have sufficient permissions.");
             }
 
             String jsonMessage = requestSummary.getMessage();
@@ -2543,7 +2543,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable(value = "id", required = true) String id,
             @Parameter(description = "SBOM file")
-            @RequestBody MultipartFile file,
+            @RequestParam("file") MultipartFile file,
             @Parameter(description = "Don't overwrite existing project releases and packages while re-importing SBOM")
             @RequestParam(value = "doNotReplacePackageAndRelease", required = false) boolean doNotReplacePackageAndRelease
     ) throws TException {
@@ -2551,7 +2551,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         Project project = projectService.getProjectForUserById(id, sw360User);
         if (!restControllerHelper.isWriteActionAllowed(project, sw360User)) {
-            throw new BadCredentialsException("You do not have sufficient permissions to update this project.");
+            throw new ResourceNotFoundException();
         }
 
         if (!attachmentService.isValidSbomFile(file, "CycloneDX")) {
@@ -2574,8 +2574,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
             throw new BadRequestClientException((requestSummary.getMessage()!=null)? requestSummary.getMessage() : "Invalid SBOM file");
-        }else if(requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED){
-            throw new BadCredentialsException("You do not have sufficient permissions.");
         }
 
         String jsonMessage = requestSummary.getMessage();

@@ -1221,6 +1221,7 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Test
     public void should_import_cyclonedx_on_project() throws IOException, TException {
+        given(this.attachmentServiceMock.isValidSbomFile(any(), eq("CycloneDX"))).willReturn(true);
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.projectServiceMock.importCycloneDX(any(), any(), any(), anyBoolean())).willReturn(new RequestSummary().setRequestStatus(RequestStatus.SUCCESS).setMessage("{\"projectId\":\"" + project1.getId() + "\"}"));
 
@@ -1401,5 +1402,35 @@ public class ProjectTest extends TestIntegrationBase {
         }
         assertTrue("Should contain Apache License 2.0", licenseNames.contains("Apache License 2.0"));
         assertTrue("Should contain MIT License", licenseNames.contains("MIT License"));
+    }
+
+    @Test
+    public void should_fail_import_with_invalid_sbom() throws IOException, TException {
+        given(this.attachmentServiceMock.isValidSbomFile(any(), anyString())).willReturn(false);
+        given(this.projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(project1);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource("invalid sbom content".getBytes()) {
+            @Override
+            public String getFilename() {
+                return "invalid.json";
+            }
+        });
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/import/SBOM?type=CycloneDX",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+
+        response = new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/import/SBOM",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 }
