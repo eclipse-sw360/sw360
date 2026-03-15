@@ -136,7 +136,9 @@ public class ModifiedLevenshteinDistance {
             }
 
             //=========================================================================================================
-            LevenshteinCost[] swap = oldcost; oldcost = curcost; curcost = swap;
+            LevenshteinCost[] swap = oldcost;
+            oldcost = curcost;
+            curcost = swap;
         }
 
         LevenshteinCost finalCost = oldcost[needleLength - 1]

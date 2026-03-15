@@ -78,7 +78,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
