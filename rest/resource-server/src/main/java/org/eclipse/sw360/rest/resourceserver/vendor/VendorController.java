@@ -86,6 +86,11 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "List all of the service's vendors.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vendors successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No vendors found.",
+                content = @Content)
+    })
     @GetMapping(value = VENDORS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors(
             @Parameter(description = "Search text")
@@ -138,6 +143,9 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Get a single vendor by id.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vendor successfully retrieved.")
+    })
     @GetMapping(value = VENDORS_URL + "/{id}")
     public ResponseEntity<EntityModel<Vendor>> getVendor(
             @Parameter(description = "The id of the vendor to get.")
@@ -155,6 +163,11 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Get the releases by vendor id.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Releases for vendor successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No releases found for this vendor.",
+                content = @Content)
+    })
     @GetMapping(value = VENDORS_URL + "/{id}/releases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleases(
             @Parameter(description = "The id of the vendor to get.")
@@ -187,6 +200,9 @@ public class VendorController implements RepresentationModelProcessor<Repository
             tags = {"Vendor"}
     )
     @PreAuthorize("hasAuthority('ADMIN')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vendor deleted successfully.")
+    })
     @DeleteMapping(value = VENDORS_URL + "/{id}")
     public ResponseEntity<?> deleteVendor(
             @Parameter(description = "The id of the vendor to be deleted.")
@@ -213,6 +229,9 @@ public class VendorController implements RepresentationModelProcessor<Repository
             tags = {"Vendor"}
     )
     @PreAuthorize("hasAuthority('ADMIN')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Vendor created successfully.")
+    })
     @PostMapping(value = VENDORS_URL)
     public ResponseEntity<?> createVendor(
             @Parameter(description = "The vendor to be created.")
