@@ -100,6 +100,12 @@ jobs:
           curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/r -d '"1"' || true
           curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/_node/_local/_config/cluster/w -d '"1"' || true
           
+          # Create required test databases
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/sw360_test_db || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/sw360changelogs || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/sw360spdx || true
+          curl -s -u ${{ env.COUCHDB_USER }}:${{ env.COUCHDB_PASSWORD }} -X PUT http://localhost:5984/sw360_test_attachments || true
+          
           echo "CouchDB configured for single-node operation"
 
       - name: Set up JDK 21
