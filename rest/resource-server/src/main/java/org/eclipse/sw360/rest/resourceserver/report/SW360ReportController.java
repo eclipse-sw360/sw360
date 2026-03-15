@@ -257,7 +257,6 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            reportBean.setWithSubProject(true);
             downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
         } catch (Exception e) {
             log.error(e);
