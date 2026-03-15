@@ -986,9 +986,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                 log.info("Release : " + releaseId + " .Fossology Process exited, removing lock.");
                 if (service != null)
                     service.shutdownNow();
-                if (lockObj.isLocked())
+                if (lockObj.isHeldByCurrentThread()) {
                     lockObj.unlock();
-                mapOfLocks.remove(releaseId);
+                    mapOfLocks.remove(releaseId);
+                }
             }
         });
 
