@@ -763,4 +763,9 @@ service ProjectService {
     * Get linked releases information in dependency network of a project
     */
     list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
+    /**
+     * Copy a project with only the selected fields carried over.
+     * fieldsToCopy is a set of Project._Fields names specifying which fields to include in the new project.
+     */
+    AddDocumentRequestSummary copyProject(1: string projectId, 2: set<string> fieldsToCopy, 3: User user) throws (1: SW360Exception exp);
 }
