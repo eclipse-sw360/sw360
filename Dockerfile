@@ -120,6 +120,12 @@ COPY --from=binaries /sw360_tomcat_webapps/*.jar ${CATALINA_HOME}/webapps/
 # Shared streamlined jar libs
 COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${CATALINA_HOME}/lib/
 
+# Install gettext for envsubst
+RUN apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app/sw360
 
 # Copy the configuration files
