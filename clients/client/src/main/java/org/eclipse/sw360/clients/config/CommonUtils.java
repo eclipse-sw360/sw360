@@ -37,6 +37,7 @@ public class CommonUtils {
 
             props.load(resourceAsStream);
         } catch (IOException e) {
+            // Nothing to do
         }
 
         if (useSystemConfig) {
@@ -48,6 +49,7 @@ public class CommonUtils {
 
                     props.load(resourceAsStream);
                 } catch (IOException e) {
+                    // Nothing to do
                 }
             }
         }
@@ -71,6 +73,7 @@ public class CommonUtils {
                     }
                     return Optional.of(IOUtils.toByteArray(resourceAsStream));
                 } catch (IOException e) {
+                    // Nothing to do
                 }
             }
         }
@@ -80,6 +83,7 @@ public class CommonUtils {
                 throw new IOException("cannot open " + resourceFilePath);
             return Optional.of(IOUtils.toByteArray(resourceAsStream));
         } catch (IOException e) {
+            // Nothing to do
         }
         return Optional.empty();
     }

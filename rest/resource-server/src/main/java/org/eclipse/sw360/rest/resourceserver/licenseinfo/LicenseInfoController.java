@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @BasePathAwareController
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class LicenseInfoController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String LICENSE_INFO_URL = "/licenseinfo";
 

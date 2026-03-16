@@ -288,7 +288,7 @@ public final class HttpUtils {
                 try {
                     return resultClass.getDeclaredConstructor().newInstance();
                 } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-
+                    // To be handled
                 } catch (InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }

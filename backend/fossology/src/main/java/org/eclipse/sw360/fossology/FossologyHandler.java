@@ -266,6 +266,7 @@ public class FossologyHandler implements FossologyService.Iface {
             case IN_WORK:
                 // Do nothing, upload should happen in another thread
                 log.debug("Upload in progress...");
+                break;
             default:
                 // Do nothing, unknown status
         }

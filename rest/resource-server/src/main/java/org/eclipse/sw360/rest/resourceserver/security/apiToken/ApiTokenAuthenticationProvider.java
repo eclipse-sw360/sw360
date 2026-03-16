@@ -51,7 +51,7 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
 
 @Profile("!SECURITY_MOCK")
 @Component
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     private static final Logger log = LogManager.getLogger(ApiTokenAuthenticationProvider.class);

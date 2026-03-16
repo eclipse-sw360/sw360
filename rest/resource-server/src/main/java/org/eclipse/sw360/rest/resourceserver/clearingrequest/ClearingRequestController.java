@@ -64,7 +64,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -429,9 +429,16 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     }
 
     private ClearingRequest convertToClearingRequest(Map<String, Object> requestBody){
+        Map<String, Object> sanitizedBody = new HashMap<>();
+        requestBody.forEach((key, value) -> {
+            if (value != null && !(value instanceof String && ((String) value).isEmpty())) {
+                sanitizedBody.put(key, value);
+            }
+        });
+
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
-        return mapper.convertValue(requestBody, ClearingRequest.class);
+        return mapper.convertValue(sanitizedBody, ClearingRequest.class);
     }
 }

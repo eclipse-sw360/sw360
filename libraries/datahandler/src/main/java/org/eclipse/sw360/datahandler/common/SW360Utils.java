@@ -1132,6 +1132,7 @@ public class SW360Utils {
                             break;
                         case TType.BOOL:
                             packageInfo.setFieldValue(field, true);
+                            break;
                         default:
                             break;
                     }

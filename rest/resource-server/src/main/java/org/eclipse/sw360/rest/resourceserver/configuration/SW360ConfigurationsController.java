@@ -50,7 +50,7 @@ import java.util.Map;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -98,15 +98,16 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             )
             @RequestParam(required = false, name = "changeable") Boolean changeable)
             throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, String> configs;
         if (changeable == null) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getSW360Configs());
+            configs = sw360ConfigurationsService.getSW360Configs();
+        } else if (changeable) {
+            configs = sw360ConfigurationsService.getSW360ConfigFromDb();
+        } else {
+            configs = sw360ConfigurationsService.getSW360ConfigFromProperties();
         }
-
-        if (changeable) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromDb());
-        }
-
-        return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromProperties());
+        return ResponseEntity.ok(sw360ConfigurationsService.filterAdminOnlyKeys(configs, sw360User));
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -190,15 +191,16 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             @PathVariable(name = "configFor") ConfigFor configFor,
             @RequestParam(required = false, name = "changeable") Boolean changeable
     ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, String> configs;
         if (changeable == null) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getConfigForContainer(configFor));
+            configs = sw360ConfigurationsService.getConfigForContainer(configFor);
+        } else if (changeable) {
+            configs = sw360ConfigurationsService.getSW360ConfigFromDb(configFor);
+        } else {
+            configs = sw360ConfigurationsService.getSW360ConfigFromProperties();
         }
-
-        if (changeable) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromDb(configFor));
-        }
-
-        return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromProperties());
+        return ResponseEntity.ok(sw360ConfigurationsService.filterAdminOnlyKeys(configs, sw360User));
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")

@@ -27,6 +27,7 @@ public class SpdxDocumentSummary extends DocumentSummary<SPDXDocument> {
                 copyField(document, copy, SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID);
                 copyField(document, copy, SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS);
                 copyField(document, copy, SPDXDocument._Fields.SPDX_FILE_INFO_IDS);
+                break;
             default:
                 break;
         }

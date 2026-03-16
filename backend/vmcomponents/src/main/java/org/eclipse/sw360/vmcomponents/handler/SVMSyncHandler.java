@@ -652,8 +652,16 @@ public class SVMSyncHandler<T extends TBase> {
 
                 Set<String> vulIds = new HashSet<>();
                 for (Object id : ids) {
-                    JsonObject json = (JsonObject) id;
-                    String vulId = json.get(SVMConstants.VULNERABILITY_ID).toString();
+                    String vulId;
+                    if (id instanceof JsonObject) {
+                        Object vulIdObj = ((JsonObject) id).get(SVMConstants.VULNERABILITY_ID);
+                        if (vulIdObj == null) {
+                            continue;
+                        }
+                        vulId = vulIdObj.toString();
+                    } else {
+                        vulId = id.toString();
+                    }
                     if (!StringUtils.isEmpty(vulId)){
                         vulIds.add(vulId);
                     }

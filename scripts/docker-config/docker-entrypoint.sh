@@ -1,51 +1,29 @@
 #!/bin/env bash
+# Part of the SW360 Portal Project.
 # SPDX-License-Identifier: EPL-2.0
 
 set -o errexit -o nounset -o pipefail
 
-# Set default values for environment variables
-export COUCHDB_URL="${COUCHDB_URL:-http://couchdb:5984}"
-export COUCHDB_USER="${COUCHDB_USER:-admin}"
-export COUCHDB_LUCENESEARCH_LIMIT="${COUCHDB_LUCENESEARCH_LIMIT:-1000}"
-export ENABLE_DISKSPACE="${ENABLE_DISKSPACE:-false}"
-export JWKS_ISSUER_URI="${JWKS_ISSUER_URI:-http://localhost:8080/authorization/oauth2/jwks}"
-export JWKS_SET_URI="${JWKS_SET_URI:-http://localhost:8080/authorization/oauth2/jwks}"
-export SVM_SW360_API_URL="${SVM_SW360_API_URL:-https://svmtest.cert.siemens.com}"
-export JWKS_ISSUER="${JWKS_ISSUER:-http://localhost:8090}"
-
-# Read secrets from Docker secrets if available
-if [ -f "/run/secrets/COUCHDB_PASSWORD" ]; then
-  export COUCHDB_PASSWORD=$(cat /run/secrets/COUCHDB_PASSWORD)
-else
-  export COUCHDB_PASSWORD="${COUCHDB_PASSWORD:-admin}"
+# Source secrets if available. This allows overriding the default ENV values.
+if [ -f "/run/secrets/COUCHDB_SECRETS" ]; then
+  source /run/secrets/COUCHDB_SECRETS
 fi
-if [ -f "/run/secrets/SVM_SW360_CERTIFICATE_PASSPHRASE" ]; then
-  export SVM_SW360_CERTIFICATE_PASSPHRASE=$(cat /run/secrets/SVM_SW360_CERTIFICATE_PASSPHRASE)
-else
-  export SVM_SW360_CERTIFICATE_PASSPHRASE="${SVM_SW360_CERTIFICATE_PASSPHRASE}"
-fi
-if [ -f "/run/secrets/SVM_SW360_JKS_PASSWORD" ]; then
-  export SVM_SW360_JKS_PASSWORD=$(cat /run/secrets/SVM_SW360_JKS_PASSWORD)
-else
-  export SVM_SW360_JKS_PASSWORD="${SVM_SW360_JKS_PASSWORD}"
-fi
-if [ -f "/run/secrets/REST_APITOKEN_HASH_SALT" ]; then
-  export REST_APITOKEN_HASH_SALT=$(cat /run/secrets/REST_APITOKEN_HASH_SALT)
-else
-  export REST_APITOKEN_HASH_SALT="${REST_APITOKEN_HASH_SALT}"
+if [ -f "/run/secrets/SW360_SECRETS" ]; then
+  source /run/secrets/SW360_SECRETS
 fi
 
 mkdir -p /etc/sw360/authorization /etc/sw360/rest
 
-# Write configuration
-/usr/bin/envsubst < /app/docker-config/couchdb.properties.template > /etc/sw360/couchdb.properties
-/usr/bin/envsubst < /app/docker-config/etc_sw360/authorization/application.yml.template > /etc/sw360/authorization/application.yml
-/usr/bin/envsubst < /app/docker-config/etc_sw360/rest/application.yml.template > /etc/sw360/rest/application.yml
-/usr/bin/envsubst < /app/docker-config/etc_sw360/sw360.properties.template > /etc/sw360/sw360.properties
+# Write configuration from environment variables
+/usr/bin/envsubst < /app/sw360/couchdb.properties.template > /etc/sw360/couchdb.properties
+/usr/bin/envsubst < /app/sw360/etc_sw360/authorization/application.yml.template > /etc/sw360/authorization/application.yml
+/usr/bin/envsubst < /app/sw360/etc_sw360/rest/application.yml.template > /etc/sw360/rest/application.yml
+/usr/bin/envsubst < /app/sw360/etc_sw360/sw360.properties.template > /etc/sw360/sw360.properties
+/usr/bin/envsubst < /app/sw360/manager/tomcat-users.xml > "$CATALINA_HOME"/conf/tomcat-users.xml
 
 # Wait for DB
 test_for_couchdb() {
-  curl -s $COUCHDB_URL/_up | grep -q '"status":"ok"'
+  curl -s "$COUCHDB_URL"/_up | grep -q '"status":"ok"'
   return $?
 }
 until test_for_couchdb; do
@@ -57,4 +35,4 @@ done
 echo
 echo 'SW360 configuration complete; Starting up...'
 echo
-$CATALINA_HOME/bin/catalina.sh run
+"$CATALINA_HOME"/bin/catalina.sh run

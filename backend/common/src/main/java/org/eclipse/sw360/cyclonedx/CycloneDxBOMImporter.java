@@ -449,8 +449,10 @@ public class CycloneDxBOMImporter {
         final Set<String> invalidReleases = new HashSet<>();
         final Set<String> invalidVcsComponents = new HashSet<>();
         final Map<String, ProjectReleaseRelationship> releaseRelationMap = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
-        countMap.put(COMP_CREATION_COUNT_KEY, 0); countMap.put(COMP_REUSE_COUNT_KEY, 0);
-        countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
+        countMap.put(COMP_CREATION_COUNT_KEY, 0);
+        countMap.put(COMP_REUSE_COUNT_KEY, 0);
+        countMap.put(REL_CREATION_COUNT_KEY, 0);
+        countMap.put(REL_REUSE_COUNT_KEY, 0);
         int compCreationCount = 0, compReuseCount = 0, relCreationCount = 0, relReuseCount = 0;
 
         final List<org.cyclonedx.model.Component> components = vcsToComponentMap.get("");
@@ -578,8 +580,10 @@ public class CycloneDxBOMImporter {
         final Set<String> invalidVcsComponents = new HashSet<>();
         final Map<String, ProjectReleaseRelationship> releaseRelationMap = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
         final Set<String> projectPkgIds = CommonUtils.isNullOrEmptyMap(project.getPackageIds()) ? new HashSet<>() : project.getPackageIds().keySet();
-        countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
-        countMap.put(PKG_CREATION_COUNT_KEY, 0); countMap.put(PKG_REUSE_COUNT_KEY, 0);
+        countMap.put(REL_CREATION_COUNT_KEY, 0);
+        countMap.put(REL_REUSE_COUNT_KEY, 0);
+        countMap.put(PKG_CREATION_COUNT_KEY, 0);
+        countMap.put(PKG_REUSE_COUNT_KEY, 0);
         int relCreationCount = 0, relReuseCount = 0, pkgCreationCount = 0, pkgReuseCount = 0;
 
         if (!doNotReplacePackageAndRelease) {

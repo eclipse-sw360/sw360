@@ -54,8 +54,6 @@ public class MailConstants {
     public static final String TEXT_FOR_UPDATE_RELEASE = "textForUpdateRelease";
     public static final String TEXT_FOR_NEW_PROJECT = "textForNewProject";
     public static final String TEXT_FOR_UPDATE_PROJECT = "textForUpdateProject";
-    public static final String TEXT_FOR_CLOSED_CLEARING_REQUEST = "textForClosedClearingRequest";
-    public static final String TEXT_FOR_REJECTED_CLEARING_REQUEST = "textForRejectedClearingRequest";
     public static final String TEXT_SPREADSHEET_EXPORT_SUCCESS = "textForSuccessfulExport";
 
     private MailConstants() {

@@ -19,8 +19,8 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author birgit.heydenreich@tngtech.com
  */
-@Setter
 @Getter
+@Setter
 public class UserCSV {
     private String givenname;
     private String lastname;

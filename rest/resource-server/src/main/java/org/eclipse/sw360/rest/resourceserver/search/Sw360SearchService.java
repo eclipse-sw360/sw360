@@ -27,7 +27,7 @@ import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360SearchService {
     private static final Logger log = LogManager.getLogger(Sw360SearchService.class);
 

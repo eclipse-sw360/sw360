@@ -7,32 +7,9 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# --------------------------------------------------#
-#                       NOTE                        #
-#                                                   #
-# This property file only lists the properties for  #
-# this module as a reference to lookup.             #
-#                                                   #
-# If you want to set these properties, you should   #
-# create a file named '/etc/sw36/sw360.properties'  #
-# on your system and set the properties in there.   #
-#                                                   #
-# The values given here are the default values.     #
-# --------------------------------------------------#
-
-
 # ***************************************
-# Portlet Properties
+# Config Properties not saved in DB
 # ***************************************
-
-# ---------------------------------------
-# Predefined values for select boxes and
-# autocompletion
-#
-# They are only used in the UI and not
-# for validation.
-# ---------------------------------------
-
 
 ## API Token generation
 rest.write.access.usergroup=USER
@@ -41,50 +18,94 @@ rest.apitoken.read.validity.days=90
 rest.apitoken.write.validity.days=30
 rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
 
-# where the frontend searches the backend
-backend.url= http://127.0.0.1:8080
+# where the Thrift should connect
+backend.url=http://127.0.0.1:8080
 
-domain=Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics
-
-org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport,SHS:SHS_templateReport
-
-# ---------------------------------------
-# Other
-# ---------------------------------------
+org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport
+enable.sw360.change.log=false
 
 # ---------------------------------------
-# Activation of portlets and components
-#
-# There are no default values for these
-# settings therefore they sould be
-# configured in any case
+# Email Properties
 # ---------------------------------------
 
-send.project.spreadsheet.export.to.mail.enabled=true
+# settings for the mail utility:
+# if host is not set, e-mailing is disabled
+MailUtil_host=$EMAIL_PROPERTIES_HOST
+MailUtil_from=$EMAIL_PROPERTIES_FROM
+MailUtil_port=$EMAIL_PROPERTIES_PORT
+MailUtil_enableStarttls=$EMAIL_PROPERTIES_STARTTLS
+MailUtil_enableSsl=$EMAIL_PROPERTIES_ENABLE_SSL
+MailUtil_isAuthenticationNecessary=$EMAIL_PROPERTIES_AUTH_REQUIRED
+MailUtil_login=$EMAIL_PROPERTIES_USERNAME
+MailUtil_password=$EMAIL_PROPERTIES_PASSWORD
+MailUtil_enableDebug=$EMAIL_PROPERTIES_DEBUG
+MailUtil_supportMailAddress=$EMAIL_PROPERTIES_SUPPORT_EMAIL
+MailUtil_smtpSSLProtocol=$EMAIL_PROPERTIES_TLS_PROTOCOL
+MailUtil_smtpSSLTrust=$EMAIL_PROPERTIES_TLS_TRUST
+
+# text patterns for mail utility
+defaultBegin= \
+  *** This is an automatically generated email, please do not reply. ***\n\n\
+  Dear SW360-user,\n\n
+defaultEnd= \
+  With best regards,\n\
+  SW360
+unsubscribeNoticeBefore=\n\n*** If you do not wish to receive mails from SW360, please notify:
+unsubscribeNoticeAfter=. ***
+
+subjectForNewModerationRequest= New moderation request
+subjectForUpdateModerationRequest= Update on moderation request
+subjectForAcceptedModerationRequest= Your moderation request has been accepted
+subjectForDeclinedModerationRequest= Your moderation request has been declined
+subjectForDeclinedUserModerationRequest= Your request for a SW360 user account has been declined
+subjectForNewComponent= New component created
+subjectForUpdateComponent= Component updated
+subjectForNewRelease= New release created
+subjectForUpdateRelease= Release updated
+subjectForNewProject= New project created
+subjectForUpdateProject= Project updated
+subjectForNewClearingRequest= New clearing request <%s> for Project <%s>
+subjectForClearingRequestComment= New comment added in clearing request <%s> for Project <%s>
+subjectForUpdatedClearingRequest= Your clearing request <%s> has been updated for Project <%s>
+subjectForClosedClearingRequest= Your clearing request <%s> has been closed for Project <%s>
+subjectForRejectedClearingRequest= Your clearing request <%s> has been rejected for Project <%s>
+subjectForUpdatedProjectWithClearingRequest= Project <%s> with clearing request <%s> updated
+subjectForSuccessfulExport= Spreadsheet Export Successful
+
+textForSuccessfulExport= The %s spreadsheet export successfully completed. Please find the download link(%s) here.
+textForNewModerationRequest= a new moderation request for %s %s has been added to your SW360-account.\n\n
+textForUpdateModerationRequest= \
+  one of the moderation requests for %s %s previously added to your \
+  SW360-account has been updated.\n\n
+textForAcceptedModerationRequest= your moderation request to change the %s %s has been accepted by one of the moderators.\n\n
+textForDeclinedModerationRequest= your moderation request to change the %s %s has been declined by one of the moderators.\n\n
+textForDeclinedUserModerationRequest= your request for a SW360 user account has been declined by one of the administrators.\n\n
+textForNewComponent= a new component %s, in which you take part, has been created.\n\n
+textForUpdateComponent= the component %s, in which you take part, has been updated.\n\n
+textForNewRelease= a new release %s %s, in which you take part, has been created.\n\n
+textForUpdateRelease= the release %s %s, in which you take part, has been updated.\n\n
+textForNewProject= a new project %s %s, in which you take part, has been created.\n\n
+textForUpdateProject= the project %s %s, in which you take part, has been updated.\n\nModified by: %s\n\nChanges:\n%s\n
 
 # ---------------------------------------
 # SVM Properties
 # ---------------------------------------
-svm.sw360.api.url=$SVM_SW360_API_URL/portal/api/custom/sw360/applications.json
-svm.sw360.certificate.filename=SVM.CERT.SIEMENS.COM.pfx
+svm.sw360.api.url=$SVM_SW360_API_URL
+svm.sw360.certificate.filename=$SVM_SW360_CERTIFICATE_FILENAME
 svm.sw360.certificate.passphrase=$SVM_SW360_CERTIFICATE_PASSPHRASE
 svm.sw360.jks.password=$SVM_SW360_JKS_PASSWORD
+svm.json.log.output.location=/tmp
 
-svm.components.url=$SVM_SW360_API_URL/portal/api/v1/public/components
-svm.actions.url=$SVM_SW360_API_URL/portal/api/v1/public/actions
-svm.priorities.url=$SVM_SW360_API_URL/portal/api/v1/public/priorities
-svm.components.vulnerabilities.url=$SVM_SW360_API_URL/portal/api/v1/public/components/#compVmId#/notifications
-svm.vulnerabilities.url=$SVM_SW360_API_URL/portal/api/v1/public/notifications
+svm.base.path=$SVM_API_BASE_PATH
+svm.api.root.path=/$SVM_API_ROOT_PATH
 
-svm.base.path=$SVM_SW360_API_URL
-svm.api.root.path=/portal/api/v1/public
-svm.component.id=com.siemens.svm.component.id
-mainline.component.id=com.siemens.mainl.component.id
+svm.component.id=org.sw360.svm.component.id
+mainline.component.id=org.sw360.mainl.component.id
 svm.component.id.key=svm_component_id
-svm.short.status=com.siemens.svm.component.short.status
+svm.short.status=org.sw360.svm.component.short.status
 svm.short.status.key=short_status
-svm.scheduler.email=svm.component.mapping@siemens.com
-svm.monitoringlist.id=com.siemens.svm.monitoringlist.id
+svm.scheduler.email=svm@sw360.org
+svm.monitoringlist.id=org.sw360.svm.monitoringlist.id
 
 # ---------------------------------------
 # JWKS Properties
@@ -92,3 +113,9 @@ svm.monitoringlist.id=com.siemens.svm.monitoringlist.id
 jwks.validation.enabled=true
 jwks.issuer.url=$JWKS_ISSUER/
 jwks.endpoint.url=JWKS_ISSUER/client-management/.well-known/jwks.json
+
+# ---------------------------------------
+# Scheduler Services
+# ---------------------------------------
+#general pattern for scheduling multiple services: autostart = service1,service2,service3,...
+autostart=$SCHEDULER_AUTOSTART_SERVICES

@@ -70,7 +70,7 @@ class NewRequestBuilderImpl implements RequestBuilder {
         try {
             requestBuilder.uri(new URI(uri));
         } catch (URISyntaxException e) {
-
+            // nothing to do
         }
         return this;
     }

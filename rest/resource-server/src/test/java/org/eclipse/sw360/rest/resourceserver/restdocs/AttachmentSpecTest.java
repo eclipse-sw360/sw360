@@ -184,4 +184,12 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 
+    @Test
+    public void should_return_400_when_sha1_parameter_is_missing() throws Exception {
+        mockMvc.perform(get("/api/attachments")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
 }

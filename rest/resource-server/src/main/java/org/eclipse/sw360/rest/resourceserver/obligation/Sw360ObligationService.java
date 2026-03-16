@@ -41,7 +41,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ObligationService {
     public Obligation getObligationById(String obligationId, User user) {
         LicenseService.Iface sw360LicenseClient = null;

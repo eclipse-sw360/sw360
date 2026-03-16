@@ -86,6 +86,10 @@ public class ConfigurationsTest extends TestIntegrationBase {
         given(this.sw360ConfigurationsService.updateSW360Configs(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.sw360ConfigurationsService.updateSW360ConfigForContainer(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.sw360ConfigurationsService.getConfigForContainer(any())).willReturn(testConfigsFromDb);
+        // filterAdminOnlyKeys returns configs as-is for ADMIN users (test user is ADMIN)
+        given(this.sw360ConfigurationsService.filterAdminOnlyKeys(eq(allTestConfigs), any())).willReturn(allTestConfigs);
+        given(this.sw360ConfigurationsService.filterAdminOnlyKeys(eq(testConfigsFromDb), any())).willReturn(testConfigsFromDb);
+        given(this.sw360ConfigurationsService.filterAdminOnlyKeys(eq(testConfigsFromProperties), any())).willReturn(testConfigsFromProperties);
     }
 
     // ========== GET CONFIGURATIONS TESTS ==========

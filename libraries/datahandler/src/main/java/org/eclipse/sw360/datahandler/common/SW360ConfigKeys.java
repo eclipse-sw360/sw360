@@ -74,6 +74,9 @@ public class SW360ConfigKeys {
     public static final String VCS_HOSTS = "vcs.hosts";
     public static final String NON_PKG_MANAGED_COMPS_PROP = "non.pkg.managed.comps.prop";
 
+    // This property is used to configure the SVM notification URL
+    public static final String SVM_NOTIFICATION_URL = "svm.notification.url";
+
     // Properties purely used by UI
     // This property is used in Project Administration
     public static final String UI_CLEARING_TEAMS = "ui.clearing.teams";
@@ -118,6 +121,23 @@ public class SW360ConfigKeys {
     public static final String UI_SOFTWARE_PLATFORMS = "ui.software.platforms";
     // This property is used to create State of Projects
     public static final String UI_STATE = "ui.state";
+
+    // Configuration keys that should only be visible to ADMIN and SW360_ADMIN users
+    public static final Set<String> ADMIN_ONLY_CONFIG_KEYS = Set.of(
+            RELEASE_FRIENDLY_URL,
+            IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
+            REST_API_TOKEN_LENGTH,
+            INHERIT_ATTACHMENT_USAGES,
+            SKIP_DOMAINS_FOR_VALID_SOURCE_CODE,
+            ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
+            IS_FORCE_UPDATE_ENABLED,
+            AUTO_SET_ECC_STATUS,
+            IS_ADMIN_PRIVATE_ACCESS_ENABLED,
+            DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
+            COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
+            SVM_NOTIFICATION_URL,
+            VCS_HOSTS
+    );
 
     // List of all known config keys
     public static final Set<String> ALL_KNOWN_CONFIG_KEYS = Set.of(

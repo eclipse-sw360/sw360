@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import javax.net.ssl.SSLContext;
 import java.io.*;
 import java.security.*;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,30 +53,32 @@ public class SvmConnector {
         if(CommonUtils.isNullEmptyOrWhitespace(MONITORING_LIST_API_URL)) {
             return;
         }
+
+        HttpPut httpPut = new HttpPut(MONITORING_LIST_API_URL);
+        httpPut.addHeader(new BasicHeader("Expect", "100-continue")); // prevents error 413 when sending large files
+
+        MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+        entityBuilder.addPart("data", new ByteArrayBody(jsonString.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_JSON, "projects.json"));
+        httpPut.setEntity(entityBuilder.build());
+
+        StatusLine statusLine;
+
         try (CloseableHttpClient httpClient = HttpClients
                 .custom()
                 .setSSLSocketFactory(createSslSocketFactoryForSVM())
                 .build()) {
-
-            HttpPut httpPut = new HttpPut(MONITORING_LIST_API_URL);
-            httpPut.addHeader(new BasicHeader("Expect", "100-continue")); // prevents error 413 when sending large files
-
-            MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
-            entityBuilder.addPart("data", new ByteArrayBody(jsonString.getBytes(), ContentType.APPLICATION_JSON, "projects.json"));
-            httpPut.setEntity(entityBuilder.build());
-
             try (CloseableHttpResponse httpResponse = httpClient.execute(httpPut)) {
-
-                StatusLine statusLine = httpResponse.getStatusLine();
-                if (statusLine.getStatusCode() != 200) {
-                    String errorMessage = "SVMML: Failed to send monitoring lists to SVM: HTTP error code : " + statusLine.getStatusCode();
-                    throw new SW360Exception(errorMessage);
-                }
-
-                String response = statusLine.toString();
-                log.info("SVMML SVM Server replied: " + response);
+                statusLine = httpResponse.getStatusLine();
             }
         }
+
+        if (statusLine.getStatusCode() != 200) {
+            String errorMessage = "SVMML: Failed to send monitoring lists to SVM: HTTP error code : " + statusLine.getStatusCode();
+            throw new SW360Exception(errorMessage);
+        }
+
+        String response = statusLine.toString();
+        log.info("SVMML SVM Server replied: " + response);
     }
 
     private SSLConnectionSocketFactory createSslSocketFactoryForSVM() throws IOException {
@@ -85,7 +88,11 @@ public class SvmConnector {
             String javaKeystoreFilename = System
                     .getProperties()
                     .getProperty("java.home") + File.separator + "lib" + File.separator + "security" + File.separator + "cacerts";
-            trustStore.load(new FileInputStream(javaKeystoreFilename), JAVA_KEYSTORE_PASSWORD);
+            try (InputStream javaKeystoreStream = new FileInputStream(javaKeystoreFilename)) {
+                trustStore.load(javaKeystoreStream, JAVA_KEYSTORE_PASSWORD);
+            } catch (FileNotFoundException e) {
+                throw new IOException("Java Keystore file not found.");
+            }
 
             // Loading KeyStore, i.e., PKCS #12 bundle
             KeyStore keyStore = KeyStore.getInstance("PKCS12");

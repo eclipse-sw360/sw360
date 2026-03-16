@@ -31,6 +31,7 @@ public class LicenseTypeSummary extends DocumentSummary<LicenseType> {
                 copyField(document, copy, _Fields.LICENSE_TYPE);
                 copyField(document, copy, _Fields.LICENSE_TYPE_ID);
                 copyField(document, copy, _Fields.ID);
+                break;
             default:
         }
 

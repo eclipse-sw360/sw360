@@ -58,7 +58,7 @@ resource "keycloak_realm" "sw360" {
       content_security_policy_report_only = ""
       x_content_type_options              = "nosniff"
       x_robots_tag                        = "none"
-      x_xss_protection                    = "1; mode=block"
+      x_xss_protection                    = "0"
       strict_transport_security           = "max-age=31536000; includeSubDomains"
     }
   }

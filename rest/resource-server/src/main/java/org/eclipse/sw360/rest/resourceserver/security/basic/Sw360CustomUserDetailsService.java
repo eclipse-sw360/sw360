@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360CustomUserDetailsService implements UserDetailsService {
 
     private static final Logger log = LogManager.getLogger(Sw360CustomUserDetailsService.class);
