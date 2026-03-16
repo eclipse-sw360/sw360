@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.test.skip>true</maven.test.skip>
+        <!-- Removed maven.test.skip to allow tests to run -->
     </properties>
 
     <dependencies>
@@ -80,6 +80,12 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>${jakarta.servlet-api.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
 

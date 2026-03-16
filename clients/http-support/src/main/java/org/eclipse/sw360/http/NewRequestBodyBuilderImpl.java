@@ -57,15 +57,32 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
         initBody(BodyPublishers.ofString(str));
     }
 
+    /**
+     * Sets the request body to the contents of the given file.
+     * Throws an IllegalStateException if the file does not exist or is not readable.
+     *
+     * @param path      the path to the file
+     * @param mediaType the media type (currently unused, set header in request builder)
+     * @throws IllegalStateException if the file does not exist or is not readable
+     */
     @Override
     public void file(Path path, String mediaType) {
+        if (path == null) {
+            throw new IllegalStateException("File path must not be null");
+        }
+        if (!java.nio.file.Files.exists(path)) {
+            throw new IllegalStateException("File does not exist: " + path);
+        }
+        if (!java.nio.file.Files.isReadable(path)) {
+            throw new IllegalStateException("File is not readable: " + path);
+        }
         try {
             initBody(BodyPublishers.ofFile(path));
-            Path fileNamePath = path.getFileName();
-            fileName = (fileNamePath != null) ? fileNamePath.toString() : null;
         } catch (FileNotFoundException e) {
             throw new IllegalStateException(e);
         }
+        Path fileNamePath = path.getFileName();
+        fileName = (fileNamePath != null) ? fileNamePath.toString() : null;
     }
 
     @Override
