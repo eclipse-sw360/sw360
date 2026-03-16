@@ -134,3 +134,9 @@ BUILD_CONTEXT_ARGS=("--build-context" "binaries=docker-image://${DOCKER_IMAGE_RO
 image_build "sw360" "sw360" "$SW360_VERSION" "Dockerfile" "." \
 "${BUILD_CONTEXT_ARGS[@]}" \
 "$@"
+
+# 4. Build Keycloak Image
+echo "Building SW360 Keycloak..."
+image_build "keycloak" "keycloak" "$SW360_VERSION" "Dockerfile" "." \
+"${BUILD_CONTEXT_ARGS[@]}" \
+"$@"
