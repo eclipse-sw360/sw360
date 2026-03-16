@@ -113,6 +113,12 @@ ENV SW360_CORS_ALLOWED_ORIGIN="*"
 ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
 ENV SW360_BASE_URL="http://localhost:8080"
 
+# Install dependencies for entrypoint
+RUN apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
+
 # Streamlined wars
 COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${CATALINA_HOME}/webapps/
 # org.eclipse.sw360 jar artifacts
