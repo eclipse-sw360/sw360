@@ -24,7 +24,7 @@ services:
     stdin_open: true
     tty: true
     networks:
-      - sw360-network
+      - default
     volumes:
       - etc:/etc/sw360
     healthcheck:
@@ -69,7 +69,6 @@ volumes:
 
 networks:
   default:
-    name: sw360net
     driver: bridge
 
 secrets:
