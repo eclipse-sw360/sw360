@@ -57,6 +57,7 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 
+import java.beans.Visibility;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
@@ -73,6 +74,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import javax.xml.transform.Source;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
@@ -1031,7 +1034,41 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
     }
+    ///////////////////////////////
+    // COPY PROJECT               //
+    ///////////////////////////////
+    public AddDocumentRequestSummary copyProject(String projectId, Set<String> fieldsToCopy, User user) throws SW360Exception {
+        Project sourceProject = getProjectById(projectId, user);
+        if (sourceProject == null) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
+        }
 
+        Project newProject = new Project();
+
+        // Always copy the name (required field)
+        newProject.setName(sourceProject.getName() + " (Copy)");
+
+        // Copy only the fields requested by the user
+        for (String fieldName : fieldsToCopy) {
+            try {
+                Project._Fields field = Project._Fields.findByName(fieldName);
+                if (field != null && sourceProject.isSet(field)) {
+                    ThriftUtils.copyField(sourceProject, newProject, field);
+                }
+            } catch (Exception e) {
+                log.warn("Could not copy field: " + fieldName, e);
+            }
+        }
+
+        // Reset fields that must not be carried over
+        newProject.unsetId();
+        newProject.unsetRevision();
+        newProject.unsetCreatedBy();
+        newProject.unsetCreatedOn();
+        newProject.unsetClearingRequestId();
+
+        return addProject(newProject, user);
+    }
     private void copyImmutableFields(Project destination, Project source) {
         ThriftUtils.copyField(source, destination, Project._Fields.CREATED_ON);
         ThriftUtils.copyField(source, destination, Project._Fields.CREATED_BY);
