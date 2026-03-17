@@ -29,6 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.license.LicenseSourcePolicy;
 import org.springframework.security.access.AccessDeniedException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,8 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ObligationService {
+    private final LicenseSourcePolicy licenseSourcePolicy;
+
     public Obligation getObligationById(String obligationId, User user) {
         LicenseService.Iface sw360LicenseClient = null;
         Obligation obligation = null;
@@ -63,6 +66,7 @@ public class Sw360ObligationService {
     }
 
     public Obligation createObligation(Obligation obligation, User sw360User) {
+        throwIfManualObligationCreationDisabled();
         try {
             if (obligation.getTitle() != null && !obligation.getTitle().trim().isEmpty()
             && obligation.getText() != null && !obligation.getText().trim().isEmpty()
@@ -188,5 +192,11 @@ public class Sw360ObligationService {
 
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
+    }
+
+    private void throwIfManualObligationCreationDisabled() {
+        if (licenseSourcePolicy.isLicenseDbOnlyMode()) {
+            throw new AccessDeniedException("Manual obligation creation is disabled in LICENSEDB_ONLY mode.");
+        }
     }
 }

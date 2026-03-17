@@ -60,6 +60,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
+import org.eclipse.sw360.rest.resourceserver.license.LicenseResolutionService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationRequestController;
@@ -141,6 +142,9 @@ public class RestControllerHelper<T> {
 
     @NonNull
     private final Sw360LicenseService licenseService;
+
+    @NonNull
+    private final LicenseResolutionService licenseResolutionService;
 
     @NonNull
     private final Sw360ObligationService obligationService;
@@ -823,12 +827,8 @@ public class RestControllerHelper<T> {
     }
 
     private void createMissingLicense(String licenseId) throws Exception {
-        License newLicense = new License();
-        newLicense.setId(licenseId);
-        newLicense.setShortname(licenseId);
-        newLicense.setFullname(licenseId);
         User user = getSw360UserFromAuthentication();
-        licenseService.createLicense(newLicense, user);
+        licenseResolutionService.resolveOrCreateMissingLicense(licenseId, user);
     }
 
     public License mapLicenseRequestToLicense(License licenseRequestBody, License licenseUpdate) {
