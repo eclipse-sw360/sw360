@@ -151,6 +151,14 @@ public class LicenseDatabaseHandler {
      */
     public List<License> getLicenseSummary() {
         final List<License> licenses = licenseRepository.getAll();
+
+        log.info("Get licenses ");
+        /* Test LicenseDB call */
+        List<License_db> licenses_db = licenseDBRestClient.getLicenses();
+
+        /* Log all licenses */
+        licenses_db.forEach(license_db -> log.info("LicenseDB License: " + license_db.getShortname()));
+
         return convertToLicenseSummary(licenses);
 
     }
@@ -466,6 +474,7 @@ public class LicenseDatabaseHandler {
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligationsFromLicenses, licenseTypes);
 
+        log.info("Get licenses ");
         /* Test LicenseDB call */
         List<License_db> licenses_db = licenseDBRestClient.getLicenses();
 
