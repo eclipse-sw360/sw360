@@ -1,12 +1,13 @@
 package org.eclipse.sw360.licenses.licenseDB.config;
 
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,7 @@ public class LicenseDBRestConfig {
     public static final String CONFIG_LICENSEDB_USERNAME = "username";
     public static final String CONFIG_LICENSEDB_PASSWORD = "password";
     public static final String CONFIG_LICENSEDB_BASE_URL = "baseUrl";
-    private static final Logger log = LoggerFactory.getLogger(LicenseDBRestConfig.class);
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     private String token;
     private String refresh;
@@ -90,10 +91,9 @@ public class LicenseDBRestConfig {
 
 
     public ConfigContainer get() throws SW360Exception {
-        if (config == null || outdated) {
+        if (config == null) {
             try {
                 config = repository.getByConfigFor(ConfigFor.LICENSEDB_REST);
-                outdated = false;
             } catch (IllegalStateException e) {
                 ConfigContainer newConfig = new ConfigContainer(ConfigFor.LICENSEDB_REST, new HashMap<>());
                 repository.add(newConfig);
