@@ -57,6 +57,8 @@ public class CommonUtils {
     public static final String DEFAULT_ATTACHMENT_FILENAME = "comp_attachment";
     private static final Pattern FILENAME_SANITIZE_PATTERN =
             Pattern.compile("(?i)/|\\\\|%2f|%5c");
+    private static final Pattern LEADING_UNDERSCORES_PATTERN =
+            Pattern.compile("^_+");
 
     private CommonUtils() {
         // Utility class with only static functions
@@ -247,13 +249,14 @@ public class CommonUtils {
 
     /**
      * Sanitize filename to prevent path traversal attacks.
-     * Replaces path separators (/ and \) with underscores to prevent directory traversal.
+     * Replaces path separators (/ and \) with underscores to prevent directory traversal. Also make they don't start
+     * with `_` as CouchDB does not allow it.
      *
      * @param filename the original filename that may contain path separators
      * @return sanitized filename safe for file operations, or DEFAULT_ATTACHMENT_FILENAME if input is invalid
      */
     public static String sanitizeFilename(String filename) {
-        if (filename == null || filename.trim().isEmpty()) {
+        if (isNullEmptyOrWhitespace(filename)) {
             return DEFAULT_ATTACHMENT_FILENAME;
         }
 
@@ -261,12 +264,13 @@ public class CommonUtils {
         // This prevents path traversal since sequences like "../" become ".._"
         String sanitized = FILENAME_SANITIZE_PATTERN.matcher(filename).replaceAll("_");
 
-        // If filename becomes empty after sanitization, use default
-        if (sanitized.trim().isEmpty()) {
-            return DEFAULT_ATTACHMENT_FILENAME;
-        }
+        // Filename cannot start with _ (remove leading underscores)
+        sanitized = LEADING_UNDERSCORES_PATTERN.matcher(sanitized).replaceFirst("");
 
-        return sanitized;
+        // If filename becomes empty after sanitization, use default
+        return isNullEmptyOrWhitespace(sanitized)
+                ? DEFAULT_ATTACHMENT_FILENAME
+                : sanitized;
     }
 
     public static boolean allAreEmptyOrNull(Collection... collections) {
