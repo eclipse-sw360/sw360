@@ -23,6 +23,7 @@ import org.eclipse.sw360.datahandler.db.CustomPropertiesRepository;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.entitlement.LicenseModerator;
+import org.eclipse.sw360.datahandler.licensedb.SpringContextBridge;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -102,8 +103,8 @@ public class LicenseDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
 
     /* LicenseDB Rest client */
-    @Autowired
-    private LicenseDBRestClient licenseDBRestClient;
+
+    private final LicenseDBRestClient licenseDBRestClient;
 
 
     private static boolean IMPORT_STATUS = false;
@@ -136,6 +137,9 @@ public class LicenseDatabaseHandler {
                 obligationNodeRepository,
                 obligationListRepository
         };
+
+        /* Initialize LicenseDB rest client */
+        licenseDBRestClient = SpringContextBridge.getBean(LicenseDBRestClient.class);
 
         moderator = new LicenseModerator();
     }
