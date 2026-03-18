@@ -33,7 +33,7 @@ public class LicenseDBRestConfig {
     private ConfigContainer config;
 
     @Autowired
-    public LicenseDBRestConfig(ConfigContainerRepository repository) {
+    public LicenseDBRestConfig(ConfigContainerRepository repository) throws SW360Exception {
         this.repository = repository;
 
         get();

@@ -355,6 +355,7 @@ public class FossologyHandler implements FossologyService.Iface {
                                   scanningJobId, statusResponse.get("eta"));
                     }
                     // leave in_work for next cycle
+
                 }
                 break;
 
