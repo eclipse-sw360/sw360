@@ -140,6 +140,16 @@ public class CveSearchHandler implements CveSearchService.Iface {
         return vulnerabilityUpdateStatus.getRequestStatus();
     }
 
+    /**
+     * Searches for Common Platform Enumeration (CPE) identifiers based on the specified vendor, product, and version.
+     * This method utilizes the CVE search service to identify CPEs associated with the given inputs.
+     *
+     * @param vendor   The name of the vendor. This parameter cannot be null and should be properly trimmed and not empty.
+     * @param product  The name of the product. This parameter cannot be null and should be properly trimmed and not empty.
+     * @param version  The version of the product. This parameter cannot be null but can be empty or "*", which results in no version-specific filtering.
+     * @return A set of CPE strings that match the provided criteria. If no matches are found or if required parameters are invalid, an empty set is returned.
+     * @throws TException If an error occurs while communicating with the CVE search service, or if an unexpected error occurs during processing.
+     */
     @Override
     public Set<String> findCpes(String vendor, String product, String version) throws TException {
         if(vendor == null || product == null || version == null) {
