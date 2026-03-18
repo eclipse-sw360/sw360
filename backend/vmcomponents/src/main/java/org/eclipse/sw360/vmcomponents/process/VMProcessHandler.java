@@ -255,4 +255,11 @@ public class VMProcessHandler {
             default: throw new IllegalArgumentException("unknown task '"+task+"'. do not know what to do :( ");
         }
     }
+
+    public static void shutdown() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdownNow();
+            log.info("VMProcessHandler executor shut down successfully.");
+        }
+    }
 }
