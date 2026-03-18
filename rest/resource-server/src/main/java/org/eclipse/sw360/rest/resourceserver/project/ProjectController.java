@@ -3750,10 +3750,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Set<String> securityResponsibles = sw360Project.getSecurityResponsibles();
             restControllerHelper.addEmbeddedSecurityResponsibles(userHalResource, securityResponsibles);
 
-            String clearingTeam = sw360Project.getClearingTeam();
-            if (clearingTeam != null) {
-                restControllerHelper.addEmbeddedClearingTeam(userHalResource, clearingTeam, "clearingTeam");
-            }
             if (sw360Project.getProjectResponsible() != null) {
                 restControllerHelper.addEmbeddedProjectResponsible(userHalResource,sw360Project.getProjectResponsible());
             }
