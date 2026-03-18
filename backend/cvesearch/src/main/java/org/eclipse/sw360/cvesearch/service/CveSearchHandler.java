@@ -142,6 +142,41 @@ public class CveSearchHandler implements CveSearchService.Iface {
 
     @Override
     public Set<String> findCpes(String vendor, String product, String version) throws TException {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        if(vendor == null || product == null || version == null) {
+            return Collections.emptySet();
+        }
+        vendor = vendor.trim();
+        product = product.trim();
+        version = version.trim().toLowerCase();
+        if(vendor.isEmpty() || product.isEmpty()) {
+            return Collections.emptySet();
+        }
+       try {
+           List<CveSearchData> cveSearchDataList = cveSearchWrapper.search(vendor, product);
+           String finalVersion = version;
+           var cpeStream = cveSearchDataList.stream()
+                   .map(CveSearchData::getVulnerable_configuration)
+                   .filter(Objects::nonNull)
+                   .flatMap(m -> m.keySet().stream());
+           if(finalVersion.isEmpty() || finalVersion.equals("*")) {
+               return cpeStream.collect(Collectors.toSet());
+           }
+           return cpeStream.filter(cpe -> finalVersion.equals(getVersionFromCpe(cpe)))
+                   .collect(Collectors.toSet());
+
+       } catch (IOException e) {
+           throw new TException("CVE search failed: " + e.getMessage(), e);
+       }
+    }
+
+    private String getVersionFromCpe(String cpe) {
+        if(cpe == null || cpe.isEmpty()) {
+            return "";
+        }
+        String[] split = cpe.split(":");
+        if(split.length <= 5) {
+            return "";
+        }
+        return split[5].toLowerCase();
     }
 }
