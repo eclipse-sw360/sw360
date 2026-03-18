@@ -32,6 +32,8 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import org.eclipse.sw360.licenses.licenseDB.dtos.License_db;
+import org.eclipse.sw360.licenses.licenseDB.rest.LicenseDBRestClient;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
 import org.eclipse.sw360.exporter.LicenseExporter;
 import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
@@ -68,6 +70,7 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import com.google.common.collect.Lists;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.spdx.core.InvalidSPDXAnalysisException;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -97,6 +100,11 @@ public class LicenseDatabaseHandler {
     private final CustomPropertiesRepository customPropertiesRepository;
     private final DatabaseRepositoryCloudantClient[] repositories;
     private DatabaseHandlerUtil dbHandlerUtil;
+
+    /* LicenseDB Rest client */
+    @Autowired
+    private LicenseDBRestClient licenseDBRestClient;
+
 
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
@@ -457,6 +465,13 @@ public class LicenseDatabaseHandler {
         final List<Obligation> obligationsFromLicenses = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligationsFromLicenses, licenseTypes);
+
+        /* Test LicenseDB call */
+        List<License_db> licenses_db = licenseDBRestClient.getLicenses();
+
+        /* Log all licenses */
+        licenses_db.forEach(license_db -> log.info("LicenseDB License: " + license_db.getShortname()));
+
         return licenses;
     }
 
