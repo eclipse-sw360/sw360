@@ -1,6 +1,10 @@
 package org.eclipse.sw360.licenses.licenseDB.config;
 
 
+import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
