@@ -556,7 +556,10 @@ public class RestControllerHelper<T> {
     }
 
     public boolean checkDuplicateLicense(List<License> licenses, String licenseId) {
-        return licenses.stream().anyMatch(licenseCheck -> licenseCheck.getShortname().equalsIgnoreCase(licenseId));
+        if (licenseId == null) {
+            return true;
+        }
+        return licenses.stream().anyMatch(licenseCheck -> licenseId.equalsIgnoreCase(licenseCheck.getShortname()));
     }
 
     private HalResource<License> addEmbeddedLicense(String licenseId) {
@@ -1160,11 +1163,11 @@ public class RestControllerHelper<T> {
                     if (vulnerability.getFieldValue(field) == null) {
                         break;
                     }
-                    if (field.equals(Vulnerability._Fields.CVSS)) {
+                    if (Vulnerability._Fields.CVSS.equals(field)) {
                         vulnerabilityApiDTO.setCvss(String.valueOf(vulnerability.getCvss()));
-                    } else if (field.equals(Vulnerability._Fields.IS_SET_CVSS)) {
+                    } else if (Vulnerability._Fields.IS_SET_CVSS.equals(field)) {
                         vulnerabilityApiDTO.setIsSetCvss(String.valueOf(vulnerability.isIsSetCvss()));
-                    } else if (field.equals(Vulnerability._Fields.CVE_REFERENCES)) {
+                    } else if (Vulnerability._Fields.CVE_REFERENCES.equals(field)) {
                         Set<CVEReference> cveReferences = vulnerability.getCveReferences();
                         if (cveReferences.size() > 0) {
                             vulnerabilityApiDTO.setCveReferences(convertCVEReferenceString(cveReferences));
@@ -1192,7 +1195,7 @@ public class RestControllerHelper<T> {
 
     public boolean setDataForVulnerability(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability) {
         for (Vulnerability._Fields field : Vulnerability._Fields.values()) {
-            if (field.equals(Vulnerability._Fields.REVISION) || field.equals(Vulnerability._Fields.ID) || field.equals(Vulnerability._Fields.TYPE)) {
+            if (Vulnerability._Fields.REVISION.equals(field) || Vulnerability._Fields.ID.equals(field) || Vulnerability._Fields.TYPE.equals(field)) {
                 continue;
             }
             for (VulnerabilityApiDTO._Fields fieldDTO : VulnerabilityApiDTO._Fields.values()) {
@@ -1200,17 +1203,17 @@ public class RestControllerHelper<T> {
                     if (vulnerabilityApiDTO.getFieldValue(fieldDTO) == null) {
                         break;
                     }
-                    if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVSS)) {
+                    if (VulnerabilityApiDTO._Fields.CVSS.equals(fieldDTO)) {
                         if (!setDataCVSS(vulnerabilityApiDTO.getCvss(), vulnerability)) {
                             throw new RuntimeException(new SW360Exception("Invalid cvss: property 'cvss' should be a valid cvss.")
                                     .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                         }
-                    } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.IS_SET_CVSS)) {
+                    } else if (VulnerabilityApiDTO._Fields.IS_SET_CVSS.equals(fieldDTO)) {
                         if(!setDataIsSetCvss(vulnerabilityApiDTO.getIsSetCvss(), vulnerability)) {
                             throw new RuntimeException(new SW360Exception("Invalid isSetCvss: property 'isSetCvss' should be a valid isSetCvss.")
                                     .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                         }
-                    } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVE_REFERENCES)) {
+                    } else if (VulnerabilityApiDTO._Fields.CVE_REFERENCES.equals(fieldDTO)) {
                         setDataCveReferences(vulnerabilityApiDTO.getCveReferences(), vulnerability);
                     } else {
                         vulnerability.setFieldValue(field, vulnerabilityApiDTO.getFieldValue(fieldDTO));
@@ -1538,7 +1541,7 @@ public class RestControllerHelper<T> {
     }
 
     public void addEmbeddedCotsDetails(HalResource halResource, Release release) {
-        if (null != release.getCotsDetails() && release.getComponentType().equals(ComponentType.COTS)) {
+        if (null != release.getCotsDetails() && ComponentType.COTS.equals(release.getComponentType())) {
             HalResource<COTSDetails> cotsDetailsHalResource = new HalResource<>(release.getCotsDetails());
             if (CommonUtils.isNotNullEmptyOrWhitespace(release.getCotsDetails().getCotsResponsible())) {
                 User sw360User = userService.getUserByEmail(release.getCotsDetails().getCotsResponsible());

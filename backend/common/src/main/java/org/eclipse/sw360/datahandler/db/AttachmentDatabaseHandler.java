@@ -85,9 +85,7 @@ public class AttachmentDatabaseHandler {
 
         return attachment;
     }
-    public void updateAttachmentContent(AttachmentContent attachment) throws TException {
-        attachmentConnector.updateAttachmentContent(attachment);
-    }
+
     public RequestSummary bulkDelete(List<String> ids) {
         final List<DocumentResult> documentOperationResults = attachmentContentRepository.deleteIds(ids);
         return CommonUtils.getRequestSummary(ids, documentOperationResults);
@@ -269,7 +267,6 @@ public class AttachmentDatabaseHandler {
     public List<Source> getAttachmentOwnersByIds(Set<String> ids) {
         return attachmentOwnerRepository.getOwnersByIds(ids);
     }
-    
     public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) {
         return attachmentUsageRepository.getUsagesByReleaseId(releaseId);
     }
