@@ -66,7 +66,7 @@ public class LicenseDBRestClient {
     }
 
     private String login() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/auth/login";
+        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/login";
         Map<String, String> body = new HashMap<>();
         body.put("username", licenseDBRestConfig.getUsername());
         body.put("password", licenseDBRestConfig.getPassword());
@@ -75,7 +75,7 @@ public class LicenseDBRestClient {
     }
 
     public String refreshToken() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/auth/refresh";
+        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/refresh";
         Map<String, String> body = new HashMap<>();
         body.put("refresh_token", licenseDBRestConfig.getRefresh());
 
@@ -110,7 +110,7 @@ public class LicenseDBRestClient {
     }
 
     public List<License_db> getLicenses() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/licenses";
+        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/licenses";
         String token = getAuth();
         if (token == null) {
             return Collections.emptyList();
@@ -134,7 +134,7 @@ public class LicenseDBRestClient {
     }
 
     public License_db getLicenseById(String id) {
-        String url = licenseDBRestConfig.getBaseUrl() + "/licenses/" + id;
+        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/licenses/" + id;
         String token = getAuth();
         if (token == null) {
             return null;
