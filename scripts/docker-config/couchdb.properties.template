@@ -22,3 +22,10 @@ lucenesearch.limit = $COUCHDB_LUCENESEARCH_LIMIT
 # Warning: Nouveau currently does not support use of leading wildcards.
 # see more: https://wiki.apache.org/lucene-java/LuceneFAQ#What_wildcard_search_support_is_available_from_Lucene.3F
 lucenesearch.leading.wildcard = false
+
+# Use retires from cloudant
+cloudant.enable.retries = $CLOUDANT_ENABLE_RETRIES
+# How many retries before failure
+cloudant.max.retries = 2
+# Interval between retries (in seconds)
+cloudant.max.retry.interval = 5
