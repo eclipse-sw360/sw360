@@ -1,19 +1,18 @@
 package org.eclipse.sw360.licenses.licenseDB.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.licenses.licenseDB.config.LicenseDBRestConfig;
-
 import org.eclipse.sw360.licenses.licenseDB.dtos.License_db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -22,19 +21,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Component
 public class LicenseDBRestClient {
 
     private static final Logger log = LoggerFactory.getLogger(LicenseDBRestClient.class);
 
-    @Autowired
-    private LicenseDBRestConfig licenseDBRestConfig;
+    private final LicenseDBRestConfig licenseDBRestConfig;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    public LicenseDBRestClient() {
+        // Manual initialization of dependencies
+        this.licenseDBRestConfig = new LicenseDBRestConfig();
+        
+        // Manual configuration of RestTemplate
+        this.restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(30000);
+        requestFactory.setReadTimeout(300000);
+        this.restTemplate.setRequestFactory(requestFactory);
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        // Manual configuration of ObjectMapper
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     /**
      * Retrieves the current OAuth token, refreshing it if necessary or performing a full login.
@@ -56,13 +65,8 @@ public class LicenseDBRestClient {
         return login();
     }
 
-    /**
-     * Performs a login call to retrieve a new token using username and password.
-     *
-     * @return the access token if successful, null otherwise.
-     */
     private String login() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/login";
+        String url = licenseDBRestConfig.getBaseUrl() + "/auth/login";
         Map<String, String> body = new HashMap<>();
         body.put("username", licenseDBRestConfig.getUsername());
         body.put("password", licenseDBRestConfig.getPassword());
@@ -70,13 +74,8 @@ public class LicenseDBRestClient {
         return authenticate(url, body);
     }
 
-    /**
-     * Performs a refresh token call to retrieve a new access token.
-     *
-     * @return the new access token if successful, null otherwise.
-     */
     public String refreshToken() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/refresh";
+        String url = licenseDBRestConfig.getBaseUrl() + "/auth/refresh";
         Map<String, String> body = new HashMap<>();
         body.put("refresh_token", licenseDBRestConfig.getRefresh());
 
@@ -110,13 +109,8 @@ public class LicenseDBRestClient {
         return null;
     }
 
-    /**
-     * Retrieves all licenses from the LicenseDB API.
-     *
-     * @return a list of License DTOs.
-     */
     public List<License_db> getLicenses() {
-        String url = licenseDBRestConfig.getBaseUrl() + "api/v1/licenses";
+        String url = licenseDBRestConfig.getBaseUrl() + "/licenses";
         String token = getAuth();
         if (token == null) {
             return Collections.emptyList();
@@ -139,14 +133,8 @@ public class LicenseDBRestClient {
         return Collections.emptyList();
     }
 
-    /**
-     * Retrieves a single license by its ID from the LicenseDB API.
-     *
-     * @param id the license ID.
-     * @return the License DTO, or null if not found or an error occurred.
-     */
     public License_db getLicenseById(String id) {
-        String url = licenseDBRestConfig.getBaseUrl() + "api/v1/licenses/" + id;
+        String url = licenseDBRestConfig.getBaseUrl() + "/licenses/" + id;
         String token = getAuth();
         if (token == null) {
             return null;
@@ -168,8 +156,4 @@ public class LicenseDBRestClient {
 
         return null;
     }
-
-    /* get /obligations */
-
-    /* get /obligations/{id} */
 }
