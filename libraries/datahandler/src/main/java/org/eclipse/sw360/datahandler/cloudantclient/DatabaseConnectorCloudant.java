@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +67,7 @@ public class DatabaseConnectorCloudant {
 
     private final String dbName;
     private final DatabaseInstanceCloudant instance;
+    private final AttachmentAwareDatabase attachmentInstance;
 
     private static final String OPERATOR_EQ = "$eq";
     private static final String OPERATOR_IN = "$in";
@@ -81,6 +83,7 @@ public class DatabaseConnectorCloudant {
 
     public DatabaseConnectorCloudant(Cloudant client, String dbName) {
         this.instance = new DatabaseInstanceCloudant(client);
+        this.attachmentInstance = new AttachmentAwareDatabase(client);
         this.dbName = dbName;
         // Create the database if it does not exist yet
         instance.createDB(dbName);
@@ -94,9 +97,36 @@ public class DatabaseConnectorCloudant {
         DocumentResult resp;
         if (document != null) {
             if (document instanceof AttachmentContent content) {
-                InputStream in = getAttachment(content.getId(), content.getFilename());
+                // Retrieve all attachment names from the existing document
+                // before the update replaces it (losing inline attachments).
+                // This is only called by
+                // AttachmentStreamConnector::downloadRemoteAttachmentAndUpdate
+                // to download remote attachment and set remote only as false.
+                Map<String, InputStream> attachmentStreams = new LinkedHashMap<>();
+                try {
+                    Document existingDoc = getDocument(content.getId());
+                    Map<String, Attachment> existingAttachments = existingDoc.getAttachments();
+                    if (existingAttachments != null) {
+                        for (String attachmentName : existingAttachments.keySet()) {
+                            try {
+                                attachmentStreams.put(attachmentName,
+                                        getAttachment(content.getId(), attachmentName));
+                            } catch (Exception e) {
+                                log.warn("Could not read attachment '{}' from document {}",
+                                        attachmentName, content.getId(), e);
+                            }
+                        }
+                    }
+                } catch (SW360Exception e) {
+                    log.error("Cannot find document for attachment content: {}",
+                            content.getId(), e);
+                }
                 resp = this.updateWithResponse(document);
-                createAttachment(resp.getId(), content.getFilename(), in, content.getContentType());
+                // Re-attach all attachments (base file + any _partN files)
+                for (Map.Entry<String, InputStream> entry : attachmentStreams.entrySet()) {
+                    createAttachment(resp.getId(), entry.getKey(),
+                            entry.getValue(), content.getContentType());
+                }
             } else {
                 resp = this.updateWithResponse(document);
             }
@@ -491,7 +521,7 @@ public class DatabaseConnectorCloudant {
                         .attachmentName(attachmentName)
                         .build();
 
-        return this.instance.getClient().getAttachment(attachmentOptions).execute()
+        return this.attachmentInstance.getAttachment(attachmentOptions).execute()
                 .getResult();
     }
 
@@ -514,7 +544,7 @@ public class DatabaseConnectorCloudant {
                         .rev(revision)
                         .build();
 
-        this.instance.getClient().putAttachment(attachmentOptions).execute()
+        this.attachmentInstance.putAttachment(attachmentOptions).execute()
                 .getResult();
     }
 

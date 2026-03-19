@@ -201,11 +201,6 @@ service AttachmentService {
     AttachmentContent getAttachmentContent(1:string id) throws (1: SW360Exception exp);
 
     /**
-     * Update attachmentContent in database, no permission check is necessary
-     **/
-    oneway void updateAttachmentContent(1:AttachmentContent attachment);
-
-    /**
      * delete attachment contents with ids from db,
      * return RequestStatus together with the total number of elements and the number of successfully removed elements
      **/
