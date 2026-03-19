@@ -194,5 +194,30 @@ public class Sw360AttachmentServiceTest {
         assertThat(sanitized3).doesNotContain("/");
         assertThat(sanitized3).doesNotContain("\\");
         assertThat(sanitized3).isEqualTo(".._dir_file.txt");
+
+        // Test strings starting with _ (CouchDB restriction)
+        String filename4 = "_secret_file.txt";
+        String sanitized4 = CommonUtils.sanitizeFilename(filename4);
+        assertThat(sanitized4).isEqualTo("secret_file.txt");
+
+        // Test multiple leading underscores
+        String filename5 = "_/_extra_hidden.tar.gz";
+        String sanitized5 = CommonUtils.sanitizeFilename(filename5);
+        assertThat(sanitized5).isEqualTo("extra_hidden.tar.gz");
+
+        // Test URL encoded separators
+        String filename6 = "%2fdir%2f..%5cfile.txt";
+        String sanitized6 = CommonUtils.sanitizeFilename(filename6);
+        assertThat(sanitized6).isEqualTo("dir_.._file.txt");
+
+        // Test empty/whitespace input returns default
+        assertThat(CommonUtils.sanitizeFilename("")).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
+        assertThat(CommonUtils.sanitizeFilename("   ")).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
+        assertThat(CommonUtils.sanitizeFilename(null)).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
+
+        // Test filename that becomes empty after sanitization (e.g. just underscores and slashes)
+        String filename7 = "_//_\\_";
+        String sanitized7 = CommonUtils.sanitizeFilename(filename7);
+        assertThat(sanitized7).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
     }
 }
