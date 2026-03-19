@@ -44,6 +44,10 @@ public class DatabaseSettings {
     public static final int LUCENE_SEARCH_LIMIT;
     public static final boolean LUCENE_LEADING_WILDCARD;
 
+    public static final boolean CLOUDANT_ENABLE_RETRIES;
+    public static final int CLOUDANT_MAX_RETRIES;
+    public static final int CLOUDANT_MAX_RETRY_INTERVAL;
+
     private static final Optional<String> COUCH_DB_USERNAME;
     private static final Optional<String> COUCH_DB_PASSWORD;
 
@@ -72,9 +76,19 @@ public class DatabaseSettings {
         LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
         LUCENE_LEADING_WILDCARD =
                 Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
+
+        CLOUDANT_ENABLE_RETRIES = Boolean.parseBoolean(props.getProperty("cloudant.enable.retries", "true"));
+        CLOUDANT_MAX_RETRIES = Integer.parseInt(props.getProperty("cloudant.max.retries", "2"));
+        CLOUDANT_MAX_RETRY_INTERVAL = Integer.parseInt(props.getProperty("cloudant.max.retry.interval", "5"));
     }
 
+    private static final Cloudant CLIENT = createConfiguredClient();
+
     public static @NotNull Cloudant getConfiguredClient() {
+        return CLIENT;
+    }
+
+    private static @NotNull Cloudant createConfiguredClient() {
         Cloudant client;
         if (COUCH_DB_USERNAME.isPresent() && COUCH_DB_PASSWORD.isPresent()) {
             Authenticator authenticator = CouchDbSessionAuthenticator
@@ -82,6 +96,9 @@ public class DatabaseSettings {
             client = new Cloudant("sw360-couchdb", authenticator);
         } else {
             client = Cloudant.newInstance("sw360-couchdb");
+        }
+        if (CLOUDANT_ENABLE_RETRIES) {
+            client.enableRetries(CLOUDANT_MAX_RETRIES, CLOUDANT_MAX_RETRY_INTERVAL);
         }
         try {
             client.setServiceUrl(COUCH_DB_URL);

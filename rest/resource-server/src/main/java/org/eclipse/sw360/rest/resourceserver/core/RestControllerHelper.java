@@ -1559,17 +1559,15 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedSecurityResponsibles (HalResource<Project> halResource, Set<String> securityResponsibles) {
         for (String securityResponsible : securityResponsibles) {
+            if (isNullEmptyOrWhitespace(securityResponsible)) {
+                LOGGER.debug("Skipping empty security responsible entry");
+                continue;
+            }
             User sw360User = getUserByEmail(securityResponsible);
             if(sw360User!=null) {
                 addEmbeddedUser(halResource, sw360User, "securityResponsibles");
             }
         }
-    }
-
-    public void addEmbeddedClearingTeam(HalResource<Project> userHalResource, String clearingTeam, String resource) {
-        User sw360User = getUserByEmail(clearingTeam);
-        if(sw360User!=null)
-            addEmbeddedUser(userHalResource, sw360User, resource);
     }
 
     public void addEmbeddedOtherLicenses(HalResource<Release> halRelease, Set<String> licenseIds) {

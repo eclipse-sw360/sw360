@@ -185,6 +185,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public static final String PROJECTS_URL = "/projects";
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = LogManager.getLogger(ProjectController.class);
+    private static final Gson GSON = new Gson();
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.CLEARING_TEAM, "clearingTeam")
@@ -2499,7 +2500,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             String jsonMessage = requestSummary.getMessage();
-            messageMap = new Gson().fromJson(jsonMessage, Map.class);
+            messageMap = GSON.fromJson(jsonMessage, Map.class);
             projectId = messageMap.get("projectId");
 
             if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -2569,7 +2570,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         String jsonMessage = requestSummary.getMessage();
-        messageMap = new Gson().fromJson(jsonMessage, Map.class);
+        messageMap = GSON.fromJson(jsonMessage, Map.class);
         projectId = messageMap.get("projectId");
 
         if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -3749,10 +3750,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Set<String> securityResponsibles = sw360Project.getSecurityResponsibles();
             restControllerHelper.addEmbeddedSecurityResponsibles(userHalResource, securityResponsibles);
 
-            String clearingTeam = sw360Project.getClearingTeam();
-            if (clearingTeam != null) {
-                restControllerHelper.addEmbeddedClearingTeam(userHalResource, clearingTeam, "clearingTeam");
-            }
             if (sw360Project.getProjectResponsible() != null) {
                 restControllerHelper.addEmbeddedProjectResponsible(userHalResource,sw360Project.getProjectResponsible());
             }
@@ -3850,7 +3847,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     uniqueDependencyNetwork.add(releaseNode);
                 }
             }
-            project.setReleaseRelationNetwork(new Gson().toJson(uniqueDependencyNetwork));
+            project.setReleaseRelationNetwork(GSON.toJson(uniqueDependencyNetwork));
         }
         else {
             project.setReleaseRelationNetwork(null);
