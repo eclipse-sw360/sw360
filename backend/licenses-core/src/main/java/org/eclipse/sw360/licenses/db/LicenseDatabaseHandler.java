@@ -139,7 +139,7 @@ public class LicenseDatabaseHandler {
         };
 
         /* Initialize LicenseDB rest client */
-        licenseDBRestClient = SpringContextBridge.getBean(LicenseDBRestClient.class);
+        this.licenseDBRestClient = new LicenseDBRestClient();
 
         moderator = new LicenseModerator();
     }

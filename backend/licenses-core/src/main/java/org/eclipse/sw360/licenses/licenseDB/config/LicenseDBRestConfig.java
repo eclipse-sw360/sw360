@@ -1,28 +1,24 @@
 package org.eclipse.sw360.licenses.licenseDB.config;
 
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-
-import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 
-@Component
 public class LicenseDBRestConfig {
 
     public static final String CONFIG_LICENSEDB_USERNAME = "username";
     public static final String CONFIG_LICENSEDB_PASSWORD = "password";
     public static final String CONFIG_LICENSEDB_BASE_URL = "baseUrl";
-    private final Logger log = LogManager.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(LicenseDBRestConfig.class);
 
     private String token;
     private String refresh;
@@ -32,13 +28,19 @@ public class LicenseDBRestConfig {
 
     private ConfigContainer config;
 
-    @Autowired
-    public LicenseDBRestConfig(ConfigContainerRepository repository) throws SW360Exception {
-        this.repository = repository;
-
-        get();
+    public LicenseDBRestConfig() {
+        // Manual construction of the repository using global DatabaseSettings
+        DatabaseConnectorCloudant configContainerDatabaseConnector = new DatabaseConnectorCloudant(
+                DatabaseSettings.getConfiguredClient(),
+                DatabaseSettings.COUCH_DB_CONFIG);
+        this.repository = new ConfigContainerRepository(configContainerDatabaseConnector);
+        
+        try {
+            get();
+        } catch (SW360Exception e) {
+            log.error("Could not initialize LicenseDB configuration from database.", e);
+        }
     }
-
 
     public String getUsername() {
         return getFirstValue(CONFIG_LICENSEDB_USERNAME);
@@ -82,24 +84,26 @@ public class LicenseDBRestConfig {
 
     private String getFirstValue(String key) {
         try {
-            return get().getConfigKeyToValues().getOrDefault(key, new HashSet<>()).stream().findFirst().orElse(null);
+            ConfigContainer currentConfig = get();
+            if (currentConfig != null && currentConfig.getConfigKeyToValues() != null) {
+                return currentConfig.getConfigKeyToValues().getOrDefault(key, new HashSet<>()).stream().findFirst().orElse(null);
+            }
         } catch (SW360Exception e) {
-            log.error(e);
-            return null;
+            log.error("Error fetching config value for key: " + key, e);
         }
+        return null;
     }
-
 
     public ConfigContainer get() throws SW360Exception {
         if (config == null) {
             try {
                 config = repository.getByConfigFor(ConfigFor.LICENSEDB_REST);
             } catch (IllegalStateException e) {
-                ConfigContainer newConfig = new ConfigContainer(ConfigFor.LICENSEDB_REST, new HashMap<>());
-                repository.add(newConfig);
+                log.warn("No LicenseDB configuration found in database. Creating a placeholder.");
+                config = new ConfigContainer(ConfigFor.LICENSEDB_REST, new HashMap<>());
+                repository.add(config);
             }
         }
         return config;
     }
-
 }
