@@ -44,6 +44,8 @@ public class CustomThriftDeserializer implements JsonDeserializer<TBase> {
         LinkedTreeMap value_;
     }
 
+    private static final Gson GSON = new Gson();
+
     private static class GenericAttachmentUsage {
         String id;
         String revision;
@@ -65,10 +67,8 @@ public class CustomThriftDeserializer implements JsonDeserializer<TBase> {
             json = jObj.getAsJsonObject();
         }
 
-        Gson gson = new Gson();
         if (typeOfT.getTypeName().equals("org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage")) {
-            AttachmentUsage tbase = gson.fromJson(json, typeOfT);
-            GenericAttachmentUsage attachmntUsage = gson.fromJson(json, GenericAttachmentUsage.class);
+            GenericAttachmentUsage attachmntUsage = GSON.fromJson(json, GenericAttachmentUsage.class);
             GenericUsageData genericUsageData = attachmntUsage.usageData;
             AttachmentUsage au = new AttachmentUsage(attachmntUsage.owner, attachmntUsage.attachmentContentId,
                     attachmntUsage.usedBy);
@@ -87,11 +87,11 @@ public class CustomThriftDeserializer implements JsonDeserializer<TBase> {
                     throw new IllegalArgumentException("No class registered for type " + genericUsageData.setField_
                             + ". Could not deserialize field.");
                 }
-                Object value = gson.fromJson(new Gson().toJson((LinkedTreeMap) genericUsageData.value_), valueType);
+                Object value = GSON.fromJson(GSON.toJsonTree(genericUsageData.value_), valueType);
                 UsageData ud = new UsageData(type, value);
                 au.setUsageData(ud);
             }
-            Map tbaseMap = gson.fromJson(json, Map.class);
+            Map tbaseMap = GSON.fromJson(json, Map.class);
             if (tbaseMap.get("_id").toString() != null) {
                 au.setId(tbaseMap.get("_id").toString());
             }
@@ -100,8 +100,8 @@ public class CustomThriftDeserializer implements JsonDeserializer<TBase> {
             }
             return au;
         }
-        Map tbaseMap = gson.fromJson(json, Map.class);
-        TBase tbase = gson.fromJson(json, typeOfT);
+        Map tbaseMap = GSON.fromJson(json, Map.class);
+        TBase tbase = GSON.fromJson(json, typeOfT);
         TFieldIdEnum id = tbase.fieldForId(1);
         TFieldIdEnum rev = tbase.fieldForId(2);
         tbase.setFieldValue(id, tbaseMap.get("_id"));

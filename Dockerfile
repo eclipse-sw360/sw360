@@ -82,6 +82,7 @@ FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b
 # CouchDB settings
 ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
@@ -112,6 +113,12 @@ ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
 ENV SW360_CORS_ALLOWED_ORIGIN="*"
 ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
 ENV SW360_BASE_URL="http://localhost:8080"
+
+# Install dependencies for entrypoint
+RUN apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
 
 # Streamlined wars
 COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${CATALINA_HOME}/webapps/
@@ -169,6 +176,7 @@ FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df
 ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_USER="admin"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
 
 # Create the /etc/sw360
 USER root

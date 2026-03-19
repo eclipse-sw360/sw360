@@ -21,10 +21,11 @@ import com.google.gson.JsonSerializer;
 
 public class CustomThriftSerializer implements JsonSerializer<TBase> {
 
+    private static final Gson GSON = new Gson();
+
     @Override
     public JsonElement serialize(TBase src, Type typeOfSrc, JsonSerializationContext context) {
-        Gson gson = new Gson();
-        JsonElement json = gson.toJsonTree(src, typeOfSrc);
+        JsonElement json = GSON.toJsonTree(src, typeOfSrc);
         JsonObject jObject = json.getAsJsonObject();
         JsonElement str = jObject.get("__isset_bitfield");
         JsonElement idElement = jObject.get("id");

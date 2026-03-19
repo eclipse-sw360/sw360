@@ -15,9 +15,14 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.DeleteDatabaseOptions;
 import com.ibm.cloud.cloudant.v1.model.PutDatabaseOptions;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
+import okhttp3.Cache;
+import okhttp3.OkHttpClient;
 import org.eclipse.sw360.datahandler.common.CustomThriftDeserializer;
 import org.eclipse.sw360.datahandler.common.CustomThriftSerializer;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
+
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Class for connecting to a given CouchDB instance
@@ -54,6 +59,22 @@ public class DatabaseInstanceCloudant {
     }
 
     public void destroy() {
+        if (client == null) {
+            return;
+        }
+        // As per https://javadoc.io/static/com.squareup.okhttp3/okhttp/3.9.1/okhttp3/OkHttpClient.html
+        OkHttpClient okhttpClient = client.getClient();
+        try (ExecutorService executor = okhttpClient.dispatcher().executorService()) {
+            executor.shutdown();
+        }
+        okhttpClient.connectionPool().evictAll();
+        try (Cache cache = okhttpClient.cache()) {
+            if (cache != null) {
+                cache.close();
+            }
+        } catch (IOException ignored) {
+            // Nothing to do, safe to exit
+        }
         client = null;
     }
 
