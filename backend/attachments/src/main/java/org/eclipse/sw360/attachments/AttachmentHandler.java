@@ -72,12 +72,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
     }
 
     @Override
-    public void updateAttachmentContent(AttachmentContent attachment) throws TException {
-        validateAttachment(attachment);
-        handler.updateAttachmentContent(attachment);
-    }
-
-    @Override
     public RequestSummary bulkDelete(List<String> ids) throws TException {
         assertNotNull(ids);
         return handler.bulkDelete(ids);

@@ -82,6 +82,7 @@ FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b
 # CouchDB settings
 ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
@@ -175,6 +176,7 @@ FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df
 ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_USER="admin"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
 
 # Create the /etc/sw360
 USER root
