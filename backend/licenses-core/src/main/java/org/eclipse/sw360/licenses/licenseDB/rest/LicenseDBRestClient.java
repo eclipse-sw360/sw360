@@ -1,3 +1,15 @@
+/*
+ * Copyright Siemens AG, 2015, 2019. Part of the SW360 Portal Project.
+ * Copyright Mahmoud Elsheemy<mahmoudalshemy.3@gmail.com>, 2026. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+
 package org.eclipse.sw360.licenses.licenseDB.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -11,11 +23,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +51,10 @@ public class LicenseDBRestClient {
         
         // Manual configuration of RestTemplate
         this.restTemplate = new RestTemplate();
+        
+        // Ensure Jackson message converter is present and first
+        this.restTemplate.getMessageConverters().add(0, new MappingJackson2HttpMessageConverter());
+        
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(30000);
         requestFactory.setReadTimeout(300000);
@@ -66,7 +86,12 @@ public class LicenseDBRestClient {
     }
 
     private String login() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/login";
+        String baseUrl = licenseDBRestConfig.getBaseUrl();
+        if (baseUrl != null && baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String url = baseUrl + "/api/v1/login";
+        
         Map<String, String> body = new HashMap<>();
         body.put("username", licenseDBRestConfig.getUsername());
         body.put("password", licenseDBRestConfig.getPassword());
@@ -75,7 +100,12 @@ public class LicenseDBRestClient {
     }
 
     public String refreshToken() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/refresh";
+        String baseUrl = licenseDBRestConfig.getBaseUrl();
+        if (baseUrl != null && baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String url = baseUrl + "/api/v1/refresh";
+        
         Map<String, String> body = new HashMap<>();
         body.put("refresh_token", licenseDBRestConfig.getRefresh());
 
@@ -84,7 +114,16 @@ public class LicenseDBRestClient {
 
     private String authenticate(String url, Map<String, String> body) {
         try {
-            ResponseEntity<JsonNode> res = restTemplate.postForEntity(url, body, JsonNode.class);
+            log.info("Authenticating at URL: {}", url);
+
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+            
+            ResponseEntity<JsonNode> res = restTemplate.postForEntity(url, entity, JsonNode.class);
             if (res.getStatusCode().is2xxSuccessful() && res.getBody() != null && res.getBody().has("data")) {
                 JsonNode data = res.getBody().get("data");
 
@@ -96,7 +135,7 @@ public class LicenseDBRestClient {
                 }
 
                 if (data.has("expires_at")) {
-                    licenseDBRestConfig.setExpiry(LocalDateTime.parse(data.get("expires_at").asText()));
+                    licenseDBRestConfig.setExpiry(LocalDateTime.ofInstant(Instant.parse(data.get("expires_at").asText()), ZoneId.systemDefault()));
                 }
 
                 return accessToken;
@@ -110,7 +149,12 @@ public class LicenseDBRestClient {
     }
 
     public List<License_db> getLicenses() {
-        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/licenses";
+        String baseUrl = licenseDBRestConfig.getBaseUrl();
+        if (baseUrl != null && baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String url = baseUrl + "/api/v1/licenses";
+        
         String token = getAuth();
         if (token == null) {
             return Collections.emptyList();
@@ -118,6 +162,7 @@ public class LicenseDBRestClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         try {
@@ -134,7 +179,12 @@ public class LicenseDBRestClient {
     }
 
     public License_db getLicenseById(String id) {
-        String url = licenseDBRestConfig.getBaseUrl() + "/api/v1/licenses/" + id;
+        String baseUrl = licenseDBRestConfig.getBaseUrl();
+        if (baseUrl != null && baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String url = baseUrl + "/api/v1/licenses/" + id;
+        
         String token = getAuth();
         if (token == null) {
             return null;
@@ -142,6 +192,7 @@ public class LicenseDBRestClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         try {
