@@ -74,7 +74,7 @@ COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 # Runtime SW360 image
 
 # FROM tomcat:11-jre21-temurin-noble
-FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
+FROM tomcat@sha256:28cba8cc937ca4db18cd32d559f49708fb2868c79c3441d793be0611d2bd7d56 AS sw360
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
