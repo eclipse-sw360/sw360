@@ -23,7 +23,6 @@ import org.eclipse.sw360.datahandler.db.CustomPropertiesRepository;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.entitlement.LicenseModerator;
-import org.eclipse.sw360.datahandler.licensedb.SpringContextBridge;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -102,10 +101,6 @@ public class LicenseDatabaseHandler {
     private final DatabaseRepositoryCloudantClient[] repositories;
     private DatabaseHandlerUtil dbHandlerUtil;
 
-    /* LicenseDB Rest client */
-
-    private final LicenseDBRestClient licenseDBRestClient;
-
 
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
@@ -138,9 +133,6 @@ public class LicenseDatabaseHandler {
                 obligationListRepository
         };
 
-        /* Initialize LicenseDB rest client */
-        this.licenseDBRestClient = new LicenseDBRestClient();
-
         moderator = new LicenseModerator();
     }
 
@@ -155,13 +147,6 @@ public class LicenseDatabaseHandler {
      */
     public List<License> getLicenseSummary() {
         final List<License> licenses = licenseRepository.getAll();
-
-        log.info("Get licenses ");
-        /* Test LicenseDB call */
-        List<License_db> licenses_db = licenseDBRestClient.getLicenses();
-
-        /* Log all licenses */
-        licenses_db.forEach(license_db -> log.info("LicenseDB License: " + license_db.getShortname()));
 
         return convertToLicenseSummary(licenses);
 
@@ -477,13 +462,6 @@ public class LicenseDatabaseHandler {
         final List<Obligation> obligationsFromLicenses = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligationsFromLicenses, licenseTypes);
-
-        log.info("Get licenses ");
-        /* Test LicenseDB call */
-        List<License_db> licenses_db = licenseDBRestClient.getLicenses();
-
-        /* Log all licenses */
-        licenses_db.forEach(license_db -> log.info("LicenseDB License: " + license_db.getShortname()));
 
         return licenses;
     }

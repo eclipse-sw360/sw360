@@ -1,3 +1,15 @@
+/*
+ * Copyright Siemens AG, 2015, 2019. Part of the SW360 Portal Project.
+ * Copyright Mahmoud Elsheemy<mahmoudalshemy.3@gmail.com>, 2026. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+
 package org.eclipse.sw360.licenses.licenseDB.dtos;
 
 import java.util.List;
