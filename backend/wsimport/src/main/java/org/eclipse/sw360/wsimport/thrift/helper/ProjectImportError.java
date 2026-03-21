@@ -17,6 +17,7 @@ package org.eclipse.sw360.wsimport.thrift.helper;
 public enum ProjectImportError {
     PROJECT_NOT_FOUND("Unable to get project from server"),
     PROJECT_ALREADY_EXISTS("Project already in database"),
+    DUPLICATE_RELEASE_RELATION("Upload data contains duplicate release relations"),
     OTHER("Other error");
 
     private final String text;

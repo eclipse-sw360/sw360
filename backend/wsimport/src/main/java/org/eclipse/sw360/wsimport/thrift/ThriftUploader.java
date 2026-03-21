@@ -96,21 +96,17 @@ public class ThriftUploader {
         Set<ReleaseRelation> releases = createReleases(wsProject, sw360User, tokenCredentials);
         sw360Project.setProjectResponsible(sw360User.getEmail());
 
-        /*
-         * TODO: Improve duplicate handling
-         */
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage =
-                releases.stream()
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage;
+        try {
+            releaseIdToUsage = releases.stream()
                     .collect(Collectors.toMap(
                             ReleaseRelation::getReleaseId,
-                            ReleaseRelation::getProjectReleaseRelationship,
-                            (projectReleaseRelationship1, projectReleaseRelationship2) -> {
-                                LOGGER.info("--- Duplicate key found!");
-                                LOGGER.info("--- 1: " + projectReleaseRelationship1.getReleaseRelation());
-                                LOGGER.info("--- 2: " + projectReleaseRelationship2.getReleaseRelation());
-                                return projectReleaseRelationship1;
-                            }
-                    ));
+                            ReleaseRelation::getProjectReleaseRelationship));
+        } catch (IllegalStateException e) {
+            LOGGER.warn("Duplicate release relation found in upload data for project: "
+                    + wsProject.getProjectName(), e);
+            return new ProjectImportResult(ProjectImportError.DUPLICATE_RELEASE_RELATION);
+        }
         sw360Project.setReleaseIdToUsage(releaseIdToUsage);
         String projectId = thriftExchange.addProject(sw360Project, sw360User);
 
