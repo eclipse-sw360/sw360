@@ -228,9 +228,8 @@ public class UserDatabaseHandler {
     public Map<String, List<String>> readFileCsv(String filePath) {
         Map<String, List<String>> listMap = new HashMap<>();
         List<String> emailCsv = new ArrayList<>();
-        try {
-            File file = new File(filePath);
-            CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build();
+        try (FileReader fileReader = new FileReader(new File(filePath));
+             CSVReader reader = new CSVReaderBuilder(fileReader).withSkipLines(1).build()) {
             List<String[]> rows = reader.readAll();
             String mapTemp = "";
             for (String[] row : rows) {
