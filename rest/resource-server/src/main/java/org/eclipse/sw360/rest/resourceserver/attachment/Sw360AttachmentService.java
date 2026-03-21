@@ -274,7 +274,7 @@ public class Sw360AttachmentService {
     }
 
     public Attachment addAttachment(MultipartFile file, User sw360User) throws IOException, TException {
-        String fileName = file.getOriginalFilename();
+        String fileName = CommonUtils.sanitizeFilename(file.getOriginalFilename());
         String contentType = file.getContentType();
         final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
         final AttachmentConnector attachmentConnector = getConnector();
