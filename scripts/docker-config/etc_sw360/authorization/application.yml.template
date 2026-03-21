@@ -14,14 +14,17 @@ server:
 
 # Connection to the couch databases. Will be used to store client credentials
 couchdb:
-  url: http://couchdb:5984
+  url: $COUCHDB_URL
   database: sw360oauthclients
   # if your couchdb does not use authentication, pls just don't use the settings for username and password
-  username: sw360
-  password: sw360fossie
+  username: $COUCHDB_USER
+  password: $COUCHDB_PASSWORD
 
 jwt:
   secretkey: sw360SecretKey
+  auth:
+    converter:
+      principle-attribute: email
 
 spring:
   jackson:
@@ -30,10 +33,6 @@ spring:
 
 # Common SW360 properties
 sw360:
-  # The url of the Liferay instance
-  sw360-portal-server-url: ${SW360_PORTAL_SERVER_URL:http://127.0.0.1:8080}
-  # The id of the company in Liferay that sw360 is run for
-  sw360-liferay-company-id: ${SW360_LIFERAY_COMPANY_ID:20101}
   # Allowed origins that should be set in the header
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
@@ -55,3 +54,5 @@ security:
   oauth2:
     resource:
       id: sw360-REST-API
+  accesstoken:
+    validity: 90

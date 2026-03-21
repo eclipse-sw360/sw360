@@ -64,6 +64,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -81,6 +82,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
@@ -172,7 +174,7 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_F
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -183,6 +185,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public static final String PROJECTS_URL = "/projects";
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = LogManager.getLogger(ProjectController.class);
+    private static final Gson GSON = new Gson();
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.CLEARING_TEAM, "clearingTeam")
@@ -706,6 +709,36 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (!isWriteAllowed && (comment == null || comment.isBlank())) {
             return ResponseEntity.badRequest().body(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT);
         }
+
+        // Check for clearing request and delete if it exists and is open
+        ThriftClients thriftClients = new ThriftClients();
+        ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
+        ClearingRequest clearingRequest = null;
+
+        try {
+            clearingRequest = moderationClient.getClearingRequestByProjectId(id, sw360User);
+        } catch (TException e) {
+            log.info("No clearing request found for project: " + id + " (exception: " + e.getMessage() + ")");
+        }
+
+        if (clearingRequest != null && !isClosedClearingRequest(clearingRequest)) {
+            log.warn("Project has an open clearing request. Attempting to delete the clearing request and then the project.");
+
+            try {
+                RequestStatus clearingRequestStatus = moderationClient.deleteClearingRequest(clearingRequest.getId(), sw360User);
+                if (clearingRequestStatus != RequestStatus.SUCCESS) {
+                    log.error("Failed to delete clearing request for project: " + id);
+                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+                log.info("Successfully deleted the open clearing request for project: " + id);
+            } catch (TException e) {
+                log.error("Error deleting clearing request for project: " + id, e);
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else if (clearingRequest != null) {
+            log.info("The clearing request for project is already closed. Proceeding with project deletion.");
+        }
+
         RequestStatus requestStatus = projectService.deleteProject(id, sw360User);
         if (requestStatus == RequestStatus.SUCCESS) {
             return new ResponseEntity<>(HttpStatus.OK);
@@ -716,6 +749,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } else {
             throw new SW360Exception("Something went wrong.");
         }
+    }
+
+    private boolean isClosedClearingRequest(ClearingRequest clearingRequest) {
+        if (clearingRequest == null) {
+            return true;
+        }
+        ClearingRequestState state = clearingRequest.getClearingState();
+        return state == ClearingRequestState.CLOSED || state == ClearingRequestState.REJECTED;
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -1515,7 +1556,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final List<EntityModel<License>> licenseResources = new ArrayList<>();
         final Set<String> allLicenseIds = new HashSet<>();
 
-        final Set<String> releaseIdToUsage = project.getReleaseIdToUsage().keySet();
+        final Set<String> releaseIdToUsage = CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
         for (final String releaseId : releaseIdToUsage) {
             final Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             final Set<String> licenseIds = sw360Release.getMainLicenseIds();
@@ -1788,6 +1829,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
+
         boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState().name(), user, reqBodyMap, sw360Project);
         if (!editPermitted) {
             log.error("No write permission for project");
@@ -2458,7 +2500,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             String jsonMessage = requestSummary.getMessage();
-            messageMap = new Gson().fromJson(jsonMessage, Map.class);
+            messageMap = GSON.fromJson(jsonMessage, Map.class);
             projectId = messageMap.get("projectId");
 
             if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -2528,7 +2570,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         String jsonMessage = requestSummary.getMessage();
-        messageMap = new Gson().fromJson(jsonMessage, Map.class);
+        messageMap = GSON.fromJson(jsonMessage, Map.class);
         projectId = messageMap.get("projectId");
 
         if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -3150,7 +3192,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Release> releases = new ArrayList<>();
         ObligationList obligation = new ObligationList();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
-        List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+        List<String> releaseIds = new ArrayList<>(CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet());
         for (final String releaseId : releaseIds) {
             Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             if (sw360Release.getAttachmentsSize() > 0) {
@@ -3222,7 +3264,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, ObligationStatusInfo> oblData = Maps.newHashMap();
         Map<String, ObligationStatusInfo> filterData = Maps.newHashMap();
 
-        List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+        List<String> releaseIds = new ArrayList<>(CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet());
         for (final String releaseId : releaseIds) {
             Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             if (sw360Release.getAttachmentsSize() > 0) {
@@ -3309,7 +3351,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, ObligationStatusInfo> obligationStatusMapFromReport = Maps.newHashMap();
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
         List<Release> releases = new ArrayList<>();
-        List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+        List<String> releaseIds = new ArrayList<>(CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet());
         for (final String releaseId : releaseIds) {
             Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             if (sw360Release.getAttachmentsSize() > 0) {
@@ -3480,7 +3522,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
      * @throws TException If there is an error during the Thrift operation.
      */
     private List<Release> getReleasesWithAttachments(Project project, User user) throws TException {
-        return project.getReleaseIdToUsage().keySet().stream()
+        return CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet().stream()
                 .map(releaseId -> {
                     try {
                         Release release = releaseService.getReleaseForUserById(releaseId, user);
@@ -3708,10 +3750,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Set<String> securityResponsibles = sw360Project.getSecurityResponsibles();
             restControllerHelper.addEmbeddedSecurityResponsibles(userHalResource, securityResponsibles);
 
-            String clearingTeam = sw360Project.getClearingTeam();
-            if (clearingTeam != null) {
-                restControllerHelper.addEmbeddedClearingTeam(userHalResource, clearingTeam, "clearingTeam");
-            }
             if (sw360Project.getProjectResponsible() != null) {
                 restControllerHelper.addEmbeddedProjectResponsible(userHalResource,sw360Project.getProjectResponsible());
             }
@@ -3809,7 +3847,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     uniqueDependencyNetwork.add(releaseNode);
                 }
             }
-            project.setReleaseRelationNetwork(new Gson().toJson(uniqueDependencyNetwork));
+            project.setReleaseRelationNetwork(GSON.toJson(uniqueDependencyNetwork));
         }
         else {
             project.setReleaseRelationNetwork(null);

@@ -1,4 +1,3 @@
-
 # Copyright Helio Chisisni de Castro, 2023. Part of the SW360 Portal Project.
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
 # Copyright BMW CarIT GmbH, 2021.
@@ -16,8 +15,8 @@
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-# 3-eclipse-temurin-21-noble
-FROM maven@sha256:89086b81ff2ec9c65739b1763ffb729b59b48c569fe13e5c81a54e128b6827a7 AS sw360build
+# FROM maven:3-eclipse-temurin-21-noble
+FROM maven@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -48,16 +47,7 @@ WORKDIR /build/sw360
 
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,target=/root/.m2 \
-    --mount=type=secret,id=couchdb \
-    set -a \
-    && source /run/secrets/couchdb \
-    && envsubst < scripts/docker-config/couchdb.properties.template | tee scripts/docker-config/etc_sw360/couchdb.properties \
-    && set +a \
-    && cp scripts/docker-config/etc_sw360/couchdb.properties build-configuration/resources/ \
-    && cp -a scripts/docker-config/etc_sw360 /etc/sw360 \
-    && mkdir /etc/sw360/manager \
-    && envsubst < scripts/docker-config/manager/tomcat-users.xml | tee /etc/sw360/manager/tomcat-users.xml \
-    && mvn clean package \
+    mvn clean package \
     -P deploy \
     -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
@@ -65,6 +55,7 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Djars.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
+    -Dlistener.deploy.dir=/sw360_keycloak_listener \
     -Dhelp-docs=true
 
 # Generate slim war files
@@ -75,31 +66,138 @@ COPY scripts/create-slim-war-files.sh /bin/slim.sh
 RUN bash /bin/slim.sh
 
 FROM scratch AS binaries
-COPY --from=sw360build /etc/sw360 /etc/sw360
 COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
+COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 
 #--------------------------------------------------------------------------------------------------
-# Runtime image
+# Runtime SW360 image
 
-# 11-jre21-temurin-noble
-FROM tomcat@sha256:ba0d8041e7c6d51bb8f82949ee77c1fdc8b01df8a8ff311e2f7c0e516105e139 AS sw360
+# FROM tomcat:11-jre21-temurin-noble
+FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
 
-ARG TOMCAT_DIR=/usr/local/tomcat
+# Default environment variables that can be overridden at runtime
+# For more information, please check the documentation.
+#
+# CouchDB settings
+ENV COUCHDB_URL="http://couchdb:5984"
+ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
+#
+# Spring controllers
+ENV ENABLE_DISKSPACE="false"
+ENV JWKS_ISSUER_URI="http://localhost:8080/authorization/oauth2/jwks"
+ENV JWKS_SET_URI="http://localhost:8080/authorization/oauth2/jwks"
+ENV JWKS_ISSUER="http://localhost:8090"
+#
+# Email configs
+ENV EMAIL_PROPERTIES_HOST=""
+ENV EMAIL_PROPERTIES_PORT=""
+ENV EMAIL_PROPERTIES_STARTTLS="false"
+ENV EMAIL_PROPERTIES_ENABLE_SSL="false"
+ENV EMAIL_PROPERTIES_AUTH_REQUIRED="false"
+ENV EMAIL_PROPERTIES_FROM="__No_Reply__@sw360.org"
+ENV EMAIL_PROPERTIES_SUPPORT_EMAIL="help@sw360.org"
+ENV EMAIL_PROPERTIES_TLS_PROTOCOL="TLSv1.2"
+ENV EMAIL_PROPERTIES_TLS_TRUST="*"
+ENV EMAIL_PROPERTIES_DEBUG="false"
+#
+# SVM Configs
+ENV SVM_API_BASE_PATH="https://svm.example.org"
+ENV SVM_API_ROOT_PATH="api/v1"
+ENV SVM_SW360_API_URL="https://svm.example.org/application.json"
+ENV SVM_SW360_CERTIFICATE_FILENAME="not-configured.pfx"
+#
+# Other settings
+ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
+ENV SW360_CORS_ALLOWED_ORIGIN="*"
+ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
+ENV SW360_BASE_URL="http://localhost:8080"
 
-# Modified etc
-COPY --from=binaries /etc/sw360 /etc/sw360
+# Install dependencies for entrypoint
+RUN apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
+
 # Streamlined wars
-COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${TOMCAT_DIR}/webapps/
+COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${CATALINA_HOME}/webapps/
 # org.eclipse.sw360 jar artifacts
-COPY --from=binaries /sw360_tomcat_webapps/*.jar ${TOMCAT_DIR}/webapps/
+COPY --from=binaries /sw360_tomcat_webapps/*.jar ${CATALINA_HOME}/webapps/
 # Shared streamlined jar libs
-COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${TOMCAT_DIR}/lib/
+COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${CATALINA_HOME}/lib/
+
+WORKDIR /app/sw360
+
+# Copy the configuration files
+COPY ./scripts/docker-config .
 
 # Tomcat manager for debugging portlets
-RUN --mount=type=bind,target=/build/sw360,rw \
-    mv ${TOMCAT_DIR}/webapps.dist/manager ${TOMCAT_DIR}/webapps/manager \
-    && cp /etc/sw360/manager/tomcat-users.xml ${TOMCAT_DIR}/conf/tomcat-users.xml \
-    && cp /build/sw360/scripts/docker-config/manager/context.xml ${TOMCAT_DIR}/webapps/manager/META-INF/context.xml
+# Make entrypoint executable
+RUN mv ${CATALINA_HOME}/webapps.dist/manager ${CATALINA_HOME}/webapps/manager \
+    && mv ./manager/context.xml ${CATALINA_HOME}/webapps/manager/META-INF/context.xml \
+    && chmod a+x ./docker-entrypoint.sh
 
-WORKDIR ${TOMCAT_DIR}
+EXPOSE 8080
+
+ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
+
+#--------------------------------------------------------------------------------------------------
+# Build custom Keycloak with SW360 providers
+# For guide, see https://www.keycloak.org/server/containers
+
+# FROM quay.io/keycloak/keycloak:26.5.5
+FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak-build
+
+# Enable health and metrics support
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+
+# Configure a database vendor
+ENV KC_DB=postgres
+
+WORKDIR /opt/keycloak
+
+# Copy always does root:root with 644. Thus cp within container to get
+# keycloak:root with 644
+COPY --from=binaries /sw360_keycloak_listener /tmp/providers/
+
+RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
+ && /opt/keycloak/bin/kc.sh build
+
+# Copy the optimized KC
+# FROM quay.io/keycloak/keycloak:26.5.5
+FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak
+
+# Default environment variables that can be overridden at runtime
+# For more information, please check the documentation.
+#
+# CouchDB settings
+ENV COUCHDB_URL="http://couchdb:5984"
+ENV COUCHDB_USER="admin"
+ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
+
+# Create the /etc/sw360
+USER root
+
+RUN mkdir -p /etc/sw360 \
+ && chown -R keycloak:keycloak /etc/sw360
+
+USER keycloak
+
+# Copy the configs required in /etc/sw360
+WORKDIR /app/docker-config
+
+# Copy the configs and entrypoint
+COPY --chown=keycloak ./scripts/docker-config/docker-entrypoint-keycloak.sh .
+
+# Make entrypoint executable
+RUN chmod a+x ./docker-entrypoint-keycloak.sh
+
+# Copy the optimized KC
+COPY --from=keycloak-build /opt/keycloak/ /opt/keycloak/
+
+ENTRYPOINT ["/app/docker-config/docker-entrypoint-keycloak.sh"]
+
+CMD ["start", "--optimized"]
