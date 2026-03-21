@@ -79,3 +79,4 @@ output
 /third-party/keycloak-tf/terraform.tfstate*
 /third-party/keycloak-tf/.terraform.lock.hcl
 /third-party/keycloak-tf/.terraform/**
+.claude/
