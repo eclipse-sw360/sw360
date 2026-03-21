@@ -60,6 +60,7 @@ file to tweak SW360 behaviour.
 **CouchDB Settings**
 * `COUCHDB_URL`: URL of the CouchDB instance (default: `http://couchdb:5984`).
 * `COUCHDB_LUCENESEARCH_LIMIT`: Limit for Lucene search results (default: `1000`).
+* `CLOUDANT_ENABLE_RETRIES`: Enable retries in Cloudant (default: `true`).
 
 **Spring Controllers**
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).

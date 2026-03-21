@@ -53,6 +53,7 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     protected final Logger log = LogManager.getLogger(DatabaseRepositoryCloudantClient.class);
     private static final char HIGH_VALUE_UNICODE_CHARACTER = '\uFFF0';
+    private static final Gson GSON = new Gson();
 
     private final Class<T> type;
     private DatabaseConnectorCloudant connector;
@@ -467,12 +468,11 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     public List<Source> queryViewForSource(PostViewOptions req) {
         List<Source> sources = Lists.newArrayList();
-        Gson gson = new Gson();
         try {
             ViewResult response = getConnector().getPostViewQueryResponse(req);
             for (ViewResultRow row : response.getRows()) {
                 Type t = new TypeToken<Map<String, String>>() {}.getType();
-                Map<String, String> srcMap = gson.fromJson(new Gson().toJson(row.getValue()), t);
+                Map<String, String> srcMap = GSON.fromJson(GSON.toJsonTree(row.getValue()), t);
                 Source._Fields type = Source._Fields.findByName(srcMap.keySet().iterator().next());
                 Source source = new Source(type, srcMap.values().iterator().next());
                 sources.add(source);
@@ -485,11 +485,10 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     public List<Attachment> queryViewForAttachment(PostViewOptions req) {
         List<Attachment> attachments = Lists.newArrayList();
-        Gson gson = new Gson();
         try {
             ViewResult response = getConnector().getPostViewQueryResponse(req);
             for (ViewResultRow row : response.getRows()) {
-                Attachment value = gson.fromJson(new Gson().toJson(row.getValue()), Attachment.class);
+                Attachment value = GSON.fromJson(GSON.toJsonTree(row.getValue()), Attachment.class);
                 attachments.add(value);
             }
         } catch (ServiceResponseException e) {
