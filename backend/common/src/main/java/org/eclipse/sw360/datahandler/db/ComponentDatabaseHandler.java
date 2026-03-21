@@ -3376,15 +3376,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String fileName = file.getName();
         String contentType = "application/zip";
         final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
-        FileInputStream inputStream = new FileInputStream(file);
-        Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, inputStream, null);
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, inputStream, null);
 
-        attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
-        attachment.setAttachmentType(AttachmentType.SOURCE);
-        attachment.setCheckStatus(CheckStatus.NOTCHECKED);
-        attachment.setCreatedComment("Uploaded by the SW360 scheduled service based on the VCS url of the component");
-        attachment.setCreatedBy(SW360Constants.SRC_ATTACHMENT_UPLOADER_EMAIL);
-        return attachment;
+            attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
+            attachment.setAttachmentType(AttachmentType.SOURCE);
+            attachment.setCheckStatus(CheckStatus.NOTCHECKED);
+            attachment.setCreatedComment("Uploaded by the SW360 scheduled service based on the VCS url of the component");
+            attachment.setCreatedBy(SW360Constants.SRC_ATTACHMENT_UPLOADER_EMAIL);
+            return attachment;
+        }
     }
 
     private AttachmentContent makeAttachmentContent(String filename, String contentType) {
