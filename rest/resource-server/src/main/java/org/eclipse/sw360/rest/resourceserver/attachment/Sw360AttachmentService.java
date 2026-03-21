@@ -200,28 +200,41 @@ public class Sw360AttachmentService {
             return;
         }
         List<File> files = new ArrayList<>();
-        for (Attachment attachment : attachments) {
-            AttachmentContent attachmentContent = getAttachmentContent(attachment.getAttachmentContentId());
-            InputStream inputStream = getStreamToAttachments(Collections.singleton(attachmentContent), user, context);
-            String fileType = getFileType(attachmentContent.getFilename());
-            File sourceFile = saveAsTempFile(inputStream, attachment.getAttachmentContentId(), fileType);
-            File file = renameFile(sourceFile, attachment.getFilename());
-            files.add(file);
-            FileUtils.delete(sourceFile);
+        List<File> tempFiles = new ArrayList<>();
+        try {
+            for (Attachment attachment : attachments) {
+                AttachmentContent attachmentContent = getAttachmentContent(attachment.getAttachmentContentId());
+                String fileType = getFileType(attachmentContent.getFilename());
+                try (InputStream inputStream = getStreamToAttachments(Collections.singleton(attachmentContent), user, context)) {
+                    File sourceFile = saveAsTempFile(inputStream, attachment.getAttachmentContentId(), fileType);
+                    tempFiles.add(sourceFile);
+                    File file = renameFile(sourceFile, attachment.getFilename());
+                    files.add(file);
+                    tempFiles.add(file);
+                }
+            }
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
+            try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                for (File file : files) {
+                    // Sanitize filename for ZIP entry to prevent path traversal
+                    String sanitizedName = CommonUtils.sanitizeFilename(file.getName());
+                    zipOutputStream.putNextEntry(new ZipEntry(sanitizedName));
+                    try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                        IOUtils.copy(fileInputStream, zipOutputStream);
+                    }
+                    zipOutputStream.closeEntry();
+                }
+            }
+        } finally {
+            for (File file : tempFiles) {
+                try {
+                    FileUtils.delete(file);
+                } catch (IOException e) {
+                    log.error("Failed to delete temp file: " + file.getAbsolutePath(), e);
+                }
+            }
         }
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
-        ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());
-        for (File file : files) {
-            // Sanitize filename for ZIP entry to prevent path traversal
-            String sanitizedName = CommonUtils.sanitizeFilename(file.getName());
-            zipOutputStream.putNextEntry(new ZipEntry(sanitizedName));
-            FileInputStream fileInputStream = new FileInputStream(file);
-            IOUtils.copy(fileInputStream, zipOutputStream);
-            fileInputStream.close();
-            zipOutputStream.closeEntry();
-        }
-        zipOutputStream.close();
     }
 
     public <T> InputStream getStreamToAttachments(Set<AttachmentContent> attachments, User sw360User, T context) throws IOException, TException {
