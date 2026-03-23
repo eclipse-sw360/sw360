@@ -1202,7 +1202,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 return actualProjectReleaseRelationship;
             }
         }
-        throw new ResourceNotFoundException("Requested Re<<<<<< HEAD\n" + "=======lease Not Found");
+        throw new ResourceNotFoundException("Requested Release Not Found");
     }
 
     @PreDestroy
