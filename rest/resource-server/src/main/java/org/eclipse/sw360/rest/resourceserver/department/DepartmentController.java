@@ -43,6 +43,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -73,6 +76,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Manually active the service.",
             tags = {"Departments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Department import triggered.")
+    })
     @PostMapping(value = DEPARTMENT_URL + "/manuallyactive")
     public ResponseEntity<RequestSummary> importDepartmentManually() throws SW360Exception {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -93,6 +99,11 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Schedule import.",
             tags = {"Departments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Department import scheduled."),
+            @ApiResponse(responseCode = "409", description = "Import already scheduled.",
+                content = @Content(mediaType = "application/json"))
+    })
     @PostMapping(value = DEPARTMENT_URL + "/scheduleImport")
     public ResponseEntity<Map<String, String>> scheduleImportDepartment() throws SW360Exception {
         try {
@@ -122,6 +133,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
     @Operation(summary = "Unschedule Department Import",
             description = "Cancels the scheduled import task for the department.",
             tags = {"Departments"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Department import unscheduled.")
+    })
     @PostMapping(value = DEPARTMENT_URL + "/unscheduleImport")
     public ResponseEntity<Map<String, String>> unScheduleImportDepartment() throws SW360Exception {
 
@@ -145,6 +159,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Updates the department folder path configuration.",
             tags = {"Departments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Path updated.")
+    })
     @PostMapping(value = DEPARTMENT_URL + "/writePathFolder")
     public ResponseEntity<String> updatePath(
             @Parameter(description = "The path of the folder")
@@ -164,6 +181,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Get information about importing the department (import path folder, interval, last run time, next run time, and whether the scheduler is started or not)",
             tags = {"Departments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Import information retrieved.")
+    })
     @GetMapping(value = DEPARTMENT_URL + "/importInformation")
     public ResponseEntity<Map<String, Object>> getImportInformation() throws TException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -175,6 +195,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Get log file list",
             tags = {"Departments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Log file list retrieved.")
+    })
     @GetMapping(value = DEPARTMENT_URL + "/logFiles")
     public ResponseEntity<Set<String>> getLogFileList() throws TException {
         return new ResponseEntity<>(departmentService.getLogFileList(), HttpStatus.OK);
@@ -185,6 +208,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Get log file content by date",
             tags = {"Departments"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Log file content retrieved.")
+    })
     @GetMapping(value = DEPARTMENT_URL + "/logFileContent")
     public ResponseEntity<List<String>> getLogFileContentByDate(
             @RequestParam(value = "date") String date
@@ -194,6 +220,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(summary = "Fetch a list of members' emails from each department.",
             description = "Fetch a list of members' emails from each department.", tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member emails retrieved.")
+    })
     @GetMapping(value = DEPARTMENT_URL + "/members")
     public ResponseEntity<Map<String, List<String>>> getMembersEmailsOfSecondaryDepartments(
             @Parameter(description = "departmentName") @RequestParam(value = "departmentName", required = false) String departmentName
@@ -206,6 +235,9 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(summary = "Update members of a secondary department.",
             description = "Update members of a secondary department.", tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Members updated.")
+    })
     @PatchMapping(value = DEPARTMENT_URL + "/members")
     public ResponseEntity<Map<String, List<String>>> updateMembersOfSecondaryDepartment(
             @Parameter(description = "Department name") @RequestParam(value = "departmentName", required = false) String departmentName,

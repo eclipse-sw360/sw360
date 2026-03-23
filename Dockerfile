@@ -147,7 +147,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # For guide, see https://www.keycloak.org/server/containers
 
 # FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak-build
+FROM quay.io/keycloak/keycloak@sha256:8d44614c74798322c4e07fbe0ecb15cfbb5879d69b484628555f58ade06f0d8c AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -167,7 +167,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
 
 # Copy the optimized KC
 # FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak
+FROM quay.io/keycloak/keycloak@sha256:8d44614c74798322c4e07fbe0ecb15cfbb5879d69b484628555f58ade06f0d8c AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

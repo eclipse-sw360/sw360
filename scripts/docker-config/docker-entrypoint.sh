@@ -4,13 +4,15 @@
 
 set -o errexit -o nounset -o pipefail
 
-# Source secrets if available. This allows overriding the default ENV values.
+# Export sourced secrets so envsubst can see them when generating configs.
+set -o allexport
 if [ -f "/run/secrets/COUCHDB_SECRETS" ]; then
   source /run/secrets/COUCHDB_SECRETS
 fi
 if [ -f "/run/secrets/SW360_SECRETS" ]; then
   source /run/secrets/SW360_SECRETS
 fi
+set +o allexport
 
 mkdir -p /etc/sw360/authorization /etc/sw360/rest
 

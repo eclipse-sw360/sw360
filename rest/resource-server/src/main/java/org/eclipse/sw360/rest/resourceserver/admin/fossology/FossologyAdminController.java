@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.StringToClassMapItem;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -73,6 +74,11 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Save the FOSSology service configuration.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "FOSSology configuration saved." ),
+            @ApiResponse(responseCode = "400", description = "Invalid FOSSology configuration."),
+            @ApiResponse(responseCode = "500", description = "FOSSology configuration save failed.")
+    })
     @PostMapping(value = FOSSOLOGY_URL + "/saveConfig", consumes  = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> saveConfigration(
             @Parameter(description = "Request body containing the configuration parameters. The parameters are:\n" +
@@ -127,6 +133,9 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Make a test call and check the FOSSology server connection.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "FOSSology server connection successful.")
+    })
     @GetMapping(value = FOSSOLOGY_URL + "/reServerConnection")
     public ResponseEntity<?> checkServerConnection() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();

@@ -114,6 +114,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all of the service's moderation requests.",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation requests successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No moderation requests found.",
+                content = @Content)
+    })
     @GetMapping(value = MODERATION_REQUEST_URL)
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -140,6 +145,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "Get a single moderation request by id.",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation request successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No moderation request found.",
+                content = @Content)
+    })
     @GetMapping(value = MODERATION_REQUEST_URL + "/{id}")
     public ResponseEntity<HalResource<Map<String, Object>>> getModerationRequestById(
             @Parameter(description = "The id of the moderation request to be retrieved.")
@@ -177,6 +187,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all the ModerationRequest visible to the user based on the state and  respond with MR where user is a moderator",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation requests by state successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No moderation requests found for this state.",
+                content = @Content)
+    })
     @GetMapping(value = MODERATION_REQUEST_URL + "/byState")
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequestsByState(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -342,6 +357,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
                     "\"timestamp\", \"documentName\" and \"moderationState\".",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User submissions successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No submissions found.",
+                content = @Content)
+    })
     @GetMapping(value = MODERATION_REQUEST_URL + "/mySubmissions")
     public ResponseEntity<CollectionModel<ModerationRequest>> getSubmissions(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -635,6 +655,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
             tags = {"Moderation Requests"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation request deleted."),
+            @ApiResponse(responseCode = "409", description = "Cannot delete - moderation request in use.",
+                content = @Content(mediaType = "application/json"))
+    })
     @DeleteMapping(value = MODERATION_REQUEST_URL + "/delete")
     public ResponseEntity<?> deleteModerationRequest(
             @Parameter(description = "List of moderation request IDs to delete")

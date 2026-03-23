@@ -10,6 +10,8 @@
 package org.eclipse.sw360.rest.resourceserver.version;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +43,9 @@ public class VersionController {
             description = "Returns the build version and REST API version.",
             tags = {"Version"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Version successfully retrieved.")
+    })
     @GetMapping(value = "/version", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> getVersion() {
         return ResponseEntity.ok(versionInfo);

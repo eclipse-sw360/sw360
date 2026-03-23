@@ -277,17 +277,20 @@ public class OSADLObligationConnector extends ObligationConnector {
 			}
 		}
 
-		String type = "";
-		String value = "";
-		String[] words = text.split(" ");
-		for (int i = 0; i < words.length; i++) {
-			if (words[i].equals(words[i].toUpperCase())) {
-				type = type + ' ' + words[i];
-			} else {
-				break;
-			}
-		}
-		type = type.trim();
+        StringBuilder typeBuilder = new StringBuilder();
+        String value = "";
+        String[] words = text.split(" ");
+
+        for (String word : words) {
+            if (word.equals(word.toUpperCase())) {
+                typeBuilder.append(' ').append(word);
+            } else {
+                break;
+            }
+        }
+
+        String type = typeBuilder.toString().trim();
+
 		if (type.isEmpty()) {
 			type = words[0];
 		}
