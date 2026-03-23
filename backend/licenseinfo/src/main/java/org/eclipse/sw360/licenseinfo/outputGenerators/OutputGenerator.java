@@ -286,7 +286,8 @@ public abstract class OutputGenerator<T> {
 
         return licenseNamesWithText.stream()
                 .filter(licenseNameWithText -> !LicenseNameWithTextUtils.isEmpty(licenseNameWithText))
-                .sorted(Comparator.comparing(LicenseNameWithText::getLicenseName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(LicenseNameWithText::getLicenseName,
+    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
     }
 
