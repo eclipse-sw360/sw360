@@ -23,8 +23,6 @@ services:
       - "11311:11311"
     stdin_open: true
     tty: true
-    networks:
-      - sw360-network
     volumes:
       - etc:/etc/sw360
     healthcheck:
