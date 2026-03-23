@@ -767,5 +767,5 @@ service ProjectService {
      * Copy a project with only the selected fields carried over.
      * fieldsToCopy is a set of Project._Fields names specifying which fields to include in the new project.
      */
-    AddDocumentRequestSummary copyProject(1: string projectId, 2: set<string> fieldsToCopy, 3: User user) throws (1: SW360Exception exp);
+    AddDocumentRequestSummary copyProject(1: string projectId, 2: set<string> fieldsToCopy, 3: Project overrideFields, 4: User user) throws (1: SW360Exception exp);
 }

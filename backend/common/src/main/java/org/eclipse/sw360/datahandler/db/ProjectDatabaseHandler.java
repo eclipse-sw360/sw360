@@ -1037,7 +1037,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ///////////////////////////////
     // COPY PROJECT               //
     ///////////////////////////////
-    public AddDocumentRequestSummary copyProject(String projectId, Set<String> fieldsToCopy, User user) throws SW360Exception {
+    
+    public AddDocumentRequestSummary copyProject(String projectId, Set<String> fieldsToCopy, Project overrideFields, User user) thr
         Project sourceProject = getProjectById(projectId, user);
         if (sourceProject == null) {
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
@@ -1066,13 +1067,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         newProject.unsetCreatedBy();
         newProject.unsetCreatedOn();
         newProject.unsetClearingRequestId();
+	newProject.unsetClearingState();
+	// Apply user overrides (name, version, etc.)
+        if (overrideFields != null) {
+            if (overrideFields.isSetName()) {
+                newProject.setName(overrideFields.getName());
+            }
+            if (overrideFields.isSetVersion()) {
+                newProject.setVersion(overrideFields.getVersion());
+            }
+        }
 
         return addProject(newProject, user);
     }
-    private void copyImmutableFields(Project destination, Project source) {
-        ThriftUtils.copyField(source, destination, Project._Fields.CREATED_ON);
-        ThriftUtils.copyField(source, destination, Project._Fields.CREATED_BY);
-    }
+
 
     ///////////////////////////////
     // DELETE INDIVIDUAL OBJECTS //
