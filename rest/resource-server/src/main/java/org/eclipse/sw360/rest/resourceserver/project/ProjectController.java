@@ -189,7 +189,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private static final Gson GSON = new Gson();
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
-            .put(Project._Fields.CLEARING_TEAM, "clearingTeam")
             .put(Project._Fields.EXTERNAL_URLS, "externalUrls")
             .put(Project._Fields.MODERATORS, "sw360:moderators")
             .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
