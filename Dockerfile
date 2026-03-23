@@ -71,7 +71,7 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 
 #--------------------------------------------------------------------------------------------------
-# Runtime image
+# Runtime SW360 image
 
 # FROM tomcat:11-jre21-temurin-noble
 FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
@@ -82,6 +82,7 @@ FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b
 # CouchDB settings
 ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
@@ -113,6 +114,12 @@ ENV SW360_CORS_ALLOWED_ORIGIN="*"
 ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
 ENV SW360_BASE_URL="http://localhost:8080"
 
+# Install dependencies for entrypoint
+RUN apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
+
 # Streamlined wars
 COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${CATALINA_HOME}/webapps/
 # org.eclipse.sw360 jar artifacts
@@ -134,3 +141,63 @@ RUN mv ${CATALINA_HOME}/webapps.dist/manager ${CATALINA_HOME}/webapps/manager \
 EXPOSE 8080
 
 ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
+
+#--------------------------------------------------------------------------------------------------
+# Build custom Keycloak with SW360 providers
+# For guide, see https://www.keycloak.org/server/containers
+
+# FROM quay.io/keycloak/keycloak:26.5.5
+FROM quay.io/keycloak/keycloak@sha256:8d44614c74798322c4e07fbe0ecb15cfbb5879d69b484628555f58ade06f0d8c AS keycloak-build
+
+# Enable health and metrics support
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+
+# Configure a database vendor
+ENV KC_DB=postgres
+
+WORKDIR /opt/keycloak
+
+# Copy always does root:root with 644. Thus cp within container to get
+# keycloak:root with 644
+COPY --from=binaries /sw360_keycloak_listener /tmp/providers/
+
+RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
+ && /opt/keycloak/bin/kc.sh build
+
+# Copy the optimized KC
+# FROM quay.io/keycloak/keycloak:26.5.5
+FROM quay.io/keycloak/keycloak@sha256:8d44614c74798322c4e07fbe0ecb15cfbb5879d69b484628555f58ade06f0d8c AS keycloak
+
+# Default environment variables that can be overridden at runtime
+# For more information, please check the documentation.
+#
+# CouchDB settings
+ENV COUCHDB_URL="http://couchdb:5984"
+ENV COUCHDB_USER="admin"
+ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
+
+# Create the /etc/sw360
+USER root
+
+RUN mkdir -p /etc/sw360 \
+ && chown -R keycloak:keycloak /etc/sw360
+
+USER keycloak
+
+# Copy the configs required in /etc/sw360
+WORKDIR /app/docker-config
+
+# Copy the configs and entrypoint
+COPY --chown=keycloak ./scripts/docker-config/docker-entrypoint-keycloak.sh .
+
+# Make entrypoint executable
+RUN chmod a+x ./docker-entrypoint-keycloak.sh
+
+# Copy the optimized KC
+COPY --from=keycloak-build /opt/keycloak/ /opt/keycloak/
+
+ENTRYPOINT ["/app/docker-config/docker-entrypoint-keycloak.sh"]
+
+CMD ["start", "--optimized"]
