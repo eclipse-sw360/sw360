@@ -87,8 +87,8 @@ public class LicenseConflictResolver implements ConflictResolver<License> {
         if (!Objects.equals(incoming.getLicenseTypeDatabaseId(), existing.getLicenseTypeDatabaseId())) {
             return true;
         }
-        if (incoming.getOsiApproved() != null && existing.getOsiApproved() != null
-                && !incoming.getOsiApproved().equals(existing.getOsiApproved())) {
+        if (incoming.getOSIApproved() != null && existing.getOSIApproved() != null
+                && !incoming.getOSIApproved().equals(existing.getOSIApproved())) {
             return true;
         }
 
@@ -119,7 +119,7 @@ public class LicenseConflictResolver implements ConflictResolver<License> {
         existing.setFullname(incoming.getFullname());
         existing.setText(incoming.getText());
         existing.setLicenseTypeDatabaseId(incoming.getLicenseTypeDatabaseId());
-        existing.setOsiApproved(incoming.getOsiApproved());
+        existing.setOSIApproved(incoming.getOSIApproved());
         existing.setExternalIds(incoming.getExternalIds());
         existing.setAdditionalData(incoming.getAdditionalData());
         return existing;
@@ -135,8 +135,8 @@ public class LicenseConflictResolver implements ConflictResolver<License> {
         if (incoming.getLicenseTypeDatabaseId() != null) {
             existing.setLicenseTypeDatabaseId(incoming.getLicenseTypeDatabaseId());
         }
-        if (incoming.getOsiApproved() != null) {
-            existing.setOsiApproved(incoming.getOsiApproved());
+        if (incoming.getOSIApproved() != null) {
+            existing.setOSIApproved(incoming.getOSIApproved());
         }
         if (incoming.getExternalIds() != null && !incoming.getExternalIds().isEmpty()) {
             if (existing.getExternalIds() == null) {
