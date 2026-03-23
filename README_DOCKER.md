@@ -13,6 +13,20 @@
 * [Networking](#networking)
 * [FOSSology Integration](#fossology-integration)
 
+## Prerequisites
+
+Before running SW360 using Docker, ensure the following tools are installed:
+
+- Docker (recommended version 20 or higher)
+- Docker Compose
+- Git
+
+Check installation:
+
+docker --version
+docker compose version
+git --version
+
 ## Building
 
 * Install a recent version of Docker build `buildx` support.
@@ -142,6 +156,10 @@ into the containers.
 
     ```sh
     docker compose up -d
+
+    This command starts all required SW360 services such as the database, backend, and frontend containers.
+
+    The first startup may take a few minutes as Docker builds and initializes the containers.
     ```
 
     To view logs:
