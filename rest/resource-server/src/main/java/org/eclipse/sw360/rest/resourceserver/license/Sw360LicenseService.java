@@ -341,7 +341,12 @@ public class Sw360LicenseService {
              }
 
              List<LicenseType> sortedResults = new ArrayList<>(uniqueResults.values());
-             sortedResults.sort(Comparator.comparing(LicenseType::getLicenseType, String.CASE_INSENSITIVE_ORDER));
+             sortedResults.sort(
+    Comparator.comparing(
+        LicenseType::getLicenseType,
+        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+    )
+);
 
              return sortedResults;
 
