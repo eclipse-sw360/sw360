@@ -24,6 +24,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,6 +36,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.projects.ProjectHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -164,6 +168,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -4497,4 +4502,29 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         return groups;
     }
+
+    @PostMapping(value = "/{id}/copy", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResourceList<RestProject>> copyProject(
+        @PathVariable String id,
+        @RequestBody(required = false) CopyProjectRequest request,
+        HttpServletRequest requestHttp) throws SW360Exception {
+    
+    User sw360User = extractSw360UserFromHttpServletRequest(requestHttp);
+    
+    Set<String> fieldsToCopy = request != null && request.getFieldsToCopy() != null 
+        ? request.getFieldsToCopy() : Set.of(); // Default: empty set
+    
+    Project overrideFields = request != null ? request.getOverrideFields() : null;
+    
+    AddDocumentRequestSummary summary = projectHandler.copyProject(id, fieldsToCopy, overrideFields, sw360User);
+    
+    if (summary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
+        RestProject restProject = projectService.enrichProject(id, sw360User);
+
+        return convertToRestResourceResponse(restProject);
+    } else {
+        return ResponseEntity.badRequest().build();
+    }
+    }
+
 }
