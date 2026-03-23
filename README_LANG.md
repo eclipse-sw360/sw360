@@ -121,4 +121,11 @@ Export LAR file:
 
 Now, new language is add to SW360.
 
+## Notes for contributors
+
+This document describes language-related configuration used in SW360.
+
+When modifying backend code, ensure consistency with existing formatting and language standards defined in this project.
+
+If new language support is introduced, update this file accordingly to maintain documentation accuracy.
 
