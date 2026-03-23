@@ -235,7 +235,6 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private void getLicensesInfoReports(
             HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
-        // TODO: use `withSubProject` while generating LicenseInfo report.
         try {
             downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
         } catch (Exception e) {
