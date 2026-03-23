@@ -61,6 +61,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     private static final Joiner AND = Joiner.on(" AND ");
     private static final Joiner OR = Joiner.on(" OR ");
     private static final String RANGE_TO = " TO ";
+    private static final Gson GSON = new Gson();
 
     private final DatabaseConnectorCloudant connector;
 
@@ -167,10 +168,9 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         List<NouveauResult.Hits> hits = queryNouveauResult.getHits();
         hits.sort(new NouveauResultComparator());
         List<T> results = new ArrayList<>();
-        Gson gson = new Gson();
         for (NouveauResult.Hits hit : hits) {
             if (hit != null && hit.getDoc() != null && !hit.getDoc().isEmpty()) {
-                results.add(gson.fromJson(gson.toJson(hit.getDoc()), type));
+                results.add(GSON.fromJson(GSON.toJsonTree(hit.getDoc()), type));
             }
         }
         return results;
