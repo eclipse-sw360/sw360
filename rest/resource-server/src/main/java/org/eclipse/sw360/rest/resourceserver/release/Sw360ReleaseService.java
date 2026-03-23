@@ -103,7 +103,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -1555,19 +1555,22 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return requestStatus;
     }
 
-    private void validateReleaseMergeSelection(ReleaseMergeSelector releaseSelection) throws SW360Exception {
+    private void validateReleaseMergeSelection(ReleaseMergeSelector releaseSelection) throws BadRequestClientException {
         if (releaseSelection == null) {
             throw new BadRequestClientException("Body for merge cannot be null");
         }
-        Set<Release._Fields> requiredFields = ImmutableSet.<Release._Fields>builder().add(Release._Fields.NAME)
-                .add(Release._Fields.CREATED_ON).add(Release._Fields.CREATED_BY).add(Release._Fields.VERSION)
-                .add(Release._Fields.ATTACHMENTS).build();
+        Set<Release._Fields> requiredFields = ImmutableSet.<Release._Fields>builder()
+                .add(Release._Fields.NAME).add(Release._Fields.CREATED_ON)
+                .add(Release._Fields.CREATED_BY).add(Release._Fields.VERSION).build();
 
         for (Release._Fields field : requiredFields) {
             if (!releaseSelection.isSet(field)
                     || isNullEmptyOrWhitespace((String) releaseSelection.getFieldValue(field))) {
                 throw new BadRequestClientException("Merge body is missing field " + field.getFieldName());
             }
+        }
+        if (!releaseSelection.isSetAttachments()) {
+            throw new BadRequestClientException("Merge body is missing field attachments");
         }
     }
 

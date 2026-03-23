@@ -27,6 +27,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,8 +44,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
+@PreAuthorize("hasAuthority('ADMIN')")
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
@@ -400,7 +402,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             schema = @Schema(implementation = String.class,
                                     example = "Service name is required"))),
     })
-    @RequestMapping(value = SCHEDULE_URL + "/status", method = RequestMethod.GET)
+    @GetMapping(value = SCHEDULE_URL + "/status")
     public ResponseEntity<Map<String, Object>> checkServiceStatus(
             @Parameter(description = "Name of the service")
             @RequestParam(value = "serviceName", required = true) String serviceName
@@ -432,7 +434,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             schema = @Schema(implementation = Boolean.class,
                                     example = "true")))
     })
-    @RequestMapping(value = SCHEDULE_URL + "/isAnyServiceScheduled", method = RequestMethod.GET)
+    @GetMapping(value = SCHEDULE_URL + "/isAnyServiceScheduled")
     public ResponseEntity<Boolean> isAnyServiceScheduled() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         boolean isAnyServiceScheduled = scheduleService.isAnyServiceScheduled(sw360User) == RequestStatus.SUCCESS;

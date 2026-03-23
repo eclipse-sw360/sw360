@@ -55,7 +55,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360LicenseService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -235,26 +235,26 @@ public class Sw360LicenseService {
         }
     }
 
-    public void getDownloadLicenseArchive(User sw360User ,HttpServletRequest request,HttpServletResponse response) throws TException,IOException{
+    public void getDownloadLicenseArchive(User sw360User ,HttpServletRequest request,HttpServletResponse response) throws TException, IOException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to download archive license. User is not admin");
         }
         try {
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            String fileConstant="LicensesBackup.lics";
             Map<String, InputStream> fileNameToStreams = (new LicsExporter(sw360LicenseClient)).getFilenameToCSVStreams();
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            final ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
-
-            for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
-                 ZipTools.addToZip(zipOutputStream, entry.getKey(), entry.getValue());
+            try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+                for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
+                    try (InputStream in = entry.getValue()) {
+                        ZipTools.addToZip(zipOutputStream, entry.getKey(), in);
+                    }
+                }
+                zipOutputStream.finish();
             }
-            zipOutputStream.flush();
-            zipOutputStream.close();
             final ByteArrayInputStream zipFile = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-            String filename = String.format(fileConstant, SW360Utils.getCreatedOn());
+            String filename = "LicensesBackup_" + SW360Utils.getCreatedOn() + ".lics";
             response.setContentType(CONTENT_TYPE);
-            response.setHeader("Content-Disposition", String.format("license; filename=\"%s\"", filename));
+            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             copyDataStreamToResponse(response, zipFile);
         } catch (SW360Exception exp) {
             if (exp.getErrorCode() == 404) {
@@ -275,16 +275,26 @@ public class Sw360LicenseService {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to upload license file. User is not admin");
         }
-        try {
-            InputStream inputStream = file.getInputStream();
+        try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
             final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
-
-        }finally {
-            for (InputStream inputStream : inputMap.values()) {
-                inputStream.close();
+        } finally {
+            IOException closeFailure = null;
+            for (InputStream in : inputMap.values()) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    if (closeFailure == null) {
+                        closeFailure = e;
+                    } else {
+                        closeFailure.addSuppressed(e);
+                    }
+                }
+            }
+            if (closeFailure != null) {
+                throw closeFailure;
             }
         }
 	}
@@ -294,29 +304,27 @@ public class Sw360LicenseService {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             return sw360LicenseClient.importAllOSADLLicenses(sw360User);
         } else {
-            throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
+            throw new BadRequestClientException("Unable to import All OSADL license obligations. User is not admin");
         }
     }
 
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (StringUtils.isNotEmpty(licenseType)) {
-             lType.setLicenseType(licenseType);
+            lType.setLicenseType(licenseType);
+        } else {
+            throw new BadRequestClientException("license type is empty");
         }
-        else {
-              throw new BadRequestClientException("license type is empty");
-        }
-        try {
-            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-                RequestStatus status = sw360LicenseClient.addLicenseType(lType, sw360User);
-            } else {
-                throw new BadRequestClientException("Unable to create License Type. User is not admin");
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            try {
+                return sw360LicenseClient.addLicenseType(lType, sw360User);
+            } catch (Exception e) {
+                throw new TException(e.getMessage());
             }
-         } catch ( Exception e) {
-                 throw new TException(e.getMessage());
-         }
-         return RequestStatus.SUCCESS;
-     }
+        } else {
+            throw new AccessDeniedException("Unable to create License Type. User is not admin");
+        }
+    }
 
      public List<LicenseType> quickSearchLicenseType(String searchElem) {
          try {

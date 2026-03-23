@@ -19,12 +19,14 @@ import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -41,7 +43,9 @@ import org.w3c.dom.Document;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.*;
@@ -138,8 +142,14 @@ public class SPDXParserTest {
                 .setFilename(exampleFile);
 
         InputStream input = makeAttachmentContentStream(exampleFile);
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newDefaultInstance();
         dbFactory.setNamespaceAware(true);
+        dbFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        dbFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        dbFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        dbFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        dbFactory.setXIncludeAware(false);
+        dbFactory.setExpandEntityReferences(false);
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document spdxDocument = dBuilder.parse(input);
         spdxDocument.getDocumentElement().normalize();
@@ -175,6 +185,58 @@ public class SPDXParserTest {
             assertLicenseInfoParsingResult(result);
             assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
                     exampleCopyright, exampleConcludedLicenseIds);
+        }
+    }
+
+    @Test
+    public void testXXEAttackIsBlocked() throws Exception {
+        String xxePayload = "<?xml version=\"1.0\"?>\n" +
+                "<!DOCTYPE foo [\n" +
+                "  <!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n" +
+                "]>\n" +
+                "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n" +
+                "         xmlns:spdx=\"http://spdx.org/rdf/terms#\">\n" +
+                "  <spdx:SpdxDocument>\n" +
+                "    <spdx:name>&xxe;</spdx:name>\n" +
+                "  </spdx:SpdxDocument>\n" +
+                "</rdf:RDF>";
+
+        AttachmentContent attachmentContent = new AttachmentContent()
+                .setId("xxe-test")
+                .setFilename("malicious.rdf");
+
+        // Register content in the store (so AttachmentContentProvider can resolve it),
+        // then override the mock to return our XXE payload instead of a file resource.
+        attachmentContentStore.put(attachmentContent);
+        InputStream xxeStream = new ByteArrayInputStream(xxePayload.getBytes(StandardCharsets.UTF_8));
+        Mockito.when(connector.getAttachmentStream(Mockito.eq(attachmentContent), Mockito.any(), Mockito.any()))
+                .thenReturn(xxeStream);
+
+        // With disallow-doctype-decl=true, the parser rejects DOCTYPE declarations.
+        // openAsSpdx catches SAXException and throws SW360Exception, but
+        // getLicenseInfo wraps it and returns FAILURE status.
+        Attachment attachment = new Attachment()
+                .setAttachmentContentId("xxe-test")
+                .setFilename("malicious.rdf")
+                .setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
+
+        // The parser should reject the XXE payload. With disallow-doctype-decl=true,
+        // openAsSpdx throws SW360Exception (wrapping SAXException) when it encounters DOCTYPE.
+        try {
+            LicenseInfoParsingResult result = parser.getLicenseInfos(attachment, dummyUser,
+                            new Project()
+                                    .setVisbility(Visibility.ME_AND_MODERATORS)
+                                    .setCreatedBy(dummyUser.getEmail())
+                                    .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId("xxe-test"))))
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+            // If no exception, result must not be SUCCESS
+            assertTrue("XXE payload should not be parsed successfully",
+                    result == null || result.getStatus() != LicenseInfoRequestStatus.SUCCESS);
+        } catch (SW360Exception e) {
+            // Expected — parser rejects DOCTYPE declaration and throws SW360Exception
         }
     }
 }

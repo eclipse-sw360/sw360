@@ -36,7 +36,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360LicenseInfoService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;

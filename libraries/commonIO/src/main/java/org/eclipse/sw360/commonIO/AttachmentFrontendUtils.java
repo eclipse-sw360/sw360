@@ -132,14 +132,4 @@ public class AttachmentFrontendUtils {
         }
         return null;
     }
-
-    protected AttachmentContent updateAttachmentContent(AttachmentContent attachment) throws TException {
-        try {
-            attchmntClient.get().updateAttachmentContent(attachment);
-        } catch (SW360Exception e) {
-            log.error("Error updating attachment", e);
-            return null;
-        }
-        return attachment;
-    }
 }

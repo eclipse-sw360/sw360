@@ -36,12 +36,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
@@ -52,7 +50,7 @@ import java.util.Map;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -100,15 +98,16 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             )
             @RequestParam(required = false, name = "changeable") Boolean changeable)
             throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, String> configs;
         if (changeable == null) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getSW360Configs());
+            configs = sw360ConfigurationsService.getSW360Configs();
+        } else if (changeable) {
+            configs = sw360ConfigurationsService.getSW360ConfigFromDb();
+        } else {
+            configs = sw360ConfigurationsService.getSW360ConfigFromProperties();
         }
-
-        if (changeable) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromDb());
-        }
-
-        return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromProperties());
+        return ResponseEntity.ok(sw360ConfigurationsService.filterAdminOnlyKeys(configs, sw360User));
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -181,7 +180,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                     )
             )
     })
-    @RequestMapping(value = SW360_CONFIG_URL + "/container/{configFor}", method = RequestMethod.GET)
+    @GetMapping(value = SW360_CONFIG_URL + "/container/{configFor}")
     public ResponseEntity<Map<String, String>> getConfigForContainer(
             @Parameter(description = "The container for which the configuration is requested.",
                     required = true, schema = @Schema(
@@ -192,15 +191,16 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             @PathVariable(name = "configFor") ConfigFor configFor,
             @RequestParam(required = false, name = "changeable") Boolean changeable
     ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, String> configs;
         if (changeable == null) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getConfigForContainer(configFor));
+            configs = sw360ConfigurationsService.getConfigForContainer(configFor);
+        } else if (changeable) {
+            configs = sw360ConfigurationsService.getSW360ConfigFromDb(configFor);
+        } else {
+            configs = sw360ConfigurationsService.getSW360ConfigFromProperties();
         }
-
-        if (changeable) {
-            return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromDb(configFor));
-        }
-
-        return ResponseEntity.ok(sw360ConfigurationsService.getSW360ConfigFromProperties());
+        return ResponseEntity.ok(sw360ConfigurationsService.filterAdminOnlyKeys(configs, sw360User));
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -247,9 +247,10 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                     )
             )
     })
-    @RequestMapping(value = SW360_CONFIG_URL + "/container/{configFor}",
-            method = RequestMethod.PATCH,
-            consumes = {MediaType.APPLICATION_JSON_VALUE})
+    @PatchMapping(
+            value = SW360_CONFIG_URL + "/container/{configFor}",
+            consumes = {MediaType.APPLICATION_JSON_VALUE}
+    )
     public ResponseEntity<?> updateSW360ConfigurationsForContainer(
             @Parameter(description = "The container for which the configuration is requested.",
                     required = true, schema = @Schema(

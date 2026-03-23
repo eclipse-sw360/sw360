@@ -35,8 +35,7 @@ import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -80,8 +79,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
-import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
-import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAINLINE_STATE_ENABLED_FOR_USER;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
@@ -154,6 +152,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.LICENSE_INFO_HEADER_TEXT);
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
+    private final ThriftClients thriftClients;
 
     public ProjectDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
         this(client, dbName, attachmentDbName, new ProjectModerator(),
@@ -204,6 +203,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         this.packageDatabaseHandler = packageDatabaseHandler;
         DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
+
+        thriftClients = new ThriftClients();
     }
 
     /////////////////////
@@ -425,6 +426,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Add project to database and return ID
         repository.add(project);
 
+        if (SW360Utils.readConfig(INHERIT_ATTACHMENT_USAGES, false) && !CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
+            saveAttachmentUsages(project);
+        }
+
         dbHandlerUtil.addChangeLogs(project, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(),
                 null, null);
         sendMailNotificationsForNewProject(project, user.getEmail());
@@ -455,6 +460,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project actual = repository.get(project.getId());
 
         assertNotNull(project);
+        assertNotNull(actual);
 
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 project.getAttachments(), user.getEmail(), project.getId());
@@ -480,6 +486,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updateProjectDependentLinkedFields(project, actual);
             project.unsetVendor();
             updateModifiedFields(project, user.getEmail());
+
+            if (SW360Utils.readConfig(INHERIT_ATTACHMENT_USAGES, false)) {
+                Set<String> newLinkedProjects = CommonUtils.isNullOrEmptyMap(project.getLinkedProjects()) ? new HashSet<>() : new HashSet<>(project.getLinkedProjects().keySet());
+                Set<String> actualLinkedProjects = CommonUtils.isNullOrEmptyMap(actual.getLinkedProjects()) ? new HashSet<>() : actual.getLinkedProjects().keySet();
+
+                newLinkedProjects.removeAll(actualLinkedProjects);
+                if (!newLinkedProjects.isEmpty()) {
+                    saveAttachmentUsages(project);
+                }
+            }
             repository.update(project);
 
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
@@ -495,13 +511,75 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getClearingRequestId())) {
                 updateProjectDependentFieldsInClearingRequest(project, actual, user);
             }
-            sendMailNotificationsForProjectUpdate(project, user.getEmail());
+            sendMailNotificationsForProjectUpdate(project, actual, user);
             dbHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
                     referenceDocLogList, null, null);
             return RequestStatus.SUCCESS;
         } else {
             return moderator.updateProject(project, user);
         }
+    }
+
+    private void saveAttachmentUsages(Project project) {
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        String projectId = project.getId();
+        List<String> projectPaths = new ArrayList<>();
+
+        buildProjectPaths(project, null, projectPaths, new HashSet<>());
+        projectPaths.remove(project.getId());
+        try {
+            if (!projectPaths.isEmpty()) {
+                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths,projectId);
+                attachmentClient.makeAttachmentUsages(newAttachmentUsages);
+            }
+        } catch (TException e) {
+            log.error("Saving attachment usages for project " + projectId + " failed", e);
+        }
+    }
+
+    void buildProjectPaths(Project project, String parentPath, List<String> results, Set<String> visited) {
+        if (project == null || visited.contains(project.getId())) {
+            return;
+        }
+        visited.add(project.getId());
+        String currentPath = parentPath == null ? project.getId() : parentPath + ":" + project.getId();
+        if (CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
+            results.add(currentPath);
+        } else {
+            for (Map.Entry<String, ProjectProjectRelationship> entry : project.getLinkedProjects().entrySet()) {
+                buildProjectPaths(repository.get(entry.getKey()), currentPath, results, visited);
+            }
+            results.add(currentPath);
+        }
+    }
+
+    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId) {
+        List<AttachmentUsage> result = new ArrayList<>();
+        try {
+            for(String projectPath: projectPaths) {
+                String[] pathArray = projectPath.split(":");
+                String subProjectId = pathArray[pathArray.length-1];
+                List<AttachmentUsage> subProjectAttachmentUsages = thriftClients.makeAttachmentClient().getUsedAttachments(Source.projectId(subProjectId), null);
+
+                for(AttachmentUsage usage: subProjectAttachmentUsages) {
+                    if (!usage.getOwner().isSetReleaseId()) {
+                        continue;
+                    }
+                    String releaseId = usage.getOwner().getReleaseId();
+                    String attachmentContentId = usage.getAttachmentContentId();
+                    AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+                    final UsageData usageData;
+                    LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                    licenseInfoUsage.setProjectPath(projectPath);
+                    usageData = UsageData.licenseInfo(licenseInfoUsage);
+                    newUsage.setUsageData(usageData);
+                    result.add(newUsage);
+                }
+            }
+        } catch (TException e) {
+            log.error("Saving attachment usages for project " + projectId + " failed", e);
+        }
+        return result;
     }
 
     private void setRequestedDateAndTrimComment(Project project, Project actual, User user) {
@@ -669,7 +747,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Set<String> added = Sets.difference(updatedReleaseIds, currentReleaseIds);
         Set<String> removed = Sets.difference(currentReleaseIds, updatedReleaseIds);
         Collection<Release> releases = CommonUtils.nullToEmptyCollection(componentDatabaseHandler.getReleasesForClearingStateSummary(allReleaseIds));
+        // Build plain text comment
         StringBuilder commentText = new StringBuilder("Linked release(s) are updated for the project.");
+
+        // Build HTML for email using template method
+        String htmlChanges = generateReleaseChangesHtml(releases, added, removed);
+
         if (CommonUtils.isNotEmpty(added)) {
             Set<String> releaseNames = extractReleaseNameWithId(releases, added);
             commentText.append(System.lineSeparator()).append("Added Release Ids: ").append(SW360Utils.spaceJoiner.join(releaseNames));
@@ -690,7 +773,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         commentText.append(System.lineSeparator()).append("Total number of non-OSS components: ").append(nonOssCompCount);
         Comment comment = new Comment().setText(commentText.toString()).setCommentedBy(user.getEmail()).setAutoGenerated(true);
         moderator.addCommentToClearingRequest(current.getClearingRequestId(), comment, user);
-        sendMailForUpdatedProjectWithClearingRequest(updated, releases, nonOssCompCount,compTypeCountMap,user);
+
+        // Pass HTML changes to email method
+        sendMailForUpdatedProjectWithClearingRequest(updated, releases, nonOssCompCount, compTypeCountMap, user, htmlChanges);
     }
 
     private Set<String> extractReleaseNameWithId(Collection<Release> releases, Collection<String> filterCriteria) {
@@ -855,7 +940,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final ProjectReleaseRelationship releaseRelation = new ProjectReleaseRelationship(ReleaseRelationship.UNKNOWN, MainlineState.OPEN);
         if (CommonUtils.isNotEmpty(linkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+                PackageService.Iface packageClient = thriftClients.makePackageClient();
                 List<Package> addedPackages = packageClient.getPackageByIds(linkedPacakgeIds);
 
                 Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = addedPackages.stream().map(Package::getReleaseId)
@@ -887,7 +972,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (CommonUtils.isNotEmpty(unlinkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+                PackageService.Iface packageClient = thriftClients.makePackageClient();
                 List<Package> removedPackages = packageClient.getPackageWithReleaseByPackageIds(unlinkedPacakgeIds);
 
                 Map<String, Set<String>> releaseIdToPackageIdsMap = removedPackages.stream()
@@ -1071,8 +1156,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project project = repository.get(id);
             if (project != null
                     && (user == null || !makePermission(project, user).isActionAllowed(RequestedAction.READ))) {
-                log.error("User " + user == null ? ""
-                        : user.getEmail() + " requested not accessible project " + printName(project));
+                log.error("User {} requested not accessible project {}",
+                        user == null ? "" : user.getEmail(), printName(project));
                 project = null;
             }
             if (project != null) {
@@ -1527,6 +1612,56 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString();
     }
 
+    /**
+     * Generates HTML for displaying release changes (added/removed releases)
+     * This template method creates a formatted HTML section for email notifications
+     * showing which releases were added and which were removed from a project
+     *
+     * @param releases Collection of all releases involved
+     * @param addedIds Set of IDs for releases that were added
+     * @param removedIds Set of IDs for releases that were removed
+     * @return HTML string with formatted changes, or empty string if no changes
+     */
+    private String generateReleaseChangesHtml(Collection<Release> releases, Set<String> addedIds, Set<String> removedIds) {
+        // Return empty string if there are no changes
+        if ((addedIds == null || addedIds.isEmpty()) && (removedIds == null || removedIds.isEmpty())) {
+            return "";
+        }
+
+        StringBuilder html = new StringBuilder();
+        html.append("<div style='margin: 15px 0;'>");
+        html.append("<h3 style='color: #333; margin-bottom: 10px;'>Release Changes</h3>");
+
+        if (CommonUtils.isNotEmpty(addedIds)) {
+            html.append("<div style='margin: 10px 0;'>");
+            html.append("<strong style='color: #28a745;'>✓ Added Releases:</strong>");
+            html.append("<ul style='margin: 5px 0; padding-left: 20px;'>");
+            releases.stream()
+                .filter(rel -> addedIds.contains(rel.getId()))
+                .forEach(rel -> html.append("<li>")
+                    .append(SW360Utils.printFullname(rel))
+                    .append("</li>"));
+            html.append("</ul>");
+            html.append("</div>");
+        }
+
+        if (CommonUtils.isNotEmpty(removedIds)) {
+            html.append("<div style='margin: 10px 0;'>");
+            html.append("<strong style='color: #dc3545;'>✗ Removed Releases:</strong>");
+            html.append("<ul style='margin: 5px 0; padding-left: 20px;'>");
+            releases.stream()
+                .filter(rel -> removedIds.contains(rel.getId()))
+                .forEach(rel -> html.append("<li>")
+                    .append(SW360Utils.printFullname(rel))
+                    .append("</li>"));
+            html.append("</ul>");
+            html.append("</div>");
+        }
+
+        html.append("</div>");
+        return html.toString();
+    }
+
     private void sendMailForNewClearing(Project project, String projectUrl, ClearingRequest clearingRequest, User user) {
         project = fillClearingStateSummary(Arrays.asList(project), user).get(0);
         Set<String> releaseIds = CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
@@ -1571,7 +1706,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()), extractReleaseNameForClearingEmail(releases));
     }
 
-    private void sendMailForUpdatedProjectWithClearingRequest(Project updated, Collection<Release> releases, String nonOssCompCount, Map<ComponentType, Integer> compTypeCountMap, User user) {
+    private void sendMailForUpdatedProjectWithClearingRequest(Project updated, Collection<Release> releases, String nonOssCompCount, Map<ComponentType, Integer> compTypeCountMap, User user, String releaseChangesHtml) {
         updated = fillClearingStateSummary(Arrays.asList(updated), user).get(0);
         ClearingRequest clearingRequest = moderator.getClearingRequestByProjectId(updated.getId(), user);
         String userDetails = getUserDetails(user);
@@ -1585,6 +1720,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         releases = getDirectlyLinkedReleasesInNewState(releases);
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.PROJECT_UPDATED, MailConstants.SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST,
                 getRecipients(clearingRequest), userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
+                releaseChangesHtml, // HTML-formatted release changes
                 String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(updated.getReleaseIdToUsageSize()), String.valueOf(totalCount),
                 String.valueOf(approvedCount), CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()),
                 clearingRequest.getRequestedClearingDate(), CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()),
@@ -1635,42 +1771,153 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 project.getName(), project.getVersion());
     }
 
-    private void sendMailNotificationsForProjectUpdate(Project project, String user) {
-        mailUtil.sendMail(project.getProjectResponsible(),
+    private void sendMailNotificationsForProjectUpdate(Project newProject, Project oldProject, User user) {
+        // Generate detailed change summary
+        String changesSummary = getProjectChangesSummary(newProject, oldProject, user);
+
+        // Get user details for "Modified by" information
+        String modifiedBy = SW360Utils.printFullname(user);
+
+        // Prepare enhanced notification text with changes
+        String projectName = newProject.getName();
+        String projectVersion = nullToEmptyString(newProject.getVersion());
+
+        mailUtil.sendMail(newProject.getProjectResponsible(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
                 SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.PROJECT_RESPONSIBLE.toString(),
-                project.getName(), project.getVersion());
-        mailUtil.sendMail(project.getProjectOwner(),
+                projectName, projectVersion, modifiedBy, changesSummary);
+        mailUtil.sendMail(newProject.getProjectOwner(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
                 SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.PROJECT_OWNER.toString(),
-                project.getName(), project.getVersion());
-        mailUtil.sendMail(project.getLeadArchitect(),
+                projectName, projectVersion, modifiedBy, changesSummary);
+        mailUtil.sendMail(newProject.getLeadArchitect(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
                 SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.LEAD_ARCHITECT.toString(),
-                project.getName(), project.getVersion());
-        mailUtil.sendMail(project.getModerators(), user,
+                projectName, projectVersion, modifiedBy, changesSummary);
+        mailUtil.sendMail(newProject.getModerators(), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
                 SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.MODERATORS.toString(),
-                project.getName(), project.getVersion());
-        mailUtil.sendMail(project.getContributors(), user,
+                projectName, projectVersion, modifiedBy, changesSummary);
+        mailUtil.sendMail(newProject.getContributors(), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
                 SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.CONTRIBUTORS.toString(),
-                project.getName(), project.getVersion());
-        mailUtil.sendMail(project.getSecurityResponsibles(), user,
+                projectName, projectVersion, modifiedBy, changesSummary);
+        mailUtil.sendMail(newProject.getSecurityResponsibles(), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
                 SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.SECURITY_RESPONSIBLES.toString(),
-                project.getName(), project.getVersion());
-        mailUtil.sendMail(SW360Utils.unionValues(project.getRoles()), user,
+                projectName, projectVersion, modifiedBy, changesSummary);
+        mailUtil.sendMail(SW360Utils.unionValues(newProject.getRoles()), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
                 SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.ROLES.toString(),
-                project.getName(), project.getVersion());
+                projectName, projectVersion, modifiedBy, changesSummary);
+    }
+
+    /**
+     * Generates a detailed summary of changes between old and new project states.
+     * This includes changes to releases, linked projects, project state, clearing state, and description.
+     *
+     * @param newProject The updated project state
+     * @param oldProject The previous project state
+     * @param user The user making the changes
+     * @return A formatted string summarizing all changes
+     */
+    private String getProjectChangesSummary(Project newProject, Project oldProject, User user) {
+        StringBuilder changes = new StringBuilder();
+        boolean hasChanges = false;
+
+        // Track release changes
+        Set<String> oldReleaseIds = getNullToEmptyKeyset(oldProject.getReleaseIdToUsage());
+        Set<String> newReleaseIds = getNullToEmptyKeyset(newProject.getReleaseIdToUsage());
+
+        Set<String> addedReleaseIds = Sets.difference(newReleaseIds, oldReleaseIds);
+        Set<String> removedReleaseIds = Sets.difference(oldReleaseIds, newReleaseIds);
+
+        if (!addedReleaseIds.isEmpty() || !removedReleaseIds.isEmpty()) {
+            changes.append("- Releases:\n");
+            hasChanges = true;
+
+            if (!addedReleaseIds.isEmpty()) {
+                Collection<Release> addedReleases = componentDatabaseHandler.getReleasesForClearingStateSummary(addedReleaseIds);
+                String addedNames = extractReleaseNamesForEmail(addedReleases);
+                changes.append("  Added: ").append(addedNames).append("\n");
+            }
+
+            if (!removedReleaseIds.isEmpty()) {
+                Collection<Release> removedReleases = componentDatabaseHandler.getReleasesForClearingStateSummary(removedReleaseIds);
+                String removedNames = extractReleaseNamesForEmail(removedReleases);
+                changes.append("  Removed: ").append(removedNames).append("\n");
+            }
+        }
+
+        // Track linked project changes
+        Set<String> oldLinkedProjects = nullToEmptyMap(oldProject.getLinkedProjects()).keySet();
+        Set<String> newLinkedProjects = nullToEmptyMap(newProject.getLinkedProjects()).keySet();
+
+        Set<String> addedProjectIds = Sets.difference(newLinkedProjects, oldLinkedProjects);
+        Set<String> removedProjectIds = Sets.difference(oldLinkedProjects, newLinkedProjects);
+
+        if (!addedProjectIds.isEmpty() || !removedProjectIds.isEmpty()) {
+            changes.append("- Linked Projects:\n");
+            hasChanges = true;
+
+            if (!addedProjectIds.isEmpty()) {
+                List<Project> addedProjects = getProjectsById(new ArrayList<>(addedProjectIds), user);
+                String addedNames = extractProjectNamesForEmail(addedProjects);
+                changes.append("  Added: ").append(addedNames).append("\n");
+            }
+
+            if (!removedProjectIds.isEmpty()) {
+                List<Project> removedProjects = getProjectsById(new ArrayList<>(removedProjectIds), user);
+                String removedNames = extractProjectNamesForEmail(removedProjects);
+                changes.append("  Removed: ").append(removedNames).append("\n");
+            }
+        }
+
+
+        if (!hasChanges) {
+            return "- General project information updated";
+        }
+
+        return changes.toString();
+    }
+
+    /**
+     * Extracts release names from a collection of releases and formats them for email display.
+     *
+     * @param releases Collection of releases to extract names from
+     * @return Comma-separated list of release names with versions
+     */
+    private String extractReleaseNamesForEmail(Collection<Release> releases) {
+        if (releases == null || releases.isEmpty()) {
+            return "(none)";
+        }
+
+        return releases.stream()
+                .map(SW360Utils::printFullname)
+                .collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Extracts project names from a collection of projects and formats them for email display.
+     *
+     * @param projects Collection of projects to extract names from
+     * @return Comma-separated list of project names with versions
+     */
+    private String extractProjectNamesForEmail(Collection<Project> projects) {
+        if (projects == null || projects.isEmpty()) {
+            return "(none)";
+        }
+
+        return projects.stream()
+                .map(SW360Utils::printName)
+                .collect(Collectors.joining(", "));
     }
 
     /**
@@ -1895,7 +2142,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Map<String, String> getGidsByEmail() throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
         Map<String, String> gidByEmail = new HashMap<>();
         userClient
@@ -2217,7 +2463,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
     private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
-    	ThriftClients thriftClients = new ThriftClients();
     	return new ProjectExporter(thriftClients.makeComponentClient(),
                 thriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
@@ -2240,7 +2485,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
      private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
          final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true,
-                 new ThriftClients(), log, user);
+                 thriftClients, log, user);
          if (projectLinks.isEmpty()) {
              throw new TException("For the projectId : " + projectId
                      + ", No data available. Please check the projectId and try again.");
@@ -2250,7 +2495,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
      public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
-        ThriftClients thriftClients = new ThriftClients();
         ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
 				thriftClients.makeProjectClient(), user, extendedByReleases);
 		try {

@@ -13,6 +13,9 @@ import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -40,7 +43,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.client.HttpClientErrorException;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -67,6 +70,11 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
             description = "List all of the service's ECC.",
             tags = {"ECC"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "ECC details successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No ECC details found.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Failed to retrieve ECC details.")
+    })
     @GetMapping(value = ECC_URL)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getEccDetails(
             HttpServletRequest request,

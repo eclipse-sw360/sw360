@@ -13,6 +13,9 @@ package org.eclipse.sw360.rest.resourceserver.core;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -28,7 +31,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -37,6 +42,8 @@ import java.time.Instant;
 
 @ControllerAdvice
 public class RestExceptionHandler {
+
+    private static final Logger LOGGER = LogManager.getLogger(RestExceptionHandler.class);
 
     @ExceptionHandler({Exception.class, TException.class, ResourceClassNotFoundException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception e) {
@@ -55,6 +62,11 @@ public class RestExceptionHandler {
 
     @ExceptionHandler({HttpMessageNotReadableException.class, BadRequestClientException.class})
     public ResponseEntity<ErrorMessage> handleMessageNotReadableException(RuntimeException e) {
+        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({MissingServletRequestParameterException.class, MissingServletRequestPartException.class})
+    public ResponseEntity<ErrorMessage> handleMissingServletRequestParameter(Exception e) {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
     }
 
@@ -112,6 +124,10 @@ public class RestExceptionHandler {
             this.status = httpStatus.value();
             this.error = httpStatus.getReasonPhrase();
             this.message = e.getMessage();
+            LOGGER.log(
+                    httpStatus.is5xxServerError() ? Level.ERROR : Level.WARN,
+                    "Response ({}): {}", this.status, this.message, e
+            );
         }
     }
 }

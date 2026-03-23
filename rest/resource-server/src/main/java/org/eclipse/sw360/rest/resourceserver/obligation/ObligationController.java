@@ -11,8 +11,10 @@ package org.eclipse.sw360.rest.resourceserver.obligation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
@@ -60,7 +62,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -78,7 +80,12 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "List all of the service's obligations.",
             tags = {"Obligations"}
     )
-    @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligations successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No obligations found.",
+                content = @Content)
+    })
+    @GetMapping(value = OBLIGATION_URL)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -137,7 +144,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get an obligation by id.",
             tags = {"Obligations"}
     )
-    @RequestMapping(value = OBLIGATION_URL + "/{id}", method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation successfully retrieved.")
+    })
+    @GetMapping(value = OBLIGATION_URL + "/{id}")
     public ResponseEntity<EntityModel<Obligation>> getObligation(
             @Parameter(description = "The id of the obligation to be retrieved.")
             @PathVariable("id") String id
@@ -159,7 +169,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.POST)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Obligation created successfully.")
+    })
+    @PostMapping(value = OBLIGATION_URL)
     public ResponseEntity<HalResource<Obligation>> createObligation(
             @Parameter(description = "The obligation to be created.")
             @RequestBody Obligation obligation
@@ -181,7 +194,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = OBLIGATION_URL + "/{ids}", method = RequestMethod.DELETE)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "207", description = "Multi-status - per-obligation delete result.")
+    })
+    @DeleteMapping(value = OBLIGATION_URL + "/{ids}")
     public ResponseEntity<List<MultiStatus>> deleteObligations(
             @Parameter(description = "The ids of the obligations to be deleted.")
             @PathVariable("ids") List<String> idsToDelete
@@ -215,7 +231,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             summary = "Edit an existing obligation.",
             description = """
             Edit an existing obligation by id.
-            
+
             The `node` property of the Obligation should be in following format as JSON encoded string:
                     {
                       "val": ["ROOT"],
@@ -284,7 +300,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Nodes from the server to render Obligations.",
             tags = {"Obligations"}
     )
-    @RequestMapping(value = OBLIGATION_URL + "/nodes", method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation nodes successfully retrieved.")
+    })
+    @GetMapping(value = OBLIGATION_URL + "/nodes")
     public ResponseEntity<CollectionModel<ObligationNode>> getObligationNodes() {
         List<ObligationNode> obligationNodes = obligationService.getObligationNodes();
         return new ResponseEntity<>(CollectionModel.of(obligationNodes), HttpStatus.OK);
@@ -295,7 +314,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Elements from the server to render Obligation suggestions.",
             tags = {"Obligations"}
     )
-    @RequestMapping(value = OBLIGATION_URL + "/elements", method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation elements successfully retrieved.")
+    })
+    @GetMapping(value = OBLIGATION_URL + "/elements")
     public ResponseEntity<CollectionModel<ObligationElement>> getObligationElements() {
         List<ObligationElement> obligationNodes = obligationService.getObligationElements();
         return new ResponseEntity<>(CollectionModel.of(obligationNodes), HttpStatus.OK);

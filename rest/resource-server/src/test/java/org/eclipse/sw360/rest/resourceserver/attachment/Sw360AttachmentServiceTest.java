@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
@@ -171,5 +172,52 @@ public class Sw360AttachmentServiceTest {
                 Arrays.asList(attachmentId(1), attachmentId(2)));
         assertThat(filtered).containsOnly(createAttachment(2));
         verify(thriftService).getAttachmentUsages(owner, attachmentId(2), null);
+    }
+
+    @Test
+    public void testSanitizeFilename_PathTraversal() {
+        // Test forward slash replacement
+        String filename1 = "../../tmp/malicious.txt";
+        String sanitized1 = CommonUtils.sanitizeFilename(filename1);
+        assertThat(sanitized1).doesNotContain("/");
+        assertThat(sanitized1).isEqualTo(".._.._tmp_malicious.txt");
+
+        // Test backslash replacement (Windows paths)
+        String filename2 = "..\\..\\Windows\\System32\\evil.dll";
+        String sanitized2 = CommonUtils.sanitizeFilename(filename2);
+        assertThat(sanitized2).doesNotContain("\\");
+        assertThat(sanitized2).isEqualTo(".._.._Windows_System32_evil.dll");
+
+        // Test mixed slashes
+        String filename3 = "../dir\\file.txt";
+        String sanitized3 = CommonUtils.sanitizeFilename(filename3);
+        assertThat(sanitized3).doesNotContain("/");
+        assertThat(sanitized3).doesNotContain("\\");
+        assertThat(sanitized3).isEqualTo(".._dir_file.txt");
+
+        // Test strings starting with _ (CouchDB restriction)
+        String filename4 = "_secret_file.txt";
+        String sanitized4 = CommonUtils.sanitizeFilename(filename4);
+        assertThat(sanitized4).isEqualTo("secret_file.txt");
+
+        // Test multiple leading underscores
+        String filename5 = "_/_extra_hidden.tar.gz";
+        String sanitized5 = CommonUtils.sanitizeFilename(filename5);
+        assertThat(sanitized5).isEqualTo("extra_hidden.tar.gz");
+
+        // Test URL encoded separators
+        String filename6 = "%2fdir%2f..%5cfile.txt";
+        String sanitized6 = CommonUtils.sanitizeFilename(filename6);
+        assertThat(sanitized6).isEqualTo("dir_.._file.txt");
+
+        // Test empty/whitespace input returns default
+        assertThat(CommonUtils.sanitizeFilename("")).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
+        assertThat(CommonUtils.sanitizeFilename("   ")).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
+        assertThat(CommonUtils.sanitizeFilename(null)).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
+
+        // Test filename that becomes empty after sanitization (e.g. just underscores and slashes)
+        String filename7 = "_//_\\_";
+        String sanitized7 = CommonUtils.sanitizeFilename(filename7);
+        assertThat(sanitized7).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
     }
 }

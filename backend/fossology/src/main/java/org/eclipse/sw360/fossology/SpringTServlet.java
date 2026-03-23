@@ -12,8 +12,9 @@ package org.eclipse.sw360.fossology;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,13 +31,13 @@ public class SpringTServlet extends Sw360ThriftServlet {
         super(processor, protocolFactory);
     }
 
-    @RequestMapping(method = RequestMethod.POST)
+    @PostMapping
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         super.doPost(request, response);
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         super.doGet(request, response);

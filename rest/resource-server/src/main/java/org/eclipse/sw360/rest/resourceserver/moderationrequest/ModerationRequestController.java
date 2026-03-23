@@ -84,7 +84,7 @@ import static org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360Moder
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -114,7 +114,12 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all of the service's moderation requests.",
             tags = {"Moderation Requests"}
     )
-    @RequestMapping(value = MODERATION_REQUEST_URL, method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation requests successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No moderation requests found.",
+                content = @Content)
+    })
+    @GetMapping(value = MODERATION_REQUEST_URL)
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -140,7 +145,12 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "Get a single moderation request by id.",
             tags = {"Moderation Requests"}
     )
-    @RequestMapping(value = MODERATION_REQUEST_URL + "/{id}", method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation request successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No moderation request found.",
+                content = @Content)
+    })
+    @GetMapping(value = MODERATION_REQUEST_URL + "/{id}")
     public ResponseEntity<HalResource<Map<String, Object>>> getModerationRequestById(
             @Parameter(description = "The id of the moderation request to be retrieved.")
             @PathVariable String id
@@ -177,7 +187,12 @@ public class ModerationRequestController implements RepresentationModelProcessor
             description = "List all the ModerationRequest visible to the user based on the state and  respond with MR where user is a moderator",
             tags = {"Moderation Requests"}
     )
-    @RequestMapping(value = MODERATION_REQUEST_URL + "/byState", method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation requests by state successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No moderation requests found for this state.",
+                content = @Content)
+    })
+    @GetMapping(value = MODERATION_REQUEST_URL + "/byState")
     public ResponseEntity<CollectionModel<ModerationRequest>> getModerationRequestsByState(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
@@ -254,7 +269,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
                     )}
             )}
     )
-    @RequestMapping(value = MODERATION_REQUEST_URL + "/{id}", method = RequestMethod.PATCH)
+    @PatchMapping(value = MODERATION_REQUEST_URL + "/{id}")
     public ResponseEntity<HalResource<Map<String, String>>> updateModerationRequestById(
             @Parameter(description = "The id of the moderation request to be updated.")
             @PathVariable String id,
@@ -342,6 +357,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
                     "\"timestamp\", \"documentName\" and \"moderationState\".",
             tags = {"Moderation Requests"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User submissions successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No submissions found.",
+                content = @Content)
+    })
     @GetMapping(value = MODERATION_REQUEST_URL + "/mySubmissions")
     public ResponseEntity<CollectionModel<ModerationRequest>> getSubmissions(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -581,7 +601,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
                 }
             )
         })
-    @RequestMapping(value = MODERATION_REQUEST_URL + "/validate", method = RequestMethod.POST)
+    @PostMapping(value = MODERATION_REQUEST_URL + "/validate")
     public ResponseEntity<String> validateModerationRequest(
             @Parameter(description = "Entity type", example = "PROJECT",
                     schema = @Schema(allowableValues = {"PROJECT", "COMPONENT", "RELEASE"}))
@@ -635,7 +655,12 @@ public class ModerationRequestController implements RepresentationModelProcessor
             tags = {"Moderation Requests"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = MODERATION_REQUEST_URL + "/delete", method = RequestMethod.DELETE)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Moderation request deleted."),
+            @ApiResponse(responseCode = "409", description = "Cannot delete - moderation request in use.",
+                content = @Content(mediaType = "application/json"))
+    })
+    @DeleteMapping(value = MODERATION_REQUEST_URL + "/delete")
     public ResponseEntity<?> deleteModerationRequest(
             @Parameter(description = "List of moderation request IDs to delete")
             @RequestBody List<String> ids

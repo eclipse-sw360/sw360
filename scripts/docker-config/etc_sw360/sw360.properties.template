@@ -1,0 +1,121 @@
+# Copyright Siemens AG, 2013-2016, 2019. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+# ***************************************
+# Config Properties not saved in DB
+# ***************************************
+
+## API Token generation
+rest.write.access.usergroup=USER
+rest.admin.access.usergroup=ADMIN
+rest.apitoken.read.validity.days=90
+rest.apitoken.write.validity.days=30
+rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
+
+# where the Thrift should connect
+backend.url=http://127.0.0.1:8080
+
+org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport
+enable.sw360.change.log=false
+
+# ---------------------------------------
+# Email Properties
+# ---------------------------------------
+
+# settings for the mail utility:
+# if host is not set, e-mailing is disabled
+MailUtil_host=$EMAIL_PROPERTIES_HOST
+MailUtil_from=$EMAIL_PROPERTIES_FROM
+MailUtil_port=$EMAIL_PROPERTIES_PORT
+MailUtil_enableStarttls=$EMAIL_PROPERTIES_STARTTLS
+MailUtil_enableSsl=$EMAIL_PROPERTIES_ENABLE_SSL
+MailUtil_isAuthenticationNecessary=$EMAIL_PROPERTIES_AUTH_REQUIRED
+MailUtil_login=$EMAIL_PROPERTIES_USERNAME
+MailUtil_password=$EMAIL_PROPERTIES_PASSWORD
+MailUtil_enableDebug=$EMAIL_PROPERTIES_DEBUG
+MailUtil_supportMailAddress=$EMAIL_PROPERTIES_SUPPORT_EMAIL
+MailUtil_smtpSSLProtocol=$EMAIL_PROPERTIES_TLS_PROTOCOL
+MailUtil_smtpSSLTrust=$EMAIL_PROPERTIES_TLS_TRUST
+
+# text patterns for mail utility
+defaultBegin= \
+  *** This is an automatically generated email, please do not reply. ***\n\n\
+  Dear SW360-user,\n\n
+defaultEnd= \
+  With best regards,\n\
+  SW360
+unsubscribeNoticeBefore=\n\n*** If you do not wish to receive mails from SW360, please notify:
+unsubscribeNoticeAfter=. ***
+
+subjectForNewModerationRequest= New moderation request
+subjectForUpdateModerationRequest= Update on moderation request
+subjectForAcceptedModerationRequest= Your moderation request has been accepted
+subjectForDeclinedModerationRequest= Your moderation request has been declined
+subjectForDeclinedUserModerationRequest= Your request for a SW360 user account has been declined
+subjectForNewComponent= New component created
+subjectForUpdateComponent= Component updated
+subjectForNewRelease= New release created
+subjectForUpdateRelease= Release updated
+subjectForNewProject= New project created
+subjectForUpdateProject= Project updated
+subjectForNewClearingRequest= New clearing request <%s> for Project <%s>
+subjectForClearingRequestComment= New comment added in clearing request <%s> for Project <%s>
+subjectForUpdatedClearingRequest= Your clearing request <%s> has been updated for Project <%s>
+subjectForClosedClearingRequest= Your clearing request <%s> has been closed for Project <%s>
+subjectForRejectedClearingRequest= Your clearing request <%s> has been rejected for Project <%s>
+subjectForUpdatedProjectWithClearingRequest= Project <%s> with clearing request <%s> updated
+subjectForSuccessfulExport= Spreadsheet Export Successful
+
+textForSuccessfulExport= The %s spreadsheet export successfully completed. Please find the download link(%s) here.
+textForNewModerationRequest= a new moderation request for %s %s has been added to your SW360-account.\n\n
+textForUpdateModerationRequest= \
+  one of the moderation requests for %s %s previously added to your \
+  SW360-account has been updated.\n\n
+textForAcceptedModerationRequest= your moderation request to change the %s %s has been accepted by one of the moderators.\n\n
+textForDeclinedModerationRequest= your moderation request to change the %s %s has been declined by one of the moderators.\n\n
+textForDeclinedUserModerationRequest= your request for a SW360 user account has been declined by one of the administrators.\n\n
+textForNewComponent= a new component %s, in which you take part, has been created.\n\n
+textForUpdateComponent= the component %s, in which you take part, has been updated.\n\n
+textForNewRelease= a new release %s %s, in which you take part, has been created.\n\n
+textForUpdateRelease= the release %s %s, in which you take part, has been updated.\n\n
+textForNewProject= a new project %s %s, in which you take part, has been created.\n\n
+textForUpdateProject= the project %s %s, in which you take part, has been updated.\n\nModified by: %s\n\nChanges:\n%s\n
+
+# ---------------------------------------
+# SVM Properties
+# ---------------------------------------
+svm.sw360.api.url=$SVM_SW360_API_URL
+svm.sw360.certificate.filename=$SVM_SW360_CERTIFICATE_FILENAME
+svm.sw360.certificate.passphrase=$SVM_SW360_CERTIFICATE_PASSPHRASE
+svm.sw360.jks.password=$SVM_SW360_JKS_PASSWORD
+svm.json.log.output.location=/tmp
+
+svm.base.path=$SVM_API_BASE_PATH
+svm.api.root.path=/$SVM_API_ROOT_PATH
+
+svm.component.id=org.sw360.svm.component.id
+mainline.component.id=org.sw360.mainl.component.id
+svm.component.id.key=svm_component_id
+svm.short.status=org.sw360.svm.component.short.status
+svm.short.status.key=short_status
+svm.scheduler.email=svm@sw360.org
+svm.monitoringlist.id=org.sw360.svm.monitoringlist.id
+
+# ---------------------------------------
+# JWKS Properties
+# ---------------------------------------
+jwks.validation.enabled=true
+jwks.issuer.url=$JWKS_ISSUER/
+jwks.endpoint.url=JWKS_ISSUER/client-management/.well-known/jwks.json
+
+# ---------------------------------------
+# Scheduler Services
+# ---------------------------------------
+#general pattern for scheduling multiple services: autostart = service1,service2,service3,...
+autostart=$SCHEDULER_AUTOSTART_SERVICES

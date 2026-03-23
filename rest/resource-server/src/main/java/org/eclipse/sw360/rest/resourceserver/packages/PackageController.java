@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.thrift.TException;
@@ -78,7 +79,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -109,7 +110,10 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             tags = {"Packages"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PACKAGES_URL, method = RequestMethod.POST)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Package created successfully.")
+    })
+    @PostMapping(value = PACKAGES_URL)
     public ResponseEntity<EntityModel<Package>> createPackage(
             @Parameter(description = "The package to be created.",
                     schema = @Schema(implementation = Package.class))
@@ -175,7 +179,12 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             tags = {"Packages"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PACKAGES_URL + "/{id}", method = RequestMethod.DELETE)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Package deleted successfully."),
+            @ApiResponse(responseCode = "409", description = "Package is in use and cannot be deleted.",
+                content = @Content(mediaType = "application/json"))
+    })
+    @DeleteMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<?> deletePackage(
             @Parameter(description = "The id of the package to be deleted.")
             @PathVariable("id") String id
@@ -200,6 +209,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             description = "Get a package by id.",
             tags = {"Packages"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Package successfully retrieved.")
+    })
     @GetMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<EntityModel<Package>> getPackage(
             @Parameter(description = "The id of the package to be retrieved.")
@@ -449,7 +461,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             }
     )
 
-    @RequestMapping(value = PACKAGES_URL + "/{id}/usage", method = RequestMethod.GET)
+    @GetMapping(value = PACKAGES_URL + "/{id}/usage")
     public ResponseEntity<Map<String, Object>> getPackageUsageInfo(
             @Parameter(description = "The id of the package to check usage for")
             @PathVariable("id") String id

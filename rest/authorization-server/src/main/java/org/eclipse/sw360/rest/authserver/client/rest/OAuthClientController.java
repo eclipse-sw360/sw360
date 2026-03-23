@@ -28,10 +28,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
@@ -61,7 +63,7 @@ public class OAuthClientController {
     @Autowired
     private OAuthClientRepository repo;
 
-    @RequestMapping(method = RequestMethod.GET, path = "")
+    @GetMapping(path = "")
     public ResponseEntity<List<OAuthClientResource>> getAllClients() {
         List<OAuthClientResource> clientResources;
 
@@ -75,7 +77,7 @@ public class OAuthClientController {
         return new ResponseEntity<List<OAuthClientResource>>(clientResources, HttpStatus.OK);
     }
 
-    @RequestMapping(method = RequestMethod.POST, path = "", consumes = "application/json", produces = "application/json")
+    @PostMapping(path = "", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createOrUpdateClient(@RequestBody OAuthClientResource clientResource) {
         OAuthClientEntity clientEntity = null;
 
@@ -107,7 +109,7 @@ public class OAuthClientController {
                 new OAuthClientResource(repo.getByClientId(clientEntity.getClientId())), HttpStatus.OK);
     }
 
-    @RequestMapping(method = RequestMethod.DELETE, path = "/{clientId}", consumes = "application/json", produces = "application/json")
+    @DeleteMapping(path = "/{clientId}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> deleteClient(@PathVariable("clientId") String clientId) {
         OAuthClientEntity clientEntity = null;
 

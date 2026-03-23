@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler.ErrorMessage;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
@@ -112,7 +114,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -167,6 +169,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully retrieved"),
+        @ApiResponse(responseCode = "204", description = "No content - no releases found",
+                content = @Content)
+    })
     @GetMapping(value = RELEASES_URL)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -273,6 +280,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get a single release by ID.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release successfully retrieved"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}")
     public ResponseEntity<EntityModel<Release>> getRelease(
             @Parameter(description = "The ID of the release to be retrieved.")
@@ -295,11 +307,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 sw360SPDXDocumentService.sortSectionForDocumentCreation(documentCreationInformation);
                 restControllerHelper.addEmbeddedDocumentCreationInformation(halRelease, documentCreationInformation);
             }
-            String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
-            if(CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
-                PackageInformation packageInformation = releaseService.getPackageInformationById(spdxPackageInfoId, sw360User);
-                sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
-                restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
+            if (!CommonUtils.isNullOrEmptyCollection(spdxDocument.getSpdxPackageInfoIds())) {
+                String spdxPackageInfoId = spdxDocument.getSpdxPackageInfoIds().stream().findFirst().get();
+                if (CommonUtils.isNotNullEmptyOrWhitespace(spdxPackageInfoId)) {
+                    PackageInformation packageInformation = releaseService.getPackageInformationById(spdxPackageInfoId, sw360User);
+                    sw360SPDXDocumentService.sortSectionForPackageInformation(packageInformation);
+                    restControllerHelper.addEmbeddedPackageInformation(halRelease, packageInformation);
+                }
             }
         }
         if (linkedReleaseRelations != null) {
@@ -313,6 +327,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get 5 of the service's most recently created releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Recent releases successfully retrieved"),
+        @ApiResponse(responseCode = "204", description = "No content - no recent releases found",
+                content = @Content)
+    })
     @GetMapping(value = RELEASES_URL + "/recentReleases")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getRecentRelease() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -334,6 +353,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get vulnerabilities of a single release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerabilities successfully retrieved"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this release",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfReleases(
             @Parameter(description = "The ID of the release.")
@@ -350,6 +374,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get service's releases subscription.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release subscriptions successfully retrieved"),
+        @ApiResponse(responseCode = "204", description = "No content - no subscriptions found",
+                content = @Content)
+    })
     @GetMapping(value = RELEASES_URL + "/mySubscriptions")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleaseSubscription() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -371,7 +400,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get all the resources where the release is used.",
             tags = {"Releases"}
     )
-    @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Resources using this release successfully retrieved"),
+        @ApiResponse(responseCode = "204", description = "No content - release not used by any resource",
+                content = @Content)
+    })
+    @GetMapping(value = RELEASES_URL + "/usedBy" + "/{id}")
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
@@ -417,6 +451,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             }
 
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases matching external IDs successfully retrieved")
+    })
     @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
     public ResponseEntity<Release> searchByExternalIds(
             HttpServletRequest request
@@ -431,6 +468,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Delete existing releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "207", description = "Multi-status - per-release delete result")
+    })
     @DeleteMapping(value = RELEASES_URL + "/{ids}")
     public ResponseEntity<List<MultiStatus>> deleteReleases(
             @Parameter(description = "The IDs of the releases to be deleted.")
@@ -464,6 +504,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Update an existing release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}")
     public ResponseEntity<EntityModel<Release>> patchRelease(
             @Parameter(description = "The ID of the release to be updated.")
@@ -493,6 +538,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Update vulnerabilities of an existing release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerabilities successfully updated"),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid vulnerability data",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(
             @Parameter(description = "The ID of the release to be updated.")
@@ -583,6 +633,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Create a new release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Release successfully created")
+    })
     @PostMapping(value = RELEASES_URL)
     public ResponseEntity<EntityModel<Release>> createRelease(
             @Parameter(description = "The release object to be created.",
@@ -633,6 +686,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             tags = {"Releases"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "SPDX document successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}/spdx")
     public ResponseEntity<?> updateSPDX(
             @Parameter(description = "Updated data of SPDX document")
@@ -706,6 +764,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Get all attachment information of a release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Release attachments successfully retrieved")
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/attachments")
     public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getReleaseAttachments(
             @Parameter(description = "The ID of the release.")
@@ -751,6 +812,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Update an attachment information of a release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")))
+    })
     @PatchMapping(value = RELEASES_URL + "/{id}/attachment/{attachmentId}")
     public ResponseEntity<EntityModel<Attachment>> patchReleaseAttachmentInfo(
             @Parameter(description = "The ID of the release.")
@@ -777,6 +843,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Create a new attachment for the release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachment successfully added"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update sent for moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")))
+    })
     @PostMapping(value = RELEASES_URL + "/{releaseId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource<Release>> addAttachmentToRelease(
             @Parameter(description = "The ID of the release.")
@@ -838,6 +909,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Delete attachments from a release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Attachments successfully deleted"),
+        @ApiResponse(responseCode = "202", description = "Accepted - delete sent for moderation",
+                content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}")))
+    })
     @DeleteMapping(RELEASES_URL + "/{releaseId}/attachments/{attachmentIds}")
     public ResponseEntity<HalResource<Release>> deleteAttachmentsFromRelease(
             @Parameter(description = "The ID of the release.")
@@ -879,7 +955,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)
+    @GetMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus")
     public ResponseEntity<Map<String, Object>> checkFossologyProcessStatus(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId
@@ -947,7 +1023,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess", method = RequestMethod.GET)
+    @GetMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess")
     public ResponseEntity<HalResource> triggerFossologyProcess(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId,
@@ -1037,7 +1113,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport", method = RequestMethod.GET)
+    @GetMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport")
     public ResponseEntity<HalResource> triggerReloadFossologyReport(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId
@@ -1121,7 +1197,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = RELEASES_URL + "/{id}/releases", method = RequestMethod.POST)
+    @PostMapping(value = RELEASES_URL + "/{id}/releases")
     public ResponseEntity linkReleases(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1174,7 +1250,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/link/packages", method = RequestMethod.PATCH)
+    @PatchMapping(value = RELEASES_URL + "/{id}/link/packages")
     public ResponseEntity<?> linkPackages(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1215,7 +1291,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/unlink/packages", method = RequestMethod.PATCH)
+    @PatchMapping(value = RELEASES_URL + "/{id}/unlink/packages")
     public ResponseEntity<?> unlinkPackages(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1248,7 +1324,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/linkedPackages", method = RequestMethod.GET)
+    @GetMapping(value = RELEASES_URL + "/{id}/linkedPackages")
     public ResponseEntity<CollectionModel<EntityModel<Package>>> getLinkedPackages(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id,
@@ -1411,6 +1487,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Load SPDX License Information from the attachment of the release.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "SPDX license info successfully retrieved"),
+        @ApiResponse(responseCode = "500", description = "Internal server error - cannot retrieve license info",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @GetMapping(value = RELEASES_URL + "/{id}/spdxLicensesInfo")
     public ResponseEntity<?> loadSpdxLicensesInfo(
             @Parameter(description = "The ID of the release.")
@@ -1681,7 +1762,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/checkCyclicLink", method = RequestMethod.POST)
+    @PostMapping(value = RELEASES_URL + "/{id}/checkCyclicLink")
     public ResponseEntity<?> checkForCyclicReleaseLink(
             @Parameter(description = "The ID of the checking release.")
             @PathVariable("id") String releaseId,
@@ -1762,6 +1843,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             tags = {"Releases"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Subscription updated successfully")
+    })
     @PostMapping(value = RELEASES_URL + "/{id}/subscriptions")
     public ResponseEntity<String> handleReleaseSubscriptions(
             @Parameter(description = "The ID of the release.")
@@ -1879,6 +1963,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Bulk delete existing releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Bulk delete completed")
+    })
     @DeleteMapping(value = RELEASES_URL + "/{id}/bulkDelete")
     public ResponseEntity<BulkOperationNode> bulkDeleteReleases(
             @Parameter(description = "The release id to be bulk-deleted.")
@@ -1930,7 +2017,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}", method = RequestMethod.GET)
+    @GetMapping(value = RELEASES_URL + "/{id}/licenseData/{attachContentId}")
     public ResponseEntity<List<Map<String,String>>> getReleaseLicenseInfo(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String relId,
@@ -2006,7 +2093,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/licenseFileList", method = RequestMethod.GET)
+    @GetMapping(value = RELEASES_URL + "/{id}/licenseFileList")
     public ResponseEntity<Map<String, Object>> getReleaseLicenseFileList(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String relId,
@@ -2026,7 +2113,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             description = "Merge source release into target release.",
             tags = {"Releases"}
     )
-    @RequestMapping(value = RELEASES_URL + "/mergereleases", method = RequestMethod.PATCH)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully merged")
+    })
+    @PatchMapping(value = RELEASES_URL + "/mergereleases")
     public ResponseEntity<RequestStatus> mergeReleases(
             @Parameter(description = "The id of the merge target release.")
             @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
@@ -2094,7 +2184,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
             }
     )
-    @RequestMapping(value = RELEASES_URL + "/{id}/usageInformationForMerge", method = RequestMethod.GET)
+    @GetMapping(value = RELEASES_URL + "/{id}/usageInformationForMerge")
     public ResponseEntity<Map<String, Object>> getUsageInformationForReleaseMerge(
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId

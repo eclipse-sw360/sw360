@@ -126,7 +126,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     private static final Logger log = LogManager.getLogger(Sw360ProjectService.class);
@@ -735,15 +735,15 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ThriftClients thriftClients = new ThriftClients();
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
-        if (oblLevel.equalsIgnoreCase("Project")) {
+        if ("Project".equalsIgnoreCase(oblLevel)) {
             updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
                     obligationStatusMap, obligations, ObligationLevel.PROJECT_OBLIGATION, true);
             return updatedObligationStatusMap;
-        } else if (oblLevel.equalsIgnoreCase("Organization")) {
+        } else if ("Organization".equalsIgnoreCase(oblLevel)) {
             updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
                     obligationStatusMap, obligations, ObligationLevel.ORGANISATION_OBLIGATION, true);
             return updatedObligationStatusMap;
-        } else if (oblLevel.equalsIgnoreCase("Component")) {
+        } else if ("Component".equalsIgnoreCase(oblLevel)) {
             updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
                     obligationStatusMap, obligations, ObligationLevel.COMPONENT_OBLIGATION, true);
             return updatedObligationStatusMap;
@@ -1211,7 +1211,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 return actualProjectReleaseRelationship;
             }
         }
-        throw new ResourceNotFoundException("Requested Re<<<<<< HEAD\n" + "=======lease Not Found");
+        throw new ResourceNotFoundException("Requested Release Not Found");
     }
 
     @PreDestroy

@@ -69,7 +69,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360AttachmentService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -200,26 +200,44 @@ public class Sw360AttachmentService {
             return;
         }
         List<File> files = new ArrayList<>();
-        for (Attachment attachment : attachments) {
-            AttachmentContent attachmentContent = getAttachmentContent(attachment.getAttachmentContentId());
-            InputStream inputStream = getStreamToAttachments(Collections.singleton(attachmentContent), user, context);
-            String fileType = getFileType(attachmentContent.getFilename());
-            File sourceFile = saveAsTempFile(inputStream, attachment.getAttachmentContentId(), fileType);
-            File file = renameFile(sourceFile, attachment.getFilename());
-            files.add(file);
-            FileUtils.delete(sourceFile);
+        File sourceFile = null;
+        try {
+            for (Attachment attachment : attachments) {
+                AttachmentContent attachmentContent = getAttachmentContent(attachment.getAttachmentContentId());
+                try (InputStream inputStream = getStreamToAttachments(Collections.singleton(attachmentContent), user, context)) {
+                    String fileType = getFileType(attachmentContent.getFilename());
+                    sourceFile = saveAsTempFile(inputStream, attachment.getAttachmentContentId(), fileType);
+                    File file = renameFile(sourceFile, attachment.getFilename());
+                    files.add(file);
+                } finally {
+                    if (sourceFile != null) {
+                        FileUtils.delete(sourceFile);
+                    }
+                }
+            }
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
+            try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                for (File file : files) {
+                    // Sanitize filename for ZIP entry to prevent path traversal
+                    String sanitizedName = CommonUtils.sanitizeFilename(file.getName());
+                    zipOutputStream.putNextEntry(new ZipEntry(sanitizedName));
+                    try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                        IOUtils.copy(fileInputStream, zipOutputStream);
+                    } finally {
+                        zipOutputStream.closeEntry();
+                        FileUtils.deleteQuietly(file);
+                    }
+                }
+            }
+        } finally {
+            for (File file : files) {
+                if (file.exists()) {
+                    FileUtils.deleteQuietly(file);
+                }
+            }
         }
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
-        ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());
-        for (File file : files) {
-            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
-            FileInputStream fileInputStream = new FileInputStream(file);
-            IOUtils.copy(fileInputStream, zipOutputStream);
-            fileInputStream.close();
-            zipOutputStream.closeEntry();
-        }
-        zipOutputStream.close();
+
     }
 
     public <T> InputStream getStreamToAttachments(Set<AttachmentContent> attachments, User sw360User, T context) throws IOException, TException {
@@ -231,8 +249,11 @@ public class Sw360AttachmentService {
         String fileName = (attachmentFilename != null && !attachmentFilename.isEmpty())
                 ? attachmentFilename
                 : file.getOriginalFilename();
+
+        // Sanitize filename to prevent path traversal
+        String sanitizedFileName = CommonUtils.sanitizeFilename(fileName);
         String contentType = file.getContentType();
-        final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
+        final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
 
         final AttachmentConnector attachmentConnector = getConnector();
         Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
@@ -414,11 +435,12 @@ public class Sw360AttachmentService {
     }
 
     private File renameFile(File sourceFile, String filename) throws IOException {
-        String pathFile = sourceFile.getPath().substring(0,sourceFile.getPath().lastIndexOf("/"));
-        StringBuilder newName = new StringBuilder(pathFile);
-        newName.append("/");
-        newName.append(filename);
-        File file = new File(newName.toString());
+        // Sanitize filename to prevent path traversal
+        String sanitizedFilename = CommonUtils.sanitizeFilename(filename);
+        String pathFile = sourceFile.getPath().substring(0,
+                sourceFile.getPath().lastIndexOf(File.separator));
+        String newName = pathFile + File.separator + sanitizedFilename;
+        File file = new File(newName);
         FileUtils.copyFile(sourceFile, file);
         return file;
     }

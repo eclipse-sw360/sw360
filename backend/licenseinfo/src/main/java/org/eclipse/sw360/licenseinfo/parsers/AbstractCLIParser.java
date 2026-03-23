@@ -114,6 +114,8 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
 
     protected <T> boolean hasThisXMLRootElement(AttachmentContent content, String rootElementNamespace, String rootElementName, User user, T context) throws TException {
         XMLInputFactory xmlif = XMLInputFactory.newFactory();
+        xmlif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        xmlif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         XMLStreamReader xmlStreamReader = null;
         InputStream attachmentStream = null;
         try {
@@ -139,7 +141,15 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     }
 
     protected Document getDocument(InputStream attachmentStream) throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newDefaultInstance();
+
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
+
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(attachmentStream);
     }

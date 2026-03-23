@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.StringToClassMapItem;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -38,10 +39,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -49,9 +50,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class FossologyAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String FOSSOLOGY_URL = "/fossology";
 
@@ -72,6 +74,11 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Save the FOSSology service configuration.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "FOSSology configuration saved." ),
+            @ApiResponse(responseCode = "400", description = "Invalid FOSSology configuration."),
+            @ApiResponse(responseCode = "500", description = "FOSSology configuration save failed.")
+    })
     @PostMapping(value = FOSSOLOGY_URL + "/saveConfig", consumes  = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> saveConfigration(
             @Parameter(description = "Request body containing the configuration parameters. The parameters are:\n" +
@@ -126,7 +133,10 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Make a test call and check the FOSSology server connection.",
             tags = {"Admin"}
     )
-    @RequestMapping(value = FOSSOLOGY_URL + "/reServerConnection", method = RequestMethod.GET)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "FOSSology server connection successful.")
+    })
+    @GetMapping(value = FOSSOLOGY_URL + "/reServerConnection")
     public ResponseEntity<?> checkServerConnection() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         sw360FossologyAdminServices.serverConnection(sw360User);
@@ -158,7 +168,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             )
     }
     )
-    @RequestMapping(value = FOSSOLOGY_URL + "/configData", method = RequestMethod.GET)
+    @GetMapping(value = FOSSOLOGY_URL + "/configData")
     public ResponseEntity<?> getConnectionConfigurationData()throws TException {
         Map<String, Object> configData = new HashMap<>();
         try {

@@ -95,6 +95,7 @@ public class SW360Utils {
     public static final Comparator<ReleaseLink> RELEASE_LINK_COMPARATOR = Comparator.comparing(rl -> getReleaseFullname(rl.getVendor(), rl.getName(), rl.getVersion()).toLowerCase());
     private static final ObjectMapper objectMapper;
     private static final String DIGIT_AND_DECIMAL_REGEX = "[^\\d.]";
+    private static final Gson GSON = new Gson();
     private static final Comparator<Entry<String, ObligationStatusInfo>> COMPARE_BY_OBLIGATIONTYPE = Comparator
             .comparing(Entry<String, ObligationStatusInfo>::getValue, (osi1, osi2) -> {
                 String type1 = "", type2 = "";
@@ -110,13 +111,13 @@ public class SW360Utils {
     public static Joiner spaceJoiner = Joiner.on(" ");
     public static Joiner commaJoiner = Joiner.on(", ");
 
-    public static String INACCESSIBLE_RELEASE ="RestrictedRelease";
+    public static String INACCESSIBLE_RELEASE = "RestrictedRelease";
 
     private SW360Utils() {
         // Utility class with only static functions
     }
 
-    static{
+    static {
         objectMapper = new ObjectMapper();
         SimpleModule customModule = new SimpleModule("SW360 serializers");
         customModule.setMixInAnnotation(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class);
@@ -1031,7 +1032,7 @@ public class SW360Utils {
                 dependencyNetwork.add(node);
             }
         }
-        project.setReleaseRelationNetwork(new Gson().toJson(dependencyNetwork));
+        project.setReleaseRelationNetwork(GSON.toJson(dependencyNetwork));
     }
 
     /**
@@ -1132,6 +1133,7 @@ public class SW360Utils {
                             break;
                         case TType.BOOL:
                             packageInfo.setFieldValue(field, true);
+                            break;
                         default:
                             break;
                     }
