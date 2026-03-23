@@ -89,10 +89,10 @@ public class ObligationConflictResolver implements ConflictResolver<Obligation> 
                 && !incoming.getObligationLevel().equals(existing.getObligationLevel())) {
             return true;
         }
-        if (!Objects.equals(incoming.getDevelopment(), existing.getDevelopment())) {
+        if (!Objects.equals(incoming.isDevelopment(), existing.isDevelopment())) {
             return true;
         }
-        if (!Objects.equals(incoming.getDistribution(), existing.getDistribution())) {
+        if (!Objects.equals(incoming.isDistribution(), existing.isDistribution())){
             return true;
         }
 
@@ -123,8 +123,8 @@ public class ObligationConflictResolver implements ConflictResolver<Obligation> 
         existing.setText(incoming.getText());
         existing.setObligationType(incoming.getObligationType());
         existing.setObligationLevel(incoming.getObligationLevel());
-        existing.setDevelopment(incoming.getDevelopment());
-        existing.setDistribution(incoming.getDistribution());
+        existing.setDevelopment(incoming.isDevelopment());
+        existing.setDistribution(incoming.isDistribution());
         existing.setExternalIds(incoming.getExternalIds());
         existing.setAdditionalData(incoming.getAdditionalData());
         return existing;
@@ -140,11 +140,15 @@ public class ObligationConflictResolver implements ConflictResolver<Obligation> 
         if (incoming.getObligationLevel() != null) {
             existing.setObligationLevel(incoming.getObligationLevel());
         }
-        if (incoming.getDevelopment() != null) {
-            existing.setDevelopment(incoming.getDevelopment());
+        if (incoming.isDevelopment()) {
+            existing.setDevelopment(true);
+        } else {
+            existing.setDevelopment(false);
         }
-        if (incoming.getDistribution() != null) {
-            existing.setDistribution(incoming.getDistribution());
+        if (incoming.isDistribution()) {
+            existing.setDistribution(true);
+        } else {
+            existing.setDistribution(false);
         }
         if (incoming.getExternalIds() != null && !incoming.getExternalIds().isEmpty()) {
             if (existing.getExternalIds() == null) {
