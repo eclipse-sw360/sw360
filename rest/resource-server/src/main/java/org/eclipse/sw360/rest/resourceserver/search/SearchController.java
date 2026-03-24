@@ -21,6 +21,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +54,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -75,6 +78,10 @@ public class SearchController implements RepresentationModelProcessor<Repository
                 "Name for Project, Component and Release, Fullname for License, User and Vendor, Title for Obligation",
             tags = {"Search"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search results successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No search results found.", content = @Content)
+    })
     @GetMapping(value = SEARCH_URL)
     public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))

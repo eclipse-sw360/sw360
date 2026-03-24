@@ -13,11 +13,12 @@ package org.eclipse.sw360.rest.resourceserver.admin.attachment;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -32,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class AttachmentCleanUpController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String ATTACHMENT_CLEANUP_URL = "/attachmentCleanUp";
 
@@ -53,6 +54,9 @@ public class AttachmentCleanUpController implements RepresentationModelProcessor
             description = "Cleanup all the unused attachments.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment clean up request created.")
+    })
     @DeleteMapping(value = ATTACHMENT_CLEANUP_URL + "/deleteAll")
     public ResponseEntity<RequestSummary> cleanUpAttachment() throws TException  {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();

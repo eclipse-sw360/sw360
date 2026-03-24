@@ -1,4 +1,5 @@
 # Copyright BMW CarIT GmbH, 2021.
+# Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -11,10 +12,12 @@ services:
     image: "${SW360_IMAGE:-ghcr.io/eclipse-sw360/sw360}:${SW360_VERSION:-latest}"
     restart: unless-stopped
     container_name: sw360
+    env_file: config/sw360/.env.backend
+    secrets:
+      - COUCHDB_SECRETS
+      - SW360_SECRETS
     depends_on:
       - couchdb
-    environment:
-      - SW360_BASE_URL=${SW360_BASE_URL:-http://localhost:8080}
     ports:
       - "8080:8080"
       - "11311:11311"
@@ -22,19 +25,27 @@ services:
     tty: true
     volumes:
       - etc:/etc/sw360
-      - ./config/sw360:/app/sw360/config
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/resource/api/health | grep -iq 'status\":\"up' || exit 1" ]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 60s
 
   couchdb-nouveau:
-    image: couchdb:3.4-nouveau
+    image: couchdb:3.5-nouveau
+    restart: unless-stopped
+    container_name: couchdb_nouveau
     ports:
       - "5987:5987"
       - "5988:5988"
 
   couchdb:
-    image: couchdb:3.4
+    image: couchdb:3.5
     restart: unless-stopped
-    environment:
-      - COUCHDB_CREATE_DATABASE=yes
+    container_name: couchdb
+    env_file:
+      - ./config/couchdb/default_secrets # CouchDB does not support secrets
     ports:
       - "5984:5984"
     depends_on:
@@ -57,3 +68,10 @@ volumes:
 networks:
   default:
     name: sw360net
+    driver: bridge
+
+secrets:
+  SW360_SECRETS:
+    file: ./config/sw360/default_secrets
+  COUCHDB_SECRETS:
+    file: ./config/couchdb/default_secrets

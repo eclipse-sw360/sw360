@@ -90,6 +90,7 @@ public class SW360ConfigsDatabaseHandler {
                 .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, "[]"))
                 .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
                 .put(REST_API_TOKEN_LENGTH, getOrDefault(configContainer, REST_API_TOKEN_LENGTH, "20"))
+                .put(INHERIT_ATTACHMENT_USAGES, getOrDefault(configContainer, INHERIT_ATTACHMENT_USAGES, "false"))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
     }
@@ -199,6 +200,7 @@ public class SW360ConfigsDatabaseHandler {
                  DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
                  IS_BULK_RELEASE_DELETING_ENABLED,
                  IS_PACKAGE_PORTLET_ENABLED,
+                 INHERIT_ATTACHMENT_USAGES,
                  IS_ADMIN_PRIVATE_ACCESS_ENABLED,
                  UI_CLEARING_TEAM_UNKNOWN_ENABLED,
                  UI_CUSTOM_WELCOME_PAGE_GUIDELINE,
