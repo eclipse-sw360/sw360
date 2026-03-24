@@ -292,14 +292,25 @@
                                     <value>${rest.version}</value>
                                 </property>
                                 <property>
-                                    <!-- Build version from git-commit-id-maven-plugin -->
-                                    <name>sw360BuildVersion</name>
-                                    <value>${git.build.version}</value>
-                                </property>
-                                <property>
                                     <!-- Commits between HEAD and latest tag from git-commit-id-maven-plugin -->
                                     <name>sw360CommitCount</name>
                                     <value>${git.closest.tag.commit.count}</value>
+                                </property>
+                                <property>
+                                    <name>buildTime</name>
+                                    <value>${maven.build.timestamp}</value>
+                                </property>
+                                <property>
+                                    <name>buildNumber</name>
+                                    <value>${git.commit.id.abbrev}</value>
+                                </property>
+                                <property>
+                                    <name>sw360Version</name>
+                                    <value>${project.version}</value>
+                                </property>
+                                <property>
+                                    <name>gitBranch</name>
+                                    <value>${git.branch}</value>
                                 </property>
                             </properties>
                         </configuration>

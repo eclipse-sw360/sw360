@@ -81,9 +81,12 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String VERSION_INFO_PROPERTIES_FILE = "/restInfo.properties";
-    private static final String VERSION_INFO_KEY = "sw360RestVersion";
-    private static final String BUILD_VERSION_KEY = "sw360BuildVersion";
-    private static final String COMMIT_COUNT_KEY = "sw360CommitCount";
+    public static final String VERSION_INFO_KEY = "sw360RestVersion";
+    public static final String COMMIT_COUNT_KEY = "sw360CommitCount";
+    public static final String BUILD_TIME_KEY = "buildTime";
+    public static final String BUILD_NUMBER_KEY = "buildNumber";
+    public static final String PROJECT_VERSION_KEY = "sw360Version";
+    public static final String GIT_BRANCH_KEY = "gitBranch";
     private static final String CURIE_NAMESPACE = "sw360";
     private static final String APPLICATION_ID = "rest";
 
@@ -104,7 +107,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String DEFAULT_ADMIN_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String SERVER_PATH_URL;
-    private static final Map<Object, Object> versionInfo;
+    public static final Map<Object, Object> versionInfo;
     public static final String SVM_NOTIFICATION_URL;
 
     static {
@@ -130,6 +133,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         versionInfo = new HashMap<>();
         Properties properties = CommonUtils.loadProperties(Sw360ResourceServer.class, VERSION_INFO_PROPERTIES_FILE, false);
         versionInfo.putAll(properties);
+        versionInfo.put(VERSION_INFO_KEY, getRestVersion());
 
         SpringDocUtils.getConfig()
                 .replaceParameterObjectWithClass(org.springframework.data.domain.Pageable.class,
@@ -182,7 +186,8 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        String restVersionString = getRestVersion();
+        String restVersionString = String.valueOf(versionInfo.getOrDefault(VERSION_INFO_KEY,
+                "1.0.0"));
         return new OpenAPI()
                 .addServersItem(new Server().url("/resource/api").description("SW360 REST API Server"))
                 .components(new Components()
@@ -221,8 +226,8 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
      * </ol>
      * @return Version string for OpenAPI docs.
      */
-    private String getRestVersion() {
-        Object buildVersion = versionInfo.get(BUILD_VERSION_KEY);
+    public static String getRestVersion() {
+        Object buildVersion = versionInfo.get(PROJECT_VERSION_KEY);
         Object commitCount = versionInfo.get(COMMIT_COUNT_KEY);
         String restVersionString = "1.0.0";
         if (buildVersion != null && commitCount != null) {
