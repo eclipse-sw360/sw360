@@ -11,6 +11,7 @@ package org.eclipse.sw360.licenses;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
@@ -20,8 +21,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -38,36 +40,55 @@ import static org.junit.Assert.*;
  */
 public class LicenseHandlerAdditionalTest {
 
-    private static final String dbName = "test_licenses_" + System.currentTimeMillis();
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
 
     private LicenseHandler handler;
     private User adminUser;
     private User nonAdminUser;
-    private List<String> createdLicenseIds;
-    private List<String> createdLicenseTypeIds;
+    private Map<String, License> licenses;
 
     @Before
     public void setUp() throws Exception {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        createTestEntries();
         handler = new LicenseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
         
         adminUser = new User()
                 .setEmail("admin@sw360.org")
-                .setDepartment("IT")
+                .setDepartment("CT BE OP SWI OSS")
                 .setUserGroup(UserGroup.ADMIN);
         
         nonAdminUser = new User()
                 .setEmail("user@sw360.org")
-                .setDepartment("IT")
+                .setDepartment("CT BE OP SWI OSS")
                 .setUserGroup(UserGroup.CLEARING_ADMIN);
-        
-        createdLicenseIds = new ArrayList<>();
-        createdLicenseTypeIds = new ArrayList<>();
     }
 
     @After
     public void tearDown() throws Exception {
         TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+    }
+    
+    private void createTestEntries() throws Exception {
+        licenses = new HashMap<>();
+        
+        License license1 = new License();
+        license1.setShortname("TestLicense-1");
+        license1.setId("TestLicense-1");
+        license1.setFullname("Test License 1");
+        licenses.put(license1.id, license1);
+        
+        License license2 = new License();
+        license2.setShortname("TestLicense-2");
+        license2.setId("TestLicense-2");
+        license2.setFullname("Test License 2");
+        licenses.put(license2.id, license2);
+        
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        
+        for (License license : licenses.values()) {
+            db.add(license);
+        }
     }
 
     @Test
@@ -81,7 +102,6 @@ public class LicenseHandlerAdditionalTest {
         
         License created = handler.getByID(licenseShortname, adminUser.getDepartment());
         assertNotNull("License should be created", created);
-        createdLicenseIds.add(created.getId());
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), adminUser);
         assertEquals("License deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
@@ -101,7 +121,6 @@ public class LicenseHandlerAdditionalTest {
         
         License created = handler.getByID(licenseShortname, adminUser.getDepartment());
         assertNotNull("License should be created", created);
-        createdLicenseIds.add(created.getId());
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), nonAdminUser);
         assertEquals("Non-admin should not be able to delete license", RequestStatus.FAILURE, deleteStatus);
@@ -121,7 +140,6 @@ public class LicenseHandlerAdditionalTest {
         for (LicenseType type : types) {
             if (typeName.equals(type.getLicenseType())) {
                 found = true;
-                createdLicenseTypeIds.add(type.getLicenseTypeId());
                 break;
             }
         }
@@ -151,7 +169,6 @@ public class LicenseHandlerAdditionalTest {
         for (LicenseType type : types) {
             if (typeName.equals(type.getLicenseType())) {
                 typeId = type.getLicenseTypeId();
-                createdLicenseTypeIds.add(typeId);
                 break;
             }
         }
@@ -186,9 +203,6 @@ public class LicenseHandlerAdditionalTest {
         
         License created1 = handler.getByID(license1.getShortname(), adminUser.getDepartment());
         License created2 = handler.getByID(license2.getShortname(), adminUser.getDepartment());
-        
-        if (created1 != null) createdLicenseIds.add(created1.getId());
-        if (created2 != null) createdLicenseIds.add(created2.getId());
         
         List<License> summary = handler.getLicenseSummary();
         assertNotNull("License summary should not be null", summary);
