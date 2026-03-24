@@ -149,22 +149,27 @@ public class LicenseDBRestClient {
     }
 
     public List<License_db> getLicenses() {
+
+        /* Build URI path */
         String baseUrl = licenseDBRestConfig.getBaseUrl();
         if (baseUrl != null && baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
         String url = baseUrl + "/api/v1/licenses";
-        
+
+        /* OAuth layer */
         String token = getAuth();
         if (token == null) {
             return Collections.emptyList();
         }
 
+        /* Prepare HTTP Headers */
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
+        /* Send HTTP request */
         try {
             ResponseEntity<JsonNode> res = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
             if (res.getStatusCode().is2xxSuccessful() && res.getBody() != null && res.getBody().has("data")) {
@@ -175,6 +180,7 @@ public class LicenseDBRestClient {
             log.error("Failed to retrieve licenses from LicenseDB API.", e);
         }
 
+        /* Return response */
         return Collections.emptyList();
     }
 

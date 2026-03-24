@@ -101,6 +101,7 @@ public class LicenseDatabaseHandler {
     private final DatabaseRepositoryCloudantClient[] repositories;
     private DatabaseHandlerUtil dbHandlerUtil;
 
+    private final LicenseDBRestClient licenseDBRestClient;
 
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
@@ -134,6 +135,8 @@ public class LicenseDatabaseHandler {
         };
 
         moderator = new LicenseModerator();
+
+        licenseDBRestClient = new LicenseDBRestClient();
     }
 
 
@@ -147,6 +150,10 @@ public class LicenseDatabaseHandler {
      */
     public List<License> getLicenseSummary() {
         final List<License> licenses = licenseRepository.getAll();
+
+        List<License_db> licenses_db = licenseDBRestClient.getLicenses();
+
+        // Mapping Layer licenses_db ->  licenses
 
         return convertToLicenseSummary(licenses);
 
