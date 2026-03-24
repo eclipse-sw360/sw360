@@ -81,8 +81,8 @@ public class ResourceServerConfiguration {
                         auth.requestMatchers(HttpMethod.GET, "/mkdocs/**").permitAll();
                     }
                     // API endpoints
-                    auth.requestMatchers(HttpMethod.GET, "/version").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/version").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
