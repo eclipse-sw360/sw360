@@ -74,6 +74,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.transform.Source;
 
@@ -481,7 +482,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         Collections.emptySet())))) {
             return RequestStatus.INVALID_INPUT;
         } else if (isWriteActionAllowedOnProject(actual, user) || forceUpdate) {
-            copyImmutableFields(project,actual);
+           
             setRequestedDateAndTrimComment(project, actual, user);
             setRequestedDateAndTrimCommentForPackages(project, actual, user);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
@@ -1045,6 +1046,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         Project newProject = new Project();
+        // Default: copy ALL non-internal fields if empty (per GMishx feedback)
+        if (fieldsToCopy.isEmpty()) {
+            fieldsToCopy = Stream.of(Project._Fields.values())
+                .filter(f -> !"ID".equals(f.name()) && !"CREATED_ON".equals(f.name()) 
+                  && !"CREATED_BY".equals(f.name()) && !"REVISION".equals(f.name())
+                  && !"CLEARING_STATE".equals(f.name()) && !"CLEARING_REQUEST_ID".equals(f.name()))
+        .map(Enum::name)
+        .collect(Collectors.toSet());
+    }
+
 
         // Always copy the name (required field)
         newProject.setName(sourceProject.getName() + " (Copy)");
