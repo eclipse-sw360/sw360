@@ -2154,7 +2154,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Get usage information for release merge.",
-            description = "Get usage information for release merge including projects, attachment usages, releases, release vulnerabilities, and project ratings. " +
+            description = "Get usage information for release merge including projects, attachment usages, releases, release vulnerabilities, project ratings, and packages. " +
                     "This information helps determine the impact of merging a release.",
             tags = {"Releases"},
             responses = {
@@ -2169,7 +2169,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                                                           "attachmentUsages": 3,
                                                           "releases": 2,
                                                           "releaseVulnerabilities": 1,
-                                                          "projectRatings": 4
+                                                          "projectRatings": 4,
+                                                          "packages": 3
                                                         }
                                                         """
                                             ))
