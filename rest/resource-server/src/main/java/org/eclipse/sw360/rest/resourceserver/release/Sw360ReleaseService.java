@@ -54,6 +54,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
@@ -1646,13 +1648,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
 
+        PackageService.Iface packageClient = thriftClients.makePackageClient();
+        Set<Package> packages = packageClient.getPackagesByReleaseId(releaseSourceId);
+        usageInformation.put("packages", packages.size());
+
         return usageInformation;
     }
 
     /**
      * Get linked packages for a release
      */
-    public List<org.eclipse.sw360.datahandler.thrift.packages.Package> getLinkedPackagesForRelease(String releaseId, User user) throws TException {
+    public List<Package> getLinkedPackagesForRelease(String releaseId, User user) throws TException {
         Release release = getReleaseForUserById(releaseId, user);
 
         if (release.getPackageIds() == null || release.getPackageIds().isEmpty()) {
