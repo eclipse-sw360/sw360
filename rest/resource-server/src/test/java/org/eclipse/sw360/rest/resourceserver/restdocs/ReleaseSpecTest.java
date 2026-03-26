@@ -1,7 +1,8 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Contributors to the SW360 Project, 2026.
  *
-  * This program and the accompanying materials are made
+ * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
@@ -435,6 +436,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         project.setName("Emerald Web");
         project.setProjectType(ProjectType.PRODUCT);
         project.setVersion("1.0.2");
+        ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(
+                ReleaseRelationship.CONTAINED, MainlineState.MAINLINE);
+        project.setReleaseIdToUsage(Collections.singletonMap(releaseId, projectReleaseRelationship));
         projectList.add(project);
 
         given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(releaseList);
@@ -965,6 +969,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
                                 subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("_embedded.sw360:projects.[]releaseIdToUsage").description("Map of release ID to project-release relationship, containing mainlineState (possible values: " + Arrays.asList(MainlineState.values()) + ") and releaseRelation"),
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 subsectionWithPath("_embedded.sw360:restrictedResources.[]projects").description("Number of restricted projects"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
