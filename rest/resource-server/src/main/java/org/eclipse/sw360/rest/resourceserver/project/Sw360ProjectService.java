@@ -126,7 +126,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     private static final Logger log = LogManager.getLogger(Sw360ProjectService.class);
@@ -1211,7 +1211,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 return actualProjectReleaseRelationship;
             }
         }
-        throw new ResourceNotFoundException("Requested Re<<<<<< HEAD\n" + "=======lease Not Found");
+        throw new ResourceNotFoundException("Requested Release Not Found");
     }
 
     @PreDestroy

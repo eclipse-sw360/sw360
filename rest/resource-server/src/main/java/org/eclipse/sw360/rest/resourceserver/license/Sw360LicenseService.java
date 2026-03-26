@@ -55,7 +55,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360LicenseService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -242,13 +242,12 @@ public class Sw360LicenseService {
         }
     }
 
-    public void getDownloadLicenseArchive(User sw360User ,HttpServletRequest request,HttpServletResponse response) throws TException,IOException{
+    public void getDownloadLicenseArchive(User sw360User ,HttpServletRequest request,HttpServletResponse response) throws TException, IOException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to download archive license. User is not admin");
         }
         try {
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            String fileConstant="LicensesBackup.lics";
             Map<String, InputStream> fileNameToStreams = (new LicsExporter(sw360LicenseClient)).getFilenameToCSVStreams();
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
@@ -260,9 +259,9 @@ public class Sw360LicenseService {
                 zipOutputStream.finish();
             }
             final ByteArrayInputStream zipFile = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-            String filename = String.format(fileConstant, SW360Utils.getCreatedOn());
+            String filename = "LicensesBackup_" + SW360Utils.getCreatedOn() + ".lics";
             response.setContentType(CONTENT_TYPE);
-            response.setHeader("Content-Disposition", String.format("license; filename=\"%s\"", filename));
+            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             copyDataStreamToResponse(response, zipFile);
         } catch (SW360Exception exp) {
             if (exp.getErrorCode() == 404) {

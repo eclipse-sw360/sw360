@@ -54,6 +54,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
@@ -103,7 +105,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -1555,19 +1557,22 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return requestStatus;
     }
 
-    private void validateReleaseMergeSelection(ReleaseMergeSelector releaseSelection) throws SW360Exception {
+    private void validateReleaseMergeSelection(ReleaseMergeSelector releaseSelection) throws BadRequestClientException {
         if (releaseSelection == null) {
             throw new BadRequestClientException("Body for merge cannot be null");
         }
-        Set<Release._Fields> requiredFields = ImmutableSet.<Release._Fields>builder().add(Release._Fields.NAME)
-                .add(Release._Fields.CREATED_ON).add(Release._Fields.CREATED_BY).add(Release._Fields.VERSION)
-                .add(Release._Fields.ATTACHMENTS).build();
+        Set<Release._Fields> requiredFields = ImmutableSet.<Release._Fields>builder()
+                .add(Release._Fields.NAME).add(Release._Fields.CREATED_ON)
+                .add(Release._Fields.CREATED_BY).add(Release._Fields.VERSION).build();
 
         for (Release._Fields field : requiredFields) {
             if (!releaseSelection.isSet(field)
                     || isNullEmptyOrWhitespace((String) releaseSelection.getFieldValue(field))) {
                 throw new BadRequestClientException("Merge body is missing field " + field.getFieldName());
             }
+        }
+        if (!releaseSelection.isSetAttachments()) {
+            throw new BadRequestClientException("Merge body is missing field attachments");
         }
     }
 
@@ -1643,13 +1648,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
 
+        PackageService.Iface packageClient = thriftClients.makePackageClient();
+        Set<Package> packages = packageClient.getPackagesByReleaseId(releaseSourceId);
+        usageInformation.put("packages", packages.size());
+
         return usageInformation;
     }
 
     /**
      * Get linked packages for a release
      */
-    public List<org.eclipse.sw360.datahandler.thrift.packages.Package> getLinkedPackagesForRelease(String releaseId, User user) throws TException {
+    public List<Package> getLinkedPackagesForRelease(String releaseId, User user) throws TException {
         Release release = getReleaseForUserById(releaseId, user);
 
         if (release.getPackageIds() == null || release.getPackageIds().isEmpty()) {
@@ -1657,8 +1666,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         try {
-            org.eclipse.sw360.datahandler.thrift.packages.PackageService.Iface packageClient =
-                new ThriftClients().makePackageClient();
+            PackageService.Iface packageClient = new ThriftClients().makePackageClient();
             return packageClient.getPackageWithReleaseByPackageIds(release.getPackageIds());
         } catch (TTransportException e) {
             throw new TException("Unable to get package client", e);

@@ -76,7 +76,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class SW360ReportService {
 
     @NonNull
@@ -127,29 +127,22 @@ public class SW360ReportService {
 
     public String getDocumentName(User user, String projectId, String module) throws TException {
         String documentName = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
-        switch (module) {
-        case SW360Constants.PROJECTS:
+        if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
                 Project project = projectclient.getProjectById(projectId, user);
                 documentName = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn());
             }
-            break;
-        case SW360Constants.COMPONENTS:
+        } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
             documentName = String.format("components-%s.xlsx", SW360Utils.getCreatedOn());
-            break;
-        case SW360Constants.LICENSES:
+        } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
             documentName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
-            break;
-        case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
+        } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
                 Project project = projectclient.getProjectById(projectId, user);
                 documentName = String.format("releases-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn());
             }
-            break;
-        default:
-            break;
         }
         return documentName;
     }
@@ -243,7 +236,8 @@ public class SW360ReportService {
                 : null;
 
         List<ProjectLink> mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
-                projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, true, sw360User);
+                projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true,
+                reportBean.isWithSubProject(), sw360User);
 
         List<AttachmentUsage> attchmntUsg = attachmentService.getAttachemntUsages(id);
 

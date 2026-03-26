@@ -41,6 +41,7 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -81,7 +82,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -109,6 +110,11 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "List all of the service's users.",
             description = "List all of the service's users.", tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of users."),
+            @ApiResponse(responseCode = "204", description = "No users found.",
+                content = @Content)
+    })
     @GetMapping(value = USERS_URL)
     public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -172,6 +178,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     // for compatibility with older version of the REST API
     @Operation(summary = "Get a single user.", description = "Get a single user by email.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User with given email.")
+    })
     @GetMapping(value = USERS_URL + "/{email:.+}")
     public ResponseEntity<EntityModel<User>> getUserByEmail(
             @Parameter(description = "The email of the user to be retrieved.")
@@ -189,6 +198,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     // getUserByEmail())
     @Operation(summary = "Get a single user.", description = "Get a single user by id.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User with given ID.")
+    })
     @GetMapping(value = USERS_URL + "/byid/{id:.+}")
     public ResponseEntity<EntityModel<User>> getUser(
             @Parameter(description = "The id of the user to be retrieved.")
@@ -202,6 +214,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @Operation(summary = "Create a new user.", description = "Create a user (not in Liferay).",
             tags = {"Users"})
     @PreAuthorize("hasAuthority('ADMIN')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User created successfully.")
+    })
     @PostMapping(value = USERS_URL)
     public ResponseEntity<EntityModel<User>> createUser(
             @Parameter(description = "The user to be created.")
@@ -227,6 +242,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Get current user's profile.", description = "Get current user's profile.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Current user profile.")
+    })
     @GetMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> getUserProfile() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -236,6 +254,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Update user's profile.", description = "Update user's profile.",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully.")
+    })
     @PatchMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> updateUserProfile(
             @Parameter(description = "Updated user profile", schema = @Schema(example = """
@@ -399,6 +420,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Update an existing user.", description = "Update an existing user",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User updated successfully.")
+    })
     @PatchMapping(value = USERS_URL + "/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<EntityModel<User>> patchUser(
@@ -424,6 +448,11 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(summary = "Get existing departments.", description = "Get existing departments from all users",
             tags = {"Users"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of departments."),
+            @ApiResponse(responseCode = "400", description = "Invalid type parameter (must be primary or secondary)",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestExceptionHandler.ErrorMessage.class)))
+    })
     @GetMapping(value = USERS_URL + "/departments")
     public ResponseEntity<?> getExistingDepartments(
             @Parameter(description = "Type of department (primary, secondary)")

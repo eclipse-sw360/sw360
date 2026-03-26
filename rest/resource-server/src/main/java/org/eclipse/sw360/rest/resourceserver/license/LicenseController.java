@@ -86,7 +86,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -108,6 +108,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's licenses. Supports quick filtering.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of licenses.")
+    })
     @GetMapping(value = LICENSES_URL)
     public ResponseEntity<CollectionModel<License>> getLicenses(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -148,6 +151,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all obligations of a license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of obligations for the license.")
+    })
     @GetMapping(value = LICENSES_URL + "/{id}/obligations")
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligationsByLicenseId(
             @PathVariable("id") String id
@@ -169,6 +175,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "List all of the service's licenseTypes.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of license types.")
+    })
     @GetMapping(value = LICENSE_TYPES_URL)
     public ResponseEntity<CollectionModel<EntityModel<LicenseType>>> getLicenseTypes(
             @Parameter(description = "The search license type text.")
@@ -196,6 +205,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Get a specific license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License with embedded obligations.")
+    })
     @GetMapping(value = LICENSES_URL + "/{id:.+}")
     public ResponseEntity<EntityModel<License>> getLicense(
             @Parameter(description = "The id of the license.")
@@ -214,6 +226,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License deleted successfully.")
+    })
     @DeleteMapping(value = LICENSES_URL + "/{id:.+}")
     public ResponseEntity deleteLicense(
             @Parameter(description = "The id of the license.")
@@ -230,6 +245,11 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "License created successfully."),
+            @ApiResponse(responseCode = "409", description = "License with same shortname already exists.",
+                content = @Content(mediaType = "application/json"))
+    })
     @PostMapping(value = LICENSES_URL)
     public ResponseEntity<EntityModel<License>> createLicense(
             @Parameter(description = "The license to be created.")
@@ -461,6 +481,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All licenses deleted successfully.")
+    })
     @DeleteMapping(value = LICENSES_URL + "/deleteAll")
     public ResponseEntity deleteAllLicense() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -474,6 +497,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "SPDX license imported successfully.")
+    })
     @PostMapping(value = LICENSES_URL + "/import/SPDX")
     public ResponseEntity<RequestSummary> importSPDX() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -492,6 +518,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             }
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License archive (ZIP) stream.")
+    })
     @GetMapping(value = LICENSES_URL + "/downloadLicenses", produces = "application/zip")
     public void downloadLicenseArchive(
             HttpServletRequest request,
@@ -509,6 +538,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License archive uploaded successfully.")
+    })
     @PostMapping(value = LICENSES_URL + "/upload", consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> uploadLicenses(
             @Parameter(description = "The license archive file to be uploaded.")
@@ -534,6 +566,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "OSADL information imported successfully.")
+    })
     @PostMapping(value = LICENSES_URL + "/import/OSADL")
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();

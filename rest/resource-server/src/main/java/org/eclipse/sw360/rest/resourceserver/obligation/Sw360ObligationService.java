@@ -42,7 +42,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360ObligationService {
     private final LicenseSourcePolicy licenseSourcePolicy;
 

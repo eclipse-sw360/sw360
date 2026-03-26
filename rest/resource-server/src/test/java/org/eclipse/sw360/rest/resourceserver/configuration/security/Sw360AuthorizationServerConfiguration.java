@@ -28,7 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile("SECURITY_MOCK")
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class Sw360AuthorizationServerConfiguration {
 
 	@Autowired
@@ -41,6 +41,7 @@ public class Sw360AuthorizationServerConfiguration {
 		httpSecurity.authorizeHttpRequests(
 				authz -> authz
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/version").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())

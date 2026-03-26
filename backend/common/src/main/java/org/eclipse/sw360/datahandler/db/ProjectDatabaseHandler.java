@@ -460,6 +460,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project actual = repository.get(project.getId());
 
         assertNotNull(project);
+        assertNotNull(actual);
 
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 project.getAttachments(), user.getEmail(), project.getId());
@@ -524,7 +525,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String projectId = project.getId();
         List<String> projectPaths = new ArrayList<>();
 
-        buildProjectPaths(project,null,projectPaths);
+        buildProjectPaths(project, null, projectPaths, new HashSet<>());
         projectPaths.remove(project.getId());
         try {
             if (!projectPaths.isEmpty()) {
@@ -536,14 +537,17 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    void buildProjectPaths(Project project, String parentPath, List<String> results) {
-        String currentPath = parentPath == null ? project.getId() : parentPath + ":" + project.getId();
-        if(CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
-            results.add(currentPath);
+    void buildProjectPaths(Project project, String parentPath, List<String> results, Set<String> visited) {
+        if (project == null || visited.contains(project.getId())) {
+            return;
         }
-        else {
-            for(Map.Entry<String,ProjectProjectRelationship> entry: project.getLinkedProjects().entrySet()) {
-                buildProjectPaths(repository.get(entry.getKey()), currentPath, results);
+        visited.add(project.getId());
+        String currentPath = parentPath == null ? project.getId() : parentPath + ":" + project.getId();
+        if (CommonUtils.isNullOrEmptyMap(project.getLinkedProjects())) {
+            results.add(currentPath);
+        } else {
+            for (Map.Entry<String, ProjectProjectRelationship> entry : project.getLinkedProjects().entrySet()) {
+                buildProjectPaths(repository.get(entry.getKey()), currentPath, results, visited);
             }
             results.add(currentPath);
         }
@@ -558,6 +562,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 List<AttachmentUsage> subProjectAttachmentUsages = thriftClients.makeAttachmentClient().getUsedAttachments(Source.projectId(subProjectId), null);
 
                 for(AttachmentUsage usage: subProjectAttachmentUsages) {
+                    if (!usage.getOwner().isSetReleaseId()) {
+                        continue;
+                    }
                     String releaseId = usage.getOwner().getReleaseId();
                     String attachmentContentId = usage.getAttachmentContentId();
                     AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
@@ -1149,8 +1156,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project project = repository.get(id);
             if (project != null
                     && (user == null || !makePermission(project, user).isActionAllowed(RequestedAction.READ))) {
-                log.error("User " + user == null ? ""
-                        : user.getEmail() + " requested not accessible project " + printName(project));
+                log.error("User {} requested not accessible project {}",
+                        user == null ? "" : user.getEmail(), printName(project));
                 project = null;
             }
             if (project != null) {
