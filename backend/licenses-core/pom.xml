@@ -33,5 +33,24 @@
             <groupId>org.spdx</groupId>
             <artifactId>tools-java</artifactId>
         </dependency>
+        <!-- Added for LicenseDB integration, providing License, Obligation thrift classes -->
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>datahandler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Added for LicenseDB integration, providing WebClient for HTTP calls -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- Test dependency for mocking HTTP server in LicenseDBConnector tests -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <version>4.12.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
