@@ -1,3 +1,4 @@
+import java.util.Objects;
 /*
  * Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
@@ -1311,7 +1312,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Set<String> updatedAttachmentId = updatedAttachments.stream().map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
 
             // check if attachments are updated
-            if (!originalAttachmentId.equals(updatedAttachmentId)) {
+            if (!Objects.equals(originalAttachmentId, updatedAttachmentId)) {
                 // fetch all the projects associated with this release and collect the Clearing request Ids
                 final Set<Project> usingProjects = projectRepository.searchByReleaseId(release.getId());
                 final Set<String> crIds = CommonUtils.nullToEmptySet(usingProjects).stream()
