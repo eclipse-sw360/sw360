@@ -66,6 +66,10 @@ public class CLIParser extends AbstractCLIParser {
         super(attachmentConnector, attachmentContentProvider);
     }
 
+    /**
+     * Checks if this parser is applicable to the given attachment by verifying
+     * the file extension is XML and the root element is ComponentLicenseInformation.
+     */
     @Override
     public <T> boolean isApplicableTo(Attachment attachment, User user, T context) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
@@ -76,18 +80,30 @@ public class CLIParser extends AbstractCLIParser {
         return hasThisXMLRootElement(content, CLI_ROOT_ELEMENT_NAMESPACE, CLI_ROOT_ELEMENT_NAME, user, context);
     }
 
+    /**
+     * Parses license information from a CLI attachment, optionally including file hashes.
+     *
+     * @param includeFilesHash if true, includes source file hashes in copyright info
+     */
     @Override
     public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context,
             boolean includeFilesHash) throws TException {
         return getLicenseInfosDelegated(attachment, user, context, includeFilesHash);
     }
 
+    /**
+     * Parses license information from a CLI attachment without file hashes.
+     */
     @Override
     public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
             throws TException {
         return getLicenseInfosDelegated(attachment, user, context, false);
     }
 
+    /**
+     * Parses obligation information from a CLI attachment.
+     * Returns a failure status result if the XML cannot be parsed.
+     */
     @Override
     public <T> ObligationParsingResult getObligations(Attachment attachment, User user, T context) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
@@ -167,8 +183,10 @@ public class CLIParser extends AbstractCLIParser {
                 String textContent = childNodes.item(i).getTextContent();
                 assessmentSummaryMap.put(nodeName, textContent);
             }
+        } else if (assessmentSummaryList.getLength() == 0) {
+            log.warn("AssessmentSummary element not found in CLI file");
         } else {
-            log.error("AssessmentSummary not found in CLI!");
+            log.warn("Multiple AssessmentSummary elements found in CLI file (count: " + assessmentSummaryList.getLength() + "), expected exactly 1. Skipping.");
         }
         return assessmentSummaryMap;
     }
@@ -200,6 +218,10 @@ public class CLIParser extends AbstractCLIParser {
         String content = findNamedSubelement(node, LICENSE_CONTENT_ELEMENT_NAME)
                 .map(AbstractCLIParser::normalizeEscapedXhtml).orElse(null);
         Map<String, Set<String>> copyrightWithFileHash = new HashMap<String, Set<String>>();
+        if (content == null) {
+            log.warn("Copyright node is missing Content element, skipping entry");
+            return copyrightWithFileHash;
+        }
         copyrightWithFileHash.put(content, filesHash);
         return copyrightWithFileHash;
     }
