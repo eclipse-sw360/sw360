@@ -3407,7 +3407,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id,
             @Parameter(description = "If true, returns the license obligation data in release view. "
                     + "Otherwise, returns it in project view.")
-            @RequestParam(value = "view", defaultValue = "false") boolean releaseView
+            @RequestParam(value = "view", defaultValue = "false") boolean releaseView,
+            @Parameter(description = "If true, includes obligations from all sub-projects with status "
+                    + "FULFILLED_AND_PARENT_MUST_ALSO_FULFILL. Default is false.")
+            @RequestParam(value = "includeSubprojectObligations", defaultValue = "false") boolean includeSubprojectObligations
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
@@ -3416,6 +3419,30 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Release> releases = new ArrayList<>();
         ObligationList obligation = new ObligationList();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
+
+        // Handle includeSubprojects flag for "All Obligations" tab
+        if (includeSubprojectObligations) {
+            // Get obligations from current project and all sub-projects with FULFILLED_AND_PARENT_MUST_ALSO_FULFILL status
+            obligationStatusMap = getInheritedObligationsFromProjectHierarchy(sw360Project, sw360User);
+
+            // Enrich obligation status info with release data
+            for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
+                ObligationStatusInfo statusInfo = entry.getValue();
+                if (statusInfo.getReleaseIdToAcceptedCLI() != null && !statusInfo.getReleaseIdToAcceptedCLI().isEmpty()) {
+                    Set<Release> limitedSet = releaseService.getReleasesForUserByIds(
+                            statusInfo.getReleaseIdToAcceptedCLI().keySet());
+                    statusInfo.setReleases(limitedSet);
+                }
+                statusInfo.setId(entry.getKey());
+            }
+
+            // Return paginated response
+            Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
+            HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
+            return new ResponseEntity<>(halObligation, HttpStatus.OK);
+        }
+
+        // Default behavior - existing functionality for current project only
         List<String> releaseIds = new ArrayList<>(CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet());
         for (final String releaseId : releaseIds) {
             Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
@@ -3453,9 +3480,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 if(statusInfo.getStatus() == null){
                     statusInfo.setStatus(ObligationStatus.OPEN);
                 }
-                Set<Release> limitedSet = releaseService
-                        .getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
-                statusInfo.setReleases(limitedSet);
+                if(statusInfo.getReleaseIdToAcceptedCLI()!=null){
+                    Set<Release> limitedSet = releaseService
+                            .getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
+                    statusInfo.setReleases(limitedSet);
+                }
             }
 
             Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
@@ -3551,6 +3580,77 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     return obligationLevel == null || obligationLevel == targetLevel;
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
+     * Fetches obligations from the entire project hierarchy (current project + all sub-projects)
+     * and filters by FULFILLED_AND_PARENT_MUST_ALSO_FULFILL status.
+     *
+     * @param rootProject The root project
+     * @param sw360User   The authenticated user
+     * @return Map of obligation ID to ObligationStatusInfo with filtered status
+     * @throws TException If there's an error fetching project or obligation data
+     */
+    private Map<String, ObligationStatusInfo> getInheritedObligationsFromProjectHierarchy(
+            Project rootProject, User sw360User) throws TException {
+
+        Map<String, ObligationStatusInfo> aggregatedObligations = Maps.newHashMap();
+
+        // Collect all projects in hierarchy (root + all sub-projects recursively)
+        List<Project> allProjects = new ArrayList<>();
+        allProjects.add(rootProject);
+
+        // Get all linked sub-projects recursively
+        try {
+            Collection<ProjectLink> linkedProjectLinks = SW360Utils.getLinkedProjectsAsFlatList(
+                    rootProject, true, new ThriftClients(), log, sw360User);
+
+            // Fetch full project objects for each linked project
+            for (ProjectLink projectLink : linkedProjectLinks) {
+                try {
+                    Project subProject = projectService.getProjectForUserById(projectLink.getId(), sw360User);
+                    allProjects.add(subProject);
+                } catch (Exception e) {
+                    log.warn("Could not fetch sub-project with ID: " + projectLink.getId(), e);
+                    // Continue processing other projects
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error traversing project hierarchy for project: " + rootProject.getId(), e);
+        }
+
+        // Collect obligations from all projects
+        for (Project project : allProjects) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
+                try {
+                    ObligationList obligationList = projectService.getObligationData(
+                            project.getLinkedObligationId(), sw360User);
+
+                    Map<String, ObligationStatusInfo> projectObligations =
+                            CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
+
+                    // Add project name/info to help identify source project
+                    for (Map.Entry<String, ObligationStatusInfo> entry : projectObligations.entrySet()) {
+                        ObligationStatusInfo statusInfo = entry.getValue();
+                        // Only add obligations with FULFILLED_AND_PARENT_MUST_ALSO_FULFILL status
+                        if (statusInfo.getStatus() == ObligationStatus.FULFILLED_AND_PARENT_MUST_ALSO_FULFILL) {
+                            // Approach 3: Keep both with different keys
+                            // Create a unique key combining project ID and obligation ID
+                            String obligationId = entry.getKey();
+                            String uniqueKey = project.getId() + ":" + obligationId;
+
+                            // Store with the unique key to preserve obligations from all projects
+                            aggregatedObligations.put(uniqueKey, statusInfo);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not fetch obligations for project: " + project.getId(), e);
+                    // Continue processing other projects
+                }
+            }
+        }
+
+        return aggregatedObligations;
     }
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
