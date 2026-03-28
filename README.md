@@ -37,14 +37,33 @@ It is comprised of one frontend (portal) part, backend (services) part and addit
 
 The reference platform is the Ubuntu server 22.04 (which is an LTS version).
 
+### Architecture at a glance
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Backend services | Java 21 + Apache Thrift | Domain logic exposed as Thrift RPC |
+| Database | Apache CouchDB + Nouveau | Component, release, and project storage with full-text search |
+| REST API | Spring Boot | External integration endpoint (OAuth2-protected) |
+| Auth | Keycloak / built-in auth-server | OAuth2 / OIDC token issuance |
+
 ### Project structure
 
-This is a multi module maven file. please consider that we have the following modules:
+This is a multi-module Maven project. The top-level modules are:
 
-* backend: For the thrift based services.
-* libraries: For general stuff that is reused among the above, for example, couchdb access.
-* scripts: Auxiliary scripts to help build, deploy and config system
-* rest: For the REST API which contains an authorization and resource server.
+| Module | Path | Description |
+|--------|------|-------------|
+| Backend services | `backend/` | 30+ Thrift-based domain services (components, licenses, vulnerabilities, …) |
+| Shared libraries | `libraries/` | CouchDB connector, Thrift data models, shared utilities |
+| REST API | `rest/` | Spring Boot resource server and built-in auth server |
+| Keycloak | `keycloak/` | Identity provider integration |
+| Config | `config/` | Docker runtime configuration and secrets |
+| Scripts | `scripts/` | Build, migration, and utility scripts |
+
+### Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow,
+including semantic commit conventions, sign-off requirements (`-s`), and code
+review guidelines.
 
 ### Issues
 
@@ -90,18 +109,12 @@ git clone https://github.com/eclipse-sw360/sw360.git
 cd sw360
 pip install pre-commit
 pre-commit install
-
-### Note on build requirements
-
-Please note that even partial or module-level Maven builds require deploy-related
-properties to be set due to enforced build rules.
-
-At a minimum, the `base.deploy.dir` property must be provided, otherwise the build
-will fail with a Maven Enforcer error.
-
-This applies even when building individual modules (for example, `libraries`).
-
 ```
+
+> **Note on build requirements:** even partial or module-level Maven builds
+> require deploy-related properties to be set due to enforced build rules.
+> At a minimum, `base.deploy.dir` must be provided (e.g. `-Djars.deploy.dir=deploy`),
+> otherwise the build will fail with a Maven Enforcer error.
 
 **Step 2**: Build the code
 
@@ -114,7 +127,17 @@ mvn package -P deploy \
     -Dbackend.deploy.dir=webapps
 ```
 
-If you want to run the tests, we need start a local couchdb server and Docker is required:
+**Step 3** *(optional)*: Run the tests
+
+A local CouchDB instance and Docker are required to run the full test suite:
+
+```bash
+mvn package -P deploy \
+    -Dhelp-docs=false \
+    -Djars.deploy.dir=deploy \
+    -Drest.deploy.dir=webapps \
+    -Dbackend.deploy.dir=webapps
+```
 
 ### License
 
