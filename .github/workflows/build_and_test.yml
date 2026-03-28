@@ -101,10 +101,10 @@ jobs:
           chmod +x third-party/thrift/install-thrift.sh
           DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
 
-      - name: Build SW360
+      - name: Build SW360 with Tests and Coverage
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
-          mvn clean install \
+          mvn clean verify \
             --no-transfer-progress \
             -P deploy -Dhelp-docs=true \
             -Dbase.deploy.dir=. \
@@ -116,6 +116,123 @@ jobs:
             -DRunRestForceUpdateTest=false \
             -fae \
             -Dmaven.plugin.validation=VERBOSE
+
+      - name: Generate Coverage Reports
+        run: |
+          mvn jacoco:report-aggregate
+          
+      - name: Parse Coverage Percentage
+        id: coverage
+        run: |
+          if [ -f "./target/site/jacoco-aggregate/jacoco.xml" ]; then
+            # Extract coverage percentage from XML
+            COVERAGE=$(grep -o 'line-rate="[^"]*"' ./target/site/jacoco-aggregate/jacoco.xml | head -1 | cut -d'"' -f2)
+            if [ ! -z "$COVERAGE" ]; then
+              COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc -l | cut -c1-5)
+              echo "coverage=$COVERAGE_PCT" >> $GITHUB_OUTPUT
+              echo "✅ Coverage percentage extracted: ${COVERAGE_PCT}%"
+            else
+              echo "coverage=0" >> $GITHUB_OUTPUT
+              echo "⚠️ Could not extract coverage percentage"
+            fi
+          else
+            echo "coverage=0" >> $GITHUB_OUTPUT
+            echo "❌ Coverage report not found"
+            exit 1
+          fi
+          
+      - name: Display Test and Coverage Summary
+        run: |
+          echo "=== TEST EXECUTION SUMMARY ==="
+          echo "✅ Unit Tests (UTs) executed from:"
+          echo "   • backend/ (all modules)"
+          echo "   • libraries/ (datahandler, importers, exporters, etc.)"
+          echo "   • clients/ (client, http-support)"
+          echo "   • keycloak/ (event-listeners, user-storage-provider)"
+          echo ""
+          echo "✅ Integration Tests (ITs) executed from:"
+          echo "   • rest/resource-server/ (all integration tests)"
+          echo ""
+          echo "=== COVERAGE SUMMARY ==="
+          echo "📊 Overall Code Coverage: ${{ steps.coverage.outputs.coverage }}%"
+          echo "📁 Coverage reports available in:"
+          echo "   • Combined: ./target/site/jacoco-aggregate/"
+          echo "   • Individual: */target/site/jacoco/"
+          
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            target/site/jacoco-aggregate/
+            */target/site/jacoco/
+          retention-days: 30
+          
+      - name: Comment Coverage in PR
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: ./target/site/jacoco-aggregate/jacoco.xml
+          filter-changed-files: false
+          delete-old-comments: false
+        continue-on-error: true
+        
+      - name: Create Coverage Summary Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const coverage = '${{ steps.coverage.outputs.coverage }}';
+            const comment = `## 📊 SW360 Test Coverage Report
+            
+            ### ✅ Test Execution Summary
+            **Unit Tests (UTs) executed from:**
+            - \`backend/\` (all modules)
+            - \`libraries/\` (datahandler, importers, exporters, etc.)
+            - \`clients/\` (client, http-support)
+            - \`keycloak/\` (event-listeners, user-storage-provider)
+            
+            **Integration Tests (ITs) executed from:**
+            - \`rest/resource-server/\` (all integration tests)
+            
+            ### 📈 Coverage Results
+            **Overall Code Coverage: ${coverage}%**
+            
+            ### 📁 Coverage Reports Available
+            - **Combined Report**: \`target/site/jacoco-aggregate/\`
+            - **Individual Reports**: \`*/target/site/jacoco/\`
+            - **Download**: Available in Actions → Artifacts → coverage-reports
+            
+            ---
+            *Generated automatically by SW360 CI/CD pipeline*`;
+            
+            // Delete previous coverage comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const coverageComments = comments.filter(comment => 
+              comment.body.includes('SW360 Test Coverage Report')
+            );
+            
+            for (const comment of coverageComments) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: comment.id
+              });
+            }
+            
+            // Add new coverage comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
 
       - name: Run PrivateProjectAccessTest
         run: |
