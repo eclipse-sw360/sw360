@@ -6,6 +6,101 @@ the first project location:
 
 https://github.com/eclipse-sw360/sw360/releases
 
+## sw360-20.0.0
+We are proud to announce the release of SW360 version 20.0.0. This major release
+brings significant architectural changes, security enhancements, and performance
+improvements over the 19.2.x series. The most notable update in this version is
+the removal of the Liferay UI; the SW360 backend is now fully decoupled, and
+users must set up the new Next.js-based frontend from the
+[eclipse-sw360/sw360-frontend](https://github.com/eclipse-sw360/sw360-frontend)
+repository.
+
+Highlight of the changes in this version includes:
+* **Frontend Decoupling:** Complete removal of the legacy Liferay UI,
+  introducing a standalone backend with expanded endpoints to support the new
+  Next.js frontend.
+* **Security Improvements:** Addressed multiple vulnerabilities including XXE
+  and path traversal, added XSS protection headers, and reinforced endpoint
+  security.
+* **API & Documentation:** Introduced extensive OpenAPI documentation and
+  implemented robust pagination under the hood.
+* **User & Identity Management:** Enhanced Keycloak user synchronization with
+  CouchDB, and added batch processing.
+* **Performance & Stability:** Implemented database-side pagination, optimized
+  memory usage, and improved indexing and search speeds.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Aashish Jha <aashishjha1107@gmail.com>
+> Abhay349 <pandeyabhay967@gmail.com>
+> Achal Jhawar <35405812+achaljhawar@users.noreply.github.com>
+> Aditya Vishe <adityavishe67@gmail.com>
+> afsahsyeda <afsah.syeda@siemens-healthineers.com>
+> airajena <airajena0@gmail.com>
+> Akshit Joshi <akshit.joshi@siemens-healthineers.com>
+> Alex <alextanzhao22@gmail.com>
+> Ali <aligadallah14@gmail.com>
+> Aman-Cool <aman017102007@gmail.com>
+> amritkv <er.akverma8@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> drockparashar <pranshu007parashar@gmail.com>
+> Elbialy0 <mahmoudelbialy109@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> harshdeveloper21 <harsh237hk@gmail.com>
+> harshitg927 <121371860+harshitg927@users.noreply.github.com>
+> Helio Chissini de Castro <dev@heliocastro.info>
+> himanshu07gupta <himanshu29gupta0703@gmail.com>
+> Himanshu A Garode <himanshu2006garode@gmail.com>
+> Hritik Raj <hritik23154049@akgec.ac.in>
+> Kareem74x <kareemmostafa74x@gmail.com>
+> Kaushlendra Pratap <kaushlendra-pratap.singh@siemens.com>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Mahmoud Abdulmawlaa <m.elbaadishy@gmail.com>
+> Matthew Pappas <matteopappas@gmail.com>
+> Md Ali <mdali620563@gmail.com>
+> Mohamed Hanafy <mohamed.hanfy.dev@outlook.com>
+> naitikk31 <DARJINAITIK7@GMAIL.COM>
+> Nikesh Kumar <kumar.nikesh@siemens.com>
+> pranayh24 <pranayheda24@gmail.com>
+> Prathmesh <dhoneprathmesh72@gmail.com>
+> Priya Sharma <priyasharma1001a@gmail.com>
+> Rajnish Kumar <22it3036@rgipt.ac.in>
+> RITANKAR SAHA <ritankar.saha786@gmail.com>
+> rohit <brohit11544@gmail.com>
+> Rudra Chopra <prabhuchopra@gmail.com>
+> saiteja-in <vurukondasaiteja13@gmail.com>
+> Sameed Ahmad <sameed.ahmad@siemens-healthineers.com>
+> Sandip Mandal <sandipsmmandal02@gmail.com>
+> Sathwik Hejamady Bhat <sathwikhbhat@gmail.com>
+> sathwik-y <sathwik.yellapragada@gmail.com>
+> Shivamrut <gshivamrut@gmail.com>
+> Suhas2109 <suhas.n@siemens-healthineers.com>
+> suvrat1629 <suvrat1629@gmail.com>
+> Taanvi Khevaria <149520227+taanvi2205@users.noreply.github.com>
+> tanwar-div <tanwarkheritalwana@gmail.com>
+> VanKhanhAnny <arianne.dangvankhanh@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `7d37bb9b8` feat(version): update /version endpoint
+
+### Corrections
+* `ba842fcaa` fix(UI): The Linked Packages is not appearing in the project
+  details page, even though packages are linked to the project.
+* `29af0f8fb` fix(Release): merge release issue fixed.
+
+### Infrastructure
+* `924ca4397` chore(lang): remove old README_LANG.md
+
 ## sw360-20.0.0-rc-2
 This is the second release candidate for SW360 in the line of next major release
 version 20.0.0 of SW360. The candidate includes numerous features, corrections,
@@ -16,7 +111,8 @@ This release serves as a preview of the upcoming major version 20.0.0 for
 testing and should not be used in production environments.
 
 Highlight of the changes includes:
-* **Security Enhancements:** Addressed XXE vulnerabilities in parsers, fixed header injection issues, added XSS protection headers, and reinforced endpoint security.
+* **Security Enhancements:** Addressed XXE vulnerabilities in parsers, fixed
+  header injection issues, added XSS protection headers, and reinforced endpoint security.
 * **API & Documentation:** Expanded OpenAPI documentation across multiple core controllers.
 * **Performance & Stability:** Optimize memory usage with static client reuse.
 * **Infrastructure:** Updated container infrastructure for v20 and improve CI checks.

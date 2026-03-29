@@ -575,10 +575,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource<Package> createHalPackage(Package sw360Package, User sw360User) throws TException {
         HalResource<Package> halPackage = new HalResource<>(sw360Package);
-        User packageCreator = restControllerHelper.getUserByEmail(sw360Package.getCreatedBy());
         String linkedRelease = sw360Package.getReleaseId();
 
-        restControllerHelper.addEmbeddedUser(halPackage, packageCreator, "createdBy");
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Package.getCreatedBy())) {
+            User packageCreator = restControllerHelper.getUserByEmail(sw360Package.getCreatedBy());
+            restControllerHelper.addEmbeddedUser(halPackage, packageCreator, "createdBy");
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(linkedRelease)) {
             Release release = releaseService.getReleaseForUserById(linkedRelease, sw360User);
 
@@ -1108,7 +1110,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         } else {
-            RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
+            RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true, comment);
             if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
                 return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
             }
@@ -1146,7 +1148,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         } else {
-            RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
+            RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false, comment);
             if (patchPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
                 return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
             }
@@ -2994,9 +2996,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return projectService.updateProject(project, sw360User);
     }
 
-    private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)
+    private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link, String comment)
             throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (comment != null) {
+            sw360User.setCommentMadeDuringModerationRequest(comment);
+        }
         Project project = projectService.getProjectForUserById(id, sw360User);
         Set<String> packageIds = new HashSet<>();
         if (project.getPackageIds() != null && !CommonUtils.isNullOrEmptyCollection(project.getPackageIds().keySet())) {
@@ -3010,15 +3015,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         project.setPackageIds(packageIds.stream()
                 .collect(Collectors.toMap(pkgId -> pkgId, pkgId -> {
+                    boolean isBeingLinked = link && packagesInRequestBody.contains(pkgId);
                     ProjectPackageRelationship existing = (project.getPackageIds() != null && project.getPackageIds().get(pkgId) != null)
                             ? project.getPackageIds().get(pkgId)
-                            : new ProjectPackageRelationship();
-                    if (existing != null && existing.getComment() != null) {
-                        ProjectPackageRelationship rel = new ProjectPackageRelationship();
+                            : null;
+                    ProjectPackageRelationship rel = new ProjectPackageRelationship();
+                    if (isBeingLinked && comment != null) {
+                        // Newly linked package: save the provided comment
+                        rel.setComment(comment);
+                    } else if (existing != null && existing.getComment() != null) {
+                        // Already linked package: preserve existing comment
                         rel.setComment(existing.getComment());
-                        return rel;
                     }
-                    return new ProjectPackageRelationship();
+                    return rel;
                 }))
         );
         return projectService.updateProject(project, sw360User);

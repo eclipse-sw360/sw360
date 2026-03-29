@@ -1725,11 +1725,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updateReleaseReferencesInReleases(mergeTargetId, mergeSourceId, sessionUser);
             updateReleaseReferencesInVulnerabilities(mergeTargetId, mergeSourceId, sessionUser);
             updateReleaseReferencesInProjectRatings(mergeTargetId, mergeSourceId, sessionUser);
+            updateReleaseReferencesInPackages(mergeTargetId, mergeSourceId, sessionUser);
 
             // Finally we can delete the source component
             updateParentComponent(mergeSource, sessionUser);
 
-            deleteRelease(mergeSourceId, sessionUser);
+            RequestStatus deleteStatus = deleteRelease(mergeSourceId, sessionUser);
+            if (deleteStatus != RequestStatus.SUCCESS) {
+                log.error("Failed to delete source release [{}] during merge. Status: {}", mergeSourceId, deleteStatus);
+                return RequestStatus.FAILURE;
+            }
 
         } catch(Exception e) {
             log.error("Cannot merge release [" + mergeSource.getId() + "] into [" + mergeTarget.getId() + "].", e);
@@ -1999,6 +2004,32 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             vulnerabilityService.updateProjectVulnerabilityRating(rating, sessionUser);
             dbHandlerUtil.addChangeLogs(rating, ratingBefore, sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
+        }
+    }
+
+    private void updateReleaseReferencesInPackages(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
+        PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+
+        Set<Package> packages = packageClient.getPackagesByReleaseId(mergeSourceId);
+        Release mergeTarget = releaseRepository.get(mergeTargetId);
+        for (Package pkg : packages) {
+            Package packageBefore = pkg.deepCopy();
+            pkg.setReleaseId(mergeTargetId);
+            packageClient.updatePackage(pkg, sessionUser);
+            mergeTarget.addToPackageIds(pkg.getId());
+            dbHandlerUtil.addChangeLogs(pkg, packageBefore, sessionUser.getEmail(), Operation.UPDATE,
+                    attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
+        }
+        // Update the merge target release with the migrated package IDs
+        if (!packages.isEmpty()) {
+            releaseRepository.update(mergeTarget);
+        }
+
+        // Remove package IDs from source release so deleteRelease does not block
+        Release mergeSource = releaseRepository.get(mergeSourceId);
+        if (mergeSource.isSetPackageIds()) {
+            mergeSource.getPackageIds().clear();
+            releaseRepository.update(mergeSource);
         }
     }
 

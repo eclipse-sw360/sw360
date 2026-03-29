@@ -41,6 +41,7 @@ public class Sw360AuthorizationServerConfiguration {
 		httpSecurity.authorizeHttpRequests(
 				authz -> authz
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/version").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
