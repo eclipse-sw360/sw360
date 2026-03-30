@@ -8,10 +8,12 @@ resource "keycloak_openid_client" "sw360_user_clients" {
   for_each = { for client in local.sw360_clients : client.user_email => client }
 
   realm_id  = keycloak_realm.sw360.id
-  client_id = uuidv5("oid", each.key)
+  client_id = try(each.value.client_id, uuidv5("oid", each.key))
 
   name    = "${each.value.user_group}-${each.value.user_email}-${each.value.creator_email}-${each.value.creation_date}"
   enabled = true
+
+  client_secret = try(each.value.client_secret, null)
 
   access_type         = "CONFIDENTIAL"
   valid_redirect_uris = []
@@ -25,6 +27,13 @@ resource "keycloak_openid_client" "sw360_user_clients" {
   frontchannel_logout_enabled  = false
   consent_required             = false
   use_refresh_tokens           = false
+
+  lifecycle {
+    ignore_changes = [
+      client_id,
+      client_secret
+    ]
+  }
 }
 
 # Default scopes given to all clients
