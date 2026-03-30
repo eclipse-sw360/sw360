@@ -207,32 +207,3 @@ docker run \
       container name, or mapped host port).
   * Add the folder ID (default is `1` for **Software Repository**).
   * Add the API Token obtained from FOSSology as **Access Token**.
-  
-## Troubleshooting
-Inside it, replace the current Docker Network Error section with the following content:
-
-### Docker Network Error
-
-Some contributors may encounter the following error when running:
-
-```sh
-docker compose up
-
-Error message:
-
-service "sw360" refers to undefined network sw360-network: invalid compose project
-services:
-  sw360:
-    networks:
-      - sw360-network
-
-Update the docker-compose.yml to use the default Docker network or define a valid network.
-
-services:
-  sw360:
-    networks:
-      - default
-
-networks:
-  default:
-    driver: bridge

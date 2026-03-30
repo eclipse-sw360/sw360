@@ -23,8 +23,6 @@ services:
       - "11311:11311"
     stdin_open: true
     tty: true
-    networks:
-      - default
     volumes:
       - etc:/etc/sw360
     healthcheck:
@@ -66,11 +64,7 @@ services:
 volumes:
   couchdb: null
   etc: null
-
-networks:
-  default:
-    driver: bridge
-
+  
 secrets:
   SW360_SECRETS:
     file: ./config/sw360/default_secrets
