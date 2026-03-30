@@ -53,7 +53,7 @@ If you run in any issues with documentation or software, please be kind and repo
 
 ### Deployment
 
-It is recommended to use the Docker-based setup,
+Is recommended using the docker based setup,
 [described here](https://github.com/eclipse/sw360/blob/main/README_DOCKER.md).
 
 If you intend to install in a bare metal machine or use in your own virtualized system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).
@@ -64,21 +64,21 @@ If you intend to develop over SW360, few steps are needed as equal you need have
 requirements
 
 * Base build requirements
-  * Java 21
+  * Java 11
   * Maven 3.8.7
   * pre-commit
-  * thrift 0.20.0 runtime
+  * thrift 0.16.0 runtime
   * Python environment ( to [pre-commit](https://pre-commit.com/) ) - SW360 use Eclipse formatting rules
   through [Spotless maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven)
 
-If you can't install thrift 0.20 runtime, you will need the following requirements:
+If you can't install thrift 0.16 runtime, you will need the following requirements:
 
 * C++ dev environment
 * cmake
 Then run the current build script:
 
 ```bash
-./third-party/thrift/install-thrift.sh
+./scripts/install-thrift.sh
 ```
 
 #### Local Building
@@ -90,17 +90,6 @@ git clone https://github.com/eclipse-sw360/sw360.git
 cd sw360
 pip install pre-commit
 pre-commit install
-
-### Note on build requirements
-
-Please note that even partial or module-level Maven builds require deploy-related
-properties to be set due to enforced build rules.
-
-At a minimum, the `base.deploy.dir` property must be provided, otherwise the build
-will fail with a Maven Enforcer error.
-
-This applies even when building individual modules (for example, `libraries`).
-
 ```
 
 **Step 2**: Build the code
@@ -115,6 +104,19 @@ mvn package -P deploy \
 ```
 
 If you want to run the tests, we need start a local couchdb server and Docker is required:
+
+## Supported Export Formats
+
+SW360 now supports exporting data in the following formats:
+
+- Excel (XLSX)
+- CSV (Comma-Separated Values)
+- TSV (Tab-Separated Values)
+- XML
+- JSON
+- YAML
+
+These formats can be used for integration with other tools, direct software processing, or human-readable data exchange. For details on how to use these export options, see the relevant API or UI documentation.
 
 ### License
 
