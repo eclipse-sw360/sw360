@@ -90,14 +90,18 @@ def process_documents(rows):
 
 def format_client(client):
     """Formats a client dictionary into Terraform HCL snippet."""
-    return f"""    {{
-      user_email    = "{client['user_email']}"
-      creator_email = "{client['creator_email']}"
-      user_group    = "{client['user_group']}"
-      creation_date = "{client['creation_date']}"
-      client_id     = "{client['client_id']}"
-      client_secret = "{client['client_secret']}"
-    }}"""
+    lines = [
+        f'      user_email    = "{client["user_email"]}"',
+        f'      creator_email = "{client["creator_email"]}"',
+        f'      user_group    = "{client["user_group"]}"',
+        f'      creation_date = "{client["creation_date"]}"'
+    ]
+    if client.get("client_id"):
+        lines.append(f'      client_id     = "{client["client_id"]}"')
+    if client.get("client_secret"):
+        lines.append(f'      client_secret = "{client["client_secret"]}"')
+
+    return "    {\n" + "\n".join(lines) + "\n    }"
 
 
 def main():
