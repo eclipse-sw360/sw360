@@ -3309,10 +3309,28 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity<String>("No release linked to the project", HttpStatus.NO_CONTENT);
         }
         Map<String, AttachmentUsage> licenseInfoAttachmentUsage = projectService.getLicenseInfoAttachmentUsage(id);
-        if(licenseInfoAttachmentUsage.size() == 0) {
-            return new ResponseEntity<String>("No approved CLI or licenseInfo attachment usage present for the project", HttpStatus.NO_CONTENT);
+        Map<String, Set<Release>> licensesFromAttachmentUsage;
+        if (licenseInfoAttachmentUsage.isEmpty()) {
+            // Fallback: build license->releases map from release mainLicenseIds
+            licensesFromAttachmentUsage = new HashMap<>();
+            for (String releaseId : sw360Project.getReleaseIdToUsage().keySet()) {
+                try {
+                    Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                    if (release != null && !CommonUtils.isNullOrEmptyCollection(release.getMainLicenseIds())) {
+                        for (String licenseId : release.getMainLicenseIds()) {
+                            licensesFromAttachmentUsage.computeIfAbsent(licenseId, k -> new HashSet<>()).add(release);
+                        }
+                    }
+                } catch (TException e) {
+                    log.warn("Error fetching release {} for licenseDbObligations fallback: {}", releaseId, e.getMessage());
+                }
+            }
+        } else {
+            licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(licenseInfoAttachmentUsage, sw360User);
         }
-        Map<String, Set<Release>> licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(licenseInfoAttachmentUsage, sw360User);
+        if (licensesFromAttachmentUsage.isEmpty()) {
+            return new ResponseEntity<String>("No license obligations found for the project releases", HttpStatus.NO_CONTENT);
+        }
         Map<String, ObligationStatusInfo> licenseObligation = projectService.getLicenseObligationData(licensesFromAttachmentUsage, sw360User);
 
         Map<String, Object> responseBody = createPaginationMetadata(pageable, licenseObligation);
@@ -3677,8 +3695,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         Map<String, AttachmentUsage> licenseInfoAttachmentUsage = projectService.getLicenseInfoAttachmentUsage(id);
-        Map<String, Set<Release>> licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(
-                licenseInfoAttachmentUsage, sw360User);
+        Map<String, Set<Release>> licensesFromAttachmentUsage;
+        if (licenseInfoAttachmentUsage.isEmpty()) {
+            licensesFromAttachmentUsage = new HashMap<>();
+            for (String releaseId : CommonUtils.nullToEmptyMap(sw360Project.getReleaseIdToUsage()).keySet()) {
+                try {
+                    Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                    if (release != null && !CommonUtils.isNullOrEmptyCollection(release.getMainLicenseIds())) {
+                        for (String licenseId : release.getMainLicenseIds()) {
+                            licensesFromAttachmentUsage.computeIfAbsent(licenseId, k -> new HashSet<>()).add(release);
+                        }
+                    }
+                } catch (TException e) {
+                    log.warn("Error fetching release {} for addLicenseObligations fallback: {}", releaseId, e.getMessage());
+                }
+            }
+        } else {
+            licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(
+                    licenseInfoAttachmentUsage, sw360User);
+        }
         Map<String, ObligationStatusInfo> licenseObligation = projectService.getLicenseObligationData(licensesFromAttachmentUsage, sw360User);
         Map<String, ObligationStatusInfo> selectedLicenseObligation = new HashMap<String, ObligationStatusInfo>();
 
