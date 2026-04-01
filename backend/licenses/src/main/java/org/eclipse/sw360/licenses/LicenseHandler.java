@@ -409,8 +409,21 @@ public class LicenseHandler implements LicenseService.Iface {
     public Map<PaginationData, List<Obligation>> searchObligationTextPaginated(
             String searchText, ObligationLevel obligationLevel, PaginationData pageData
     ) {
-        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) || obligationLevel != null) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             return obligationSearchHandler.searchWithPagination(searchText, obligationLevel, pageData);
+        }
+        if (obligationLevel != null) {
+            Map<PaginationData, List<Obligation>> result = handler.getObligationsPaginated(pageData);
+            if (result == null || result.isEmpty()) {
+                return result;
+            }
+            Map.Entry<PaginationData, List<Obligation>> entry = result.entrySet().iterator().next();
+            List<Obligation> filtered = entry.getValue().stream()
+                    .filter(o -> obligationLevel.equals(o.getObligationLevel()))
+                    .collect(java.util.stream.Collectors.toList());
+            PaginationData pd = entry.getKey();
+            pd.setTotalRowCount(filtered.size());
+            return java.util.Collections.singletonMap(pd, filtered);
         }
         return handler.getObligationsPaginated(pageData);
     }
