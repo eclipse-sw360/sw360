@@ -18,6 +18,7 @@ frontend_base_url = "http://localhost:3000"
 tenant              = "38ae3bcd-9579-4fd4-adda-b42e1495d55a"
 azure_client_id     = "azure-idp-client-id"
 azure_client_secret = "azure-idp-client-secret"
+azure_idp_alias     = "azure-sw360"
 # Uncomment following to setup SMTP in KeyCloak for sending emails
 # smtp_from     = "sw360.server.in@siemens.com"
 # smtp_username = "my-smtp-user"

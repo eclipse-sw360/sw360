@@ -136,9 +136,9 @@
                         #set($licenseAckMap = $acknowledgements.get($releaseName))
     <pre class="acknowledgements">
 #foreach($licenseName in $licenseAckMap.keySet())
-    <strong>$esc.xml($licenseName)</strong><br/>
     #set($acks = $licenseAckMap.get($licenseName))
 #foreach($ack in ${acks})
+     <strong>$esc.xml($licenseName)</strong><br/>
      #set($containsLink = $ack.matches($anchorRegEx))
      #set($containsScript = $ack.matches($scriptRegEx))
      #set($ackAsHtml = $esc.xml($ack))
@@ -146,6 +146,7 @@
      #set($ackAsHtml = $ack)
      #end
      $ackAsHtml<br/>
+  <br/>
      #end
      #end
          </pre>

@@ -19,6 +19,14 @@ set -ex
 BASEDIR="${BASEDIR:-$(mktemp -d)}"
 THRIFT_VERSION=${THRIFT_VERSION:-0.20.0}
 
+installDeps() {
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    cmake \
+    curl \
+    flex \
+    bison
+}
+
 processThrift() {
   VERSION=${THRIFT_VERSION}
   CACHE_DIR="$BASEDIR/cache"
@@ -57,4 +65,5 @@ processThrift() {
   DESTDIR="${DESTDIR:-$BASEDIR/dist/thrift-$VERSION}" make install
 }
 
+installDeps
 processThrift

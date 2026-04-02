@@ -257,12 +257,9 @@ public abstract class OutputGenerator<T> {
                 Map<String, Set<String>> licenseAckMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 for (LicenseNameWithText lnt : licenseInfo.getLicenseNamesWithTexts()) {
                     String licenseName = lnt.getLicenseName();
-                    Set<String> acknowledgementsSet = new HashSet<>();
-                    if(lnt.getAcknowledgements()!=null && !lnt.getAcknowledgements().isEmpty()){
-                        acknowledgementsSet.add(lnt.getAcknowledgements());
-                    }
-                    if (!acknowledgementsSet.isEmpty()) {
-                        licenseAckMap.put(licenseName, new TreeSet<>(acknowledgementsSet));
+                    String ack = lnt.getAcknowledgements();
+                    if (licenseName != null && ack != null && !ack.trim().isEmpty()) {
+                        licenseAckMap.computeIfAbsent(licenseName, k -> new TreeSet<>()).add(ack.trim());
                     }
                 }
                 if (!licenseAckMap.isEmpty()) {

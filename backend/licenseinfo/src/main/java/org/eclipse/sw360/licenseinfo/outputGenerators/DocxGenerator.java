@@ -805,12 +805,12 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 String licenseName = entry.getKey();
                 Set<String> acknowledgementSet = entry.getValue();
                 if (!acknowledgementSet.isEmpty()) {
-                    // Print license name as heading
-                    XWPFRun licenseRun = document.createParagraph().createRun();
-                    addFormattedText(licenseRun, licenseName + ":", FONT_SIZE, true);
-                    // Print each acknowledgement under the license name
+                    // Print license name before each acknowledgement text
                     for (String acknowledgement : acknowledgementSet) {
+                        XWPFRun licenseRun = document.createParagraph().createRun();
+                        addFormattedText(licenseRun, licenseName, FONT_SIZE, true);
                         setText(document.createParagraph().createRun(), nullToEmptyString(acknowledgement));
+                        addNewLines(document, 1);
                     }
                 }
             }
