@@ -64,12 +64,7 @@ services:
 volumes:
   couchdb: null
   etc: null
-
-networks:
-  default:
-    name: sw360net
-    driver: bridge
-
+  
 secrets:
   SW360_SECRETS:
     file: ./config/sw360/default_secrets
