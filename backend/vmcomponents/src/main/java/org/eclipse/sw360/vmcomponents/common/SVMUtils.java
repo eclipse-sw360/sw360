@@ -37,26 +37,29 @@ public class SVMUtils {
         URL url_ = new URI(url).toURL();
         log.debug("Call URL: "+url);
         HttpURLConnection conn = (HttpURLConnection) url_.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Accept", "application/json");
+        try {
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
 
-        if (conn.getResponseCode() != 200) {
-            String errorMessage = "Failed : HTTP error code : " + conn.getResponseCode();
-            log.error(errorMessage);
-            throw new RuntimeException(errorMessage);
+            if (conn.getResponseCode() != 200) {
+                String errorMessage = "Failed : HTTP error code : " + conn.getResponseCode();
+                log.error(errorMessage);
+                throw new RuntimeException(errorMessage);
+            }
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    json.append(line.trim());
+                }
+            }
+
+            String response = json.toString();
+            log.debug("Response from Server .... \n"+response);
+            return response;
+        } finally {
+            conn.disconnect();
         }
-
-        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-
-        String line = "";
-        while ((line = br.readLine()) != null) {
-            json.append(line.trim());
-        }
-
-        conn.disconnect();
-        String response = json.toString();
-        log.debug("Response from Server .... \n"+response);
-        return response;
     }
 
     public static RequestSummary newRequestSummary(RequestStatus status, int totalElements, int totalAffectedElements, String message ){
