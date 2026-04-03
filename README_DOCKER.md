@@ -4,6 +4,8 @@
 
 ## Table of Contents
 
+* [First-time contributor quick start](#first-time-contributor-quick-start)
+* [Recommended local setup path](#recommended-local-setup-path)
 * [Building](#building)
 * [Configuration](#configuration)
   * [Environment Variables](#environment-variables)
@@ -12,10 +14,52 @@
 * [Volumes and Persistence](#volumes-and-persistence)
 * [Networking](#networking)
 * [FOSSology Integration](#fossology-integration)
+* [Troubleshooting](#troubleshooting)
+
+## First-time contributor quick start
+
+If you are new to SW360 and want the easiest local setup for development or evaluation, the Docker-based setup is the recommended starting point.
+
+Before proceeding, make sure you have:
+
+- Java 21 installed
+- Maven 3.8.7 or newer
+- Docker Desktop installed and running
+- Git installed
+- (Optional for code contributions) Eclipse IDE or another Java IDE
+
+> **Note for Windows users:** If you plan to import the project into Eclipse, import it as an **Existing Maven Project** instead of a regular Eclipse project.
+
+## Recommended local setup path
+
+For first-time contributors, the recommended setup path is:
+
+1. Clone the repository
+2. Make sure Docker Desktop is installed and running
+3. Build the Docker images
+4. Start the Docker services
+5. Verify SW360 starts successfully
+6. Only then import the repository into your IDE if you want to contribute code
+
+This avoids IDE-related build confusion during initial onboarding.
+
 
 ## Building
 
 * Install a recent version of Docker build `buildx` support.
+
+### Windows notes
+
+If you are using Windows:
+
+- Use **Git Bash** or **WSL** when running shell scripts such as `./docker_build.sh`
+- Make sure **Docker Desktop** is fully started before running Docker commands
+- If you are using Eclipse, import the repository using:
+
+  `File > Import > Maven > Existing Maven Projects`
+
+- SW360 currently requires **Java 21** for development. Using Java 17 may cause build or IDE compilation issues.
+
 * Build images using the provided script:
 
     ```sh
@@ -207,3 +251,17 @@ docker run \
       container name, or mapped host port).
   * Add the folder ID (default is `1` for **Software Repository**).
   * Add the API Token obtained from FOSSology as **Access Token**.
+  
+
+## Troubleshooting
+
+### Common first-time setup issues
+
+#### Java version mismatch
+SW360 development currently expects **Java 21**. If your IDE or Maven is using Java 17 or older, you may see build or compilation issues.
+
+#### Docker is not running
+Make sure Docker Desktop is fully started before running:
+
+```sh
+docker compose up
