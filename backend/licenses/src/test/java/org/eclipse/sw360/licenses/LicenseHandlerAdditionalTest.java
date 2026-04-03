@@ -12,6 +12,7 @@ package org.eclipse.sw360.licenses;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
@@ -62,7 +63,7 @@ public class LicenseHandlerAdditionalTest {
         nonAdminUser = new User()
                 .setEmail("user@sw360.org")
                 .setDepartment("CT BE OP SWI OSS")
-                .setUserGroup(UserGroup.CLEARING_ADMIN);
+                .setUserGroup(UserGroup.USER);
     }
 
     @After
@@ -124,7 +125,7 @@ public class LicenseHandlerAdditionalTest {
         assertNotNull("License should be created", created);
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), nonAdminUser);
-        assertEquals("Non-admin should not be able to delete license", RequestStatus.FAILURE, deleteStatus);
+        assertEquals("Non-admin should not be able to delete license", RequestStatus.ACCESS_DENIED, deleteStatus);
     }
 
     @Test
@@ -154,7 +155,7 @@ public class LicenseHandlerAdditionalTest {
         licenseType.setLicenseType(typeName);
         
         RequestStatus addStatus = handler.addLicenseType(licenseType, nonAdminUser);
-        assertEquals("Non-admin should not be able to add license type", RequestStatus.FAILURE, addStatus);
+        assertEquals("Non-admin should not be able to add license type", RequestStatus.ACCESS_DENIED, addStatus);
     }
 
     @Test
@@ -229,15 +230,14 @@ public class LicenseHandlerAdditionalTest {
         }
     }
 
-    @Test
+    @Test(expected = org.eclipse.sw360.datahandler.thrift.SW360Exception.class)
     public void testDeleteNonExistentLicense() throws Exception {
-        RequestStatus status = handler.deleteLicense("non_existent_id_12345", adminUser);
-        assertEquals("Deleting non-existent license should return failure", RequestStatus.FAILURE, status);
+        handler.deleteLicense("non_existent_id_12345", adminUser);
     }
 
     @Test
     public void testDeleteNonExistentLicenseType() throws Exception {
         RequestStatus status = handler.deleteLicenseType("99999", adminUser);
-        assertEquals("Deleting non-existent license type should return failure", RequestStatus.FAILURE, status);
+        assertEquals("Deleting non-existent license type should return INVALID_INPUT", RequestStatus.INVALID_INPUT, status);
     }
 }
