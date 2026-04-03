@@ -2,6 +2,7 @@
  * Copyright Siemens AG, 2017-2018.
  * Copyright Sandip Mandal<sandipmandal02.sm@gmail.com>, 2026.
  * Copyright Bosch Software Innovations GmbH, 2017.
+ * Copyright Contributors to the SW360 Project, 2026.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -415,6 +416,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         List<EntityModel> resources = new ArrayList<>();
         sw360Projects.forEach(p -> {
             Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            if (p.isSetReleaseIdToUsage() && p.getReleaseIdToUsage().containsKey(id)) {
+                embeddedProject.setReleaseIdToUsage(
+                        Collections.singletonMap(id, p.getReleaseIdToUsage().get(id)));
+            }
             resources.add(EntityModel.of(embeddedProject));
         });
 
