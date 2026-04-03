@@ -629,7 +629,11 @@ public class LicenseDatabaseHandler {
         // only a new license gets its id from the shortname. Id of an existing license isn't supposed to be changed anyway
         if (!license.isSetId()) license.setId(inputLicense.getShortname());
         license.unsetShortname();
-        license.setLicenseTypeDatabaseId(inputLicense.getLicenseTypeDatabaseId());
+        if (CommonUtils.isNotNullEmptyOrWhitespace(inputLicense.getLicenseTypeDatabaseId())) {
+            license.setLicenseTypeDatabaseId(inputLicense.getLicenseTypeDatabaseId());
+        } else {
+            license.unsetLicenseTypeDatabaseId();
+        }
         license.unsetLicenseType();
         license.setOSIApproved(Optional.ofNullable(inputLicense.getOSIApproved())
                 .orElse(Quadratic.NA));
@@ -649,7 +653,8 @@ public class LicenseDatabaseHandler {
 
     public License setLicenseForChangelogs(License license) throws SW360Exception {
         License licenseForChangelogs = license.deepCopy();
-        if (licenseForChangelogs.isSetLicenseTypeDatabaseId()) {
+        if (licenseForChangelogs.isSetLicenseTypeDatabaseId()
+                && !licenseForChangelogs.getLicenseTypeDatabaseId().isEmpty()) {
             LicenseType licenseTypeForChangelogs = getLicenseTypeById(licenseForChangelogs.getLicenseTypeDatabaseId());
             licenseForChangelogs.setLicenseType(licenseTypeForChangelogs);
             licenseForChangelogs.unsetLicenseTypeDatabaseId();
