@@ -61,6 +61,7 @@ public class Sw360LicenseService {
     private String thriftServerUrl;
     private static final String CONTENT_TYPE = "application/zip";
     LicenseType lType = new LicenseType();
+    private final LicenseSourcePolicy licenseSourcePolicy;
 
     public List<License> getLicenses() throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
@@ -105,6 +106,11 @@ public class Sw360LicenseService {
     }
 
     public License createLicense(License license, User sw360User) throws TException {
+        throwIfManualLicenseOperationsDisabled("Manual license creation is disabled");
+        return createLicenseFromAuthoritativeSource(license, sw360User);
+    }
+
+    public License createLicenseFromAuthoritativeSource(License license, User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         license.setId(license.getShortname());
         List<License> licenses = sw360LicenseClient.addLicenses(Collections.singletonList(license), sw360User);
@@ -226,6 +232,7 @@ public class Sw360LicenseService {
         return new LicenseService.Client(protocol);
     }
     public RequestSummary importSpdxInformation(User sw360User) throws TException {
+        throwIfManualLicenseOperationsDisabled("SPDX import is disabled");
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             RequestSummary allSPDXLicenseStatus = sw360LicenseClient.importAllSpdxLicenses(sw360User);
@@ -300,6 +307,7 @@ public class Sw360LicenseService {
 	}
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
+        throwIfManualLicenseOperationsDisabled("OSADL import is disabled");
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             return sw360LicenseClient.importAllOSADLLicenses(sw360User);
@@ -403,5 +411,11 @@ public class Sw360LicenseService {
         List<License> licenses = sw360LicenseClient.searchLicense(searchText);
         licenses.sort(Comparator.comparing(License::getFullname, String.CASE_INSENSITIVE_ORDER));
         return licenses;
+    }
+
+    private void throwIfManualLicenseOperationsDisabled(String operationDescription) {
+        if (licenseSourcePolicy.isLicenseDbOnlyMode()) {
+            throw new AccessDeniedException(operationDescription + " in LICENSEDB_ONLY mode.");
+        }
     }
 }
