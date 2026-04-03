@@ -234,6 +234,14 @@ struct ImportBomRequestPreparation {
     7: optional string message;
 }
 
+struct ImportBomDryRunReport {
+    1: required RequestStatus requestStatus;
+    2: optional set<string> newComponents;
+    3: optional set<string> existingComponents;
+    4: optional set<string> licenseConflicts;
+    5: optional set<string> warnings;
+}
+
 struct CustomProperties {
     1: optional string id,
     2: optional string revision,
