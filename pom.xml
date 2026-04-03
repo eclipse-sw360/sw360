@@ -100,7 +100,7 @@
     <assertj.version>3.27.7</assertj.version>
     <byte-buddy.version>1.17.8</byte-buddy.version>
     <cloudantsdk.version>0.10.16</cloudantsdk.version>
-    <commons-cli.version>1.9.0</commons-cli.version>
+    <commons-cli.version>1.10.0</commons-cli.version>
     <commons-codec.version>1.20.0</commons-codec.version>
     <commons-collection4.version>4.5.0</commons-collection4.version>
     <commons-compress.version>1.28.0</commons-compress.version>
@@ -133,7 +133,7 @@
     <jcraft.version>0.1.55</jcraft.version>
     <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
     <jetty.version>10.0.15</jetty.version>
-    <jgiven.version>2.0.2</jgiven.version>
+    <jgiven.version>2.0.3</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
     <json.version>20250517</json.version>
     <joda-time.version>2.14.0</joda-time.version>
@@ -165,13 +165,25 @@
     <keycloak.version>26.5.6</keycloak.version>
     <org.owasp.encoder.version>1.3.1</org.owasp.encoder.version>
     <write.properties.file.version>2.0.0</write.properties.file.version>
+    <!-- Plugin version properties (sonatype/release profile) -->
+    <maven-scm-plugin.version>2.2.1</maven-scm-plugin.version>
+    <eclipse-jarsigner-plugin.version>1.3.2</eclipse-jarsigner-plugin.version>
+    <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
+    <!-- Dependency version properties (not yet in Spring BOM) -->
+    <axis.version>1.4</axis.version>
+    <cyclonedx-core-java.version>11.0.1</cyclonedx-core-java.version>
+    <maven-model.version>4.0.0-beta-4</maven-model.version>
+    <velocity-engine-core.version>2.4.1</velocity-engine-core.version>
+    <velocity-tools-generic.version>3.1</velocity-tools-generic.version>
+    <saxon-dom.version>8.7</saxon-dom.version>
   </properties>
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>org.apache.axis</groupId>
         <artifactId>axis</artifactId>
-        <version>1.4</version>
+        <version>${axis.version}</version>
       </dependency>
       <dependency>
         <groupId>net.bytebuddy</groupId>
@@ -259,7 +271,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-slf4j-impl</artifactId>
+        <artifactId>log4j-slf4j2-impl</artifactId>
         <version>${log4j2.version}</version>
         <scope>runtime</scope>
       </dependency>
@@ -291,7 +303,7 @@
       <dependency>
         <groupId>commons-cli</groupId>
         <artifactId>commons-cli</artifactId>
-        <version>1.10.0</version>
+        <version>${commons-cli.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.thrift</groupId>
@@ -313,12 +325,12 @@
       <dependency>
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-core-java</artifactId>
-        <version>11.0.1</version>
+        <version>${cyclonedx-core-java.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-model</artifactId>
-        <version>4.0.0-beta-4</version>
+        <version>${maven-model.version}</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jaxb</groupId>
@@ -403,7 +415,7 @@
       <dependency>
         <groupId>org.apache.velocity</groupId>
         <artifactId>velocity-engine-core</artifactId>
-        <version>2.4.1</version>
+        <version>${velocity-engine-core.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.apache.commons</groupId>
@@ -414,7 +426,7 @@
       <dependency>
         <groupId>org.apache.velocity.tools</groupId>
         <artifactId>velocity-tools-generic</artifactId>
-        <version>3.1</version>
+        <version>${velocity-tools-generic.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.poi</groupId>
@@ -434,7 +446,7 @@
       <dependency>
         <groupId>net.sf.saxon</groupId>
         <artifactId>saxon-dom</artifactId>
-        <version>8.7</version>
+        <version>${saxon-dom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.assertj</groupId>
@@ -573,11 +585,101 @@
         <artifactId>spring-boot-devtools</artifactId>
         <version>${spring-boot.version}</version>
       </dependency>
-    <dependency>
+      <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-webflux</artifactId>
         <version>${spring-boot.version}</version>
-    </dependency>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-rest</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <version>${spring-boot.version}</version>
+        <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-log4j2</artifactId>
+        <version>${spring-boot.version}</version>
+      </dependency>
       <dependency>
         <groupId>jakarta.servlet</groupId>
         <artifactId>jakarta.servlet-api</artifactId>
@@ -660,6 +762,22 @@
         <version>${spring-boot.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.restdocs</groupId>
+        <artifactId>spring-restdocs-mockmvc</artifactId>
+        <version>${spring-restdocs.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>${springdoc-openapi-stater-common.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-common</artifactId>
+        <version>${springdoc-openapi-stater-common.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -804,7 +922,7 @@
       <plugin>
         <groupId>com.tngtech.jgiven</groupId>
         <artifactId>jgiven-maven-plugin</artifactId>
-        <version>2.0.3</version>
+        <version>${jgiven.version}</version>
         <configuration>
           <format>html</format>
         </configuration>
@@ -856,7 +974,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-scm-plugin</artifactId>
-        <version>2.2.1</version>
+        <version>${maven-scm-plugin.version}</version>
         <configuration>
           <tag>${project.artifactId}-${project.version}</tag>
         </configuration>
@@ -922,7 +1040,7 @@
             <plugin>
               <groupId>org.eclipse.cbi.maven.plugins</groupId>
               <artifactId>eclipse-jarsigner-plugin</artifactId>
-              <version>1.3.2</version>
+              <version>${eclipse-jarsigner-plugin.version}</version>
             </plugin>
           </plugins>
         </pluginManagement>
@@ -930,7 +1048,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.2.8</version>
+            <version>${maven-gpg-plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -944,7 +1062,7 @@
           <plugin>
             <groupId>org.sonatype.plugins</groupId>
             <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.7.0</version>
+            <version>${nexus-staging-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <serverId>ossrh</serverId>
