@@ -129,7 +129,7 @@ public abstract class IntegrationTestBase {
         testClient = RegisteredClient.withId("trusted-sw360-client").clientId("trusted-sw360-client")
                 .clientSecret(encoder.encode("sw360-secret")).authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
+                .authorizationGrantType(new AuthorizationGrantType("password"))
                 .scope(Sw360GrantedAuthority.READ.getAuthority())
                 .scope(Sw360GrantedAuthority.WRITE.getAuthority())
                 .scope(Sw360GrantedAuthority.ADMIN.getAuthority())
