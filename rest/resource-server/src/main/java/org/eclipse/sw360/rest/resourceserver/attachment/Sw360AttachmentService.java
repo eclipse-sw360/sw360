@@ -41,7 +41,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -355,6 +358,13 @@ public class Sw360AttachmentService {
     }
 
     public Attachment updateAttachment(Set<Attachment> attachments, Attachment newData, String attachmentId, User user) {
+        CheckStatus requestedStatus = newData.getCheckStatus();
+        if (requestedStatus != null
+                && requestedStatus != CheckStatus.NOTCHECKED
+                && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
+            throw new AccessDeniedException(
+                    "Only users with role CLEARING_ADMIN or higher may accept or reject attachments.");
+        }
         if (CommonUtils.isNotEmpty(attachments)) {
             Optional<Attachment> matchingAttachment = attachments.stream()
                     .filter(att -> att.attachmentContentId.equals(attachmentId)).findFirst();
