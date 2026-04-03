@@ -4,7 +4,7 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.http;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.file.Path;
@@ -61,9 +61,7 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
     public void file(Path path, String mediaType) {
         try {
             initBody(BodyPublishers.ofFile(path));
-            Path fileNamePath = path.getFileName();
-            fileName = (fileNamePath != null) ? fileNamePath.toString() : null;
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
