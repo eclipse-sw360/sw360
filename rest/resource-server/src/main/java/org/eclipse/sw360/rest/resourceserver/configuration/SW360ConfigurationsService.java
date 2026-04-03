@@ -35,8 +35,11 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class SW360ConfigurationsService {
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     private SW360ConfigsService.Iface getThriftConfigsClient() {
-        return new ThriftClients().makeSW360ConfigsClient();
+        return thriftClients.makeSW360ConfigsClient();
     }
 
     public Map<String, String> getSW360Configs() throws TException {

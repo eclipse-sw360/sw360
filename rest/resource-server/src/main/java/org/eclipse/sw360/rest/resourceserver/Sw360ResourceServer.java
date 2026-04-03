@@ -25,6 +25,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
@@ -144,6 +145,11 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     @Bean
     public CurieProvider curieProvider() {
         return new DefaultCurieProvider(CURIE_NAMESPACE, UriTemplate.of("/docs/{rel}.html"));
+    }
+
+    @Bean
+    public ThriftClients thriftClients() {
+        return new ThriftClients();
     }
 
     @Bean

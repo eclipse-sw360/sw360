@@ -11,6 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -25,7 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class SW360RestHealthIndicator implements HealthIndicator {
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
     @Override
     public Health health() {
         List<Exception> exceptions = new ArrayList<>();
@@ -81,7 +85,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     }
 
     protected HealthService.Iface makeHealthClient() {
-        return new ThriftClients().makeHealthClient();
+        return thriftClients.makeHealthClient();
     }
 
     protected DatabaseInstanceCloudant makeDatabaseInstance() {

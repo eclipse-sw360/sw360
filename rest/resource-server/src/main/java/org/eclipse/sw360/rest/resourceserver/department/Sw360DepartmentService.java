@@ -49,7 +49,8 @@ public class Sw360DepartmentService {
     private static final Logger log = LogManager.getLogger(Sw360DepartmentService.class);
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
-    ThriftClients thriftClients = new ThriftClients();
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
 
     public RequestSummary importDepartmentManually(User sw360User) throws TException {
         try {
@@ -108,7 +109,6 @@ public class Sw360DepartmentService {
     }
 
     public Map<String, Object> getImportInformation(User user) throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
         ScheduleService.Iface scheduleClient = thriftClients.makeScheduleClient();
 
@@ -122,14 +122,12 @@ public class Sw360DepartmentService {
     }
 
     public Set<String> getLogFileList() throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
 
         return userClient.getListFileLog();
     }
 
     public List<String> getLogFileContentByDate(String date) throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
         if (isValidDate(date)) {
             throw new SW360Exception("Invalid date time format, must be: yyyy-MM-dd");
@@ -157,7 +155,6 @@ public class Sw360DepartmentService {
 
     public Map<String, List<String>> getSecondaryDepartmentMembers() {
         try {
-            ThriftClients thriftClients = new ThriftClients();
             UserService.Iface userClient = thriftClients.makeUserClient();
             return userClient.getSecondaryDepartmentMemberEmails();
         } catch (TException e) {
@@ -168,7 +165,6 @@ public class Sw360DepartmentService {
 
     public Map<String, List<String>> getMemberEmailsBySecondaryDepartmentName(String departmentName) {
         try {
-            ThriftClients thriftClients = new ThriftClients();
             UserService.Iface userClient = thriftClients.makeUserClient();
             List<String> memberEmails = List.copyOf(userClient.getMemberEmailsBySecondaryDepartmentName(departmentName));
             return Map.of(departmentName, memberEmails);
@@ -192,21 +188,18 @@ public class Sw360DepartmentService {
 
     private void deleteMembersFromDepartment(String departmentName, List<String> removedMemberEmails) throws TException {
         List<User> addedMembers = getUsersByEmails(removedMemberEmails);
-        ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
         userClient.deleteSecondaryDepartmentFromListUser(addedMembers, departmentName);
     }
 
     private void addMembersToDepartment(String departmentName, List<String> addedMemberEmails) throws TException {
         List<User> addedMembers = getUsersByEmails(addedMemberEmails);
-        ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
         userClient.updateDepartmentToListUser(addedMembers, departmentName);
     }
 
     private List<User> getUsersByEmails(List<String> emails) {
         try {
-            ThriftClients thriftClients = new ThriftClients();
             UserService.Iface userClient = thriftClients.makeUserClient();
             return userClient.getAllUserByEmails(emails);
         } catch (TException exception) {
