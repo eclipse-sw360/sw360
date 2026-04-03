@@ -379,10 +379,7 @@ public class Sw360LicenseService {
         try {
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
 
-            List<License> allLicenses = sw360LicenseClient.getLicenseSummary();
-            return (int) allLicenses.stream()
-                    .filter(license -> license.getLicenseType() != null && license.getLicenseType().getId().equals(licenseTypeId))
-                    .count();
+            return sw360LicenseClient.checkLicenseTypeInUse(licenseTypeId);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("License type not found with ID: " + licenseTypeId);
