@@ -270,34 +270,44 @@ public class Sw360LicenseService {
     }
 
     public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
-        final HashMap<String, InputStream> inputMap = new HashMap<>();
-
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestClientException("License file is missing or empty");
+        }
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to upload license file. User is not admin");
         }
+
+        final HashMap<String, InputStream> inputMap = new HashMap<>();
+        Exception primaryException = null;
+
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
             final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
+        } catch (Exception e) {
+            primaryException = e;
+            throw e;
         } finally {
-            IOException closeFailure = null;
-            for (InputStream in : inputMap.values()) {
-                try {
+            closeInputMapStreams(inputMap, primaryException);
+        }
+    }
+
+    private void closeInputMapStreams(Map<String, InputStream> inputMap, Exception primaryException) {
+        for (InputStream in : inputMap.values()) {
+            try {
+                if (in != null) {
                     in.close();
-                } catch (IOException e) {
-                    if (closeFailure == null) {
-                        closeFailure = e;
-                    } else {
-                        closeFailure.addSuppressed(e);
-                    }
+                }
+            } catch (IOException e) {
+                if (primaryException != null) {
+                    primaryException.addSuppressed(e);
+                } else {
+                    throw new RuntimeException("Failed to close input stream", e);
                 }
             }
-            if (closeFailure != null) {
-                throw closeFailure;
-            }
         }
-	}
+    }
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
