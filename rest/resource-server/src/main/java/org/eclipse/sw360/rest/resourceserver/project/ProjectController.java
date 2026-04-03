@@ -1414,6 +1414,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            description = "Get the total count of vulnerabilities for a single project.",
+            tags = {"Projects"}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vulnerability count successfully retrieved"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
+    @GetMapping(value = PROJECTS_URL + "/{id}/vulnerabilitiesCount")
+    public ResponseEntity<Map<String, Integer>> getVulnerabilitiesCountOfProject(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id
+    ) {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Map<String, Integer> counts = vulnerabilityService.getVulnerabilityCountsByProjectId(id, sw360User);
+        return ResponseEntity.ok(counts);
+    }
+
+    @Operation(
             description = "Get vulnerabilities of a single project.",
             tags = {"Projects"}
     )
