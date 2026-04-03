@@ -2717,6 +2717,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         String projectId = null;
         Map<String, String> messageMap = new HashMap<>();
 
+        if (!attachmentService.isValidSbomFile(file, "CycloneDX")) {
+            throw new BadRequestClientException(
+                "Invalid SBOM file [" + file.getOriginalFilename() + "]. " +
+                "Only CycloneDX (.json, .xml) files are supported for this endpoint."
+            );
+        }
+
         try {
             attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
         } catch (IOException e) {
