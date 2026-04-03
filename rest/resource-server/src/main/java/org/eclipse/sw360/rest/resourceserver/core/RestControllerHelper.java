@@ -895,6 +895,9 @@ public class RestControllerHelper<T> {
         embeddedProject.setTag(project.getTag());
         embeddedProject.setType(null);
         embeddedProject.setClearingRequestId(project.getClearingRequestId());
+        if (project.isSetLinkedProjects()) {
+            embeddedProject.setLinkedProjects(project.getLinkedProjects());
+        }
         return embeddedProject;
     }
 
