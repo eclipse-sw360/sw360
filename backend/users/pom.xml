@@ -22,9 +22,9 @@
     <artifactId>backend-users</artifactId>
     <packaging>war</packaging>
     <name>backend-users</name>
-    <build><finalName>users</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>users</deploy.name>
     </properties>
 
     <dependencies>

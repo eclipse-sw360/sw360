@@ -20,9 +20,9 @@
     <artifactId>backend-search</artifactId>
     <packaging>war</packaging>
     <name>backend-search</name>
-    <build><finalName>search</finalName></build>
     <properties>
       <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+      <deploy.name>search</deploy.name>
   </properties>
 
     <dependencies>
