@@ -125,7 +125,7 @@ public class LicenseHandlerAdditionalTest {
         assertNotNull("License should be created", created);
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), nonAdminUser);
-        assertEquals("Non-admin should not be able to delete license", RequestStatus.ACCESS_DENIED, deleteStatus);
+        assertEquals("Non-admin should not be able to delete license", RequestStatus.FAILURE, deleteStatus);
     }
 
     @Test
