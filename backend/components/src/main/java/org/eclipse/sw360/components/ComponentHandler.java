@@ -29,6 +29,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,6 +94,7 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public List<Component> getAccessibleRecentComponentsSummary(int limit, User user) throws TException
     {
+        assertUser(user);
         return handler.getAccessibleRecentComponentsSummary(limit, user);
     }
 
@@ -135,11 +137,15 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(String text, Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        if (user == null) {
+            return Collections.emptyMap();
+        }
         return componentSearchHandler.searchAccessibleComponents(text, subQueryRestrictions, user, pageData);
     }
 
     @Override
     public List<Component> refineSearchWithAccessibility(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
+        assertUser(user);
         return componentSearchHandler.searchWithAccessibility(text, subQueryRestrictions, user);
     }
 
@@ -152,6 +158,7 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Release>> searchAccessibleReleases(String searchText, User user, PaginationData pageData) throws TException {
+        assertUser(user);
         return handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user, pageData) ;
     }
 
@@ -173,11 +180,17 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Component>> searchComponentByNamePrefixPaginated(User user, String name, PaginationData pageData) {
+        if (user == null) {
+            return Collections.emptyMap();
+        }
         return handler.searchComponentByNamePrefixPaginated(user, name, pageData);
     }
 
     @Override
     public Map<PaginationData, List<Component>> searchComponentByExactNamePaginated(User user, String name, PaginationData pageData) {
+        if (user == null) {
+            return Collections.emptyMap();
+        }
         return handler.searchComponentByExactNamePaginated(user, name, pageData);
     }
 
@@ -209,6 +222,7 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public List<Release> getRecentReleasesWithAccessibility(User user) throws TException {
+        assertUser(user);
         return handler.getRecentReleasesWithAccessibility(user);
     }
 
@@ -293,6 +307,7 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public List<String> getReleaseIdsFromComponentId(String id, User user) throws TException {
         assertNotNull(id);
+        assertUser(user);
         return handler.getReleaseIdsFromComponentId(id,user);
     }
 
@@ -345,6 +360,7 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public List<Release> getAccessibleReleasesFromVendorIds(Set<String> ids, User user) throws TException {
+        assertUser(user);
         return handler.getAccessibleReleasesFromVendorIds(ids, user);
     }
 
@@ -538,6 +554,7 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Set<Component> getUsingComponentsWithAccessibilityForRelease(String releaseId, User user) throws TException {
+        assertUser(user);
         return handler.getUsingComponentsWithAccessibility(releaseId, user);
     }
 
@@ -548,6 +565,7 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Set<Component> getUsingComponentsWithAccessibilityForComponent(Set<String> releaseIds, User user) throws TException {
+        assertUser(user);
         return handler.getUsingComponentsWithAccessibility(releaseIds, user);
     }
 
@@ -748,6 +766,7 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
             PaginationData pageData) throws TException {
+        assertUser(user);
         return handler.getRecentComponentsSummaryWithPagination(user, pageData);
     }
 
