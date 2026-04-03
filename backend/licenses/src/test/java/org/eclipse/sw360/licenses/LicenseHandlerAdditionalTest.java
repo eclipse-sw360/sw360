@@ -108,8 +108,7 @@ public class LicenseHandlerAdditionalTest {
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), adminUser);
         assertEquals("License deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
-        License afterDelete = handler.getByID(created.getId(), adminUser.getDepartment());
-        assertNull("License should be null after deletion", afterDelete);
+        assertThrows(SW360Exception.class, () -> handler.getByID(created.getId(), adminUser.getDepartment()));
     }
 
     @Test
