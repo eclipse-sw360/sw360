@@ -37,6 +37,7 @@ import static org.junit.Assert.*;
  * - addLicenseType
  * - deleteLicenseType
  * - getLicenseSummaryForExport
+ * - getLicenseTypes
  */
 public class LicenseHandlerAdditionalTest {
 
@@ -165,7 +166,7 @@ public class LicenseHandlerAdditionalTest {
         handler.addLicenseType(licenseType, adminUser);
         
         List<LicenseType> types = handler.getLicenseTypes();
-        String typeId = null;
+        Integer typeId = null;
         for (LicenseType type : types) {
             if (typeName.equals(type.getLicenseType())) {
                 typeId = type.getLicenseTypeId();
@@ -174,7 +175,7 @@ public class LicenseHandlerAdditionalTest {
         }
         assertNotNull("License type should be created", typeId);
         
-        RequestStatus deleteStatus = handler.deleteLicenseType(typeId, adminUser);
+        RequestStatus deleteStatus = handler.deleteLicenseType(typeId.toString(), adminUser);
         assertEquals("License type deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
         List<LicenseType> typesAfterDelete = handler.getLicenseTypes();
