@@ -29,7 +29,6 @@
     </properties>
 
     <build>
-        <finalName>org.eclipse.sw360.common-io-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

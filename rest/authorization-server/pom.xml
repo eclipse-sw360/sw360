@@ -25,6 +25,7 @@
 
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>authorization</deploy.name>
     </properties>
 
     <dependencies>
@@ -143,10 +144,6 @@
             <url>https://repo.spring.io/milestone</url>
         </pluginRepository>
     </pluginRepositories>
-
-    <build>
-        <finalName>authorization</finalName>
-    </build>
 
     <profiles>
         <profile>

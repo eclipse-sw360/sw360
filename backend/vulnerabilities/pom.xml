@@ -21,11 +21,9 @@
     <artifactId>backend-vulnerabilities</artifactId>
     <packaging>war</packaging>
     <name>backend-vulnerabilities</name>
-    <build>
-        <finalName>vulnerabilities</finalName>
-    </build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>vulnerabilities</deploy.name>
     </properties>
 
     <dependencies>

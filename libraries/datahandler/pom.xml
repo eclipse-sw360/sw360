@@ -28,7 +28,6 @@
     </properties>
 
     <build>
-        <finalName>org.eclipse.sw360.datahandler-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>

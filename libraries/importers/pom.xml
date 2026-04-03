@@ -28,7 +28,6 @@
 	</properties>
 
 	<build>
-		<finalName>org.eclipse.sw360.importers-${project.version}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

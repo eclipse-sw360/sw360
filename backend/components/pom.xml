@@ -21,9 +21,9 @@
     <artifactId>backend-components</artifactId>
     <packaging>war</packaging>
     <name>backend-components</name>
-    <build><finalName>components</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>components</deploy.name>
     </properties>
 
     <dependencies>

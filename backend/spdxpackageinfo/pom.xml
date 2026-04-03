@@ -24,9 +24,9 @@
     <artifactId>backend-spdxpackageinfo</artifactId>
     <packaging>war</packaging>
     <name>backend-spdxpackageinfo</name>
-    <build><finalName>spdxpackageinfo</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>spdxpackageinfo</deploy.name>
     </properties>
 
     <dependencies>

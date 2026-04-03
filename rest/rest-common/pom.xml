@@ -21,6 +21,10 @@
     <artifactId>rest-common</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <artifact.deploy.dir>${jars.deploy.dir}</artifact.deploy.dir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -54,7 +58,6 @@
 
     </dependencies>
     <build>
-        <finalName>rest-common</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -45,7 +45,6 @@
     </dependencies>
 
     <build>
-        <finalName>org.eclipse.sw360.log4j-osgi-support-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

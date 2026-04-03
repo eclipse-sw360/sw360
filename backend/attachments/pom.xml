@@ -20,9 +20,9 @@
     <artifactId>backend-attachments</artifactId>
     <packaging>war</packaging>
     <name>backend-attachments</name>
-    <build><finalName>attachments</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>attachments</deploy.name>
     </properties>
     <dependencies>
         <dependency>
