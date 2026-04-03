@@ -20,12 +20,13 @@
     </parent>
 
     <artifactId>backend-users</artifactId>
-    <packaging>war</packaging>
+    <!--
+      Packaging changed from WAR to JAR as part of the Thrift-to-REST migration.
+      The service is now a standalone Spring Boot executable JAR with an embedded
+      Tomcat, no longer deployed to a shared servlet container.
+    -->
+    <packaging>jar</packaging>
     <name>backend-users</name>
-    <build><finalName>users</finalName></build>
-    <properties>
-        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -38,5 +39,42 @@
             <artifactId>spring-security-crypto</artifactId>
             <version>${spring-security.version}</version>
         </dependency>
+
+        <!-- Spring Boot Web — provides embedded Tomcat + Spring MVC for the REST layer -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <!-- Use Log4j2 everywhere in SW360 -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <mainClass>org.eclipse.sw360.users.UserSpringApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

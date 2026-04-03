@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -35,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
@@ -43,11 +41,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Implementation of the Thrift service
+ * Business-logic handler for the user service.
+ *
+ * <p>Previously implemented {@code UserService.Iface} (the Apache Thrift generated interface)
+ * and was exposed via a Thrift servlet.  It is now a plain Spring {@code @Service} bean
+ * exposed over HTTP/REST by {@link UserRestController}, removing the Thrift transport layer.
  *
  * @author cedric.bodet@tngtech.com
  */
-public class UserHandler implements UserService.Iface {
+public class UserHandler {
 
     private static final Logger log = LogManager.getLogger(UserHandler.class);
     private static final String EXTENSION = ".log";
@@ -85,7 +87,7 @@ public class UserHandler implements UserService.Iface {
             log.info("No users found. Creating default administrator user.");
             try {
                 addUser(admin);
-            } catch (TException e) {
+            } catch (SW360Exception e) {
                 log.atError().withThrowable(e).log("Error creating admin user");
             }
         }
@@ -95,15 +97,13 @@ public class UserHandler implements UserService.Iface {
         db = new UserDatabaseHandler(client, userDbName);
     }
 
-    @Override
     public User getUser(String id) throws SW360Exception {
         User user = db.getUser(id);
         assertNotNull(user);
         return user;
     }
 
-    @Override
-    public User getByEmail(String email) throws TException {
+    public User getByEmail(String email) throws SW360Exception {
         StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
         assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": "
                 + stackTraceElement.getLineNumber());
@@ -114,8 +114,7 @@ public class UserHandler implements UserService.Iface {
         return db.getByEmail(email);
     }
 
-    @Override
-    public User getByEmailOrExternalId(String email, String externalId) throws TException {
+    public User getByEmailOrExternalId(String email, String externalId) throws SW360Exception {
         User user = getByEmail(email);
         if (user == null) {
             user = db.getByExternalId(externalId);
@@ -126,86 +125,71 @@ public class UserHandler implements UserService.Iface {
         return user;
     }
 
-    @Override
-    public User getByApiToken(String token) throws TException {
+    public User getByApiToken(String token) throws SW360Exception {
         assertNotEmpty(token);
         return db.getByApiToken(token);
     }
 
-    @Override
-    public User getByOidcClientId(String clientId) throws TException {
+    public User getByOidcClientId(String clientId) throws SW360Exception {
         assertNotEmpty(clientId);
         return db.getByOidcClientId(clientId);
     }
 
-    @Override
     public List<User> searchUsers(String searchText) {
         return db.searchUsers(searchText);
     }
 
-    @Override
     public List<User> getAllUsers() {
         return db.getAll();
     }
 
-    @Override
-    public AddDocumentRequestSummary addUser(User user) throws TException {
+    public AddDocumentRequestSummary addUser(User user) throws SW360Exception {
         assertUser(user);
         return db.addUser(user);
     }
 
-    @Override
-    public RequestStatus updateUser(User user) throws TException {
+    public RequestStatus updateUser(User user) throws SW360Exception {
         assertNotNull(user);
         assertNotNull(user.getEmail());
         return db.updateUser(user);
     }
 
-    @Override
-    public RequestStatus deleteUser(User user, User adminUser) throws TException {
+    public RequestStatus deleteUser(User user, User adminUser) throws SW360Exception {
         assertNotNull(user);
         assertNotNull(user.getEmail());
         return db.deleteUser(user, adminUser);
     }
 
-    @Override
-    public String getDepartmentByEmail(String email) throws TException {
+    public String getDepartmentByEmail(String email) throws SW360Exception {
         User user = getByEmail(email);
         return user != null ? user.getDepartment() : null;
     }
 
-    @Override
     public Map<PaginationData, List<User>> getUsersWithPagination(User user,
-            PaginationData pageData) throws TException {
+            PaginationData pageData) {
         return db.getUsersWithPagination(pageData);
     }
 
-    @Override
-    public Map<PaginationData, List<User>> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, PaginationData pageData)
-            throws TException {
+    public Map<PaginationData, List<User>> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
         return db.search(text, subQueryRestrictions, pageData);
     }
 
-    @Override
-    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
+    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
         return db.searchUsersByExactValues(subQueryRestrictions, pageData);
     }
 
-    @Override
-    public Set<String> getUserDepartments() throws TException {
+    public Set<String> getUserDepartments() {
         return db.getUserDepartments();
     }
 
-    @Override
-    public Set<String> getMemberEmailsBySecondaryDepartmentName(String departmentName) throws TException {
+    public Set<String> getMemberEmailsBySecondaryDepartmentName(String departmentName) {
         return db.getAllEmailsBySecondaryDepartmentName(departmentName);
     }
 
-    public Set<String> getUserEmails() throws TException {
+    public Set<String> getUserEmails() {
         return db.getUserEmails();
     }
 
-    @Override
     public RequestSummary importFileToDB() {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         RequestSummary requestSummary = new RequestSummary();
@@ -215,19 +199,16 @@ public class UserHandler implements UserService.Iface {
         return requestSummary;
     }
 
-    @Override
     public RequestStatus importDepartmentSchedule() {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         db.importFileToDB(configDTO.getPathFolder());
         return RequestStatus.SUCCESS;
     }
 
-    @Override
-    public Map<String, List<String>> getSecondaryDepartmentMemberEmails() throws TException {
+    public Map<String, List<String>> getSecondaryDepartmentMemberEmails() {
         return db.getSecondaryDepartmentMemberEmails();
     }
 
-    @Override
     public Set<String> getListFileLog() {
         try {
             DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
@@ -244,7 +225,6 @@ public class UserHandler implements UserService.Iface {
         return Collections.emptySet();
     }
 
-    @Override
     public List<String> getLogFileContentByName(String fileName) throws SW360Exception {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
@@ -258,8 +238,7 @@ public class UserHandler implements UserService.Iface {
         return Collections.emptyList();
     }
 
-    @Override
-    public String getLastModifiedFileName() throws TException {
+    public String getLastModifiedFileName() {
         try {
             DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
             if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
@@ -279,8 +258,7 @@ public class UserHandler implements UserService.Iface {
         return "";
     }
 
-    @Override
-    public String getPathConfigDepartment() throws TException {
+    public String getPathConfigDepartment() {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         if (configDTO != null && !configDTO.getPathFolder().isEmpty()) {
             return configDTO.getPathFolder();
@@ -288,13 +266,11 @@ public class UserHandler implements UserService.Iface {
         return "";
     }
 
-    @Override
-    public void writePathFolderConfig(String pathFolder) throws TException {
+    public void writePathFolderConfig(String pathFolder) {
         readFileDepartmentConfig.writePathFolderConfig(pathFolder);
     }
 
-    @Override
-    public String getLastRunningTime() throws TException {
+    public String getLastRunningTime() {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         if (configDTO != null && !configDTO.getLastRunningTime().isEmpty()) {
             return configDTO.getLastRunningTime();
@@ -302,33 +278,27 @@ public class UserHandler implements UserService.Iface {
         return "";
     }
 
-    @Override
-    public void updateDepartmentToListUser(List<User> users, String department) throws TException {
+    public void updateDepartmentToListUser(List<User> users, String department) {
         db.updateDepartmentToUsers(users, department);
     }
 
-    @Override
-    public void deleteSecondaryDepartmentFromListUser(List<User> users, String department) throws TException {
+    public void deleteSecondaryDepartmentFromListUser(List<User> users, String department) {
         db.deleteSecondaryDepartmentFromListUser(users, department);
     }
 
-    @Override
-    public List<User> getAllUserByEmails(List<String> emails) throws TException {
+    public List<User> getAllUserByEmails(List<String> emails) {
         return db.getAllUserByEmails(emails);
     }
 
-    @Override
-    public List<User> searchDepartmentUsers(String department) throws TException {
+    public List<User> searchDepartmentUsers(String department) {
         return db.getAllDepartmentUser(department);
     }
 
-    @Override
-    public List<User> searchUsersGroup(UserGroup userGroup) throws TException {
+    public List<User> searchUsersGroup(UserGroup userGroup) {
         return db.getAllUsersGroup(userGroup);
     }
 
-    @Override
-    public Set<String> getUserSecondaryDepartments() throws TException {
+    public Set<String> getUserSecondaryDepartments() {
         return db.getUserSecondaryDepartments();
     }
 }
