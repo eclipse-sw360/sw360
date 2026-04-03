@@ -930,7 +930,16 @@ public class CycloneDxBOMImporter {
 
     private Component createComponent(org.cyclonedx.model.Component componentFromBom) {
         Component component = new Component();
-        component.setName(CommonUtils.nullToEmptyString(componentFromBom.getName()).trim());
+        String componentName = CommonUtils.nullToEmptyString(componentFromBom.getName()).trim();
+        String componentGroup = CommonUtils.nullToEmptyString(componentFromBom.getGroup()).trim();
+
+        // Only prepend group if it's present AND not already embedded in the name.
+        // This handles inconsistencies between SBOM generators (e.g. NPM scopes).
+        if (!componentGroup.isEmpty() && !componentName.startsWith(componentGroup)) {
+            componentName = componentGroup + "/" + componentName;
+        }
+
+        component.setName(componentName);
 
         String compVCS = CommonUtils.nullToEmptyList(componentFromBom.getExternalReferences()).stream()
                 .filter(extRef -> ExternalReference.Type.VCS.equals(extRef.getType()))
