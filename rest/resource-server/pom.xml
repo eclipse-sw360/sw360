@@ -25,6 +25,7 @@
     <packaging>war</packaging>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>resource</deploy.name>
     </properties>
 
     <dependencies>
@@ -192,7 +193,6 @@
     </profiles>
 
     <build>
-        <finalName>resource</finalName>
         <plugins>
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>

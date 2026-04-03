@@ -43,7 +43,6 @@
   </scm>
   <modules>
     <module>build-configuration</module>
-    <module>utils</module>
     <module>libraries</module>
     <module>backend</module>
     <module>rest</module>
@@ -59,7 +58,6 @@
   <properties>
     <rest.version>2.0.0</rest.version>
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
-    <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
     <jars.deploy.dir/>
     <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
     <listener.deploy.dir/>
@@ -165,6 +163,9 @@
     <keycloak.version>26.5.6</keycloak.version>
     <org.owasp.encoder.version>1.3.1</org.owasp.encoder.version>
     <write.properties.file.version>2.0.0</write.properties.file.version>
+    <!-- Deployment artifact name (Tomcat context root). Defaults to artifactId.
+         Override per-module only when the desired deploy name differs from the artifactId. -->
+    <deploy.name>${project.artifactId}</deploy.name>
     <!-- Plugin version properties (sonatype/release profile) -->
     <maven-scm-plugin.version>2.2.1</maven-scm-plugin.version>
     <eclipse-jarsigner-plugin.version>1.3.2</eclipse-jarsigner-plugin.version>
@@ -1011,12 +1012,12 @@
                         <artifactId>${project.artifactId}</artifactId>
                         <version>${project.version}</version>
                         <type>${project.packaging}</type>
-                        <destFileName>${project.build.finalName}.${project.packaging}</destFileName>
+                        <destFileName>${deploy.name}.${project.packaging}</destFileName>
                       </artifactItem>
                     </artifactItems>
-                    <!-- This property is set by the submodules themself, depending wether they are backend, frontend or
-                    library modules. All other submodule leave this property blank causing the dependency plugin to copy
-                    the artifact inside the target folder. -->
+                    <!-- This property is set by the submodules themself, depending on whether they are backend,
+                    frontend or library modules. All other submodule leave this property blank causing the dependency
+                    plugin to copy the artifact inside the target folder. -->
                     <outputDirectory>${artifact.deploy.dir}</outputDirectory>
                   </configuration>
                 </execution>

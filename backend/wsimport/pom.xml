@@ -21,11 +21,9 @@
     <artifactId>backend-wsimport</artifactId>
     <packaging>war</packaging>
     <name>backend-wsimport</name>
-    <build>
-        <finalName>wsimport</finalName>
-    </build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>wsimport</deploy.name>
     </properties>
 
     <dependencies>

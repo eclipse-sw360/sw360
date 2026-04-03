@@ -23,9 +23,9 @@
     <artifactId>backend-cvesearch</artifactId>
     <packaging>war</packaging>
     <name>backend-cvesearch</name>
-    <build><finalName>cvesearch</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>cvesearch</deploy.name>
     </properties>
 
     <dependencies>

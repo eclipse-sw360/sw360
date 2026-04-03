@@ -22,9 +22,9 @@
     <artifactId>backend-configurations</artifactId>
     <packaging>war</packaging>
     <name>backend-configurations</name>
-    <build><finalName>configurations</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>configurations</deploy.name>
     </properties>
 
     <dependencies>
