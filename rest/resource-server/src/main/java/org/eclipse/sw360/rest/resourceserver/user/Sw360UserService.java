@@ -68,7 +68,7 @@ public class Sw360UserService {
     private String thriftServerUrl;
     public static final String AUTHORITIES_READ = "READ";
     public static final String AUTHORITIES_WRITE = "WRITE";
-    public static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
+    static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
 
     public List<User> getAllUsers() {
         try {
