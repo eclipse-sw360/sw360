@@ -354,6 +354,10 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
         validateNoEmptyKeys(project);
         return handler.addProject(project, user);
+    @Override
+    public AddDocumentRequestSummary copyProject(String projectId, Set<String> fieldsToCopy, Project overrideFields, User user) throws SW360Exception {	return projectDatabaseHandler.copyProject(projectId, fieldsToCopy, overrideFields, user);
+    }
+
     }
 
     ///////////////////////////////
