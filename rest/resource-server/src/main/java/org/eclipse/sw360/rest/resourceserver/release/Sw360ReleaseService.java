@@ -99,6 +99,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
@@ -333,6 +335,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
+        } else if (requestStatus == RequestStatus.DUPLICATE) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                    "A release with the same name and version already exists.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
             throw new RuntimeException(
                     "sw360 release with name '" + SW360Utils.printName(release) + " cannot be updated.");
