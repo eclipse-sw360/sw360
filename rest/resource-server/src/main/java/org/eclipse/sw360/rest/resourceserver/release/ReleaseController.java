@@ -111,6 +111,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 
 @BasePathAwareController
@@ -120,6 +121,7 @@ import com.google.common.collect.ImmutableMap;
 @SecurityRequirement(name = "basic")
 public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
+    private static final int MAX_BATCH_SUMMARY_IDS = 200;
     private static final String SPDX_DOCUMENT = "spdxDocument";
     private static final String DOCUMENT_CREATION_INFORMATION = "documentCreationInformation";
     private static final String PACKAGE_INFORMATION = "packageInformation";
@@ -320,6 +322,75 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             restControllerHelper.addEmbeddedReleaseLinks(halRelease, linkedReleaseRelations);
         }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get release summaries in a single batch.",
+            description = "Returns lightweight release summary data for a list of release IDs.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Batch release summary.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                        {
+                                                          "items": [
+                                                            {
+                                                              "id": "releaseId1",
+                                                              "name": "Release A",
+                                                              "version": "1.0.0",
+                                                              "clearingState": "APPROVED"
+                                                            }
+                                                          ],
+                                                          "missingIds": ["releaseId2"]
+                                                        }
+                                                        """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Invalid request body.")
+            }
+    )
+    @PostMapping(value = RELEASES_URL + "/batch-summary", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> getReleaseBatchSummary(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            examples = {
+                                    @ExampleObject(name = "Batch summary request", value = """
+                                            {
+                                              "ids": ["releaseId1", "releaseId2", "releaseId3"]
+                                            }
+                                            """)
+                            }
+                    )
+            )
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        LinkedHashSet<String> releaseIds = normalizeReleaseBatchSummaryIds(extractReleaseBatchSummaryIds(reqBodyMap));
+        List<Release> releases = releaseService.getAccessibleReleasesByIds(releaseIds, sw360User);
+        Map<String, Release> releasesById = releases.stream()
+                .collect(Collectors.toMap(Release::getId, release -> release, (existing, ignored) -> existing));
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        List<String> missingIds = new ArrayList<>();
+        for (String releaseId : releaseIds) {
+            Release release = releasesById.get(releaseId);
+            if (release == null) {
+                missingIds.add(releaseId);
+                continue;
+            }
+            items.add(createReleaseBatchSummaryItem(release));
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("items", items);
+        response.put("missingIds", missingIds);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @Operation(
@@ -1867,6 +1938,50 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
         return resource;
+    }
+
+    private List<String> extractReleaseBatchSummaryIds(Map<String, Object> reqBodyMap) {
+        if (reqBodyMap == null || !reqBodyMap.containsKey("ids")) {
+            throw new BadRequestClientException("The request body must contain an 'ids' array.");
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            mapper.registerModule(sw360Module);
+            return mapper.convertValue(reqBodyMap.get("ids"), new TypeReference<List<String>>() {});
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestClientException("The 'ids' field must be an array of release IDs.");
+        }
+    }
+
+    private LinkedHashSet<String> normalizeReleaseBatchSummaryIds(List<String> releaseIds) {
+        if (releaseIds == null) {
+            throw new BadRequestClientException("The 'ids' field must be an array of release IDs.");
+        }
+
+        LinkedHashSet<String> normalizedIds = new LinkedHashSet<>();
+        for (String releaseId : releaseIds) {
+            if (StringUtils.isBlank(releaseId)) {
+                throw new BadRequestClientException("The 'ids' field must not contain blank values.");
+            }
+            normalizedIds.add(releaseId);
+        }
+
+        if (normalizedIds.size() > MAX_BATCH_SUMMARY_IDS) {
+            throw new BadRequestClientException("A maximum of " + MAX_BATCH_SUMMARY_IDS + " unique release IDs is allowed.");
+        }
+
+        return normalizedIds;
+    }
+
+    private Map<String, Object> createReleaseBatchSummaryItem(Release release) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("id", release.getId());
+        item.put("name", release.getName());
+        item.put("version", release.getVersion());
+        item.put("clearingState", release.getClearingState() == null ? null : release.getClearingState().name());
+        return item;
     }
 
     private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
