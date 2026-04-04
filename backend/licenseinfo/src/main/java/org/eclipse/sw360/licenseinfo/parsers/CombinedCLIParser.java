@@ -72,6 +72,10 @@ public class CombinedCLIParser extends AbstractCLIParser{
         return releaseExternalIdCorrelationKey;
     }
 
+    /**
+     * Checks if this parser is applicable to the given attachment by verifying
+     * the file extension is XML and the root element is CombinedCLI.
+     */
     @Override
     public <T> boolean isApplicableTo(Attachment attachment, User user, T context) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
@@ -82,6 +86,10 @@ public class CombinedCLIParser extends AbstractCLIParser{
         return hasThisXMLRootElement(content, COMBINED_CLI_ROOT_ELEMENT_NAMESPACE, COMBINED_CLI_ROOT_ELEMENT_NAME, user, context);
     }
 
+    /**
+     * Parses license information from a CombinedCLI attachment.
+     * Groups results by external component ID and correlates them with known releases.
+     */
     @Override
     public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
@@ -159,10 +167,16 @@ public class CombinedCLIParser extends AbstractCLIParser{
             String contentText = findNamedSubelement(nodes.item(i), contentElementName)
                     .map(AbstractCLIParser::normalizeEscapedXhtml)
                     .orElse(null);
+            if (externalId == null) {
+                log.warn("Copyright node is missing srcComponent attribute, skipping entry");
+                continue;
+            }
             if (!result.containsKey(externalId)){
                 result.put(externalId, Sets.newHashSet());
             }
-            result.get(externalId).add(contentText);
+            if (contentText != null) {
+                result.get(externalId).add(contentText);
+            }
         }
         return result;
     }
