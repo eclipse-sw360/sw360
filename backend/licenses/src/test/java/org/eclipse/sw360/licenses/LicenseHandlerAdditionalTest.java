@@ -34,11 +34,13 @@ import static org.junit.Assert.*;
  * This test file addresses issue #3736: Missing test coverage for LicenseHandler business logic methods
  * 
  * Methods tested:
- * - deleteLicense
- * - addLicenseType
- * - deleteLicenseType
+ * - deleteLicense (positive + negative)
+ * - addLicenseType (positive + negative)
+ * - deleteLicenseType (positive)
  * - getLicenseSummaryForExport
  * - getLicenseTypes
+ * - testDeleteNonExistentLicense
+ * - testDeleteNonExistentLicenseType
  */
 public class LicenseHandlerAdditionalTest {
 
