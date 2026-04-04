@@ -46,7 +46,9 @@ public class LicenseHandlerAdditionalTest {
 
     private LicenseHandler handler;
     private User adminUser;
+    private User clearingAdminUser;
     private User nonAdminUser;
+    private User sw360AdminUser;
     private Map<String, License> licenses;
 
     @Before
@@ -58,12 +60,22 @@ public class LicenseHandlerAdditionalTest {
         adminUser = new User()
                 .setEmail("admin@sw360.org")
                 .setDepartment("CT BE OP SWI OSS")
-                .setUserGroup(UserGroup.ADMIN);
+                .setUserGroup(UserGroup.CLEARING_ADMIN);
+        
+        clearingAdminUser = new User()
+                .setEmail("clearingadmin@sw360.org")
+                .setDepartment("CT BE OP SWI OSS")
+                .setUserGroup(UserGroup.CLEARING_ADMIN);
         
         nonAdminUser = new User()
                 .setEmail("user@sw360.org")
                 .setDepartment("CT BE OP SWI OSS")
                 .setUserGroup(UserGroup.USER);
+        
+        sw360AdminUser = new User()
+                .setEmail("sw360admin@sw360.org")
+                .setDepartment("CT BE OP SWI OSS")
+                .setUserGroup(UserGroup.SW360_ADMIN);
     }
 
     @After
@@ -100,15 +112,15 @@ public class LicenseHandlerAdditionalTest {
         license.setShortname(licenseShortname);
         license.setFullname("Test License for Deletion");
         
-        handler.updateLicense(license, adminUser, adminUser);
+        handler.updateLicense(license, clearingAdminUser, clearingAdminUser);
         
-        License created = handler.getByID(licenseShortname, adminUser.getDepartment());
+        License created = handler.getByID(licenseShortname, clearingAdminUser.getDepartment());
         assertNotNull("License should be created", created);
         
-        RequestStatus deleteStatus = handler.deleteLicense(created.getId(), adminUser);
+        RequestStatus deleteStatus = handler.deleteLicense(created.getId(), clearingAdminUser);
         assertEquals("License deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
-        assertThrows(SW360Exception.class, () -> handler.getByID(created.getId(), adminUser.getDepartment()));
+        assertThrows(SW360Exception.class, () -> handler.getByID(created.getId(), clearingAdminUser.getDepartment()));
     }
 
     @Test
@@ -118,9 +130,9 @@ public class LicenseHandlerAdditionalTest {
         license.setShortname(licenseShortname);
         license.setFullname("Test License for Deletion by Non-Admin");
         
-        handler.updateLicense(license, adminUser, adminUser);
+        handler.updateLicense(license, clearingAdminUser, clearingAdminUser);
         
-        License created = handler.getByID(licenseShortname, adminUser.getDepartment());
+        License created = handler.getByID(licenseShortname, clearingAdminUser.getDepartment());
         assertNotNull("License should be created", created);
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), nonAdminUser);
@@ -133,7 +145,7 @@ public class LicenseHandlerAdditionalTest {
         String typeName = "Test License Type " + System.currentTimeMillis();
         licenseType.setLicenseType(typeName);
         
-        RequestStatus addStatus = handler.addLicenseType(licenseType, adminUser);
+        RequestStatus addStatus = handler.addLicenseType(licenseType, clearingAdminUser);
         assertEquals("License type addition should succeed", RequestStatus.SUCCESS, addStatus);
         
         List<LicenseType> types = handler.getLicenseTypes();
@@ -163,7 +175,7 @@ public class LicenseHandlerAdditionalTest {
         String typeName = "Test License Type to Delete " + System.currentTimeMillis();
         licenseType.setLicenseType(typeName);
         
-        handler.addLicenseType(licenseType, adminUser);
+        handler.addLicenseType(licenseType, clearingAdminUser);
         
         List<LicenseType> types = handler.getLicenseTypes();
         Integer typeId = null;
@@ -175,7 +187,7 @@ public class LicenseHandlerAdditionalTest {
         }
         assertNotNull("License type should be created", typeId);
         
-        RequestStatus deleteStatus = handler.deleteLicenseType(typeId.toString(), adminUser);
+        RequestStatus deleteStatus = handler.deleteLicenseType(typeId.toString(), sw360AdminUser);
         assertEquals("License type deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
         List<LicenseType> typesAfterDelete = handler.getLicenseTypes();
@@ -199,11 +211,11 @@ public class LicenseHandlerAdditionalTest {
         license2.setShortname("ExportTest-2-" + System.currentTimeMillis());
         license2.setFullname("Export Test License 2");
         
-        handler.updateLicense(license1, adminUser, adminUser);
-        handler.updateLicense(license2, adminUser, adminUser);
+        handler.updateLicense(license1, clearingAdminUser, clearingAdminUser);
+        handler.updateLicense(license2, clearingAdminUser, clearingAdminUser);
         
-        License created1 = handler.getByID(license1.getShortname(), adminUser.getDepartment());
-        License created2 = handler.getByID(license2.getShortname(), adminUser.getDepartment());
+        License created1 = handler.getByID(license1.getShortname(), clearingAdminUser.getDepartment());
+        License created2 = handler.getByID(license2.getShortname(), clearingAdminUser.getDepartment());
         
         List<License> summary = handler.getLicenseSummary();
         assertNotNull("License summary should not be null", summary);
@@ -231,12 +243,12 @@ public class LicenseHandlerAdditionalTest {
 
     @Test(expected = org.eclipse.sw360.datahandler.thrift.SW360Exception.class)
     public void testDeleteNonExistentLicense() throws Exception {
-        handler.deleteLicense("non_existent_id_12345", adminUser);
+        handler.deleteLicense("non_existent_id_12345", sw360AdminUser);
     }
 
     @Test
     public void testDeleteNonExistentLicenseType() throws Exception {
-        RequestStatus status = handler.deleteLicenseType("99999", adminUser);
+        RequestStatus status = handler.deleteLicenseType("99999", sw360AdminUser);
         assertEquals("Deleting non-existent license type should return INVALID_INPUT", RequestStatus.INVALID_INPUT, status);
     }
 }
