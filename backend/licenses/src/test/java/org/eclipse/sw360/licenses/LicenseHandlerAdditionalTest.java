@@ -60,7 +60,7 @@ public class LicenseHandlerAdditionalTest {
         adminUser = new User()
                 .setEmail("admin@sw360.org")
                 .setDepartment("CT BE OP SWI OSS")
-                .setUserGroup(UserGroup.CLEARING_ADMIN);
+                .setUserGroup(UserGroup.ADMIN);
         
         clearingAdminUser = new User()
                 .setEmail("clearingadmin@sw360.org")
