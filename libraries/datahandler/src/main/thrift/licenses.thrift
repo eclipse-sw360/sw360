@@ -78,6 +78,11 @@ struct Obligation {
     300: optional map<string, string> additionalData,
     97: optional string node,
 
+    // LicenseDB sync fields
+    24: optional string licenseDbId,
+    25: optional string lastSyncTime,
+    26: optional string syncStatus,
+
 }
 
 struct LicenseType {
@@ -142,6 +147,11 @@ struct License {
     25: optional string text,
 
     30: optional bool checked = true;
+
+    // LicenseDB sync fields
+    31: optional string licenseDbId,
+    32: optional string lastSyncTime,
+    33: optional string syncStatus,
 
     90: optional DocumentState documentState,
 
