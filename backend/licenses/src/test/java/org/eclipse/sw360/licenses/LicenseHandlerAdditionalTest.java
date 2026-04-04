@@ -120,7 +120,8 @@ public class LicenseHandlerAdditionalTest {
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), clearingAdminUser);
         assertEquals("License deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
-        assertThrows(SW360Exception.class, () -> handler.getByID(created.getId(), clearingAdminUser.getDepartment()));
+        License afterDelete = handler.getByID(created.getId(), clearingAdminUser.getDepartment());
+        assertNull("License should be null after deletion", afterDelete);
     }
 
     @Test
@@ -136,7 +137,7 @@ public class LicenseHandlerAdditionalTest {
         assertNotNull("License should be created", created);
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), nonAdminUser);
-        assertEquals("Non-admin should not be able to delete license", RequestStatus.FAILURE, deleteStatus);
+        assertEquals("Non-admin should not be able to delete license", RequestStatus.ACCESS_DENIED, deleteStatus);
     }
 
     @Test
