@@ -52,9 +52,7 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -Dsurefire.failIfNoSpecifiedTests=false \
-    -Djars.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
-    -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dlistener.deploy.dir=/sw360_keycloak_listener \
     -Dhelp-docs=true
 
@@ -66,7 +64,6 @@ COPY scripts/create-slim-war-files.sh /bin/slim.sh
 RUN bash /bin/slim.sh
 
 FROM scratch AS binaries
-COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 
@@ -146,8 +143,8 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-# FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak-build
+# FROM quay.io/keycloak/keycloak:26.5.7
+FROM quay.io/keycloak/keycloak@sha256:45ae20191531eb608ddb0b775d012b40d3e4f942697f3214694887dd7c108d13 AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -166,8 +163,8 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-# FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak
+# FROM quay.io/keycloak/keycloak:26.5.7
+FROM quay.io/keycloak/keycloak@sha256:45ae20191531eb608ddb0b775d012b40d3e4f942697f3214694887dd7c108d13 AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

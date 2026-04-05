@@ -6,6 +6,253 @@ the first project location:
 
 https://github.com/eclipse-sw360/sw360/releases
 
+## sw360-20.0.0
+We are proud to announce the release of SW360 version 20.0.0. This major release
+brings significant architectural changes, security enhancements, and performance
+improvements over the 19.2.x series. The most notable update in this version is
+the removal of the Liferay UI; the SW360 backend is now fully decoupled, and
+users must set up the new Next.js-based frontend from the
+[eclipse-sw360/sw360-frontend](https://github.com/eclipse-sw360/sw360-frontend)
+repository.
+
+Highlight of the changes in this version includes:
+* **Frontend Decoupling:** Complete removal of the legacy Liferay UI,
+  introducing a standalone backend with expanded endpoints to support the new
+  Next.js frontend.
+* **Security Improvements:** Addressed multiple vulnerabilities including XXE
+  and path traversal, added XSS protection headers, and reinforced endpoint
+  security.
+* **API & Documentation:** Introduced extensive OpenAPI documentation and
+  implemented robust pagination under the hood.
+* **User & Identity Management:** Enhanced Keycloak user synchronization with
+  CouchDB, and added batch processing.
+* **Performance & Stability:** Implemented database-side pagination, optimized
+  memory usage, and improved indexing and search speeds.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Aashish Jha <aashishjha1107@gmail.com>
+> Abhay349 <pandeyabhay967@gmail.com>
+> Achal Jhawar <35405812+achaljhawar@users.noreply.github.com>
+> Aditya Vishe <adityavishe67@gmail.com>
+> afsahsyeda <afsah.syeda@siemens-healthineers.com>
+> airajena <airajena0@gmail.com>
+> Akshit Joshi <akshit.joshi@siemens-healthineers.com>
+> Alex <alextanzhao22@gmail.com>
+> Ali <aligadallah14@gmail.com>
+> Aman-Cool <aman017102007@gmail.com>
+> amritkv <er.akverma8@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> drockparashar <pranshu007parashar@gmail.com>
+> Elbialy0 <mahmoudelbialy109@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> harshdeveloper21 <harsh237hk@gmail.com>
+> harshitg927 <121371860+harshitg927@users.noreply.github.com>
+> Helio Chissini de Castro <dev@heliocastro.info>
+> himanshu07gupta <himanshu29gupta0703@gmail.com>
+> Himanshu A Garode <himanshu2006garode@gmail.com>
+> Hritik Raj <hritik23154049@akgec.ac.in>
+> Kareem74x <kareemmostafa74x@gmail.com>
+> Kaushlendra Pratap <kaushlendra-pratap.singh@siemens.com>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Mahmoud Abdulmawlaa <m.elbaadishy@gmail.com>
+> Matthew Pappas <matteopappas@gmail.com>
+> Md Ali <mdali620563@gmail.com>
+> Mohamed Hanafy <mohamed.hanfy.dev@outlook.com>
+> naitikk31 <DARJINAITIK7@GMAIL.COM>
+> Nikesh Kumar <kumar.nikesh@siemens.com>
+> pranayh24 <pranayheda24@gmail.com>
+> Prathmesh <dhoneprathmesh72@gmail.com>
+> Priya Sharma <priyasharma1001a@gmail.com>
+> Rajnish Kumar <22it3036@rgipt.ac.in>
+> RITANKAR SAHA <ritankar.saha786@gmail.com>
+> rohit <brohit11544@gmail.com>
+> Rudra Chopra <prabhuchopra@gmail.com>
+> saiteja-in <vurukondasaiteja13@gmail.com>
+> Sameed Ahmad <sameed.ahmad@siemens-healthineers.com>
+> Sandip Mandal <sandipsmmandal02@gmail.com>
+> Sathwik Hejamady Bhat <sathwikhbhat@gmail.com>
+> sathwik-y <sathwik.yellapragada@gmail.com>
+> Shivamrut <gshivamrut@gmail.com>
+> Suhas2109 <suhas.n@siemens-healthineers.com>
+> suvrat1629 <suvrat1629@gmail.com>
+> Taanvi Khevaria <149520227+taanvi2205@users.noreply.github.com>
+> tanwar-div <tanwarkheritalwana@gmail.com>
+> VanKhanhAnny <arianne.dangvankhanh@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `7d37bb9b8` feat(version): update /version endpoint
+
+### Corrections
+* `ba842fcaa` fix(UI): The Linked Packages is not appearing in the project
+  details page, even though packages are linked to the project.
+* `29af0f8fb` fix(Release): merge release issue fixed.
+
+### Infrastructure
+* `924ca4397` chore(lang): remove old README_LANG.md
+
+## sw360-20.0.0-rc-2
+This is the second release candidate for SW360 in the line of next major release
+version 20.0.0 of SW360. The candidate includes numerous features, corrections,
+and improvements over the previous release
+[20.0.0-rc-1](https://github.com/eclipse-sw360/sw360/releases/tag/sw360-20.0.0-rc-1)
+
+This release serves as a preview of the upcoming major version 20.0.0 for
+testing and should not be used in production environments.
+
+Highlight of the changes includes:
+* **Security Enhancements:** Addressed XXE vulnerabilities in parsers, fixed
+  header injection issues, added XSS protection headers, and reinforced endpoint security.
+* **API & Documentation:** Expanded OpenAPI documentation across multiple core controllers.
+* **Performance & Stability:** Optimize memory usage with static client reuse.
+* **Infrastructure:** Updated container infrastructure for v20 and improve CI checks.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Abhay349 <pandeyabhay967@gmail.com>
+> ADITYA-CODE-SOURCE <adityavishe67@gmail.com>
+> afsahsyeda <afsah.syeda@siemens-healthineers.com>
+> Alex <alextanzhao22@gmail.com>
+> Ali <aligadallah14@gmail.com>
+> Aman-Cool <aman017102007@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> Elbialy0 <mahmoudelbialy109@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> harshdeveloper21 <harsh237hk@gmail.com>
+> himanshu07gupta <himanshu29gupta0703@gmail.com>
+> Kareem74x <kareemmostafa74x@gmail.com>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Mahmoud Abdulmawlaa <m.elbaadishy@gmail.com>
+> Matthew Pappas <matteopappas@gmail.com>
+> Nikesh Kumar <kumar.nikesh@siemens.com>
+> Prathmesh <dhoneprathmesh72@gmail.com>
+> Priya Sharma <priyasharma1001a@gmail.com>
+> rudra-superrr <prabhuchopra@gmail.com>
+> saiteja-in <vurukondasaiteja13@gmail.com>
+> Sandip Mandal <sandipsmmandal02@gmail.com>
+> Shivamrut <gshivamrut@gmail.com>
+> VanKhanhAnny <arianne.dangvankhanh@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `a3b728052` feat(attachments): add test for attachment service
+* `064862f46` feat(agents): add AGENTS.md ref existing doc
+* `857e32f78` feat(vmprocess): add shutdown hook to close thread
+* `3ad882f4a` feat(container): add steps for keycloak image
+* `5ff8538df` feat(container): update container for version 20
+* `fba2f20ff` feat(Project): Handle case sensitive for export spreadsheet
+* `2982f9d65` feat(checkstyle): add Checkstyle configuration
+* `187b7b068` feat(http-support): implement file upload method in NewRequestBodyBuilderImpl
+* `18c916a29` feat(AttachmentUsages): Save existing attachment usages of sub-project at parent project level
+* `e1180015e` feat(Email): Enhancement of e-mail notifications for updation of project
+* `31d4b31f1` feat(licenseInfo): Normalise license text and optimise performance
+
+### Corrections
+* `3597da377` fix(clearingteam): Add clearing team to project api responses
+* `8702d8c43` fix(docker): correct runtime startup configuration Refs: #3945 Signed-off-by: VanKhanhAnny <arianne.dangvankhanh@gmail.com>
+* `8ac24b639` fix(rest): close streams and temp files in attachment bundle download
+* `021dff813` fix(rest): prevent NPE in vulnerability tracking sorting and clean error message
+* `bd3a16194` fix(report): respect withSubProject semantics for licenseInfo
+* `7e8dd3413` fix: XXE vulnerability in SPDX parser
+* `09cecb788` fix(license): include timestamp in backup filename
+* `9a7acdb57` fix(nouveau): add ConflictException retry to putNouveauDesignDocument
+* `ada574770` fix(datahandler): add ConflictException retry to putDesignDocument
+* `342df4f9c` fix(attachmentUsages): fix null owner corruption and infinite recursion in sub-project inheritance
+* `f7786d1c2` fix(attachment): urlencode filename to get
+* `d3ed1ce48` fix(project): ClearingTeam is a string, not user
+* `1acec288d` fix(Docker): add missing runtime dependency
+* `ecbac4f45` fix(release): fix test of attach field in merge
+* `bdac2d5f7` fix(rest): X-XSS-Protection Header
+* `fa0e2d515` fix(clearingrequest): replace per-call THttpClient with shared ThriftClients instance
+* `709dfaeac` fix(rest) : Compilation error fix from different PRs
+* `2b2b0c75c` fix(components): correct clearing state priority in autosetReleaseClearingState
+* `61933e7d2` fix(rest): update clearing request after editing in request tab
+* `5c11a3834` fix(security): Add @PreAuthorize annotation to AttachmentController
+* `bafbd42ac` fix(security): Add @PreAuthorize to ScheduleAdminController
+* `f874c08c2` fix(project): add null checks for both project and actual in updateProject to prevent NPE
+* `b9a63e0fe` fix(vmcomponents): handle NPE and ClassCastException in getVulIdsPerComponentVmId (#3780)
+* `e05569f31` fix(rest): Add null check for getReleaseIdToUsage() ...
+* `ffa9aad1f` fix(rest): return 400 for missing required request parameters instead of 500
+* `96f1a5963` fix(SvmConnector): handle missing keystore
+* `251a50819` fix(backend): close FileInputStream in SvmConnector to prevent resource leak
+* `05b632d05` fix(importCDX):do not alter unknown domain VCS and revert old changes
+* `0c3a7c29d` fix(rest): Unauthorrrized access to backend configurations.
+* `1876d51e3` fix(index): check if vcs exists
+* `61fe5227e` fix(view): check release.eccInformation not null
+* `d8acc1273` Fix/jwt claim validation (#3753)
+* `b33e1be65` Fix CORS filter activation and allowed methods (#3735)
+* `c7534cf0e` fix(rest): Add logic to delete open clearing requests from request tab, when the project has deleted.
+* `34d133488` fix(security): replace newInstance() with newDefaultInstance()
+* `738366d2d` fix(security): fix XXE vulnerability in XML parsing
+* `79ce6f23b` fix: prevent NoSuchElementException when ...
+* `1ed5584d4` fix(licenseinfo): check Optional.isPresent() before get() in DocxGenerator
+* `3b0c53f2a` fix(CR): header injection vulnerability.
+* `de763bb7c` fix: Prevent NullPointerException in Sw360ProjectService
+* `8416467ef` fix(rest): users receive email notification to download project reports for project-only/with-linked-releases
+* `5b8bca91a` fix(RepositoryUrl): update default value VCS_HOST
+* `9720ece9e` fix(config): update VCS_HOSTS to use JSON array format for config consistency
+* `d8e8e7502` fix: Exception Swallowing in UserRepository
+
+### Infrastructure
+* `912b15d27` refactor(licenses): replace String concatenation with StringBuilder
+* `b990ed902` docs(api): add Swagger @ApiResponse status code documentation for additional controllers
+* `842d5ee76` chore(docs/swagger): add @ApiResponses annotations for ...
+* `ba7d5a24d` chore(docs/swagger): add OpenAPI annotations for ImportExportController, LicenseController and UserController
+* `3739ad2f4` chore(core): remove redundant String.format
+* `76caf9ae4` chore(docs/swagger): add OpenAPI annotations for ReleaseController
+* `414a2f62c` chore(docs/swagger): add OpenAPI annotations for ProjectController
+* `aeae97f81` chore(deps): bump org.springframework:spring-webmvc
+* `8979d0ec0` chore(deps): bump actions/cache from 5.0.3 to 5.0.4
+* `b149d3a08` chore(deps): bump github/codeql-action from 4.32.6 to 4.33.0
+* `ebe9dcc80` chore(deps): bump keycloak/keycloak from `a7b0cb7` to `8d44614`
+* `e2ab8ca4d` perf(cloudant): use static client with retries
+* `805205f3e` perf(gson): reuse Gson objects
+* `eec790b27` chore(deps): bump step-security/harden-runner from 2.15.1 to 2.16.0
+* `6904e658b` chore(deps): bump https://github.com/gitleaks/gitleaks
+* `93cb74714` perf(licenseinfo): remove redundant stream collection in obligation mapping
+* `3584fc7f2` chore(deps): bump https://github.com/pre-commit/pre-commit-hooks
+* `847926002` chore(deps): bump https://github.com/compilerla/conventional-pre-commit
+* `58a065cac` chore(deps): bump actions/dependency-review-action from 4.8.3 to 4.9.0
+* `f904ba4f2` chore(deps): bump https://github.com/pylint-dev/pylint
+* `5efa1d134` chore(deps): bump docker/setup-qemu-action from 3.7.0 to 4.0.0
+* `52c9d90b5` chore(deps): bump https://github.com/gitleaks/gitleaks
+* `70ffa370b` chore(deps): bump docker/metadata-action from 5.10.0 to 6.0.0
+* `a08389fc8` chore(workflow): update workflow for containers
+* `e4ec0c915` chore(config): remove unused config
+* `6a35ca228` chore(lint): fix some style linter errors
+* `26a083764` docs: update README for CouchDB password setup
+* `e13be358d` chore(deps): bump docker/login-action from 3.7.0 to 4.0.0
+* `9dd307df6` chore(deps): bump step-security/harden-runner from 2.15.0 to 2.15.1
+* `0a8c4bab5` chore(deps): bump docker/setup-buildx-action from 3.12.0 to 4.0.0
+* `8cd0f096b` chore(deps): bump docker/build-push-action from 6.19.2 to 7.0.0
+* `1fd521312` chore(deps): bump github/codeql-action from 4.32.4 to 4.32.6
+* `4df420199` chore(deps): bump com.fasterxml.jackson.core:jackson-core
+* `b35f52c48` chore(deps): bump actions/upload-artifact from 6.0.0 to 7.0.0
+* `043db8adb` chore(deps): bump step-security/harden-runner from 2.14.2 to 2.15.0
+* `4955cc43e` chore(deps): bump actions/dependency-review-action from 4.8.2 to 4.8.3
+* `205f8d670` chore(deps): bump github/codeql-action from 4.32.3 to 4.32.4
+* `d444ed5bf` ci: cancel stale PR workflow runs using concurrency
+
 ## sw360-20.0.0-rc-1
 This is a first release candidate for SW360 in the line of next major release
 version 20.0.0 of SW360. The candidate includes numerous features, corrections,

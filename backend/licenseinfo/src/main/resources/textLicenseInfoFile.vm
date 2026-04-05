@@ -42,18 +42,23 @@ Details
 
 ## Acknowledgments
 ##
-#set($acks = [])
+#set($licenseAckMap = [])
 #if(${acknowledgements.get($releaseName)})
-#set($acks = $acknowledgements.get($releaseName))
-#if($acks.size() > 0)
+#set($licenseAckMap = $acknowledgements.get($releaseName))
+#if($licenseAckMap.size() > 0)
 Acknowledgements for $releaseName
 ----------------
+#foreach($licenseName in $licenseAckMap.keySet())
+#set($acks = $licenseAckMap.get($licenseName))
 #foreach($ack in ${acks})
-$ack
+$licenseName
+    $ack
+
 #end## foreach($ack in ${acks})
+#end## foreach($licenseName in $licenseAckMap.keySet())
 
 
-#end## if($acks.size() > 0)
+#end## if($licenseAckMap.size() > 0)
 #end## if(${acknowledgements.get($releaseName)})
 ##
 ##
