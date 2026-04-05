@@ -982,7 +982,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                             attachmentId, uploadDescription);
                 }
             } catch (Exception exp) {
-                log.error(String.format("Release : %s .Error occured while triggering Fossology Process . %s",
+                log.error(String.format("Release : %s .Error occurred while triggering Fossology Process . %s",
                         new Object[] { releaseId, exp.getMessage() }));
             } finally {
                 log.info("Release : " + releaseId + " .Fossology Process exited, removing lock.");
@@ -1027,7 +1027,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             attachmentSizeinBytes = FileCopyUtils.copy(streamToAttachments, attachmentOutputStream);
         } catch (IOException exp) {
             log.error("Release : " + release.getId()
-                    + " .Error occured while calculation attachment size.Attachment ID : " + attachmentId);
+                    + " .Error occurred while calculation attachment size.Attachment ID : " + attachmentId);
         }
 
         return (attachmentSizeinBytes / 1024) / 1024;
