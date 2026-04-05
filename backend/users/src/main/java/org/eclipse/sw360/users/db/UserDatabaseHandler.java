@@ -230,29 +230,30 @@ public class UserDatabaseHandler {
         List<String> emailCsv = new ArrayList<>();
         try {
             File file = new File(filePath);
-            CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build();
-            List<String[]> rows = reader.readAll();
-            String mapTemp = "";
-            for (String[] row : rows) {
-                if (row.length > 1) {
-                    if (!Objects.equals(row[0], "")) {
-                        if (!mapTemp.isEmpty()) {
-                            if (listMap.containsKey(mapTemp)) {
-                                departmentDuplicate.add(mapTemp);
+            try (CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build()) {
+                List<String[]> rows = reader.readAll();
+                String mapTemp = "";
+                for (String[] row : rows) {
+                    if (row.length > 1) {
+                        if (!Objects.equals(row[0], "")) {
+                            if (!mapTemp.isEmpty()) {
+                                if (listMap.containsKey(mapTemp)) {
+                                    departmentDuplicate.add(mapTemp);
+                                }
+                                listMap.put(mapTemp, emailCsv);
+                                emailCsv = new ArrayList<>();
                             }
-                            listMap.put(mapTemp, emailCsv);
-                            emailCsv = new ArrayList<>();
+                            mapTemp = row[0];
                         }
-                        mapTemp = row[0];
+                        String email = row[1];
+                        emailCsv.add(email);
                     }
-                    String email = row[1];
-                    emailCsv.add(email);
                 }
+                if (listMap.containsKey(mapTemp)) {
+                    departmentDuplicate.add(mapTemp);
+                }
+                listMap.put(mapTemp, emailCsv);
             }
-            if (listMap.containsKey(mapTemp)) {
-                departmentDuplicate.add(mapTemp);
-            }
-            listMap.put(mapTemp, emailCsv);
         } catch (IOException | CsvException e) {
             log.error("Can't read file csv: {}", e.getMessage());
         }
