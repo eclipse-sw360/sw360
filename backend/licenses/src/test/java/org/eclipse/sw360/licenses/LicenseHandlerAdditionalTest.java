@@ -114,15 +114,15 @@ public class LicenseHandlerAdditionalTest {
         license.setShortname(licenseShortname);
         license.setFullname("Test License for Deletion");
         
-        handler.updateLicense(license, clearingAdminUser, clearingAdminUser);
+        handler.updateLicense(license, adminUser, adminUser);
         
-        License created = handler.getByID(licenseShortname, clearingAdminUser.getDepartment());
+        License created = handler.getByID(licenseShortname, adminUser.getDepartment());
         assertNotNull("License should be created", created);
         
-        RequestStatus deleteStatus = handler.deleteLicense(created.getId(), clearingAdminUser);
+        RequestStatus deleteStatus = handler.deleteLicense(created.getId(), adminUser);
         assertEquals("License deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
-        assertThrows(SW360Exception.class, () -> handler.getByID(created.getId(), clearingAdminUser.getDepartment()));
+        assertThrows(SW360Exception.class, () -> handler.getByID(created.getId(), adminUser.getDepartment()));
     }
 
     @Test
@@ -132,9 +132,9 @@ public class LicenseHandlerAdditionalTest {
         license.setShortname(licenseShortname);
         license.setFullname("Test License for Deletion by Non-Admin");
         
-        handler.updateLicense(license, clearingAdminUser, clearingAdminUser);
+        handler.updateLicense(license, adminUser, adminUser);
         
-        License created = handler.getByID(licenseShortname, clearingAdminUser.getDepartment());
+        License created = handler.getByID(licenseShortname, adminUser.getDepartment());
         assertNotNull("License should be created", created);
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), nonAdminUser);
@@ -147,7 +147,7 @@ public class LicenseHandlerAdditionalTest {
         String typeName = "Test License Type " + System.currentTimeMillis();
         licenseType.setLicenseType(typeName);
         
-        RequestStatus addStatus = handler.addLicenseType(licenseType, clearingAdminUser);
+        RequestStatus addStatus = handler.addLicenseType(licenseType, adminUser);
         assertEquals("License type addition should succeed", RequestStatus.SUCCESS, addStatus);
         
         List<LicenseType> types = handler.getLicenseTypes();
@@ -177,7 +177,7 @@ public class LicenseHandlerAdditionalTest {
         String typeName = "Test License Type to Delete " + System.currentTimeMillis();
         licenseType.setLicenseType(typeName);
         
-        handler.addLicenseType(licenseType, clearingAdminUser);
+        handler.addLicenseType(licenseType, adminUser);
         
         List<LicenseType> types = handler.getLicenseTypes();
         Integer typeId = null;
@@ -189,7 +189,7 @@ public class LicenseHandlerAdditionalTest {
         }
         assertNotNull("License type should be created", typeId);
         
-        RequestStatus deleteStatus = handler.deleteLicenseType(typeId.toString(), sw360AdminUser);
+        RequestStatus deleteStatus = handler.deleteLicenseType(typeId.toString(), adminUser);
         assertEquals("License type deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
         List<LicenseType> typesAfterDelete = handler.getLicenseTypes();
@@ -213,11 +213,11 @@ public class LicenseHandlerAdditionalTest {
         license2.setShortname("ExportTest-2-" + System.currentTimeMillis());
         license2.setFullname("Export Test License 2");
         
-        handler.updateLicense(license1, clearingAdminUser, clearingAdminUser);
-        handler.updateLicense(license2, clearingAdminUser, clearingAdminUser);
+        handler.updateLicense(license1, adminUser, adminUser);
+        handler.updateLicense(license2, adminUser, adminUser);
         
-        License created1 = handler.getByID(license1.getShortname(), clearingAdminUser.getDepartment());
-        License created2 = handler.getByID(license2.getShortname(), clearingAdminUser.getDepartment());
+        License created1 = handler.getByID(license1.getShortname(), adminUser.getDepartment());
+        License created2 = handler.getByID(license2.getShortname(), adminUser.getDepartment());
         
         List<License> summary = handler.getLicenseSummary();
         assertNotNull("License summary should not be null", summary);
@@ -245,12 +245,12 @@ public class LicenseHandlerAdditionalTest {
 
     @Test(expected = org.eclipse.sw360.datahandler.thrift.SW360Exception.class)
     public void testDeleteNonExistentLicense() throws Exception {
-        handler.deleteLicense("non_existent_id_12345", sw360AdminUser);
+        handler.deleteLicense("non_existent_id_12345", adminUser);
     }
 
     @Test
     public void testDeleteNonExistentLicenseType() throws Exception {
-        RequestStatus status = handler.deleteLicenseType("99999", sw360AdminUser);
+        RequestStatus status = handler.deleteLicenseType("99999", adminUser);
         assertEquals("Deleting non-existent license type should return INVALID_INPUT", RequestStatus.INVALID_INPUT, status);
     }
 }
