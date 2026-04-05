@@ -189,7 +189,7 @@ public class LicenseHandlerAdditionalTest {
         }
         assertNotNull("License type should be created", typeId);
         
-        RequestStatus deleteStatus = handler.deleteLicenseType(typeId.toString(), adminUser);
+        RequestStatus deleteStatus = handler.deleteLicenseType(typeId.toString(), sw360AdminUser);
         assertEquals("License type deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
         
         List<LicenseType> typesAfterDelete = handler.getLicenseTypes();
