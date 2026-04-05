@@ -259,9 +259,6 @@ public class CycloneDxBOMExporter {
             if (CommonUtils.isNotEmpty(release.getOtherLicenseIds())) {
                 licenses.addAll(release.getOtherLicenseIds());
             }
-            if (CommonUtils.isNotEmpty(sw360Comp.getMainLicenseIds())) {
-                licenses.addAll(sw360Comp.getMainLicenseIds());
-            }
             if (CommonUtils.isNotEmpty(licenses)) {
                 comp.setLicenseChoice(getLicenseFromSw360Document(licenses));
             }
