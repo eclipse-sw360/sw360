@@ -121,8 +121,24 @@ public class LicenseHandlerAdditionalTest {
         
         RequestStatus deleteStatus = handler.deleteLicense(created.getId(), adminUser);
         assertEquals("License deletion should succeed", RequestStatus.SUCCESS, deleteStatus);
+    }
+
+    @Test(expected = SW360Exception.class)
+    public void testGetDeletedLicenseThrowsException() throws Exception {
+        License license = new License();
+        String licenseShortname = "TestLicense-DeleteThrows-" + System.currentTimeMillis();
+        license.setShortname(licenseShortname);
+        license.setFullname("Test License for Deletion");
         
-        assertThrows(SW360Exception.class, () -> handler.getByID(created.getId(), adminUser.getDepartment()));
+        handler.updateLicense(license, adminUser, adminUser);
+        
+        License created = handler.getByID(licenseShortname, adminUser.getDepartment());
+        assertNotNull("License should be created", created);
+        
+        handler.deleteLicense(created.getId(), adminUser);
+        
+        // This should throw SW360Exception since license was deleted
+        handler.getByID(created.getId(), adminUser.getDepartment());
     }
 
     @Test
