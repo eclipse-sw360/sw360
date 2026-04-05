@@ -147,14 +147,14 @@ public class CycloneDxBOMExporter {
             }
             return summary;
         } catch (SW360Exception e) {
-            log.error(String.format("An error occured while fetching project: %s from db, for SBOM export!", projectId), e);
-            summary.setMessage("An error occured while fetching project from db, for SBOM export: " + e.getMessage());
+            log.error(String.format("An error occurred while fetching project: %s from db, for SBOM export!", projectId), e);
+            summary.setMessage("An error occurred while fetching project from db, for SBOM export: " + e.getMessage());
         } catch (GeneratorException e) {
-            log.error(String.format("An error occured while exporting xml SBOM for project with id: %s", projectId), e);
-            summary.setMessage("An error occured while exporting xml SBOM for project: " + e.getMessage());
+            log.error(String.format("An error occurred while exporting xml SBOM for project with id: %s", projectId), e);
+            summary.setMessage("An error occurred while exporting xml SBOM for project: " + e.getMessage());
         } catch (Exception e) {
-            log.error("An error occured while exporting SBOm for project: " + projectId, e);
-            summary.setMessage("An error occured while exporting SBOM for project: " + e.getMessage());
+            log.error("An error occurred while exporting SBOm for project: " + projectId, e);
+            summary.setMessage("An error occurred while exporting SBOM for project: " + e.getMessage());
         }
         summary.setRequestStatus(RequestStatus.FAILURE);
         return summary;
