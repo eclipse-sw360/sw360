@@ -517,7 +517,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     log.warn("Project with Id - " + searchId + " not visisble to user - " + user.getEmail());
                 }
             } else {
-                log.warn("Error occured while fetching Project with Id - " + searchId);
+                log.warn("Error occurred while fetching Project with Id - " + searchId);
             }
         });
 

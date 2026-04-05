@@ -1628,7 +1628,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     return addedCount != orphanCount;
                 }
             } catch (TException e) {
-                log.error(String.format("An error occured while updating linked packages of release: %s", releaseId), e.getCause());
+                log.error(String.format("An error occurred while updating linked packages of release: %s", releaseId), e.getCause());
                 return true;
             }
         }
@@ -1668,7 +1668,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
             }
         } catch (TException e) {
-            log.error(String.format("An error occured while updating linked packages of release: %s", releaseId), e.getCause());
+            log.error(String.format("An error occurred while updating linked packages of release: %s", releaseId), e.getCause());
             throw new SW360Exception(e.getMessage());
         }
     }
@@ -2818,7 +2818,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     try {
                         return getRelease(relId, sessionUser);
                     } catch (SW360Exception e) {
-                        log.error("Error occured while getting release. ", e);
+                        log.error("Error occurred while getting release. ", e);
                     }
                     return null;
                 }).filter(rel -> rel == null || !makePermission(rel, sessionUser).isActionAllowed(RequestedAction.WRITE))
@@ -3365,7 +3365,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                                 "SRC Upload: Error while downloading the source code zip file for release:"
                                                         + r.getId() + " " + e);
                                     } catch (Exception e) {
-                                        log.error("An exception occured while uploading source:" + r.getId() + " " + e);
+                                        log.error("An exception occurred while uploading source:" + r.getId() + " " + e);
                                     }
                                 }
                             }
