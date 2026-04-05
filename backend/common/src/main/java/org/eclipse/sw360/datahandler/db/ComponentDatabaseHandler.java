@@ -3407,9 +3407,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String fileName = file.getName();
         String contentType = "application/zip";
         final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
-        FileInputStream inputStream = new FileInputStream(file);
-        Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, inputStream, null);
-
+        Attachment attachment;
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, inputStream, null);
+        }
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
         attachment.setAttachmentType(AttachmentType.SOURCE);
         attachment.setCheckStatus(CheckStatus.NOTCHECKED);
