@@ -262,14 +262,22 @@ public class FossologyHandler implements FossologyService.Iface {
                     furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
                     fossologyProcess.setProcessStatus(ExternalToolProcessStatus.NEW);
                     furthestStep.setResult("Upload preparation failed: " + e.getMessage());
-                    updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+                    try {
+                        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+                    } catch (Exception rollbackEx) {
+                        log.error("Failed to roll back clearing state after upload failure: {}", rollbackEx.getMessage());
+                    }
                     throw e;
                 } catch (RuntimeException e) {
                     log.error("Upload preparation failed for release, rolling back clearing state: {}", e.getMessage());
                     furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
                     fossologyProcess.setProcessStatus(ExternalToolProcessStatus.NEW);
                     furthestStep.setResult("Upload preparation failed: " + e.getMessage());
-                    updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+                    try {
+                        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+                    } catch (Exception rollbackEx) {
+                        log.error("Failed to roll back clearing state after upload failure: {}", rollbackEx.getMessage());
+                    }
                     throw e;
                 }
                 break;
