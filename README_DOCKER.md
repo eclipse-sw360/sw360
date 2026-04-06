@@ -4,145 +4,185 @@
 
 ## Table of Contents
 
-[Building](#building)
-
-[Running the Image](#running-the-image-first-time)
-
-[Extra Configurations](#configurations)
+* [Building](#building)
+* [Configuration](#configuration)
+  * [Environment Variables](#environment-variables)
+  * [Secrets](#secrets)
+* [Running the Image](#running-the-image)
+* [Volumes and Persistence](#volumes-and-persistence)
+* [Networking](#networking)
+* [FOSSology Integration](#fossology-integration)
 
 ## Building
 
-* Install Docker recent version
-* Build images
-
-    Build is done by the script:
+* Install a recent version of Docker build `buildx` support.
+* Build images using the provided script:
 
     ```sh
     ./docker_build.sh
     ```
 
-    If you want to specify [CVE-Search](https://github.com/cve-search/cve-search) host at build time, run as follows:
+    This script builds the Thrift image, the SW360 binaries image, and finally
+    the SW360 runtime image.
+
+    If you want to specify a
+    [CVE-Search](https://github.com/cve-search/cve-search) host at build time
+    (modifies properties file before build), run as follows:
 
     ```sh
     ./docker_build.sh --cvesearch-host <HOST_URL>
     ```
 
-    The `<HOST_URL>` above should be `http://<YOUR_SERVER_HOST>:<PORT>` style, 
+    The `<HOST_URL>` should be in `http://<YOUR_SERVER_HOST>:<PORT>` format,
     or it can be [https://cvepremium.circl.lu](https://cvepremium.circl.lu) for testing purposes only.
+* If you want to change the image root (defaults to `ghcr.io/eclipse-sw360`) run
+  the script by overriding the flag `DOCKER_IMAGE_ROOT`:
 
-    The script will build multiple intermediary images.
-    Subsequent builds will only build the differences
-
-    To configure couchdb, create a file containing the necessary credentials.
-
-    A template of this file can be found in:
-    `config/couchdb/default_secrets`
-
-    Example:
-
-    ```ini
-    COUCHDB_URL=http://couchdb:5984
-    COUCHDB_USER=sw360
-    COUCHDB_PASSWORD=sw360fossie
+    ```sh
+    DOCKER_IMAGE_ROOT=myregistry.com/sw360 ./docker_build.sh
     ```
 
-    To pass your file during build export a variable called **SECRETS** pointing to your file
+## Configuration
 
-* Proxy during build stage
+The SW360 Docker setup uses environment variables and secret files for
+configuration at runtime. This allows usage of same base image for various
+servers. The entrypoint script
+([docker-entrypoint.sh](scripts/docker-config/docker-entrypoint.sh))
+reads these variables and updates the configuration files in `/etc/sw360` at
+container startup.
 
-    Docker will detect if you configured proxy environment variables.
+### Environment Variables
 
-    It's suggested though to configure docker system wide ( require super user privileges )
+General configuration variables are stored in
+[config/sw360/.env.backend](config/sw360/.env.backend). You can modify this
+file to tweak SW360 behaviour.
 
-  * systemd based
-    If you are using a regular systemd based docker:
-    * Create the following file **http_proxy.conf** on the directory `/etc/systemd/system/docker.service.d/`
+**CouchDB Settings**
+* `COUCHDB_URL`: URL of the CouchDB instance (default: `http://couchdb:5984`).
+* `COUCHDB_LUCENESEARCH_LIMIT`: Limit for Lucene search results (default: `1000`).
+* `CLOUDANT_ENABLE_RETRIES`: Enable retries in Cloudant (default: `true`).
 
-    ```ini
-    [Service]
-    Environment="HTTP_PROXY=<your_proxy>"
-    Environment="HTTPS_PROXY=<your_proxy>"
-    Environment="NO_PROXY=<your_proxy>"
-    ```
+**Spring Controllers**
+* `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
+* `JWKS_ISSUER_URI`: URI for JWKS issuer (default:
+    `http://localhost:8080/authorization/oauth2/jwks`). Use
+    `http://localhost:8083/realms/sw360/protocol/openid-connect/certs` for
+    KeyCloak based setup.
+* `JWKS_SET_URI`: URI for JWKS set (default:
+    `http://localhost:8080/authorization/oauth2/jwks`).
+* `JWKS_ISSUER`: Issuer URL (default: `http://localhost:8090`).
 
-    * Do a regular systemctl daemon-reload and systemctl restart docker
+**Email Configuration**
+* `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to
+    disable email service.
+* `EMAIL_PROPERTIES_PORT`: SMTP port (empty by default).
+* `EMAIL_PROPERTIES_STARTTLS`: Enable STARTTLS (default: `false`).
+* `EMAIL_PROPERTIES_ENABLE_SSL`: Enable SSL (default: `false`).
+* `EMAIL_PROPERTIES_AUTH_REQUIRED`: Authentication required (default: `false`).
+* `EMAIL_PROPERTIES_FROM`: Sender email address (default:
+    `__No_Reply__@sw360.org`).
+* `EMAIL_PROPERTIES_SUPPORT_EMAIL`: Support email address (default:
+    `help@sw360.org`).
+* `EMAIL_PROPERTIES_TLS_PROTOCOL`: TLS protocol version (default: `TLSv1.2`).
+* `EMAIL_PROPERTIES_TLS_TRUST`: Trusted certificates (default: `*`).
+* `EMAIL_PROPERTIES_DEBUG`: Enable mail debug logging (default: `false`).
 
-* Volumes
+**SVM Configs**
+* `SVM_API_BASE_PATH`: Base path of SVM API (default:
+    `https://svm.example.org`).
+* `SVM_API_ROOT_PATH`: API root path (default: `api/v1`).
+* `SVM_SW360_API_URL`: SW360 data API URL for SVM (default:
+    `https://svm.example.org/application.json`).
+* `SVM_SW360_CERTIFICATE_FILENAME`: Certificate file name to push monitoring
+    list information. To use, put the certificate file in the `etc` named
+    volume, update this variable and `SVM_SW360_CERTIFICATE_PASSPHRASE` in
+    [Secrets](#secrets).
 
-  By default couchdb and sw360 have their own storage volumes:
+**Note:** Make sure the API URLs are not starting or ending with `/`.
 
-  **CouchDB**
+**Other Settings**
+* `SCHEDULER_AUTOSTART_SERVICES`: Comma-separated list (no spaces) of services
+    to autostart (default: `cvesearchService`). Leave empty to not start any
+    service.
+* `SW360_CORS_ALLOWED_ORIGIN`: CORS allowed origins (default: `*`).
+* `SW360_THRIFT_SERVER_URL`: URL where Thrift server is running (default:
+    `http://localhost:8080`).
+* `SW360_BASE_URL`: Base URL for SW360 server (default: `http://localhost:8080`).
 
-  ```yml
-  - couchdb → /opt/couchdb/data
-  ```
+### Secrets
 
-  **sw360**
+Sensitive information is managed via secret files located in
+`config/couchdb/` and `config/sw360/`.
 
-  ```yml
-  - etc → /etc/sw360
-  - webapps → /app/sw360/tomcat/webapps
-  ```
+**CouchDB Secrets ([config/couchdb/default_secrets](config/couchdb/default_secrets))**
+* `COUCHDB_USER`: CouchDB username.
+* `COUCHDB_PASSWORD`: CouchDB password.
 
-  There is a local mounted as binded dir volume to add customizations
+**SW360 App Secrets ([config/sw360/default_secrets](config/sw360/default_secrets))**
+* `SVM_SW360_CERTIFICATE_PASSPHRASE`: Passphrase for SVM certificate located by
+    `SVM_SW360_CERTIFICATE_FILENAME`.
+* `SVM_SW360_JKS_PASSWORD`: Password for ca-cert keystore.
+* `REST_APITOKEN_HASH_SALT`: Salt for user generated API token hashing.
+* `EMAIL_PROPERTIES_USERNAME`: Username for SMTP authentication.
+* `EMAIL_PROPERTIES_PASSWORD`: Password for SMTP authentication.
 
-  **sw360**
+To update these secrets, simply edit the respective files. The
+[docker-compose.yml](docker-compose.yml) is configured to mount these secrets
+into the containers.
 
-  ```yml
-  - ./config/sw360 -> /app/sw360/config
-  ```
+## Running the Image
 
-  **couchdb**
-
-  ```yml
-  - config/couchdb/sw360_setup.ini → /opt/couchdb/sw360_setup.ini
-  - config/couchdb/sw360_log.ini → /opt/couchdb/etc/local.d/sw360_log.ini
-  - logs/couchdb → /opt/couchdb/log
-  ```
-
-  If you want to override all configs, create a docker env file  and alter for your needs.
-
-  Then just rebuild the project with **-env env_file** option
-
-## Networking
-
-This composed image runs under a single default network, called **sw360net**
-
-So any external docker image can connect to internal couchdb  through this network
-
-## Running the image first time
-
-* Run the resulting image:
+* Start the services using Docker Compose:
 
     ```sh
     docker compose up
     ```
 
-* With custom env file
+    Add `-d` to run in detached mode:
 
     ```sh
-    docker compose --env-file <envfile> up
+    docker compose up -d
     ```
 
-    You can add **-d** parameter at end of line to start in daemon mode and see the logs with the following command:
+    To view logs:
 
     ```sh
-    docker logs -f sw360
+    docker compose logs -f sw360
     ```
 
-### Post setup configuration
+## Volumes and Persistence
 
-* Please read this page after you have initial screen:
-[SW360 Initial Setup Configuration](https://eclipse.dev/sw360/docs/deployment/legacy/deploy-liferay7.3/)
+The `docker-compose.yml` defines several volumes to persist data and
+configuration.
 
-## Fossology
+**SW360 Service**
+* `etc` (named volume) mounted to `/etc/sw360`: Persists generated
+    configuration files.
 
-For docker based approach, is recommended use official [Fossology docker image](https://hub.docker.com/r/fossology/fossology/)
+**CouchDB Service**
+* `couchdb` (named volume) mounted to `/opt/couchdb/data`: Persists the
+    database data.
+* `config/couchdb/sw360_setup.ini` mounted to
+    `/opt/couchdb/etc/local.d/sw360_setup.ini`: Default CouchDB secrets.
+* `config/couchdb/sw360_log.ini` mounted to
+    `/opt/couchdb/etc/local.d/sw360_log.ini`: CouchDB logging configuration.
+* `config/couchdb/nouveau.ini` mounted to
+    `/opt/couchdb/etc/local.d/nouveau.ini`: Inform CouchDB about Nouveau service.
 
-This is the steps to quick perform this:
+## Networking
+
+The services run in a default network called `sw360net`. This allows services to
+communicate with each other securely without using host network. External
+containers can connect to the services attached to this network.
+
+## FOSSology Integration
+
+For a Docker-based approach, it is recommended to use the official
+[FOSSology Docker image](https://hub.docker.com/r/fossology/fossology/).
+
+Run FOSSology connected to the SW360 network:
 
 ```sh
-# Start Fossology container connected to sw360 env
 docker run \
     --network sw360net \
     -p 8081:80 \
@@ -153,34 +193,17 @@ docker run \
     -d fossology/fossology
 ```
 
-This will pull/start the fossology container and made it available on the host machine at port 8081
+### Configure FOSSology
 
-### Configure Fossology
-
-* **On Fossology**
-  * Login on Fossology
-  * Create an API token for the user intended to be used
-* **On sw360**
-  * Go to fossology admin config
-  * Add the host, will be something like: `http(s)://<hostname>:8081/repo/api/v1/`
-  * Add the id of folder. The default id is **1** (Software Repository). You can get the ID of the folder you want from the folder URL in Fossology
-  * Add your obtained Token from Fossology
-
-## Configurations
-
-By default, docker image of sw360 runs without internal web server and is assigned to be on port 8080.
-
-Here's some extra configurations that can be useful to fix some details.
-
-### CouchDB
-
-CouchDB in compose runs with one standard admin user in a single node setup, user **sw360** and password **sw360fossie**
-
-To modify the entries and setup, you have two possible options:
-
-* Modify `config/couchdb/docker.ini` in main source tree
-* Create a new `.ini` file, add to `config/couchdb/` folder and add as a mounted volume file in docker compose
-
-For logging, they are now file based on local source folder `logs/couchdb` and the base configuration is in `config/couchdb/log.ini`.
-
-You can find [CouchDB configuration docs here](https://docs.couchdb.org/en/stable/config/index.html)
+* **On FOSSology**
+  * Login to FOSSology.
+  * Create an API token for sw360 to use from Admin > Users > Edit User Account.
+      Or check their
+      [Wiki for REST API](https://github.com/fossology/fossology/wiki/FOSSology-REST-API#token).
+  * Note desired folder's ID.
+* **On SW360**
+  * Go to Admin > Fossology or the endpoint `POST fossology/saveConfig`.
+  * Add the FOSSology host URL (e.g., `http://fossology/repo/api/v2/` if using
+      container name, or mapped host port).
+  * Add the folder ID (default is `1` for **Software Repository**).
+  * Add the API Token obtained from FOSSology as **Access Token**.

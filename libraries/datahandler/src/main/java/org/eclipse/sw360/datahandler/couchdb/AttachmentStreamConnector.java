@@ -122,7 +122,7 @@ public class AttachmentStreamConnector {
                     String originalFileName = attachment.getFilename();
                     // Sanitize filename to prevent path traversal
                     String sanitizedFileName = CommonUtils.sanitizeFilename(originalFileName);
-                    
+
                     if (!fileNameUsageMap.containsKey(sanitizedFileName)) {
                         fileNameUsageMap.put(sanitizedFileName, 0);
                         zipEntry = new ZipEntry(sanitizedFileName);
@@ -222,7 +222,8 @@ public class AttachmentStreamConnector {
                 try {
                     return connector.getAttachment(attachmentId, partFileName);
                 } catch (ServiceResponseException e) {
-                    log.error("Cannot find part " + (part - 1) + " of attachment " + attachmentId, e);
+                    log.error("Cannot find part {} of attachment {}", part - 1, attachmentId, e);
+                    log.error("Debugging info: {}", e.getDebuggingInfo());
                     return null;
                 }
             }

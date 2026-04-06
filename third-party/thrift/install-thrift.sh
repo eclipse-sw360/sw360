@@ -19,19 +19,27 @@ set -ex
 BASEDIR="${BASEDIR:-$(mktemp -d)}"
 THRIFT_VERSION=${THRIFT_VERSION:-0.20.0}
 
-has() { type "$1" &> /dev/null; }
+installDeps() {
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    cmake \
+    curl \
+    flex \
+    bison
+}
 
 processThrift() {
   VERSION=${THRIFT_VERSION}
+  CACHE_DIR="$BASEDIR/cache"
+  SOURCE_FILE_NAME="$CACHE_DIR/thrift-$VERSION.tar.gz"
 
   echo "-[shell provisioning] Extracting thrift"
   [ -d "$BASEDIR/thrift" ] && rm -rf "$BASEDIR/thrift"
   mkdir -p "$BASEDIR/thrift"
-  if [ -f "/var/cache/deps/thrift-$VERSION.tar.gz" ]; then
-      tar -xzf "/var/cache/deps/thrift-$VERSION.tar.gz" -C "$BASEDIR/thrift" --strip-components=1
-  else
-      curl -L "http://archive.apache.org/dist/thrift/$VERSION/thrift-$VERSION.tar.gz" | tar -xz -C "$BASEDIR/thrift" --strip-components=1
+  if [ ! -f "$SOURCE_FILE_NAME" ]; then
+      mkdir -p "$CACHE_DIR"
+      curl -L "http://archive.apache.org/dist/thrift/$VERSION/thrift-$VERSION.tar.gz" --output "$SOURCE_FILE_NAME"
   fi
+  tar -xzf "$SOURCE_FILE_NAME" -C "$BASEDIR/thrift" --strip-components=1
 
   mkdir -p "${BASEDIR}/build"
   cd "${BASEDIR}/build" || exit 1
@@ -50,11 +58,12 @@ processThrift() {
 
   # -DCMAKE_POLICY_VERSION_MINIMUM=3.5 is added to fix the cmake error:
   # CMake Error at CMakeLists.txt:20 (cmake_minimum_required):
-  #  Compatibility with CMake < 3.5 has been removed from CMake.
+  # Compatibility with CMake < 3.5 has been removed from CMake.
 
   make -j"$(nproc)"
 
   DESTDIR="${DESTDIR:-$BASEDIR/dist/thrift-$VERSION}" make install
 }
 
+installDeps
 processThrift

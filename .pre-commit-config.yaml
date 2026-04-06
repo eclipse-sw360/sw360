@@ -1,33 +1,33 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
     hooks:
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
-    -   id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
 
--   repo: https://github.com/compilerla/conventional-pre-commit
-    rev: 'v3.6.0'
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: 91ab4bf57e58b32adf1a122681f6ebe164d081c8 # v4.4.0
     hooks:
-    -   id: conventional-pre-commit
-        stages: [commit-msg]
--   repo: https://github.com/gitleaks/gitleaks
-    rev: v8.21.2
+      - id: conventional-pre-commit
+        stages: [ commit-msg ]
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e # v8.30.1
     hooks:
-    -   id: gitleaks
--   repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
+      - id: gitleaks
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 38980559e3a605691d6579f96222c30778e5a69e # 3.0.0
     hooks:
-    -   id: shellcheck
--   repo: https://github.com/pylint-dev/pylint
-    rev: v3.3.1
+      - id: shellcheck
+  - repo: https://github.com/pylint-dev/pylint
+    rev: 88e1ab7545a4af4aea15c305a154c164a95ab842 # v4.0.5
     hooks:
-    -   id: pylint
+      - id: pylint
 
-# Java code quality checks using Maven Checkstyle
--   repo: local
+  # Java code quality checks using Maven Checkstyle
+  - repo: local
     hooks:
-    -   id: checkstyle
+      - id: checkstyle
         name: checkstyle (Java)
         entry: mvn
         args:
@@ -39,9 +39,9 @@ repos:
         language: system
         files: \.java$
         pass_filenames: false
-        stages: [pre-push]
+        stages: [ pre-push ]
         exclude: |
-            (?x)^(
-                libraries/datahandler/src/main/java/org/eclipse/sw360/datahandler/thrift/.*|
-                .*/target/.*
-            )$
+          (?x)^(
+              libraries/datahandler/src/main/java/org/eclipse/sw360/datahandler/thrift/.*|
+              .*/target/.*
+          )$

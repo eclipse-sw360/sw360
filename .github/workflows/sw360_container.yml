@@ -23,6 +23,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '*'
     paths-ignore:
       - '**.md'
 
@@ -42,9 +44,10 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       sw360_version: ${{ steps.pom_version.outputs.SW360_VERSION }}
+      timestamp: ${{ steps.pom_version.outputs.TIMESTAMP }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
         with:
           egress-policy: audit
 
@@ -62,6 +65,7 @@ jobs:
         id: pom_version
         run: |
           echo "SW360_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
+          echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
 
   sw360_image:
     name: SW360 Runtime image
@@ -71,10 +75,11 @@ jobs:
       packages: write
     env:
       SW360_VERSION: ${{ needs.sw360_version.outputs.sw360_version }}
+      TIMESTAMP: ${{ needs.sw360_version.outputs.timestamp }}
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
         with:
           egress-policy: audit
 
@@ -82,43 +87,76 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Extract components metadata (tags, labels) runtime image
-        id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        id: meta_sw360
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: |
             ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=schedule,pattern=nightly
-            type=semver,pattern={{version}}
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-          labels: org.opencontainers.image.licenses=EPL-2.0
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+          labels: |
+            org.opencontainers.image.licenses=EPL-2.0
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
-      - name: Assembly image
+      - name: Extract components metadata (tags, labels) KeyCloak image
+        id: meta_keycloak
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/keycloak
+          tags: |
+            type=schedule,pattern=nightly
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=ref,event=tag
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=26.5.5,enable=true
+          labels: |
+            org.opencontainers.image.licenses=EPL-2.0
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: SW360 image
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           context: .
           target: sw360
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta_sw360.outputs.tags }}
+          labels: ${{ steps.meta_sw360.outputs.labels }}
           provenance: mode=max
           sbom: true
-          secret-files: |
-            "couchdb=./config/couchdb/default_secrets"
+        env:
+          SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
+
+      - name: KeyCloak image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        with:
+          context: .
+          target: keycloak
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64
+          tags: ${{ steps.meta_keycloak.outputs.tags }}
+          labels: ${{ steps.meta_keycloak.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+        env:
+          SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}

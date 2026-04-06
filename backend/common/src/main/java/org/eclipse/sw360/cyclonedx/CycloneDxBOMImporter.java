@@ -85,6 +85,7 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.NON_PKG_MANAG
  */
 public class CycloneDxBOMImporter {
     private static final Logger log = LogManager.getLogger(CycloneDxBOMImporter.class);
+    private static final Gson GSON = new Gson();
     private static final String DOT_GIT = ".git";
     private static final String SLASH = "/";
     private static final String DOT = ".";
@@ -215,7 +216,7 @@ public class CycloneDxBOMImporter {
                     if (requestSummary.requestStatus.equals(RequestStatus.SUCCESS)) {
 
                         String jsonMessage = requestSummary.getMessage();
-                        messageMap = new Gson().fromJson(jsonMessage, Map.class);
+                        messageMap = GSON.fromJson(jsonMessage, Map.class);
                         String projId = messageMap.get("projectId");
 
                         if (CommonUtils.isNullEmptyOrWhitespace(projId)) {
@@ -313,16 +314,16 @@ public class CycloneDxBOMImporter {
                         requestSummary.setMessage(convertCollectionToJSONString(messageMap));
                     }
                 } else {
-                    requestSummary.setMessage(String.format(String.format(
+                    requestSummary.setMessage(String.format(
                             "SBOM import aborted with error: Multiple vcs information found in components, vcs found: %s and total components: %s",
-                            vcsCount, componentsCount)));
+                            vcsCount, componentsCount));
                     return requestSummary;
                 }
             }
 
             if (RequestStatus.SUCCESS.equals(requestSummary.getRequestStatus())) {
                 String jsonMessage = requestSummary.getMessage();
-                messageMap = new Gson().fromJson(jsonMessage, Map.class);
+                messageMap = GSON.fromJson(jsonMessage, Map.class);
                 String projId = messageMap.get("projectId");
                 Project project = projectDatabaseHandler.getProjectById(projId, user);
                 try {
@@ -651,7 +652,7 @@ public class CycloneDxBOMImporter {
 
                 for (org.cyclonedx.model.Component bomComp : entry.getValue()) {
                     Set<String> licenses = getLicenseFromBomComponent(bomComp);
-                    Release release = createRelease(bomComp.getVersion(), comp, licenses);
+                    Release release = createRelease(bomComp, comp, licenses);
                     if (CommonUtils.isNullEmptyOrWhitespace(release.getVersion()) ) {
                         log.error("release version is not present in SBoM for component: " + comp.getName());
                         invalidReleases.add(comp.getName());

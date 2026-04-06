@@ -15,7 +15,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.eclipse.sw360</groupId>
   <artifactId>sw360</artifactId>
-  <version>20.0.0-rc-1</version>
+  <version>20.0.0</version>
   <packaging>pom</packaging>
   <name>Eclipse SW360</name>
   <description>Eclipse SW360 compliance management application</description>
@@ -43,7 +43,6 @@
   </scm>
   <modules>
     <module>build-configuration</module>
-    <module>utils</module>
     <module>libraries</module>
     <module>backend</module>
     <module>rest</module>
@@ -59,7 +58,6 @@
   <properties>
     <rest.version>2.0.0</rest.version>
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
-    <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
     <jars.deploy.dir/>
     <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
     <listener.deploy.dir/>
@@ -99,8 +97,8 @@
     <!-- Dependencies version properties -->
     <assertj.version>3.27.7</assertj.version>
     <byte-buddy.version>1.17.8</byte-buddy.version>
-    <cloudantsdk.version>0.10.12</cloudantsdk.version>
-    <commons-cli.version>1.9.0</commons-cli.version>
+    <cloudantsdk.version>0.10.16</cloudantsdk.version>
+    <commons-cli.version>1.10.0</commons-cli.version>
     <commons-codec.version>1.20.0</commons-codec.version>
     <commons-collection4.version>4.5.0</commons-collection4.version>
     <commons-compress.version>1.28.0</commons-compress.version>
@@ -133,44 +131,60 @@
     <jcraft.version>0.1.55</jcraft.version>
     <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
     <jetty.version>10.0.15</jetty.version>
-    <jgiven.version>2.0.2</jgiven.version>
+    <jgiven.version>2.0.3</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
     <json.version>20250517</json.version>
     <joda-time.version>2.14.0</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
-    <junit.version>4.13.2</junit.version>
+    <junit.version>5.13.3</junit.version>
+    <junit-platform-launcher.version>1.13.3</junit-platform-launcher.version>
     <log4j2.version>2.25.3</log4j2.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
     <mockito.version>5.21.0</mockito.version>
-    <okhttp.version>4.12.0</okhttp.version>
+    <okhttp.version>5.3.2</okhttp.version>
     <org.ow2.asm.version>9.9.1</org.ow2.asm.version>
     <org.spdx.java.spdx.library.version>2.0.2</org.spdx.java.spdx.library.version>
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
-    <plexus-utils.version>4.0.2</plexus-utils.version>
+    <plexus-utils.version>4.0.3</plexus-utils.version>
     <poi.version>5.5.0</poi.version>
     <project-lombok.version>1.18.38</project-lombok.version>
     <slf4j.version>2.0.17</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
-    <spring-boot.version>3.5.3</spring-boot.version>
+    <spring-boot.version>3.5.12</spring-boot.version>
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2-authorization-server.version>1.5.5</spring-security-oauth2-authorization-server.version>
     <spring-security.version>6.5.6</spring-security.version>
     <springdoc-openapi-stater-common.version>2.8.13</springdoc-openapi-stater-common.version>
-    <springframework.version>6.2.12</springframework.version>
+    <springframework.version>6.2.17</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <wiremock.version>3.13.1</wiremock.version>
-    <keycloak.version>26.5.2</keycloak.version>
+    <keycloak.version>26.5.6</keycloak.version>
     <org.owasp.encoder.version>1.3.1</org.owasp.encoder.version>
     <write.properties.file.version>2.0.0</write.properties.file.version>
+    <!-- Deployment artifact name (Tomcat context root). Defaults to artifactId.
+         Override per-module only when the desired deploy name differs from the artifactId. -->
+    <deploy.name>${project.artifactId}</deploy.name>
+    <!-- Plugin version properties (sonatype/release profile) -->
+    <maven-scm-plugin.version>2.2.1</maven-scm-plugin.version>
+    <eclipse-jarsigner-plugin.version>1.3.2</eclipse-jarsigner-plugin.version>
+    <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
+    <!-- Dependency version properties (not yet in Spring BOM) -->
+    <axis.version>1.4</axis.version>
+    <cyclonedx-core-java.version>11.0.1</cyclonedx-core-java.version>
+    <maven-model.version>4.0.0-beta-4</maven-model.version>
+    <velocity-engine-core.version>2.4.1</velocity-engine-core.version>
+    <velocity-tools-generic.version>3.1</velocity-tools-generic.version>
+    <saxon-dom.version>8.7</saxon-dom.version>
   </properties>
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>org.apache.axis</groupId>
         <artifactId>axis</artifactId>
-        <version>1.4</version>
+        <version>${axis.version}</version>
       </dependency>
       <dependency>
         <groupId>net.bytebuddy</groupId>
@@ -180,8 +194,10 @@
       </dependency>
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>okhttp</artifactId>
+        <artifactId>okhttp-bom</artifactId>
         <version>${okhttp.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.ow2.asm</groupId>
@@ -256,7 +272,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-slf4j-impl</artifactId>
+        <artifactId>log4j-slf4j2-impl</artifactId>
         <version>${log4j2.version}</version>
         <scope>runtime</scope>
       </dependency>
@@ -288,7 +304,7 @@
       <dependency>
         <groupId>commons-cli</groupId>
         <artifactId>commons-cli</artifactId>
-        <version>1.10.0</version>
+        <version>${commons-cli.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.thrift</groupId>
@@ -310,12 +326,12 @@
       <dependency>
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-core-java</artifactId>
-        <version>11.0.1</version>
+        <version>${cyclonedx-core-java.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-model</artifactId>
-        <version>4.0.0-beta-4</version>
+        <version>${maven-model.version}</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jaxb</groupId>
@@ -400,7 +416,7 @@
       <dependency>
         <groupId>org.apache.velocity</groupId>
         <artifactId>velocity-engine-core</artifactId>
-        <version>2.4.1</version>
+        <version>${velocity-engine-core.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.apache.commons</groupId>
@@ -411,7 +427,7 @@
       <dependency>
         <groupId>org.apache.velocity.tools</groupId>
         <artifactId>velocity-tools-generic</artifactId>
-        <version>3.1</version>
+        <version>${velocity-tools-generic.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.poi</groupId>
@@ -431,7 +447,7 @@
       <dependency>
         <groupId>net.sf.saxon</groupId>
         <artifactId>saxon-dom</artifactId>
-        <version>8.7</version>
+        <version>${saxon-dom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.assertj</groupId>
@@ -445,16 +461,22 @@
         <version>${cloudantsdk.version}</version>
       </dependency>
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <version>${junit-platform-launcher.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
         <version>${junit.version}</version>
         <scope>test</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-          </exclusion>
-        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.dom4j</groupId>
@@ -481,12 +503,6 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>${mockito.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
         <groupId>com.tngtech.jgiven</groupId>
         <artifactId>jgiven-junit</artifactId>
         <version>${jgiven.version}</version>
@@ -500,7 +516,7 @@
       </dependency>
       <dependency>
         <groupId>org.wiremock</groupId>
-        <artifactId>wiremock</artifactId>
+        <artifactId>wiremock-standalone</artifactId>
         <version>${wiremock.version}</version>
         <scope>test</scope>
       </dependency>
@@ -570,11 +586,101 @@
         <artifactId>spring-boot-devtools</artifactId>
         <version>${spring-boot.version}</version>
       </dependency>
-    <dependency>
+      <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-webflux</artifactId>
         <version>${spring-boot.version}</version>
-    </dependency>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-rest</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <version>${spring-boot.version}</version>
+        <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-log4j2</artifactId>
+        <version>${spring-boot.version}</version>
+      </dependency>
       <dependency>
         <groupId>jakarta.servlet</groupId>
         <artifactId>jakarta.servlet-api</artifactId>
@@ -643,6 +749,36 @@
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
         <version>${joda-time.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.restdocs</groupId>
+        <artifactId>spring-restdocs-mockmvc</artifactId>
+        <version>${spring-restdocs.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>${springdoc-openapi-stater-common.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-common</artifactId>
+        <version>${springdoc-openapi-stater-common.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -778,6 +914,13 @@
           <target>${java_target.version}</target>
           <release>${java_release.version}</release>
           <parameters>true</parameters>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${project-lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
       <plugin>
@@ -787,7 +930,7 @@
       <plugin>
         <groupId>com.tngtech.jgiven</groupId>
         <artifactId>jgiven-maven-plugin</artifactId>
-        <version>2.0.3</version>
+        <version>${jgiven.version}</version>
         <configuration>
           <format>html</format>
         </configuration>
@@ -839,7 +982,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-scm-plugin</artifactId>
-        <version>2.2.1</version>
+        <version>${maven-scm-plugin.version}</version>
         <configuration>
           <tag>${project.artifactId}-${project.version}</tag>
         </configuration>
@@ -869,12 +1012,12 @@
                         <artifactId>${project.artifactId}</artifactId>
                         <version>${project.version}</version>
                         <type>${project.packaging}</type>
-                        <destFileName>${project.build.finalName}.${project.packaging}</destFileName>
+                        <destFileName>${deploy.name}.${project.packaging}</destFileName>
                       </artifactItem>
                     </artifactItems>
-                    <!-- This property is set by the submodules themself, depending wether they are backend, frontend or
-                    library modules. All other submodule leave this property blank causing the dependency plugin to copy
-                    the artifact inside the target folder. -->
+                    <!-- This property is set by the submodules themself, depending on whether they are backend,
+                    frontend or library modules. All other submodule leave this property blank causing the dependency
+                    plugin to copy the artifact inside the target folder. -->
                     <outputDirectory>${artifact.deploy.dir}</outputDirectory>
                   </configuration>
                 </execution>
@@ -905,7 +1048,7 @@
             <plugin>
               <groupId>org.eclipse.cbi.maven.plugins</groupId>
               <artifactId>eclipse-jarsigner-plugin</artifactId>
-              <version>1.3.2</version>
+              <version>${eclipse-jarsigner-plugin.version}</version>
             </plugin>
           </plugins>
         </pluginManagement>
@@ -913,7 +1056,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.2.8</version>
+            <version>${maven-gpg-plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -927,7 +1070,7 @@
           <plugin>
             <groupId>org.sonatype.plugins</groupId>
             <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.7.0</version>
+            <version>${nexus-staging-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <serverId>ossrh</serverId>
