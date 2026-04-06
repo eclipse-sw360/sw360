@@ -57,13 +57,6 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     /**
-     * Update the database with new attachment metadata
-     */
-    public void updateAttachmentContent(AttachmentContent attachment) throws SW360Exception {
-        connector.update(attachment);
-    }
-
-    /**
      * Get attachment metadata from attachmentId
      */
     public AttachmentContent getAttachmentContent(String attachmentContentId) throws SW360Exception {

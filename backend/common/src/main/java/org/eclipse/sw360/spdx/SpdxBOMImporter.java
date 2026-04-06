@@ -66,6 +66,7 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT
 
 public class SpdxBOMImporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporter.class);
+    private static final Gson GSON = new Gson();
     private final SpdxBOMImporterSink sink;
 
     public SpdxBOMImporter(SpdxBOMImporterSink sink) {
@@ -963,7 +964,7 @@ public class SpdxBOMImporter {
                     response.setReleaseRelationship(ReleaseRelationship.valueOf(releaseNode.releaseRelationship));
                     releases.add(response);
                 });
-                project.setReleaseRelationNetwork(new Gson().toJson(releaseNodes));
+                project.setReleaseRelationNetwork(GSON.toJson(releaseNodes));
             }
 
             Map<String, ProjectReleaseRelationship> releaseIdToProjectRelationship = makeReleaseIdToProjectRelationship(releases);

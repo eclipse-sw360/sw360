@@ -126,6 +126,26 @@ communicate with SW360 REST API with authentication from KeyCloak.
     Scope to get read/write token: "openid email READ WRITE"
     ```
 
+## Migrating legacy OAuth clients
+
+If you are upgrading from an existing SW360 setup and want to import your
+users' existing Liferay tokens from CouchDB into Keycloak seamlessly, you can
+use the included `export_clients.py` helper script.
+
+1. Install the necessary dependencies (e.g. `ibmcloudant`). Set your CouchDB
+   credentials into environment variables if required (`COUCHDB_URL`,
+   `COUCHDB_USER`, `COUCHDB_PASSWORD`).
+2. Run `python export_clients.py > migrated_clients.tf` to extract the
+   configurations (including the exact `client_id` and `client_secret`
+   properties).
+3. Replace the `sw360_read_clients` and `sw360_write_clients` maps in
+   `l-sw360-clients-list.tf` with the output of the script.
+4. Run `tofu apply` to provision the identical clients directly inside Keycloak.
+5. **Security Note:** Remove the `client_id` and `client_secret` fields from
+   `l-sw360-clients-list.tf` before committing your changes into your Git
+   repositories! Terraform is specifically configured to ignore subsequent
+   changes to these variables once created.
+
 # Using KeyCloak to configure Frontend and Backend
 
 After following the steps mentioned above and running `tofu apply`, your

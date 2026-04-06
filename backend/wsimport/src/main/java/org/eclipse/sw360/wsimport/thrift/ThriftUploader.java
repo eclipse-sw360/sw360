@@ -104,11 +104,13 @@ public class ThriftUploader {
                     .collect(Collectors.toMap(
                             ReleaseRelation::getReleaseId,
                             ReleaseRelation::getProjectReleaseRelationship,
-                            (projectReleaseRelationship1, projectReleaseRelationship2) -> {
-                                LOGGER.info("--- Duplicate key found!");
-                                LOGGER.info("--- 1: " + projectReleaseRelationship1.getReleaseRelation());
-                                LOGGER.info("--- 2: " + projectReleaseRelationship2.getReleaseRelation());
-                                return projectReleaseRelationship1;
+                            (existing, duplicate) -> {
+                                LOGGER.warn(
+                                        "Duplicate releaseId detected. Keeping existing relation {} and ignoring {}",
+                                        existing.getReleaseRelation(),
+                                        duplicate.getReleaseRelation()
+                                );
+                                return existing;
                             }
                     ));
         sw360Project.setReleaseIdToUsage(releaseIdToUsage);

@@ -36,11 +36,12 @@ public class Sw360AuthorizationServerConfiguration {
 
 	@Order(1)
 	@Bean
-	public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
+	public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) throws Exception {
 		SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
 		httpSecurity.authorizeHttpRequests(
 				authz -> authz
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/version").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.NaturalVersionComparator;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
@@ -106,7 +107,7 @@ public class ResourceComparatorGenerator<T> {
         releaseMap.put(Release._Fields.NAME, Comparator.comparing(Release::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         releaseMap.put(Release._Fields.CLEARING_STATE, Comparator.comparing(p -> Optional.ofNullable(p.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         releaseMap.put(Release._Fields.CREATED_ON, Comparator.comparing(Release::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        releaseMap.put(Release._Fields.VERSION, Comparator.comparing(Release::getVersion, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        releaseMap.put(Release._Fields.VERSION, Comparator.comparing(Release::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return Collections.unmodifiableMap(releaseMap);
     }
 
@@ -121,7 +122,7 @@ public class ResourceComparatorGenerator<T> {
         releaseMapForEcc.put(Release._Fields.NAME,
                 Comparator.comparing(Release::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         releaseMapForEcc.put(Release._Fields.VERSION,
-                Comparator.comparing(Release::getVersion, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+                Comparator.comparing(Release::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         releaseMapForEcc.put(Release._Fields.CREATOR_DEPARTMENT, Comparator.comparing(Release::getCreatorDepartment,
                 Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(releaseMapForEcc);

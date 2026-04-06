@@ -13,6 +13,8 @@ package org.eclipse.sw360.rest.resourceserver.admin.attachment;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -52,6 +54,9 @@ public class AttachmentCleanUpController implements RepresentationModelProcessor
             description = "Cleanup all the unused attachments.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment clean up request created.")
+    })
     @DeleteMapping(value = ATTACHMENT_CLEANUP_URL + "/deleteAll")
     public ResponseEntity<RequestSummary> cleanUpAttachment() throws TException  {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
