@@ -6,11 +6,11 @@ package org.eclipse.sw360.keycloak.spi;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.keycloak.spi.service.Sw360UserService;
+import org.eclipse.sw360.keycloak.common.Sw360UserService;
+import org.eclipse.sw360.keycloak.common.UserMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -24,13 +24,16 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.DEFAULT_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.DEFAULT_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.DEFAULT_FIRST_NAME;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.DEFAULT_LAST_NAME;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -42,8 +45,6 @@ public class Sw360UserStorageProviderFactoryTest {
     private KeycloakSession session;
     @Mock
     private ComponentModel componentModel;
-    @Mock
-    private Config.Scope config;
     @Mock
     private KeycloakSessionFactory sessionFactory;
     @Mock
@@ -70,7 +71,6 @@ public class Sw360UserStorageProviderFactoryTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         // Only set static config for config logic tests, not for general unit tests
         factory = new Sw360UserStorageProviderFactory();
     }
@@ -95,7 +95,10 @@ public class Sw360UserStorageProviderFactoryTest {
     public void testSyncSince() {
         Date lastSync = new Date();
         SynchronizationResult result = factory.syncSince(lastSync, sessionFactory, "realmId", model);
-        assertNull(result);
+        assertEquals(0, result.getAdded());
+        assertEquals(0, result.getRemoved());
+        assertEquals(0, result.getFailed());
+        assertEquals(0, result.getUpdated());
     }
 
     @Test
@@ -105,10 +108,10 @@ public class Sw360UserStorageProviderFactoryTest {
         when(groupModel.getName()).thenReturn("USER");
         when(userModel.getGroupsStream()).thenReturn(Stream.empty());
         when(userModel.getEmail()).thenReturn("test@test.com");
-        java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
-                .getDeclaredMethod("populateUserAttributes", UserModel.class, RealmModel.class, User.class, UserGroup.class);
+        java.lang.reflect.Method method = UserMapper.class
+                .getDeclaredMethod("mapSw360ToKeycloak", UserModel.class, RealmModel.class, User.class);
         method.setAccessible(true);
-        method.invoke(factory, userModel, realm, user, user.getUserGroup());
+        method.invoke(factory, userModel, realm, user);
         verify(userModel).setFirstName("test");
         verify(userModel).setLastName("test");
         verify(userModel).setEmail("test@test.com");
@@ -122,14 +125,14 @@ public class Sw360UserStorageProviderFactoryTest {
     public void testPopulateUserAttributesWithNullValues() throws Exception {
         User user = createTestUser("test@test.com", null, null, null, null, null);
         when(userModel.getEmail()).thenReturn("test@test.com");
-        java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
-                .getDeclaredMethod("populateUserAttributes", UserModel.class, RealmModel.class, User.class, UserGroup.class);
+        java.lang.reflect.Method method = UserMapper.class
+                .getDeclaredMethod("mapSw360ToKeycloak", UserModel.class, RealmModel.class, User.class);
         method.setAccessible(true);
-        method.invoke(factory, userModel, realm, user, null);
-        verify(userModel).setFirstName("Not Provided");
-        verify(userModel).setLastName("Not Provided");
-        verify(userModel).setSingleAttribute("Department", "Unknown");
-        verify(userModel).setSingleAttribute("externalId", "N/A");
+        method.invoke(factory, userModel, realm, user);
+        verify(userModel).setFirstName(DEFAULT_FIRST_NAME);
+        verify(userModel).setLastName(DEFAULT_LAST_NAME);
+        verify(userModel).setSingleAttribute("Department", DEFAULT_DEPARTMENT);
+        verify(userModel).setSingleAttribute("externalId", DEFAULT_EXTERNAL_ID);
     }
 
     @Test
@@ -138,7 +141,7 @@ public class Sw360UserStorageProviderFactoryTest {
         when(groupModel.getName()).thenReturn("USER");
         when(userModel.getGroupsStream()).thenReturn(Stream.empty());
         when(userModel.getEmail()).thenReturn("test@test.com");
-        java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
+        java.lang.reflect.Method method = UserMapper.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
         when(userModel.getGroupsStream()).thenReturn(Stream.empty());
@@ -150,7 +153,7 @@ public class Sw360UserStorageProviderFactoryTest {
     @Test
     public void testAssignGroupToUserWithNullGroup() throws Exception {
         when(userModel.getEmail()).thenReturn("test@test.com");
-        java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
+        java.lang.reflect.Method method = UserMapper.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, null);
@@ -161,7 +164,7 @@ public class Sw360UserStorageProviderFactoryTest {
     public void testAssignGroupToUserWithNonExistentGroup() throws Exception {
         when(realm.getGroupsStream()).thenReturn(Stream.empty());
         when(userModel.getEmail()).thenReturn("test@test.com");
-        java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
+        java.lang.reflect.Method method = UserMapper.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, UserGroup.USER);
@@ -175,7 +178,7 @@ public class Sw360UserStorageProviderFactoryTest {
         when(mockGroup.getName()).thenReturn("USER");
         when(userModel.getGroupsStream()).thenReturn(Stream.of(mockGroup));
         when(userModel.getEmail()).thenReturn("test@test.com");
-        java.lang.reflect.Method method = Sw360UserStorageProviderFactory.class
+        java.lang.reflect.Method method = UserMapper.class
                 .getDeclaredMethod("assignGroupToUser", UserModel.class, RealmModel.class, UserGroup.class);
         method.setAccessible(true);
         method.invoke(factory, userModel, realm, UserGroup.USER);
