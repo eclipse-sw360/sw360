@@ -77,7 +77,8 @@
                                 <!-- Exclude okhttp-urlconnection to solve split package with okhttp3 -->
                                 <excludeArtifactIds>
                                     keycloak-core,keycloak-server-spi,keycloak-server-spi-private,
-                                    keycloak-model-jpa,jboss-logging,commons-logging,jakarta.mail-api
+                                    keycloak-model-jpa,jboss-logging,commons-logging,jakarta.mail-api,
+                                    okhttp-urlconnection,spring-jcl,logback-classic,jakarta.activation
                                 </excludeArtifactIds>
                             </configuration>
                         </execution>
