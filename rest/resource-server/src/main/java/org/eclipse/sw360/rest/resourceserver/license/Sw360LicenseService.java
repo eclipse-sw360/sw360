@@ -45,6 +45,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -57,6 +59,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Service
 @RequiredArgsConstructor
 public class Sw360LicenseService {
+    private static final Logger log = LoggerFactory.getLogger(Sw360LicenseService.class);
+    
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
     private static final String CONTENT_TYPE = "application/zip";
@@ -297,7 +301,7 @@ public class Sw360LicenseService {
                 throw closeFailure;
             }
         }
-	}
+    }
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();

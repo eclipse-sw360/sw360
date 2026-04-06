@@ -241,7 +241,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 subsectionWithPath("_embedded.sw360:obligations").description("An array of <<resources-obligations, Obligations obligations>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("note").description("The license's note")
+                                fieldWithPath("note").description("The license's note"),
+                                fieldWithPath("setLicenseDbId").description("Whether LicenseDB ID is set, optional"),
+                                fieldWithPath("setLastSyncTime").description("Whether last sync time is set, optional"),
+                                fieldWithPath("setSyncStatus").description("Whether sync status is set, optional")
                         )));
     }
 
@@ -279,7 +282,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 subsectionWithPath("_embedded.sw360:obligations").description("An array of <<resources-obligations, Obligations obligations>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("note").description("The license's note")
+                                fieldWithPath("note").description("The license's note"),
+                                fieldWithPath("setLicenseDbId").description("Whether LicenseDB ID is set, optional"),
+                                fieldWithPath("setLastSyncTime").description("Whether last sync time is set, optional"),
+                                fieldWithPath("setSyncStatus").description("Whether sync status is set, optional")
                         )));
     }
 
@@ -322,7 +328,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
                                 subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("setLicenseDbId").description("Whether LicenseDB ID is set, optional"),
+                                fieldWithPath("setLastSyncTime").description("Whether last sync time is set, optional"),
+                                fieldWithPath("setSyncStatus").description("Whether sync status is set, optional")
                         )));
     }
 
@@ -350,7 +359,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("note").description("The license's note")
+                                fieldWithPath("note").description("The license's note"),
+                                fieldWithPath("setLicenseDbId").description("Whether LicenseDB ID is set, optional"),
+                                fieldWithPath("setLastSyncTime").description("Whether last sync time is set, optional"),
+                                fieldWithPath("setSyncStatus").description("Whether sync status is set, optional")
                         )));
     }
 
