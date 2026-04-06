@@ -537,6 +537,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Upload license archive.",
             tags = {"Licenses"}
     )
+    @PreAuthorize("hasAuthority('WRITE')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "License archive uploaded successfully.")
     })

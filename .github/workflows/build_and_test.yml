@@ -17,12 +17,9 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - third-party/**
-      - Dockerfile
-      - docker_build.sh
-      - .github/sw360_container.yml
-      - .github/thrift_container.yml
+  merge_group:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:

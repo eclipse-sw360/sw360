@@ -1036,6 +1036,7 @@ public class LicenseDatabaseHandler {
         RequestSummary requestSummary = new RequestSummary()
                 .setTotalAffectedElements(0)
                 .setMessage("");
+        RequestStatus requestStatus = RequestStatus.SUCCESS;
         List<String> spdxIds = SpdxConnector.getAllSpdxLicenseIds();
         Map<String,License> sw360Licenses = ThriftUtils.getIdMap(getLicenses());
 
@@ -1073,21 +1074,28 @@ public class LicenseDatabaseHandler {
         }
 
         try {
-            addOrOverwriteLicenses(newLicenses,user, false);
+            List<License> importedLicenses = addOrOverwriteLicenses(newLicenses, user, false);
+            if (importedLicenses == null) {
+                String msg = "Failed to import all SPDX licenses";
+                requestSummary.setMessage(msg);
+                requestStatus = RequestStatus.FAILURE;
+                log.error(msg);
+            }
 
-            if (mismatchedLicenses.size() > 0){
+            if (mismatchedLicenses.size() > 0 && requestStatus == RequestStatus.SUCCESS){
                 requestSummary.setMessage("The following licenses did not match their SPDX equivalent: " + COMMA_JOINER.join(mismatchedLicenses));
             }
             requestSummary.setTotalAffectedElements(newLicenses.size());
         } catch (SW360Exception e) {
             String msg = "Failed to import all SPDX licenses";
             requestSummary.setMessage(msg);
+            requestStatus = RequestStatus.FAILURE;
             log.error(msg, e);
         }
 
         return requestSummary
                 .setTotalElements(spdxIds.size())
-                .setRequestStatus(RequestStatus.SUCCESS);
+                .setRequestStatus(requestStatus);
     }
 
     public RequestSummary importAllOSADLLicenses(User user) {
