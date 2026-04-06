@@ -160,6 +160,7 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
         }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<EntityModel<Attachment>> attachments = new ArrayList<>();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         for (MultipartFile file: files) {
             Attachment attachment = attachmentService.addAttachment(file, sw360User);
             attachments.add(EntityModel.of(attachment));
