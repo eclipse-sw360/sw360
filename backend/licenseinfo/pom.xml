@@ -20,11 +20,9 @@
     <artifactId>backend-licenseinfo</artifactId>
     <packaging>war</packaging>
     <name>backend-licenseinfo</name>
-    <build>
-        <finalName>licenseinfo</finalName>
-    </build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>licenseinfo</deploy.name>
     </properties>
 
     <dependencies>

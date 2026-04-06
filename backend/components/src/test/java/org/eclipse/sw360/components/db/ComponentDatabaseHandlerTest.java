@@ -507,7 +507,7 @@ public class ComponentDatabaseHandlerTest {
     }
 
     @Test
-    public void testDontDeleteComponentWithReleaseContained() throws Exception {
+    public void testDeleteComponentWithUnusedRelease() throws Exception {
         Component component = new Component().setId("Del").setName("delete").setDescription("d1").setCreatedBy(email1);
         component.addToCategories(category);
         Release release = new Release().setId("DelR").setComponentId("Del").setName("delete Release").setVersion("1.0").setCreatedBy(email1).setVendorId("V1").setClearingState(ClearingState.NEW_CLEARING);
@@ -524,14 +524,32 @@ public class ComponentDatabaseHandlerTest {
 
         RequestStatus status = handler.deleteComponent("Del", user1);
 
+        assertEquals(RequestStatus.SUCCESS, status);
+    }
+
+    @Test
+    public void testDontDeleteComponentWithReleaseInUse() throws Exception {
+        Component component = new Component().setId("Del").setName("delete").setDescription("d1").setCreatedBy(email1);
+        component.addToCategories(category);
+        Release release = new Release().setId("DelR").setComponentId("Del").setName("delete Release").setVersion("1.0").setCreatedBy(email1).setVendorId("V1").setClearingState(ClearingState.NEW_CLEARING);
+
+        handler.addComponent(component, email1);
+        handler.addRelease(release, user1);
+
+        // Make release "DelR" in use by linking it from another release
+        final Release r1A = handler.getRelease("R1A", user1);
+        r1A.setReleaseIdToRelationship(ImmutableMap.of("DelR", ReleaseRelationship.CONTAINED));
+        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+
+        RequestStatus status = handler.deleteComponent("Del", user1);
+
         assertEquals(RequestStatus.IN_USE, status);
 
-        {
-            Component del = handler.getComponent("Del", user1);
-            assertEquals("delete", del.getName());
-            Release delR = handler.getRelease("DelR", user1);
-            assertEquals("delete Release", delR.getName());
-        }
+        // Verify component and release still exist
+        Component del = handler.getComponent("Del", user1);
+        assertEquals("delete", del.getName());
+        Release delR = handler.getRelease("DelR", user1);
+        assertEquals("delete Release", delR.getName());
     }
 
     @Test

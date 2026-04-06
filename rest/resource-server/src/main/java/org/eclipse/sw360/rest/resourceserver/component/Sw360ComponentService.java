@@ -182,6 +182,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             throw new BadRequestClientException("Component name field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
+        } else if (requestStatus == RequestStatus.DUPLICATE) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                    "A component with the same name already exists.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
             throw new RuntimeException("sw360 component with name '" + component.getName() + " cannot be updated.");
         }

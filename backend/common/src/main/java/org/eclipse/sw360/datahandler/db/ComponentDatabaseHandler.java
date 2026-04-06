@@ -1311,7 +1311,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Set<String> updatedAttachmentId = updatedAttachments.stream().map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
 
             // check if attachments are updated
-            if (!originalAttachmentId.equals(updatedAttachmentId)) {
+            if (!Objects.equals(originalAttachmentId, updatedAttachmentId)) {
                 // fetch all the projects associated with this release and collect the Clearing request Ids
                 final Set<Project> usingProjects = projectRepository.searchByReleaseId(release.getId());
                 final Set<String> crIds = CommonUtils.nullToEmptySet(usingProjects).stream()
@@ -2064,8 +2064,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         final Set<String> releaseIds = component.getReleaseIds();
-        if (releaseIds!=null && releaseIds.size()>0) return RequestStatus.IN_USE;
-        if (checkIfInUse(releaseIds)) return RequestStatus.IN_USE;
+        if (!forceDelete && checkIfInUse(releaseIds)) return RequestStatus.IN_USE;
 
 
         if (makePermission(component, user).isActionAllowed(RequestedAction.DELETE) || forceDelete) {

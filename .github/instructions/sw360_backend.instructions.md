@@ -73,15 +73,15 @@ UI (React) → REST Controllers → Sw360*Service → ThriftClients → Backend 
 ## Developer Workflows
 
 ### Build Commands
+`$TOMCAT_HOME` points to a directory where Apache Tomcat is installed and
+contains the `/webapps` directory.
 ```bash
 # Full build (skip tests)
 mvn package -P deploy -DskipTests
 
 # Build with specific deploy directories
 mvn package -P deploy -DskipTests \
-    -Dbackend.deploy.dir=webapps \
-    -Drest.deploy.dir=webapps \
-    -Djars.deploy.dir=deploy
+    -Dbase.deploy.dir=$TOMCAT_HOME
 
 # Docker build
 ./docker_build.sh

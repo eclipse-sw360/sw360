@@ -13,3 +13,9 @@ security:
     headername:
       # You have to enable authorization by headers explicitly here
       enabled: true
+
+# Suppress warnings in test logs
+logging:
+  level:
+    org.eclipse.sw360.datahandler.common.SW360Utils: FATAL
+    org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider: WARN

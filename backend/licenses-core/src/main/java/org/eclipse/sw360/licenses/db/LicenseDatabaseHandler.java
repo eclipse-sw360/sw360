@@ -554,49 +554,53 @@ public class LicenseDatabaseHandler {
             resultObligationList.setLinkedObligations(obligations);
             resultObligationList.setLicenseId(resultLicense.getId());
 
-            if(isNewLicense) {
-                if (!resultLicense.getObligationDatabaseIds().isEmpty()) {
-                    obligationListRepository.add(resultObligationList);
-                    resultLicense.setObligationListId(resultObligationList.getId());
-                }
-                licenseRepository.add(resultLicense);
-                dbHandlerUtil.addChangeLogs(resultLicenseForChangelogs, null, user.getEmail(), Operation.CREATE, null,
-                        Lists.newArrayList(), null, null);
-                if(resultLicense.getObligationListId() != null){
-                    dbHandlerUtil.addChangeLogs(resultObligationList, null, user.getEmail(), Operation.CREATE, null,
-                            Lists.newArrayList(), resultLicense.getId(), Operation.LICENSE_CREATE);
-                }
-            } else {
-                licenseRepository.update(resultLicense);
-
-                dbHandlerUtil.addChangeLogs(resultLicenseForChangelogs, oldLicenseForChangelogs, user.getEmail(),
-                        Operation.UPDATE, null,
-                        Lists.newArrayList(), null, null);
-
-                LicenseObligationList oldObligationList = new LicenseObligationList();
-                if (!resultLicense.getObligationDatabaseIds().equals(oldObligationDatabaseIds) && CommonUtils.isNotNullEmptyOrWhitespace(resultLicense.getObligationListId())) {
-                    resultObligationList.setId(resultLicense.getObligationListId());
-                    LicenseObligationList baseObligationList = obligationListRepository
-                            .get(resultLicense.getObligationListId());
-                    resultObligationList.setId(baseObligationList.getId());
-                    resultObligationList.setRevision(baseObligationList.getRevision());
-                    obligationListRepository.update(resultObligationList);
-
-                    Map<String, Obligation> oldObligations = new HashMap<>();
-                    getObligationsByIds(oldObligationDatabaseIds).forEach(oblig -> {
-                        oldObligations.put(oblig.getTitle(), oblig);
-                    });
-                    oldObligationList.setId(baseObligationList.getId());
-                    oldObligationList.setLinkedObligations(oldObligations);
-                    oldObligationList.setLicenseId(oldLicense.orElse(new License()).getId());
-                    dbHandlerUtil.addChangeLogs(resultObligationList, oldObligationList, user.getEmail(),
-                            Operation.UPDATE, null,
-                            Lists.newArrayList(), resultLicense.getId(), Operation.LICENSE_UPDATE);
-                }
-            }
+            persistLicenseAndChangelogs(user, isNewLicense, resultLicense, resultObligationList, resultLicenseForChangelogs, oldLicenseForChangelogs, oldObligationDatabaseIds, oldLicense);
             return RequestStatus.SUCCESS;
         }
         return RequestStatus.FAILURE;
+    }
+
+    private void persistLicenseAndChangelogs(User user, boolean isNewLicense, License resultLicense, LicenseObligationList resultObligationList, License resultLicenseForChangelogs, License oldLicenseForChangelogs, Set<String> oldObligationDatabaseIds, Optional<License> oldLicense) throws SW360Exception {
+        if(isNewLicense) {
+            if (!resultLicense.getObligationDatabaseIds().isEmpty()) {
+                obligationListRepository.add(resultObligationList);
+                resultLicense.setObligationListId(resultObligationList.getId());
+            }
+            licenseRepository.add(resultLicense);
+            dbHandlerUtil.addChangeLogs(resultLicenseForChangelogs, null, user.getEmail(), Operation.CREATE, null,
+                    Lists.newArrayList(), null, null);
+            if(resultLicense.getObligationListId() != null){
+                dbHandlerUtil.addChangeLogs(resultObligationList, null, user.getEmail(), Operation.CREATE, null,
+                        Lists.newArrayList(), resultLicense.getId(), Operation.LICENSE_CREATE);
+            }
+        } else {
+            licenseRepository.update(resultLicense);
+
+            dbHandlerUtil.addChangeLogs(resultLicenseForChangelogs, oldLicenseForChangelogs, user.getEmail(),
+                    Operation.UPDATE, null,
+                    Lists.newArrayList(), null, null);
+
+            LicenseObligationList oldObligationList = new LicenseObligationList();
+            if (!resultLicense.getObligationDatabaseIds().equals(oldObligationDatabaseIds) && CommonUtils.isNotNullEmptyOrWhitespace(resultLicense.getObligationListId())) {
+                resultObligationList.setId(resultLicense.getObligationListId());
+                LicenseObligationList baseObligationList = obligationListRepository
+                        .get(resultLicense.getObligationListId());
+                resultObligationList.setId(baseObligationList.getId());
+                resultObligationList.setRevision(baseObligationList.getRevision());
+                obligationListRepository.update(resultObligationList);
+
+                Map<String, Obligation> oldObligations = new HashMap<>();
+                getObligationsByIds(oldObligationDatabaseIds).forEach(oblig -> {
+                    oldObligations.put(oblig.getTitle(), oblig);
+                });
+                oldObligationList.setId(baseObligationList.getId());
+                oldObligationList.setLinkedObligations(oldObligations);
+                oldObligationList.setLicenseId(oldLicense.orElse(new License()).getId());
+                dbHandlerUtil.addChangeLogs(resultObligationList, oldObligationList, user.getEmail(),
+                        Operation.UPDATE, null,
+                        Lists.newArrayList(), resultLicense.getId(), Operation.LICENSE_UPDATE);
+            }
+        }
     }
 
     private License updateLicenseFromInputLicense(Optional<License> oldLicense, License inputLicense, String businessUnit, User user){

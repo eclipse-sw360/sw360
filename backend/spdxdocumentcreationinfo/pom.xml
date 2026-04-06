@@ -24,9 +24,9 @@
     <artifactId>backend-spdxdocumentcreationinfo</artifactId>
     <packaging>war</packaging>
     <name>backend-spdxdocumentcreationinfo</name>
-    <build><finalName>spdxdocumentcreationinfo</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>spdxdocumentcreationinfo</deploy.name>
     </properties>
 
     <dependencies>

@@ -1248,7 +1248,7 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Test
     public void should_get_project_report() throws IOException, TException {
-        given(this.sw360ReportServiceMock.getProjectBuffer(any(), anyBoolean(), any())).willReturn(ByteBuffer.wrap(new byte[]{1, 2, 3, 4}));
+        given(this.sw360ReportServiceMock.getProjectBuffer(any(), anyBoolean(), any(), any())).willReturn(ByteBuffer.wrap(new byte[]{1, 2, 3, 4}));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<byte[]> response =

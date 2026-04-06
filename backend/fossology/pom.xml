@@ -26,11 +26,8 @@
 
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>fossology</deploy.name>
     </properties>
-
-    <build>
-        <finalName>fossology</finalName>
-    </build>
 
     <dependencies>
         <!-- Core SW360 Dependencies -->

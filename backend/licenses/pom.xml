@@ -22,9 +22,9 @@
     <artifactId>backend-licenses</artifactId>
     <packaging>war</packaging>
     <name>backend-licenses</name>
-    <build><finalName>licenses</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>licenses</deploy.name>
     </properties>
 
     <dependencies>

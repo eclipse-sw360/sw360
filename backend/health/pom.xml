@@ -21,10 +21,8 @@
     <name>backend-health</name>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>health</deploy.name>
     </properties>
-    <build>
-        <finalName>health</finalName>
-    </build>
 
     <dependencies>
         <dependency>

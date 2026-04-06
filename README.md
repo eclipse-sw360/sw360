@@ -90,18 +90,17 @@ git clone https://github.com/eclipse-sw360/sw360.git
 cd sw360
 pip install pre-commit
 pre-commit install
+```
 
 ### Note on build requirements
 
 Please note that even partial or module-level Maven builds require deploy-related
 properties to be set due to enforced build rules.
 
-At a minimum, the `base.deploy.dir` property must be provided, otherwise the build
-will fail with a Maven Enforcer error.
+At a minimum, the `base.deploy.dir` property must be provided pointing towards
+your Tomcat's home directory, otherwise the build will fail.
 
 This applies even when building individual modules (for example, `libraries`).
-
-```
 
 **Step 2**: Build the code
 
@@ -109,9 +108,7 @@ This applies even when building individual modules (for example, `libraries`).
 mvn package -P deploy \
     -Dhelp-docs=false \
     -DskipTests \
-    -Djars.deploy.dir=deploy \
-    -Drest.deploy.dir=webapps \
-    -Dbackend.deploy.dir=webapps
+    -Dbase.deploy.dir=$TOMCAT_HOME
 ```
 
 If you want to run the tests, we need start a local couchdb server and Docker is required:

@@ -549,10 +549,10 @@ public class RestControllerHelper<T> {
     }
 
     public Set<String> getObligationIdsFromRequestWithValueTrue(Map<String, Boolean> reqBodyMaps) {
-        Map<String, Boolean> obligationIdsRequest = reqBodyMaps.entrySet().stream()
-                .filter(reqBodyMap-> reqBodyMap.getValue().equals(true))
-                .collect(Collectors.toMap(reqBodyMap-> reqBodyMap.getKey(),reqBodyMap -> reqBodyMap.getValue()));
-        return obligationIdsRequest.keySet();
+        return reqBodyMaps.entrySet().stream()
+                .filter(entry -> Boolean.TRUE.equals(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
     public boolean checkDuplicateLicense(List<License> licenses, String licenseId) {

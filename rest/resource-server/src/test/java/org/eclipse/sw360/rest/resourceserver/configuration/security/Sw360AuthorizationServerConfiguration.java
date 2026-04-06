@@ -36,7 +36,7 @@ public class Sw360AuthorizationServerConfiguration {
 
 	@Order(1)
 	@Bean
-	public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
+	public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) throws Exception {
 		SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
 		httpSecurity.authorizeHttpRequests(
 				authz -> authz

@@ -23,9 +23,9 @@
     <artifactId>backend-changelogs</artifactId>
     <packaging>war</packaging>
     <name>backend-changelogs</name>
-    <build><finalName>changelogs</finalName></build>
     <properties>
       <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+      <deploy.name>changelogs</deploy.name>
   </properties>
 
     <dependencies>
