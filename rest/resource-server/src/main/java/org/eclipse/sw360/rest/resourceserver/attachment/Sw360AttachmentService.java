@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -41,6 +42,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -266,6 +269,11 @@ public class Sw360AttachmentService {
 
         CheckStatus checkStatus = newAttachment.getCheckStatus();
         if (checkStatus != null) {
+            if ((checkStatus == CheckStatus.ACCEPTED || checkStatus == CheckStatus.REJECTED)
+                    && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)) {
+                throw new AccessDeniedException(
+                        "Setting checkStatus to ACCEPTED or REJECTED requires CLEARING_ADMIN role");
+            }
             attachment.setCheckStatus(checkStatus);
         }
 
@@ -398,6 +406,11 @@ public class Sw360AttachmentService {
             attachmentToUpdate.setCreatedComment(createdComment);
         }
         if (checkStatus != null) {
+            if ((checkStatus == CheckStatus.ACCEPTED || checkStatus == CheckStatus.REJECTED)
+                    && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
+                throw new AccessDeniedException(
+                        "Setting checkStatus to ACCEPTED or REJECTED requires CLEARING_ADMIN role");
+            }
             attachmentToUpdate.setCheckStatus(checkStatus);
             String checkedComment = reqBodyAttachment.getCheckedComment();
             if (checkStatus != CheckStatus.NOTCHECKED) {
