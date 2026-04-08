@@ -2478,6 +2478,22 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_project_detail_tab_counts() throws Exception {
+        mockMvc.perform(get("/api/projects/" + project8.getId() + "/tabCounts")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON)
+                        .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("vulnerabilityCount").description("Count of vulnerabilities linked to the project"),
+                                fieldWithPath("vulnerabilityRatedCount").description("Count of vulnerabilities with project relevance other than NOT_CHECKED"),
+                                fieldWithPath("obligationCount").description("Count of obligations linked to the project"),
+                                fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN")
+                        )));
+    }
+
+    @Test
     public void should_document_get_license_clearing_details_count() throws Exception {
         this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/clearingDetailsCount")
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
