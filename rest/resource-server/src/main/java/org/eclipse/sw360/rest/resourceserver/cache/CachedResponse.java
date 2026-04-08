@@ -15,20 +15,26 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a controller GET method as cacheable.
- * On cache hit, the method is skipped and cached JSON is returned.
- * On cache miss, the method runs and the response is written to cache asynchronously.
+ * Marks a controller GET method as cacheable (documentation annotation).
  *
- * <p>Supports multiple endpoints when a single method handles different cache scenarios
- * based on request parameters (e.g., {@code allDetails=true} vs {@code allDetails=false}).
- * The actual endpoint to cache is determined at runtime by matching {@link CacheCondition}.</p>
+ * <p><strong>Note:</strong> This annotation is purely for documentation purposes.
+ * The actual caching logic is handled by {@link CacheReadFilter} using {@link CacheCondition}
+ * beans to determine what requests are cacheable.</p>
+ *
+ * <p>This annotation documents which endpoints a controller method can potentially cache,
+ * supporting multiple endpoints when a single method handles different cache scenarios
+ * based on request parameters (e.g., {@code allDetails=true} vs {@code allDetails=false}).</p>
+ *
+ * @see CacheReadFilter
+ * @see CacheCondition
+ * @see CachedEndpoint
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CachedResponse {
     /**
      * One or more endpoints this method can potentially cache.
-     * The actual endpoint used is determined by matching CacheCondition at runtime.
+     * This is for documentation only - actual caching is determined by CacheCondition beans.
      */
     CachedEndpoint[] endpoints();
 }

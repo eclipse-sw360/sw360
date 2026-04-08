@@ -1684,4 +1684,10 @@ public class RestControllerHelper<T> {
             throw new AccessDeniedException("User is not allowed to access this resource.");
         }
     }
+
+    public static void throwIfNotAdmin(User sw360User) throws AccessDeniedException {
+        if (!PermissionUtils.isAdmin(sw360User)) {
+            throw new AccessDeniedException("User is not allowed to access this resource.");
+        }
+    }
 }

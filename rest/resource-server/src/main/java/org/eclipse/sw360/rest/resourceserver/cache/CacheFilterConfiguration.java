@@ -19,11 +19,11 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
- * Configuration for registering the CacheReadFilter.
+ * Configuration to register CacheReadFilter with proper ordering.
  *
- * <p>The filter is registered using FilterRegistrationBean to ensure it runs
- * AFTER Spring Security's filter chain (which runs at order -100).
- * This guarantees SecurityContextHolder contains the authenticated user.</p>
+ * <p>The filter is registered to run AFTER Spring Security's filter chain
+ * (SecurityProperties.DEFAULT_FILTER_ORDER = -100), ensuring that
+ * SecurityContextHolder is populated when the cache filter executes.</p>
  */
 @Configuration
 public class CacheFilterConfiguration {
