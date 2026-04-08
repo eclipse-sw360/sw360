@@ -1,0 +1,210 @@
+# Copyright (c) Siemens AG, 2026.
+# Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+# License-Filename: LICENSE
+
+name: PR Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-pr:
+    name: Validate PR Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: PR quality gate
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const errors = [];
+            const warnings = [];
+
+            function escapeRegExp(value) {
+              return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+
+            function sectionContent(heading) {
+              const pattern = new RegExp(`##\\s*${escapeRegExp(heading)}\\s*\\n([\\s\\S]*?)(?=\\n##\\s+|\\n<details>|$)`, 'i');
+              const match = body.match(pattern);
+              return match ? match[1].replace(/<[^>]+>/g, '').trim() : '';
+            }
+
+            const ALLOWED_TYPES = ['feat', 'fix', 'refactor', 'test', 'docs', 'chore', 'build'];
+
+            function checkedTypes() {
+              const matches = [...body.matchAll(/-\s*\[x\]\s*`([a-zA-Z]+)`/gi)];
+              return [...new Set(matches.map((m) => m[1].toLowerCase()))].filter((t) => ALLOWED_TYPES.includes(t));
+            }
+
+            function checkedCount() {
+              return (body.match(/-\s*\[x\]/g) || []).length;
+            }
+
+            function isTrivialType(type) {
+              return ['docs', 'chore', 'build'].includes(type);
+            }
+
+            function hasMeaningfulText(value) {
+              return typeof value === 'string' && value.replace(/\s+/g, ' ').trim().length > 20;
+            }
+
+            function listItemMatches(text) {
+              return new RegExp(`- \\[x\\] .*${text}.*`, 'i').test(body);
+            }
+
+            const selectedTypes = checkedTypes();
+            const type = selectedTypes.length === 1 ? selectedTypes[0] : null;
+            const summary = sectionContent('Summary');
+            const issuePattern = body.match(/Issue:[ \t]*([^\n]*)/i);
+            const issueField = issuePattern ? issuePattern[1].trim() : '';
+            const howToTest = sectionContent('How To Test');
+            const aiChecked = listItemMatches('AI-assisted code');
+            const aiHints = /copilot|chatgpt|claude|gemini|cursor|ai-assisted|ai assisted/i.test(body);
+
+            if (!summary || !hasMeaningfulText(summary)) {
+              errors.push('**Summary** is empty — describe what changed and why.');
+            }
+
+            if (!type) {
+              errors.push('**Type of Change** — check exactly one type.');
+            }
+
+            if (!issueField && type && !isTrivialType(type)) {
+              errors.push('**Issue** is required for `feat` and `fix` PRs. Link the issue or write `N/A` with justification.');
+            } else if (!issueField && type) {
+              warnings.push('**Issue** is empty. Consider linking a related issue for traceability.');
+            }
+
+            if (type && !isTrivialType(type) && type !== 'test') {
+              if (!howToTest || howToTest === '1.') {
+                errors.push('**How To Test** is empty — provide steps so reviewers can verify your changes.');
+              }
+            }
+
+            const minChecklist = [
+              'All related issues are referenced in commit messages and in PR',
+              'Signed-off-by',
+              'New files include EPL-2.0 license headers',
+              'Code is formatted',
+              'manually tested'
+            ];
+
+            const checklistMissing = minChecklist.filter((item) => !body.match(new RegExp(item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')));
+            if (checklistMissing.length > 0) {
+              warnings.push('Some required checklist items may still be missing. Review the PR template and confirm all required boxes are completed.');
+            }
+
+            if (aiChecked) {
+              const understanding = body.match(/\*\*Your understanding of the changes \(in your own words\):\*\*\s*\n([\s\S]*?)(?=\n\*\*|\n##\s+|\n- \[|$)/i);
+              if (!understanding || !hasMeaningfulText(understanding[1])) {
+                errors.push('**AI Disclosure**: You checked AI-assisted code but did not explain your understanding of the changes.');
+              }
+
+              const edgeCases = [...body.matchAll(/\d+\.\s+(.+)/g)];
+              if (edgeCases.length < 2) {
+                warnings.push('**AI Disclosure**: Add at least 2 edge cases you verified.');
+              }
+            } else if (aiHints) {
+              warnings.push('Your PR mentions AI tools but the **AI Disclosure** checkbox is not checked. If AI was used, please check the box and fill in the details.');
+            }
+
+            const manuallyTested = /-\s*\[x\].*(manual|manually).*tested/i.test(body);
+            if (type && !isTrivialType(type) && type !== 'test' && !manuallyTested) {
+              warnings.push('**Manual testing** is not checked. For `feat`/`fix`/`refactor` PRs, please confirm you tested against a running SW360 instance.');
+            }
+
+            let score = 0;
+            let maxScore = 0;
+
+            maxScore += 15;
+            if (summary && hasMeaningfulText(summary)) score += 15;
+
+            maxScore += 10;
+            if (type) score += 10;
+
+            maxScore += 10;
+            if (issueField) score += 10;
+
+            maxScore += 20;
+            if (howToTest && hasMeaningfulText(howToTest) && howToTest !== '1.') score += 20;
+
+            maxScore += 20;
+            const checked = checkedCount();
+            score += Math.min(20, checked * 3);
+
+            maxScore += 15;
+            if (type === 'fix' && sectionContent('Bug Fix Details').length > 30) score += 15;
+            else if (type === 'feat' && sectionContent('Feature Details').length > 30) score += 15;
+            else if (type === 'refactor' && sectionContent('Refactor Details').length > 20) score += 15;
+            else if (isTrivialType(type)) score += 15;
+
+            maxScore += 10;
+            if (!aiChecked && !aiHints) score += 10;
+            else if (aiChecked) {
+              const understanding = body.match(/\*\*Your understanding of the changes \(in your own words\):\*\*\s*\n([\s\S]*?)(?=\n\*\*|\n##\s+|\n- \[|$)/i);
+              if (understanding && hasMeaningfulText(understanding[1])) score += 10;
+              else score += 3;
+            }
+
+            const percentage = Math.round((score / maxScore) * 100);
+            const lines = [];
+            lines.push('### 📋 PR Quality Gate');
+            lines.push('');
+            const bar = percentage >= 80 ? '🟢' : percentage >= 60 ? '🟡' : '🔴';
+            lines.push(`**Completeness: ${bar} ${percentage}%** (threshold: 60%)`);
+            lines.push('');
+
+            if (errors.length > 0) {
+              lines.push('#### ❌ Required fixes');
+              errors.forEach((entry) => lines.push(`- ${entry}`));
+              lines.push('');
+            }
+
+            if (warnings.length > 0) {
+              lines.push('#### ⚠️ Suggestions');
+              warnings.forEach((entry) => lines.push(`- ${entry}`));
+              lines.push('');
+            }
+
+            if (errors.length === 0 && warnings.length === 0) {
+              lines.push('✅ PR description looks great! Ready for review.');
+            } else {
+              lines.push('> Edit your PR description and the check will re-run automatically.');
+            }
+
+            const output = lines.join('\n');
+            core.summary.addRaw(output);
+            await core.summary.write();
+
+            if (errors.length > 0 || percentage < 60) {
+              core.setFailed(`PR quality gate failed: ${percentage}% complete with ${errors.length} error(s). See job summary.`);
+            } else if (warnings.length > 0) {
+              core.warning(`PR quality gate passed with warnings. See job summary.`);
+            }
