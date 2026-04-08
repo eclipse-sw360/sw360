@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
+import java.text.ParseException;
 
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.BASIC;
 import static org.hamcrest.CoreMatchers.is;
@@ -34,7 +35,7 @@ public abstract class GrantTypeClientCredentialsTestBase extends IntegrationTest
     }
 
     @Test
-    public void should_get_expected_jwt_attributes() throws IOException {
+    public void should_get_expected_jwt_attributes() throws IOException, ParseException {
         checkJwtClaims(BASIC.getAuthority());
     }
 }
