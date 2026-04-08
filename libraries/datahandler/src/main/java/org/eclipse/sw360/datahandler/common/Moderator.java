@@ -131,7 +131,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                             attachments.add(update);
                         }
                     } catch (SW360Exception e) {
-                        log.error("Error occured while checking attachment exists in DB: ", e);
+                        log.error("Error occurred while checking attachment exists in DB: ", e);
                     }
                 }
             }

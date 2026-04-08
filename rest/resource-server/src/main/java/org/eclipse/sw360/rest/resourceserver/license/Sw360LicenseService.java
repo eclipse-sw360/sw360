@@ -269,17 +269,28 @@ public class Sw360LicenseService {
         FileCopyUtils.copy(buffer, response.getOutputStream());
     }
 
-    public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
-        final HashMap<String, InputStream> inputMap = new HashMap<>();
+    public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch)
+            throws IOException, TException {
+
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestClientException("Unable to upload license file. File is null or empty.");
+        }
 
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            throw new BadRequestClientException("Unable to upload license file. User is not admin");
+            throw new BadRequestClientException("Unable to upload license file. User is not admin.");
         }
+
+        final HashMap<String, InputStream> inputMap = new HashMap<>();
+        Throwable primaryThrowable = null;
+
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
             final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
+        } catch (Throwable t) {
+            primaryThrowable = t;
+            throw t;
         } finally {
             IOException closeFailure = null;
             for (InputStream in : inputMap.values()) {
@@ -293,11 +304,16 @@ public class Sw360LicenseService {
                     }
                 }
             }
+
             if (closeFailure != null) {
-                throw closeFailure;
+                if (primaryThrowable != null) {
+                    primaryThrowable.addSuppressed(closeFailure);
+                } else {
+                    throw closeFailure;
+                }
             }
         }
-	}
+    }
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
@@ -379,10 +395,7 @@ public class Sw360LicenseService {
         try {
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
 
-            List<License> allLicenses = sw360LicenseClient.getLicenseSummary();
-            return (int) allLicenses.stream()
-                    .filter(license -> license.getLicenseType() != null && license.getLicenseType().getId().equals(licenseTypeId))
-                    .count();
+            return sw360LicenseClient.checkLicenseTypeInUse(licenseTypeId);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("License type not found with ID: " + licenseTypeId);

@@ -1501,8 +1501,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return cachedAllProjectsIdMap;
         }
 
-        cachedAllProjectsIdMap = ThriftUtils.getIdMap(repository.getAll());
+        cachedAllProjectsIdMap = ThriftUtils.getIdMap(repository.getAllProjectsForClearingCache());
         cachedAllProjectsIdMapLoadingInstant = Instant.now();
+        log.debug("Refreshed project clearing cache with {} entries", cachedAllProjectsIdMap.size());
 
         return cachedAllProjectsIdMap;
     }

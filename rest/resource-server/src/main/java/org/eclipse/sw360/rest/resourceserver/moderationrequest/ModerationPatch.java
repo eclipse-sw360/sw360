@@ -30,6 +30,14 @@ public class ModerationPatch {
         this.comment = null;
     }
 
+    public ModerationAction getAction() {
+        return action;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
     /**
      * Actions which can be performed on the moderation request
      */

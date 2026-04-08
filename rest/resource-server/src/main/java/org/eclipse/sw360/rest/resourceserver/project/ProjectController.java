@@ -481,7 +481,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         //check the below condition when releaseRelation is not null
-        if (releaseRelation != null) {
+        if (releaseRelation != null && sw360Project.getReleaseIdToUsage() != null) {
             Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage().entrySet().stream()
                     .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
                     .collect(Collectors.toMap(
@@ -500,13 +500,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .collect(Collectors.toSet());
 
         // Filter the releaseIdToUsage map
-        Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
-                .filter(entry -> validReleaseIds.contains(entry.getKey()))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
-        sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
+        if (sw360Project.getReleaseIdToUsage() != null) {
+            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
+                    .filter(entry -> validReleaseIds.contains(entry.getKey()))
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue
+                    ));
+            sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
+        }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
         List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
@@ -736,6 +738,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @PreAuthorize("hasAuthority('WRITE')")
     @DeleteMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity deleteProject(
             @Parameter(description = "Project ID")
@@ -968,7 +971,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sourceProj = projectService.getProjectForUserById(id, sw360User);
         Map<String, String> responseMap = new HashMap<>();
-        HttpStatus status = null;
+        if (projectIdsInRequestBody == null || projectIdsInRequestBody.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        HttpStatus status = HttpStatus.OK;
         Set<String> alreadyLinkedIds = new HashSet<>();
         Set<String> idsSentToModerator = new HashSet<>();
         Set<String> idsWithCyclicPath = new HashSet<>();

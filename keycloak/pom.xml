@@ -19,6 +19,27 @@
         <version>20.0.0</version>
     </parent>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Logging implementations managed for tests -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jul-to-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -30,42 +51,32 @@
                             <path>
                                 <groupId>org.projectlombok</groupId>
                                 <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
                             </path>
                         </annotationProcessorPaths>
                     </configuration>
                 </plugin>
-
                 <plugin>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>copy-deps</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>copy-dependencies</goal>
-                            </goals>
-                            <configuration>
-                                <outputDirectory>${artifact.deploy.dir}</outputDirectory>
-                                <overWriteReleases>false</overWriteReleases>
-                                <overWriteSnapshots>false</overWriteSnapshots>
-                                <overWriteIfNewer>true</overWriteIfNewer>
-                                <!-- Only copy dependencies that are needed at runtime (excludes 'provided' and 'test') -->
-                                <includeScope>runtime</includeScope>
-                                <!-- Exclude the artifact itself if it somehow gets included -->
-                                <!-- Exclude okhttp-urlconnection to solve split package with okhttp3 -->
-                                <excludeArtifactIds>
-                                    keycloak-core,keycloak-server-spi,keycloak-server-spi-private,
-                                    keycloak-model-jpa,jboss-logging,commons-logging,jakarta.mail-api
-                                </excludeArtifactIds>
-                            </configuration>
-                        </execution>
-                    </executions>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
     </build>
 
     <modules>
+        <module>sw360-keycloak-common</module>
         <module>user-storage-provider</module>
         <module>event-listeners</module>
     </modules>

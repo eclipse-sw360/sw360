@@ -11,6 +11,8 @@ package org.eclipse.sw360.keycloak.event.listener.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.keycloak.common.KeycloakConstants;
+import org.eclipse.sw360.keycloak.common.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +24,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.*;
 
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ATTR_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ATTR_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.DEFAULT_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ProviderService.LISTENER;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -74,7 +80,7 @@ public class Sw360KeycloakUserEventServiceTest {
         userEventService.userLoginEvent(loginEvent);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(sw360UserService).createOrUpdateUser(userCaptor.capture());
+        verify(sw360UserService).createOrUpdateUser(userCaptor.capture(), eq(LISTENER));
 
         User capturedUser = userCaptor.getValue();
         assertNotNull(capturedUser);
@@ -92,7 +98,7 @@ public class Sw360KeycloakUserEventServiceTest {
         userEventService.userLoginEvent(loginEvent);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(sw360UserService).createOrUpdateUser(userCaptor.capture());
+        verify(sw360UserService).createOrUpdateUser(userCaptor.capture(), eq(LISTENER));
 
         User capturedUser = userCaptor.getValue();
         assertEquals(OrganizationMapper.mapOrganizationName(departmentWithSpaces), capturedUser.getDepartment());
@@ -108,7 +114,7 @@ public class Sw360KeycloakUserEventServiceTest {
         userEventService.userLoginEvent(loginEvent);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(sw360UserService).createOrUpdateUser(userCaptor.capture());
+        verify(sw360UserService).createOrUpdateUser(userCaptor.capture(), eq(LISTENER));
 
         User capturedUser = userCaptor.getValue();
         String expectedDepartment = OrganizationMapper.mapOrganizationName(originalDepartment);
@@ -124,10 +130,10 @@ public class Sw360KeycloakUserEventServiceTest {
         userEventService.userLoginEvent(loginEvent);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(sw360UserService).createOrUpdateUser(userCaptor.capture());
+        verify(sw360UserService).createOrUpdateUser(userCaptor.capture(), eq(LISTENER));
 
         User capturedUser = userCaptor.getValue();
-        assertEquals(Sw360UserService.DEFAULT_DEPARTMENT, capturedUser.getDepartment());
+        assertEquals(DEFAULT_DEPARTMENT, capturedUser.getDepartment());
     }
 
     @Test
@@ -140,7 +146,7 @@ public class Sw360KeycloakUserEventServiceTest {
 
         verify(userProvider).getUserById(realmModel, TEST_USERNAME);
         verify(userProvider, never()).getUserByEmail(any(), any());
-        verify(sw360UserService).createOrUpdateUser(any(User.class));
+        verify(sw360UserService).createOrUpdateUser(any(User.class), any(KeycloakConstants.ProviderService.class));
     }
 
     @Test
@@ -157,8 +163,8 @@ public class Sw360KeycloakUserEventServiceTest {
     public void testUserLoginEvent_WithNullDepartmentAttribute() {
         Event loginEvent = createLoginEvent();
         Map<String, List<String>> attributes = new HashMap<>();
-        attributes.put(Sw360UserService.CUSTOM_ATTR_DEPARTMENT, Collections.singletonList(null));
-        attributes.put(Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
+        attributes.put(ATTR_DEPARTMENT, Collections.singletonList(null));
+        attributes.put(ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
 
         when(userModel.getEmail()).thenReturn(TEST_EMAIL);
         when(userModel.getFirstName()).thenReturn(TEST_FIRST_NAME);
@@ -169,7 +175,7 @@ public class Sw360KeycloakUserEventServiceTest {
 
         userEventService.userLoginEvent(loginEvent);
 
-        verify(sw360UserService).createOrUpdateUser(any(User.class));
+        verify(sw360UserService).createOrUpdateUser(any(User.class), any(KeycloakConstants.ProviderService.class));
     }
 
     private Event createLoginEvent() {
@@ -186,8 +192,8 @@ public class Sw360KeycloakUserEventServiceTest {
 
     private void setupUserModelMock(String department) {
         Map<String, List<String>> attributes = new HashMap<>();
-        attributes.put(Sw360UserService.CUSTOM_ATTR_DEPARTMENT, Collections.singletonList(department));
-        attributes.put(Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
+        attributes.put(ATTR_DEPARTMENT, Collections.singletonList(department));
+        attributes.put(ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
 
         when(userModel.getEmail()).thenReturn(TEST_EMAIL);
         when(userModel.getFirstName()).thenReturn(TEST_FIRST_NAME);
@@ -198,7 +204,7 @@ public class Sw360KeycloakUserEventServiceTest {
 
     private void setupUserModelMockWithoutDepartment() {
         Map<String, List<String>> attributes = new HashMap<>();
-        attributes.put(Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
+        attributes.put(ATTR_EXTERNAL_ID, Collections.singletonList("ext123"));
 
         when(userModel.getEmail()).thenReturn(TEST_EMAIL);
         when(userModel.getFirstName()).thenReturn(TEST_FIRST_NAME);

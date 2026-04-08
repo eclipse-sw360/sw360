@@ -1,0 +1,302 @@
+<!--
+~ SPDX-FileCopyrightText: © 2026 Siemens AG
+~ SPDX-License-Identifier: EPL-2.0
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>sw360-keycloak-common</artifactId>
+    <packaging>jar</packaging>
+    <name>sw360-keycloak-common</name>
+    <description>Common libraries used by KeyCloak Providers</description>
+
+    <parent>
+        <artifactId>keycloak</artifactId>
+        <groupId>org.eclipse.sw360</groupId>
+        <version>20.0.0</version>
+    </parent>
+
+    <properties>
+        <deploy.name>${project.artifactId}</deploy.name>
+        <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
+    </properties>
+
+    <dependencies>
+        <!-- Core backend dependencies -->
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>datahandler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>backend-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Connectivity -->
+        <dependency>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>cloudant</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <minimizeJar>true</minimizeJar> <!-- Significantly reduces JAR size (~100MB to ~20MB) -->
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+
+                            <!-- Includes only the necessary heavy dependencies to be bundled and relocated -->
+                            <artifactSet>
+                                <includes>
+                                    <!-- Explicitly include only core backend modules to prevent bloat from wildcards -->
+                                    <include>org.eclipse.sw360:datahandler</include>
+                                    <include>org.eclipse.sw360:backend-common</include>
+                                    <include>org.eclipse.sw360:build-configuration</include>
+                                    <include>org.eclipse.sw360:nouveau-handler</include>
+
+                                    <include>com.ibm.cloud:*</include>
+                                    <include>org.apache.thrift:libthrift</include>
+                                    <include>com.google.guava:guava</include>
+                                    <include>com.fasterxml.jackson.*:*</include>
+                                    <include>org.apache.logging.log4j:log4j-api</include>
+                                    <include>org.apache.logging.log4j:log4j-core</include>
+                                    <include>org.apache.commons:*</include>
+                                    <include>commons-*:*</include>
+                                    <include>com.squareup.okhttp3:*</include>
+                                    <include>com.squareup.okio:*</include>
+                                    <include>org.jetbrains.kotlin:*</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>org.springframework:*</exclude>
+                                    <exclude>org.springframework.boot:*</exclude>
+                                    <exclude>com.ctc.wstx:*</exclude>
+                                    <exclude>org.codehaus.woodstox:*</exclude>
+                                    <exclude>stax:stax-api</exclude>
+                                    <exclude>org.apache.maven:*</exclude>
+                                    <exclude>org.apache.jena:*</exclude>
+                                </excludes>
+                            </artifactSet>
+
+                            <!-- Relocates internal dependencies to avoid classpath conflicts with Keycloak's runtime -->
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.jackson</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google.guava</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.guava</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.thrift</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.thrift</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.ibm.cloud</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.cloudant</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.logging.log4j</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.log4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.commons</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>okhttp3</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.okhttp3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>okio</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.okio</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>kotlin</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.kotlin</shadedPattern>
+                                </relocation>
+                            </relocations>
+
+                            <!-- Filters to manage resource overlaps and force-keep classes required by thin providers -->
+                            <filters>
+                                <filter>
+                                    <!-- Global metadata cleanup -->
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/**</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/LICENSE*</exclude>
+                                        <exclude>META-INF/NOTICE*</exclude>
+                                        <exclude>META-INF/thirdparty-LICENSE</exclude>
+                                        <exclude>META-INF/FastDoubleParser-LICENSE</exclude>
+                                        <exclude>META-INF/FastDoubleParser-NOTICE</exclude>
+                                        <exclude>META-INF/spring.*</exclude>
+                                        <exclude>META-INF/maven/**</exclude>
+                                        <exclude>META-INF/*.kotlin_module</exclude>
+                                        <exclude>META-INF/kotlin-project-structure-metadata.json</exclude>
+                                        <exclude>META-INF/native-image/**</exclude>
+                                        <exclude>log4j2.xml</exclude>
+                                        <exclude>Log4j-*.*</exclude>
+                                        <exclude>assets/org/apache/commons/math3/**</exclude>
+                                    </excludes>
+                                </filter>
+
+                                <!-- Ensure common SW360 properties are ONLY taken from build-configuration -->
+                                <filter>
+                                    <artifact>org.eclipse.sw360:datahandler</artifact>
+                                    <includes><include>**</include></includes>
+                                    <excludes>
+                                        <exclude>couchdb.properties</exclude>
+                                        <exclude>orgmapping.properties</exclude>
+                                        <exclude>search.properties</exclude>
+                                        <exclude>sw360.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.eclipse.sw360:backend-common</artifact>
+                                    <includes><include>**</include></includes>
+                                    <excludes>
+                                        <exclude>couchdb.properties</exclude>
+                                        <exclude>orgmapping.properties</exclude>
+                                        <exclude>search.properties</exclude>
+                                        <exclude>sw360.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.eclipse.sw360:nouveau-handler</artifact>
+                                    <includes><include>**</include></includes>
+                                    <excludes>
+                                        <exclude>couchdb.properties</exclude>
+                                        <exclude>orgmapping.properties</exclude>
+                                        <exclude>search.properties</exclude>
+                                        <exclude>sw360.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.eclipse.sw360:build-configuration</artifact>
+                                    <includes>
+                                        <include>couchdb.properties</include>
+                                        <include>orgmapping.properties</include>
+                                        <include>search.properties</include>
+                                        <include>sw360.properties</include>
+                                    </includes>
+                                </filter>
+
+                                <!-- Ensure transitive dependencies are also kept if they are within our shaded scope -->
+                                <filter>
+                                    <artifact>com.squareup.okhttp3:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.squareup.okio:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.apache.commons:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>commons-*:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.ibm.cloud:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.*:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.jetbrains.kotlin:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.apache.thrift:libthrift</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -358,24 +358,24 @@ public class CycloneDxBOMImporter {
                         log.info("failed to link SBOM Import status attachment to project with status: " + updateStatus);
                     }
                 } catch (SW360Exception e) {
-                    log.error("An error occured while updating project from SBOM: " + e.getMessage());
-                    requestSummary.setMessage("An error occured while updating project during SBOM import, please delete the project and re-import SBOM!");
+                    log.error("An error occurred while updating project from SBOM: " + e.getMessage());
+                    requestSummary.setMessage("An error occurred while updating project during SBOM import, please delete the project and re-import SBOM!");
                     return requestSummary;
                 }
             }
 
         } catch (IOException e) {
-            log.error("IOException occured while importing CycloneDX SBoM: ", e);
-            requestSummary.setMessage("IOException occured while importing CycloneDX SBoM: " + e.getMessage());
+            log.error("IOException occurred while importing CycloneDX SBoM: ", e);
+            requestSummary.setMessage("IOException occurred while importing CycloneDX SBoM: " + e.getMessage());
         } catch (ParseException e) {
-            log.error("ParseException occured while importing CycloneDX SBoM: ", e);
-            requestSummary.setMessage("ParseException occured while importing CycloneDX SBoM: " + e.getMessage());
+            log.error("ParseException occurred while importing CycloneDX SBoM: ", e);
+            requestSummary.setMessage("ParseException occurred while importing CycloneDX SBoM: " + e.getMessage());
         } catch (SW360Exception e) {
-            log.error("SW360Exception occured while importing CycloneDX SBoM: ", e);
-            requestSummary.setMessage("SW360Exception occured while importing CycloneDX SBoM: " + e.getMessage());
+            log.error("SW360Exception occurred while importing CycloneDX SBoM: ", e);
+            requestSummary.setMessage("SW360Exception occurred while importing CycloneDX SBoM: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Exception occured while importing CycloneDX SBoM: ", e);
-            requestSummary.setMessage("An Exception occured while importing CycloneDX SBoM: " + e.getMessage());
+            log.error("Exception occurred while importing CycloneDX SBoM: ", e);
+            requestSummary.setMessage("An Exception occurred while importing CycloneDX SBoM: " + e.getMessage());
         }
         return requestSummary;
     }
@@ -427,9 +427,13 @@ public class CycloneDxBOMImporter {
                 }
             }
         } catch (SW360Exception e) {
+
             log.error("An error occured while importing project from SBOM: " + e.getMessage());
             summary.setMessage("An error occured while importing project from SBOM!");
             summary.setRequestStatus(RequestStatus.FAILURE);
+
+            log.error("An error occurred while importing project from SBOM: " + e.getMessage());
+            summary.setMessage("An error occurred while importing project from SBOM!");
             return summary;
         }
 
@@ -535,8 +539,7 @@ public class CycloneDxBOMImporter {
                     }
                     releaseRelationMap.putIfAbsent(release.getId(), getDefaultRelation());
                 } catch (SW360Exception e) {
-                    log.error("An error occured while creating/adding release from SBOM: " + e.getMessage());
-                    compImportErrorCount++;
+                    log.error("An error occurred while creating/adding release from SBOM: " + e.getMessage());
                     continue;
                 }
 
@@ -841,6 +844,7 @@ public class CycloneDxBOMImporter {
                 } catch (SW360Exception e) {
                     log.error("An error occured while creating/adding component from SBOM: " + e.getMessage());
                     compImportErrorCount++;
+                    continue;
                 }
             } else {
                 nonPkgManagedCompWithoutVCS.add(bomComp.getName());
@@ -898,7 +902,7 @@ public class CycloneDxBOMImporter {
             jsonGenerator.close();
             return jsonObjectWriter.toString();
         } catch (IOException e) {
-            throw new SW360Exception("An exception occured while generating JSON info for BOM import! " + e.getMessage());
+            throw new SW360Exception("An exception occurred while generating JSON info for BOM import! " + e.getMessage());
         }
     }
 
