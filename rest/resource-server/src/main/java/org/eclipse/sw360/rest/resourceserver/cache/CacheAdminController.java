@@ -48,6 +48,7 @@ import java.util.Map;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 @Tag(name = "Admin - Cache", description = "API response cache management (Admin only)")
 public class CacheAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
 

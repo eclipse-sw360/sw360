@@ -5,7 +5,7 @@
 package org.eclipse.sw360.rest.authserver;
 import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 import org.junit.Test;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.*;
 
 import java.nio.charset.StandardCharsets;

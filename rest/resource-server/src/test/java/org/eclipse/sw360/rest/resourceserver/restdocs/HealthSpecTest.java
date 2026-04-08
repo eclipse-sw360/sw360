@@ -12,7 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.health.contributor.Health;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -55,7 +55,10 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                                 fieldWithPath("components.diskSpace.details.threshold").description("The threshold of the diskspace."),
                                 fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
                                 fieldWithPath("components.diskSpace.details.path").description("The path being monitored for disk space."),
-                                fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'.")
+                                fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'."),
+                                fieldWithPath("components.livenessState.status").description("The status of the liveness state health indicator."),
+                                fieldWithPath("components.readinessState.status").description("The status of the readiness state health indicator."),
+                                fieldWithPath("groups").description("The health indicator groups (e.g., liveness, readiness).")
                         )
                 ));
     }
@@ -85,7 +88,10 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                                 fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
                                 //TODO: Reverify
                                 fieldWithPath("components.diskSpace.details.path").description("The path of the file."),
-                                fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'.")
+                                fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'."),
+                                fieldWithPath("components.livenessState.status").description("The status of the liveness state health indicator."),
+                                fieldWithPath("components.readinessState.status").description("The status of the readiness state health indicator."),
+                                fieldWithPath("groups").description("The health indicator groups (e.g., liveness, readiness).")
                         )
                 ));
     }

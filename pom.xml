@@ -137,8 +137,8 @@
     <json.version>20250517</json.version>
     <joda-time.version>2.14.0</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
-    <junit.version>5.13.3</junit.version>
-    <junit-platform-launcher.version>1.13.3</junit-platform-launcher.version>
+    <junit.version>6.0.3</junit.version>
+    <junit-platform-launcher.version>6.0.3</junit-platform-launcher.version>
     <log4j2.version>2.25.4</log4j2.version>
     <logback.version>1.5.18</logback.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
@@ -153,13 +153,12 @@
     <project-lombok.version>1.18.38</project-lombok.version>
     <slf4j.version>2.0.17</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
-    <spring-boot.version>3.5.12</spring-boot.version>
-    <spring-restdocs.version>3.0.1</spring-restdocs.version>
-    <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
-    <spring-security-oauth2-authorization-server.version>1.5.5</spring-security-oauth2-authorization-server.version>
-    <spring-security.version>6.5.6</spring-security.version>
-    <springdoc-openapi-stater-common.version>2.8.13</springdoc-openapi-stater-common.version>
-    <springframework.version>6.2.17</springframework.version>
+    <spring-boot.version>4.0.5</spring-boot.version>
+    <spring-restdocs.version>4.0.0</spring-restdocs.version>
+    <spring-security-oauth2-authorization-server.version>7.0.4</spring-security-oauth2-authorization-server.version>
+    <spring-security.version>7.0.4</spring-security.version>
+    <springdoc-openapi-stater-common.version>3.0.2</springdoc-openapi-stater-common.version>
+    <springframework.version>7.0.6</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <archunit.version>1.4.1</archunit.version>
     <wiremock.version>3.13.1</wiremock.version>
@@ -582,11 +581,6 @@
       </dependency>
       <dependency>
         <groupId>org.springframework.security</groupId>
-        <artifactId>spring-security-jwt</artifactId>
-        <version>${spring-security-jwt.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.security</groupId>
         <artifactId>spring-security-oauth2-authorization-server</artifactId>
         <version>${spring-security-oauth2-authorization-server.version}</version>
       </dependency>
@@ -614,6 +608,34 @@
           <exclusion>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <!--
+        Exclude Jackson 3.x (tools.jackson) transitive dependencies where
+        possible. SW360 registers its 60+ Thrift mixins with both Jackson
+        2.x (ObjectMapper) and Jackson 3.x (via JsonMapperBuilderCustomizer)
+        so both converters work. These exclusions reduce classpath bloat.
+      -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-jackson</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-http-converter</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
