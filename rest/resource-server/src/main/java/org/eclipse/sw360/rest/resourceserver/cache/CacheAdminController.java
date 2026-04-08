@@ -19,6 +19,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -53,6 +55,9 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
     private static final Logger log = LogManager.getLogger(CacheAdminController.class);
 
     @NonNull
+    private final RestControllerHelper restControllerHelper;
+
+    @NonNull
     private final ApiResponseCacheManager cacheManager;
 
     @Override
@@ -65,6 +70,8 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
     @Operation(summary = "Get all cache statistics (all endpoints, all variants)")
     @GetMapping(CACHE_ADMIN_URL + "/stats")
     public ResponseEntity<List<CacheStatistics>> getAllStats() {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RestControllerHelper.throwIfNotAdmin(sw360User);
         log.info("Admin: retrieving all cache statistics");
         return ResponseEntity.ok(cacheManager.getAllVariantStatistics());
     }
@@ -74,7 +81,10 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
     @GetMapping(CACHE_ADMIN_URL + "/stats/{endpoint}")
     public ResponseEntity<List<CacheStatistics>> getEndpointStats(
             @Parameter(description = "Endpoint name (e.g., RELEASES_ALL_DETAILS)")
-            @PathVariable("endpoint") String endpointName) {
+            @PathVariable("endpoint") String endpointName
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RestControllerHelper.throwIfNotAdmin(sw360User);
         CachedEndpoint endpoint = parseEndpoint(endpointName);
         if (endpoint == null) {
             log.warn("Admin: invalid endpoint name: {}", endpointName);
@@ -89,6 +99,8 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
     @Operation(summary = "Invalidate all caches")
     @DeleteMapping(CACHE_ADMIN_URL)
     public ResponseEntity<Map<String, String>> invalidateAll() {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RestControllerHelper.throwIfNotAdmin(sw360User);
         log.info("Admin: invalidate all caches");
         cacheManager.invalidateAll();
         return ResponseEntity.ok(Map.of("status", "success", "message", "All caches invalidated"));
@@ -99,7 +111,10 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
     @DeleteMapping(CACHE_ADMIN_URL + "/{endpoint}")
     public ResponseEntity<Map<String, String>> invalidateEndpoint(
             @Parameter(description = "Endpoint name (e.g., RELEASES_ALL_DETAILS)")
-            @PathVariable("endpoint") String endpointName) {
+            @PathVariable("endpoint") String endpointName
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RestControllerHelper.throwIfNotAdmin(sw360User);
         CachedEndpoint endpoint = parseEndpoint(endpointName);
         if (endpoint == null) {
             log.warn("Admin: invalid endpoint name: {}", endpointName);
@@ -118,7 +133,10 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
             @Parameter(description = "Endpoint name (e.g., RELEASES_ALL_DETAILS)")
             @PathVariable("endpoint") String endpointName,
             @Parameter(description = "Variant name (e.g., ADMIN, USER)")
-            @PathVariable("variant") String variant) {
+            @PathVariable("variant") String variant
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RestControllerHelper.throwIfNotAdmin(sw360User);
         CachedEndpoint endpoint = parseEndpoint(endpointName);
         if (endpoint == null) {
             log.warn("Admin: invalid endpoint name: {}", endpointName);

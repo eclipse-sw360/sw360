@@ -41,7 +41,7 @@ public class ApiResponseCacheManager {
     private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String CONFIG_GLOBAL_ENABLED = "rest.cache.enabled";
     private static final String CONFIG_GLOBAL_DIRECTORY = "rest.cache.directory";
-    private static final String DEFAULT_CACHE_DIRECTORY = "/var/sw360/cache";
+    private static final String DEFAULT_CACHE_DIRECTORY = "/var/cache/sw360";
     private static final long DEFAULT_TTL_SECONDS = 86400;
     private static final long DEFAULT_MAX_STALE_SECONDS = 300;
 
