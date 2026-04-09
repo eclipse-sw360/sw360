@@ -660,9 +660,17 @@ public class RestControllerHelper<T> {
         halResource.addEmbeddedResource(isSingleProject ? "sw360:project" : "sw360:projects", halProject);
     }
 
+    private static final Set<Project._Fields> IMMUTABLE_PROJECT_FIELDS = EnumSet.of(
+            Project._Fields.CREATED_ON,
+            Project._Fields.CREATED_BY
+    );
+
     public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
             ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
         for (Project._Fields field : Project._Fields.values()) {
+            if (IMMUTABLE_PROJECT_FIELDS.contains(field)) {
+                continue;
+            }
             Object fieldValue = requestBodyProject.getFieldValue(field);
             if (fieldValue != null) {
                 String reqBodyStr = field.getFieldName();
@@ -678,9 +686,17 @@ public class RestControllerHelper<T> {
         return projectToUpdate;
     }
 
+    private static final Set<Component._Fields> IMMUTABLE_COMPONENT_FIELDS = EnumSet.of(
+            Component._Fields.CREATED_ON,
+            Component._Fields.CREATED_BY
+    );
+
     public Component updateComponent(Component componentToUpdate, ComponentDTO requestBodyComponent) {
         Component component = convertToComponent(requestBodyComponent);
         for(Component._Fields field:Component._Fields.values()) {
+            if (IMMUTABLE_COMPONENT_FIELDS.contains(field)) {
+                continue;
+            }
             Object fieldValue = component.getFieldValue(field);
             if(fieldValue != null) {
                 componentToUpdate.setFieldValue(field, fieldValue);
@@ -751,9 +767,7 @@ public class RestControllerHelper<T> {
         component.setId(componentDTO.getId());
         component.setName(componentDTO.getName());
         component.setDescription(componentDTO.getDescription());
-        component.setCreatedOn(componentDTO.getCreatedOn());
         component.setComponentType(componentDTO.getComponentType());
-        component.setCreatedBy(componentDTO.getCreatedBy());
         component.setSubscribers(componentDTO.getSubscribers());
         component.setModerators(componentDTO.getModerators());
         component.setComponentOwner(componentDTO.getComponentOwner());

@@ -604,6 +604,38 @@ public class Sw360AttachmentService {
         }
     }
 
+    /**
+     * Preserves immutable attachment fields (createdBy, createdTeam, createdOn)
+     * from stored attachments. For existing attachments, these fields are restored
+     * from the stored version. For new attachments, they are set from the current user.
+     *
+     * @param incomingAttachments the attachments from the request body
+     * @param storedAttachments   the attachments currently stored in the database
+     * @param user                the current user (used for new attachments)
+     */
+    public void preserveImmutableAttachmentFields(Set<Attachment> incomingAttachments,
+            Set<Attachment> storedAttachments, User user) {
+        if (incomingAttachments == null || incomingAttachments.isEmpty()) {
+            return;
+        }
+        Map<String, Attachment> storedMap = new HashMap<>();
+        if (storedAttachments != null) {
+            storedAttachments.forEach(att -> storedMap.put(att.getAttachmentContentId(), att));
+        }
+        for (Attachment incoming : incomingAttachments) {
+            Attachment stored = storedMap.get(incoming.getAttachmentContentId());
+            if (stored != null) {
+                incoming.setCreatedBy(stored.getCreatedBy());
+                incoming.setCreatedTeam(stored.getCreatedTeam());
+                incoming.setCreatedOn(stored.getCreatedOn());
+            } else {
+                incoming.setCreatedBy(user.getEmail());
+                incoming.setCreatedTeam(user.getDepartment());
+                incoming.setCreatedOn(SW360Utils.getCreatedOn());
+            }
+        }
+    }
+
     public boolean isValidSbomFile(MultipartFile file, String type) throws TException {
         if (file == null || file.isEmpty()) {
             return false;
