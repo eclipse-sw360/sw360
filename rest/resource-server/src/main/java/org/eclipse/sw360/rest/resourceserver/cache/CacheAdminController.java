@@ -13,6 +13,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
@@ -68,6 +70,10 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(summary = "Get all cache statistics (all endpoints, all variants)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cache statistics retrieved successfully."),
+            @ApiResponse(responseCode = "403", description = "User is not an admin.")
+    })
     @GetMapping(CACHE_ADMIN_URL + "/stats")
     public ResponseEntity<List<CacheStatistics>> getAllStats() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -78,6 +84,11 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(summary = "Get statistics for all variants of a specific cached endpoint)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cache statistics retrieved successfully."),
+            @ApiResponse(responseCode = "400", description = "Invalid endpoint name."),
+            @ApiResponse(responseCode = "403", description = "User is not an admin.")
+    })
     @GetMapping(CACHE_ADMIN_URL + "/stats/{endpoint}")
     public ResponseEntity<List<CacheStatistics>> getEndpointStats(
             @Parameter(description = "Endpoint name (e.g., RELEASES_ALL_DETAILS)")
@@ -97,6 +108,10 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(summary = "Invalidate all caches")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All caches invalidated successfully."),
+            @ApiResponse(responseCode = "403", description = "User is not an admin.")
+    })
     @DeleteMapping(CACHE_ADMIN_URL)
     public ResponseEntity<Map<String, String>> invalidateAll() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -108,6 +123,11 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(summary = "Invalidate all variants of a cached endpoint")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cache invalidated successfully."),
+            @ApiResponse(responseCode = "400", description = "Invalid endpoint name."),
+            @ApiResponse(responseCode = "403", description = "User is not an admin.")
+    })
     @DeleteMapping(CACHE_ADMIN_URL + "/{endpoint}")
     public ResponseEntity<Map<String, String>> invalidateEndpoint(
             @Parameter(description = "Endpoint name (e.g., RELEASES_ALL_DETAILS)")
@@ -128,6 +148,11 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(summary = "Invalidate a specific variant of a cached endpoint")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cache invalidated successfully."),
+            @ApiResponse(responseCode = "400", description = "Invalid endpoint name."),
+            @ApiResponse(responseCode = "403", description = "User is not an admin.")
+    })
     @DeleteMapping(CACHE_ADMIN_URL + "/{endpoint}/{variant}")
     public ResponseEntity<Map<String, String>> invalidateEndpointVariant(
             @Parameter(description = "Endpoint name (e.g., RELEASES_ALL_DETAILS)")

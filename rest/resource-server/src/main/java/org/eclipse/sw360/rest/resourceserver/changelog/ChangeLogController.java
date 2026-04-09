@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,17 +85,18 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
     @Operation(
             summary = "Get change logs for a document.",
             description = "List all the changelog based on the document id and parent document id.",
-            tags = {"Changelog"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = {
-                                    @Content(mediaType = MediaTypes.HAL_JSON_VALUE,
-                                            schema = @Schema(implementation = ChangeLogs.class))
-                            }
-                    ),
-            }
+            tags = {"Changelog"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Change logs retrieved successfully.",
+                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                            schema = @Schema(implementation = ChangeLogs.class))}
+            ),
+            @ApiResponse(responseCode = "204", description = "No change logs found.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Failed to retrieve change logs.")
+    })
     @GetMapping(value = CHANGE_LOG_URL + "/document/{id}")
     public ResponseEntity getChangeLogForDocument(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -147,7 +149,7 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
         }
 
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity(resources, HttpStatus.OK);
+        return new ResponseEntity(resources, status);
     }
 
     @Override
