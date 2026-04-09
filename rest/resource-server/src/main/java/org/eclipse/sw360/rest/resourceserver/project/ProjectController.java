@@ -1988,6 +1988,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         Project updateProject = convertToProject(reqBodyMap);
         updateProject.unsetReleaseRelationNetwork();
+        if (updateProject.getAttachments() != null && !updateProject.getAttachments().isEmpty()) {
+            attachmentService.preserveImmutableAttachmentFields(
+                    updateProject.getAttachments(), sw360Project.getAttachments(), user);
+        }
         String comment = (String) reqBodyMap.get("comment");
         user.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {

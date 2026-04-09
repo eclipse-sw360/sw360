@@ -417,6 +417,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         user.setCommentMadeDuringModerationRequest(comment);
 
         if (updateComponentDto.getAttachments() != null && !updateComponentDto.getAttachments().isEmpty()) {
+            attachmentService.preserveImmutableAttachmentFields(
+                    updateComponentDto.getAttachments(), sw360Component.getAttachments(), user);
             updateComponentDto.getAttachments().forEach(attachment ->
                 wrapSW360Exception(() -> attachmentService.fillCheckedAttachmentData(attachment, user))
             );
