@@ -74,6 +74,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -1237,6 +1240,115 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 // Can be sorted on name and createdOn, but using different default value for score sorting
                 ProjectSortColumn.BY_TYPE, true);
         return sw360ProjectClient.refineSearchPageable(null, filterMap, sw360User, pageData);
+    }
+
+    /**
+     * Returns all projects that match the given filters, using the same branching
+     * logic as {@code GET /api/projects} ({@code getProjectsForUser}):
+     * <ul>
+     *   <li>No filters → all accessible projects via
+     *       {@code getAccessibleProjectsSummary} (no pagination needed)</li>
+     *   <li>Filters + {@code luceneSearch=true} → non-paginated Thrift
+     *       {@code refineSearch} which calls
+     *       {@code ProjectSearchHandler.search(text, filterMap, user)} →
+     *       {@code searchProjectViewWithRestrictionsAndFilter}. Returns all
+     *       matching results in one call without any page-size limit.</li>
+     *   <li>Filters only → CouchDB Mango exact-value search, iterated page
+     *       by page using {@code LUCENE_SEARCH_LIMIT} as a safe page size.</li>
+     * </ul>
+     *
+     * @param filterMap    field-name → accepted values (same map built by
+     *                     {@code ProjectController.getFilterMap})
+     * @param sw360User    the authenticated user
+     * @param luceneSearch {@code true} to use Lucene wildcard search,
+     *                     {@code false} for exact match
+     * @return flat list of all matching projects
+     */
+    public List<Project> getFilteredProjectsForExport(
+            Map<String, Set<String>> filterMap, User sw360User, boolean luceneSearch
+    ) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+
+        // ── No filters: return every accessible project in one shot ──────────
+        if (filterMap.isEmpty()) {
+            return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
+        }
+
+        // ── Lucene / Nouveau full-text search ─────────────────────────────────
+        if (luceneSearch) {
+            // Mirror the wildcard preparation done in ProjectController
+            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
+                Set<String> wildcardNames = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(Project._Fields.NAME.getFieldName(), wildcardNames);
+            }
+            // Use the non-paginated Thrift method: delegates directly to
+            // ProjectSearchHandler.search(text, subQueryRestrictions, user)
+            // → NouveauLuceneAwareDatabaseConnector.searchProjectViewWithRestrictionsAndFilter
+            // Returns ALL matching results in a single call – no page-size limit.
+            return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
+        }
+
+        // ── CouchDB Mango exact-value search (paginated, safe page size) ──────
+        return fetchAllPages((page) -> searchAccessibleProjectByExactValues(filterMap, sw360User,
+                PageRequest.of(page, DatabaseSettings.LUCENE_SEARCH_LIMIT)));
+    }
+
+    /**
+     * Fetches all pages returned by {@code pageSupplier} and returns a flat list
+     * of every matching project.
+     *
+     * <p>The total number of pages is derived from the {@code totalRowCount} field
+     * in the first page's {@link PaginationData}, so the loop is always bounded and
+     * never runs indefinitely.  An early-exit guard is kept in case a page comes
+     * back unexpectedly empty (e.g. concurrent deletes), which prevents hanging on
+     * an otherwise correct page count.
+     */
+    private List<Project> fetchAllPages(ThriftPageSupplier pageSupplier) throws TException {
+        // --- fetch the first page to learn the total row count ---
+        Map<PaginationData, List<Project>> firstResult = pageSupplier.get(0);
+        if (firstResult == null || firstResult.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Project> firstBatch = firstResult.values().iterator().next();
+        if (firstBatch == null || firstBatch.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        long totalRowCount = firstResult.keySet().iterator().next().getTotalRowCount();
+        int pageSize = firstBatch.size();
+
+        List<Project> all = new ArrayList<>((int) Math.min(totalRowCount, Integer.MAX_VALUE));
+        all.addAll(firstBatch);
+
+        if (all.size() >= totalRowCount || pageSize == 0) {
+            return all;
+        }
+
+        // --- compute the remaining number of pages and fetch each one ---
+        int totalPages = (int) Math.ceil((double) totalRowCount / pageSize);
+        for (int page = 1; page < totalPages; page++) {
+            Map<PaginationData, List<Project>> result = pageSupplier.get(page);
+            if (result == null || result.isEmpty()) {
+                break;
+            }
+            List<Project> batch = result.values().iterator().next();
+            if (batch == null || batch.isEmpty()) {
+                break; // guard: stop early if an unexpected empty page is returned
+            }
+            all.addAll(batch);
+            if (all.size() >= totalRowCount) {
+                break;
+            }
+        }
+        return all;
+    }
+
+    /** Functional interface for the paginated-fetch lambda used in {@link #fetchAllPages}. */
+    @FunctionalInterface
+    private interface ThriftPageSupplier {
+        Map<PaginationData, List<Project>> get(int page) throws TException;
     }
 
     public void copyLinkedObligationsForClonedProject(Project createDuplicateProject, Project sw360Project, User user)

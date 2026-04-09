@@ -30,7 +30,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.ReleaseExporter;
@@ -110,36 +112,40 @@ public class SW360ReportService {
     LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
     AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
-        /*
-            * If projectId is not null, then validate the project record for the given projectId
-            * If the projectId is null, then fetch the project details which are assigned with user
-         */
-        if (projectId != null && !validateProject(projectId, user)) {
-            throw new TException("No project record found for the project Id : " + projectId);
-        }
-        return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
+        return getProjectBuffer(user, extendedByReleases, projectId, format, null);
     }
 
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
+    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format,
+                                       SW360ReportBean reportBean) throws TException {
         String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
         validateFormat(fmt);
-        if ("xlsx".equals(fmt)) {
-            if (projectId != null && !validateProject(projectId, user)) {
-                throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
-            }
-            return projectclient.getReportDataStream(user, extendedByReleases, projectId);
-        }
         try {
             List<Project> projects;
             if (projectId != null) {
+                if (!validateProject(projectId, user)) {
+                    throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
+                }
+                // For a single specific project, delegate to backend for xlsx
+                // but use ProjectExporter for other formats
+                if ("xlsx".equals(fmt)) {
+                    return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+                }
                 Project project = projectclient.getProjectById(projectId, user);
                 if (project == null) {
                     throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
                 }
                 projects = List.of(project);
             } else {
-                projects = projectclient.getAccessibleProjectsSummary(user);
+                // No specific projectId: apply filters (if any) to determine
+                // which projects to export. This ensures the export always
+                // reflects the same result set the user sees in the UI.
+                projects = getFilteredProjects(user, reportBean);
+                if ("xlsx".equals(fmt)) {
+                    // Build xlsx from the filtered project list via ProjectExporter
+                    ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+                    return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(projects)));
+                }
             }
             ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
             List<Map<String, String>> records = exporter.makeRecords(projects);
@@ -150,6 +156,66 @@ public class SW360ReportService {
         } catch (Exception e) {
             throw new TException("Failed to export projects in format " + fmt + ": " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Retrieves all projects that match the filters carried in {@code reportBean},
+     * using the exact same branching logic as {@code GET /api/projects}:
+     * <ul>
+     *   <li>No filters → all accessible projects</li>
+     *   <li>Filters + {@code luceneSearch=true} → Lucene/Nouveau wildcard search</li>
+     *   <li>Filters only → CouchDB Mango exact-value search</li>
+     * </ul>
+     * All pages are iterated so that the full result set is returned,
+     */
+    private List<Project> getFilteredProjects(User user, SW360ReportBean reportBean) throws TException {
+        Map<String, Set<String>> filterMap = buildFilterMap(reportBean);
+        return projectService.getFilteredProjectsForExport(filterMap, user,
+                reportBean != null && reportBean.isLuceneSearch());
+    }
+
+    /**
+     * Builds the filter map from the project-related fields in the given reportBean.
+     * Mirrors the {@code getFilterMap} helper in {@code ProjectController}.
+     */
+    private Map<String, Set<String>> buildFilterMap(SW360ReportBean reportBean) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (reportBean == null) {
+            return filterMap;
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getName())) {
+            filterMap.put(Project._Fields.NAME.getFieldName(), CommonUtils.splitToSet(reportBean.getName()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getType())) {
+            filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), CommonUtils.splitToSet(reportBean.getType()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getGroup())) {
+            filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), CommonUtils.splitToSet(reportBean.getGroup()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getTag())) {
+            filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(reportBean.getTag()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getVersion())) {
+            filterMap.put(Project._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(reportBean.getVersion()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getProjectResponsible())) {
+            filterMap.put(Project._Fields.PROJECT_RESPONSIBLE.getFieldName(),
+                    CommonUtils.splitToSet(reportBean.getProjectResponsible()));
+        }
+        ProjectState projectState = reportBean.getProjectState();
+        if (projectState != null && CommonUtils.isNotNullEmptyOrWhitespace(projectState.name())) {
+            filterMap.put(Project._Fields.STATE.getFieldName(), CommonUtils.splitToSet(projectState.name()));
+        }
+        ProjectClearingState projectClearingState = reportBean.getProjectClearingState();
+        if (projectClearingState != null && CommonUtils.isNotNullEmptyOrWhitespace(projectClearingState.name())) {
+            filterMap.put(Project._Fields.CLEARING_STATE.getFieldName(),
+                    CommonUtils.splitToSet(projectClearingState.name()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getAdditionalData())) {
+            filterMap.put(Project._Fields.ADDITIONAL_DATA.getFieldName(),
+                    CommonUtils.splitToSet(reportBean.getAdditionalData()));
+        }
+        return filterMap;
     }
 
     private ByteBuffer convertToFormat(List<Map<String, String>> records, List<String> headers, String format) throws IOException {
