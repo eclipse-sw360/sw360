@@ -46,8 +46,10 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
@@ -1728,5 +1730,41 @@ public class RestControllerHelper<T> {
         if (!PermissionUtils.isAdmin(sw360User)) {
             throw new AccessDeniedException("User is not allowed to access this resource.");
         }
+    }
+
+    /**
+     * Convert parameters passed to projects endpoint and return it as a filter map for CouchDB.
+     * @return Filter Map based on parameters passed.
+     */
+    public static Map<String, Set<String>> getFilterMapForProject(
+            String tag, String projectType, String group, String version, String projectResponsible,
+            ProjectState projectState, ProjectClearingState projectClearingState, String additionalData
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
+            filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(tag));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectType)) {
+            filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), CommonUtils.splitToSet(projectType));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(group)) {
+            filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), CommonUtils.splitToSet(group));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(version)) {
+            filterMap.put(Project._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(version));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectResponsible)) {
+            filterMap.put(Project._Fields.PROJECT_RESPONSIBLE.getFieldName(), CommonUtils.splitToSet(projectResponsible));
+        }
+        if (projectState!=null && CommonUtils.isNotNullEmptyOrWhitespace(projectState.name())) {
+            filterMap.put(Project._Fields.STATE.getFieldName(), CommonUtils.splitToSet(projectState.name()));
+        }
+        if (projectClearingState!=null && CommonUtils.isNotNullEmptyOrWhitespace(projectClearingState.name())) {
+            filterMap.put(Project._Fields.CLEARING_STATE.getFieldName(), CommonUtils.splitToSet(projectClearingState.name()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(additionalData)) {
+            filterMap.put(Project._Fields.ADDITIONAL_DATA.getFieldName(), CommonUtils.splitToSet(additionalData));
+        }
+        return filterMap;
     }
 }
