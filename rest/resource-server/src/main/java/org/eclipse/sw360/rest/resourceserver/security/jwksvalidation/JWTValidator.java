@@ -33,7 +33,6 @@ public class JWTValidator {
         JwtConsumerBuilder jwtConsumerBuilder = new JwtConsumerBuilder()
                 .setRequireExpirationTime()
                 .setRequireIssuedAt()
-                .setRequireNotBefore()
                 .setAllowedClockSkewInSeconds(ALLOWED_CLOCK_SKEW_SECONDS)
                 .setExpectedIssuer(issuerUrl)
                 .setVerificationKeyResolver(httpsJwksKeyResolver);
