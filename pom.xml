@@ -139,7 +139,7 @@
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>5.13.3</junit.version>
     <junit-platform-launcher.version>1.13.3</junit-platform-launcher.version>
-    <log4j2.version>2.25.3</log4j2.version>
+    <log4j2.version>2.25.4</log4j2.version>
     <logback.version>1.5.18</logback.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
     <mockito.version>5.21.0</mockito.version>
