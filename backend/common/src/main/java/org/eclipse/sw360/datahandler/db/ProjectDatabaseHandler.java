@@ -57,6 +57,7 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 
+import java.beans.Visibility;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
@@ -73,6 +74,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
@@ -87,7 +91,8 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
-import java.nio.ByteBuffer;
+import java.nio.ByteBuffer; 
+
 
 /**
  * Class for accessing the CouchDB database
@@ -261,7 +266,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .setId(project.getClearingRequestId()).setMessage("Clearing request already present for project");
         }
 
-        if (!(ProjectClearingState.CLOSED.equals(project.getClearingState()) || Visibility.PRIVATE.equals(project.getVisbility()))) {
+        if (!(ProjectClearingState.CLOSED.equals(project.getClearingState()) || org.eclipse.sw360.datahandler.thrift.Visibility.PRIVATE.equals(project.getVisbility()))) {
             clearingRequest.setProjectBU(project.getBusinessUnit());
             String crId = moderator.createClearingRequest(clearingRequest, user);
             if (CommonUtils.isNotNullEmptyOrWhitespace(crId)) {
@@ -478,7 +483,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         Collections.emptySet())))) {
             return RequestStatus.INVALID_INPUT;
         } else if (isWriteActionAllowedOnProject(actual, user) || forceUpdate) {
-            copyImmutableFields(project,actual);
+           
             setRequestedDateAndTrimComment(project, actual, user);
             setRequestedDateAndTrimCommentForPackages(project, actual, user);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
@@ -567,7 +572,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     }
                     String releaseId = usage.getOwner().getReleaseId();
                     String attachmentContentId = usage.getAttachmentContentId();
-                    AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+                    AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId,org.eclipse.sw360.datahandler.thrift.Source.projectId(projectId));
                     final UsageData usageData;
                     LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
                     licenseInfoUsage.setProjectPath(projectPath);
@@ -911,7 +916,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateProjectDependentLinkedFields(Project updated, Project actual) throws SW360Exception {
-        Source usedBy = Source.projectId(updated.getId());
+       org.eclipse.sw360.datahandler.thrift.Source usedBy =org.eclipse.sw360.datahandler.thrift.Source.projectId(updated.getId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
         Set<String> actualLinkedReleaseIds = nullToEmptyMap(actual.getReleaseIdToUsage()).keySet();
         deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
@@ -1031,11 +1036,66 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
     }
+///////////////////////////////
+// COPY PROJECT               //
+/////////////////////////////
 
-    private void copyImmutableFields(Project destination, Project source) {
-        ThriftUtils.copyField(source, destination, Project._Fields.CREATED_ON);
-        ThriftUtils.copyField(source, destination, Project._Fields.CREATED_BY);
+public AddDocumentRequestSummary copyProject(String projectId, Set<String> fieldsToCopy, Project overrideFields, User user) throws TException {
+    Project sourceProject = getProjectById(projectId, user);
+    if (sourceProject == null) {
+        return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
     }
+
+    Project newProject = new Project();
+    
+    // Default: copy ALL non-internal fields if empty (per GMishx feedback)
+    if (fieldsToCopy.isEmpty()) {
+        fieldsToCopy = Stream.of(Project._Fields.values())
+                .filter(f -> !"ID".equals(f.name()) && 
+                        !"CREATED_ON".equals(f.name()) && 
+                        !"CREATED_BY".equals(f.name()) && 
+                        !"REVISION".equals(f.name()) &&
+                        !"CLEARING_STATE".equals(f.name()) && 
+                        !"CLEARING_REQUEST_ID".equals(f.name()))
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+    }
+
+    // Always copy the name (required field)
+    newProject.setName(sourceProject.getName() + " (Copy)");
+
+    // Copy only the fields requested by the user
+    for (String fieldName : fieldsToCopy) {
+        try {
+            Project._Fields field = Project._Fields.findByName(fieldName);
+            if (field != null && sourceProject.isSet(field)) {
+                ThriftUtils.copyField(sourceProject, newProject, field);
+            }
+        } catch (Exception e) {
+            log.warn("Could not copy field: " + fieldName, e);
+        }
+    }
+
+    // Reset fields that must not be carried over
+    newProject.unsetId();
+    newProject.unsetRevision();
+    newProject.unsetCreatedBy();
+    newProject.unsetCreatedOn();
+    newProject.unsetClearingRequestId();
+    newProject.unsetClearingState();
+    
+    // Apply user overrides (name, version, etc.)
+    if (overrideFields != null) {
+        if (overrideFields.isSetName()) {
+            newProject.setName(overrideFields.getName());
+        }
+        if (overrideFields.isSetVersion()) {
+            newProject.setVersion(overrideFields.getVersion());
+        }
+    }
+
+    return addProject(newProject, user);
+}
 
     ///////////////////////////////
     // DELETE INDIVIDUAL OBJECTS //
@@ -1218,7 +1278,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
 
         Project project = getProjectById(id,user);
-        Visibility actualVisbility = project.getVisbility();
+       org.eclipse.sw360.datahandler.thrift.Visibility actualVisbility = project.getVisbility();
         DocumentState documentState;
         if (moderationRequestsForDocumentId.isEmpty()) {
             documentState = CommonUtils.getOriginalDocumentState();
@@ -1458,7 +1518,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         projects.stream().forEach(project -> {
             // build project tree, get all linked release ids and fetch the releases
-            // current decision is to not check any permissions for subproject visibility
+            // current decision is to not check any permissions for subprojectorg.eclipse.sw360.datahandler.thrift.Visibility
             Set<String> releaseIdsOfProjectTree = getReleaseIdsOfProjectTree(project, Sets.newHashSet(),
                     allProjectsIdMap, user, null);
             List<Release> releasesForClearingStateSummary = componentDatabaseHandler
@@ -1924,7 +1984,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     /**
      * CAUTION!
      * You should most probably use {@link #getAccessibleProjects(User)} instead of this method.
-     * This method reads all the projects without checking for visibility constraints. It is intended to provide
+     * This method reads all the projects without checking fororg.eclipse.sw360.datahandler.thrift.Visibility constraints. It is intended to provide
      * all projects for export from a scheduled service, where a valid sw360 user is not available.
      * This is a less than optimal situation, but that's the way it is at the moment.
      * @return list of all projects in the database
