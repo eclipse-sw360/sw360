@@ -65,7 +65,6 @@ import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
@@ -137,7 +136,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     private final Sw360VulnerabilityService vulnerabilityService;
 
     @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
+    private final ObjectMapper objectMapper;
 
     @Operation(
             summary = "List all of the service's components.",
@@ -461,10 +460,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     private ComponentDTO convertToComponentDTO(Map<String, Object> requestBody) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-        return mapper.convertValue(requestBody, ComponentDTO.class);
+        return objectMapper.convertValue(requestBody, ComponentDTO.class);
     }
 
     private String extractModerationComment(ComponentDTO updateComponentDto) {
