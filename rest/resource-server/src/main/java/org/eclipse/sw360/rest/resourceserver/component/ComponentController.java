@@ -65,6 +65,7 @@ import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
@@ -460,7 +461,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     private ComponentDTO convertToComponentDTO(Map<String, Object> requestBody) {
-        return objectMapper.convertValue(requestBody, ComponentDTO.class);
+        // objectMapper.copy() inherits all registered modules (sw360Module + xssPreventionModule)
+        // from the shared bean. The copy is configured with FAIL_ON_UNKNOWN_PROPERTIES=false so
+        // that extra/unrecognised keys in the PATCH body (e.g. "invalid_property", legacy names)
+        // are silently ignored — matching the behaviour of every other convertValue call in the
+        // codebase. The shared bean is never mutated.
+        return objectMapper.copy()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(requestBody, ComponentDTO.class);
     }
 
     private String extractModerationComment(ComponentDTO updateComponentDto) {
