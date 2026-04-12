@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -695,14 +694,18 @@ public class RestControllerHelper<T> {
         return projectToUpdate;
     }
 
-    public Component updateComponent(Component componentToUpdate, ComponentDTO requestBodyComponent) {
+    public Component updateComponent(Component componentToUpdate, ComponentDTO requestBodyComponent,
+            Map<String, Object> reqBodyMap) {
         Component component = convertToComponent(requestBodyComponent);
-        for(Component._Fields field:Component._Fields.values()) {
+        for (Component._Fields field : Component._Fields.values()) {
             if (IMMUTABLE_COMPONENT_FIELDS.contains(field)) {
                 continue;
             }
             Object fieldValue = component.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
+                if (!reqBodyMap.containsKey(field.getFieldName())) {
+                    continue;
+                }
                 componentToUpdate.setFieldValue(field, fieldValue);
             }
         }
@@ -791,17 +794,7 @@ public class RestControllerHelper<T> {
         component.setBlog(componentDTO.getBlog());
         component.setAttachments(componentDTO.getAttachments());
         component.setVcs(componentDTO.getVcs());
-
-        // Copy visbility only when the caller explicitly set a non-default value.
-        // The Thrift-generated no-arg constructor initialises visbility to EVERYONE
-        // (from the IDL default `= sw360.Visibility.EVERYONE`). Jackson does not
-        // invoke the setter for fields absent from the PATCH body, so at this point
-        // we cannot tell whether the caller omitted visbility or sent EVERYONE.
-        // Treating EVERYONE as the "not provided" sentinel prevents silently
-        // overwriting an existing restricted visibility setting on every PATCH.
-        if (componentDTO.getVisbility() != null && componentDTO.getVisbility() != Visibility.EVERYONE) {
-            component.setVisbility(componentDTO.getVisbility());
-        }
+        component.setVisbility(componentDTO.getVisbility());
 
         return component;
     }

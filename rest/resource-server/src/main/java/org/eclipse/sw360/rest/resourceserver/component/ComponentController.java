@@ -65,6 +65,8 @@ import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
@@ -133,6 +135,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
+
+    @NonNull
+    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @Operation(
             summary = "List all of the service's components.",
@@ -423,8 +428,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the component to be updated.")
             @PathVariable("id") String id,
             @Parameter(description = "Updated component fields. Add 'comment' field in body for moderation request.")
-            @RequestBody ComponentDTO updateComponentDto
+            @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
+        ComponentDTO updateComponentDto = convertToComponentDTO(reqBodyMap);
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
         Component sw360Component = validateAndGetComponent(id, updateComponentDto, user);
@@ -443,7 +449,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             );
         }
 
-        sw360Component = restControllerHelper.updateComponent(sw360Component, updateComponentDto);
+        sw360Component = restControllerHelper.updateComponent(sw360Component, updateComponentDto, reqBodyMap);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
 
         if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -452,6 +458,13 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         HalResource<Component> halResource = createHalComponent(sw360Component, user);
         return ResponseEntity.ok(halResource);
+    }
+
+    private ComponentDTO convertToComponentDTO(Map<String, Object> requestBody) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+        return mapper.convertValue(requestBody, ComponentDTO.class);
     }
 
     private String extractModerationComment(ComponentDTO updateComponentDto) {
