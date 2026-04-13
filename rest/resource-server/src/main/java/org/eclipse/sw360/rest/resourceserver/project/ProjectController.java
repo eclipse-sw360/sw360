@@ -757,7 +757,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return ResponseEntity.badRequest().body(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT);
         }
 
-        // Check for clearing request and delete if it exists and is open
+        // Fetch the clearing request before deletion attempt, but do NOT delete it yet.
+        // The CR must only be removed after confirming the project deletion succeeded;
+        // deleting it first and then discovering the project is IN_USE causes permanent
+        // data loss — the project remains but its clearing history is gone.
         ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
         ClearingRequest clearingRequest = null;
 

@@ -33,7 +33,11 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.exporter.CSVExport;
+import org.eclipse.sw360.exporter.JsonExport;
+import org.eclipse.sw360.exporter.ProjectExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
+import org.eclipse.sw360.exporter.XmlExport;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -103,7 +107,7 @@ public class SW360ReportService {
     private final Sw360LicenseInfoService licenseInfoService;
 
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
-    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private static final Set<String> SUPPORTED_FORMATS = Set.of("xlsx", "csv", "json", "xml");
     private final ThriftClients thriftClients;
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
@@ -111,33 +115,36 @@ public class SW360ReportService {
             * If projectId is not null, then validate the project record for the given projectId
             * If the projectId is null, then fetch the project details which are assigned with user
          */
-        if (projectId != null && !validateProject(projectId, user)) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        if (projectId != null && !validateProject(projectId, user, projectClient)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
-        return thriftClients.makeProjectClient().getReportDataStream(user, extendedByReleases, projectId);
+        return projectClient.getReportDataStream(user, extendedByReleases, projectId);
     }
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
         String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
         validateFormat(fmt);
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         if ("xlsx".equals(fmt)) {
-            if (projectId != null && !validateProject(projectId, user)) {
+            if (projectId != null && !validateProject(projectId, user, projectClient)) {
                 throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
             }
-            return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+            return projectClient.getReportDataStream(user, extendedByReleases, projectId);
         }
         try {
             List<Project> projects;
             if (projectId != null) {
-                Project project = projectclient.getProjectById(projectId, user);
+                Project project = projectClient.getProjectById(projectId, user);
                 if (project == null) {
                     throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
                 }
                 projects = List.of(project);
             } else {
-                projects = projectclient.getAccessibleProjectsSummary(user);
+                projects = projectClient.getAccessibleProjectsSummary(user);
             }
-            ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+            ProjectExporter exporter = new ProjectExporter(componentClient, projectClient, user, projects, extendedByReleases);
             List<Map<String, String>> records = exporter.makeRecords(projects);
             List<String> headers = extendedByReleases ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
             return convertToFormat(records, headers, fmt);
@@ -170,17 +177,13 @@ public class SW360ReportService {
         }
     }
 
-    private boolean validateProject(String projectId, User user) throws TException {
-        boolean validProject = true;
+    private boolean validateProject(String projectId, User user, ProjectService.Iface projectClient) throws TException {
         try {
-            Project project = thriftClients.makeProjectClient().getProjectById(projectId, user);
-            if (project == null) {
-                return false;
-            }
+            Project project = projectClient.getProjectById(projectId, user);
+            return project != null;
         } catch (Exception e) {
-            validProject = false;
+            return false;
         }
-        return validProject;
     }
 
     public String getDocumentName(User user, String projectId, String module) throws TException {
@@ -191,12 +194,13 @@ public class SW360ReportService {
         String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
         validateFormat(fmt);
         String extension = getFileExtension(fmt);
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         String documentName = String.format("projects-%s.%s", SW360Utils.getCreatedOn(), extension);
         if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
-                Project project = thriftClients.makeProjectClient().getProjectById(projectId, user);
-                documentName = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
-                        SW360Utils.getCreatedOn());
+                Project project = projectClient.getProjectById(projectId, user);
+                documentName = String.format("project-%s-%s-%s.%s", project.getName(), project.getVersion(),
+                        SW360Utils.getCreatedOn(), extension);
             }
         } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
             documentName = String.format("components-%s.%s", SW360Utils.getCreatedOn(), extension);
@@ -204,9 +208,9 @@ public class SW360ReportService {
             documentName = String.format("licenses-%s.%s", SW360Utils.getCreatedOn(), extension);
         } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
-                Project project = thriftClients.makeProjectClient().getProjectById(projectId, user);
-                documentName = String.format("releases-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
-                        SW360Utils.getCreatedOn());
+                Project project = projectClient.getProjectById(projectId, user);
+                documentName = String.format("releases-%s-%s-%s.%s", project.getName(), project.getVersion(),
+                        SW360Utils.getCreatedOn(), extension);
             }
         }
         return documentName;
@@ -234,7 +238,8 @@ public class SW360ReportService {
 
     public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)
             throws TException {
-        if (projectId!=null && !validateProject(projectId, user)) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        if (projectId!=null && !validateProject(projectId, user, projectClient)) {
             throw new SW360Exception("No project record found for the project Id : " + projectId);
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
@@ -433,13 +438,15 @@ public class SW360ReportService {
 
     public ByteBuffer downloadSourceCodeBundle(String projectId, User sw360User, boolean withSubProject)
             throws IOException, TException {
-        if (projectId == null || !validateProject(projectId, sw360User)) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        if (projectId == null || !validateProject(projectId, sw360User, projectClient)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
-        Project project = thriftClients.makeProjectClient().getProjectById(projectId, sw360User);
+        Project project = projectClient.getProjectById(projectId, sw360User);
         List<AttachmentContent> attachments = new ArrayList<>();
-        for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject)) {
-            attachments.add(thriftClients.makeAttachmentClient().getAttachmentContent(id));
+        for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject, attachmentClient)) {
+            attachments.add(attachmentClient.getAttachmentContent(id));
         }
         return serveAttachmentBundle(attachments, project, sw360User);
     }
@@ -473,24 +480,30 @@ public class SW360ReportService {
     }
 
     public List<String> getAttachmentIdFromAttachmentUsages(Project sw360Project, User sw360User, boolean withSubProject) {
+        return getAttachmentIdFromAttachmentUsages(sw360Project, sw360User, withSubProject, thriftClients.makeAttachmentClient());
+    }
+
+    private List<String> getAttachmentIdFromAttachmentUsages(Project sw360Project, User sw360User, boolean withSubProject,
+            AttachmentService.Iface attachmentClient) {
         final Set<String> attachmentIds = new HashSet<>();
         final Set<Project> projects = new HashSet<>(List.of(sw360Project));
         if (withSubProject) {
             final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(sw360Project, true, thriftClients, log, sw360User);
             projects.addAll(linkedProjects.stream().map(link -> wrapTException(() -> projectService.getProjectForUserById(link.getId(), sw360User))).toList());
         }
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         for (Project project : projects) {
             try {
-                List<AttachmentUsage> attachmentSourceUsages = thriftClients.makeAttachmentClient().getUsedAttachments(Source.projectId(project.getId()),
+                List<AttachmentUsage> attachmentSourceUsages = attachmentClient.getUsedAttachments(Source.projectId(project.getId()),
                         UsageData.sourcePackage(new SourcePackageUsage()));
                 List<String> currentProjAttachments = attachmentSourceUsages.stream().map(AttachmentUsage::getAttachmentContentId).toList();
-                if (! currentProjAttachments.isEmpty()) {
+                if (!currentProjAttachments.isEmpty()) {
                     attachmentIds.addAll(currentProjAttachments);
                     continue;
                 }
                 Map<String, ProjectReleaseRelationship> releaseUsage = project.getReleaseIdToUsage();
                 try {
-                    List<Release> releases = thriftClients.makeComponentClient().getFullReleasesById(releaseUsage.keySet(), sw360User);
+                    List<Release> releases = componentClient.getFullReleasesById(releaseUsage.keySet(), sw360User);
                     releases.forEach(release -> {
                         Set<Attachment> attachments = release.getAttachments();
                         if (attachments != null) {
@@ -525,17 +538,19 @@ public class SW360ReportService {
     }
 
     public ByteBuffer getProjectReleaseSpreadSheetWithEcc(User user, String projectId) throws TException, IOException {
-        if (projectId == null || projectId.isEmpty() || !validateProject(projectId, user)) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        if (projectId == null || projectId.isEmpty() || !validateProject(projectId, user, projectClient)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
         ReleaseExporter exporter = null;
         List<Release> releases = null;
         try {
-            List<ReleaseClearingStatusData> releaseStringMap = thriftClients.makeProjectClient()
+            List<ReleaseClearingStatusData> releaseStringMap = projectClient
                     .getReleaseClearingStatusesWithAccessibility(projectId, user);
             releases = releaseStringMap.stream().map(ReleaseClearingStatusData::getRelease)
                     .sorted(Comparator.comparing(SW360Utils::printFullname)).collect(Collectors.toList());
-            exporter = new ReleaseExporter(thriftClients.makeComponentClient(), releases, user, releaseStringMap);
+            exporter = new ReleaseExporter(componentClient, releases, user, releaseStringMap);
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }
