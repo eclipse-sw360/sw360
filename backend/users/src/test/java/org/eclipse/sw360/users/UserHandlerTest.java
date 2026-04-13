@@ -12,12 +12,19 @@ package org.eclipse.sw360.users;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 public class UserHandlerTest {
@@ -33,14 +40,16 @@ public class UserHandlerTest {
     private static final String DUMMY_DEPARTMENT = "DummyDepartment";
 
     UserHandler handler;
+    private UserDatabaseHandler dbHandler;
 
     @Before
     public void setUp() throws Exception {
         // Create the database
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
-        // Create the connector
+        // Create the connectors
         handler = new UserHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        dbHandler = new UserDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @After
@@ -75,5 +84,32 @@ public class UserHandlerTest {
         assertEquals(DUMMY_EMAIL_ADDRESS_2, userFromDatabase.getEmail());
         assertEquals(DUMMY_DEPARTMENT, userFromDatabase.getDepartment());
         assertFalse(userFromDatabase.isSetCommentMadeDuringModerationRequest());
+    }
+
+    @Test
+    public void testReadFileCsv_parsesGroupsAndEmails() throws Exception {
+        File csv = File.createTempFile("dept-users", ".csv");
+        csv.deleteOnExit();
+        Files.write(csv.toPath(),
+                "Department,Email\nEngineering,alice@example.org\n,bob@example.org\nLegal,carol@example.org\n"
+                        .getBytes());
+
+        Map<String, List<String>> result = dbHandler.readFileCsv(csv.getAbsolutePath());
+
+        assertEquals("Expected two department entries", 2, result.size());
+        assertTrue("Engineering entry should exist", result.containsKey("Engineering"));
+        assertEquals("Engineering should have two members",
+                List.of("alice@example.org", "bob@example.org"),
+                result.get("Engineering"));
+        assertTrue("Legal entry should exist", result.containsKey("Legal"));
+        assertEquals("Legal should have one member",
+                List.of("carol@example.org"),
+                result.get("Legal"));
+    }
+
+    @Test
+    public void testReadFileCsv_nonExistentFile_returnsEmptyMap() {
+        Map<String, List<String>> result = dbHandler.readFileCsv("/nonexistent/path/file.csv");
+        assertTrue("Should return empty map for missing file", result.isEmpty());
     }
 }
