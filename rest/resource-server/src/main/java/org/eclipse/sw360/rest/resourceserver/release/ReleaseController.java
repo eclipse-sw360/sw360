@@ -1401,14 +1401,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Set<String> otherLicenseIds = licensesInfoInRequestBody.get("otherLicenseIds");
 
         if (!CommonUtils.isNullOrEmptyCollection(licenseIds)) {
-	    sw360Release.getMainLicenseIds().clear();
+            if (sw360Release.isSetMainLicenseIds()) {
+                sw360Release.unsetMainLicenseIds();
+            }
             for (String licenseId : licenseIds) {
                 sw360Release.addToMainLicenseIds(licenseId);
             }
         }
 
         if (!CommonUtils.isNullOrEmptyCollection(otherLicenseIds)) {
-	    sw360Release.getOtherLicenseIds().clear();
+            if (sw360Release.isSetOtherLicenseIds()) {
+                sw360Release.unsetOtherLicenseIds();
+            }
             for (String licenseId : otherLicenseIds) {
                 sw360Release.addToOtherLicenseIds(licenseId);
             }
