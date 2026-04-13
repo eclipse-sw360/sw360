@@ -298,6 +298,11 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         return sw360ComponentClient.importBomFromAttachmentContent(user, attachmentContentId);
     }
 
+    public SpdxImportDryRunResult dryRunImportSBOM(User user, String attachmentContentId) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.dryRunImportBom(user, attachmentContentId);
+    }
+
     public ImportBomRequestPreparation prepareImportSBOM(User user, String attachmentContentId) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.prepareImportBom(user, attachmentContentId);

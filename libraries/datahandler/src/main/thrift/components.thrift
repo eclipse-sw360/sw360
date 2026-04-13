@@ -30,6 +30,9 @@ typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
 typedef sw360.ClearingReportStatus ClearingReportStatus
 typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
+typedef sw360.SpdxImportDryRunResult SpdxImportDryRunResult
+typedef sw360.SpdxComponentInfo SpdxComponentInfo
+typedef sw360.LicenseConflictInfo LicenseConflictInfo
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -1038,6 +1041,12 @@ service ComponentService {
     string getCyclicLinkedReleasePath(1: Release release, 2: User user);
 
     ImportBomRequestPreparation prepareImportBom(1: User user, 2:string attachmentContentId);
+
+    /**
+     * Dry-run SPDX import - simulates import without persisting data
+     * Returns detailed impact analysis including new/existing components and license conflicts
+     **/
+    SpdxImportDryRunResult dryRunImportBom(1: User user, 2:string attachmentContentId);
 
     /**
      * parse a bom file and write the information to SW360

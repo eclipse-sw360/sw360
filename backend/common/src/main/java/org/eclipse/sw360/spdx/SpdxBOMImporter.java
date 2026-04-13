@@ -124,6 +124,144 @@ public class SpdxBOMImporter {
         return requestPreparation;
     }
 
+    public SpdxImportDryRunResult dryRunImportSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
+            throws SW360Exception, IOException {
+        final SpdxImportDryRunResult result = new SpdxImportDryRunResult();
+        List<SpdxComponentInfo> newComponents = new ArrayList<>();
+        List<SpdxComponentInfo> existingComponents = new ArrayList<>();
+        List<LicenseConflictInfo> licenseConflicts = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+
+        String fileType = getFileType(attachmentContent.getFilename());
+        if (!"rdf".equals(fileType) && !"spdx".equals(fileType)) {
+            result.setRequestStatus(RequestStatus.FAILURE);
+            result.setMessage("Invalid file type. Only .rdf and .spdx files are supported.");
+            return result;
+        }
+        final String ext = "." + fileType;
+
+        final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(inputStream, attachmentContent.getId(), ext);
+        try {
+            SpdxDocument spdxDocument = openAsSpdx(sourceFile);
+            if (spdxDocument == null) {
+                result.setRequestStatus(RequestStatus.FAILURE);
+                result.setMessage("Failed to parse SPDX file.");
+                return result;
+            }
+
+            List<SpdxElement> describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
+            List<SpdxElement> packages = describedPackages.stream()
+                    .filter(SpdxPackage.class::isInstance)
+                    .collect(Collectors.toList());
+
+            if (packages.isEmpty()) {
+                result.setRequestStatus(RequestStatus.FAILURE);
+                result.setMessage("The provided BOM did not contain any top level packages.");
+                return result;
+            } else if (packages.size() > 1) {
+                result.setRequestStatus(RequestStatus.FAILURE);
+                result.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
+                return result;
+            }
+
+            final SpdxPackage spdxPackage = (SpdxPackage) packages.get(0);
+            final String componentName = getValue(spdxPackage.getName());
+            final String version = getValue(spdxPackage.getVersionInfo());
+            final String spdxId = spdxPackage.getId();
+            
+            Set<String> licenseConcluded = new HashSet<>();
+            if (spdxPackage.getLicenseConcluded() != null) {
+                licenseConcluded.add(spdxPackage.getLicenseConcluded().toString());
+            }
+            
+            Set<String> licenseDeclared = new HashSet<>();
+            String declaredLicense = createLicenseDeclaredFromSpdxLicenseDeclared(spdxPackage);
+            if (declaredLicense != null) {
+                licenseDeclared.add(declaredLicense);
+            }
+
+            SpdxComponentInfo componentInfo = new SpdxComponentInfo();
+            componentInfo.setName(componentName);
+            componentInfo.setVersion(version);
+            componentInfo.setComponentType(ComponentType.OSS.toString());
+            componentInfo.setSpdxId(spdxId);
+            componentInfo.setLicenseConcluded(licenseConcluded);
+            componentInfo.setLicenseDeclared(licenseDeclared);
+
+            Component existingComponent = sink.searchComponent(componentName);
+            if (existingComponent != null) {
+                existingComponents.add(componentInfo);
+                
+                Set<String> existingLicenses = existingComponent.getMainLicenseIds();
+                if (existingLicenses != null && !existingLicenses.isEmpty()) {
+                    for (String existingLicense : existingLicenses) {
+                        for (String proposedLicense : licenseConcluded) {
+                            if (!existingLicense.equals(proposedLicense) && !"NOASSERTION".equals(proposedLicense)) {
+                                LicenseConflictInfo conflict = new LicenseConflictInfo();
+                                conflict.setComponentName(componentName);
+                                conflict.setExistingLicense(existingLicense);
+                                conflict.setProposedLicense(proposedLicense);
+                                conflict.setConflictType("LICENSE_MISMATCH");
+                                licenseConflicts.add(conflict);
+                            }
+                        }
+                    }
+                }
+            } else {
+                newComponents.add(componentInfo);
+            }
+
+            List<SpdxPackage> allPackages = getPackages(spdxDocument);
+            for (SpdxPackage pkg : allPackages) {
+                String pkgName = getValue(pkg.getName());
+                if (pkgName == null || pkgName.equals(componentName)) {
+                    continue;
+                }
+                
+                SpdxComponentInfo pkgInfo = new SpdxComponentInfo();
+                pkgInfo.setName(pkgName);
+                pkgInfo.setVersion(getValue(pkg.getVersionInfo()));
+                pkgInfo.setComponentType(ComponentType.OSS.toString());
+                pkgInfo.setSpdxId(pkg.getId());
+                
+                Set<String> pkgLicenseConcluded = new HashSet<>();
+                if (pkg.getLicenseConcluded() != null) {
+                    pkgLicenseConcluded.add(pkg.getLicenseConcluded().toString());
+                }
+                pkgInfo.setLicenseConcluded(pkgLicenseConcluded);
+                
+                String pkgDeclared = createLicenseDeclaredFromSpdxLicenseDeclared(pkg);
+                if (pkgDeclared != null) {
+                    Set<String> pkgLicenseDeclared = new HashSet<>();
+                    pkgLicenseDeclared.add(pkgDeclared);
+                    pkgInfo.setLicenseDeclared(pkgLicenseDeclared);
+                }
+
+                Component existingPkgComponent = sink.searchComponent(pkgName);
+                if (existingPkgComponent != null) {
+                    existingComponents.add(pkgInfo);
+                } else {
+                    newComponents.add(pkgInfo);
+                }
+            }
+
+            result.setNewComponents(newComponents);
+            result.setExistingComponents(existingComponents);
+            result.setLicenseConflicts(licenseConflicts);
+            result.setWarnings(warnings);
+            result.setRequestStatus(RequestStatus.SUCCESS);
+            result.setMessage("Dry-run completed successfully. " + newComponents.size() + " new components, " + 
+                           existingComponents.size() + " existing components, " + licenseConflicts.size() + " license conflicts.");
+
+        } catch (InvalidSPDXAnalysisException | NullPointerException e) {
+            log.error("Error during dry-run import: " + e);
+            result.setRequestStatus(RequestStatus.FAILURE);
+            result.setMessage("Error analyzing SPDX file: " + e.getMessage());
+        }
+
+        return result;
+    }
+
     public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, User user)
             throws SW360Exception, IOException {
         return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, user);
