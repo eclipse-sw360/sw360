@@ -28,9 +28,6 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Profile("!SECURITY_MOCK")
 public class ApiTokenAuthenticationFilter implements Filter {
@@ -58,11 +55,11 @@ public class ApiTokenAuthenticationFilter implements Filter {
         if (context.getAuthentication() != null && context.getAuthentication().isAuthenticated()) {
             log.trace("Already authenticated");
         } else {
+            HttpServletRequest httpRequest = (HttpServletRequest) request;
+            HttpServletResponse httpResponse = (HttpServletResponse) response;
             try {
-                Map<String, String> headers = Collections.list(((HttpServletRequest) request).getHeaderNames()).stream()
-                        .collect(Collectors.toMap(h -> h, ((HttpServletRequest) request)::getHeader));
-                if (!headers.isEmpty() && headers.containsKey(AUTHENTICATION_TOKEN_PARAMETER)) {
-                    String authorization = headers.get(AUTHENTICATION_TOKEN_PARAMETER);
+                String authorization = httpRequest.getHeader(AUTHENTICATION_TOKEN_PARAMETER);
+                if (authorization != null && !authorization.isBlank()) {
                     String[] token = authorization.trim().split("\\s+");
                     if (token.length == 2 && token[0].equalsIgnoreCase("token")) {
                         Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]));
@@ -71,19 +68,20 @@ public class ApiTokenAuthenticationFilter implements Filter {
                         Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS));
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     }
-                } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()
-                        && headers.containsKey(OIDC_AUTHENTICATION_TOKEN_PARAMETER)) {
-                    String authorization = headers.get(OIDC_AUTHENTICATION_TOKEN_PARAMETER);
-                    String[] token = authorization.trim().split("\\s+");
-                    if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
-                        Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS));
-                        SecurityContextHolder.getContext().setAuthentication(auth);
+                } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED) {
+                    String oidcAuthorization = httpRequest.getHeader(OIDC_AUTHENTICATION_TOKEN_PARAMETER);
+                    if (oidcAuthorization != null && !oidcAuthorization.isBlank()) {
+                        String[] token = oidcAuthorization.trim().split("\\s+");
+                        if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
+                            Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS));
+                            SecurityContextHolder.getContext().setAuthentication(auth);
+                        }
                     }
                 }
             } catch (AuthenticationException e) {
                 log.error("Authentication failed: {}", e.getMessage());
                 SecurityContextHolder.clearContext();
-                authenticationEntryPoint.commence((HttpServletRequest) request, (HttpServletResponse) response, e);
+                authenticationEntryPoint.commence(httpRequest, httpResponse, e);
             }
         }
 
