@@ -66,7 +66,6 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
@@ -113,7 +112,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     private String thriftServerUrl;
 
     @NonNull
-    private RestControllerHelper rch;
+    private final RestControllerHelper rch;
 
     @NonNull
     private final Sw360ProjectService projectService;

@@ -31,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -70,7 +69,6 @@ public class FossologyHandler implements FossologyService.Iface {
 
     boolean reportStep = false;
 
-    @Autowired
     public FossologyHandler(ThriftClients thriftClients, FossologyRestConfig fossologyRestConfig,
             FossologyRestClient fossologyRestClient, AttachmentConnector attachmentConnector) {
         this.thriftClients = thriftClients;
