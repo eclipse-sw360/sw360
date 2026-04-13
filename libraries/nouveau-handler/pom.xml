@@ -16,7 +16,7 @@
     <parent>
         <artifactId>libraries</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.0.0-rc-2</version>
+        <version>20.0.0</version>
     </parent>
 
     <name>nouveau-handler</name>
@@ -28,7 +28,6 @@
     </properties>
 
     <build>
-        <finalName>org.eclipse.sw360.nouveau-handler-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
@@ -164,8 +163,19 @@
             <artifactId>cloudant</artifactId>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>

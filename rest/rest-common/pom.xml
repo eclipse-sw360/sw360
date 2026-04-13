@@ -15,11 +15,15 @@
     <parent>
         <artifactId>rest</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.0.0-rc-2</version>
+        <version>20.0.0</version>
     </parent>
 
     <artifactId>rest-common</artifactId>
     <packaging>jar</packaging>
+
+    <properties>
+        <artifact.deploy.dir>${jars.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -54,7 +58,6 @@
 
     </dependencies>
     <build>
-        <finalName>rest-common</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

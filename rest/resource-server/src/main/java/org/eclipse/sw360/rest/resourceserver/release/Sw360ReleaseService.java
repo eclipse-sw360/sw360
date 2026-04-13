@@ -99,6 +99,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
@@ -336,6 +338,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
+        } else if (requestStatus == RequestStatus.DUPLICATE) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                    "A release with the same name and version already exists.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
             throw new RuntimeException(
                     "sw360 release with name '" + SW360Utils.printName(release) + " cannot be updated.");
@@ -985,7 +990,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                             attachmentId, uploadDescription);
                 }
             } catch (Exception exp) {
-                log.error(String.format("Release : %s .Error occured while triggering Fossology Process . %s",
+                log.error(String.format("Release : %s .Error occurred while triggering Fossology Process . %s",
                         new Object[] { releaseId, exp.getMessage() }));
             } finally {
                 log.info("Release : " + releaseId + " .Fossology Process exited, removing lock.");
@@ -1030,7 +1035,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             attachmentSizeinBytes = FileCopyUtils.copy(streamToAttachments, attachmentOutputStream);
         } catch (IOException exp) {
             log.error("Release : " + release.getId()
-                    + " .Error occured while calculation attachment size.Attachment ID : " + attachmentId);
+                    + " .Error occurred while calculation attachment size.Attachment ID : " + attachmentId);
         }
 
         return (attachmentSizeinBytes / 1024) / 1024;

@@ -4,9 +4,10 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.event.listener;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.sw360.keycloak.common.Sw360UserService;
 import org.eclipse.sw360.keycloak.event.listener.service.Sw360KeycloakAdminEventService;
 import org.eclipse.sw360.keycloak.event.listener.service.Sw360KeycloakUserEventService;
-import org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -15,8 +16,6 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Custom Event Listener Provider for SW360.

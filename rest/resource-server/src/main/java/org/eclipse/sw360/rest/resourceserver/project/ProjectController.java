@@ -484,7 +484,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         //check the below condition when releaseRelation is not null
-        if (releaseRelation != null) {
+        if (releaseRelation != null && sw360Project.getReleaseIdToUsage() != null) {
             Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage().entrySet().stream()
                     .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
                     .collect(Collectors.toMap(
@@ -503,13 +503,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .collect(Collectors.toSet());
 
         // Filter the releaseIdToUsage map
-        Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
-                .filter(entry -> validReleaseIds.contains(entry.getKey()))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
-        sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
+        if (sw360Project.getReleaseIdToUsage() != null) {
+            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
+                    .filter(entry -> validReleaseIds.contains(entry.getKey()))
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue
+                    ));
+            sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
+        }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
         List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
@@ -578,10 +580,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource<Package> createHalPackage(Package sw360Package, User sw360User) throws TException {
         HalResource<Package> halPackage = new HalResource<>(sw360Package);
-        User packageCreator = restControllerHelper.getUserByEmail(sw360Package.getCreatedBy());
         String linkedRelease = sw360Package.getReleaseId();
 
-        restControllerHelper.addEmbeddedUser(halPackage, packageCreator, "createdBy");
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Package.getCreatedBy())) {
+            User packageCreator = restControllerHelper.getUserByEmail(sw360Package.getCreatedBy());
+            restControllerHelper.addEmbeddedUser(halPackage, packageCreator, "createdBy");
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(linkedRelease)) {
             Release release = releaseService.getReleaseForUserById(linkedRelease, sw360User);
 
@@ -737,6 +741,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     )
             }
     )
+    @PreAuthorize("hasAuthority('WRITE')")
     @DeleteMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity deleteProject(
             @Parameter(description = "Project ID")
@@ -762,34 +767,38 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             log.info("No clearing request found for project: " + id + " (exception: " + e.getMessage() + ")");
         }
 
-        if (clearingRequest != null && !isClosedClearingRequest(clearingRequest)) {
-            log.warn("Project has an open clearing request. Attempting to delete the clearing request and then the project.");
-
-            try {
-                RequestStatus clearingRequestStatus = moderationClient.deleteClearingRequest(clearingRequest.getId(), sw360User);
-                if (clearingRequestStatus != RequestStatus.SUCCESS) {
-                    log.error("Failed to delete clearing request for project: " + id);
-                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-                log.info("Successfully deleted the open clearing request for project: " + id);
-            } catch (TException e) {
-                log.error("Error deleting clearing request for project: " + id, e);
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        } else if (clearingRequest != null) {
-            log.info("The clearing request for project is already closed. Proceeding with project deletion.");
-        }
-
+        // Delete the project first. If this fails the clearing request is left
+        // completely untouched — no data loss.
         RequestStatus requestStatus = projectService.deleteProject(id, sw360User);
-        if (requestStatus == RequestStatus.SUCCESS) {
-            return new ResponseEntity<>(HttpStatus.OK);
-        } else if (requestStatus == RequestStatus.IN_USE) {
+        if (requestStatus == RequestStatus.IN_USE) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         } else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        } else {
+        } else if (requestStatus != RequestStatus.SUCCESS) {
             throw new SW360Exception("Something went wrong.");
         }
+
+        // Project is gone. Now remove the open clearing request if one existed.
+        // The backend already orphaned it during project cleanup, so deleting by ID
+        // is still safe at this point.
+        if (clearingRequest != null && !isClosedClearingRequest(clearingRequest)) {
+            try {
+                RequestStatus crStatus = moderationClient.deleteClearingRequest(clearingRequest.getId(), sw360User);
+                if (crStatus != RequestStatus.SUCCESS) {
+                    log.warn("Project {} deleted but clearing request {} could not be removed",
+                            id, clearingRequest.getId());
+                    return ResponseEntity.ok()
+                            .body("Project deleted successfully, but the associated clearing request could not be removed.");
+                }
+                log.info("Clearing request {} deleted after project {}", clearingRequest.getId(), id);
+            } catch (TException e) {
+                log.warn("Project {} deleted but clearing request cleanup threw an exception", id, e);
+                return ResponseEntity.ok()
+                        .body("Project deleted successfully, but the associated clearing request could not be removed.");
+            }
+        }
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     private boolean isClosedClearingRequest(ClearingRequest clearingRequest) {
@@ -961,7 +970,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sourceProj = projectService.getProjectForUserById(id, sw360User);
         Map<String, String> responseMap = new HashMap<>();
-        HttpStatus status = null;
+        if (projectIdsInRequestBody == null || projectIdsInRequestBody.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        HttpStatus status = HttpStatus.OK;
         Set<String> alreadyLinkedIds = new HashSet<>();
         Set<String> idsSentToModerator = new HashSet<>();
         Set<String> idsWithCyclicPath = new HashSet<>();
@@ -1110,7 +1122,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         } else {
-            RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
+            RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true, comment);
             if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
                 return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
             }
@@ -1148,7 +1160,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         } else {
-            RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
+            RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false, comment);
             if (patchPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
                 return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
             }
@@ -2996,9 +3008,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return projectService.updateProject(project, sw360User);
     }
 
-    private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)
+    private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link, String comment)
             throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (comment != null) {
+            sw360User.setCommentMadeDuringModerationRequest(comment);
+        }
         Project project = projectService.getProjectForUserById(id, sw360User);
         Set<String> packageIds = new HashSet<>();
         if (project.getPackageIds() != null && !CommonUtils.isNullOrEmptyCollection(project.getPackageIds().keySet())) {
@@ -3012,15 +3027,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         project.setPackageIds(packageIds.stream()
                 .collect(Collectors.toMap(pkgId -> pkgId, pkgId -> {
+                    boolean isBeingLinked = link && packagesInRequestBody.contains(pkgId);
                     ProjectPackageRelationship existing = (project.getPackageIds() != null && project.getPackageIds().get(pkgId) != null)
                             ? project.getPackageIds().get(pkgId)
-                            : new ProjectPackageRelationship();
-                    if (existing != null && existing.getComment() != null) {
-                        ProjectPackageRelationship rel = new ProjectPackageRelationship();
+                            : null;
+                    ProjectPackageRelationship rel = new ProjectPackageRelationship();
+                    if (isBeingLinked && comment != null) {
+                        // Newly linked package: save the provided comment
+                        rel.setComment(comment);
+                    } else if (existing != null && existing.getComment() != null) {
+                        // Already linked package: preserve existing comment
                         rel.setComment(existing.getComment());
-                        return rel;
                     }
-                    return new ProjectPackageRelationship();
+                    return rel;
                 }))
         );
         return projectService.updateProject(project, sw360User);

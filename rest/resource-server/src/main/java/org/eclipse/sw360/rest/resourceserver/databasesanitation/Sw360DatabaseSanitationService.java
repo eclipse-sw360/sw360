@@ -35,12 +35,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class Sw360DatabaseSanitationService {
+    private static final Logger log = LogManager.getLogger(Sw360DatabaseSanitationService.class);
 
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;

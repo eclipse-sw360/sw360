@@ -16,15 +16,15 @@
     <parent>
         <artifactId>backend</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.0.0-rc-2</version>
+        <version>20.0.0</version>
     </parent>
 
     <artifactId>backend-users</artifactId>
     <packaging>war</packaging>
     <name>backend-users</name>
-    <build><finalName>users</finalName></build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>users</deploy.name>
     </properties>
 
     <dependencies>
