@@ -1465,7 +1465,7 @@ public class BulkDeleteUtilTest {
             timeLogLastTime = System.nanoTime();
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("IOException occurred", e);
             return false;
         }
     }
@@ -1478,7 +1478,7 @@ public class BulkDeleteUtilTest {
             timeLogLastTime = 0;
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("IOException occurred", e);
             return false;
         }
     }
@@ -1496,7 +1496,7 @@ public class BulkDeleteUtilTest {
             }
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("IOException occurred", e);
             return false;
         }
     }
@@ -1508,3 +1508,4 @@ public class BulkDeleteUtilTest {
         }
     }
 }
+

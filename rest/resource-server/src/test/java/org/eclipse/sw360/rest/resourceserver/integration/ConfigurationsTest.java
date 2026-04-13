@@ -53,9 +53,6 @@ public class ConfigurationsTest extends TestIntegrationBase {
     @LocalServerPort
     private int port;
 
-    @MockitoBean
-    private SW360ConfigurationsService sw360ConfigurationsService;
-
     private Map<String, String> testConfigsFromProperties;
     private Map<String, String> testConfigsFromDb;
     private Map<String, String> allTestConfigs;
@@ -80,16 +77,16 @@ public class ConfigurationsTest extends TestIntegrationBase {
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
         // Setup configuration service mocks
-        given(this.sw360ConfigurationsService.getSW360ConfigFromProperties()).willReturn(testConfigsFromProperties);
-        given(this.sw360ConfigurationsService.getSW360ConfigFromDb()).willReturn(testConfigsFromDb);
-        given(this.sw360ConfigurationsService.getSW360Configs()).willReturn(allTestConfigs);
-        given(this.sw360ConfigurationsService.updateSW360Configs(any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.sw360ConfigurationsService.updateSW360ConfigForContainer(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.sw360ConfigurationsService.getConfigForContainer(any())).willReturn(testConfigsFromDb);
+        given(this.sw360ConfigurationsServiceMock.getSW360ConfigFromProperties()).willReturn(testConfigsFromProperties);
+        given(this.sw360ConfigurationsServiceMock.getSW360ConfigFromDb()).willReturn(testConfigsFromDb);
+        given(this.sw360ConfigurationsServiceMock.getSW360Configs()).willReturn(allTestConfigs);
+        given(this.sw360ConfigurationsServiceMock.updateSW360Configs(any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.sw360ConfigurationsServiceMock.updateSW360ConfigForContainer(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.sw360ConfigurationsServiceMock.getConfigForContainer(any())).willReturn(testConfigsFromDb);
         // filterAdminOnlyKeys returns configs as-is for ADMIN users (test user is ADMIN)
-        given(this.sw360ConfigurationsService.filterAdminOnlyKeys(eq(allTestConfigs), any())).willReturn(allTestConfigs);
-        given(this.sw360ConfigurationsService.filterAdminOnlyKeys(eq(testConfigsFromDb), any())).willReturn(testConfigsFromDb);
-        given(this.sw360ConfigurationsService.filterAdminOnlyKeys(eq(testConfigsFromProperties), any())).willReturn(testConfigsFromProperties);
+        given(this.sw360ConfigurationsServiceMock.filterAdminOnlyKeys(eq(allTestConfigs), any())).willReturn(allTestConfigs);
+        given(this.sw360ConfigurationsServiceMock.filterAdminOnlyKeys(eq(testConfigsFromDb), any())).willReturn(testConfigsFromDb);
+        given(this.sw360ConfigurationsServiceMock.filterAdminOnlyKeys(eq(testConfigsFromProperties), any())).willReturn(testConfigsFromProperties);
     }
 
     // ========== GET CONFIGURATIONS TESTS ==========
@@ -219,7 +216,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     @Test
     public void should_fail_update_configurations_with_invalid_input() throws IOException, TException {
         // Mock invalid input scenario
-        given(this.sw360ConfigurationsService.updateSW360Configs(any(), any())).willReturn(RequestStatus.INVALID_INPUT);
+        given(this.sw360ConfigurationsServiceMock.updateSW360Configs(any(), any())).willReturn(RequestStatus.INVALID_INPUT);
 
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -246,7 +243,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     @Test
     public void should_fail_update_configurations_when_in_use() throws IOException, TException {
         // Mock in-use scenario
-        given(this.sw360ConfigurationsService.updateSW360Configs(any(), any())).willReturn(RequestStatus.IN_USE);
+        given(this.sw360ConfigurationsServiceMock.updateSW360Configs(any(), any())).willReturn(RequestStatus.IN_USE);
 
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -356,7 +353,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        verify(this.sw360ConfigurationsService)
+        verify(this.sw360ConfigurationsServiceMock)
                 .updateSW360ConfigForContainer(
                         eq(ConfigFor.SW360_CONFIGURATION),
                         argThat(x -> {
@@ -426,7 +423,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_get_configurations() throws IOException, TException {
         // Mock TException in getSW360Configs
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsService)
+        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
                 .getSW360Configs();
 
         HttpHeaders headers = getHeaders(port);
@@ -447,7 +444,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_update_configurations() throws IOException, TException {
         // Mock TException in updateSW360Configs
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsService)
+        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
                 .updateSW360Configs(any(), any());
 
         HttpHeaders headers = getHeaders(port);
@@ -475,7 +472,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_get_container_configurations() throws IOException, TException {
         // Mock TException in getConfigForContainer
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsService)
+        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
                 .getConfigForContainer(any());
 
         HttpHeaders headers = getHeaders(port);
@@ -496,7 +493,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_update_container_configurations() throws IOException, TException {
         // Mock TException in updateSW360ConfigForContainer
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsService)
+        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
                 .updateSW360ConfigForContainer(any(), any(), any());
 
         HttpHeaders headers = getHeaders(port);
@@ -525,7 +522,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     public void should_handle_invalid_properties_format_exception_in_update_configurations() throws Exception {
         // Mock service to throw InvalidPropertiesFormatException
         doThrow(new InvalidPropertiesFormatException("Invalid configuration format"))
-                .when(sw360ConfigurationsService)
+                .when(sw360ConfigurationsServiceMock)
                 .updateSW360Configs(any(Map.class), any(User.class));
 
         HttpHeaders headers = getHeaders(port);
@@ -554,7 +551,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     public void should_handle_invalid_properties_format_exception_in_update_container_configurations() throws Exception {
         // Mock service to throw InvalidPropertiesFormatException
         doThrow(new InvalidPropertiesFormatException("Invalid container configuration format"))
-                .when(sw360ConfigurationsService)
+                .when(sw360ConfigurationsServiceMock)
                 .updateSW360ConfigForContainer(any(ConfigFor.class), any(Map.class), any(User.class));
 
         HttpHeaders headers = getHeaders(port);

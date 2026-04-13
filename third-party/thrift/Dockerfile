@@ -31,6 +31,7 @@ RUN apt-get -qq update \
     libevent-dev \
     libtool \
     pkg-config \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./third-party/thrift/install-thrift.sh install_thrift.sh

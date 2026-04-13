@@ -17,7 +17,6 @@
     <artifactId>backend-vmcomponents</artifactId>
     <packaging>war</packaging>
     <name>backend-vmcomponents</name>
-    <build><finalName>vmcomponents</finalName></build>
 
     <developers>
         <developer>
@@ -26,6 +25,7 @@
     </developers>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>vmcomponents</deploy.name>
     </properties>
 
     <dependencies>
@@ -45,8 +45,7 @@
         </dependency>
         <dependency>
             <groupId>org.wiremock</groupId>
-            <artifactId>wiremock</artifactId>
-            <version>${wiremock.version}</version>
+            <artifactId>wiremock-standalone</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

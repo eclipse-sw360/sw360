@@ -7,8 +7,8 @@ package org.eclipse.sw360.keycloak.event.listener.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.keycloak.common.Sw360UserService;
 import org.jboss.logging.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.keycloak.events.Event;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -17,6 +17,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.userprofile.DefaultUserProfile;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,11 +26,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
-import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_DEPARTMENT;
-import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.CUSTOM_ATTR_EXTERNAL_ID;
-import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_DEPARTMENT;
-import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.DEFAULT_EXTERNAL_ID;
-import static org.eclipse.sw360.keycloak.event.listener.service.Sw360UserService.REALM;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ATTR_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ATTR_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.DEFAULT_DEPARTMENT;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.DEFAULT_EXTERNAL_ID;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ProviderService.LISTENER;
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.REALM_SW360;
 
 public class Sw360KeycloakUserEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakUserEventService.class);
@@ -56,7 +58,7 @@ public class Sw360KeycloakUserEventService {
 			updateKeycloakUserGroup(event, eu.getUserGroup());
 		});
 
-		userService.createOrUpdateUser(user);
+		userService.createOrUpdateUser(user, LISTENER);
 	}
 
 	private User fillUserFromEvent(Map<String, String> userDetails) {
@@ -68,9 +70,9 @@ public class Sw360KeycloakUserEventService {
 		user.setGivenname(userDetails.get("first_name"));
 		user.setLastname(userDetails.get("last_name"));
         user.setDepartment(sanitizeDepartment(
-                getAttributeOrDefaultFromSession(CUSTOM_ATTR_DEPARTMENT, DEFAULT_DEPARTMENT)));
+                getAttributeOrDefaultFromSession(ATTR_DEPARTMENT, DEFAULT_DEPARTMENT)));
         user.setExternalid(sanitizeExternalId(
-                getAttributeOrDefaultFromSession(CUSTOM_ATTR_EXTERNAL_ID, DEFAULT_EXTERNAL_ID)));
+                getAttributeOrDefaultFromSession(ATTR_EXTERNAL_ID, DEFAULT_EXTERNAL_ID)));
 		return user;
 	}
 
@@ -90,10 +92,10 @@ public class Sw360KeycloakUserEventService {
 
 	public void userLoginEvent(Event event) {
 		UserProvider userProvider = keycloakSession.users();
-		RealmModel realmModel = keycloakSession.realms().getRealmByName(REALM);
+		RealmModel realmModel = keycloakSession.realms().getRealmByName(REALM_SW360);
 		UserModel userModel = getUserFromKeycloakRealm(event, realmModel, userProvider);
 		User user = convertKcUserModelToUser(userModel);
-        userService.createOrUpdateUser(user);
+        userService.createOrUpdateUser(user, LISTENER);
 	}
 
 	private UserModel getUserFromKeycloakRealm(Event event, RealmModel realmModel, UserProvider userProvider) {
@@ -128,7 +130,7 @@ public class Sw360KeycloakUserEventService {
 	private void mapSetDepartment(UserModel userModel, User user) {
 		log.debug("User Model Attributes" + userModel.getAttributes());
 		List<String> departments = userModel.getAttributes().getOrDefault(
-                CUSTOM_ATTR_DEPARTMENT, Collections.singletonList(DEFAULT_DEPARTMENT));
+                ATTR_DEPARTMENT, Collections.singletonList(DEFAULT_DEPARTMENT));
 		String department = departments.getFirst();
 		String parentDepartment = sanitizeDepartment(department);
 		user.setDepartment(parentDepartment);
@@ -137,7 +139,7 @@ public class Sw360KeycloakUserEventService {
 	private void mapSetExternalId(UserModel userModel, User user) {
 		log.debug("User Model Attributes" + userModel.getAttributes());
 		List<String> externalIds = userModel.getAttributes().getOrDefault(
-                CUSTOM_ATTR_EXTERNAL_ID, Collections.singletonList(DEFAULT_EXTERNAL_ID));
+                ATTR_EXTERNAL_ID, Collections.singletonList(DEFAULT_EXTERNAL_ID));
 		String externalId = externalIds.getFirst();
 		user.setExternalid(sanitizeExternalId(externalId));
 	}
@@ -184,9 +186,9 @@ public class Sw360KeycloakUserEventService {
      * @param event     Event which is triggered.
      * @param userGroup New UserGroup to assign to KC user
      */
-	private void updateKeycloakUserGroup(@NotNull Event event, @NotNull UserGroup userGroup) {
+	private void updateKeycloakUserGroup(@Nonnull Event event, @Nonnull UserGroup userGroup) {
 		String userId = event.getUserId();
-		RealmModel realm = keycloakSession.realms().getRealmByName(REALM);
+		RealmModel realm = keycloakSession.realms().getRealmByName(REALM_SW360);
 		UserModel userModel = keycloakSession.users().getUserById(realm, userId);
 
 		if (userModel != null) {

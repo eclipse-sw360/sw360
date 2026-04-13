@@ -46,7 +46,7 @@ class NewResponseImpl<T extends Serializable> implements org.eclipse.sw360.http.
 
     @Override
     public String header(String name) {
-        return response.headers().firstValue(name).orElse("");
+        return response.headers().firstValue(name).orElse(null);
     }
 
     @Override

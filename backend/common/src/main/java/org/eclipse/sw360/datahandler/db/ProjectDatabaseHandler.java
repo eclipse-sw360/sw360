@@ -521,24 +521,23 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void saveAttachmentUsages(Project project) {
-        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
         String projectId = project.getId();
         List<String> projectPaths = new ArrayList<>();
-
-        buildProjectPaths(project, null, projectPaths, new HashSet<>());
-        projectPaths.remove(project.getId());
         try {
+            buildProjectPaths(project, null, projectPaths, new HashSet<>());
+            projectPaths.remove(projectId);
             if (!projectPaths.isEmpty()) {
-                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths,projectId);
+                AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths, projectId, attachmentClient);
                 attachmentClient.makeAttachmentUsages(newAttachmentUsages);
             }
-        } catch (TException e) {
+        } catch (TException | RuntimeException e) {
             log.error("Saving attachment usages for project " + projectId + " failed", e);
         }
     }
 
     void buildProjectPaths(Project project, String parentPath, List<String> results, Set<String> visited) {
-        if (project == null || visited.contains(project.getId())) {
+        if (project == null || project.getId() == null || visited.contains(project.getId())) {
             return;
         }
         visited.add(project.getId());
@@ -553,31 +552,29 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId) {
+    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId,
+            AttachmentService.Iface attachmentClient) throws TException {
         List<AttachmentUsage> result = new ArrayList<>();
-        try {
-            for(String projectPath: projectPaths) {
-                String[] pathArray = projectPath.split(":");
-                String subProjectId = pathArray[pathArray.length-1];
-                List<AttachmentUsage> subProjectAttachmentUsages = thriftClients.makeAttachmentClient().getUsedAttachments(Source.projectId(subProjectId), null);
+        for (String projectPath : projectPaths) {
+            String[] pathArray = projectPath.split(":");
+            String subProjectId = pathArray[pathArray.length - 1];
+            List<AttachmentUsage> subProjectAttachmentUsages =
+                    attachmentClient.getUsedAttachments(Source.projectId(subProjectId), null);
 
-                for(AttachmentUsage usage: subProjectAttachmentUsages) {
-                    if (!usage.getOwner().isSetReleaseId()) {
-                        continue;
-                    }
-                    String releaseId = usage.getOwner().getReleaseId();
-                    String attachmentContentId = usage.getAttachmentContentId();
-                    AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
-                    final UsageData usageData;
-                    LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
-                    licenseInfoUsage.setProjectPath(projectPath);
-                    usageData = UsageData.licenseInfo(licenseInfoUsage);
-                    newUsage.setUsageData(usageData);
-                    result.add(newUsage);
+            for (AttachmentUsage usage : subProjectAttachmentUsages) {
+                if (!usage.getOwner().isSetReleaseId()) {
+                    log.warn("Skipping attachment usage with non-release owner for sub-project {}", subProjectId);
+                    continue;
                 }
+                String releaseId = usage.getOwner().getReleaseId();
+                String attachmentContentId = usage.getAttachmentContentId();
+                AttachmentUsage newUsage = new AttachmentUsage(
+                        Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                licenseInfoUsage.setProjectPath(projectPath);
+                newUsage.setUsageData(UsageData.licenseInfo(licenseInfoUsage));
+                result.add(newUsage);
             }
-        } catch (TException e) {
-            log.error("Saving attachment usages for project " + projectId + " failed", e);
         }
         return result;
     }
@@ -1144,7 +1141,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 
@@ -1501,8 +1498,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return cachedAllProjectsIdMap;
         }
 
-        cachedAllProjectsIdMap = ThriftUtils.getIdMap(repository.getAll());
+        cachedAllProjectsIdMap = ThriftUtils.getIdMap(repository.getAllProjectsForClearingCache());
         cachedAllProjectsIdMapLoadingInstant = Instant.now();
+        log.debug("Refreshed project clearing cache with {} entries", cachedAllProjectsIdMap.size());
 
         return cachedAllProjectsIdMap;
     }
@@ -2772,7 +2770,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 
@@ -2801,7 +2799,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     parentNodeId, visitedIds, maxDepth, user, true, WITH_ALL_RELEASES);
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 

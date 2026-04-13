@@ -504,7 +504,7 @@ public class DatabaseHandlerUtil {
         try {
             return mapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("Error occured while converting Object to Json : ", e);
+            log.error("Error occurred while converting Object to Json : ", e);
             throw new RuntimeException(e);
         }
     }
@@ -539,7 +539,7 @@ public class DatabaseHandlerUtil {
               logMap.put("changeTimestamp",changeLogParent.getChangeTimestamp());
               changelog.debug(convertObjectToJson(logMap));
           } catch (Exception exp) {
-              log.error("Error occured while creating Select Logs", exp);
+              log.error("Error occurred while creating Select Logs", exp);
           }
         };
 
@@ -951,7 +951,7 @@ public class DatabaseHandlerUtil {
                     }
                 }
             } catch (Exception exp) {
-                log.warn("Error occured while writing to a file", exp);
+                log.warn("Error occurred while writing to a file", exp);
             }
         };
     }
@@ -998,7 +998,7 @@ public class DatabaseHandlerUtil {
                     }
                 }
             } catch (Exception exp) {
-                log.warn("Error occured while writing to a file", exp);
+                log.warn("Error occurred while writing to a file", exp);
             }
         };
     }
@@ -1025,7 +1025,7 @@ public class DatabaseHandlerUtil {
                         attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
                     } catch (SW360Exception e) {
                         log.error(
-                                "Error occured while fetching Attachment content. During Update Project to store Attachment in fileSystem",
+                                "Error occurred while fetching Attachment content. During Update Project to store Attachment in fileSystem",
                                 e);
                     }
                     if (attachmentContent == null)
