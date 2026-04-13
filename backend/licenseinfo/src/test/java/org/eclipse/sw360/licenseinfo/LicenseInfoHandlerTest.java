@@ -58,6 +58,23 @@ public class LicenseInfoHandlerTest {
     }
 
     @Test
+    public void testLicenseInfoCacheUsesValueBasedKey() {
+        LicenseInfoParsingResult result = new LicenseInfoParsingResult();
+        ImmutableList<LicenseInfoParsingResult> cachedResults = ImmutableList.of(result);
+        LicenseInfoHandler.LicenseInfoCacheKey cacheKey =
+                new LicenseInfoHandler.LicenseInfoCacheKey("attachmentContentId", true);
+
+        handler.licenseInfoCache.put(cacheKey, cachedResults);
+
+        LicenseInfoHandler.LicenseInfoCacheKey equalCacheKey =
+                new LicenseInfoHandler.LicenseInfoCacheKey("attachmentContentId", true);
+        LicenseInfoHandler.LicenseInfoCacheKey differentCacheKey =
+                new LicenseInfoHandler.LicenseInfoCacheKey("attachmentContentId", false);
+        Assert.assertSame(cachedResults, handler.licenseInfoCache.getIfPresent(equalCacheKey));
+        Assert.assertNull(handler.licenseInfoCache.getIfPresent(differentCacheKey));
+    }
+
+    @Test
     public void testThatEmptyLicensesAreFiltered() {
         LicenseInfoParsingResult emptyResult = new LicenseInfoParsingResult();
 

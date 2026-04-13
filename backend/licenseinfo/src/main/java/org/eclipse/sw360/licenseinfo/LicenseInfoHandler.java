@@ -75,11 +75,40 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected List<OutputGenerator<?>> outputGenerators;
     protected ComponentDatabaseHandler componentDatabaseHandler;
     protected ProjectDatabaseHandler projectDatabaseHandler;
-    protected Cache<Object[], List<LicenseInfoParsingResult>> licenseInfoCache;
+    protected Cache<LicenseInfoCacheKey, List<LicenseInfoParsingResult>> licenseInfoCache;
     protected Cache<String, LicenseInfoParsingResult> licenseInfoCacheForEvaluation;
     protected Cache<String, List<ObligationParsingResult>> obligationCache;
     protected Cache<String, List<ObligationParsingResult>> obligationCacheForEvaluation;
     protected Cache<String, LicenseInfoParsingResult> licenseObligationMappingCache;
+
+    @VisibleForTesting
+    static final class LicenseInfoCacheKey {
+        private final String attachmentContentId;
+        private final boolean includeConcludedLicense;
+
+        LicenseInfoCacheKey(String attachmentContentId, boolean includeConcludedLicense) {
+            this.attachmentContentId = attachmentContentId;
+            this.includeConcludedLicense = includeConcludedLicense;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            LicenseInfoCacheKey that = (LicenseInfoCacheKey) o;
+            return includeConcludedLicense == that.includeConcludedLicense
+                    && Objects.equals(attachmentContentId, that.attachmentContentId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(attachmentContentId, includeConcludedLicense);
+        }
+    }
 
     public LicenseInfoHandler() throws MalformedURLException {
         this(new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
@@ -575,14 +604,11 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             return Collections.singletonList(noSourceParsingResult(MSG_NO_RELEASE_GIVEN));
         }
 
+        LicenseInfoCacheKey cacheKey = new LicenseInfoCacheKey(attachmentContentId, includeConcludedLicense);
         if (licenseInfoCache != null) {
-            for (Entry<Object[], List<LicenseInfoParsingResult>> entry : licenseInfoCache.asMap().entrySet()) {
-                Object[] key = entry.getKey();
-                List<LicenseInfoParsingResult> cachedValue = entry.getValue();
-                if (attachmentContentId.equals(key[0].toString()) && includeConcludedLicense == (boolean) key[1]
-                        && cachedValue != null) {
-                    return cachedValue;
-                }
+            List<LicenseInfoParsingResult> cachedValue = licenseInfoCache.getIfPresent(cacheKey);
+            if (cachedValue != null) {
+                return cachedValue;
             }
         }
 
@@ -621,8 +647,9 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             results = assignReleaseToLicenseInfoParsingResults(results, release);
             results = assignComponentToLicenseInfoParsingResults(results, release, user);
 
-            Object[] cacheKey = new Object[] { attachmentContentId, includeConcludedLicense };
-            licenseInfoCache.put(cacheKey, results);
+            if (licenseInfoCache != null) {
+                licenseInfoCache.put(cacheKey, results);
+            }
             return results;
         } catch (WrappedTException exception) {
             throw exception.getCause();
@@ -1026,11 +1053,10 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             throws TException {
         try {
             if (licenseInfoCacheForEvaluation != null) {
-                for (Entry<String, LicenseInfoParsingResult> entry : licenseInfoCacheForEvaluation.asMap().entrySet()) {
-                    LicenseInfoParsingResult cachedValue = entry.getValue();
-                    if (attachment.getAttachmentContentId().equals(entry.getKey()) && cachedValue != null) {
-                        return cachedValue;
-                    }
+                LicenseInfoParsingResult cachedValue =
+                        licenseInfoCacheForEvaluation.getIfPresent(attachment.getAttachmentContentId());
+                if (cachedValue != null) {
+                    return cachedValue;
                 }
             }
 
