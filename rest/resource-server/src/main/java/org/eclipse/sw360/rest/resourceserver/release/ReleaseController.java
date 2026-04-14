@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -95,12 +94,10 @@ import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilitySer
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
-import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -112,8 +109,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
 @BasePathAwareController
@@ -121,22 +116,13 @@ import com.google.common.collect.ImmutableMap;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
-public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
+public class ReleaseController {
     public static final String RELEASES_URL = "/releases";
     private static final String SPDX_DOCUMENT = "spdxDocument";
     private static final String DOCUMENT_CREATION_INFORMATION = "documentCreationInformation";
     private static final String PACKAGE_INFORMATION = "packageInformation";
     private static final Logger log = LogManager.getLogger(ReleaseController.class);
     private static final Map<String, ReentrantLock> mapOfLocks = new HashMap<String, ReentrantLock>();
-    private static final ImmutableMap<Release._Fields,String> mapOfFieldsTobeEmbedded = ImmutableMap.of(
-            Release._Fields.MODERATORS, "sw360:moderators",
-            Release._Fields.ATTACHMENTS, "sw360:attachments",
-            Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
-            Release._Fields.RELEASE_ID_TO_RELATIONSHIP,"sw360:releaseIdToRelationship",
-            Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
-    private static final ImmutableMap<Release._Fields, String[]> mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames = ImmutableMap.<Release._Fields, String[]>builder()
-            .put(Release._Fields.SOURCE_CODE_DOWNLOADURL, new String[] { "downloadurl", "sourceCodeDownloadurl" })
-            .build();
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
 
@@ -165,7 +151,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     private SW360SPDXDocumentService sw360SPDXDocumentService;
 
     @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
+    private ReleaseModelAssembler releaseModelAssembler;
+
+    @NonNull
+    private ReleaseRequestMapper releaseRequestMapper;
 
     @NonNull
     private final ApiResponseCacheManager cacheManager;
@@ -256,7 +245,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
                 releaseResource = EntityModel.of(embeddedRelease);
             } else {
-                releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
+                releaseResource = releaseModelAssembler.toDetailedHalResource(sw360Release);
             }
 
             releaseResources.add(releaseResource);
@@ -294,7 +283,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+        HalResource<Release> halRelease = releaseModelAssembler.toHalResource(sw360Release, true);
         restControllerHelper.addEmbeddedDataToHalResourceRelease(halRelease, sw360Release);
         List<ReleaseLink> linkedReleaseRelations = releaseService.getLinkedReleaseRelations(sw360Release, sw360User);
 
@@ -490,13 +479,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
-        Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        Release updateRelease = releaseRequestMapper.toRelease(reqBodyMap);
         updateRelease.setClearingState(sw360Release.getClearingState());
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
         sw360Release = releaseService.getReleaseForUserById(id, user);
-        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+        HalResource<Release> halRelease = releaseModelAssembler.toHalResource(sw360Release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
@@ -606,35 +595,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestBody Map<String, Object> reqBodyMap
     ) throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release release = setBackwardCompatibleFieldsInRelease(reqBodyMap);
-        if (release.isSetComponentId()) {
-            URI componentURI = new URI(release.getComponentId());
-            String path = componentURI.getPath();
-            String componentId = path.substring(path.lastIndexOf('/') + 1);
-            release.setComponentId(componentId);
-        }
-        if (release.isSetVendorId()) {
-            URI vendorURI = new URI(release.getVendorId());
-            String path = vendorURI.getPath();
-            String vendorId = path.substring(path.lastIndexOf('/') + 1);
-            release.setVendorId(vendorId);
-        }
-
-        if (release.getMainLicenseIds() != null) {
-            Set<String> mainLicenseIds = new HashSet<>();
-            Set<String> mainLicenseUris = release.getMainLicenseIds();
-            for (String licenseURIString : mainLicenseUris.toArray(new String[mainLicenseUris.size()])) {
-                URI licenseURI = new URI(licenseURIString);
-                String path = licenseURI.getPath();
-                String licenseId = path.substring(path.lastIndexOf('/') + 1);
-                mainLicenseIds.add(licenseId);
-            }
-            release.setMainLicenseIds(mainLicenseIds);
-        }
-
+        Release release = releaseRequestMapper.normalizeCreateRequest(releaseRequestMapper.toRelease(reqBodyMap));
         release.unsetClearingState();
         Release sw360Release = releaseService.createRelease(release, sw360User);
-        HalResource<Release> halResource = createHalReleaseResource(sw360Release, true);
+        HalResource<Release> halResource = releaseModelAssembler.toHalResource(sw360Release, true);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -676,7 +640,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
             throw new BadRequestClientException("Update SPDXDocument Failed!");
         }
-        HalResource<Release> halRelease = createHalReleaseResource(release, false);
+        HalResource<Release> halRelease = releaseModelAssembler.toHalResource(release, false);
 
         if(reqBodyMap.isEmpty()) {
             return ResponseEntity.ok(halRelease);
@@ -814,7 +778,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         release.addToAttachments(attachment);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User);
-        HalResource<Release> halRelease = createHalReleaseResource(release, true);
+        HalResource<Release> halRelease = releaseModelAssembler.toHalResource(release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
@@ -873,7 +837,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
         release.getAttachments().removeAll(attachmentsToDelete);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(release, user);
-        HalResource<Release> halRelease = createHalReleaseResource(release, true);
+        HalResource<Release> halRelease = releaseModelAssembler.toHalResource(release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
@@ -1419,7 +1383,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
 
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
-        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+        HalResource<Release> halRelease = releaseModelAssembler.toHalResource(sw360Release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
@@ -1799,100 +1763,6 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
     }
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
-        return resource;
-    }
-
-    private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
-        HalResource<Release> halRelease = new HalResource<>(release);
-        Link componentLink = linkTo(ReleaseController.class)
-                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId()).withRel("component");
-        halRelease.add(componentLink);
-        release.setComponentId(null);
-        if (verbose) {
-            if (release.getModerators() != null) {
-                Set<String> moderators = release.getModerators();
-                restControllerHelper.addEmbeddedModerators(halRelease, moderators);
-                release.setModerators(null);
-            }
-            if (release.getAttachments() != null) {
-                Set<Attachment> attachments = release.getAttachments();
-                restControllerHelper.addEmbeddedAttachments(halRelease, attachments);
-                release.setAttachments(null);
-            }
-            if (release.getVendor() != null) {
-                Vendor vendor = release.getVendor();
-                HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor);
-                halRelease.addEmbeddedResource("sw360:vendors", vendorHalResource);
-                release.setVendor(null);
-            }
-            if (release.getMainLicenseIds() != null) {
-                restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
-            }
-            if (release.getOtherLicenseIds() != null) {
-                restControllerHelper.addEmbeddedOtherLicenses(halRelease, release.getOtherLicenseIds());
-            }
-            Set<String> packageIds = release.getPackageIds();
-
-            if (packageIds != null) {
-                restControllerHelper.addEmbeddedPackages(halRelease, packageIds, packageService);
-                release.setPackageIds(null);
-            }
-        }
-        return halRelease;
-    }
-    private HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
-        HalResource<Release> halRelease = new HalResource<>(release);
-        Link componentLink = linkTo(ReleaseController.class)
-                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
-                .withRel("component");
-        halRelease.add(componentLink);
-        release.setComponentId(null);
-        Set<String> packageIds = release.getPackageIds();
-
-        if (packageIds != null) {
-            for (String id : release.getPackageIds()) {
-                Link packageLink = linkTo(ReleaseController.class)
-                        .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
-                halRelease.add(packageLink);
-            }
-        }
-        release.setPackageIds(null);
-        for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
-            restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
-        }
-        // Do not add attachment as it is an embedded field
-        release.unsetAttachments();
-        return halRelease;
-    }
-
-    private Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-
-        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(reqBodyMap.get("attachments"), mapper);
-        if (null != reqBodyMap.get("attachments")) {
-            reqBodyMap.remove("attachments");
-        }
-        Release release = mapper.convertValue(reqBodyMap, Release.class);
-        if (null != attachments) {
-            release.setAttachments(attachments);
-        }
-
-        mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames.entrySet().stream().forEach(entry -> {
-            Release._Fields field = entry.getKey();
-            String oldFieldName = entry.getValue()[0];
-            String newFieldName = entry.getValue()[1];
-            if (!reqBodyMap.containsKey(newFieldName) && reqBodyMap.containsKey(oldFieldName)) {
-                release.setFieldValue(field, CommonUtils.nullToEmptyString(reqBodyMap.get(oldFieldName)));
-            }
-        });
-
-        return release;
-    }
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Bulk delete releases.",
