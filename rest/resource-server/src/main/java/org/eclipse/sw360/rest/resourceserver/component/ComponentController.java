@@ -12,7 +12,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
-import com.google.common.collect.Sets;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
@@ -62,14 +61,12 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -100,7 +97,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
@@ -128,9 +124,6 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @NonNull
     private final Sw360VendorService vendorService;
-
-    @NonNull
-    private final Sw360UserService userService;
 
     @NonNull
     private final Sw360AttachmentService attachmentService;
@@ -221,7 +214,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
-    private CollectionModel getFilteredComponentResources(
+    private CollectionModel<EntityModel<Component>> getFilteredComponentResources(
             List<String> fields, boolean allDetails, User sw360User, PaginationResult<Component> paginationResult
     ) throws URISyntaxException {
         List<EntityModel<Component>> componentResources = new ArrayList<>();
@@ -245,7 +238,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         paginationResult.getResources().forEach(consumer);
 
-        CollectionModel resources;
+        CollectionModel<EntityModel<Component>> resources;
         if (componentResources.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(Component.class, paginationResult);
         } else {
@@ -770,10 +763,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @Operation(
             summary = "Delete one or multiple attachments of a component.",
-            description = "Delete one or multiple attachments from a component.\n\n" +
-                    "Note that attachments can only be deleted if they are not used by a project.\n" +
-                    "Requests that cannot delete any of the attachments specified fail with response\n" +
-                    "status 500.",
+            description = """
+                    Delete one or multiple attachments from a component.
+
+                    Note that attachments can only be deleted if they are not used by a project.
+                    Requests that cannot delete any of the attachments specified fail with response
+                    status 500.""",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Attachments deleted successfully"),
                     @ApiResponse(responseCode = "202", description = "Deletion sent for moderation"),
@@ -921,7 +916,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                 sw360Components, SW360Constants.TYPE_COMPONENT);
         List<EntityModel<Component>> componentResources = new ArrayList<>();
 
-        paginationResult.getResources().stream().forEach(c -> {
+        paginationResult.getResources().forEach(c -> {
             Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, null);
             EntityModel<Component> embeddedComponentResource = EntityModel.of(embeddedComponent);
             if (embeddedComponentResource == null) {
@@ -1078,9 +1073,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     private boolean validateReleaseVulnerabilityRelationDTO(Map<String,Set<String>> releaseIdsWithExternalIdsFromRequest, VulnerabilityState vulnerabilityState ) {
         long countExternalIdsActual = 0;
         for (Map.Entry<String, Set<String>> releaseIdWithVulnerabilityId: releaseIdsWithExternalIdsFromRequest.entrySet()){
-            countExternalIdsActual += releaseIdWithVulnerabilityId.getValue().stream().count();
+            countExternalIdsActual += releaseIdWithVulnerabilityId.getValue().size();
         }
-        long countExternalIdsFromRequest = vulnerabilityState.getReleaseVulnerabilityRelationDTOs().stream().count();
+        long countExternalIdsFromRequest = vulnerabilityState.getReleaseVulnerabilityRelationDTOs().size();
         return countExternalIdsActual != countExternalIdsFromRequest;
     }
 
@@ -1389,34 +1384,5 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             filterMap.put(Component._Fields.CREATED_ON.getFieldName(), CommonUtils.splitToSet(createdOn));
         }
         return filterMap;
-    }
-
-    /**
-     * Create a filter predicate to remove all components which do not satisfy the restriction set.
-     * @param restrictions Restrictions set to filter components on
-     * @return Filter predicate for stream.
-     */
-    private static @NonNull Predicate<Component> filterComponentMap(Map<String, Set<String>> restrictions) {
-        return component -> {
-            for (Map.Entry<String, Set<String>> restriction : restrictions.entrySet()) {
-                final Set<String> filterSet = restriction.getValue();
-                Component._Fields field = Component._Fields.findByName(restriction.getKey());
-                Object fieldValue = component.getFieldValue(field);
-                if (fieldValue == null) {
-                    return false;
-                }
-                if (field == Component._Fields.COMPONENT_TYPE && !filterSet.contains(component.componentType.name())) {
-                    return false;
-                } else if ((field == Component._Fields.CREATED_BY || field == Component._Fields.CREATED_ON)
-                        && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
-                    return false;
-                } else if (fieldValue instanceof Set) {
-                    if (Sets.intersection(filterSet, (Set<String>) fieldValue).isEmpty()) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        };
     }
 }
