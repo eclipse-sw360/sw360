@@ -43,7 +43,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentServic
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.EntityModel;
@@ -74,11 +73,8 @@ public class Sw360AttachmentService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
 
-    @Value("${sw360.couchdb-url:http://localhost:5984}")
-    private String couchdbUrl;
-
     @NonNull
-    private final RestControllerHelper restControllerHelper;
+    private final RestControllerHelper<Attachment> restControllerHelper;
 
     private static final Logger log = LogManager.getLogger(Sw360AttachmentService.class);
 
@@ -88,7 +84,7 @@ public class Sw360AttachmentService {
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
 
-    public List<AttachmentUsage> getAttachemntUsages(String projectId) throws TException {
+    public List<AttachmentUsage> getAttachmentUsages(String projectId) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         return attachmentClient.getUsedAttachments(Source.projectId(projectId),
                 UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
@@ -100,7 +96,7 @@ public class Sw360AttachmentService {
         if (attachments.isEmpty()) {
             throw new ResourceNotFoundException("Attachment not found.");
         }
-        return createAttachmentInfo(attachmentClient, attachments.get(0));
+        return createAttachmentInfo(attachmentClient, attachments.getFirst());
     }
 
     public List<AttachmentUsage> getAttachmentUseById(String id) throws TException {
@@ -166,7 +162,7 @@ public class Sw360AttachmentService {
             throws TException {
         AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
         attachmentInfo.setOwner(attachmentClient
-                .getAttachmentOwnersByIds(Collections.singleton(attachment.getAttachmentContentId())).get(0));
+                .getAttachmentOwnersByIds(Collections.singleton(attachment.getAttachmentContentId())).getFirst());
         return attachmentInfo;
     }
 
@@ -487,19 +483,13 @@ public class Sw360AttachmentService {
 
     private  Set<ProjectUsage> getProjectAttachmentUsages(List<AttachmentUsage> attachmentUsages, User user) {
         Set<ProjectUsage> projectUsages = new HashSet<>();
-        attachmentUsages.stream().forEach(attachmentUsage -> {
+        attachmentUsages.forEach(attachmentUsage -> {
             try {
                 Project project = getThriftProjectClient().getProjectById(attachmentUsage.getUsedBy().getProjectId(), user);
 
-                StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.append(project.getName());
-                stringBuilder.append("(");
-                stringBuilder.append(project.getVersion());
-                stringBuilder.append(")");
-
                 ProjectUsage projectUsage = new ProjectUsage();
                 projectUsage.setProjectId(attachmentUsage.getUsedBy().getProjectId());
-                projectUsage.setProjectName(stringBuilder.toString());
+                projectUsage.setProjectName(project.getName() + "(" + project.getVersion() + ")");
 
                 projectUsages.add(projectUsage);
             } catch (TException e) {

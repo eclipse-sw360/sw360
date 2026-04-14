@@ -491,6 +491,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        attachmentService.preserveImmutableAttachmentFields(
+                updateRelease.getAttachments(), sw360Release.getAttachments(), user);
         updateRelease.setClearingState(sw360Release.getClearingState());
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
