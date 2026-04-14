@@ -131,7 +131,7 @@ public class Sw360DepartmentService {
     public List<String> getLogFileContentByDate(String date) throws TException {
         ThriftClients thriftClients = new ThriftClients();
         UserService.Iface userClient = thriftClients.makeUserClient();
-        if (isValidDate(date)) {
+        if (!isValidDate(date)) {
             throw new SW360Exception("Invalid date time format, must be: yyyy-MM-dd");
         }
         try {
@@ -142,7 +142,7 @@ public class Sw360DepartmentService {
     }
 
     private static boolean isValidDate(String dateStr) {
-        if (CommonUtils.isNotNullEmptyOrWhitespace(dateStr)) {
+        if (CommonUtils.isNullEmptyOrWhitespace(dateStr)) {
             return false;
         }
         final String DATE_FORMAT = "yyyy-MM-dd";

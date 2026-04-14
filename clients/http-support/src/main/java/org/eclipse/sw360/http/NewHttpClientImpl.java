@@ -10,7 +10,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,20 +47,19 @@ public class NewHttpClientImpl implements org.eclipse.sw360.http.HttpClient {
     @Override
     public <T> CompletableFuture<T> execute(Consumer<? super RequestBuilder> producer,
             ResponseProcessor<? extends T> processor) {
-        CompletableFuture<HttpResponse<String>> asyncResponse = null;
-        CompletableFuture<T> resultFuture = new CompletableFuture<>();
         NewRequestBuilderImpl builder = new NewRequestBuilderImpl(getMapper());
         producer.accept(builder);
         HttpRequest request = builder.build();
-        asyncResponse = getClient().sendAsync(request, BodyHandlers.ofString());
-        try {
-            HttpResponse<String> response = asyncResponse.get();
-            T result = processor.process(new NewResponseImpl<>(response));
-            resultFuture.complete(result);
-        } catch (InterruptedException | ExecutionException | IOException e) {
-            resultFuture.completeExceptionally(e);
-        }
-        return resultFuture;
+
+        return getClient().sendAsync(request, BodyHandlers.ofString())
+                .thenCompose(response -> {
+                    try {
+                        T result = processor.process(new NewResponseImpl<>(response));
+                        return CompletableFuture.completedFuture(result);
+                    } catch (IOException e) {
+                        return CompletableFuture.failedFuture(e);
+                    }
+                });
     }
 
     /**

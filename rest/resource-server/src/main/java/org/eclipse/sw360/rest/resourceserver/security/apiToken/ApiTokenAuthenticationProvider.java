@@ -15,6 +15,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.users.ClientMetadata;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
@@ -41,6 +42,7 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -135,13 +137,20 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
     }
 
     private User getUserFromClientId(String clientId) {
+        User user;
         try {
-            return userService.getUserFromClientId(clientId);
+            user = userService.getUserFromClientId(clientId);
         } catch (RuntimeException e) {
             log.debug("Could not find any user for the entered clientId " + clientId);
             throw new AuthenticationServiceException(
                     "Your entered OIDC token is not associated with any user for authorization.");
         }
+        if (user == null) {
+            log.debug("Could not find any user for the entered clientId " + clientId);
+            throw new AuthenticationServiceException(
+                    "Your entered OIDC token is not associated with any user for authorization.");
+        }
+        return user;
     }
 
     private Optional<RestApiToken> getApiTokenFromUser(String tokenHash, User sw360User) {
@@ -182,8 +191,19 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
     }
 
     private PreAuthenticatedAuthenticationToken authenticatedOidcUser(User user, String credentials) {
-        Set<GrantedAuthority> grantedAuthorities = getGrantedAuthoritiesFromUserAccess(
-                user.getOidcClientInfos().get(credentials).getAccess());
+        Map<String, ClientMetadata> oidcInfos = user.getOidcClientInfos();
+        ClientMetadata clientMetadata = oidcInfos == null ? null : oidcInfos.get(credentials);
+        if (clientMetadata == null) {
+            log.debug("No OIDC client metadata for clientId {} and user {}", credentials, user.getEmail());
+            throw new AuthenticationServiceException(
+                    "Your entered OIDC token is not associated with any user for authorization.");
+        }
+        UserAccess access = clientMetadata.getAccess();
+        if (access == null) {
+            throw new AuthenticationServiceException(
+                    "Your entered OIDC token is not associated with any user for authorization.");
+        }
+        Set<GrantedAuthority> grantedAuthorities = getGrantedAuthoritiesFromUserAccess(access);
         PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken = new PreAuthenticatedAuthenticationToken(
                 user.getEmail(), credentials, grantedAuthorities);
         preAuthenticatedAuthenticationToken.setAuthenticated(true);

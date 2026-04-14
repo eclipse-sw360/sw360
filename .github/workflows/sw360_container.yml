@@ -47,7 +47,7 @@ jobs:
       timestamp: ${{ steps.pom_version.outputs.TIMESTAMP }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
         with:
           egress-policy: audit
 
@@ -73,13 +73,14 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       packages: write
+      id-token: write
     env:
       SW360_VERSION: ${{ needs.sw360_version.outputs.sw360_version }}
       TIMESTAMP: ${{ needs.sw360_version.outputs.timestamp }}
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
         with:
           egress-policy: audit
 
@@ -98,6 +99,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
 
       - name: Extract components metadata (tags, labels) runtime image
         id: meta_sw360
@@ -134,6 +138,7 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: SW360 image
+        id: build_sw360
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           context: .
@@ -148,6 +153,7 @@ jobs:
           SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
 
       - name: KeyCloak image
+        id: build_keycloak
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           context: .
@@ -160,3 +166,20 @@ jobs:
           sbom: true
         env:
           SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
+
+      - name: Sign the images
+        if: github.event_name != 'pull_request'
+        env:
+          TAGS: ${{ steps.meta_sw360.outputs.tags }}
+          DIGEST: ${{ steps.build_sw360.outputs.digest }}
+          KC_TAGS: ${{ steps.meta_keycloak.outputs.tags }}
+          KC_DIGEST: ${{ steps.build_keycloak.outputs.digest }}
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images+="${tag}@${DIGEST} "
+          done
+          for tag in ${KC_TAGS}; do
+            images+="${tag}@${KC_DIGEST} "
+          done
+          cosign sign --yes ${images}
