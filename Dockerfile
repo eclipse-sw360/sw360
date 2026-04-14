@@ -15,8 +15,8 @@
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-# FROM maven:3-eclipse-temurin-21-noble
-FROM maven@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
+# Where code compiles
+FROM maven:3-eclipse-temurin-21-noble@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -70,8 +70,7 @@ COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 #--------------------------------------------------------------------------------------------------
 # Runtime SW360 image
 
-# FROM tomcat:11-jre21-temurin-noble
-FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
+FROM tomcat:11-jre21-temurin-noble@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
@@ -143,8 +142,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-# FROM quay.io/keycloak/keycloak:26.5.7
-FROM quay.io/keycloak/keycloak@sha256:45ae20191531eb608ddb0b775d012b40d3e4f942697f3214694887dd7c108d13 AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.5.7@sha256:45ae20191531eb608ddb0b775d012b40d3e4f942697f3214694887dd7c108d13 AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -163,8 +161,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-# FROM quay.io/keycloak/keycloak:26.5.7
-FROM quay.io/keycloak/keycloak@sha256:45ae20191531eb608ddb0b775d012b40d3e4f942697f3214694887dd7c108d13 AS keycloak
+FROM quay.io/keycloak/keycloak:26.5.7@sha256:45ae20191531eb608ddb0b775d012b40d3e4f942697f3214694887dd7c108d13 AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
