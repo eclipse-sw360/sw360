@@ -108,8 +108,10 @@ public class VendorHandlerTest {
     public void testSearchVendors1() throws Exception {
         pageData.setSortColumnNumber(0);
         Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("the", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
         List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
+        assertEquals(1, pagination.getTotalRowCount());
         assertEquals(vendorList.get(1).getFullname(), vendors.getFirst().getFullname());
     }
 
@@ -117,16 +119,20 @@ public class VendorHandlerTest {
     public void testSearchVendors2() throws Exception {
         pageData.setSortColumnNumber(0);
         Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("xyz", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
         List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(0, vendors.size());
+        assertEquals(0, pagination.getTotalRowCount());
     }
 
     @Test
     public void testSearchVendors3() throws Exception {
         pageData.setSortColumnNumber(0);
         Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("micro", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
         List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
+        assertEquals(1, pagination.getTotalRowCount());
         assertEquals(vendorList.get(0).getFullname(), vendors.getFirst().getFullname());
     }
 
@@ -134,8 +140,10 @@ public class VendorHandlerTest {
     public void testSearchVendors4() throws Exception {
         pageData.setSortColumnNumber(1);
         Map<PaginationData, List<Vendor>> paginatedVendors = vendorRepository.searchVendorsWithPagination("a", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
         List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
+        assertEquals(1, pagination.getTotalRowCount());
         assertEquals(vendorList.get(1).getShortname(), vendors.getFirst().getShortname());
     }
 }
