@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
+
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -169,40 +170,18 @@ public class FossologyHandler implements FossologyService.Iface {
 
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps().getLast();
 
-        // Handle different process steps using v2 API.
-        // The try-catch-finally ensures that if a TException or RuntimeException escapes
-        // a step handler (e.g. CouchDB unavailable while fetching the attachment stream),
-        // we (a) reset any IN_WORK state that was persisted before the failure so the
-        // release is not permanently stranded, and (b) always flush the corrected state
-        // back to CouchDB before re-throwing, preventing the release from being stuck
-        // in clearingState=SENT_TO_CLEARING_TOOL with no way to recover without admin
-        // intervention.
-        try {
-            if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())) {
-                handleUploadStepV2(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription);
-            } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
-                handleScanStepV2(componentClient, release, user, fossologyProcess);
-            } else if(!SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false) && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
-                handleReportStepV2(componentClient, release, user, fossologyProcess);
-            } else if(reportStep && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
-                handleReportStepV2(componentClient, release, user, fossologyProcess);
-            }
-        } catch (TException | RuntimeException e) {
-            // If the upload step was optimistically set to IN_WORK before the network
-            // call but the call never completed, reset it to NEW so subsequent retries
-            // can attempt the upload again rather than hitting the no-op IN_WORK guard.
-            if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())
-                    && ExternalToolProcessStatus.IN_WORK.equals(furthestStep.getStepStatus())) {
-                furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
-                fossologyProcess.setProcessStatus(ExternalToolProcessStatus.NEW);
-                furthestStep.setResult("Upload interrupted: " + e.getMessage());
-                log.error("Exception during FOSSology upload for release [{}], resetting step to NEW: {}",
-                        releaseId, e.getMessage());
-            }
-            throw e;
-        } finally {
-            updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+        // Handle different process steps using v2 API
+        if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())) {
+            handleUploadStepV2(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription);
+        } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
+            handleScanStepV2(componentClient, release, user, fossologyProcess);
+        } else if(!SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false) && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStepV2(componentClient, release, user, fossologyProcess);
+        } else if(reportStep && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStepV2(componentClient, release, user, fossologyProcess);
         }
+
+        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
 
         return fossologyProcess;
     }
