@@ -6,7 +6,7 @@ SPDX-License-Identifier: EPL-2.0
 
 # SW360 ArchUnit Test Summary
 
-> **Last Updated:** April 7, 2026
+> **Last Updated:** April 15, 2026
 > **Module:** `rest/resource-server`
 
 This document provides a comprehensive overview of all ArchUnit architecture tests in the SW360 REST resource-server module. These tests enforce architectural patterns, coding standards, and best practices.
@@ -28,8 +28,11 @@ This document provides a comprehensive overview of all ArchUnit architecture tes
 | [Security Annotation Rules](#9-security-annotation-rules) | 4 | Validates security annotations |
 | [Spring Framework Rules](#10-spring-framework-rules) | 7 | Enforces Spring best practices |
 | [Thrift Service Boundary Rules](#11-thrift-service-boundary-rules) | 3 | Prevents bypassing Thrift layer |
-| [Coding Standard Rules](#12-coding-standard-rules) | 6 | General coding standards |
-| **Total** | **51** | **Complete architecture validation** |
+| [Coding Standard Rules](#12-coding-standard-rules) | 14 | General coding standards & modern Java |
+| [Resource Management Rules](#13-resource-management-rules) | 9 | Resource lifecycle & concurrency |
+| [Dependency Governance Rules](#14-dependency-governance-rules) | 6 | Third-party dependency allowlist & bans |
+| [Test Coverage Completeness Rules](#15-test-coverage-completeness-rules) | 3 | Forced test co-evolution |
+| **Total** | **77** | **Complete architecture validation** |
 
 ---
 
@@ -179,6 +182,85 @@ This document provides a comprehensive overview of all ArchUnit architecture tes
 | `constantsClassesShouldBeFinal` | Constants classes must be declared `final` (allows empty — validates future additions) |
 | `noClassShouldDependOnJavaxServlet` | Use `jakarta.servlet` (not `javax.servlet`) — SW360 runs on Spring Boot 3.x / Jakarta EE |
 | `noClassShouldDependOnJavaxAnnotationNullable` | Use `lombok.NonNull` instead of `javax.annotation.Nullable` |
+| `noClassShouldUseStringBuffer` | Use `StringBuilder` (not `StringBuffer`) — `StringBuffer` is synchronized and slower |
+| `noClassShouldUseLegacyDateAPI` | Use `java.time` API (`LocalDate`, `Instant`, etc.) instead of legacy `Calendar` |
+| `noClassShouldUseEnumeration` | Use `Iterator` (not `Enumeration`) — `Enumeration` is legacy |
+| `noClassShouldUseObservable` | Use `PropertyChangeListener` or reactive patterns (not `Observable`) — deprecated since Java 9 |
+| `noClassShouldDependOnRawCollectionTypes` | Use `Map` (not `Dictionary`) — `Dictionary` is abstract and legacy |
+| `noClassShouldDependOnSunPackages` | Do not use internal JDK `sun.*` packages — not part of the public API |
+| `noClassShouldDependOnComSunPackages` | Do not use internal `com.sun.*` packages — not part of the public API |
+| `utilityClassesShouldBeFinal` | Utility classes (`*Utils`, `*Util`) that are not Spring beans should be declared `final` |
+
+---
+
+### 13. Resource Management Rules
+**File:** `ResourceManagementRulesTest.java`
+
+| Test Name | Description |
+|-----------|-------------|
+| `noClassShouldUseFinalizeMethod` | Classes must not override `finalize()` — use try-with-resources or `java.lang.ref.Cleaner` instead |
+| `noClassShouldUseShutdownHookInBusinessLogic` | Business logic classes must not use `Runtime.addShutdownHook()` — use Spring lifecycle (`@PreDestroy`, `DisposableBean`) |
+| `controllersShouldNotCreateThreadsDirectly` | Controllers must not directly instantiate `Thread` — use `@Async` or Spring-managed `ExecutorService` |
+| `servicesShouldNotCreateExecutorsDirect` | `@Service` classes should not use `Executors` factory directly — inject Spring's `TaskExecutor` (⚠️ `Sw360ProjectService` and `Sw360ReleaseService` excluded pending refactoring) |
+| `classesShouldPreferPathOverFileConstructor` | Controllers should not use `FileReader` directly — use `Files.newBufferedReader(Path)` with try-with-resources |
+| `controllersShouldNotUseFileInputStreamDirectly` | Controllers should not use `FileInputStream` — delegate to service layer or use Spring's `Resource` abstraction |
+| `controllersShouldNotUseFileOutputStreamDirectly` | Controllers should not use `FileOutputStream` — delegate file operations to service layer |
+| `controllersShouldNotHaveMutableStaticFields` | Controllers must not have mutable static fields (excluding loggers) — controllers must be stateless |
+| `classesShouldNotCatchThrowable` | Classes should not catch `Throwable` — catch specific exception types. Compiler-generated Throwable catches from try-with-resources are automatically filtered out (⚠️ `Sw360ReleaseService` and `Sw360LicenseService` excluded pending refactoring) |
+
+---
+
+### 14. Dependency Governance Rules
+**File:** `DependencyGovernanceRulesTest.java`
+
+| Test Name | Description |
+|-----------|-------------|
+| `restModuleShouldOnlyUseApprovedLibraries` | REST module must only depend on approved third-party libraries (allowlist approach) — any new dependency must be explicitly added to `ALLOWED_PACKAGE_PREFIXES` |
+| `noClassShouldUseApacheHttpClient` | Do not use Apache HttpClient directly — use Spring's `RestTemplate` or `WebClient` for HTTP calls |
+| `noClassShouldUseOkHttp` | Do not use OkHttp directly — use Spring's `RestTemplate` or `WebClient` for HTTP calls |
+| `noClassShouldUseGsonDirectly` | Do not use Gson directly — Jackson is the project standard for JSON processing (⚠️ `ProjectController` and `SW360ReportController` excluded pending refactoring) |
+| `noClassShouldUseOrgJson` | Do not use `org.json` directly — Jackson is the project standard for JSON processing |
+| `noClassShouldUseJUnit4Assertions` | Do not use JUnit 4 assertions — use JUnit 5 Assertions or AssertJ |
+
+**Approved Third-Party Libraries (Allowlist):**
+
+| Package Prefix | Library | Justification |
+|----------------|---------|---------------|
+| `java.` | Java Platform | JDK standard library |
+| `jakarta.` | Jakarta EE | Servlet, validation, annotations (Spring Boot 3.x) |
+| `org.eclipse.sw360.` | SW360 | Project's own packages |
+| `org.springframework.` | Spring Framework | Core framework |
+| `org.springdoc.` | SpringDoc OpenAPI | OpenAPI documentation generation |
+| `org.apache.thrift.` | Apache Thrift | Thrift RPC protocol |
+| `org.apache.logging.` | Log4j2 | Logging framework |
+| `org.apache.commons.` | Apache Commons | Utilities (lang3, io, csv, text) |
+| `org.slf4j.` | SLF4J | Logging facade |
+| `com.fasterxml.jackson.` | Jackson | JSON serialization (project standard) |
+| `com.google.common.` | Guava | Google utilities |
+| `com.google.gson.` | Gson | JSON (transitive via Cloudant SDK) |
+| `io.swagger.` | Swagger/OpenAPI | OpenAPI annotations and models |
+| `lombok.` | Lombok | Boilerplate reduction |
+| `org.jetbrains.` | JetBrains Annotations | `@NotNull`, `@Nullable` annotations |
+| `org.jose4j.` | jose4j | JWT/JWKS validation |
+| `tools.jackson.` | Jackson 3.x | JSON serialization (Spring Boot 4.x) |
+
+---
+
+### 15. Test Coverage Completeness Rules
+**File:** `TestCoverageCompletenessRulesTest.java`
+
+| Test Name | Description |
+|-----------|-------------|
+| `everyControllerShouldHaveATest` | Every `*Controller` class must have a corresponding test class whose name contains the domain keyword and ends with `Test` or `SpecTest` (e.g., `ComponentController` -> `ComponentTest`, `ComponentSpecTest`) |
+| `everyServiceShouldHaveATest` | Every `Sw360*Service` / `SW360*Service` class must have a corresponding test class (same naming convention as controllers, after stripping the `Sw360`/`SW360` prefix) |
+| `everyEndpointShouldHaveAtLeastOneTest` | The number of HTTP-exercising `@Test` methods (those calling `TestRestTemplate` or `MockMvc`, detected via bytecode method-call analysis) must be >= the number of `@XxxMapping` endpoint methods in each controller. Trivial tests without HTTP calls are not counted |
+
+**Pre-existing exclusions:**
+
+| Constant | Classes | Reason |
+|----------|---------|--------|
+| `EXCLUDED_CLASSES` | `VersionController`, `Sw360CustomUserDetailsService`, `LicenseInfoController`, `SW360ReportController`, `Sw360LicenseInfoService`, `SW360ReportService`, `SW360SPDXDocumentService` | Infrastructure or pre-existing gaps (TODO markers) |
+| `ENDPOINT_RATIO_EXCLUDED` | `FossologyAdminController`, `AttachmentCleanUpController` | Known endpoint-to-test ratio gaps |
 
 ---
 
@@ -210,9 +292,15 @@ Some classes are intentionally excluded from certain rules due to legacy pattern
 | `JacksonCustomizations` | Core-to-domain dependency | Intentionally references domain mixins for JSON serialization |
 | `Json*Serializer` | Core-to-domain dependency | Custom serializers in `core.serializer` reference domain controllers for link building |
 | `RestControllerHelper` | Service-to-controller dependency | Helper class that bridges layers |
-| `Sw360ProjectService` | Service-to-controller dependency | Builds embedded HAL resources referencing controller URLs |
+| `Sw360ProjectService` | Service-to-controller dependency, Executors | Builds embedded HAL resources; uses `Executors.newFixedThreadPool()` |
+| `Sw360ReleaseService` | Catch Throwable, Executors | Uses `Executors.newSingleThreadScheduledExecutor()` for FOSSology; explicit `catch(Throwable)` |
+| `Sw360LicenseService` | Catch Throwable | Explicit `catch(Throwable)` in bulk download |
+| `ProjectController` | Gson ban | Uses Gson directly (pending refactoring to Jackson) |
+| `SW360ReportController` | Gson ban | Uses Gson directly (pending refactoring to Jackson) |
+| `ApiResponseCacheManager` | Service naming | Cache manager, not a typical service |
 | `SW360RestHealthIndicator` | CouchDB direct access | Needs direct DB connection for health checks |
 | `SW360ConfigurationsController` | URL constant | Configuration endpoint |
+| `ReleaseCacheCondition` | Configuration naming | Spring `Condition` class, not a traditional configuration |
 
 ---
 

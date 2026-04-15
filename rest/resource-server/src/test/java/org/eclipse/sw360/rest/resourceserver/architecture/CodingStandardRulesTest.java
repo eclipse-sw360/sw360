@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2025-2026. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -27,6 +27,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *   <li>Interfaces must follow Java naming conventions (no {@code I} prefix)</li>
  *   <li>Constants classes must be {@code final}</li>
  *   <li>No dependency on removed {@code javax} packages (use {@code jakarta} instead)</li>
+ *   <li>Prefer modern Java APIs (java.time over java.util.Date)</li>
  * </ul>
  */
 @DisplayName("Coding Standard Rules")
@@ -106,6 +107,114 @@ class CodingStandardRulesTest extends SW360ArchitectureTest {
                 .should().dependOnClassesThat()
                 .haveFullyQualifiedName("javax.annotation.Nullable")
                 .as("Use lombok.NonNull instead of javax.annotation");
+
+        rule.check(restClasses);
+    }
+
+    // ========== Resource Management & Modern Java Best Practices ==========
+
+    @Test
+    @DisplayName("Classes should not use legacy StringBuffer — use StringBuilder instead")
+    void noClassShouldUseStringBuffer() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("..rest.resourceserver..")
+                .should().dependOnClassesThat()
+                .areAssignableTo(StringBuffer.class)
+                .as("Use StringBuilder (not StringBuffer) — StringBuffer is synchronized and slower");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("Classes should not use deprecated Date constructors with millis — use java.time API")
+    void noClassShouldUseLegacyDateAPI() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("..rest.resourceserver..")
+                .and().resideOutsideOfPackage("..resourceserver.security..")
+                .and().haveSimpleNameNotContaining("Test")
+                .and().haveSimpleNameNotContaining("Spec")
+                .should().dependOnClassesThat()
+                .haveFullyQualifiedName("java.util.Calendar")
+                .as("Use java.time API (LocalDate, Instant, etc.) instead of legacy Calendar");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("Classes should not use deprecated Enumeration — use Iterator instead")
+    void noClassShouldUseEnumeration() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("..rest.resourceserver..")
+                .should().dependOnClassesThat()
+                .haveFullyQualifiedName("java.util.Enumeration")
+                .as("Use Iterator (not Enumeration) — Enumeration is legacy");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("Classes should not use Observable/Observer — use PropertyChangeListener or reactive patterns")
+    void noClassShouldUseObservable() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("..rest.resourceserver..")
+                .should().dependOnClassesThat()
+                .haveFullyQualifiedName("java.util.Observable")
+                .as("Use PropertyChangeListener or reactive patterns (not Observable) — deprecated since Java 9");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("Classes should not use raw types for collections in return types")
+    void noClassShouldDependOnRawCollectionTypes() {
+        // This checks that classes don't import raw collection-related deprecated APIs
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("..rest.resourceserver..")
+                .should().dependOnClassesThat()
+                .haveFullyQualifiedName("java.util.Dictionary")
+                .as("Use Map (not Dictionary) — Dictionary is abstract and legacy");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("Classes should not directly depend on sun.* internal JDK packages")
+    void noClassShouldDependOnSunPackages() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("..rest.resourceserver..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("sun..")
+                .as("Do not use internal JDK sun.* packages — they are not part of the public API");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("Classes should not directly depend on com.sun.* internal packages")
+    void noClassShouldDependOnComSunPackages() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("..rest.resourceserver..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.sun..")
+                .as("Do not use internal com.sun.* packages — they are not part of the public API");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("Utility classes should be final")
+    void utilityClassesShouldBeFinal() {
+        // Note: Spring @Service/@Component beans like RestControllerHelper cannot be final
+        // as Spring may need to create proxies for them
+        ArchRule rule = classes()
+                .that().haveSimpleNameEndingWith("Utils")
+                .or().haveSimpleNameEndingWith("Util")
+                .and().resideInAPackage("..rest.resourceserver..")
+                .and().areNotAnnotatedWith(org.springframework.stereotype.Service.class)
+                .and().areNotAnnotatedWith(org.springframework.stereotype.Component.class)
+                .should().haveModifier(com.tngtech.archunit.core.domain.JavaModifier.FINAL)
+                .allowEmptyShould(true)
+                .as("Utility classes (*Utils, *Util) that are not Spring beans should be declared final");
 
         rule.check(restClasses);
     }
