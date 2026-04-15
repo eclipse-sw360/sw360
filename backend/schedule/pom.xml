@@ -22,11 +22,9 @@
     <artifactId>backend-schedule</artifactId>
     <packaging>war</packaging>
     <name>backend-schedule</name>
-    <build>
-        <finalName>schedule</finalName>
-    </build>
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>schedule</deploy.name>
     </properties>
 
     <dependencies>

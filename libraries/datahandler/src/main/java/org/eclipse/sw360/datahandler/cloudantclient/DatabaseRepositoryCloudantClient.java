@@ -600,12 +600,70 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     private void paginationSetTotalRowCount(PaginationData pageData, boolean isReduced, PostViewOptions query) {
         if (!isReduced) {
-            PostViewOptions.Builder countQuery = query.newBuilder();
-            countQuery.includeDocs(false);
-            countQuery.limit(1);
-            pageData.setTotalRowCount(getViewTotalCount(countQuery.build()));
+            if (isFilteredViewQuery(query)) {
+                pageData.setTotalRowCount(getFilteredViewTotalCount(query));
+            } else {
+                PostViewOptions.Builder countQuery = query.newBuilder();
+                countQuery.includeDocs(false);
+                countQuery.limit(1);
+                pageData.setTotalRowCount(getViewTotalCount(countQuery.build()));
+            }
         } else {
             pageData.setTotalRowCount(viewReduceSum(query));
         }
+    }
+
+    private long getFilteredViewTotalCount(PostViewOptions query) {
+        ViewResult response = queryQueryResponse(buildFilteredCountQuery(query));
+        if (response == null || response.getRows() == null) {
+            return 0;
+        }
+        return response.getRows().size();
+    }
+
+    private PostViewOptions buildFilteredCountQuery(PostViewOptions query) {
+        PostViewOptions.Builder countQuery = new PostViewOptions.Builder(query.db(), query.ddoc(), query.view())
+                .includeDocs(false)
+                .reduce(false);
+
+        if (query.descending() != null) {
+            countQuery.descending(query.descending());
+        }
+        if (query.inclusiveEnd() != null) {
+            countQuery.inclusiveEnd(query.inclusiveEnd());
+        }
+        if (query.key() != null) {
+            countQuery.key(query.key());
+        }
+        if (query.keys() != null && !query.keys().isEmpty()) {
+            countQuery.keys(query.keys());
+        }
+        if (query.startKey() != null) {
+            countQuery.startKey(query.startKey());
+        }
+        if (query.endKey() != null) {
+            countQuery.endKey(query.endKey());
+        }
+        if (query.startKeyDocId() != null) {
+            countQuery.startKeyDocId(query.startKeyDocId());
+        }
+        if (query.endKeyDocId() != null) {
+            countQuery.endKeyDocId(query.endKeyDocId());
+        }
+        if (query.stable() != null) {
+            countQuery.stable(query.stable());
+        }
+        if (query.update() != null) {
+            countQuery.update(query.update());
+        }
+
+        return countQuery.build();
+    }
+
+    private static boolean isFilteredViewQuery(PostViewOptions query) {
+        return query.key() != null
+                || (query.keys() != null && !query.keys().isEmpty())
+                || query.startKey() != null
+                || query.endKey() != null;
     }
 }
