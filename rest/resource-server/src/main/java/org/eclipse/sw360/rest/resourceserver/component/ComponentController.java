@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -260,8 +261,11 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the component.")
             @PathVariable("id") String id
     ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
-        Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        // VIEWER must not see which projects use this component
+        Set<Project> sw360Projects = PermissionUtils.isViewer(user)
+                ? Collections.emptySet()
+                : componentService.getProjectsByComponentId(id, user);
         Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
 
         List<EntityModel> resources = new ArrayList<>();
@@ -911,7 +915,10 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<Component> sw360Components = componentService.getMyComponentsForUser(sw360User);
+        // VIEWER cannot create components, so mycomponents is always empty
+        List<Component> sw360Components = PermissionUtils.isViewer(sw360User)
+                ? Collections.emptyList()
+                : componentService.getMyComponentsForUser(sw360User);
         PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                 sw360Components, SW360Constants.TYPE_COMPONENT);
         List<EntityModel<Component>> componentResources = new ArrayList<>();

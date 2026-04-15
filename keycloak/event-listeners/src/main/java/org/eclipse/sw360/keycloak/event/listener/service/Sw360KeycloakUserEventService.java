@@ -58,7 +58,12 @@ public class Sw360KeycloakUserEventService {
 			updateKeycloakUserGroup(event, eu.getUserGroup());
 		});
 
-		userService.createOrUpdateUser(user, LISTENER);
+                // For new users, check if department is viewer-only
+                if (existingUser.isEmpty()) {
+                        assignViewerRoleIfApplicable(user, event);
+                }
+
+                userService.createOrUpdateUser(user, LISTENER);
 	}
 
 	private User fillUserFromEvent(Map<String, String> userDetails) {
@@ -95,6 +100,11 @@ public class Sw360KeycloakUserEventService {
 		RealmModel realmModel = keycloakSession.realms().getRealmByName(REALM_SW360);
 		UserModel userModel = getUserFromKeycloakRealm(event, realmModel, userProvider);
 		User user = convertKcUserModelToUser(userModel);
+                // For new users (not yet in CouchDB), check if department is viewer-only
+                if (userService.getUserByEmail(user.getEmail()) == null) {
+                        assignViewerRoleIfApplicable(user, event);
+                }
+
         userService.createOrUpdateUser(user, LISTENER);
 	}
 
@@ -142,6 +152,23 @@ public class Sw360KeycloakUserEventService {
                 ATTR_EXTERNAL_ID, Collections.singletonList(DEFAULT_EXTERNAL_ID));
 		String externalId = externalIds.getFirst();
 		user.setExternalid(sanitizeExternalId(externalId));
+	}
+
+	/**
+	 * Checks if the user's department is configured as viewer-only in orgmapping.properties.
+	 * If so, assigns the VIEWER role to the user and updates the Keycloak group.
+	 *
+	 * @param user  the user to check and update
+	 * @param event the Keycloak event for group update
+	 * @see OrganizationMapper#isViewerOnlyDepartment(String)
+	 */
+	private void assignViewerRoleIfApplicable(User user, Event event) {
+		if (OrganizationMapper.isViewerOnlyDepartment(user.getDepartment())) {
+			log.infof("Department '%s' is viewer-only, assigning VIEWER role to user %s",
+					user.getDepartment(), user.getEmail());
+			user.setUserGroup(UserGroup.VIEWER);
+			updateKeycloakUserGroup(event, UserGroup.VIEWER);
+		}
 	}
 
 	/**

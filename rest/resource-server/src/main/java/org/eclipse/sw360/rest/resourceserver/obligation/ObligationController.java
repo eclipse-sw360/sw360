@@ -101,6 +101,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not access obligation data
         List<Obligation> obligations = new ArrayList<>();
         Map<PaginationData, List<Obligation>> paginatedObligations =
                 obligationService.getObligationsFiltered(searchKeyWord, obligationLevel, pageable);
@@ -156,6 +157,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
     ) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
+        restControllerHelper.throwIfViewerUser(sw360User); // VIEWER must not access obligation data
         try {
             Obligation sw360Obligation = obligationService.getObligationById(id, sw360User);
             HalResource<Obligation> halResource = createHalObligation(sw360Obligation);

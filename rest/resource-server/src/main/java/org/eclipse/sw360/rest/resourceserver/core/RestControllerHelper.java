@@ -1707,8 +1707,9 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public static void throwIfNotAdmin(User sw360User) throws AccessDeniedException {
-        if (!PermissionUtils.isAdmin(sw360User)) {
+    /** Blocks access for VIEWER (read-only) role. Mirrors {@link #throwIfSecurityUser}. */
+    public void throwIfViewerUser(User user) {
+        if (PermissionUtils.isViewer(user)) {
             throw new AccessDeniedException("User is not allowed to access this resource.");
         }
     }

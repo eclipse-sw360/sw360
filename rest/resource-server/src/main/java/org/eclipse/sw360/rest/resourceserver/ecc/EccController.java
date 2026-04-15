@@ -83,6 +83,7 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
     ) throws SW360Exception {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        restControllerHelper.throwIfViewerUser(user); // VIEWER must not access ECC data
         try {
             List<Release> releases = releaseService.getReleasesForUser(user);
             PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
