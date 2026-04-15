@@ -29,6 +29,7 @@ import org.apache.thrift.TException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -131,7 +132,10 @@ public class FossologyHandlerTest {
         ExternalToolProcess fossologyProcess = createFossologyProcess("content-1", "sha-1");
         fossologyProcess.addToProcessSteps(uploadStep);
 
-        Release release = createRelease(Set.of(fossologyProcess));
+        // Use a mutable set — updateFossologyProcessInRelease calls remove() on it
+        Set<ExternalToolProcess> processes = new HashSet<>();
+        processes.add(fossologyProcess);
+        Release release = createRelease(processes);
         Attachment sourceAttachment = createSourceAttachment("content-1", "sha-1");
         sourceAttachment.setFilename("source.tar.gz");
 
