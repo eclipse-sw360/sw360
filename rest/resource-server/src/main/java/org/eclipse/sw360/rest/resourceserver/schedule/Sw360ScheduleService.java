@@ -20,12 +20,9 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
-
 import static org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper.throwIfNotAdmin;
 
 @Service
-@RequiredArgsConstructor
 public class Sw360ScheduleService {
     private static final Logger log = LogManager.getLogger(Sw360ScheduleService.class);
 
