@@ -151,12 +151,6 @@ public class FossologyHandlerLocalhostIntegrationTest {
         assertEquals(RequestStatus.SUCCESS, actual);
     }
 
-    // FIXME:
-    // test preconditions in normal test (only mocks needed, no integration):
-    // - more than one fossology process
-    // - more than one source attachment
-    // - new source attachment, different from existing fossology process
-
     private void prepareValidPreconditions(User user) throws FileNotFoundException, TException {
         Attachment sourceAttachment = new Attachment("84", "commons-lang3-3.5-sources.jar");
         sourceAttachment.setAttachmentContentId("84c");
