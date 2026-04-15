@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -113,18 +114,17 @@ public class FossologyHandler implements FossologyService.Iface {
                 return RequestStatus.FAILURE;
             }
 
-            if (fossologyProcesses.size() == 0) {
+            if (fossologyProcesses.isEmpty()) {
                 log.info("No FOSSology process found for release with id {}, so nothing to set to OUTDATED.",
                         releaseId);
-                return RequestStatus.SUCCESS;
             } else {
                 // after illegal state check, we know exactly 1 fossology process
                 fossologyProcess = fossologyProcesses.iterator().next();
                 fossologyProcess.setProcessStatus(ExternalToolProcessStatus.OUTDATED);
                 release.setClearingState(calculateCurrentClearingState(release, fossologyProcess));
                 componentClient.updateReleaseFossology(release, user);
-                return RequestStatus.SUCCESS;
             }
+            return RequestStatus.SUCCESS;
         } catch (TException e) {
             log.error("Could not set FOSSology process to status OUTDATED for release id " + releaseId
                     + " because of exceptions in components backend: ", e);
@@ -155,7 +155,7 @@ public class FossologyHandler implements FossologyService.Iface {
             return null;
         }
 
-        if (fossologyProcesses.size() == 0) {
+        if (fossologyProcesses.isEmpty()) {
             fossologyProcess = createFossologyProcess(release, user, sourceAttachment.getAttachmentContentId(),
                     sourceAttachment.getSha1());
         } else {
@@ -204,55 +204,73 @@ public class FossologyHandler implements FossologyService.Iface {
                     attachmentFilename = "unknown-filename";
                 }
                 String attachmentContentId = sourceAttachment.getAttachmentContentId();
-                AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+                AttachmentContent attachmentContent;
+                try {
+                    attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+                } catch (TException | RuntimeException e) {
+                    bailUploadFailed(componentClient, release, user, fossologyProcess, e, furthestStep,
+                            "Unable to fetch the attachmentContent for id: " + attachmentContentId,
+                            "Unable to fetch attachmentContent");
+                    throw e;
+                }
 
                 String shaValue = sourceAttachment.getSha1();
 
                 // Check if file already exists using v2 API
                 int existingUploadId = fossologyRestClient.getUploadId(shaValue, attachmentFilename);
                 if (existingUploadId > -1) {
-                    log.info("FILE ALREADY EXISTS with uploadId {}, marking upload as DONE and proceeding to scan check", existingUploadId);
+                    log.info("FILE ALREADY EXISTS with uploadId {}, marking upload as DONE and proceeding to scan check",
+                            existingUploadId);
                     furthestStep.setFinishedOn(Instant.now().toString());
                     furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
                     furthestStep.setProcessStepIdInTool(existingUploadId + "");
                     furthestStep.setResult(existingUploadId + "");
-                } else {
-                    // Upload file using v2 API with automatic scan scheduling
+                    break;
+                }
+
+                // Upload file using v2 API with automatic scan scheduling
+                CombinedUploadJobResponse response;
+                try {
                     InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, release);
                     log.info("STARTING UPLOAD for file {}", attachmentFilename);
-                    CombinedUploadJobResponse response = fossologyRestClient.uploadFileAndScan(
-                        attachmentFilename, attachmentStream, uploadDescription);
+                    response = fossologyRestClient.uploadFileAndScan(
+                            attachmentFilename, attachmentStream, uploadDescription);
+                } catch (TException | RuntimeException e) {
+                    bailUploadFailed(componentClient, release, user, fossologyProcess, e, furthestStep,
+                            "Unable to fetch the attachment stream for content id: " + attachmentContent.getId(),
+                            "Unable to fetch attachment stream");
+                    throw e;
+                }
 
-                    if (response != null && V2_STATUS_SUCCESS.equals(response.getStatus())) {
-                        int jobId = fossologyRestClient.getJobIdAfterScan(response.getUploadId());
-                        if (jobId > 0) {
-                            response.setJobId(jobId);
-                        } else {
-                            response.setMessage("Unable to find latest job id for upload " + response.getUploadId());
-                            response.setStatus(V2_STATUS_FAILED);
-                            furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
-                            furthestStep.setResult(response.getMessage());
-                            log.error("Unable to find latest job id for upload: {}", response.getMessage());
-                        }
-                    }
-                    if (response != null && response.getUploadId() > 0 && response.getJobId() > 0) {
-                        furthestStep.setFinishedOn(Instant.now().toString());
-                        furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
-                        furthestStep.setProcessStepIdInTool(response.getUploadId() + "");
-                        furthestStep.setResult(response.getUploadId() + "");
-
-                        log.info("UPLOAD SUCCESSFUL: uploadId={}", response.getUploadId());
-
-                        ExternalToolProcessStep scanStep = createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN);
-                        scanStep.setStepStatus(ExternalToolProcessStatus.IN_WORK);
-                        scanStep.setProcessStepIdInTool(response.getJobId() + "");
-                        fossologyProcess.addToProcessSteps(scanStep);
-                        log.info("AUTO-SCAN STARTED: uploadId={}, jobId={}", response.getUploadId(), response.getJobId());
+                if (response != null && V2_STATUS_SUCCESS.equals(response.getStatus())) {
+                    int jobId = fossologyRestClient.getJobIdAfterScan(response.getUploadId());
+                    if (jobId > 0) {
+                        response.setJobId(jobId);
                     } else {
+                        response.setMessage("Unable to find latest job id for upload " + response.getUploadId());
+                        response.setStatus(V2_STATUS_FAILED);
                         furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
-                        furthestStep.setResult(response != null ? response.getMessage() : "Upload failed");
-                        log.error("UPLOAD FAILED: {}", response != null ? response.getMessage() : "Unknown error");
+                        furthestStep.setResult(response.getMessage());
+                        log.error("Unable to find latest job id for upload: {}", response.getMessage());
                     }
+                }
+                if (response != null && response.getUploadId() > 0 && response.getJobId() > 0) {
+                    furthestStep.setFinishedOn(Instant.now().toString());
+                    furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
+                    furthestStep.setProcessStepIdInTool(response.getUploadId() + "");
+                    furthestStep.setResult(response.getUploadId() + "");
+
+                    log.info("UPLOAD SUCCESSFUL: uploadId={}", response.getUploadId());
+
+                    ExternalToolProcessStep scanStep = createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN);
+                    scanStep.setStepStatus(ExternalToolProcessStatus.IN_WORK);
+                    scanStep.setProcessStepIdInTool(response.getJobId() + "");
+                    fossologyProcess.addToProcessSteps(scanStep);
+                    log.info("AUTO-SCAN STARTED: uploadId={}, jobId={}", response.getUploadId(), response.getJobId());
+                } else {
+                    bailUploadFailed(componentClient, release, user, fossologyProcess, null, furthestStep,
+                            "UPLOAD FAILED: " + (response != null ? response.getMessage() : "Unknown error"),
+                            response != null ? response.getMessage() : "Upload failed");
                 }
                 break;
             case DONE:
@@ -271,6 +289,36 @@ public class FossologyHandler implements FossologyService.Iface {
     }
 
     /**
+     * Log the error and update the FOSSology process and the Release status
+     * upon any failure.
+     * @param componentClient   Component thrift client
+     * @param release           Release which failed
+     * @param user              User object
+     * @param fossologyProcess  FOSSology process queue
+     * @param exception         Exception which failed the process
+     * @param furthestStep      Furthest Step queue
+     * @param logMessage        Error message for the log
+     * @param stepResultMessage Message to put in the furthest step result
+     * @throws TException If Release update failed
+     */
+    private void bailUploadFailed(
+            Iface componentClient, @Nonnull Release release, User user,
+            @Nonnull ExternalToolProcess fossologyProcess, Exception exception,
+            @Nonnull ExternalToolProcessStep furthestStep, String logMessage,
+            String stepResultMessage
+    ) throws TException {
+        if (exception != null) {
+            log.error(logMessage, exception);
+        } else {
+            log.error(logMessage);
+        }
+        fossologyProcess.setProcessStatus(ExternalToolProcessStatus.OUTDATED);
+        furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
+        furthestStep.setResult(stepResultMessage);
+        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+    }
+
+    /**
      * Handle scan step using v2 API
      */
     private void handleScanStepV2(Iface componentClient,
@@ -280,8 +328,9 @@ public class FossologyHandler implements FossologyService.Iface {
         ExternalToolProcessStep furthestStep =
             fossologyProcess.getProcessSteps().getLast();
         String uploadId = SW360Utils
-            .getExternalToolProcessStepOfFirstProcessForTool(release, ExternalTool.FOSSOLOGY,
-                                                             FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD)
+            .getExternalToolProcessStepOfFirstProcessForTool(
+                    release, ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD
+            )
             .getResult();
 
         switch (furthestStep.getStepStatus()) {
@@ -290,16 +339,23 @@ public class FossologyHandler implements FossologyService.Iface {
                 furthestStep.setStepStatus(ExternalToolProcessStatus.IN_WORK);
                 updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
 
-                log.info("STARTING SCAN for uploadId: {}", uploadId);
-                int jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId));
-                if (jobId > -1) {
-                    furthestStep.setProcessStepIdInTool(String.valueOf(jobId));
-                    furthestStep.setResult(null);
-                    log.info("SCAN STARTED successfully with jobId: {}", jobId);
-                } else {
-                    furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
-                    furthestStep.setResult(String.valueOf(jobId));
-                    log.error("FAILED to start scan job for uploadId: {}", uploadId);
+                try {
+                    log.info("STARTING SCAN for uploadId: {}", uploadId);
+                    int jobId = fossologyRestClient.startScanning(Integer.parseInt(uploadId));
+                    if (jobId > -1) {
+                        furthestStep.setProcessStepIdInTool(String.valueOf(jobId));
+                        furthestStep.setResult(null);
+                        log.info("SCAN STARTED successfully with jobId: {}", jobId);
+                    } else {
+                        furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
+                        furthestStep.setResult(String.valueOf(jobId));
+                        log.error("FAILED to start scan job for uploadId: {}", uploadId);
+                    }
+                } catch (RuntimeException e) {
+                    bailUploadFailed(componentClient, release, user, fossologyProcess, e, furthestStep,
+                            "FOSSology scan trigger aborted for uploadId: " + uploadId,
+                            "Scan aborted");
+                    throw e;
                 }
                 break;
 
@@ -480,36 +536,19 @@ public class FossologyHandler implements FossologyService.Iface {
 
         ClearingState result = ClearingState.NEW_CLEARING;
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
-                .get(fossologyProcess.getProcessSteps().size() - 1);
+                .getLast();
 
         if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())) {
-            switch (furthestStep.getStepStatus()) {
-            case IN_WORK:
-            case DONE:
-                result = ClearingState.SENT_TO_CLEARING_TOOL;
-                break;
-            case NEW:
-            default:
-                result = ClearingState.NEW_CLEARING;
-            }
+            result = switch (furthestStep.getStepStatus()) {
+                case IN_WORK, DONE -> ClearingState.SENT_TO_CLEARING_TOOL;
+                default -> ClearingState.NEW_CLEARING;
+            };
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
-            switch (furthestStep.getStepStatus()) {
-            case IN_WORK:
-            case DONE:
-                result = ClearingState.SENT_TO_CLEARING_TOOL;
-                break;
-            case NEW:
-            default:
-                result = ClearingState.SENT_TO_CLEARING_TOOL;
-            }
+            result = ClearingState.SENT_TO_CLEARING_TOOL;
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
-            switch (furthestStep.getStepStatus()) {
-            case DONE:
+            if (ExternalToolProcessStatus.DONE.equals(furthestStep.getStepStatus())) {
                 result = ClearingState.REPORT_AVAILABLE;
-                break;
-            case IN_WORK:
-            case NEW:
-            default:
+            } else {
                 result = ClearingState.UNDER_CLEARING;
             }
         }
@@ -629,13 +668,13 @@ public class FossologyHandler implements FossologyService.Iface {
         if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {
             return RequestStatus.FAILURE;
         }
-        if (fossologyProcesses.size() == 0) {
+        if (fossologyProcesses.isEmpty()) {
             log.info("No FOSSology process found for release with id {}.", releaseId);
             return RequestStatus.FAILURE;
         } else if (fossologyProcesses.size() == 1) {
             ExternalToolProcess extToolProcess = fossologyProcesses.iterator().next();
             if (extToolProcess.getProcessSteps().size() > 2) {
-                extToolProcess.getProcessSteps().get(extToolProcess.getProcessSteps().size() - 1)
+                extToolProcess.getProcessSteps().getLast()
                         .setStepStatus(ExternalToolProcessStatus.NEW);
             } else if (extToolProcess.getProcessSteps().size() == 2 && SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false)) {
                 extToolProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));

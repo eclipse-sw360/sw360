@@ -30,7 +30,6 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
 import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -57,7 +56,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
-import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -83,7 +81,6 @@ import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -145,9 +142,6 @@ public class RestControllerHelper<T> {
     private final Sw360ObligationService obligationService;
 
     @NonNull
-    private final Sw360ClearingRequestService clearingRequestService;
-
-    @NonNull
     private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
 
     @NonNull
@@ -167,8 +161,28 @@ public class RestControllerHelper<T> {
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
-    public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
-            .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
+    public static final Set<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = EnumSet.of(
+            ProjectReleaseRelationship._Fields.CREATED_ON,
+            ProjectReleaseRelationship._Fields.CREATED_BY
+    );
+    private static final Set<Project._Fields> IMMUTABLE_PROJECT_FIELDS = EnumSet.of(
+            Project._Fields.ID,
+            Project._Fields.TYPE,
+            Project._Fields.CREATED_ON,
+            Project._Fields.CREATED_BY
+    );
+    private static final Set<Component._Fields> IMMUTABLE_COMPONENT_FIELDS = EnumSet.of(
+            Component._Fields.ID,
+            Component._Fields.TYPE,
+            Component._Fields.CREATED_ON,
+            Component._Fields.CREATED_BY
+    );
+    private static final Set<Release._Fields> IMMUTABLE_RELEASE_FIELDS = EnumSet.of(
+            Release._Fields.ID,
+            Release._Fields.TYPE,
+            Release._Fields.CREATED_ON,
+            Release._Fields.CREATED_BY
+    );
     private static final ImmutableMap<Release._Fields,String> mapOfReleaseFieldsTobeEmbedded = ImmutableMap.of(
             Release._Fields.MODERATORS, "sw360:moderators",
             Release._Fields.ATTACHMENTS, "sw360:attachments",
@@ -662,6 +676,9 @@ public class RestControllerHelper<T> {
     public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
             ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
         for (Project._Fields field : Project._Fields.values()) {
+            if (IMMUTABLE_PROJECT_FIELDS.contains(field)) {
+                continue;
+            }
             Object fieldValue = requestBodyProject.getFieldValue(field);
             if (fieldValue != null) {
                 String reqBodyStr = field.getFieldName();
@@ -680,6 +697,9 @@ public class RestControllerHelper<T> {
     public Component updateComponent(Component componentToUpdate, ComponentDTO requestBodyComponent) {
         Component component = convertToComponent(requestBodyComponent);
         for(Component._Fields field:Component._Fields.values()) {
+            if (IMMUTABLE_COMPONENT_FIELDS.contains(field)) {
+                continue;
+            }
             Object fieldValue = component.getFieldValue(field);
             if(fieldValue != null) {
                 componentToUpdate.setFieldValue(field, fieldValue);
@@ -776,6 +796,9 @@ public class RestControllerHelper<T> {
 
     public Release updateRelease(Release releaseToUpdate, Release requestBodyRelease) {
         for (Release._Fields field : Release._Fields.values()) {
+            if (IMMUTABLE_RELEASE_FIELDS.contains(field)) {
+                continue;
+            }
             Object fieldValue = requestBodyRelease.getFieldValue(field);
             if (fieldValue != null) {
                 switch (field) {
