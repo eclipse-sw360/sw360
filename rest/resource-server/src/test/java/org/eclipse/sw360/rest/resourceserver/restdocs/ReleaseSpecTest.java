@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -860,6 +861,37 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_release_batch_summary() throws Exception {
+        LinkedHashSet<String> requestedIds = new LinkedHashSet<>(Arrays.asList(release3.getId(), release.getId(), "missing-release"));
+        given(this.releaseServiceMock.getAccessibleReleasesByIds(eq(requestedIds), any()))
+                .willReturn(Arrays.asList(release, release3));
+
+        mockMvc.perform(post("/api/releases/batch-summary")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "ids": ["987456", "3765276512", "987456", "missing-release"]
+                        }
+                        """)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("ids").description("Array of release IDs. Duplicate IDs are deduplicated while preserving first-seen order.")
+                        ),
+                        responseFields(
+                                fieldWithPath("items").description("Ordered release summaries for all accessible requested releases."),
+                                fieldWithPath("items[].id").description("The release ID."),
+                                fieldWithPath("items[].name").description("The release name."),
+                                fieldWithPath("items[].version").description("The release version."),
+                                fieldWithPath("items[].clearingState").description("The release clearing state, possible values are " + Arrays.asList(ClearingState.values())).optional(),
+                                fieldWithPath("missingIds").description("Requested release IDs that were missing or inaccessible."),
+                                fieldWithPath("missingIds[]").description("A requested release ID that was not returned.").optional()
                         )));
     }
 
