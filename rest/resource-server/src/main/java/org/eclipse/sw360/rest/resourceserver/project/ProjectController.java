@@ -3156,13 +3156,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Project detail tab pill counts successfully retrieved"),
+        @ApiResponse(responseCode = "200", description = "Project detail tab pill counts successfully retrieved",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectDetailTabCounts.class))),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @GetMapping(value = PROJECTS_URL + "/{id}/tabCounts")
-    public void getProjectDetailTabCounts(
-            HttpServletResponse response,
+    public ResponseEntity<ProjectDetailTabCounts> getProjectDetailTabCounts(
             @Parameter(description = "Project ID", example = "376521")
             @PathVariable("id") String id
     ) throws TException {
@@ -3170,13 +3170,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         restControllerHelper.throwIfSecurityUser(sw360User);
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
-        List<VulnerabilityDTO> vulnerabilities = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
-        int vulnerabilityCount = vulnerabilities == null ? 0 : vulnerabilities.size();
-        int vulnerabilityRatedCount = vulnerabilities == null ? 0
+        int vulnerabilityCount;
+        int vulnerabilityRatedCount;
+        if (!sw360Project.isEnableVulnerabilitiesDisplay()) {
+            vulnerabilityCount = -1;
+            vulnerabilityRatedCount = -1;
+        } else {
+            List<VulnerabilityDTO> vulnerabilities = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
+            vulnerabilityCount = vulnerabilities == null ? 0 : vulnerabilities.size();
+            vulnerabilityRatedCount = vulnerabilities == null ? 0
                 : (int) vulnerabilities.stream()
                 .filter(vulnerability -> !isNullEmptyOrWhitespace(vulnerability.getProjectRelevance())
                         && !"NOT_CHECKED".equalsIgnoreCase(vulnerability.getProjectRelevance()))
                 .count();
+        }
         int obligationCount = 0;
         int obligationNonOpenCount = 0;
         if (!isNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
@@ -3190,18 +3197,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
 
-        try {
-            response.setContentType("application/json; charset=UTF-8");
-            response.setCharacterEncoding("UTF-8");
-            JsonObject row = new JsonObject();
-            row.addProperty("vulnerabilityCount", vulnerabilityCount);
-            row.addProperty("vulnerabilityRatedCount", vulnerabilityRatedCount);
-            row.addProperty("obligationCount", obligationCount);
-            row.addProperty("obligationNonOpenCount", obligationNonOpenCount);
-            response.getWriter().write(row.toString());
-        } catch (IOException e) {
-            throw new SW360Exception(e.getMessage());
-        }
+        return new ResponseEntity<>(new ProjectDetailTabCounts(vulnerabilityCount, vulnerabilityRatedCount,
+                obligationCount, obligationNonOpenCount), HttpStatus.OK);
     }
 
     @Operation(
