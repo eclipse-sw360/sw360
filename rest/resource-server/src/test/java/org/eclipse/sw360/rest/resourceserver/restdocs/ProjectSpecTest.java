@@ -2488,8 +2488,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                fieldWithPath("vulnerabilityCount").description("Count of vulnerabilities linked to the project"),
-                                fieldWithPath("vulnerabilityRatedCount").description("Count of vulnerabilities with project relevance other than NOT_CHECKED"),
+                                fieldWithPath("vulnerabilityCount").description("Count of vulnerabilities linked to the project; returns -1 when vulnerability display is disabled for the project"),
+                                fieldWithPath("vulnerabilityRatedCount").description("Count of vulnerabilities with project relevance other than NOT_CHECKED; returns -1 when vulnerability display is disabled for the project"),
                                 fieldWithPath("obligationCount").description("Count of obligations linked to the project"),
                                 fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN")
                         )));
