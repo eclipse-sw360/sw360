@@ -20,6 +20,7 @@
     </parent>
 
     <name>SW360 Client Utilities</name>
+    <!-- GSoC 2026: LicenseDB Integration Project -->
     <description>SW360 client utilities</description>
     <url>https://eclipse.org/sw360</url>
     <licenses>
