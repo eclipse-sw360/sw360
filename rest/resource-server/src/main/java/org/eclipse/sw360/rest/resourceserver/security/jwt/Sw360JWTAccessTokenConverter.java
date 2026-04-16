@@ -40,7 +40,8 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 
 	private static final Logger log = LogManager.getLogger(Sw360JWTAccessTokenConverter.class);
 	public static final String USER_NAME = "user_name";
-	public static final String USER_IS_DEACTIVATED_OR_NOT_AVAILABLE = "User is deactivated or not available.";
+	public static final String USER_NOT_AVAILABLE = "User does not exist or invalid credentials.";
+	public static final String USER_IS_DEACTIVATED = "User is deactivated.";
 	public static final String SCOPE = "scope";
 
 	private final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -143,8 +144,11 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 */
 	private static void validateUser(String email, User sw360User) {
 		if (email != null && CommonUtils.isNotNullEmptyOrWhitespace(email)) {
-			if (sw360User == null || sw360User.isDeactivated()) {
-				throw new BadCredentialsException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
+			if (sw360User == null) {
+				throw new BadCredentialsException(USER_NOT_AVAILABLE);
+			}
+			if (sw360User.isDeactivated()) {
+				throw new BadCredentialsException(USER_IS_DEACTIVATED);
 			}
 		}
 	}
