@@ -48,4 +48,9 @@ public class VendorPermissions extends DocumentPermissions<Vendor> {
     protected Set<String> getModerators() {
         return moderators;
     }
+
+    @Override
+    protected Set<String> getSecurityResponsibles() {
+        return Collections.emptySet();
+    }
 }

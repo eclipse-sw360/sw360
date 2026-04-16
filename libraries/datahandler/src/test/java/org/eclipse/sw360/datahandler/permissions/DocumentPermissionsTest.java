@@ -103,5 +103,10 @@ public class DocumentPermissionsTest {
         protected Set<String> getModerators() {
             throw new NotImplementedException("method not needed in test right now");
         }
+
+        @Override
+        protected Set<String> getSecurityResponsibles() {
+            throw new NotImplementedException("method not needed in test right now");
+        }
     }
 }

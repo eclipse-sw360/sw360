@@ -60,4 +60,9 @@ public class LicensePermissions extends DocumentPermissions<License> {
         return Collections.emptySet();
     }
 
+    @Override
+    protected Set<String> getSecurityResponsibles() {
+        return Collections.emptySet();
+    }
+
 }
