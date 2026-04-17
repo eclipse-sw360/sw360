@@ -467,4 +467,20 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
         .andExpect(status().isOk());
     }
+
+    @Test
+    public void should_return_400_when_license_update_fails() throws Exception {
+        given(this.licenseServiceMock.updateLicense(any(), any()))
+                .willThrow(new RuntimeException("License update failed with status: FAILURE"));
+
+        Map<String, String> licenseRequestBody = new HashMap<>();
+        licenseRequestBody.put("fullName", "Apache License 4.0");
+
+        mockMvc.perform(MockMvcRequestBuilders.patch("/api/licenses/" + license.getId())
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(licenseRequestBody))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+    }
 }

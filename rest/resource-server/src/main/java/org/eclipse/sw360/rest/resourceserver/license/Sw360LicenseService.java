@@ -146,7 +146,7 @@ public class Sw360LicenseService {
         }
         RequestStatus status = sw360LicenseClient.updateLicense(license, sw360User, sw360User);
         if (status == RequestStatus.FAILURE) {
-            throw new RuntimeException("Error updating license");
+            throw new RuntimeException("License update failed with status: " + status);
         }
         return status;
     }
