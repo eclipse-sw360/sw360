@@ -30,6 +30,8 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -171,6 +173,10 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             departmentService.writePathFolderConfig(pathFolder, sw360User);
             return ResponseEntity.ok("Path updated successfully.");
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception("Error updating path: " + e.getMessage());
         }

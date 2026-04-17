@@ -334,6 +334,10 @@ public class Sw360LicenseService {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             try {
                 return sw360LicenseClient.addLicenseType(lType, sw360User);
+            } catch (TException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
                 throw new TException(e.getMessage());
             }

@@ -341,6 +341,12 @@ public class VendorController implements RepresentationModelProcessor<Repository
             String filename = String.format("vendors-%s.xlsx", SW360Utils.getCreatedOn());
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             copyDataStreamToResponse(response, buffer);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }

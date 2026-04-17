@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
 import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
 import org.eclipse.sw360.datahandler.thrift.Source;
@@ -465,17 +466,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
 
-    private Component validateAndGetComponent(String id, ComponentDTO updateComponentDto, User user) {
+    private Component validateAndGetComponent(String id, ComponentDTO updateComponentDto, User user) throws TException {
         if (isNullOrEmpty(id)) {
             throw new BadRequestClientException("Component ID cannot be null or empty");
         }
 
-        Component sw360Component;
-        try {
-            sw360Component = componentService.getComponentForUserById(id, user);
-        } catch (Exception e) {
-            throw new ResourceNotFoundException("Component not found with ID: " + id);
-        }
+        Component sw360Component = componentService.getComponentForUserById(id, user);
 
         if (sw360Component == null) {
             throw new ResourceNotFoundException("Component not found with ID: " + id);
@@ -1120,6 +1116,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
             try {
                 requestSummary = componentService.importSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (ResourceNotFoundException e) {
+                throw e;
+            } catch (AccessDeniedException e) {
+                throw e;
+            } catch (SW360Exception e) {
+                throw e;
+            } catch (TException e) {
+                throw e;
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
             }
@@ -1178,6 +1182,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
             try {
                 importBomRequestPreparation = componentService.prepareImportSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (ResourceNotFoundException e) {
+                throw e;
+            } catch (AccessDeniedException e) {
+                throw e;
+            } catch (SW360Exception e) {
+                throw e;
+            } catch (TException e) {
+                throw e;
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
             }
