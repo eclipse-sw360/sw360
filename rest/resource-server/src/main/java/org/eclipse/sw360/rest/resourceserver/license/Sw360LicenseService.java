@@ -144,7 +144,11 @@ public class Sw360LicenseService {
                 license.setObligations(obligations);
             }
         }
-        return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+        RequestStatus status = sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+        if (status == RequestStatus.FAILURE) {
+            throw new RuntimeException("Error updating license");
+        }
+        return status;
     }
 
     public Set<String> getIdObligationsContainWhitelist(User sw360User, String licenseId, Set<String> diffIds) throws TException {

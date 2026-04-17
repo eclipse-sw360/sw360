@@ -289,7 +289,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             ),
             @ApiResponse(responseCode = "405",
                     description = "Reject license update due to: an already checked license is not allowed" +
-                            " to become unchecked again")
+                            " to become unchecked again"),
+            @ApiResponse(responseCode = "500", description = "License update failed (permission denied or business rule violation).")
     })
     @PatchMapping(value = LICENSES_URL + "/{id}")
     public ResponseEntity<EntityModel<License>> updateLicense(
@@ -309,6 +310,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         RequestStatus requestStatus = licenseService.updateLicense(licenseUpdate, sw360User);
         if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        if (requestStatus != RequestStatus.SUCCESS) {
+            throw new RuntimeException("Error updating license");
         }
         HalResource<License> halResource = createHalLicense(licenseUpdate);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
