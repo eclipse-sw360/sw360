@@ -49,6 +49,7 @@ enum RequestedAction {
     CLEARING = 5,
     ATTACHMENTS = 6,
     WRITE_ECC = 7,
+    WRITE_VULNERABILITY = 8,
 }
 
 enum UserSortColumn {
