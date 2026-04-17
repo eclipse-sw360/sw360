@@ -224,7 +224,7 @@ public class Sw360LicenseService {
         }
     }
 
-    private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
+    LicenseService.Iface getThriftLicenseClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new LicenseService.Client(protocol);
