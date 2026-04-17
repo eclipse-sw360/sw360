@@ -12,7 +12,9 @@ services:
     image: "${SW360_IMAGE:-ghcr.io/eclipse-sw360/sw360}:${SW360_VERSION:-latest}"
     restart: unless-stopped
     container_name: sw360
-    env_file: config/sw360/.env.backend
+    env_file:
+      - config/sw360/.env.backend
+      - config/couchdb/default_secrets
     secrets:
       - COUCHDB_SECRETS
       - SW360_SECRETS
