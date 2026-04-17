@@ -312,7 +312,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
         if (requestStatus != RequestStatus.SUCCESS) {
-            throw new RuntimeException("License update failed with status: " + requestStatus);
+            throw new BadRequestClientException("License update failed with status: " + requestStatus);
         }
         HalResource<License> halResource = createHalLicense(licenseUpdate);
         return new ResponseEntity<>(halResource, HttpStatus.OK);

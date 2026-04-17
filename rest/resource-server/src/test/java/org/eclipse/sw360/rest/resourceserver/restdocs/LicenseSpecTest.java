@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
@@ -471,7 +472,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_return_400_when_license_update_fails() throws Exception {
         given(this.licenseServiceMock.updateLicense(any(), any()))
-                .willThrow(new RuntimeException("License update failed with status: FAILURE"));
+                .willThrow(new BadRequestClientException("License update failed with status: FAILURE"));
 
         Map<String, String> licenseRequestBody = new HashMap<>();
         licenseRequestBody.put("fullName", "Apache License 4.0");
