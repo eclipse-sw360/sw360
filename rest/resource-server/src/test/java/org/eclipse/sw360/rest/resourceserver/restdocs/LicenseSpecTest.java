@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
@@ -471,8 +472,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_return_400_when_license_update_fails() throws Exception {
+        // Overrides the @Before stub (SUCCESS) for this test only — Mockito applies the last stub wins rule.
+        String expectedMessage = "License update failed with status: " + RequestStatus.FAILURE;
         given(this.licenseServiceMock.updateLicense(any(), any()))
-                .willThrow(new BadRequestClientException("License update failed with status: FAILURE"));
+                .willThrow(new BadRequestClientException(expectedMessage));
 
         Map<String, String> licenseRequestBody = new HashMap<>();
         licenseRequestBody.put("fullName", "Apache License 4.0");
@@ -482,6 +485,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                         .content(this.objectMapper.writeValueAsString(licenseRequestBody))
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 }
