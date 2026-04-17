@@ -554,6 +554,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             licenseService.uploadLicense(sw360User, file, overwriteIfExternalIdMatches,
                     overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
 	    }
