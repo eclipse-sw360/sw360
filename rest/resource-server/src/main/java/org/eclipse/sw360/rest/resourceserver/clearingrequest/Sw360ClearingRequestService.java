@@ -47,7 +47,8 @@ import lombok.RequiredArgsConstructor;
 public class Sw360ClearingRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ClearingRequestService.class);
 
-    private final ThriftClients thriftClients = new ThriftClients();
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
 
     public ClearingRequest getClearingRequestByProjectId(String projectId, User sw360User) throws TException {
         try {

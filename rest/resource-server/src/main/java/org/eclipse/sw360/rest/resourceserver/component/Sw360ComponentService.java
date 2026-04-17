@@ -63,6 +63,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     @NonNull
     private final RestControllerHelper<Component> rch;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     @NonNull
     private final Sw360ProjectService projectService;
 
@@ -270,7 +273,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        return new ThriftClients().makeComponentClient();
+        return thriftClients.makeComponentClient();
     }
 
     public List<Component> getMyComponentsForUser(User sw360User) throws TException {

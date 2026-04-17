@@ -210,6 +210,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final Sw360ProjectService projectService;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     @NonNull
     private final SW360PackageService packageService;
 
@@ -757,7 +760,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         // The CR must only be removed after confirming the project deletion succeeded;
         // deleting it first and then discovering the project is IN_USE causes permanent
         // data loss — the project remains but its clearing history is gone.
-        ThriftClients thriftClients = new ThriftClients();
         ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
         ClearingRequest clearingRequest = null;
 

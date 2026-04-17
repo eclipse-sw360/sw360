@@ -60,6 +60,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class Sw360ModerationRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ModerationRequestService.class);
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
 
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -80,7 +82,7 @@ public class Sw360ModerationRequestService {
     }
 
     public ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         return projectClient;
     }
 

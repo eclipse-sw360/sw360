@@ -85,7 +85,8 @@ public class Sw360ImportExportService {
     private String thriftServerUrl;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
-    ThriftClients thriftClients = new ThriftClients();
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
 
     public void getDownloadCsvComponentTemplate(User sw360User, HttpServletResponse response) throws IOException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {

@@ -139,6 +139,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     @NonNull
     private RestControllerHelper rch;
 
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
+
     /**
      * This enum is used to indicate the status of the CLI update process.
      */
@@ -346,19 +349,16 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public void deleteAttachmentUsages(List<AttachmentUsage> usagesToDelete) throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
         attachmentClient.deleteAttachmentUsages(usagesToDelete);
 	}
 
 	public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
-		ThriftClients thriftClients = new ThriftClients();
 		AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 		attachmentClient.makeAttachmentUsages(usagesToCreate);
 	}
 
 	public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
-		ThriftClients thriftClients = new ThriftClients();
 		AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 		List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
 		return allUsagesByProjectAfterCleanUp;
@@ -372,7 +372,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, Set<Release>> getLicensesFromAttachmentUsage(
             Map<String, AttachmentUsage> licenseInfoAttachmentUsage, User user) {
-        ThriftClients thriftClients = new ThriftClients();
         LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         Map<String, Release> attachmentIdToReleaseMap = new HashMap<String, Release>();
@@ -433,7 +432,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public Map<String, AttachmentUsage> getLicenseInfoAttachmentUsage(String projectId) {
         Map<String, AttachmentUsage> licenseInfoUsages = new HashMap<>();
         try {
-            ThriftClients thriftClients = new ThriftClients();
             AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 
             List<AttachmentUsage> attachmentUsages = wrapTException(
@@ -496,7 +494,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public RequestStatus removeOrphanObligations(Map<String, ObligationStatusInfo> obligationStatusMap, List<String> obligationTitlesInRequestBody, Project project, User user, ObligationList obligation) {
         try {
-            ThriftClients thriftClients = new ThriftClients();
             ProjectService.Iface client = thriftClients.makeProjectClient();
             RequestStatus status = null;
 
@@ -518,7 +515,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, ObligationStatusInfo> getLicenseObligationData(
             Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
-        ThriftClients thriftClients = new ThriftClients();
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<String, ObligationStatusInfo>();
         licensesFromAttachmentUsage.entrySet().stream().forEach(entry -> wrapTException(() -> {
@@ -618,7 +614,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public RequestStatus patchLinkedObligations(User sw360User,
             Map<String, ObligationStatusInfo> updatedObligationStatusMap, ObligationList obligation) {
         try {
-            ThriftClients thriftClients = new ThriftClients();
             ProjectService.Iface client = thriftClients.makeProjectClient();
 
             // Ensure the obligation has a valid model configuration
@@ -680,7 +675,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
     public RequestStatus addLinkedObligations(Project project, User user,
                                               Map<String, ObligationStatusInfo> licenseObligation) {
-        ThriftClients thriftClients = new ThriftClients();
         ProjectService.Iface client = thriftClients.makeProjectClient();
         final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
         final String email = user.getEmail();
@@ -734,7 +728,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                                                                             Project project, String oblLevel) throws TException {
         List<Obligation> obligations = SW360Utils.getObligations();
         Map<String, ObligationStatusInfo> updatedObligationStatusMap = Maps.newHashMap();
-        ThriftClients thriftClients = new ThriftClients();
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
         if ("Project".equalsIgnoreCase(oblLevel)) {
@@ -757,7 +750,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             List<Release> releases, User user) {
 
         final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
-        ThriftClients thriftClients = new ThriftClients();
         LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
 
         for (Release release : releases) {
@@ -1038,7 +1030,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         return projectClient;
     }
 
@@ -1077,7 +1069,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, Integer> storeAttachmentUsageCount(List<ProjectLink> mappedProjectLinks, UsageData filter) throws TException {
         try {
-            ThriftClients thriftClients = new ThriftClients();
             AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
             Map<Source, Set<String>> containedAttachments = extractContainedAttachments(mappedProjectLinks);
             Map<Map<Source, String>, Integer> attachmentUsages = attachmentClient.getAttachmentUsageCount(containedAttachments,
@@ -1133,11 +1124,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         final Collection<ProjectLink> linkedProjects;
         if(includeSubprojects) {
             linkedProjects = SW360Utils.flattenProjectLinkTree(SW360Utils.
-                    getLinkedProjects(project, deep, new ThriftClients(), log, user));
+                    getLinkedProjects(project, deep, thriftClients, log, user));
         }
         else {
             parentProjectLink = new ProjectLink(project.getId(), project.getName());
-            parentProjectLink.setLinkedReleases(SW360Utils.getLinkedReleasesWithAccessibility(project, new ThriftClients(), log, user));
+            parentProjectLink.setLinkedReleases(SW360Utils.getLinkedReleasesWithAccessibility(project, thriftClients, log, user));
             linkedProjects = Collections.singletonList(parentProjectLink);
         }
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
@@ -1145,7 +1136,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project,
                                                                     Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user) {
-        final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, deep, new ThriftClients(), log, user);
+        final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, deep, thriftClients, log, user);
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
 
@@ -1312,7 +1303,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public String getLicenseInfoHeaderText() throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
         String licenseInfoHeaderText = licenseClient.getDefaultLicenseInfoHeaderText(null);
         return licenseInfoHeaderText;
@@ -1415,7 +1405,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public List<Release> getLinkedReleasesOfSubProjects(String projectId, User sw360User) throws TException {
         Project projectById = getProjectForUserById(projectId, sw360User);
-        ComponentService.Iface sw360ComponentClient = new ThriftClients().makeComponentClient();
+        ComponentService.Iface sw360ComponentClient = thriftClients.makeComponentClient();
         Map<String, ProjectProjectRelationship> linkedProjects = CommonUtils.nullToEmptyMap(projectById.getLinkedProjects());
         Set<String> releaseIdsFromLinkedProjects = new HashSet<>();
 
@@ -1435,7 +1425,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public List<Map<String, Object>> compareWithDefaultNetwork(List<ReleaseNode> dependencyNetwork, User sw360User) {
-        ComponentService.Iface releaseClient = new ThriftClients().makeComponentClient();
+        ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
         List<Map<String, Object>> comparedNetwork = new ArrayList<>();
         for (ReleaseNode releaseNode : dependencyNetwork) {
             Map<String, Object> comparedNode = setFlagForNode(releaseNode, false);
@@ -1549,7 +1539,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         Map<String, String> filenameToAttachmentId = attachments.stream()
                 .collect(Collectors.toMap(Attachment::getAttachmentContentId, Attachment::getFilename));
 
-        ThriftClients thriftClients = new ThriftClients();
         AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 
         for (String attachmentContentId : filenameToAttachmentId.keySet()) {
@@ -1603,7 +1592,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public List<LicenseInfoParsingResult> processLicenseInfoWithObligations(
             List<LicenseInfoParsingResult> licenseInfoWithObligations, Map<String, String> releaseIdToAcceptedCLI,
             List<Release> releases, User user) throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
 
         for (Release release : releases) {
@@ -1685,8 +1673,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public ProjectLink serveLinkedResourcesOfProjectInDependencyNetwork(String projectId, boolean transitive, User sw360User) throws TException {
         Project project = getProjectForUserById(projectId, sw360User);
         final Collection<ProjectLink> linkedProjects = (!transitive)
-                ? SW360Utils.getLinkedProjectsAsFlatList(project, false, new ThriftClients(), log, sw360User)
-                : SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, false, new ThriftClients(), log, sw360User);
+                ? SW360Utils.getLinkedProjectsAsFlatList(project, false, thriftClients, log, sw360User)
+                : SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, false, thriftClients, log, sw360User);
         if (linkedProjects.isEmpty()) {
             throw new AccessDeniedException(
                     "Project or its Linked Projects are restricted and / or not accessible");
@@ -1716,8 +1704,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         ProjectService.Iface projectClient = getThriftProjectClient();
-        LicenseInfoService.Iface licenseInfoClient = new ThriftClients().makeLicenseInfoClient();
-        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+        LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
         Project project;
 
@@ -1943,7 +1931,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public int getProjectCountByPackageId(String packageId) throws TException {
-        ThriftClients thriftClients = new ThriftClients();
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         int count;
         try {

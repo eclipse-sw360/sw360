@@ -28,22 +28,21 @@ import static org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper.th
 @RequiredArgsConstructor
 public class Sw360ScheduleService {
     private static final Logger log = LogManager.getLogger(Sw360ScheduleService.class);
+    // injected bean — replaces per-call new ThriftClients() construction (see #3849 for pattern)
+    private final ThriftClients thriftClients;
 
     private RequestSummary scheduleService(User sw360User, String serviceName) throws TException {
         throwIfNotAdmin(sw360User);
-        ThriftClients thriftClients = new ThriftClients();
         return thriftClients.makeScheduleClient().scheduleService(serviceName);
     }
 
     private RequestStatus unscheduleService(User sw360User, String serviceName) throws TException {
         throwIfNotAdmin(sw360User);
-        ThriftClients thriftClients = new ThriftClients();
         return thriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
     }
 
     public RequestStatus cancelAllServices(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
-        ThriftClients thriftClients = new ThriftClients();
         return thriftClients.makeScheduleClient().unscheduleAllServices(sw360User);
     }
 
@@ -64,13 +63,12 @@ public class Sw360ScheduleService {
     }
 
     public RequestStatus cancelAttachmentDeletionLocalFS(User sw360User) throws TException {
-        return new ThriftClients().makeAttachmentClient().deleteOldAttachmentFromFileSystem();
+        return thriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem();
     }
 
     public RequestStatus triggerCveSearch(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         try {
-            ThriftClients thriftClients = new ThriftClients();
             return thriftClients.makeCvesearchClient().update();
         } catch (TException e) {
             log.error("Error occurred while triggering CVE search: " + e.getMessage(), e);
@@ -84,67 +82,67 @@ public class Sw360ScheduleService {
     public RequestSummary svmSync(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SVMSYNC_SERVICE;
-        return new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+        return thriftClients.makeScheduleClient().scheduleService(serviceName);
     }
 
     public RequestStatus cancelSvmSync(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SVMSYNC_SERVICE;
-        return new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+        return thriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
     }
 
     public RequestSummary scheduleSvmReverseMatch(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SVMMATCH_SERVICE;
-        return new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+        return thriftClients.makeScheduleClient().scheduleService(serviceName);
     }
 
     public RequestStatus cancelSvmReverseMatch(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SVMMATCH_SERVICE;
-        return new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+        return thriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
     }
 
     public RequestSummary svmReleaseTrackingFeedback(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE;
-        return new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+        return thriftClients.makeScheduleClient().scheduleService(serviceName);
     }
 
     public RequestSummary svmMonitoringListUpdate(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SVM_LIST_UPDATE_SERVICE;
-        return new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+        return thriftClients.makeScheduleClient().scheduleService(serviceName);
     }
 
     public RequestStatus cancelSvmMonitoringListUpdate(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SVM_LIST_UPDATE_SERVICE;
-        return new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+        return thriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
     }
 
     public RequestSummary triggerSrcUpload(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SRC_UPLOAD_SERVICE;
-        return new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+        return thriftClients.makeScheduleClient().scheduleService(serviceName);
     }
 
     public RequestStatus unscheduleSrcUpload(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         String serviceName = ThriftClients.SRC_UPLOAD_SERVICE;
-        return new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+        return thriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
     }
 
     public RequestStatus triggerSourceUploadForReleaseComponents(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
-        return new ThriftClients().makeComponentClient()
+        return thriftClients.makeComponentClient()
                 .uploadSourceCodeAttachmentToReleases();
     }
 
     public RequestStatus isServiceScheduled(String serviceName, User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         try {
-            boolean requestStatusWithBoolean = new ThriftClients()
+            boolean requestStatusWithBoolean = thriftClients
                     .makeScheduleClient()
                     .isServiceScheduled(serviceName, sw360User)
                     .isAnswerPositive();
@@ -159,7 +157,7 @@ public class Sw360ScheduleService {
     public RequestStatus isAnyServiceScheduled(User sw360User) throws TException {
         throwIfNotAdmin(sw360User);
         try {
-            boolean requestStatusWithBoolean = new ThriftClients()
+            boolean requestStatusWithBoolean = thriftClients
                     .makeScheduleClient()
                     .isAnyServiceScheduled(sw360User)
                     .isAnswerPositive();

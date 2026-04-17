@@ -33,22 +33,11 @@ public class Sw360AttachmentCleanUpService {
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
-    ComponentService.Iface componentClient;
-    AttachmentService.Iface attachmentClient;
-
-    private ComponentService.Iface getThriftComponentClient() {
-        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
-        return componentClient;
-    }
-
-    private AttachmentService.Iface getThriftAttachmentClient() {
-        AttachmentService.Iface attachmentClient = new ThriftClients().makeAttachmentClient();
-        return attachmentClient;
-    }
+    private final ThriftClients thriftClients;
 
     public RequestSummary cleanUpAttachments(User sw360User) throws TException {
-        componentClient = getThriftComponentClient();
-        attachmentClient = getThriftAttachmentClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
         final Set<String> usedAttachmentIds = componentClient.getUsedAttachmentContentIds();
         return attachmentClient.vacuumAttachmentDB(sw360User, usedAttachmentIds);
     }
