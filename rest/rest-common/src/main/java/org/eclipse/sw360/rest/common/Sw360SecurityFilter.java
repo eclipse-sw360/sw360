@@ -55,10 +55,10 @@ public class Sw360SecurityFilter implements Filter {
         String path = request.getRequestURI();
         if (path != null && (path.contains("/swagger-ui") || path.contains("/v3/api-docs"))) {
             // Relaxed CSP for Swagger UI to function
-            response.setHeader("Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'none'; script-src 'self'; require-trusted-types-for 'script'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';");
+            response.setHeader("Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'; upgrade-insecure-requests;");
         } else {
             // Strict CSP for API responses
-            response.setHeader("Content-Security-Policy", "default-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';");
+            response.setHeader("Content-Security-Policy", "default-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; upgrade-insecure-requests;");
         }
     }
 }
