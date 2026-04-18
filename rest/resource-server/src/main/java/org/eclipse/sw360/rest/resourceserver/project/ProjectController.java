@@ -187,6 +187,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private static final Logger log = LogManager.getLogger(ProjectController.class);
     private static final Gson GSON = new Gson();
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
+    private static final Comparator<String> PROJECT_GROUP_COMPARATOR =
+            String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.EXTERNAL_URLS, "externalUrls")
             .put(Project._Fields.MODERATORS, "sw360:moderators")
@@ -4523,6 +4525,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (TException e) {
             groups = Collections.emptySet();
         }
-        return groups;
+        return groups.stream()
+                .sorted(PROJECT_GROUP_COMPARATOR)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

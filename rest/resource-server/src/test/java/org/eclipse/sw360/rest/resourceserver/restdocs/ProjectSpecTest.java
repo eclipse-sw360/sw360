@@ -1316,6 +1316,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_return_project_groups_sorted() throws Exception {
+        given(this.projectServiceMock.getGroups()).willReturn(new HashSet<>(Arrays.asList("Zeta", "alpha", "Beta")));
+
+        mockMvc.perform(get("/api/projects/groups")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", Matchers.contains("alpha", "Beta", "Zeta")))
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("[]").description("Sorted project groups")
+                        )));
+    }
+
+    @Test
     public void should_document_get_projects_by_tag() throws Exception {
         mockMvc.perform(get("/api/projects")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
