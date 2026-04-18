@@ -144,7 +144,11 @@ public class Sw360LicenseService {
                 license.setObligations(obligations);
             }
         }
-        return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+        RequestStatus status = sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+        if (status == RequestStatus.FAILURE) {
+            throw new BadRequestClientException("License update failed with status: " + status);
+        }
+        return status;
     }
 
     public Set<String> getIdObligationsContainWhitelist(User sw360User, String licenseId, Set<String> diffIds) throws TException {
@@ -220,7 +224,8 @@ public class Sw360LicenseService {
         }
     }
 
-    private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
+    // visible for testing
+    LicenseService.Iface getThriftLicenseClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new LicenseService.Client(protocol);
