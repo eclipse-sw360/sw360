@@ -43,30 +43,46 @@ public abstract class Sw360CORSFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        if (allowedOrigin != null && !allowedOrigin.isBlank()) {
-            HttpServletRequest httpServletRequest = (HttpServletRequest)servletRequest;
-            HttpServletResponse httpServletResponse = (HttpServletResponse)servletResponse;
-            setCORSHeader(httpServletResponse);
-            if(httpServletRequest.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
-                httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-                return;
-            } else {
-                filterChain.doFilter(servletRequest, servletResponse);
+        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+        HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
+
+        if (isCorsEnabled()) {
+            String origin = httpServletRequest.getHeader(HttpHeaders.ORIGIN);
+            boolean isValidOrigin = false;
+
+            if ("*".equals(allowedOrigin.trim())) {
+                isValidOrigin = true;
+                httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            } else if (origin != null) {
+                String[] origins = allowedOrigin.split(",");
+                for (String o : origins) {
+                    if (o.trim().equalsIgnoreCase(origin)) {
+                        isValidOrigin = true;
+                        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                        break;
+                    }
+                }
             }
-        } else {
-            filterChain.doFilter(servletRequest, servletResponse);
+
+            if (isValidOrigin) {
+                httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, ALLOWED_HTTP_METHODS);
+                httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, accessControlMaxAge);
+                httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ALLOWED_HTTP_HEADERS);
+                httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, accessControlAllowCredentials);
+
+                if (httpServletRequest.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
+                    httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+                    return;
+                }
+            }
         }
+
+        filterChain.doFilter(servletRequest, servletResponse);
     }
 
-    @Override
-    public void destroy() {}
-
-    private void setCORSHeader(HttpServletResponse httpServletResponse) {
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, ALLOWED_HTTP_METHODS);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, accessControlMaxAge);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ALLOWED_HTTP_HEADERS);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, accessControlAllowCredentials);
+    private boolean isCorsEnabled() {
+        return allowedOrigin != null && !allowedOrigin.isBlank()
+                && !"#{null}".equals(allowedOrigin) && !"null".equalsIgnoreCase(allowedOrigin.trim());
     }
 
     private static String allowedHttpMethods() {

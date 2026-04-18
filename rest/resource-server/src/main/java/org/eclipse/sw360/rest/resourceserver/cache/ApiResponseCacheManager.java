@@ -58,9 +58,9 @@ public class ApiResponseCacheManager {
     private boolean globalCacheEnabled;
     private String cacheDirectory;
 
-    public ApiResponseCacheManager(ObjectMapper objectMapper) {
-        objectMapper.findAndRegisterModules();
-        this.objectMapper = objectMapper;
+    public ApiResponseCacheManager() {
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.findAndRegisterModules();
     }
 
     private void ensureInitialized() {

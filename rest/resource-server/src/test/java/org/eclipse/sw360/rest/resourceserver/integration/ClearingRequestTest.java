@@ -26,7 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -324,7 +324,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_reject_agreed_date_update_for_non_admin() throws IOException, TException {
+    public void should_forbid_agreed_date_update_for_non_admin() throws IOException, TException {
         // Non-admin user
         User nonAdmin = new User();
         nonAdmin.setEmail("user@sw360.org");
@@ -346,7 +346,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
                 String.class
         );
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     @Test
@@ -371,7 +371,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_wrap_access_denied_from_service_as_bad_request() throws IOException, TException {
+    public void should_return_forbidden_when_service_returns_access_denied() throws IOException, TException {
         given(clearingServiceMock.getClearingRequestById(anyString(), any())).willReturn(cr);
         given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
         given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.thrift.projects.Project.class), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
@@ -390,7 +390,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
                 String.class
         );
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     @Test

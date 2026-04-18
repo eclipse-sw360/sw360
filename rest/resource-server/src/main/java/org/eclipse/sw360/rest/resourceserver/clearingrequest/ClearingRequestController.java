@@ -377,7 +377,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                     schema = @Schema(implementation = ClearingRequest.class))
             @RequestBody Map<String, Object> reqBodyMap,
             HttpServletRequest request
-    ) {
+    ) throws SW360Exception {
         try{
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -444,8 +444,14 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             }
 
             return new ResponseEntity<>(halClearingRequest, HttpStatus.OK);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             throw new BadRequestClientException(e.getMessage(), e);
+        } catch (ResourceNotFoundException e) {
+            throw new ResourceNotFoundException("Clearing request not found.");
+        } catch (SW360Exception e) {
+            throw e;
+        } catch (TException e) {
+            throw new SW360Exception("An error occurred while processing the request.");
         }
     }
 

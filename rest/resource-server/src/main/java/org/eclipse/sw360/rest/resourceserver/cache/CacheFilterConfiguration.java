@@ -10,7 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.cache;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +39,7 @@ public class CacheFilterConfiguration {
 
         FilterRegistrationBean<CacheReadFilter> registration = new FilterRegistrationBean<>(filter);
         // Run after Spring Security filter chain (DEFAULT_FILTER_ORDER = -100)
-        registration.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER + 1);
+        registration.setOrder(SecurityFilterProperties.DEFAULT_FILTER_ORDER + 1);
         // URL filtering is handled by CacheReadFilter.shouldNotFilter() method
         registration.setName("cacheReadFilter");
 

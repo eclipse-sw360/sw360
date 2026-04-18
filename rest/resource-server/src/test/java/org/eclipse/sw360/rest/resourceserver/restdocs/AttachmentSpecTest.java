@@ -29,7 +29,6 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
@@ -177,7 +176,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_create_attachment() throws Exception {
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/attachments")
+        var builder = MockMvcRequestBuilders.multipart("/api/attachments")
                 .file("files", "@/bom.spdx.rdf".getBytes())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));

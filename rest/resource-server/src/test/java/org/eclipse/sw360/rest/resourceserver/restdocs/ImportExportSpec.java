@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import jakarta.servlet.ServletException;
@@ -77,7 +76,7 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
     public void should_document_upload_component_file() throws Exception {
         MockMultipartFile file = new MockMultipartFile("componentFile","file=@/bom.spdx.rdf".getBytes());
         String accessToken = TestHelper.generateAuthHeader(testUserId, testUserPassword);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/importExport/uploadComponent")
+        var builder = MockMvcRequestBuilders.multipart("/api/importExport/uploadComponent")
                 .file(file)
                 .header("Authorization", accessToken)
                 .queryParam("componentFile", "Must need to attach file.");
@@ -88,7 +87,7 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
     public void should_document_upload_release_link_file() throws Exception {
         MockMultipartFile file = new MockMultipartFile("releaseFile","file=@/bom.spdx.rdf".getBytes());
         String accessToken = TestHelper.generateAuthHeader(testUserId, testUserPassword);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/importExport/uploadRelease")
+        var builder = MockMvcRequestBuilders.multipart("/api/importExport/uploadRelease")
                 .file(file)
                 .header("Authorization", accessToken)
                 .queryParam("releaseFile", "Must need to attach file.");
@@ -99,7 +98,7 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
     public void should_document_upload_component_attachment_file() throws Exception {
         MockMultipartFile file = new MockMultipartFile("attachmentFile","file=@/bom.spdx.rdf".getBytes());
         String accessToken = TestHelper.generateAuthHeader(testUserId, testUserPassword);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/importExport/componentAttachment")
+        var builder = MockMvcRequestBuilders.multipart("/api/importExport/componentAttachment")
                 .file(file)
                 .header("Authorization", accessToken)
                 .queryParam("attachmentFile", "Must need to attach file.");

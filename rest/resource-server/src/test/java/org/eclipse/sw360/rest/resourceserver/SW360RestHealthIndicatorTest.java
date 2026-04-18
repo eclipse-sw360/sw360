@@ -22,10 +22,9 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
@@ -63,8 +62,6 @@ public class SW360RestHealthIndicatorTest {
     @MockitoBean
     private Sw360UserService userServiceMock;
 
-    @Autowired
-    private TestRestTemplate testRestTemplate;
 
     private static final String IS_DB_REACHABLE = "isDbReachable";
     private static final String IS_THRIFT_REACHABLE = "isThriftReachable";
@@ -85,7 +82,7 @@ public class SW360RestHealthIndicatorTest {
      * @return response of request
      */
     private ResponseEntity<Map> getMapResponseEntityForHealthEndpointRequest(String endpoint) {
-        return this.testRestTemplate.getForEntity(
+        return new TestRestTemplate().getForEntity(
                 "http://localhost:" + this.port + Sw360ResourceServer.REST_BASE_PATH + endpoint, Map.class);
     }
 
