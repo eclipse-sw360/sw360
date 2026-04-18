@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3InstantSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonInstantSerializer;
 import org.apache.thrift.TException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -115,6 +116,7 @@ public class RestExceptionHandler {
     public static class ErrorMessage {
 
         @JsonSerialize(using = JsonInstantSerializer.class)
+        @tools.jackson.databind.annotation.JsonSerialize(using = Json3InstantSerializer.class)
         private Instant timestamp = Instant.now();
         private final int status;
         private final String error;

@@ -65,6 +65,8 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.common.XssPreventionModule;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentMergeSelector;
+import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ProjectRelationSerializer;
+import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
@@ -406,11 +408,13 @@ public class JacksonCustomizations {
 
             @Override
             @JsonSerialize(using = JsonProjectRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = Json3ProjectRelationSerializer.class)
             @JsonProperty("linkedProjects")
             abstract public Map<String, ProjectProjectRelationship> getLinkedProjects();
 
             @Override
             @JsonSerialize(using = JsonReleaseRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = Json3ReleaseRelationSerializer.class)
             @JsonProperty("linkedReleases")
             abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();
 
@@ -2825,6 +2829,7 @@ public class JacksonCustomizations {
 
             @Override
             @JsonSerialize(using = JsonProjectRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = Json3ProjectRelationSerializer.class)
             @JsonProperty("linkedProjects")
             public abstract Map<String, ProjectProjectRelationship> getLinkedProjects();
 
