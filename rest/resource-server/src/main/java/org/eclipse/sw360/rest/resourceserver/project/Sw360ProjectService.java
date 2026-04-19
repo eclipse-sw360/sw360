@@ -2100,6 +2100,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                      usagesToUpdate.size(), projectId);
             makeAttachmentUsages(usagesToUpdate);
 
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to process ignored licenses for project {}: {}", projectId, e.getMessage(), e);
             throw new TException("Failed to process ignored licenses", e);
@@ -2220,16 +2226,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             String parentProjectId = projectHierarchy[i];
             String childProjectId = projectHierarchy[i + 1];
 
-            // Get parent project
-            Project parentProject;
-            try {
-                parentProject = getProjectForUserById(parentProjectId, user);
-            } catch (Exception e) {
-                throw new BadRequestClientException(String.format(
-                    "Invalid project hierarchy in ignoredLicenses key '%s': " +
-                    "Parent project '%s' not found or not accessible",
-                    originalKey, parentProjectId));
-            }
+            // Get parent project (getProjectForUserById maps SW360 404/403 to ResourceNotFoundException / AccessDeniedException)
+            Project parentProject = getProjectForUserById(parentProjectId, user);
 
             // Check if child project exists in parent's linked projects
             Map<String, ProjectProjectRelationship> linkedProjects = parentProject.getLinkedProjects();
@@ -2255,26 +2253,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     private void validateReleaseOwnership(String releaseId, String projectId, String originalKey, User user)
             throws TException {
-        // Get the project
-        Project project;
-        try {
-            project = getProjectForUserById(projectId, user);
-        } catch (Exception e) {
-            throw new BadRequestClientException(String.format(
-                "Invalid project in ignoredLicenses key '%s': Project '%s' not found or not accessible",
-                originalKey, projectId));
-        }
+        // Validate project access (getProjectForUserById maps SW360 404/403 to ResourceNotFoundException / AccessDeniedException)
+        getProjectForUserById(projectId, user);
 
         // Get all release IDs for this project including sub-projects (transitive=true)
-        Set<String> allReleaseIds;
-        try {
-            allReleaseIds = getReleaseIds(projectId, user, true);
-        } catch (TException e) {
-            log.error("Failed to fetch release IDs for project {}: {}", projectId, e.getMessage());
-            throw new BadRequestClientException(String.format(
-                "Failed to validate release ownership in ignoredLicenses key '%s': Unable to fetch releases for project '%s'",
-                originalKey, projectId));
-        }
+        Set<String> allReleaseIds = getReleaseIds(projectId, user, true);
 
         // Check if release exists in project or any of its sub-projects
         if (!allReleaseIds.contains(releaseId)) {

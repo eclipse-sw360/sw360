@@ -416,7 +416,8 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error status", responseBody.contains("404"));
+        assertTrue("Response should contain server error status for unexpected failure",
+                responseBody.contains("500"));
     }
 
     @Test

@@ -75,6 +75,9 @@ public class Sw360ScheduleService {
         } catch (TException e) {
             log.error("Error occurred while triggering CVE search: " + e.getMessage(), e);
             throw e;
+        } catch (RuntimeException e) {
+            log.error("Error occurred while triggering CVE search: " + e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error occurred while triggering CVE search: " + e.getMessage(), e);
             throw new TException("Unexpected error", e);

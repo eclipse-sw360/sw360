@@ -2073,6 +2073,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 attachment = attachmentService.uploadAttachment(file, attachment, sw360User);
                 uploadedAttachments.add(attachment);
                 project.addToAttachments(attachment);
+            } catch (ResourceNotFoundException e) {
+                throw e;
+            } catch (AccessDeniedException e) {
+                throw e;
             } catch (Exception e) {
                 log.error("Failed to upload attachment: {}", filename, e);
                 throw new SW360Exception("Failed to upload attachment: " + filename);
@@ -2109,6 +2113,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
             return ResponseEntity.ok(halResource);
 
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
+        } catch (DataIntegrityViolationException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error updating project attachments", e);
             throw new SW360Exception("Error updating project attachments");
@@ -4024,6 +4036,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getProjectResponsible())) {
                 restControllerHelper.addEmbeddedProjectResponsible(userHalResource,sw360Project.getProjectResponsible());
             }
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
