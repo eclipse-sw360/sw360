@@ -2930,33 +2930,35 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource<Project> createHalProject(Project sw360Project, User sw360User) throws TException {
         HalResource<Project> halProject = new HalResource<>(sw360Project);
-        User projectCreator = restControllerHelper.getUserByEmail(sw360Project.getCreatedBy());
-        restControllerHelper.addEmbeddedUser(halProject, projectCreator, CREATED_BY);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getCreatedBy())) {
+            User projectCreator = restControllerHelper.getUserByEmail(sw360Project.getCreatedBy());
+            restControllerHelper.addEmbeddedUser(halProject, projectCreator, CREATED_BY);
+        }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
-        if (releaseIdToUsage != null) {
+        if (!CommonUtils.isNullOrEmptyMap(releaseIdToUsage)) {
             restControllerHelper.addEmbeddedReleases(halProject, releaseIdToUsage.keySet(), releaseService, sw360User);
         }
 
         Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
-        if (linkedProjects != null) {
+        if (!CommonUtils.isNullOrEmptyMap(linkedProjects)) {
             restControllerHelper.addEmbeddedProject(halProject, linkedProjects.keySet(), projectService, sw360User);
         }
 
-        if (sw360Project.getModerators() != null) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getModerators())) {
             Set<String> moderators = sw360Project.getModerators();
             restControllerHelper.addEmbeddedModerators(halProject, moderators);
         }
 
-        if (sw360Project.getAttachments() != null) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getAttachments())) {
             restControllerHelper.addEmbeddedAttachments(halProject, sw360Project.getAttachments());
         }
 
-        if(sw360Project.getLeadArchitect() != null) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLeadArchitect())) {
             restControllerHelper.addEmbeddedLeadArchitect(halProject, sw360Project.getLeadArchitect());
         }
 
-        if (sw360Project.getContributors() != null) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getContributors())) {
             Set<String> contributors = sw360Project.getContributors();
             restControllerHelper.addEmbeddedContributors(halProject, contributors);
         }
@@ -2968,7 +2970,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             sw360Project.setVendor(null);
         }
 
-        if (sw360Project.getPackageIdsSize() > 0) {
+        if (!CommonUtils.isNullOrEmptyMap(sw360Project.getPackageIds())) {
             restControllerHelper.addEmbeddedPackages(halProject, sw360Project.getPackageIds().keySet(), packageService);
         }
 
@@ -4013,26 +4015,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private void setAdditionalFieldsToHalResource(Project sw360Project, HalResource<Project> userHalResource) throws SW360Exception {
         try {
             String modifiedByEmail = sw360Project.getModifiedBy();
-            if (modifiedByEmail != null) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(modifiedByEmail)) {
                 User projectModifier = restControllerHelper.getUserByEmail(modifiedByEmail);
                 if (projectModifier != null) {
                     restControllerHelper.addEmbeddedUser(userHalResource, projectModifier, "modifiedBy");
                 }
             }
             String projectOwnerEmail = sw360Project.getProjectOwner();
-            if (projectOwnerEmail != null) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(projectOwnerEmail)) {
                 User projectOwner = restControllerHelper.getUserByEmail(sw360Project.getProjectOwner());
                 if (projectOwner != null) {
                     restControllerHelper.addEmbeddedUser(userHalResource, projectOwner, "projectOwner");
                 }
             }
-            if (sw360Project.getSecurityResponsibles() == null || sw360Project.getSecurityResponsibles().isEmpty()) {
-                sw360Project.setSecurityResponsibles(new HashSet<String>(){{add("");}});
+            if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getSecurityResponsibles())) {
+                Set<String> securityResponsibles = sw360Project.getSecurityResponsibles();
+                restControllerHelper.addEmbeddedSecurityResponsibles(userHalResource, securityResponsibles);
             }
-            Set<String> securityResponsibles = sw360Project.getSecurityResponsibles();
-            restControllerHelper.addEmbeddedSecurityResponsibles(userHalResource, securityResponsibles);
 
-            if (sw360Project.getProjectResponsible() != null) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getProjectResponsible())) {
                 restControllerHelper.addEmbeddedProjectResponsible(userHalResource,sw360Project.getProjectResponsible());
             }
         } catch (ResourceNotFoundException e) {
@@ -4061,28 +4062,30 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         projectDTO.setDependencyNetwork(dependencyNetwork);
         HalResource<ProjectDTO> halProject = new HalResource<>(projectDTO);
 
-        User projectCreator = restControllerHelper.getUserByEmail(projectDTO.getCreatedBy());
-        restControllerHelper.addEmbeddedUser(halProject, projectCreator, CREATED_BY);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectDTO.getCreatedBy())) {
+            User projectCreator = restControllerHelper.getUserByEmail(projectDTO.getCreatedBy());
+            restControllerHelper.addEmbeddedUser(halProject, projectCreator, CREATED_BY);
+        }
 
         Map<String, ProjectProjectRelationship> linkedProjects = projectDTO.getLinkedProjects();
-        if (linkedProjects != null) {
+        if (!CommonUtils.isNullOrEmptyMap(linkedProjects)) {
             restControllerHelper.addEmbeddedProjectDTO(halProject, linkedProjects.keySet(), projectService, sw360User);
         }
 
-        if (projectDTO.getModerators() != null) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getModerators())) {
             Set<String> moderators = projectDTO.getModerators();
             restControllerHelper.addEmbeddedModerators(halProject, moderators);
         }
 
-        if (projectDTO.getAttachments() != null) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getAttachments())) {
             restControllerHelper.addEmbeddedAttachments(halProject, projectDTO.getAttachments());
         }
 
-        if(projectDTO.getLeadArchitect() != null) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectDTO.getLeadArchitect())) {
             restControllerHelper.addEmbeddedLeadArchitect(halProject, projectDTO.getLeadArchitect());
         }
 
-        if (projectDTO.getContributors() != null) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getContributors())) {
             Set<String> contributors = projectDTO.getContributors();
             restControllerHelper.addEmbeddedContributors(halProject, contributors);
         }

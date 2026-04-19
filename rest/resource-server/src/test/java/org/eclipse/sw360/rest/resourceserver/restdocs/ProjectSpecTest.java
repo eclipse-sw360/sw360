@@ -1527,6 +1527,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded['sw360:projects'][0].linkedReleases").isArray())
+                .andExpect(jsonPath("$._embedded['sw360:projects'][0].linkedProjects").isArray())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("page").description("Page of projects"),
