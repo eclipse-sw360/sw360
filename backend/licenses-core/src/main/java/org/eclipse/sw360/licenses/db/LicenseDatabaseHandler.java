@@ -26,12 +26,12 @@ import org.eclipse.sw360.datahandler.entitlement.LicenseModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import org.eclipse.sw360.licenses.tools.LicenseDBConnector;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
 import org.eclipse.sw360.exporter.LicenseExporter;
 import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
@@ -1033,6 +1033,30 @@ public class LicenseDatabaseHandler {
     }
 
     public RequestSummary importAllSpdxLicenses(User user) {
+
+        // If LicenseDB is configured as import source, fetch licenses from LicenseDB
+        // instead of importing directly from SPDX. Relates to issue #3840.
+        String importSource = SW360Utils.readConfig("licensedb.import.source", "xml");
+        if ("licensedb".equalsIgnoreCase(importSource)) {
+            log.info("LicenseDB configured as import source, fetching licenses from LicenseDB.");
+            LicenseDBConnector connector = new LicenseDBConnector();
+            List<License> licenses = connector.fetchAllLicenses();
+            try {
+                addOrOverwriteLicenses(licenses, user, false);
+                return new RequestSummary()
+                        .setTotalElements(licenses.size())
+                        .setTotalAffectedElements(licenses.size())
+                        .setMessage("Licenses imported from LicenseDB.")
+                        .setRequestStatus(RequestStatus.SUCCESS);
+            } catch (SW360Exception e) {
+                log.error("Failed to import licenses from LicenseDB", e);
+                return new RequestSummary()
+                        .setTotalAffectedElements(0)
+                        .setMessage("Failed to import licenses from LicenseDB: " + e.getMessage())
+                        .setRequestStatus(RequestStatus.FAILURE);
+            }
+        }
+
         RequestSummary requestSummary = new RequestSummary()
                 .setTotalAffectedElements(0)
                 .setMessage("");
@@ -1091,6 +1115,29 @@ public class LicenseDatabaseHandler {
     }
 
     public RequestSummary importAllOSADLLicenses(User user) {
+        // If LicenseDB is configured as the import source, skip direct OSADL
+        // Relates to issue #3840.
+        String importSource = SW360Utils.readConfig("licensedb.import.source", "xml");
+        if ("licensedb".equalsIgnoreCase(importSource)) {
+            log.info("LicenseDB configured as import source, fetching obligations from LicenseDB.");
+            LicenseDBConnector connector = new LicenseDBConnector();
+            List<Obligation> obligations = connector.fetchAllObligations();
+            try {
+                addListOfObligations(obligations, user);
+                return new RequestSummary()
+                        .setTotalElements(obligations.size())
+                        .setTotalAffectedElements(obligations.size())
+                        .setMessage("Obligations imported from LicenseDB.")
+                        .setRequestStatus(RequestStatus.SUCCESS);
+            } catch (Exception e) {
+                log.error("Failed to import obligations from LicenseDB", e);
+                return new RequestSummary()
+                        .setTotalAffectedElements(0)
+                        .setMessage("Failed to import obligations from LicenseDB: " + e.getMessage())
+                        .setRequestStatus(RequestStatus.FAILURE);
+            }
+        }
+
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
         Timestamp ts = Timestamp.from(Instant.now());
         long currentTime = ts.getTime();
