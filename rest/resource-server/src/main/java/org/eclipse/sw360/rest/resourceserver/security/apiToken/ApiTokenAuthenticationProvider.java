@@ -92,7 +92,10 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         } else {
             String tokenHash = BCrypt.hashpw(tokenFromAuthentication, API_TOKEN_HASH_SALT);
             User sw360User = getUserFromTokenHash(tokenHash);
-            if (sw360User == null || sw360User.isDeactivated()) {
+            if (sw360User == null) {
+                throw new BadCredentialsException("User does not exist or invalid credentials");
+            }
+            if (sw360User.isDeactivated()) {
                 throw new DisabledException("User is deactivated");
             }
             Optional<RestApiToken> restApiToken = getApiTokenFromUser(tokenHash, sw360User);
