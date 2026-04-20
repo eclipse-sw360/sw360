@@ -3170,6 +3170,56 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            description = "Get project detail tab pill counts.",
+            tags = {"Projects"}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project detail tab pill counts successfully retrieved",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectDetailTabCounts.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
+    @GetMapping(value = PROJECTS_URL + "/{id}/tabCounts")
+    public ResponseEntity<ProjectDetailTabCounts> getProjectDetailTabCounts(
+            @Parameter(description = "Project ID", example = "376521")
+            @PathVariable("id") String id
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
+        int vulnerabilityCount;
+        int vulnerabilityRatedCount;
+        if (!sw360Project.isEnableVulnerabilitiesDisplay()) {
+            vulnerabilityCount = -1;
+            vulnerabilityRatedCount = -1;
+        } else {
+            List<VulnerabilityDTO> vulnerabilities = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
+            vulnerabilityCount = vulnerabilities == null ? 0 : vulnerabilities.size();
+            vulnerabilityRatedCount = vulnerabilities == null ? 0
+                : (int) vulnerabilities.stream()
+                .filter(vulnerability -> !isNullEmptyOrWhitespace(vulnerability.getProjectRelevance())
+                        && !"NOT_CHECKED".equalsIgnoreCase(vulnerability.getProjectRelevance()))
+                .count();
+        }
+        int obligationCount = 0;
+        int obligationNonOpenCount = 0;
+        if (!isNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
+            ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            if (obligationList != null) {
+                obligationCount = obligationList.getLinkedObligationStatusSize();
+                obligationNonOpenCount = (int) obligationList.getLinkedObligationStatus().values().stream()
+                        .filter(statusInfo -> statusInfo != null && statusInfo.getStatus() != null
+                                && !ObligationStatus.OPEN.equals(statusInfo.getStatus()))
+                        .count();
+            }
+        }
+
+        return new ResponseEntity<>(new ProjectDetailTabCounts(vulnerabilityCount, vulnerabilityRatedCount,
+                obligationCount, obligationNonOpenCount), HttpStatus.OK);
+    }
+
+    @Operation(
             description = "Get license clearing info for a project.",
             tags = {"Projects"}
     )
