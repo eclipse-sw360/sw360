@@ -16,11 +16,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
@@ -29,7 +31,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.common.collect.ImmutableSet;
 
 /**
  * Class for accessing the CouchDB database for Change logs objects
@@ -39,13 +40,6 @@ import com.google.common.collect.ImmutableSet;
 public class ChangeLogsDatabaseHandler {
     private final DatabaseConnectorCloudant db;
     private final ChangeLogsRepository changeLogsRepository;
-    private static final ImmutableSet<String> setOfIgnoredFieldValues = ImmutableSet.<String>builder()
-            .add("\"\"")
-            .add("[]")
-            .add("{}").build();
-    private static final ImmutableSet<String> setOfIgnoredFieldNames = ImmutableSet.<String>builder()
-            .add("revision")
-            .add("documentState").build();
 
     public ChangeLogsDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(client, dbName);
@@ -62,10 +56,22 @@ public class ChangeLogsDatabaseHandler {
         return changeLogsByDocId;
     }
 
+    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(User user, String docId, PaginationData pageData) {
+        Map<PaginationData, List<ChangeLogs>> result = changeLogsRepository.getChangeLogsByDocumentIdPaginated(docId, pageData);
+
+        Map.Entry<PaginationData, List<ChangeLogs>> entry = result.entrySet().iterator().next();
+        List<ChangeLogs> filteredLogs = entry.getValue().stream()
+                .filter(Objects::nonNull)
+                .filter(this::isNotEmptyChangeLog)
+                .toList();
+
+        return Collections.singletonMap(entry.getKey(), filteredLogs);
+    }
+
     public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
         ChangeLogs changeLogs = changeLogsRepository.get(id);
         assertNotNull(changeLogs);
-        removeNullToEmtpyChanges(changeLogs);
+        removeNullToEmptyChanges(changeLogs);
         changeLogs.setChangeTimestamp(changeLogs.changeTimestamp.split(" ")[0]);
         return changeLogs;
     }
@@ -81,17 +87,17 @@ public class ChangeLogsDatabaseHandler {
         }
     }
 
-    private ChangeLogs removeNullToEmtpyChanges(ChangeLogs changeLog) {
+    private ChangeLogs removeNullToEmptyChanges(ChangeLogs changeLog) {
         Set<ChangedFields> changes = changeLog.getChanges();
         if (CommonUtils.isNotEmpty(changes)) {
             Set<ChangedFields> collectFiltered = changes.stream().filter(ch -> {
                 String fieldName = ch.getFieldName();
                 String oldFieldValue = ch.getFieldValueOld();
                 String newFieldValue = ch.getFieldValueNew();
-                if ((fieldName != null && setOfIgnoredFieldNames.contains(fieldName))
+                if ((fieldName != null && ChangeLogsRepository.SET_OF_IGNORED_FIELD_NAMES.contains(fieldName))
                         || (oldFieldValue == null && newFieldValue == null)
-                        || (oldFieldValue == null && setOfIgnoredFieldValues.contains(newFieldValue))
-                        || (newFieldValue == null && setOfIgnoredFieldValues.contains(oldFieldValue))
+                        || (oldFieldValue == null && ChangeLogsRepository.SET_OF_IGNORED_FIELD_VALUES.contains(newFieldValue))
+                        || (newFieldValue == null && ChangeLogsRepository.SET_OF_IGNORED_FIELD_VALUES.contains(oldFieldValue))
                         || (oldFieldValue != null && newFieldValue != null && newFieldValue.equals(oldFieldValue))) {
                     return false;
                 }
@@ -105,6 +111,6 @@ public class ChangeLogsDatabaseHandler {
 
     private boolean isNotEmptyChangeLog(ChangeLogs changeLog) {
         return changeLog.getOperation() == Operation.CREATE
-                || CommonUtils.isNotEmpty(removeNullToEmtpyChanges(changeLog).getChanges());
+                || CommonUtils.isNotEmpty(removeNullToEmptyChanges(changeLog).getChanges());
     }
 }

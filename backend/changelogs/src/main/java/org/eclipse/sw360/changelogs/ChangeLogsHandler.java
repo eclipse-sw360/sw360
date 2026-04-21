@@ -15,9 +15,12 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ChangeLogsDatabaseHandler;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
@@ -54,6 +57,13 @@ public class ChangeLogsHandler implements ChangeLogsService.Iface {
     public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
         assertNotEmpty(id);
         return handler.getChangeLogsById(id);
+    }
+
+    @Override
+    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(User user, String docId, PaginationData pageData) throws SW360Exception, TException {
+        assertNotEmpty(docId);
+        assertUser(user);
+        return handler.getChangeLogsByDocumentIdPaginated(user, docId, pageData);
     }
 
     @Override

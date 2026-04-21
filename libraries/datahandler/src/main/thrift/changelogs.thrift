@@ -17,6 +17,7 @@ namespace php sw360.thrift.changelogs
 typedef users.User User
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.PaginationData PaginationData
 enum Operation {
     CREATE = 0,
     UPDATE = 1,
@@ -74,16 +75,25 @@ struct ChangedFields
     3: optional string fieldValueNew,
 }
 
+enum ChangelogSortColumn {
+    BY_CHANGE_TIMESTAMP = 0,
+}
+
 service ChangeLogsService {
      /**
      * get Change Log by Id
      */
     ChangeLogs getChangeLogsById(1: string changeLogId) throws (1: SW360Exception exp);
-    
+
      /**
      * get all Change Logs associated with Document Id
      */
     list<ChangeLogs> getChangeLogsByDocumentId(1: User user,2: string docId) throws (1: SW360Exception exp);
+
+     /**
+     * get all Change Logs associated with Document Id paginated
+     */
+    map<PaginationData, list<ChangeLogs>> getChangeLogsByDocumentIdPaginated(1: User user,2: string docId,3: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
      * delete all Change Logs associated with Document,
