@@ -132,21 +132,27 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "Role of the users")
             @RequestParam(value = "usergroup", required = false) UserGroup usergroup,
             @Parameter(description = "luceneSearch parameter to filter the users.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "Search term to filter users by first name, last name, or email. Uses full-text Nouveau/Lucene search.")
+            @RequestParam(value = "searchText", required = false) String searchText
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
 
         Map<PaginationData, List<User>> paginatedUsers = null;
-        Map<String, Set<String>> filterMap = getFilterMap(givenname, lastname, email, department,
-                usergroup, luceneSearch);
-        if (luceneSearch) {
-            paginatedUsers = userService.refineSearch(filterMap, pageable);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedUsers = userService.searchUsersByNameOrEmail(searchText.trim(), pageable);
         } else {
-            if (filterMap.isEmpty()) {
-                paginatedUsers = userService.getUsersWithPagination(pageable);
+            Map<String, Set<String>> filterMap = getFilterMap(givenname, lastname, email, department,
+                    usergroup, luceneSearch);
+            if (luceneSearch) {
+                paginatedUsers = userService.refineSearch(filterMap, pageable);
             } else {
-                paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
+                if (filterMap.isEmpty()) {
+                    paginatedUsers = userService.getUsersWithPagination(pageable);
+                } else {
+                    paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
+                }
             }
         }
         PaginationResult<User> paginationResult = null;
@@ -496,7 +502,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             Set<String> values = CommonUtils.splitToSet(email);
             if (luceneSearch) {
                 values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareFuzzyQuery)
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
             }
             filterMap.put(User._Fields.EMAIL.getFieldName(), values);

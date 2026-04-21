@@ -146,6 +146,10 @@ public class UserDatabaseHandler {
     }
 
     public Map<PaginationData, List<User>> search(String text, Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(text)
+                && (subQueryRestrictions == null || subQueryRestrictions.isEmpty())) {
+            return userSearchHandler.searchByNameOrEmail(text, pageData);
+        }
         return userSearchHandler.search(text, subQueryRestrictions, pageData);
     }
 
