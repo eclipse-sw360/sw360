@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
@@ -24,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -38,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -109,7 +112,10 @@ public class ChangeLogTest extends TestIntegrationBase {
         changeLogs.add(changeLog);
         changeLogs.add(changeLog2);
 
-        given(changeLogServiceMock.getChangeLogsByDocumentId(anyString(), any())).willReturn(changeLogs);
+        given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willReturn(Collections.singletonMap(
+                new PaginationData().setRowsPerPage(2).setDisplayStart(0).setTotalRowCount(2),
+                changeLogs
+        ));
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -133,7 +139,10 @@ public class ChangeLogTest extends TestIntegrationBase {
 
     @Test
     public void should_return_empty_change_logs_for_unknown_document() throws IOException, TException {
-        given(changeLogServiceMock.getChangeLogsByDocumentId(anyString(), any())).willReturn(List.of());
+        given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willReturn(Collections.singletonMap(
+                new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0),
+                Collections.<ChangeLogs>emptyList()
+        ));
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -152,7 +161,7 @@ public class ChangeLogTest extends TestIntegrationBase {
 
     @Test
     public void should_handle_service_exception() throws IOException, TException {
-        given(changeLogServiceMock.getChangeLogsByDocumentId(anyString(), any())).willThrow(new TException("thrift error"));
+        given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willThrow(new TException("thrift error"));
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -192,7 +201,10 @@ public class ChangeLogTest extends TestIntegrationBase {
         changeLog.setChanges(changes);
 
         changeLogs.add(changeLog);
-        given(changeLogServiceMock.getChangeLogsByDocumentId(anyString(), any())).willReturn(changeLogs);
+        given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willReturn(Collections.singletonMap(
+                new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0),
+                changeLogs
+        ));
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
