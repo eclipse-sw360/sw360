@@ -177,6 +177,19 @@ public class Sw360UserService {
         return sw360UserClient.searchUsersByExactValues(filterMap, pageData);
     }
 
+    public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            PaginationData pageData = pageableToPaginationData(pageable);
+            return sw360UserClient.refineSearch(searchTerm, Collections.emptyMap(), pageData);
+        } catch (TException e) {
+            if ((e instanceof SW360Exception) && (((SW360Exception) e).getErrorCode() == 400)) {
+                throw new BadRequestClientException("Search parameters cannot be empty.");
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
     public RestApiToken convertToRestApiToken(Map<String, Object> requestBody, User sw360User) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
