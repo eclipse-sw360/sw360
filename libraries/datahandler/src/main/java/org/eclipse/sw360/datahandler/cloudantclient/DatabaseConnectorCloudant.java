@@ -995,6 +995,19 @@ public class DatabaseConnectorCloudant {
     }
 
     /**
+     * Generates a $regex selector for a given field.
+     * The regex is case-insensitive and performs a prefix/contains match.
+     * @param field Field name
+     * @param pattern Regex pattern (e.g. "(?i)test" for case-insensitive match of "test")
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> regex(String field, String pattern) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap("$regex", pattern));
+    }
+
+    /**
      * Generates an $elemMatch selector with and $eq selector for the field and value
      * @param field Field name
      * @param value Value to match

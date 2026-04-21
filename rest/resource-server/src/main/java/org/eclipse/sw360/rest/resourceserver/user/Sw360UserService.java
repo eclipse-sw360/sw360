@@ -177,6 +177,18 @@ public class Sw360UserService {
         return sw360UserClient.searchUsersByExactValues(filterMap, pageData);
     }
 
+    public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360UserClient.refineSearch(searchTerm, Collections.emptyMap(), pageData);
+    }
+
+    public Map<PaginationData, List<User>> searchUsersByNameOrEmailExact(String searchTerm, Pageable pageable) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360UserClient.searchUsersByNameOrEmailExact(searchTerm, pageData);
+    }
+
     public RestApiToken convertToRestApiToken(Map<String, Object> requestBody, User sw360User) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
