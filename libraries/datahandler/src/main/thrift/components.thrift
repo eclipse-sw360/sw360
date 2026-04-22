@@ -476,6 +476,8 @@ enum ReleaseSortColumn {
     BY_CREATEDON = -1,
     BY_NAME = 0,
     BY_VERSION = 1,
+    BY_CLEARING_STATE = 2,
+    BY_MAINLINE_STATE = 3,
 }
 
 enum BulkOperationNodeType {
@@ -870,6 +872,8 @@ service ComponentService {
     list<Release> getReleasesByComponentId(1: string id, 2: User user);
 
     list<Release> getReleasesFullDocsFromComponentId(1: string id, 2: User user);
+
+    map<PaginationData, list<Release>> getReleasesFromComponentIdWithPagination(1: string id, 2: User user, 3: PaginationData pageData);
 
     /**
      * get components belonging to linked releases of the release specified by releaseId

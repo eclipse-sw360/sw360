@@ -532,6 +532,14 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<Release>> getReleasesFromComponentIdWithPagination(String id, User user, PaginationData pageData) throws TException {
+        assertUser(user);
+        assertId(id);
+
+        return handler.getReleasesFromComponentIdWithPagination(id, user, pageData);
+    }
+
+    @Override
     public Set<Component> getUsingComponentsForRelease(String releaseId) throws TException {
         return handler.getUsingComponents(releaseId);
     }
