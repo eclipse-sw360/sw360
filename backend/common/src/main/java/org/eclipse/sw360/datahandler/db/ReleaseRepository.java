@@ -177,6 +177,10 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     private static final String RELEASE_BY_ALL_IDX = "ReleaseByAllIdx";
     private static final String RELEASE_BY_ATTACHMENT_TYPE_IDX = "ReleaseByAttachmentTypeIdx";
+    private static final String RELEASE_BY_COMPONENT_NAME_IDX = "ReleaseByComponentNameIdx";
+    private static final String RELEASE_BY_COMPONENT_VERSION_IDX = "ReleaseByComponentVersionIdx";
+    private static final String RELEASE_BY_COMPONENT_CLEARING_STATE_IDX = "ReleaseByComponentClearingStateIdx";
+    private static final String RELEASE_BY_COMPONENT_MAINLINE_STATE_IDX = "ReleaseByComponentMainlineStateIdx";
 
     public ReleaseRepository(DatabaseConnectorCloudant db, VendorRepository vendorRepository) {
         super(Release.class, db, new ReleaseSummary(vendorRepository));
@@ -212,6 +216,26 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                 Release._Fields.TYPE.getFieldName(),
                 Release._Fields.CLEARING_STATE.getFieldName(),
                 Release._Fields.ATTACHMENTS.getFieldName() + "." + Attachment._Fields.ATTACHMENT_TYPE.getFieldName()
+        }, db);
+
+        // Per-sort-column indexes for getReleasesFromComponentIdWithPagination.
+        // Each index starts with componentId followed by the sort field so that
+        // CouchDB/Cloudant can satisfy both the selector and the sort clause.
+        createIndex(RELEASE_BY_COMPONENT_NAME_IDX, "releaseByComponentName", new String[] {
+                Release._Fields.COMPONENT_ID.getFieldName(),
+                Release._Fields.NAME.getFieldName()
+        }, db);
+        createIndex(RELEASE_BY_COMPONENT_VERSION_IDX, "releaseByComponentVersion", new String[] {
+                Release._Fields.COMPONENT_ID.getFieldName(),
+                Release._Fields.VERSION.getFieldName()
+        }, db);
+        createIndex(RELEASE_BY_COMPONENT_CLEARING_STATE_IDX, "releaseByComponentClearingState", new String[] {
+                Release._Fields.COMPONENT_ID.getFieldName(),
+                Release._Fields.CLEARING_STATE.getFieldName()
+        }, db);
+        createIndex(RELEASE_BY_COMPONENT_MAINLINE_STATE_IDX, "releaseByComponentMainlineState", new String[] {
+                Release._Fields.COMPONENT_ID.getFieldName(),
+                Release._Fields.MAINLINE_STATE.getFieldName()
         }, db);
     }
 
@@ -314,6 +338,66 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         Set<String> releaseIds = queryForIdsAsValue("releasesByComponentId", id);
         return new ArrayList<Release>(getFullDocsById(releaseIds));
     }
+
+    /**
+     * Returns paginated releases for a given component, sorted by the column
+     * in {@code pageData}:
+     *   0 = name (default), 1 = version, 2 = clearingState, 3 = mainlineState.
+     */
+    public Map<PaginationData, List<Release>> getReleasesFromComponentIdWithPagination(
+            String id, User user, PaginationData pageData) {
+
+        final Map<String, Object> selector = eq(Release._Fields.COMPONENT_ID.getFieldName(), id);
+        final Map<String, String> sortSelector = getComponentReleaseSortSelector(pageData);
+        final String indexName = getComponentReleaseIndexName(pageData);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(selector)
+                .useIndex(Collections.singletonList(indexName));
+
+        List<Release> releases = getConnector().getQueryResultPaginated(
+                qb, Release.class, pageData, sortSelector);
+
+        return Collections.singletonMap(pageData, releases);
+    }
+
+    /**
+     * Returns the CouchDB index name that covers {@code componentId} + the sort
+     * field requested in {@code pageData}, so CouchDB can satisfy both the
+     * equality selector and the ORDER BY clause without a "no_usable_index" error.
+     */
+    private static @NotNull String getComponentReleaseIndexName(PaginationData pageData) {
+        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ReleaseSortColumn.BY_VERSION       -> RELEASE_BY_COMPONENT_VERSION_IDX;
+            case ReleaseSortColumn.BY_CLEARING_STATE -> RELEASE_BY_COMPONENT_CLEARING_STATE_IDX;
+            case ReleaseSortColumn.BY_MAINLINE_STATE -> RELEASE_BY_COMPONENT_MAINLINE_STATE_IDX;
+            case null, default                       -> RELEASE_BY_COMPONENT_NAME_IDX;
+        };
+    }
+
+    private static @NotNull String getViewFromPagination(PaginationData pageData) {
+        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ReleaseSortColumn.BY_NAME -> "byname";
+            case ReleaseSortColumn.BY_VERSION -> "releaseByVersion";
+            case null -> "all";
+            default -> "byCreatedOn";
+        };
+    }
+
+    private static @NotNull Map<String, String> getComponentReleaseSortSelector(PaginationData pageData) {
+        boolean ascending = pageData.isAscending();
+        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ReleaseSortColumn.BY_VERSION ->
+                    Collections.singletonMap(Release._Fields.VERSION.getFieldName(), ascending ? "asc" : "desc");
+            case ReleaseSortColumn.BY_CLEARING_STATE ->
+                    Collections.singletonMap(Release._Fields.CLEARING_STATE.getFieldName(), ascending ? "asc" : "desc");
+            case ReleaseSortColumn.BY_MAINLINE_STATE ->
+                    Collections.singletonMap(Release._Fields.MAINLINE_STATE.getFieldName(), ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap(Release._Fields.NAME.getFieldName(), ascending ? "asc" : "desc");
+        };
+    }
+
 
     public List<Release> getReleasesFromComponentId(String id, User user) {
         Set<String> releaseIds = queryForIdsAsValue("releasesByComponentId", id);
@@ -445,6 +529,10 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                     Collections.singletonMap(Release._Fields.NAME.getFieldName(), ascending ? "asc" : "desc");
             case ReleaseSortColumn.BY_VERSION ->
                     Collections.singletonMap(Release._Fields.VERSION.getFieldName(), ascending ? "asc" : "desc");
+            case ReleaseSortColumn.BY_CLEARING_STATE ->
+                    Collections.singletonMap(Release._Fields.CLEARING_STATE.getFieldName(), ascending ? "asc" : "desc");
+            case ReleaseSortColumn.BY_MAINLINE_STATE ->
+                    Collections.singletonMap(Release._Fields.MAINLINE_STATE.getFieldName(), ascending ? "asc" : "desc");
             case null, default ->
                     Collections.singletonMap(Release._Fields.CREATED_ON.getFieldName(), ascending ? "asc" : "desc"); // Default sort by creation date
         };
