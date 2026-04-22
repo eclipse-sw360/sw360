@@ -10,13 +10,18 @@
 package org.eclipse.sw360.datahandler.thrift;
 
 import org.junit.Test;
-import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
-import static org.junit.Assert.assertEquals;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_OBLIGATION;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
+import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareTodo;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareUser;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ThriftValidateTest {
     final String DUMMY_EMAIL_ADDRESS = "dummy.name@dummy.domain.tld";
@@ -39,5 +44,20 @@ public class ThriftValidateTest {
         assertNull(user.getId());
         assertEquals(TYPE_USER, user.getType());
         assertFalse(user.isSetCommentMadeDuringModerationRequest());
+    }
+
+    @Test
+    public void testPrepareTodoNormalizesTabCharacters() throws Exception {
+        Obligation obligation = new Obligation();
+        obligation.setTitle("Test Obligation");
+        obligation.setText("Line1\n\tIndented\tsegment");
+        obligation.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+
+        prepareTodo(obligation);
+
+        assertEquals(TYPE_OBLIGATION, obligation.getType());
+        assertFalse(obligation.getText().contains("\t"));
+        assertEquals("Line1\n Indented segment", obligation.getText());
+        assertTrue(obligation.getWhitelist().isEmpty());
     }
 }
