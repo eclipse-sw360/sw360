@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -88,7 +87,7 @@ public class ResourceServerConfiguration {
                     auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
                 })
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(basic -> basic.authenticationEntryPoint(saep))
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
                 .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.DISABLED))
                         .contentSecurityPolicy(cps -> cps.policyDirectives("script-src 'self'")))

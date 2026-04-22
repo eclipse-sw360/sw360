@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -66,6 +65,8 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.common.XssPreventionModule;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentMergeSelector;
+import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ProjectRelationSerializer;
+import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
@@ -73,15 +74,18 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseMergeSelector;
-import org.jetbrains.annotations.NotNull;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class JacksonCustomizations {
@@ -95,163 +99,143 @@ public class JacksonCustomizations {
         return new XssPreventionModule();
     }
 
+    /**
+     * Provide a Jackson 2.x ObjectMapper with all SW360 modules registered.
+     * This ensures backward compatibility for any code directly using ObjectMapper.
+     */
     @Bean
     @Primary
     public ObjectMapper objectMapper(@NotNull List<Module> modules) {
-        ObjectMapper mapper = new ObjectMapper();
-
+        ObjectMapper mapper = com.fasterxml.jackson.databind.json.JsonMapper.builder()
+                .configure(com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false)
+                .build();
         for (Module module : modules) {
             mapper.registerModule(module);
         }
-
         return mapper;
     }
+
+    /**
+     * Customize the Jackson 3.x {@code JsonMapper} used by Spring Boot 4,
+     * Spring HATEOAS 3.x, and Spring Data REST 5.x for HTTP message
+     * conversion and HAL serialization.
+     * <p>
+     * Spring Boot 4 defaults to Jackson 3.x ({@code tools.jackson}) for all
+     * JSON handling. SW360 uses 60+ Jackson 2.x mixins with annotations like
+     * {@code @JsonIgnoreProperties} and {@code @JsonProperty} to control
+     * Thrift object serialization. Jackson 3.x's annotation introspector can
+     * read Jackson 2.x annotations ({@code com.fasterxml.jackson.annotation.*}),
+     * so we register the same mixin classes here.
+     * <p>
+     * This customizer also registers the Jackson 3.x XSS prevention
+     * deserializer (equivalent to the Jackson 2.x {@link XssPreventionModule}).
+     * <p>
+     * Without this customizer, REST API responses expose raw Thrift internal
+     * fields ({@code setXxx}, {@code xxxIsSet}, {@code xxxIterator}, etc.)
+     * and lose {@code @JsonProperty} renames (e.g., {@code fullname} instead
+     * of {@code fullName}).
+     */
+    @Bean
+    public JsonMapperBuilderCustomizer sw360JsonMapperCustomizer() {
+        return builder -> {
+            registerMixIns(builder::addMixIn);
+            // Register Jackson 3.x XSS prevention module
+            tools.jackson.databind.module.SimpleModule xss3Module =
+                    new tools.jackson.databind.module.SimpleModule("Xss3PreventionModule");
+            xss3Module.addDeserializer(String.class, new Xss3StringDeserializer());
+            builder.addModule(xss3Module);
+            // Preserve property insertion order (same as Jackson 2.x default)
+            builder.configure(tools.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false);
+            builder.configure(tools.jackson.databind.MapperFeature.SORT_CREATOR_PROPERTIES_FIRST, true);
+        };
+    }
+
+    /**
+     * Central registration of all Thrift class mixins. Used by both the
+     * Jackson 2.x {@link Sw360Module} and the Jackson 3.x
+     * {@link JsonMapperBuilderCustomizer} to ensure consistency.
+     */
+    static void registerMixIns(java.util.function.BiConsumer<Class<?>, Class<?>> registrar) {
+        registrar.accept(MultiStatus.class, Sw360Module.MultiStatusMixin.class);
+        registrar.accept(Project.class, Sw360Module.ProjectMixin.class);
+        registrar.accept(User.class, Sw360Module.UserMixin.class);
+        registrar.accept(Component.class, Sw360Module.ComponentMixin.class);
+        registrar.accept(ComponentDTO.class, Sw360Module.ComponentDTOMixin.class);
+        registrar.accept(ComponentMergeSelector.class, Sw360Module.ComponentMergeSelectorMixin.class);
+        registrar.accept(Package.class, Sw360Module.PackageMixin.class);
+        registrar.accept(Release.class, Sw360Module.ReleaseMixin.class);
+        registrar.accept(SPDXDocument.class, Sw360Module.SPDXDocumentMixin.class);
+        registrar.accept(DocumentCreationInformation.class, Sw360Module.DocumentCreationInformationMixin.class);
+        registrar.accept(PackageInformation.class, Sw360Module.PackageInformationMixin.class);
+        registrar.accept(CheckSum.class, Sw360Module.CheckSumMixin.class);
+        registrar.accept(ExternalDocumentReferences.class, Sw360Module.ExternalDocumentReferencesMixin.class);
+        registrar.accept(Creator.class, Sw360Module.CreatorMixin.class);
+        registrar.accept(PackageVerificationCode.class, Sw360Module.PackageVerificationCodeMixin.class);
+        registrar.accept(ExternalReference.class, Sw360Module.ExternalReferenceMixin.class);
+        registrar.accept(SnippetRange.class, Sw360Module.SnippetRangeMixin.class);
+        registrar.accept(Annotations.class, Sw360Module.AnnotationsMixin.class);
+        registrar.accept(RelationshipsBetweenSPDXElements.class, Sw360Module.RelationshipsBetweenSPDXElementsMixin.class);
+        registrar.accept(SnippetInformation.class, Sw360Module.SnippetInformationMixin.class);
+        registrar.accept(OtherLicensingInformationDetected.class, Sw360Module.OtherLicensingInformationDetectedMixin.class);
+        registrar.accept(ReleaseLink.class, Sw360Module.ReleaseLinkMixin.class);
+        registrar.accept(ClearingReport.class, Sw360Module.ClearingReportMixin.class);
+        registrar.accept(Attachment.class, Sw360Module.AttachmentMixin.class);
+        registrar.accept(ProjectAttachmentUsage.class, Sw360Module.ProjectAttachmentUsageMixin.class);
+        registrar.accept(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class);
+        registrar.accept(Vendor.class, Sw360Module.VendorMixin.class);
+        registrar.accept(License.class, Sw360Module.LicenseMixin.class);
+        registrar.accept(LicenseType.class, Sw360Module.LicenseTypeMixin.class);
+        registrar.accept(Obligation.class, Sw360Module.ObligationMixin.class);
+        registrar.accept(ObligationNode.class, Sw360Module.ObligationNodeMixin.class);
+        registrar.accept(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
+        registrar.accept(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
+        registrar.accept(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
+        registrar.accept(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
+        registrar.accept(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
+        registrar.accept(VulnerabilitySummary.class, Sw360Module.VulnerabilitySummMixin.class);
+        registrar.accept(EccInformation.class, Sw360Module.EccInformationMixin.class);
+        registrar.accept(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
+        registrar.accept(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
+        registrar.accept(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class);
+        registrar.accept(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
+        registrar.accept(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class);
+        registrar.accept(Repository.class, Sw360Module.RepositoryMixin.class);
+        registrar.accept(SearchResult.class, Sw360Module.SearchResultMixin.class);
+        registrar.accept(ChangeLogs.class, Sw360Module.ChangeLogsMixin.class);
+        registrar.accept(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class);
+        registrar.accept(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class);
+        registrar.accept(ClearingRequest.class, Sw360Module.ClearingRequestMixin.class);
+        registrar.accept(Comment.class, Sw360Module.CommentMixin.class);
+        registrar.accept(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class);
+        registrar.accept(ObligationStatusInfo.class, Sw360Module.ObligationStatusInfoMixin.class);
+        registrar.accept(ReleaseVulnerabilityRelation.class, Sw360Module.ReleaseVulnerabilityRelationMixin.class);
+        registrar.accept(VerificationStateInfo.class, Sw360Module.VerificationStateInfoMixin.class);
+        registrar.accept(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class);
+        registrar.accept(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class);
+        registrar.accept(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class);
+        registrar.accept(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class);
+        registrar.accept(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class);
+        registrar.accept(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
+        registrar.accept(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class);
+        registrar.accept(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
+        registrar.accept(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
+        registrar.accept(RestApiToken.class, Sw360Module.RestApiTokenMixin.class);
+        registrar.accept(ProjectLink.class, Sw360Module.ProjectLinkMixin.class);
+        registrar.accept(BulkOperationNode.class, Sw360Module.BulkOperationNodeMixin.class);
+        registrar.accept(ReleaseMergeSelector.class, Sw360Module.ReleaseMergeSelectorMixin.class);
+        registrar.accept(ProjectPackageRelationship.class, Sw360Module.ProjectPackageRelationshipMixin.class);
+        registrar.accept(VendorAdvisory.class, Sw360Module.VendorAdvisoryMixin.class);
+        registrar.accept(RequestSummary.class, Sw360Module.RequestSummaryMixin.class);
+    }
+
 
     @SuppressWarnings("serial")
     public static class Sw360Module extends SimpleModule {
         public Sw360Module() {
-            setMixInAnnotation(MultiStatus.class, MultiStatusMixin.class);
-            setMixInAnnotation(Project.class, Sw360Module.ProjectMixin.class);
-            setMixInAnnotation(User.class, Sw360Module.UserMixin.class);
-            setMixInAnnotation(Component.class, Sw360Module.ComponentMixin.class);
-            setMixInAnnotation(ComponentDTO.class, Sw360Module.ComponentDTOMixin.class);
-            setMixInAnnotation(ComponentMergeSelector.class, Sw360Module.ComponentMergeSelectorMixin.class);
-            setMixInAnnotation(Package.class, Sw360Module.PackageMixin.class);
-            setMixInAnnotation(Release.class, Sw360Module.ReleaseMixin.class);
-            setMixInAnnotation(SPDXDocument.class, Sw360Module.SPDXDocumentMixin.class);
-            setMixInAnnotation(DocumentCreationInformation.class, Sw360Module.DocumentCreationInformationMixin.class);
-            setMixInAnnotation(PackageInformation.class, Sw360Module.PackageInformationMixin.class);
-            setMixInAnnotation(CheckSum.class, Sw360Module.CheckSumMixin.class);
-            setMixInAnnotation(ExternalDocumentReferences.class, Sw360Module.ExternalDocumentReferencesMixin.class);
-            setMixInAnnotation(Creator.class, Sw360Module.CreatorMixin.class);
-            setMixInAnnotation(PackageVerificationCode.class, Sw360Module.PackageVerificationCodeMixin.class);
-            setMixInAnnotation(ExternalReference.class, Sw360Module.ExternalReferenceMixin.class);
-            setMixInAnnotation(SnippetRange.class, Sw360Module.SnippetRangeMixin.class);
-            setMixInAnnotation(Annotations.class, Sw360Module.AnnotationsMixin.class);
-            setMixInAnnotation(RelationshipsBetweenSPDXElements.class, Sw360Module.RelationshipsBetweenSPDXElementsMixin.class);
-            setMixInAnnotation(SnippetInformation.class, Sw360Module.SnippetInformationMixin.class);
-            setMixInAnnotation(OtherLicensingInformationDetected.class, Sw360Module.OtherLicensingInformationDetectedMixin.class);
-            setMixInAnnotation(ReleaseLink.class, Sw360Module.ReleaseLinkMixin.class);
-            setMixInAnnotation(ClearingReport.class, Sw360Module.ClearingReportMixin.class);
-            setMixInAnnotation(Attachment.class, Sw360Module.AttachmentMixin.class);
-            setMixInAnnotation(ProjectAttachmentUsage.class, Sw360Module.ProjectAttachmentUsageMixin.class);
-            setMixInAnnotation(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class);
-            setMixInAnnotation(Vendor.class, Sw360Module.VendorMixin.class);
-            setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
-            setMixInAnnotation(LicenseType.class, Sw360Module.LicenseTypeMixin.class);
-            setMixInAnnotation(Obligation.class, Sw360Module.ObligationMixin.class);
-            setMixInAnnotation(ObligationNode.class, Sw360Module.ObligationNodeMixin.class);
-            setMixInAnnotation(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
-            setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
-            setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
-            setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
-            setMixInAnnotation(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
-            setMixInAnnotation(VulnerabilitySummary.class, Sw360Module.VulnerabilitySummMixin.class);
-            setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
-            setMixInAnnotation(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
-            setMixInAnnotation(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
-            setMixInAnnotation(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class);
-            setMixInAnnotation(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
-            setMixInAnnotation(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class);
-            setMixInAnnotation(Repository.class, Sw360Module.RepositoryMixin.class);
-            setMixInAnnotation(SearchResult.class, Sw360Module.SearchResultMixin.class);
-            setMixInAnnotation(ChangeLogs.class, Sw360Module.ChangeLogsMixin.class);
-            setMixInAnnotation(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class);
-            setMixInAnnotation(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class);
-            setMixInAnnotation(ClearingRequest.class, Sw360Module.ClearingRequestMixin.class);
-            setMixInAnnotation(Comment.class, Sw360Module.CommentMixin.class);
-            setMixInAnnotation(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class);
-            setMixInAnnotation(ObligationStatusInfo.class, Sw360Module.ObligationStatusInfoMixin.class);
-            setMixInAnnotation(ReleaseVulnerabilityRelation.class, Sw360Module.ReleaseVulnerabilityRelationMixin.class);
-            setMixInAnnotation(VerificationStateInfo.class, Sw360Module.VerificationStateInfoMixin.class);
-            setMixInAnnotation(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class);
-            setMixInAnnotation(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class);
-            setMixInAnnotation(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class);
-            setMixInAnnotation(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class);
-            setMixInAnnotation(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class);
-            setMixInAnnotation(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
-            setMixInAnnotation(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class);
-            setMixInAnnotation(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
-            setMixInAnnotation(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
-            setMixInAnnotation(RestApiToken.class, Sw360Module.RestApiTokenMixin.class);
-            setMixInAnnotation(ProjectLink.class, Sw360Module.ProjectLinkMixin.class);
-            setMixInAnnotation(BulkOperationNode.class, Sw360Module.BulkOperationNodeMixin.class);
-            setMixInAnnotation(ReleaseMergeSelector.class, Sw360Module.ReleaseMergeSelectorMixin.class);
-            setMixInAnnotation(ProjectPackageRelationship.class, Sw360Module.ProjectPackageRelationshipMixin.class);
-            setMixInAnnotation(RequestSummary.class, Sw360Module.RequestSummaryMixin.class);
+            registerMixIns(this::setMixInAnnotation);
 
-            // Make spring doc aware of the mixin(s)
-            SpringDocUtils.getConfig()
-                    .replaceWithClass(Project.class, ProjectMixin.class)
-                    .replaceWithClass(MultiStatus.class, MultiStatusMixin.class)
-                    .replaceWithClass(User.class, UserMixin.class)
-                    .replaceWithClass(Component.class, ComponentMixin.class)
-                    .replaceWithClass(ComponentDTO.class, ComponentDTOMixin.class)
-                    .replaceWithClass(ComponentMergeSelector.class, ComponentMergeSelectorMixin.class)
-                    .replaceWithClass(ReleaseMergeSelector.class, ReleaseMergeSelectorMixin.class)
-                    .replaceWithClass(Package.class, PackageMixin.class)
-                    .replaceWithClass(Release.class, ReleaseMixin.class)
-                    .replaceWithClass(ReleaseLink.class, ReleaseLinkMixin.class)
-                    .replaceWithClass(ClearingReport.class, ClearingReportMixin.class)
-                    .replaceWithClass(Attachment.class, AttachmentMixin.class)
-                    .replaceWithClass(ProjectAttachmentUsage.class, ProjectAttachmentUsageMixin.class)
-                    .replaceWithClass(ProjectUsage.class, ProjectUsageMixin.class)
-                    .replaceWithClass(Vendor.class, VendorMixin.class)
-                    .replaceWithClass(License.class, LicenseMixin.class)
-                    .replaceWithClass(LicenseType.class, Sw360Module.LicenseTypeMixin.class)
-                    .replaceWithClass(Obligation.class, ObligationMixin.class)
-                    .replaceWithClass(ObligationNode.class, ObligationNodeMixin.class)
-                    .replaceWithClass(Vulnerability.class, VulnerabilityMixin.class)
-                    .replaceWithClass(VulnerabilityState.class, VulnerabilityStateMixin.class)
-                    .replaceWithClass(ReleaseVulnerabilityRelationDTO.class, ReleaseVulnerabilityRelationDTOMixin.class)
-                    .replaceWithClass(VendorAdvisory.class, VendorAdvisoryMixin.class)
-                    .replaceWithClass(VulnerabilityDTO.class, VulnerabilityDTOMixin.class)
-                    .replaceWithClass(VulnerabilityApiDTO.class, VulnerabilityApiDTOMixin.class)
-                    .replaceWithClass(VulnerabilitySummary.class, VulnerabilitySummMixin.class)
-                    .replaceWithClass(EccInformation.class, EccInformationMixin.class)
-                    .replaceWithClass(EmbeddedProject.class, EmbeddedProjectMixin.class)
-                    .replaceWithClass(ExternalToolProcess.class, ExternalToolProcessMixin.class)
-                    .replaceWithClass(ExternalToolProcessStep.class, ExternalToolProcessStepMixin.class)
-                    .replaceWithClass(COTSDetails.class, COTSDetailsMixin.class)
-                    .replaceWithClass(ClearingInformation.class, ClearingInformationMixin.class)
-                    .replaceWithClass(Repository.class, RepositoryMixin.class)
-                    .replaceWithClass(SearchResult.class, SearchResultMixin.class)
-                    .replaceWithClass(ChangeLogs.class, ChangeLogsMixin.class)
-                    .replaceWithClass(ChangedFields.class, ChangedFieldsMixin.class)
-                    .replaceWithClass(ReferenceDocData.class, ReferenceDocDataMixin.class)
-                    .replaceWithClass(ClearingRequest.class, ClearingRequestMixin.class)
-                    .replaceWithClass(Comment.class, CommentMixin.class)
-                    .replaceWithClass(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class)
-                    .replaceWithClass(ObligationStatusInfo.class, ObligationStatusInfoMixin.class)
-                    .replaceWithClass(ReleaseVulnerabilityRelation.class, ReleaseVulnerabilityRelationMixin.class)
-                    .replaceWithClass(VerificationStateInfo.class, VerificationStateInfoMixin.class)
-                    .replaceWithClass(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class)
-                    .replaceWithClass(ModerationRequest.class, ModerationRequestMixin.class)
-                    .replaceWithClass(EmbeddedModerationRequest.class, EmbeddedModerationRequestMixin.class)
-                    .replaceWithClass(ImportBomRequestPreparation.class, ImportBomRequestPreparationMixin.class)
-                    .replaceWithClass(ModerationPatch.class, ModerationPatchMixin.class)
-                    .replaceWithClass(ProjectDTO.class, ProjectDTOMixin.class)
-                    .replaceWithClass(EmbeddedProjectDTO.class, EmbeddedProjectDTOMixin.class)
-                    .replaceWithClass(ReleaseNode.class, ReleaseNodeMixin.class)
-                    .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class)
-                    .replaceWithClass(RestApiToken.class, Sw360Module.RestApiTokenMixin.class)
-                    .replaceWithClass(ProjectLink.class, ProjectLinkMixin.class)
-                    .replaceWithClass(BulkOperationNode.class, BulkOperationNodeMixin.class)
-                    .replaceWithClass(SPDXDocument.class, Sw360Module.SPDXDocumentMixin.class)
-                    .replaceWithClass(DocumentCreationInformation.class, Sw360Module.DocumentCreationInformationMixin.class)
-                    .replaceWithClass(PackageInformation.class, Sw360Module.PackageInformationMixin.class)
-                    .replaceWithClass(CheckSum.class, Sw360Module.CheckSumMixin.class)
-                    .replaceWithClass(ExternalDocumentReferences.class, Sw360Module.ExternalDocumentReferencesMixin.class)
-                    .replaceWithClass(Creator.class, Sw360Module.CreatorMixin.class)
-                    .replaceWithClass(PackageVerificationCode.class, Sw360Module.PackageVerificationCodeMixin.class)
-                    .replaceWithClass(ExternalReference.class, Sw360Module.ExternalReferenceMixin.class)
-                    .replaceWithClass(SnippetRange.class, Sw360Module.SnippetRangeMixin.class)
-                    .replaceWithClass(Annotations.class, Sw360Module.AnnotationsMixin.class)
-                    .replaceWithClass(RelationshipsBetweenSPDXElements.class, Sw360Module.RelationshipsBetweenSPDXElementsMixin.class)
-                    .replaceWithClass(SnippetInformation.class, Sw360Module.SnippetInformationMixin.class)
-                    .replaceWithClass(OtherLicensingInformationDetected.class, Sw360Module.OtherLicensingInformationDetectedMixin.class)
-                    .replaceWithClass(ProjectPackageRelationship.class, ProjectPackageRelationshipMixin.class)
-                    .replaceWithClass(RequestSummary.class, RequestSummaryMixin.class);
+            // Make SpringDoc aware of the mixins
+            registerMixIns(SpringDocUtils.getConfig()::replaceWithClass);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -424,11 +408,13 @@ public class JacksonCustomizations {
 
             @Override
             @JsonSerialize(using = JsonProjectRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = Json3ProjectRelationSerializer.class)
             @JsonProperty("linkedProjects")
             abstract public Map<String, ProjectProjectRelationship> getLinkedProjects();
 
             @Override
             @JsonSerialize(using = JsonReleaseRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = Json3ReleaseRelationSerializer.class)
             @JsonProperty("linkedReleases")
             abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();
 
@@ -2635,7 +2621,8 @@ public class JacksonCustomizations {
                 "matchedByIsSet",
                 "usedNeedleIsSet",
                 "vulnerabilityIdIsSet",
-                "verificationStateInfoIsSet"
+                "verificationStateInfoIsSet",
+                "spdxIdIsSet"
         })
         public static abstract class ReleaseVulnerabilityRelationMixin extends ReleaseVulnerabilityRelation {
         }
@@ -2842,6 +2829,7 @@ public class JacksonCustomizations {
 
             @Override
             @JsonSerialize(using = JsonProjectRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = Json3ProjectRelationSerializer.class)
             @JsonProperty("linkedProjects")
             public abstract Map<String, ProjectProjectRelationship> getLinkedProjects();
 

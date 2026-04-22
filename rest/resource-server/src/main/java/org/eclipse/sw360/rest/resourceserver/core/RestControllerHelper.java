@@ -342,23 +342,32 @@ public class RestControllerHelper<T> {
     }
 
     public User getUserByEmail(String emailId) {
+        if (CommonUtils.isNullEmptyOrWhitespace(emailId)) {
+            LOGGER.debug("Sent empty/null emailId");
+            User sw360User = new User();
+            sw360User.setId(emailId).setEmail(emailId);
+            return sw360User;
+        }
         User sw360User;
         try {
             sw360User = userService.getUserByEmail(emailId);
         } catch (RuntimeException e) {
             sw360User = new User();
             sw360User.setId(emailId).setEmail(emailId);
-            LOGGER.debug("Could not get user object from backend with email: " + emailId);
+            LOGGER.debug("Could not get user object from backend with email: {}", emailId, e);
         }
         return sw360User;
     }
 
     public User getUserByEmailOrNull(String emailId) {
+        if (CommonUtils.isNullEmptyOrWhitespace(emailId)) {
+            return null;
+        }
         User sw360User;
         try {
             sw360User = userService.getUserByEmail(emailId);
         } catch (RuntimeException e) {
-            LOGGER.debug("Could not get user object from backend with email: " + emailId);
+            LOGGER.debug("Could not get user object from backend with email: {}", emailId);
             return null;
         }
         return sw360User;
@@ -485,6 +494,9 @@ public class RestControllerHelper<T> {
     }
 
     public void addEmbeddedUser(HalResource halResource, User user, String relation) {
+        if (user == null) {
+            return;
+        }
         User embeddedUser = convertToEmbeddedUser(user);
         EntityModel<User> embeddedUserResource = EntityModel.of(embeddedUser);
         try {

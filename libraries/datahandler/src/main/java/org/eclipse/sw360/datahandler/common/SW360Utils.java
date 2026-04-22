@@ -1149,7 +1149,7 @@ public class SW360Utils {
             SW360ConfigsService.Iface configClient = new ThriftClients().makeSW360ConfigsClient();
             return configClient.getConfigByKey(key);
         } catch (TException exception) {
-            throw new SW360Exception("Unable to get configuration");
+            throw new SW360Exception("Unable to get configuration " + key);
         }
     }
 
@@ -1171,9 +1171,7 @@ public class SW360Utils {
                 case null, default -> (T) value; // Assume it's a String
             };
         } catch (Exception e) {
-            if (e instanceof SW360Exception) {
-                log.error(((SW360Exception) e).getWhy());
-            } else {
+            if (!(e instanceof SW360Exception)) {
                 log.error(e.getMessage());
             }
             return defaultValue;
