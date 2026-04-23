@@ -54,7 +54,7 @@ resource "keycloak_realm" "sw360" {
   security_defenses {
     headers {
       x_frame_options                     = "SAMEORIGIN"
-      content_security_policy             = "frame-src 'self'; frame-ancestors 'self'; object-src 'none';"
+      content_security_policy             = "frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'none'; default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; require-trusted-types-for 'script';"
       content_security_policy_report_only = ""
       x_content_type_options              = "nosniff"
       x_robots_tag                        = "none"

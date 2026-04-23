@@ -104,7 +104,11 @@ file to tweak SW360 behaviour.
 * `SCHEDULER_AUTOSTART_SERVICES`: Comma-separated list (no spaces) of services
     to autostart (default: `cvesearchService`). Leave empty to not start any
     service.
-* `SW360_CORS_ALLOWED_ORIGIN`: CORS allowed origins (default: `*`).
+* `SW360_CORS_ALLOWED_ORIGIN`: CORS allowed origins. By default, it is set to
+    `*` for ease of local development. **To secure your deployment for
+    production**, you must update this value within
+    `config/sw360/.env.backend` to reflect the specific origin(s) of your
+    frontend server.
 * `SW360_THRIFT_SERVER_URL`: URL where Thrift server is running (default:
     `http://localhost:8080`).
 * `SW360_BASE_URL`: Base URL for SW360 server (default: `http://localhost:8080`).
