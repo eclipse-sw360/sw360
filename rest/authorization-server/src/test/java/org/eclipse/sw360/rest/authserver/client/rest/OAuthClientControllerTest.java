@@ -16,7 +16,7 @@ import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.web.client.RestClientException;
 

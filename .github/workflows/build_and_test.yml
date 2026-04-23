@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        uses: step-security/harden-runner@6c3c2f2c1c457b00c10c4848d6f5491db3b629df # v2.18.0
         with:
           egress-policy: audit
 
@@ -85,7 +85,7 @@ jobs:
 
       - name: Cache Thrift
         id: cache-thrift
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
@@ -101,18 +101,32 @@ jobs:
           chmod +x third-party/thrift/install-thrift.sh
           DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
 
-      - name: Build SW360
+      - name: Build SW360 (compile only)
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
           mvn clean install \
             --no-transfer-progress \
             -P deploy -Dhelp-docs=true \
             -Dbase.deploy.dir=${PWD}/deploy \
+            -DskipTests \
+            -Dmaven.plugin.validation=VERBOSE
+
+      - name: Run ArchUnit Architecture Tests
+        run: |
+          mvn -pl rest/resource-server test \
+            -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.*Test" \
+            -Dbase.deploy.dir=${PWD}/deploy
+
+      - name: Run Unit and Integration Tests
+        run: |
+          mvn test \
+            --no-transfer-progress \
+            -Dbase.deploy.dir=${PWD}/deploy \
             -DRunComponentVisibilityRestrictionTest=false \
             -DRunPrivateProjectAccessTest=false \
             -DRunRestForceUpdateTest=false \
-            -fae \
-            -Dmaven.plugin.validation=VERBOSE
+            -Dsurefire.excludes="**/architecture/*Test.java" \
+            -fae
 
       - name: Run PrivateProjectAccessTest
         run: |
