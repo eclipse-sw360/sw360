@@ -9,7 +9,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,6 +61,9 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
     private static final String TYPE_ECC = "ecc";
 
     public static final String ECC_URL = "/ecc";
+
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST =
+            ImmutableMap.<String, String>builder().put("message", "Moderation request is created").build();
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
@@ -163,7 +167,7 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
         release.setEccInformation(existing);
         RequestStatus updateStatus = releaseService.updateRelease(release, user);
         if (updateStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(Map.of("message", "Moderation request is created"), HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
         Release updatedRelease = releaseService.getReleaseForUserById(releaseId, user);
         return new ResponseEntity<>(EntityModel.of(updatedRelease), HttpStatus.OK);

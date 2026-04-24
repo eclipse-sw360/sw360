@@ -9,7 +9,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedResponseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
@@ -160,9 +159,10 @@ public class EccSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("materialIndexNumber").description("Material index number").optional(),
                                 fieldWithPath("containsCryptography").description("Whether the release contains cryptography").optional()
                         ),
-                        relaxedResponseFields(
+                        responseFields(
                                 fieldWithPath("name").description("The name of the release"),
                                 fieldWithPath("version").description("The version of the release"),
+                                fieldWithPath("id").description("The ID of the release"),
                                 subsectionWithPath("eccInformation").description("The updated ECC information for the release"),
                                 subsectionWithPath("_links").description("Links to other resources")
                         )));

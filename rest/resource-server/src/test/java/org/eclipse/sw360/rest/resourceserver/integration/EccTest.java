@@ -199,10 +199,6 @@ public class EccTest extends TestIntegrationBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq("rel123"), any())).willReturn(release1);
         given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
 
-        EccInformation updatedEcc = new EccInformation();
-        updatedEcc.setEccStatus(ECCStatus.APPROVED);
-        updatedEcc.setAssessmentDate("2026-04-25");
-
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
         String body = "{\"eccStatus\":\"APPROVED\",\"assessmentDate\":\"2026-04-25\"}";
