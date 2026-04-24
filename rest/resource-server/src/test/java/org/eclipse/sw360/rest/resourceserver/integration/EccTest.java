@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -212,6 +214,9 @@ public class EccTest extends TestIntegrationBase {
                         String.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue("Response should contain eccInformation", response.getBody().contains("eccInformation"));
+        assertTrue("Untouched assessorContactPerson should survive", response.getBody().contains("john.doe@example.com"));
     }
 
     @Test

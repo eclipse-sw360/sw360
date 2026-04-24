@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedResponseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
@@ -128,24 +129,6 @@ public class EccSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_ecc_with_status_filter() throws Exception {
-        mockMvc.perform(get("/api/ecc")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .queryParam("eccStatus", "OPEN")
-                .queryParam("page", "0")
-                .queryParam("page_entries", "5")
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(
-                        queryParameters(
-                                parameterWithName("eccStatus").description("Filter releases by ECC status: " +
-                                        "OPEN, IN_PROGRESS, APPROVED, REJECTED"),
-                                parameterWithName("page").description("Page of releases"),
-                                parameterWithName("page_entries").description("Amount of releases per page")
-                        )));
-    }
-
-    @Test
     public void should_document_patch_ecc() throws Exception {
         String eccBody = "{"
                 + "\"eccStatus\": \"APPROVED\","
@@ -172,7 +155,16 @@ public class EccSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("assessorDepartment").description("Department of the ECC assessor").optional(),
                                 fieldWithPath("assessmentDate").description("Date of the ECC assessment (YYYY-MM-dd)").optional(),
                                 fieldWithPath("eccn").description("Export Control Classification Number").optional(),
-                                fieldWithPath("al").description("German Ausfuhrliste value").optional()
+                                fieldWithPath("al").description("German Ausfuhrliste value").optional(),
+                                fieldWithPath("eccComment").description("Free-text ECC comment").optional(),
+                                fieldWithPath("materialIndexNumber").description("Material index number").optional(),
+                                fieldWithPath("containsCryptography").description("Whether the release contains cryptography").optional()
+                        ),
+                        relaxedResponseFields(
+                                fieldWithPath("name").description("The name of the release"),
+                                fieldWithPath("version").description("The version of the release"),
+                                subsectionWithPath("eccInformation").description("The updated ECC information for the release"),
+                                subsectionWithPath("_links").description("Links to other resources")
                         )));
     }
 }

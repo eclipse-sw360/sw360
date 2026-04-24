@@ -9,7 +9,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -101,7 +101,7 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
                 releases = releases.stream()
                         .filter(r -> r.getEccInformation() != null
                                 && eccStatus.equals(r.getEccInformation().getEccStatus()))
-                        .collect(Collectors.toList());
+                        .toList();
             }
             PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     releases, TYPE_ECC);
@@ -135,12 +135,12 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "ECC information updated successfully."),
-            @ApiResponse(responseCode = "202", description = "Update sent to moderator for approval."),
+            @ApiResponse(responseCode = "202", description = "Moderation request is created."),
             @ApiResponse(responseCode = "403", description = "Access denied.", content = @Content),
             @ApiResponse(responseCode = "404", description = "Release not found.", content = @Content)
     })
     @PatchMapping(value = ECC_URL + "/{releaseId}")
-    public ResponseEntity<EntityModel<Release>> updateEccInformation(
+    public ResponseEntity<?> updateEccInformation(
             @Parameter(description = "The ID of the release whose ECC information is to be updated.")
             @PathVariable("releaseId") String releaseId,
             @Parameter(description = "The ECC information fields to update.",
@@ -149,14 +149,23 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release release = releaseService.getReleaseForUserById(releaseId, user);
-        release.setEccInformation(eccInformation);
+        EccInformation existing = release.isSetEccInformation()
+                ? release.getEccInformation() : new EccInformation();
+        if (eccInformation.isSetEccStatus())             existing.setEccStatus(eccInformation.getEccStatus());
+        if (eccInformation.isSetAl())                    existing.setAl(eccInformation.getAl());
+        if (eccInformation.isSetEccn())                  existing.setEccn(eccInformation.getEccn());
+        if (eccInformation.isSetAssessorContactPerson()) existing.setAssessorContactPerson(eccInformation.getAssessorContactPerson());
+        if (eccInformation.isSetAssessorDepartment())    existing.setAssessorDepartment(eccInformation.getAssessorDepartment());
+        if (eccInformation.isSetEccComment())            existing.setEccComment(eccInformation.getEccComment());
+        if (eccInformation.isSetMaterialIndexNumber())   existing.setMaterialIndexNumber(eccInformation.getMaterialIndexNumber());
+        if (eccInformation.isSetAssessmentDate())        existing.setAssessmentDate(eccInformation.getAssessmentDate());
+        if (eccInformation.isSetContainsCryptography())  existing.setContainsCryptography(eccInformation.isContainsCryptography());
+        release.setEccInformation(existing);
         RequestStatus updateStatus = releaseService.updateRelease(release, user);
-        // Re-fetch to return fresh data rather than the pre-update state
-        Release updatedRelease = releaseService.getReleaseForUserById(releaseId, user);
-        EntityModel<Release> releaseResource = EntityModel.of(updatedRelease);
         if (updateStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(releaseResource, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(Map.of("message", "Moderation request is created"), HttpStatus.ACCEPTED);
         }
-        return new ResponseEntity<>(releaseResource, HttpStatus.OK);
+        Release updatedRelease = releaseService.getReleaseForUserById(releaseId, user);
+        return new ResponseEntity<>(EntityModel.of(updatedRelease), HttpStatus.OK);
     }
 }
