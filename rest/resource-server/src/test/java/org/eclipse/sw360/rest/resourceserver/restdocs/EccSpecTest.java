@@ -12,6 +12,8 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
+
+import org.springframework.restdocs.payload.JsonFieldType;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
@@ -155,9 +157,9 @@ public class EccSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("assessmentDate").description("Date of the ECC assessment (YYYY-MM-dd)").optional(),
                                 fieldWithPath("eccn").description("Export Control Classification Number").optional(),
                                 fieldWithPath("al").description("German Ausfuhrliste value").optional(),
-                                fieldWithPath("eccComment").description("Free-text ECC comment").optional(),
-                                fieldWithPath("materialIndexNumber").description("Material index number").optional(),
-                                fieldWithPath("containsCryptography").description("Whether the release contains cryptography").optional()
+                                fieldWithPath("eccComment").type(JsonFieldType.STRING).description("Free-text ECC comment").optional(),
+                                fieldWithPath("materialIndexNumber").type(JsonFieldType.STRING).description("Material index number").optional(),
+                                fieldWithPath("containsCryptography").type(JsonFieldType.BOOLEAN).description("Whether the release contains cryptography").optional()
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the release"),
