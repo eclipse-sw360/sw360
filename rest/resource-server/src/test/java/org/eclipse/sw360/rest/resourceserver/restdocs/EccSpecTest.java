@@ -162,9 +162,10 @@ public class EccSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("containsCryptography").type(JsonFieldType.BOOLEAN).description("Whether the release contains cryptography").optional()
                         ),
                         responseFields(
+                                fieldWithPath("type").description("The type of the document"),
+                                fieldWithPath("id").description("The ID of the release"),
                                 fieldWithPath("name").description("The name of the release"),
                                 fieldWithPath("version").description("The version of the release"),
-                                fieldWithPath("id").description("The ID of the release"),
                                 subsectionWithPath("eccInformation").description("The updated ECC information for the release"),
                                 subsectionWithPath("_links").description("Links to other resources")
                         )));
