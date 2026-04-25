@@ -156,7 +156,7 @@
     <spring-boot.version>4.0.5</spring-boot.version>
     <spring-restdocs.version>4.0.0</spring-restdocs.version>
     <spring-security-oauth2-authorization-server.version>7.0.4</spring-security-oauth2-authorization-server.version>
-    <spring-security.version>7.0.4</spring-security.version>
+    <spring-security.version>7.0.5</spring-security.version>
     <springdoc-openapi-stater-common.version>3.0.3</springdoc-openapi-stater-common.version>
     <springframework.version>7.0.6</springframework.version>
     <thrift.version>0.20.0</thrift.version>
