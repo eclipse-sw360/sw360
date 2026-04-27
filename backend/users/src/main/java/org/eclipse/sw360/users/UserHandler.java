@@ -8,7 +8,6 @@
  */
 package org.eclipse.sw360.users;
 
-
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
@@ -26,6 +25,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
