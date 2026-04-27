@@ -146,11 +146,33 @@ public class UserDatabaseHandler {
     }
 
     public Map<PaginationData, List<User>> search(String text, Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
-        return userSearchHandler.search(text, subQueryRestrictions, pageData);
+        Map<PaginationData, List<User>> result = null;
+        try {
+            result = userSearchHandler.search(text, subQueryRestrictions, pageData);
+        } catch (Exception e) {
+            // Exception propagated (unlikely as connector swallows it) — fall back immediately
+            log.warn("Lucene/Nouveau search threw exception for text='{}', falling back to query: {}", text, e.getMessage());
+            return repository.searchByNameOrEmail(text, pageData);
+        }
+
+        // Nouveau silently catches its own errors and returns an empty result.
+        // Detect that case and fall back to a CouchDB $regex query.
+        List<User> users = (result != null && !result.values().isEmpty())
+                ? result.values().iterator().next()
+                : null;
+        if (users == null || users.isEmpty()) {
+            log.debug("Lucene returned empty result for text='{}', falling back to query", text);
+            return repository.searchByNameOrEmail(text, pageData);
+        }
+        return result;
     }
 
     public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
         return repository.searchUsersByExactValues(subQueryRestrictions, pageData);
+    }
+
+    public Map<PaginationData, List<User>> searchByNameOrEmailExact(String searchTerm, PaginationData pageData) {
+        return repository.searchByNameOrEmailExact(searchTerm, pageData);
     }
 
     public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
