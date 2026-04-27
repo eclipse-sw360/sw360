@@ -3156,8 +3156,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Project detail tab pill counts successfully retrieved",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectDetailTabCounts.class))),
+        @ApiResponse(responseCode = "200", description = "Project detail tab pill counts successfully retrieved"),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to access this project",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })

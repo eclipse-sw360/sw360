@@ -12,7 +12,11 @@ package org.eclipse.sw360.rest.resourceserver.project;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Counts for project detail tab pills")
 public class ProjectDetailTabCounts {
@@ -35,21 +39,5 @@ public class ProjectDetailTabCounts {
         this.vulnerabilityRatedCount = vulnerabilityRatedCount;
         this.obligationCount = obligationCount;
         this.obligationNonOpenCount = obligationNonOpenCount;
-    }
-
-    public int getVulnerabilityCount() {
-        return vulnerabilityCount;
-    }
-
-    public int getVulnerabilityRatedCount() {
-        return vulnerabilityRatedCount;
-    }
-
-    public int getObligationCount() {
-        return obligationCount;
-    }
-
-    public int getObligationNonOpenCount() {
-        return obligationNonOpenCount;
     }
 }
