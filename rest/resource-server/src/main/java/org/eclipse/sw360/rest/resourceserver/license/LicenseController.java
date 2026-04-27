@@ -532,7 +532,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     }
 
-     @Operation(
+    @Operation(
             summary = "Upload license archive.",
             description = "Upload license archive.",
             tags = {"Licenses"}
