@@ -482,10 +482,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (component.getName().trim().length() == 0) {
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
         } else {
-            if (isDuplicate(component.getName(), true)) {
+            if (isDuplicateByNameAndType(component)) {
                 final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                         .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
-                Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName(), true);
+                Set<String> duplicates = getComponentIdsByNameAndType(component.getName(), component.getComponentType());
                 if (duplicates.size() == 1) {
                     duplicates.forEach(addDocumentRequestSummary::setId);
                 }
@@ -627,6 +627,40 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         Set<String> duplicates = componentRepository.getComponentIdsByName(componentName.trim(), caseInsensitive);
         return duplicates.size()>0;
+    }
+
+    private boolean isDuplicateByNameAndType(Component component) {
+        String name = component.getName();
+        if (isNullEmptyOrWhitespace(name)) {
+            return false;
+        }
+        Set<String> duplicates = getComponentIdsByNameAndType(name, component.getComponentType());
+        return duplicates.size() > 0;
+    }
+
+    private Set<String> getComponentIdsByNameAndType(String name, ComponentType type) {
+        if (isNullEmptyOrWhitespace(name)) {
+            return Set.of();
+        }
+        Set<String> componentIds = componentRepository.getComponentIdsByName(name.trim(), true);
+        if (componentIds == null || componentIds.isEmpty()) {
+            return Set.of();
+        }
+        if (type == null) {
+            return componentIds;
+        }
+        Set<String> matchingIds = new java.util.HashSet<>();
+        for (String id : componentIds) {
+            try {
+                Component existing = componentRepository.get(id);
+                if (existing != null && type.equals(existing.getComponentType())) {
+                    matchingIds.add(id);
+                }
+            } catch (Exception e) {
+                log.error("Error checking component type for id: " + id, e);
+            }
+        }
+        return matchingIds;
     }
 
     private boolean isDuplicateUsingVcs(String vcsUrl, boolean caseInsensitive){
