@@ -10,13 +10,16 @@
 package org.eclipse.sw360.fossology;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
@@ -26,9 +29,14 @@ import org.apache.thrift.TException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -112,6 +120,44 @@ public class FossologyHandlerTest {
         verify(componentClient).getSourceAttachments(RELEASE_ID);
         verifyNoMoreInteractions(componentClient);
         verifyNoInteractions(fossologyRestClient, attachmentConnector);
+    }
+
+    @Test
+    public void testProcess_resetsUploadStepToNew_andPersistsState_whenAttachmentStreamThrowsTException()
+            throws TException {
+        ExternalToolProcessStep uploadStep = new ExternalToolProcessStep();
+        uploadStep.setStepName(FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD);
+        uploadStep.setStepStatus(ExternalToolProcessStatus.NEW);
+
+        ExternalToolProcess fossologyProcess = createFossologyProcess("content-1", "sha-1");
+        fossologyProcess.addToProcessSteps(uploadStep);
+
+        // Use a mutable set — updateFossologyProcessInRelease calls remove() on it
+        Set<ExternalToolProcess> processes = new HashSet<>();
+        processes.add(fossologyProcess);
+        Release release = createRelease(processes);
+        Attachment sourceAttachment = createSourceAttachment("content-1", "sha-1");
+        sourceAttachment.setFilename("source.tar.gz");
+
+        AttachmentContent attachmentContent = new AttachmentContent();
+        attachmentContent.setId("content-1");
+
+        when(componentClient.getReleaseById(RELEASE_ID, user)).thenReturn(release);
+        when(componentClient.getSourceAttachments(RELEASE_ID)).thenReturn(Set.of(sourceAttachment));
+        when(attachmentConnector.getAttachmentContent("content-1")).thenReturn(attachmentContent);
+        when(fossologyRestClient.getUploadId(any(), any())).thenReturn(-1);
+        when(attachmentConnector.getAttachmentStream(any(), any(), any()))
+                .thenThrow(new TException("simulated stream failure"));
+
+        try {
+            uut.process(RELEASE_ID, user, "");
+            fail("Expected TException to be thrown");
+        } catch (TException e) {
+            // expected — the exception is rethrown after state reset
+        }
+
+        assertEquals(ExternalToolProcessStatus.NEW, uploadStep.getStepStatus());
+        verify(componentClient, atLeastOnce()).updateReleaseFossology(any(), any());
     }
 
     private Release createRelease(Set<ExternalToolProcess> fossologyProcesses) {
