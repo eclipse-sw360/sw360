@@ -76,8 +76,10 @@ public class SW360ConfigKeys {
 
     // This property is used to configure the SVM notification URL
     public static final String SVM_NOTIFICATION_URL = "svm.notification.url";
-
+    
     // Properties purely used by UI
+    // This property is used to enable/disable linked projects display in the UI
+    public static final String UI_ENABLE_LINKED_PROJECTS_DISPLAY = "ui.enable.linked.projects.display";
     // This property is used in Project Administration
     public static final String UI_CLEARING_TEAMS = "ui.clearing.teams";
     // This property add "Unknown" team to the clearing teams list
@@ -156,7 +158,8 @@ public class SW360ConfigKeys {
             UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
             UI_OPERATING_SYSTEMS, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
-            UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE
+            UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
+            UI_ENABLE_LINKED_PROJECTS_DISPLAY
     );
 
     private SW360ConfigKeys() {
