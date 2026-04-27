@@ -1713,6 +1713,10 @@ public class RestControllerHelper<T> {
         return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);
     }
 
+    public boolean isSecurityAdminWriteActionAllowedForVulRating(Object object, User user) {
+        return makePermission(object, user).isActionAllowed(RequestedAction.WRITE_VULNERABILITY);
+    }
+
     public void throwIfSecurityUser(User user) {
         if (PermissionUtils.isSecurityUser(user)) {
             throw new AccessDeniedException("User is not allowed to access this resource.");

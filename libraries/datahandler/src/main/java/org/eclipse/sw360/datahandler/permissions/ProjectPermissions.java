@@ -46,6 +46,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
 
     private final Set<String> moderators;
     private final Set<String> contributors;
+    private final Set<String> securityResponsibles;
     private final Set<String> attachmentContentIds;
 
     protected ProjectPermissions(Project document, User user) {
@@ -60,6 +61,9 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                 .addAll(moderators)
                 .addAll(nullToEmptySet(document.getContributors()))
                 .addAll(toSingletonSet(document.getLeadArchitect()))
+                .build();
+        securityResponsibles = new ImmutableSet.Builder<String>()
+                .addAll(nullToEmptySet(document.getSecurityResponsibles()))
                 .build();
         attachmentContentIds = nullToEmptySet(document.getAttachments()).stream()
                 .map(a -> a.getAttachmentContentId())
@@ -143,6 +147,8 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                 case WRITE:
                 case ATTACHMENTS:
                     return PermissionUtils.isUserAtLeast(ADMIN, user) || isContributor() || isUserOfOwnGroupHasRole(clearingAdminRoles, UserGroup.CLEARING_ADMIN) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
+                case WRITE_VULNERABILITY:
+                    return PermissionUtils.isSecurityAdmin(user) && isSecurityResponsible();
                 case DELETE:
                 case USERS:
                 case CLEARING:
@@ -164,6 +170,11 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
     @Override
     protected Set<String> getModerators() {
         return moderators;
+    }
+
+    @Override
+    protected Set<String> getSecurityResponsibles() {
+        return securityResponsibles;
     }
 
     @Override
