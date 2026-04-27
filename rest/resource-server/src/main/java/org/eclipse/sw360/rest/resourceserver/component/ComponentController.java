@@ -591,21 +591,45 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @Operation(
             summary = "Get all releases of a component.",
-            description = "Get all releases of a component.",
+            description = "Get all releases of a component with pagination support.",
             tags = {"Components"}
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Component releases successfully retrieved.")
     })
     @GetMapping(value = COMPONENTS_URL + "/{id}/releases")
-    public ResponseEntity<CollectionModel<ReleaseLink>> getReleaseLinksByComponentId(
+    public ResponseEntity<CollectionModel<EntityModel<ReleaseLink>>> getReleaseLinksByComponentId(
             @Parameter(description = "The id of the component.")
-            @PathVariable("id") String id
-    ) throws TException {
+            @PathVariable("id") String id,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final List<ReleaseLink> releaseLinks = componentService.convertReleaseToReleaseLink(id, sw360User);
-        CollectionModel<ReleaseLink> resources = CollectionModel.of(releaseLinks);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+
+        Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks =
+                componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
+
+        List<ReleaseLink> releaseLinks = new ArrayList<>(paginatedReleaseLinks.values().iterator().next());
+        int totalCount = Math.toIntExact(paginatedReleaseLinks.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+
+        PaginationResult<ReleaseLink> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, releaseLinks, SW360Constants.TYPE_RELEASELINK, totalCount);
+
+        List<EntityModel<ReleaseLink>> resources = paginationResult.getResources().stream()
+                .map(EntityModel::of)
+                .collect(Collectors.toList());
+
+        if (resources.isEmpty()) {
+            CollectionModel<EntityModel<ReleaseLink>> empty =
+                    restControllerHelper.emptyPageResource(ReleaseLink.class, paginationResult);
+            return new ResponseEntity<>(empty, HttpStatus.OK);
+        }
+
+        CollectionModel<EntityModel<ReleaseLink>> collectionModel =
+                restControllerHelper.generatePagesResource(paginationResult, resources);
+        return new ResponseEntity<>(collectionModel, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
