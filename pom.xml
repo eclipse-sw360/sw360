@@ -158,7 +158,7 @@
     <spring-security-oauth2-authorization-server.version>7.0.4</spring-security-oauth2-authorization-server.version>
     <spring-security.version>7.0.5</spring-security.version>
     <springdoc-openapi-stater-common.version>3.0.3</springdoc-openapi-stater-common.version>
-    <springframework.version>7.0.6</springframework.version>
+    <springframework.version>7.0.7</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <archunit.version>1.4.1</archunit.version>
     <wiremock.version>3.13.1</wiremock.version>
