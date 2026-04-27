@@ -2538,6 +2538,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
                                 fieldWithPath("clearingRequestId").description("Clearing Request id associated with project."),
                                 fieldWithPath("licenseInfoHeaderText").description("LicenseInfoHeaderText associated with project."),
+                                subsectionWithPath("packageIds").description("Map of package IDs linked to the project, including relationship metadata").optional(),
                                 subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
                                 subsectionWithPath("_embedded.projectResponsible").description("The project responsible displayed").type(JsonFieldType.OBJECT).optional(),
@@ -2546,6 +2547,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.modifiedBy").description("The user who modified the project").type(JsonFieldType.OBJECT).optional(),
                                 subsectionWithPath("_embedded.leadArchitect").description("The user who leadArchitect of this project").type(JsonFieldType.OBJECT).optional(),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
+                                subsectionWithPath("_embedded.sw360:packages").description("Linked package resources for the project").type(JsonFieldType.ARRAY).optional(),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))
                         		));

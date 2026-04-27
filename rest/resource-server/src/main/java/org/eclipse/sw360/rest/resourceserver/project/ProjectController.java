@@ -3901,7 +3901,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project.setReleaseIdToUsage(null);
         sw360Project.setLinkedProjects(null);
         sw360Project.setAttachments(null);
-        sw360Project.setPackageIds(null);
         HalResource<Project> userHalResource = createHalProject(sw360Project, sw360User);
         setAdditionalFieldsToHalResource(sw360Project,userHalResource);
         sw360Project.unsetLinkedProjects();

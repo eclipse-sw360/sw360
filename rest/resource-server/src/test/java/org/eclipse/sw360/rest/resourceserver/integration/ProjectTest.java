@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
@@ -1270,6 +1271,24 @@ public class ProjectTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         byte[].class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void should_get_summary_administration_with_linked_packages() throws IOException, TException {
+        Map<String, ProjectPackageRelationship> linkedPackages = new HashMap<>();
+        linkedPackages.put(package1.getId(), new ProjectPackageRelationship().setComment("Linked from test"));
+        project1.setPackageIds(linkedPackages);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/summaryAdministration",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertTrue(responseBody.path("_embedded").has("sw360:packages"));
     }
 
     // ========== VULNERABILITY MANAGEMENT ==========
