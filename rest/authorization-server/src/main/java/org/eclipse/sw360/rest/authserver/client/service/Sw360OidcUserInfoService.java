@@ -4,9 +4,9 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.authserver.client.service;
 
+import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.stereotype.Service;
 
@@ -18,13 +18,13 @@ import java.util.Map;
  * @author smruti.sahoo@siemens.com
  */
 @Service
+@RequiredArgsConstructor
 public class Sw360OidcUserInfoService {
 
 	public static final String USER_GROUP = "userGroup";
 	public static final String DEPARTMENT = "department";
 	public static final String PRIMARY_ROLES = "primaryRoles";
-	@Autowired
-	private Sw360UserDetailsProvider sw360UserDetailsProvider;
+	private final Sw360UserDetailsProvider sw360UserDetailsProvider;
 
 	public OidcUserInfo loadUser(String username) {
 

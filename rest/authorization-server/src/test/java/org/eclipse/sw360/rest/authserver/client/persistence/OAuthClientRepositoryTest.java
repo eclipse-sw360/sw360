@@ -14,7 +14,6 @@ import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -36,11 +35,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class OAuthClientRepositoryTest extends IntegrationTestBase {
 
-    @Autowired
     private OAuthClientRepository uut;
 
     @Before
     public void setup() {
+        uut = clientRepo;
         uut.getAll().stream().forEach(uut::remove);
     }
 

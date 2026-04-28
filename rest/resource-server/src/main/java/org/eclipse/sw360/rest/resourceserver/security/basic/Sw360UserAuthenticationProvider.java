@@ -6,7 +6,6 @@ package org.eclipse.sw360.rest.resourceserver.security.basic;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -23,11 +22,10 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    private Sw360CustomUserDetailsService userDetailsService;
+    private final Sw360CustomUserDetailsService userDetailsService;
 
-    @Autowired
     public Sw360UserAuthenticationProvider(@Lazy PasswordEncoder passwordEncoder, Sw360CustomUserDetailsService userDetailsService) {
         this.passwordEncoder = passwordEncoder;
         this.userDetailsService = userDetailsService;

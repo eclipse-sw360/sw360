@@ -52,7 +52,6 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -94,8 +93,8 @@ public class ModerationRequestController implements RepresentationModelProcessor
     private static final String REQUESTING_USER = "requestingUser";
     public static final String MODERATION_REQUEST_URL = "/moderationrequest";
 
-    @Autowired
-    private Sw360ModerationRequestService sw360ModerationRequestService;
+    @NonNull
+    private final Sw360ModerationRequestService sw360ModerationRequestService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;

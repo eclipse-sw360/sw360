@@ -9,16 +9,15 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360OidcUserInfoService;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -41,16 +40,14 @@ import java.util.UUID;
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
 
-    @Autowired
-    Sw360ClientDetailsService sw360ClientDetailsService;
+    private final Sw360ClientDetailsService sw360ClientDetailsService;
 
-    @Autowired
-    private Sw360OidcUserInfoService sw360OidcUserInfoService;
+    private final Sw360OidcUserInfoService sw360OidcUserInfoService;
 
     @Bean
     @Order(1)
@@ -62,6 +59,7 @@ public class SecurityConfig {
         httpSecurity
                 .securityMatcher(endpointsMatcher)
                 .with(authorizationServerConfigurer, Customizer.withDefaults())
+                .authenticationProvider(sw360UserAuthenticationProvider)
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")))
                 .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
@@ -77,7 +75,8 @@ public class SecurityConfig {
                 authz -> authz
                 .requestMatchers("/client-management/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
-        ).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
+        ).authenticationProvider(sw360UserAuthenticationProvider)
+                .httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
         return httpSecurity.csrf(csrf -> csrf.disable()).build();
     }
 
@@ -105,11 +104,6 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-    }
-
-    @Autowired
-    public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) {
-        authenticationManagerBuilder.authenticationProvider(sw360UserAuthenticationProvider);
     }
 
     @Bean

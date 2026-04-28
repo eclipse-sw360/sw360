@@ -37,13 +37,13 @@ import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 import org.junit.Before;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -87,8 +87,7 @@ public abstract class IntegrationTestBase {
     @MockitoBean
     Sw360UserDetailsService sw360UserDetailsService;
 
-    @Autowired
-    protected PasswordEncoder encoder;
+    protected final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Before
     public void setup() throws TException {
