@@ -4502,8 +4502,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return groups;
     }
     @Operation(summary = "Copy project", description = "Selective field copy. Empty=ALL non-internal.")
-    @PostMapping(value = "/{id}/copy"...)  ← your method
-
     @PostMapping(value = "/{id}/copy", produces = MediaType.APPLICATION_JSON_VALUE)
 public ResponseEntity<?> copyProject(@PathVariable String id,
                                     @RequestBody(required = false) CopyProjectRequest request,
