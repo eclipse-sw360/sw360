@@ -450,30 +450,17 @@ public class ProjectDatabaseHandlerTest {
         return new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE);
     }
 
-//@Test
-public void testCopyProjectGSoCEmptyFields() {
-    // GSoC Task: Verify copyProject works with empty fieldsToCopy
+
+
+@Test
+public void testCopyProjectWithEmptyFields() throws Exception {
     Set<String> emptyFields = new HashSet<>();
     Project dummyOverride = new Project();
     dummyOverride.setId("targetId");
-    
-    try {
-        // Call your implemented method
-        AddDocumentRequestSummary result = projectDatabaseHandler.copyProject(
-            "sourceId", emptyFields, dummyOverride, TestHelper.MODERATOR_USER);
-        
-        // Verify: method runs without crash + returns result
-        assertNotNull("Result should not be null", result);
-        System.out.println("✅ GSoC copyProject(): empty fieldsToCopy handled!");
-        
-    } catch (Exception e) {
-        fail("copyProject failed: " + e.getMessage());
-    }
-}
 
-//@Test
-public void gsocCopyProjectComplete() {
-    assertTrue(true);
-    System.out.println("🎉 GSoC Task COMPLETE: copyProject() implemented + tested!");
+    AddDocumentRequestSummary result = handler.copyProject(
+        "P1", emptyFields, dummyOverride, user1);
+
+    assertNotNull("Result should not be null", result);
 }
 }
