@@ -10,7 +10,6 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360OidcUserInfoService;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
@@ -104,11 +103,6 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-    }
-
-    @Bean
-    public ThriftClients thriftClients() {
-        return new ThriftClients();
     }
 
 }
