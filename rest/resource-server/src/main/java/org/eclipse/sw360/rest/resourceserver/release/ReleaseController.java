@@ -94,10 +94,12 @@ import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilitySer
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
+import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -116,7 +118,7 @@ import com.google.common.collect.ImmutableMap;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
-public class ReleaseController {
+public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
     private static final String SPDX_DOCUMENT = "spdxDocument";
     private static final String DOCUMENT_CREATION_INFORMATION = "documentCreationInformation";
@@ -158,6 +160,12 @@ public class ReleaseController {
 
     @NonNull
     private final ApiResponseCacheManager cacheManager;
+
+    @Override
+    public RepositoryLinksResource process(RepositoryLinksResource resource) {
+        resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
+        return resource;
+    }
 
     @Operation(
             summary = "List all of the service's releases.",
