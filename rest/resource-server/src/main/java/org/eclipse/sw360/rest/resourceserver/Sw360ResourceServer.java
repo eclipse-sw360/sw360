@@ -28,12 +28,13 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
+import org.eclipse.sw360.rest.common.Sw360SecurityFilter;
 import org.eclipse.sw360.rest.common.Sw360XssFilter;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -51,7 +52,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import java.util.*;
 
 @SpringBootApplication
-@Import({Sw360CORSFilter.class, Sw360XssFilter.class})
+@Import({Sw360CORSFilter.class, Sw360XssFilter.class, Sw360SecurityFilter.class})
 public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     public static final String REST_BASE_PATH = "/api";

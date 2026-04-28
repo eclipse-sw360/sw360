@@ -15,8 +15,8 @@
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-# FROM maven:3-eclipse-temurin-21-noble
-FROM maven@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
+# Where code compiles
+FROM maven:3-eclipse-temurin-21-noble@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -52,9 +52,7 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -Dsurefire.failIfNoSpecifiedTests=false \
-    -Djars.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
-    -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dlistener.deploy.dir=/sw360_keycloak_listener \
     -Dhelp-docs=true
 
@@ -66,15 +64,13 @@ COPY scripts/create-slim-war-files.sh /bin/slim.sh
 RUN bash /bin/slim.sh
 
 FROM scratch AS binaries
-COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 
 #--------------------------------------------------------------------------------------------------
 # Runtime SW360 image
 
-# FROM tomcat:11-jre21-temurin-noble
-FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
+FROM tomcat:11-jre21-temurin-noble@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
@@ -146,8 +142,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-# FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:8d44614c74798322c4e07fbe0ecb15cfbb5879d69b484628555f58ade06f0d8c AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.6.1@sha256:26ae26445475f7fac5f90ee138b1bdb64324f5815fb16133ffdbdb122d97c4d8 AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -166,8 +161,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-# FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:8d44614c74798322c4e07fbe0ecb15cfbb5879d69b484628555f58ade06f0d8c AS keycloak
+FROM quay.io/keycloak/keycloak:26.6.1@sha256:26ae26445475f7fac5f90ee138b1bdb64324f5815fb16133ffdbdb122d97c4d8 AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

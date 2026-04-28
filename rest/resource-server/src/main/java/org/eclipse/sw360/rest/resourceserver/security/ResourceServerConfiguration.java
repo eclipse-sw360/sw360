@@ -10,8 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
@@ -25,7 +23,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -45,8 +42,6 @@ public class ResourceServerConfiguration {
 
     @Autowired
     SimpleAuthenticationEntryPoint saep;
-
-    private final Logger log = LogManager.getLogger(this.getClass());
 
     @Autowired
     Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
@@ -92,7 +87,7 @@ public class ResourceServerConfiguration {
                     auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
                 })
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(basic -> basic.authenticationEntryPoint(saep))
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
                 .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.DISABLED))
                         .contentSecurityPolicy(cps -> cps.policyDirectives("script-src 'self'")))

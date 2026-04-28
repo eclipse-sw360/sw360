@@ -117,6 +117,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import static com.google.common.base.Strings.nullToEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -800,7 +802,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             obligationStatusMap = licenseObligation.getObligationStatusMap();
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo details = entry.getValue();
-                if (details.getReleaseIdToAcceptedCLI() == null) {
+                if (details.getReleaseIdToAcceptedCLI() == null && details.getReleases()!=null) {
                     Set<Release> releaseData = details.getReleases();
                     for (Release rel : releaseData) {
                         String releaseId = rel.getId();
@@ -895,6 +897,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
+        } else if (requestStatus == RequestStatus.DUPLICATE) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                    "A project with the same name and version already exists.");
         } else if (requestStatus != RequestStatus.SENT_TO_MODERATOR && requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
         }
@@ -1528,6 +1533,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
+        } else if (requestStatus == RequestStatus.DUPLICATE) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                    "A project with the same name and version already exists.");
         } else if (requestStatus != RequestStatus.SENT_TO_MODERATOR && requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
         }
@@ -2092,6 +2100,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                      usagesToUpdate.size(), projectId);
             makeAttachmentUsages(usagesToUpdate);
 
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to process ignored licenses for project {}: {}", projectId, e.getMessage(), e);
             throw new TException("Failed to process ignored licenses", e);
@@ -2212,16 +2226,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             String parentProjectId = projectHierarchy[i];
             String childProjectId = projectHierarchy[i + 1];
 
-            // Get parent project
-            Project parentProject;
-            try {
-                parentProject = getProjectForUserById(parentProjectId, user);
-            } catch (Exception e) {
-                throw new BadRequestClientException(String.format(
-                    "Invalid project hierarchy in ignoredLicenses key '%s': " +
-                    "Parent project '%s' not found or not accessible",
-                    originalKey, parentProjectId));
-            }
+            // Get parent project (getProjectForUserById maps SW360 404/403 to ResourceNotFoundException / AccessDeniedException)
+            Project parentProject = getProjectForUserById(parentProjectId, user);
 
             // Check if child project exists in parent's linked projects
             Map<String, ProjectProjectRelationship> linkedProjects = parentProject.getLinkedProjects();
@@ -2247,26 +2253,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     private void validateReleaseOwnership(String releaseId, String projectId, String originalKey, User user)
             throws TException {
-        // Get the project
-        Project project;
-        try {
-            project = getProjectForUserById(projectId, user);
-        } catch (Exception e) {
-            throw new BadRequestClientException(String.format(
-                "Invalid project in ignoredLicenses key '%s': Project '%s' not found or not accessible",
-                originalKey, projectId));
-        }
+        // Validate project access (getProjectForUserById maps SW360 404/403 to ResourceNotFoundException / AccessDeniedException)
+        getProjectForUserById(projectId, user);
 
         // Get all release IDs for this project including sub-projects (transitive=true)
-        Set<String> allReleaseIds;
-        try {
-            allReleaseIds = getReleaseIds(projectId, user, true);
-        } catch (TException e) {
-            log.error("Failed to fetch release IDs for project {}: {}", projectId, e.getMessage());
-            throw new BadRequestClientException(String.format(
-                "Failed to validate release ownership in ignoredLicenses key '%s': Unable to fetch releases for project '%s'",
-                originalKey, projectId));
-        }
+        Set<String> allReleaseIds = getReleaseIds(projectId, user, true);
 
         // Check if release exists in project or any of its sub-projects
         if (!allReleaseIds.contains(releaseId)) {

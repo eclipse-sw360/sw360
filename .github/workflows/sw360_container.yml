@@ -47,7 +47,7 @@ jobs:
       timestamp: ${{ steps.pom_version.outputs.TIMESTAMP }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
         with:
           egress-policy: audit
 
@@ -73,13 +73,14 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       packages: write
+      id-token: write
     env:
       SW360_VERSION: ${{ needs.sw360_version.outputs.sw360_version }}
       TIMESTAMP: ${{ needs.sw360_version.outputs.timestamp }}
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
         with:
           egress-policy: audit
 
@@ -87,7 +88,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -98,6 +99,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
 
       - name: Extract components metadata (tags, labels) runtime image
         id: meta_sw360
@@ -134,7 +138,8 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: SW360 image
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        id: build_sw360
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           target: sw360
@@ -148,7 +153,8 @@ jobs:
           SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
 
       - name: KeyCloak image
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        id: build_keycloak
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           target: keycloak
@@ -160,3 +166,20 @@ jobs:
           sbom: true
         env:
           SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
+
+      - name: Sign the images
+        if: github.event_name != 'pull_request'
+        env:
+          TAGS: ${{ steps.meta_sw360.outputs.tags }}
+          DIGEST: ${{ steps.build_sw360.outputs.digest }}
+          KC_TAGS: ${{ steps.meta_keycloak.outputs.tags }}
+          KC_DIGEST: ${{ steps.build_keycloak.outputs.digest }}
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images+="${tag}@${DIGEST} "
+          done
+          for tag in ${KC_TAGS}; do
+            images+="${tag}@${KC_DIGEST} "
+          done
+          cosign sign --yes ${images}

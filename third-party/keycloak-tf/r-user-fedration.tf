@@ -14,4 +14,10 @@ resource "keycloak_custom_user_federation" "sw360_user_jpa" {
   changed_sync_period = "-1"
   full_sync_period    = "-1"
   cache_policy        = "DEFAULT"
+
+  lifecycle {
+    ignore_changes = [
+      config["lastSync"]
+    ]
+  }
 }

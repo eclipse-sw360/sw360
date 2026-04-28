@@ -616,8 +616,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getLicenseInfoHeaderText()).willReturn("Default License Info Header Text");
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
-        given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any())).willReturn(projectName);
-        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any(), any())).willReturn(projectName);
+        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getProjectReleaseSpreadSheetWithEcc(any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.searchAccessibleProjectByExactValues(any(), any(), any())).willReturn(
@@ -1527,6 +1527,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded['sw360:projects'][0].linkedReleases").isArray())
+                .andExpect(jsonPath("$._embedded['sw360:projects'][0].linkedProjects").isArray())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("page").description("Page of projects"),
@@ -2475,6 +2477,22 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                fieldWithPath("releaseCount").description("Total count of releases of a project including sub-projects releases"),
                                fieldWithPath("approvedCount").description("Approved license clearing state releases")
                        )));
+    }
+
+    @Test
+    public void should_document_get_project_detail_tab_counts() throws Exception {
+        mockMvc.perform(get("/api/projects/" + project8.getId() + "/tabCounts")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON)
+                        .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("vulnerabilityCount").description("Count of vulnerabilities linked to the project; returns -1 when vulnerability display is disabled for the project"),
+                                fieldWithPath("vulnerabilityRatedCount").description("Count of vulnerabilities with project relevance other than NOT_CHECKED; returns -1 when vulnerability display is disabled for the project"),
+                                fieldWithPath("obligationCount").description("Count of obligations linked to the project"),
+                                fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN")
+                        )));
     }
 
     @Test

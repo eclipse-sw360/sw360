@@ -14,16 +14,15 @@ package org.eclipse.sw360.rest.resourceserver.schedule;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+
+import static org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper.throwIfNotAdmin;
 
 @Service
 @RequiredArgsConstructor
@@ -34,12 +33,6 @@ public class Sw360ScheduleService {
         throwIfNotAdmin(sw360User);
         ThriftClients thriftClients = new ThriftClients();
         return thriftClients.makeScheduleClient().scheduleService(serviceName);
-    }
-
-    private static void throwIfNotAdmin(User sw360User) throws AccessDeniedException {
-        if (!PermissionUtils.isAdmin(sw360User)) {
-            throw new AccessDeniedException("User does not have admin access");
-        }
     }
 
     private RequestStatus unscheduleService(User sw360User, String serviceName) throws TException {
@@ -80,6 +73,9 @@ public class Sw360ScheduleService {
             ThriftClients thriftClients = new ThriftClients();
             return thriftClients.makeCvesearchClient().update();
         } catch (TException e) {
+            log.error("Error occurred while triggering CVE search: " + e.getMessage(), e);
+            throw e;
+        } catch (RuntimeException e) {
             log.error("Error occurred while triggering CVE search: " + e.getMessage(), e);
             throw e;
         } catch (Exception e) {

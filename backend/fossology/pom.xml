@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend</artifactId>
-        <version>20.0.0-rc-2</version>
+        <version>20.0.0</version>
     </parent>
 
     <artifactId>backend-fossology</artifactId>
@@ -26,11 +26,8 @@
 
     <properties>
         <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <deploy.name>fossology</deploy.name>
     </properties>
-
-    <build>
-        <finalName>fossology</finalName>
-    </build>
 
     <dependencies>
         <!-- Core SW360 Dependencies -->

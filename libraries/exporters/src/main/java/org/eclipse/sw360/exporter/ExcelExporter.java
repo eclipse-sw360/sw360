@@ -32,7 +32,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -50,6 +53,28 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
 
     public ExcelExporter(U helper) {
         this.helper = helper;
+    }
+
+    public List<Map<String, String>> makeRecords(List<T> documents) throws SW360Exception {
+        List<String> headers = helper.getHeaders();
+        List<Map<String, String>> records = new ArrayList<>();
+        if (documents == null) {
+            return records;
+        }
+        for (T document : documents) {
+            SubTable table = helper.makeRows(document);
+            for (int i = 0; i < table.getnRows(); i++) {
+                List<String> row = table.getRow(i);
+                Map<String, String> record = new LinkedHashMap<>();
+                for (int j = 0; j < headers.size(); j++) {
+                    String header = headers.get(j);
+                    String value = (j < row.size()) ? row.get(j) : "";
+                    record.put(header, value != null ? value : "");
+                }
+                records.add(record);
+            }
+        }
+        return records;
     }
 
     public InputStream makeExcelExport(List<T> documents) throws IOException, SW360Exception {
@@ -86,12 +111,19 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         final SXSSFWorkbook workbook = new SXSSFWorkbook();
         String token = UUID.randomUUID().toString();
         String filePath = TMP_EXPORTEDFILES + user.getEmail() + SLASH + "file" + SLASH;
-        File file;
+        String relativePath;
         try {
             File dir = new File(filePath);
-            dir.mkdirs();
-            file = new File(dir.getPath() + SLASH + SW360Utils.getCreatedOn() + "_" + token);
-            file.createNewFile();
+            if (!dir.mkdirs() && !dir.exists()) {
+                log.error("Failed to create export directory: {}", dir.getAbsolutePath());
+                throw new IOException("Failed to create export directory: " + dir.getAbsolutePath());
+            }
+            File file = new File(dir.getPath() + SLASH + SW360Utils.getCreatedOn() + "_" + token);
+            if (!file.createNewFile()) {
+                log.error("Failed to create export file: {}", file.getAbsolutePath());
+                throw new IOException("Failed to create export file: " + file.getAbsolutePath());
+            }
+            relativePath = user.getEmail() + SLASH + "file" + SLASH + file.getName();
             SXSSFSheet sheet = workbook.createSheet("Data");
 
             /** Adding styles to cells */
@@ -118,21 +150,29 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         } finally {
             workbook.close();
         }
-        return file.getPath();
+        return relativePath;
     }
 
-    public InputStream downloadExcelSheet(String token) {
-        InputStream stream = null;
+    public InputStream downloadExcelSheet(String token) throws FileNotFoundException {
         try {
-            File file = new File(token);
+            File file = new File(TMP_EXPORTEDFILES + token);
+            String canonicalPath = file.getCanonicalPath();
+            String allowedDir = new File(TMP_EXPORTEDFILES).getCanonicalPath();
+            if (!canonicalPath.startsWith(allowedDir + File.separator)) {
+                log.error("Path traversal attempt detected. Token: {}", token);
+                throw new FileNotFoundException("Invalid file token: " + token);
+            }
             if (file.exists()) {
-                stream = new FileInputStream(new File(token));
+                return new FileInputStream(file);
+            } else {
+                throw new FileNotFoundException("Report file not found for token: " + token);
             }
         } catch (FileNotFoundException e) {
-            log.error("Error getting file", e);
+            throw e;
+        } catch (IOException e) {
+            log.error("Error resolving canonical path for token: {}", token, e);
+            throw new FileNotFoundException("Unable to validate file path for token: " + token);
         }
-
-        return stream;
     }
 
     /**

@@ -73,15 +73,15 @@ UI (React) → REST Controllers → Sw360*Service → ThriftClients → Backend 
 ## Developer Workflows
 
 ### Build Commands
+`$TOMCAT_HOME` points to a directory where Apache Tomcat is installed and
+contains the `/webapps` directory.
 ```bash
 # Full build (skip tests)
 mvn package -P deploy -DskipTests
 
 # Build with specific deploy directories
 mvn package -P deploy -DskipTests \
-    -Dbackend.deploy.dir=webapps \
-    -Drest.deploy.dir=webapps \
-    -Djars.deploy.dir=deploy
+    -Dbase.deploy.dir=$TOMCAT_HOME
 
 # Docker build
 ./docker_build.sh
@@ -1056,6 +1056,8 @@ public void processResource(String id, User user) throws SW360Exception {
 - Handle exceptions with specific types
 - Add file headers with EPL-2.0 license
 - Write unit tests for new code
+- **Create a test class for every new Controller or Service** (enforced by ArchUnit -- build will fail otherwise)
+- **Every new endpoint must have an HTTP-exercising test** that calls `TestRestTemplate` or `MockMvc` (enforced by ArchUnit Rule 3)
 - Use `Optional` for nullable returns
 - Follow existing patterns in the codebase
 
@@ -1125,6 +1127,41 @@ class Sw360ResourceServiceTest {
 }
 ```
 
+### Forced Test Co-Evolution (ArchUnit Rules)
+
+SW360 enforces test coverage at build time via ArchUnit rules in
+`TestCoverageCompletenessRulesTest.java`. If any rule is violated, **the build fails**.
+
+**Rule 1 -- Every Controller must have a test class**
+- `FooController` requires a test class whose name contains `Foo` and ends with
+  `Test` or `SpecTest` (e.g., `FooTest`, `FooSpecTest`)
+
+**Rule 2 -- Every Service must have a test class**
+- `Sw360FooService` / `SW360FooService` -- same matching after stripping the prefix
+
+**Rule 3 -- Every endpoint must have an HTTP-exercising test**
+- Counts HTTP endpoint methods (`@GetMapping`, `@PostMapping`, etc.) in each Controller
+- Counts `@Test` methods that **actually call `TestRestTemplate` or `MockMvc`**
+  (detected via bytecode method-call analysis)
+- If HTTP-test count < endpoint count, the build fails
+- Trivial tests (e.g., `assertTrue(true)`) are **not** counted -- only tests
+  that make real HTTP calls qualify
+
+**What this means for developers:**
+- Adding a new `*Controller` or `*Service` class **requires** adding a test class
+- Adding a new endpoint **requires** adding a `@Test` that calls
+  `TestRestTemplate.exchange()`, `MockMvc.perform()`, or similar
+- Test classes follow SW360's naming convention:
+  - Integration test: `rest/resource-server/src/test/.../integration/<Domain>Test.java`
+  - REST docs spec test: `rest/resource-server/src/test/.../restdocs/<Domain>SpecTest.java`
+- Pre-existing gaps are tracked via `EXCLUDED_CLASSES` and `ENDPOINT_RATIO_EXCLUDED`
+
+**Run the check locally:**
+```bash
+mvn -pl rest/resource-server test \
+  -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.TestCoverageCompletenessRulesTest"
+```
+
 ---
 
 ## AI Copilot Guidance
@@ -1151,11 +1188,14 @@ After generating code:
 
 **Adding a New REST Endpoint:**
 ```
-1. rest/resource-server/.../resourceserver/<entity>/<Entity>Controller.java  → Add endpoint method
-2. rest/resource-server/.../resourceserver/<entity>/Sw360<Entity>Service.java → Add service method
-3. rest/resource-server/src/docs/asciidoc/<entity>.adoc → Document endpoint
-4. rest/resource-server/src/test/.../<Entity>ControllerTest.java → Add tests
+1. rest/resource-server/.../resourceserver/<entity>/<Entity>Controller.java  -> Add endpoint method
+2. rest/resource-server/.../resourceserver/<entity>/Sw360<Entity>Service.java -> Add service method
+3. rest/resource-server/src/docs/asciidoc/<entity>.adoc -> Document endpoint
+4. rest/resource-server/src/test/.../integration/<Entity>Test.java -> Add HTTP test (MANDATORY -- ArchUnit enforced)
+5. rest/resource-server/src/test/.../restdocs/<Entity>SpecTest.java -> Add REST docs spec test
 ```
+> **Note:** Step 4 requires a `@Test` method that calls `TestRestTemplate` or `MockMvc`.
+> A test without an HTTP call will not satisfy the ArchUnit endpoint ratio rule.
 
 **Adding a New Field to Entity:**
 ```

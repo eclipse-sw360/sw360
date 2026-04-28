@@ -15,7 +15,7 @@
     <parent>
         <artifactId>libraries</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.0.0-rc-2</version>
+        <version>20.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -45,7 +45,6 @@
     </dependencies>
 
     <build>
-        <finalName>org.eclipse.sw360.log4j-osgi-support-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

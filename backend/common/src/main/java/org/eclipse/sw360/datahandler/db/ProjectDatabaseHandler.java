@@ -113,7 +113,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final boolean WITH_ALL_RELEASES = true;
     private static final boolean WITH_ROOT_RELEASES_ONLY = false;
 
-    private ExecutorService projectExecutor;
+
 
     private final ProjectRepository repository;
     private final ProjectVulnerabilityRatingRepository pvrRepository;
@@ -526,24 +526,23 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void saveAttachmentUsages(Project project) {
-        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
         String projectId = project.getId();
         List<String> projectPaths = new ArrayList<>();
-
-        buildProjectPaths(project, null, projectPaths, new HashSet<>());
-        projectPaths.remove(project.getId());
         try {
+            buildProjectPaths(project, null, projectPaths, new HashSet<>());
+            projectPaths.remove(projectId);
             if (!projectPaths.isEmpty()) {
-                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths,projectId);
+                AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths, projectId, attachmentClient);
                 attachmentClient.makeAttachmentUsages(newAttachmentUsages);
             }
-        } catch (TException e) {
+        } catch (TException | RuntimeException e) {
             log.error("Saving attachment usages for project " + projectId + " failed", e);
         }
     }
 
     void buildProjectPaths(Project project, String parentPath, List<String> results, Set<String> visited) {
-        if (project == null || visited.contains(project.getId())) {
+        if (project == null || project.getId() == null || visited.contains(project.getId())) {
             return;
         }
         visited.add(project.getId());
@@ -558,31 +557,41 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId) {
+    private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId,
+            AttachmentService.Iface attachmentClient) throws TException {
         List<AttachmentUsage> result = new ArrayList<>();
-        try {
-            for(String projectPath: projectPaths) {
-                String[] pathArray = projectPath.split(":");
-                String subProjectId = pathArray[pathArray.length-1];
-                List<AttachmentUsage> subProjectAttachmentUsages = thriftClients.makeAttachmentClient().getUsedAttachments(Source.projectId(subProjectId), null);
+        for (String projectPath : projectPaths) {
+            String[] pathArray = projectPath.split(":");
+            String subProjectId = pathArray[pathArray.length - 1];
+            List<AttachmentUsage> subProjectAttachmentUsages =
+                    attachmentClient.getUsedAttachments(Source.projectId(subProjectId), null);
 
-                for(AttachmentUsage usage: subProjectAttachmentUsages) {
-                    if (!usage.getOwner().isSetReleaseId()) {
-                        continue;
-                    }
-                    String releaseId = usage.getOwner().getReleaseId();
-                    String attachmentContentId = usage.getAttachmentContentId();
-                    AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId,org.eclipse.sw360.datahandler.thrift.Source.projectId(projectId));
-                    final UsageData usageData;
-                    LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
-                    licenseInfoUsage.setProjectPath(projectPath);
-                    usageData = UsageData.licenseInfo(licenseInfoUsage);
-                    newUsage.setUsageData(usageData);
-                    result.add(newUsage);
+            for (AttachmentUsage usage : subProjectAttachmentUsages) {
+                if (!usage.getOwner().isSetReleaseId()) {
+                    log.warn("Skipping attachment usage with non-release owner for sub-project {}", subProjectId);
+                    continue;
                 }
+                String releaseId = usage.getOwner().getReleaseId();
+                String attachmentContentId = usage.getAttachmentContentId();
+                AttachmentUsage newUsage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, org.eclipse.sw360.datahandler.thrift.Source.projectId(projectId));
+                final UsageData usageData;
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                licenseInfoUsage.setProjectPath(projectPath);
+                usageData = UsageData.licenseInfo(licenseInfoUsage);
+                newUsage.setUsageData(usageData);
+                result.add(newUsage);
             }
-        } catch (TException e) {
-            log.error("Saving attachment usages for project " + projectId + " failed", e);
+        }
+                }
+                String releaseId = usage.getOwner().getReleaseId();
+                String attachmentContentId = usage.getAttachmentContentId();
+                AttachmentUsage newUsage = new AttachmentUsage(
+                        Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                licenseInfoUsage.setProjectPath(projectPath);
+                newUsage.setUsageData(UsageData.licenseInfo(licenseInfoUsage));
+                result.add(newUsage);
+            }
         }
         return result;
     }
@@ -1204,7 +1213,7 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 
@@ -1561,8 +1570,9 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
             return cachedAllProjectsIdMap;
         }
 
-        cachedAllProjectsIdMap = ThriftUtils.getIdMap(repository.getAll());
+        cachedAllProjectsIdMap = ThriftUtils.getIdMap(repository.getAllProjectsForClearingCache());
         cachedAllProjectsIdMapLoadingInstant = Instant.now();
+        log.debug("Refreshed project clearing cache with {} entries", cachedAllProjectsIdMap.size());
 
         return cachedAllProjectsIdMap;
     }
@@ -2597,8 +2607,6 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
     }
 
     protected List<ReleaseLink> convertReleaseNodesToReleaseLinksParallel(List<ReleaseNode> releaseNodes, String projectId, User user) {
-        ExecutorService executor = Executors.newFixedThreadPool(10);
-
         final List<Callable<ReleaseLink>> callableTasksToConvertReleaseNodes = new ArrayList<>();
         releaseNodes.forEach(releaseNode -> {
             Callable<ReleaseLink> convertToReleaseLink = () ->
@@ -2607,12 +2615,10 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
         });
 
         List<Future<ReleaseLink>> releaseLinksFuture;
-        try {
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             releaseLinksFuture = executor.invokeAll(callableTasksToConvertReleaseNodes);
         } catch (InterruptedException e) {
             throw new RuntimeException("Error when convert releaseLink: " + e.getMessage());
-        } finally {
-            executor.shutdown();
         }
 
         AtomicInteger index = new AtomicInteger();
@@ -2635,34 +2641,34 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
         projectOrigin.put(projectId, SW360Utils.printName(projectById));
         LinkedHashMap<String, String> releaseOrigin = new LinkedHashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = projectById.getLinkedProjects();
-        projectExecutor = Executors.newFixedThreadPool(5);
         String releaseNetwork = projectById.getReleaseRelationNetwork();
         List<ReleaseNode> listReleaseLinkJson;
-        if (releaseNetwork != null) {
-            try {
-                listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
-                });
-                flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked);
-            } catch (JsonProcessingException e) {
-                log.error("JsonProcessingException: " + e);
+        try (ExecutorService projectExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
+            if (releaseNetwork != null) {
+                try {
+                    listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
+                    });
+                    flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
+                } catch (JsonProcessingException e) {
+                    log.error("JsonProcessingException: " + e);
+                }
             }
-        }
 
-        if (linkedProjects != null && !linkedProjects.isEmpty()) {
-            try {
-                flattenDependencyNetworkForLinkedProject(linkedProjects, projectOrigin, releaseOrigin, clearingStatusList,
-                        user, isInaccessibleLinkMasked);
-            } catch (WrappedException.WrappedSW360Exception exception) {
-                throw new SW360Exception(exception.getCause());
+            if (linkedProjects != null && !linkedProjects.isEmpty()) {
+                try {
+                    flattenDependencyNetworkForLinkedProject(linkedProjects, projectOrigin, releaseOrigin, clearingStatusList,
+                            user, isInaccessibleLinkMasked, projectExecutor);
+                } catch (WrappedException.WrappedSW360Exception exception) {
+                    throw new SW360Exception(exception.getCause());
+                }
             }
         }
-        projectExecutor.shutdown();
         return clearingStatusList;
     }
 
     private void flattenLinkedReleaseOfRelease(List<ReleaseNode>  listReleaseLinkJson,
                                                LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
-                                               List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) {
+                                               List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked, ExecutorService projectExecutor) {
         final List<Callable<Void>> callables = new ArrayList<>();
         listReleaseLinkJson.forEach(rl -> {
             Callable<Void> callableTask = () -> {
@@ -2680,7 +2686,7 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
                     Map<String, String> row = createReleaseCSRow(relation, projectMailLineState, rel, clearingStatusList, user, comment);
                     if (CommonUtils.isNotEmpty(listLinkedRelease)) {
                         flattenLinkedReleaseOfRelease(listLinkedRelease, projectOrigin, cpReleaseOrigin,
-                                clearingStatusList, user, isInaccessibleLinkMasked);
+                                clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
                     }
                     cpReleaseOrigin.remove(releaseId);
                     row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
@@ -2703,7 +2709,7 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
 
     private void flattenDependencyNetworkForLinkedProject(Map<String, ProjectProjectRelationship> linkedProjects,
                                                           LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
-                                                          List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) throws WrappedException.WrappedSW360Exception {
+                                                          List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked, ExecutorService projectExecutor) throws WrappedException.WrappedSW360Exception {
 
         linkedProjects.entrySet().stream().forEach(lp -> wrapSW360Exception(() -> {
             String projId = lp.getKey();
@@ -2721,7 +2727,7 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
                 try {
                     listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
                     });
-                    flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked);
+                    flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
                 } catch (JsonProcessingException e) {
                     log.error("JsonProcessingException: " + e);
                 }
@@ -2730,7 +2736,7 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
             if (subprojects != null && !subprojects.isEmpty()) {
                 try {
                     flattenDependencyNetworkForLinkedProject(subprojects, projectOrigin, releaseOrigin, clearingStatusList,
-                            user, isInaccessibleLinkMasked);
+                            user, isInaccessibleLinkMasked, projectExecutor);
                 } catch (WrappedException.WrappedSW360Exception exception) {
                     throw new SW360Exception(exception.getCause());
                 }
@@ -2832,7 +2838,7 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 
@@ -2861,7 +2867,7 @@ public AddDocumentRequestSummary copyProject(String projectId, Set<String> field
                     parentNodeId, visitedIds, maxDepth, user, true, WITH_ALL_RELEASES);
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(ProjectLink::getVersion, NaturalVersionComparator.NULLS_FIRST_INSTANCE));
         return out;
     }
 

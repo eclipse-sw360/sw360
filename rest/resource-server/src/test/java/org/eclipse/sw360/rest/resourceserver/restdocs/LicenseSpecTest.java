@@ -15,7 +15,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
@@ -32,7 +34,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
@@ -424,7 +425,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_upload_license() throws Exception {
         MockMultipartFile file = new MockMultipartFile("licenseFile","file=@/bom.spdx.rdf".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/licenses/upload")
+        var builder = MockMvcRequestBuilders.multipart("/api/licenses/upload")
                 .file(file)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("licenseFile", "Must need to attach file.");
@@ -467,5 +468,24 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
         .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_return_400_when_license_update_fails() throws Exception {
+        // Overrides the @Before stub (SUCCESS) for this test only — Mockito applies the last stub wins rule.
+        String expectedMessage = "License update failed with status: " + RequestStatus.FAILURE;
+        given(this.licenseServiceMock.updateLicense(any(), any()))
+                .willThrow(new BadRequestClientException(expectedMessage));
+
+        Map<String, String> licenseRequestBody = new HashMap<>();
+        licenseRequestBody.put("fullName", "Apache License 4.0");
+
+        mockMvc.perform(MockMvcRequestBuilders.patch("/api/licenses/" + license.getId())
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(licenseRequestBody))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 }

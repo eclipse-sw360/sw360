@@ -355,6 +355,20 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 addFormattedTextInTableCell(row.addNewTableCell(), "Owner");
             }
         }
+        if (project.isSetProjectResponsible() && !project.getProjectResponsible().isEmpty()) {
+            User responsible = null;
+            try {
+                responsible = userClient.getByEmail(project.getProjectResponsible());
+            } catch (TException te) {
+                // a resulting null user object is handled below
+            }
+            if (responsible != null) {
+                XWPFTableRow row = table.insertNewTableRow(currentRow++);
+                addFormattedTextInTableCell(row.addNewTableCell(), responsible.getEmail());
+                addFormattedTextInTableCell(row.addNewTableCell(), responsible.getDepartment());
+                addFormattedTextInTableCell(row.addNewTableCell(), "Responsible");
+            }
+        }
 
         if (project.isSetRoles()) {
             for (Map.Entry<String, Set<String>> rolRelationship : project.getRoles().entrySet()) {
@@ -567,6 +581,18 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             if (r == null) {
                 continue;
             }
+            if (r.getLanguagesSize() == 0 && r.getOperatingSystemsSize() == 0 && r.getSoftwarePlatformsSize() == 0) {
+                try {
+                    org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface componentClient =
+                            new ThriftClients().makeComponentClient();
+                    Release fullRelease = componentClient.getReleaseById(r.getId(), user);
+                    if (fullRelease != null) {
+                        r = fullRelease;
+                    }
+                } catch (TException e) {
+                    // fall back to the summary release if fetch fails
+                }
+            }
 
             XWPFTableRow row = table.insertNewTableRow(currentRow++);
 
@@ -610,7 +636,14 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(obligationsStatusAtProject,
                         obligations, oblLevel, true));
         if (!obligationsStatus.isEmpty()) {
+            Set<String> addedObligationKeys = new HashSet<>();
+
             obligationsStatus.entrySet().stream().forEach(o -> {
+                if (addedObligationKeys.contains(o.getKey())) {
+                    return;
+                }
+                addedObligationKeys.add(o.getKey());
+
                 ObligationStatusInfo osi = o.getValue();
                 currentRow[0] = currentRow[0] + 1;
                 XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
@@ -648,9 +681,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                                 .anyMatch(mlid -> mlid.equals(lid.replace("\n", "").replace("\r", "")))))
                 .forEach(o -> {
                     o.getLicenseIDs().stream().forEach(lid -> {
-                        Map<String, String> oblTopicText = new HashMap<String, String>();
-                        oblTopicText.put(o.getTopic(), o.getText());
-                        licenseIdToOblTopicText.put(lid, oblTopicText);
+                        licenseIdToOblTopicText
+                                .computeIfAbsent(lid, k -> new LinkedHashMap<>())
+                                .put(o.getTopic(), o.getText());
                     });
                 });
 
@@ -805,12 +838,12 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 String licenseName = entry.getKey();
                 Set<String> acknowledgementSet = entry.getValue();
                 if (!acknowledgementSet.isEmpty()) {
-                    // Print license name as heading
-                    XWPFRun licenseRun = document.createParagraph().createRun();
-                    addFormattedText(licenseRun, licenseName + ":", FONT_SIZE, true);
-                    // Print each acknowledgement under the license name
+                    // Print license name before each acknowledgement text
                     for (String acknowledgement : acknowledgementSet) {
+                        XWPFRun licenseRun = document.createParagraph().createRun();
+                        addFormattedText(licenseRun, licenseName, FONT_SIZE, true);
                         setText(document.createParagraph().createRun(), nullToEmptyString(acknowledgement));
+                        addNewLines(document, 1);
                     }
                 }
             }

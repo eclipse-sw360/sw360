@@ -63,7 +63,7 @@ public class XhtmlGenerator extends OutputGenerator<String> {
                     externalIds, excludeReleaseVersion);
         } catch (Exception e) {
             LOGGER.error("Could not generate xhtml license info file for project " + projectTitle, e);
-            return "License information could not be generated.\nAn exception occured: " + e.toString();
+            return "License information could not be generated.\nAn exception occurred: " + e.toString();
         }
     }
 

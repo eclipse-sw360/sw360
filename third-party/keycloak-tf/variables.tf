@@ -86,3 +86,9 @@ variable "dashboard_base_url" {
   type        = string
   default     = null
 }
+
+variable "azure_idp_alias" {
+  description = "Alias for Azure EntraID Identity Provider"
+  type        = string
+  default     = "azure-sw360"
+}

@@ -54,6 +54,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
@@ -97,6 +99,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
@@ -331,6 +335,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
+        } else if (requestStatus == RequestStatus.DUPLICATE) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                    "A release with the same name and version already exists.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
             throw new RuntimeException(
                     "sw360 release with name '" + SW360Utils.printName(release) + " cannot be updated.");
@@ -980,15 +987,16 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                             attachmentId, uploadDescription);
                 }
             } catch (Exception exp) {
-                log.error(String.format("Release : %s .Error occured while triggering Fossology Process . %s",
+                log.error(String.format("Release : %s .Error occurred while triggering Fossology Process . %s",
                         new Object[] { releaseId, exp.getMessage() }));
             } finally {
                 log.info("Release : " + releaseId + " .Fossology Process exited, removing lock.");
                 if (service != null)
                     service.shutdownNow();
-                if (lockObj.isLocked())
+                if (lockObj.isHeldByCurrentThread()) {
                     lockObj.unlock();
-                mapOfLocks.remove(releaseId);
+                    mapOfLocks.remove(releaseId);
+                }
             }
         });
 
@@ -1025,7 +1033,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             attachmentSizeinBytes = FileCopyUtils.copy(streamToAttachments, attachmentOutputStream);
         } catch (IOException exp) {
             log.error("Release : " + release.getId()
-                    + " .Error occured while calculation attachment size.Attachment ID : " + attachmentId);
+                    + " .Error occurred while calculation attachment size.Attachment ID : " + attachmentId);
         }
 
         return (attachmentSizeinBytes / 1024) / 1024;
@@ -1646,13 +1654,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
 
+        PackageService.Iface packageClient = thriftClients.makePackageClient();
+        Set<Package> packages = packageClient.getPackagesByReleaseId(releaseSourceId);
+        usageInformation.put("packages", packages.size());
+
         return usageInformation;
     }
 
     /**
      * Get linked packages for a release
      */
-    public List<org.eclipse.sw360.datahandler.thrift.packages.Package> getLinkedPackagesForRelease(String releaseId, User user) throws TException {
+    public List<Package> getLinkedPackagesForRelease(String releaseId, User user) throws TException {
         Release release = getReleaseForUserById(releaseId, user);
 
         if (release.getPackageIds() == null || release.getPackageIds().isEmpty()) {
@@ -1660,8 +1672,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         try {
-            org.eclipse.sw360.datahandler.thrift.packages.PackageService.Iface packageClient =
-                new ThriftClients().makePackageClient();
+            PackageService.Iface packageClient = new ThriftClients().makePackageClient();
             return packageClient.getPackageWithReleaseByPackageIds(release.getPackageIds());
         } catch (TTransportException e) {
             throw new TException("Unable to get package client", e);

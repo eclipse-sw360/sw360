@@ -18,8 +18,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.nimbusds.jwt.SignedJWT;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
@@ -36,19 +39,16 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.jwt.Jwt;
-import org.springframework.security.jwt.JwtHelper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -56,6 +56,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Sw360AuthorizationServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 @ActiveProfiles({"dev", "test"})
 public abstract class IntegrationTestBase {
 
@@ -74,8 +75,6 @@ public abstract class IntegrationTestBase {
     @MockitoBean
     Sw360UserDetailsProvider sw360UserDetailsProvider;
 
-    @MockitoSpyBean
-    protected RestTemplateBuilder restTemplateBuilder;
 
     protected User adminTestUser;
 
@@ -89,7 +88,7 @@ public abstract class IntegrationTestBase {
     Sw360UserDetailsService sw360UserDetailsService;
 
     @Autowired
-    protected BCryptPasswordEncoder encoder;
+    protected PasswordEncoder encoder;
 
     @Before
     public void setup() throws TException {
@@ -129,7 +128,7 @@ public abstract class IntegrationTestBase {
         testClient = RegisteredClient.withId("trusted-sw360-client").clientId("trusted-sw360-client")
                 .clientSecret(encoder.encode("sw360-secret")).authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
+                .authorizationGrantType(new AuthorizationGrantType("password"))
                 .scope(Sw360GrantedAuthority.READ.getAuthority())
                 .scope(Sw360GrantedAuthority.WRITE.getAuthority())
                 .scope(Sw360GrantedAuthority.ADMIN.getAuthority())
@@ -150,7 +149,7 @@ public abstract class IntegrationTestBase {
         assertThat(responseBodyJsonNode.has("jti"), is(true));
     }
 
-    protected JsonNode checkJwtClaims(String... expectedAuthority) throws IOException {
+    protected JsonNode checkJwtClaims(String... expectedAuthority) throws IOException, ParseException {
         String responseBody = responseEntity.getBody();
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
@@ -159,8 +158,8 @@ public abstract class IntegrationTestBase {
         assertThat(responseBodyJsonNode.has("access_token"), is(true));
 
         String accessToken = responseBodyJsonNode.get("access_token").asText();
-        Jwt jwt = JwtHelper.decode(accessToken);
-        String jwtClaims = jwt.getClaims();
+        SignedJWT signedJWT = SignedJWT.parse(accessToken);
+        String jwtClaims = signedJWT.getPayload().toString();
         JsonNode jwtClaimsJsonNode = new ObjectMapper().readTree(jwtClaims);
         assertThat(jwtClaimsJsonNode.get("aud").get(0).asText(), is("sw360-REST-API"));
         assertThat(jwtClaimsJsonNode.get("client_id").asText(), is("trusted-sw360-client"));

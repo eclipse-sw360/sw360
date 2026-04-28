@@ -33,8 +33,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -296,7 +297,7 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_update_component_invalid() throws IOException, TException {
-        Mockito.doThrow(TException.class).when(this.componentServiceMock)
+        Mockito.doThrow(new ResourceNotFoundException("Component not found")).when(this.componentServiceMock)
                 .getComponentForUserById(any(), any());
         String updatedComponentName = "updatedComponentName";
         HttpHeaders headers = getHeaders(port);
