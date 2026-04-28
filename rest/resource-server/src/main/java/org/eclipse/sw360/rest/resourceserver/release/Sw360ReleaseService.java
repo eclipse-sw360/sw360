@@ -155,7 +155,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             releaseById.setAdditionalData(sortedAdditionalData);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException("Release does not exists! id=" + releaseId);
+                throw new ResourceNotFoundException("Release does not exists! id=" + releaseId, sw360Exp);
             } else {
                 throw sw360Exp;
             }
