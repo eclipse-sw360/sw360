@@ -66,6 +66,7 @@ import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.jetbrains.annotations.NotNull;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
@@ -437,8 +438,12 @@ public class RestControllerHelper<T> {
             Sw360ReleaseService sw360ReleaseService,
             User user) throws TException {
         for (String releaseId : releases) {
-            final Release release = sw360ReleaseService.getReleaseForUserById(releaseId, user);
-            addEmbeddedRelease(halResource, release);
+            try {
+                final Release release = sw360ReleaseService.getReleaseForUserById(releaseId, user);
+                addEmbeddedRelease(halResource, release);
+            } catch (ResourceNotFoundException e) {
+                LOGGER.warn("Unable to find a release while adding embedded release. ID = {}", releaseId, e);
+            }
         }
     }
 
