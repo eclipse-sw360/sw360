@@ -1,1 +1,0 @@
-{"_id":"admin@sw360.org","_rev":"2-fba9e17eff01d468ee8f8266538467e7","type":"user","email":"admin@sw360.org","password":"{bcrypt}$2a$10$n0CTRN9MYHg0KSmwdKJdquaXPTcUzTBHHpf8RHHnMDmEFbL2NEOQK","fullname":"SW360 Admin","givenname":"SW360","lastname":"Admin","department":"SW360","userGroup":"ADMIN","externalid":"admin@sw360.org","wantsMailNotification":false}
