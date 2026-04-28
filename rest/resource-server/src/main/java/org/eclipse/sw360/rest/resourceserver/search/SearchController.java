@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -63,6 +64,10 @@ public class SearchController implements RepresentationModelProcessor<Repository
     private static final Logger log = LogManager.getLogger(SearchController.class);
 
     public static final String SEARCH_URL = "/search";
+
+    /** Search types allowed for VIEWER role — excludes vulnerability, obligation, user, document. */
+    private static final List<String> VIEWER_ALLOWED_SEARCH_TYPES =
+            List.of("component", "release", "license", "project", "vendor");
 
     @Autowired
     private Sw360SearchService sw360SearchService;
@@ -101,6 +106,14 @@ public class SearchController implements RepresentationModelProcessor<Repository
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        // VIEWER search restricted to allowed types (no vulnerabilities, obligations, users)
+        if (PermissionUtils.isViewer(sw360User)) {
+            typeMasks = typeMasks
+                    .map(masks -> masks.stream().filter(VIEWER_ALLOWED_SEARCH_TYPES::contains).collect(Collectors.toList()))
+                    .or(() -> Optional.of(VIEWER_ALLOWED_SEARCH_TYPES));
+        }
+
         List<SearchResult> searchResults = sw360SearchService.search(searchText, sw360User, typeMasks);
 
         PaginationResult<SearchResult> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
