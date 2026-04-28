@@ -5,7 +5,6 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.rest.authserver.security.authproviders;
 
 import org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,11 +17,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
 
-    @Autowired
-    private Sw360UserDetailsService userDetailsService;
+    private final Sw360UserDetailsService userDetailsService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    public Sw360UserAuthenticationProvider(Sw360UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    public Sw360UserAuthenticationProvider(Sw360UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
 
     /**
      * @param authentication the authentication request object.

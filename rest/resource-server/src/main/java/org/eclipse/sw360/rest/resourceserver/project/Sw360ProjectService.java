@@ -71,7 +71,6 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
@@ -137,7 +136,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     private String thriftServerUrl;
 
     @NonNull
-    private RestControllerHelper rch;
+    private final RestControllerHelper rch;
 
     /**
      * This enum is used to indicate the status of the CLI update process.

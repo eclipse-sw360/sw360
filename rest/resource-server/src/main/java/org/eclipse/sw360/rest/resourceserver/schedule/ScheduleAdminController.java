@@ -53,7 +53,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     private final RestControllerHelper restControllerHelper;
 
     @NonNull
-    private Sw360ScheduleService scheduleService;
+    private final Sw360ScheduleService scheduleService;
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {

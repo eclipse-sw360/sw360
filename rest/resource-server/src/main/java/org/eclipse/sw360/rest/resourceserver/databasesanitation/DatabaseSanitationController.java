@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -49,7 +48,7 @@ public class DatabaseSanitationController  implements RepresentationModelProcess
     public static final String DATABASESANITATION_URL = "/databaseSanitation";
 
     @NonNull
-    Sw360DatabaseSanitationService dataSanitationService;
+    private final Sw360DatabaseSanitationService dataSanitationService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
