@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static org.apache.log4j.Logger.getLogger;
@@ -59,6 +60,7 @@ public class SVMSyncHandler<T extends TBase> {
     private ComponentDatabaseHandler compDB = null;
     private final Class<T> type;
     private final String uuid = UUID.randomUUID().toString();
+    private static final Map<Class<?>, Boolean> processedFlags = new ConcurrentHashMap<>();
 
     public  SVMSyncHandler(Class<T> type) throws MalformedURLException, SW360Exception {
         this(type, null);
@@ -91,18 +93,25 @@ public class SVMSyncHandler<T extends TBase> {
 
         // get last updated element for end reporting
         T lastUpdated = dbHandler.getLastUpdated(this.type);
-        if (lastUpdated != null){
+        Boolean wasProcessed = processedFlags.get(this.type);
+        
+        if (lastUpdated != null && Boolean.TRUE.equals(wasProcessed)){
             if (VMComponent.class.isAssignableFrom(type))
                 reporting.setEndDate(((VMComponent)lastUpdated).getLastUpdateDate());
             else if (VMAction.class.isAssignableFrom(type))
                 reporting.setEndDate(((VMAction)lastUpdated).getLastUpdateDate());
             else if (VMPriority.class.isAssignableFrom(type))
                 reporting.setEndDate(((VMPriority)lastUpdated).getLastUpdateDate());
+            else if (Vulnerability.class.isAssignableFrom(type))
+                reporting.setEndDate(((Vulnerability)lastUpdated).getLastExternalUpdate());
             else
                 throw new IllegalArgumentException("unknown type " + type.getSimpleName());
         } else {
             reporting.setEndDate(SW360Utils.getCreatedOnTime());
         }
+        
+        // Clear processed flag for next run
+        processedFlags.remove(this.type);
 
         // calc processing time
         Date start = SW360Utils.getDateFromTimeString(reporting.getStartDate());
@@ -166,6 +175,8 @@ public class SVMSyncHandler<T extends TBase> {
                 element = (T) new VMAction(vmid);
             } else if (VMPriority.class.isAssignableFrom(type)) {
                 element = (T) new VMPriority(vmid);
+            } else if (Vulnerability.class.isAssignableFrom(type)) {
+                element = (T) new Vulnerability(vmid);
             } else {
                 throw new IllegalArgumentException("unknown type "+ this.type.getSimpleName());
             }
@@ -221,19 +232,27 @@ public class SVMSyncHandler<T extends TBase> {
     }
 
     public VMResult<String> getSMVElementIds(String url){
+        return getSMVElementIds(url, null);
+    }
+
+    public VMResult<String> getSMVElementIds(String url, String modifiedAfter){
         try {
-            String idResponse = SVMUtils.prepareJSONRequestAndGetResponse(url);
+            String idResponse = SVMUtils.prepareJSONRequestAndGetResponse(url, modifiedAfter);
             JsonArray ids = Jsoner.deserialize(idResponse, new JsonArray());
 
             if (ids == null || ids.isEmpty()){
-                return null;
+                String syncType = modifiedAfter != null ? "delta" : "full";
+                String message = "No elements found using " + syncType + " sync";
+                return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 0, 0, message), Collections.emptyList());
             }
 
             List<String> elementIds = new ArrayList<>(ids.size());
             for (Object id : ids) {
                 elementIds.add(id.toString());
             }
-            return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, ids.size(), ids.size(), null), elementIds);
+            String syncType = modifiedAfter != null ? "delta" : "full";
+            String message = "Retrieved " + ids.size() + " elements using " + syncType + " sync";
+            return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, ids.size(), ids.size(), message), elementIds);
         } catch (Exception e) {
             String message = "Failed to get elements of type "+type.getSimpleName()+" from SMV: "+e.getMessage();
             log.error(message,e);
@@ -248,8 +267,13 @@ public class SVMSyncHandler<T extends TBase> {
     private VMResult<T> getSMVElementMasterDataById(T element, String url){
         if (element != null){
             try {
-                url += "/" + SVMUtils.getVmid(element);
-                String response = SVMUtils.prepareJSONRequestAndGetResponse(url);
+                // Sanitize URL by removing query parameters before appending ID
+                String baseUrl = url.contains("?") ? url.substring(0, url.indexOf("?")) : url;
+                baseUrl += "/" + SVMUtils.getVmid(element);
+                String response = SVMUtils.prepareJSONRequestAndGetResponse(baseUrl);
+                
+                // Mark type as processed
+                processedFlags.put(this.type, true);
 
                 JsonObject jsonObject = Jsoner.deserialize(response, new JsonObject());
 
