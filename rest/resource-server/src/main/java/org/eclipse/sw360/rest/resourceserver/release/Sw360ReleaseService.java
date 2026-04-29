@@ -338,6 +338,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } else if (requestStatus == RequestStatus.DUPLICATE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT,
                     "A release with the same name and version already exists.");
+        } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
+            throw new AccessDeniedException("Not allowed to update release '" + SW360Utils.printName(release) + "'.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
             throw new RuntimeException(
                     "sw360 release with name '" + SW360Utils.printName(release) + " cannot be updated.");
