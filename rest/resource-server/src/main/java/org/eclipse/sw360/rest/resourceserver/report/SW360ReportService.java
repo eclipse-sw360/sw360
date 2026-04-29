@@ -144,6 +144,10 @@ public class SW360ReportService {
             List<Map<String, String>> records = exporter.makeRecords(projects);
             List<String> headers = extendedByReleases ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
             return convertToFormat(records, headers, fmt);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (TException e) {
             throw e;
         } catch (Exception e) {
@@ -249,6 +253,10 @@ public class SW360ReportService {
                 if (!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
                     sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
                 }
+            } catch (ResourceNotFoundException exp) {
+                throw exp;
+            } catch (AccessDeniedException exp) {
+                throw exp;
             } catch (Exception exp) {
                 throw new TException(exp.getMessage());
             }
@@ -275,6 +283,10 @@ public class SW360ReportService {
                 if (!CommonUtils.isNullEmptyOrWhitespace(componentPath)) {
                     sendComponentExportSpreadsheetSuccessMail(emailURL.toString(), sw360User.getEmail());
                 }
+            } catch (ResourceNotFoundException exp) {
+                throw exp;
+            } catch (AccessDeniedException exp) {
+                throw exp;
             } catch (Exception exp) {
                 throw new TException(exp.getMessage());
             }
@@ -539,6 +551,10 @@ public class SW360ReportService {
             releases = releaseStringMap.stream().map(ReleaseClearingStatusData::getRelease)
                     .sorted(Comparator.comparing(SW360Utils::printFullname)).collect(Collectors.toList());
             exporter = new ReleaseExporter(componentclient, releases, user, releaseStringMap);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }

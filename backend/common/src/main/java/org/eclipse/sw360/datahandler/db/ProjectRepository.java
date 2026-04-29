@@ -55,6 +55,9 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisat
  * @author ksoranko@verifa.io
  */
 public class ProjectRepository extends SummaryAwareRepository<Project> {
+    private static final Comparator<String> PROJECT_GROUP_COMPARATOR =
+            String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
+
     private static final String ALL = "function(doc) { if (doc.type == 'project') emit(null, doc._id) }";
 
     private static final String FULL_MY_PROJECTS_VIEW =
@@ -535,7 +538,10 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     public Set<String> getGroups() {
-        return getConnector().getDistinctSortedStringKeys(Project.class, "buprojects");
+        return getConnector().getDistinctSortedStringKeys(Project.class, "buprojects")
+                .stream()
+                .sorted(PROJECT_GROUP_COMPARATOR)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     @NotNull

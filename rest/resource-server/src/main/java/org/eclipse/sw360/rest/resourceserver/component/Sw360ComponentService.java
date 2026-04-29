@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
@@ -210,6 +211,53 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public List<Release> getReleasesByComponentId(String id,User user) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getReleasesFullDocsFromComponentId(id, user);
+    }
+
+    public Map<PaginationData, List<ReleaseLink>> getReleaseLinksByComponentIdWithPagination(String id, User user, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationDataForReleases(pageable);
+        Map<PaginationData, List<Release>> paginatedReleases = sw360ComponentClient.getReleasesFromComponentIdWithPagination(id, user, pageData);
+
+        PaginationData resultPageData = paginatedReleases.keySet().iterator().next();
+        List<Release> releases = paginatedReleases.values().iterator().next();
+
+        List<ReleaseLink> releaseLinks = convertReleasesToReleaseLinks(releases);
+        Map<PaginationData, List<ReleaseLink>> result = new HashMap<>();
+        result.put(resultPageData, releaseLinks);
+        return result;
+    }
+
+    private List<ReleaseLink> convertReleasesToReleaseLinks(List<Release> releases) {
+        List<ReleaseLink> releaseLinks = new ArrayList<>();
+        releases.forEach(release -> {
+            ReleaseLink releaseLink = new ReleaseLink();
+            releaseLink.setId(release.getId());
+            releaseLink.setName(release.getName());
+            releaseLink.setVersion(release.getVersion());
+            releaseLink.setClearingState(release.getClearingState());
+            releaseLink.setCreatedBy(release.getCreatedBy());
+
+            ClearingReport clearingReport = new ClearingReport();
+            Set<Attachment> attachments = getAttachmentForClearingReport(release);
+            if (!attachments.equals(Collections.emptySet())) {
+                Set<Attachment> attachmentsAccepted = getAttachmentsStatusAccept(attachments);
+                if (!attachmentsAccepted.isEmpty()) {
+                    clearingReport.setClearingReportStatus(ClearingReportStatus.DOWNLOAD);
+                    clearingReport.setAttachments(attachmentsAccepted);
+                    releaseLink.setClearingReport(clearingReport);
+                } else {
+                    clearingReport.setClearingReportStatus(ClearingReportStatus.NO_STATUS);
+                    releaseLink.setClearingReport(clearingReport);
+                }
+            } else {
+                clearingReport.setClearingReportStatus(ClearingReportStatus.NO_REPORT);
+                releaseLink.setClearingReport(clearingReport);
+            }
+
+            releaseLink.setMainlineState(release.getMainlineState());
+            releaseLinks.add(releaseLink);
+        });
+        return releaseLinks;
     }
 
     public List<ReleaseLink> convertReleaseToReleaseLink(String id,User user) throws TException {
@@ -445,6 +493,33 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 case "mainLicenseIds" -> ComponentSortColumn.BY_MAINLICENSE;
                 case "type" -> ComponentSortColumn.BY_TYPE;
                 default -> column; // Default to BY_CREATEDON if no match
+            };
+            ascending = order.isAscending();
+        }
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
+    }
+
+    /**
+     * Converts a Pageable object to a PaginationData object using ReleaseSortColumn mapping.
+     * Sort properties: name (0), version (1), clearingState (2), mainlineState (3).
+     *
+     * @param pageable the Pageable object to convert
+     * @return a PaginationData object representing the pagination information
+     */
+    private static PaginationData pageableToPaginationDataForReleases(@NotNull Pageable pageable) {
+        ReleaseSortColumn column = ReleaseSortColumn.BY_NAME;
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "name" -> ReleaseSortColumn.BY_NAME;
+                case "version" -> ReleaseSortColumn.BY_VERSION;
+                case "clearingState" -> ReleaseSortColumn.BY_CLEARING_STATE;
+                case "mainlineState" -> ReleaseSortColumn.BY_MAINLINE_STATE;
+                default -> column;
             };
             ascending = order.isAscending();
         }

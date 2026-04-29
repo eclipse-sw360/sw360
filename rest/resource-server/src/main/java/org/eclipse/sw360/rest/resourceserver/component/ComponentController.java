@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
 import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
 import org.eclipse.sw360.datahandler.thrift.Source;
@@ -465,17 +466,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
 
-    private Component validateAndGetComponent(String id, ComponentDTO updateComponentDto, User user) {
+    private Component validateAndGetComponent(String id, ComponentDTO updateComponentDto, User user) throws TException {
         if (isNullOrEmpty(id)) {
             throw new BadRequestClientException("Component ID cannot be null or empty");
         }
 
-        Component sw360Component;
-        try {
-            sw360Component = componentService.getComponentForUserById(id, user);
-        } catch (Exception e) {
-            throw new ResourceNotFoundException("Component not found with ID: " + id);
-        }
+        Component sw360Component = componentService.getComponentForUserById(id, user);
 
         if (sw360Component == null) {
             throw new ResourceNotFoundException("Component not found with ID: " + id);
@@ -595,21 +591,45 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @Operation(
             summary = "Get all releases of a component.",
-            description = "Get all releases of a component.",
+            description = "Get all releases of a component with pagination support.",
             tags = {"Components"}
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Component releases successfully retrieved.")
     })
     @GetMapping(value = COMPONENTS_URL + "/{id}/releases")
-    public ResponseEntity<CollectionModel<ReleaseLink>> getReleaseLinksByComponentId(
+    public ResponseEntity<CollectionModel<EntityModel<ReleaseLink>>> getReleaseLinksByComponentId(
             @Parameter(description = "The id of the component.")
-            @PathVariable("id") String id
-    ) throws TException {
+            @PathVariable("id") String id,
+            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
+            Pageable pageable,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final List<ReleaseLink> releaseLinks = componentService.convertReleaseToReleaseLink(id, sw360User);
-        CollectionModel<ReleaseLink> resources = CollectionModel.of(releaseLinks);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+
+        Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks =
+                componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
+
+        List<ReleaseLink> releaseLinks = new ArrayList<>(paginatedReleaseLinks.values().iterator().next());
+        int totalCount = Math.toIntExact(paginatedReleaseLinks.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+
+        PaginationResult<ReleaseLink> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, releaseLinks, SW360Constants.TYPE_RELEASELINK, totalCount);
+
+        List<EntityModel<ReleaseLink>> resources = paginationResult.getResources().stream()
+                .map(EntityModel::of)
+                .collect(Collectors.toList());
+
+        if (resources.isEmpty()) {
+            CollectionModel<EntityModel<ReleaseLink>> empty =
+                    restControllerHelper.emptyPageResource(ReleaseLink.class, paginationResult);
+            return new ResponseEntity<>(empty, HttpStatus.OK);
+        }
+
+        CollectionModel<EntityModel<ReleaseLink>> collectionModel =
+                restControllerHelper.generatePagesResource(paginationResult, resources);
+        return new ResponseEntity<>(collectionModel, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -1120,6 +1140,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
             try {
                 requestSummary = componentService.importSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (ResourceNotFoundException e) {
+                throw e;
+            } catch (AccessDeniedException e) {
+                throw e;
+            } catch (SW360Exception e) {
+                throw e;
+            } catch (TException e) {
+                throw e;
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
             }
@@ -1178,6 +1206,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
             try {
                 importBomRequestPreparation = componentService.prepareImportSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (ResourceNotFoundException e) {
+                throw e;
+            } catch (AccessDeniedException e) {
+                throw e;
+            } catch (SW360Exception e) {
+                throw e;
+            } catch (TException e) {
+                throw e;
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
             }

@@ -42,6 +42,7 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.FileCopyUtils;
@@ -214,6 +215,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             } else {
                 downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
             }
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -232,6 +239,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             } else {
                 downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
             }
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -243,6 +256,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -254,6 +273,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -265,6 +290,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -275,6 +306,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -317,6 +354,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             }
             response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
             copyDataStreamToResponse(response, buff);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -330,6 +373,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             ByteBuffer buffer = sw360ReportService.downloadSourceCodeBundle(projectId, sw360User, reportBean.isWithSubProject());
             downloadExcelReport(response, sw360User, module, projectId,
                     buffer, reportBean);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -404,6 +453,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
             response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
             copyDataStreamToResponse(response, buffer);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }

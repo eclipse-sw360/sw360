@@ -230,6 +230,10 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             HttpStatus status1 = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(resources, status1);
 
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -299,6 +303,10 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             }
             HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(resources, status);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }

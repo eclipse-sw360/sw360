@@ -347,6 +347,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.getReleasesFullDocsFromComponentId(id, user);
     }
 
+    public Map<PaginationData, List<Release>> getReleasesFromComponentIdWithPagination(String id, User user, PaginationData pageData) throws TException {
+        return releaseRepository.getReleasesFromComponentIdWithPagination(id, user, pageData);
+    }
+
     public List<Component> getMyComponents(String user) {
         Collection<Component> myComponents = componentRepository.getMyComponents(user);
 

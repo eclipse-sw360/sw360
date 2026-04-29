@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.VerificationState;
@@ -482,6 +483,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         releaseLinks.add(releaseLink2);
 
         given(this.componentServiceMock.convertReleaseToReleaseLink(any(),any())).willReturn(releaseLinks);
+        given(this.componentServiceMock.getReleaseLinksByComponentIdWithPagination(any(), any(), any()))
+                .willReturn(Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(releaseLinks.size()).setDisplayStart(0).setTotalRowCount(releaseLinks.size()),
+                        releaseLinks));
 
         List<String> releaseIds = releaseList.stream().map(Release::getId).collect(Collectors.toList());
         given(this.vulnerabilityServiceMock.getVulnerabilityDTOByExternalId(any(), any())).willReturn(vulDtosUpdated);
@@ -1351,7 +1356,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to the first page"),
+                                linkWithRel("last").description("Link to the last page")
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:releaseLinks.[]id").description("The Id of the releaseLinks"),
@@ -1362,7 +1369,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releaseLinks.[]clearingReport.clearingReportStatus").description("The clearingReportStatus of the clearingReport "+Arrays.asList(ClearingReportStatus.values())),
                                 subsectionWithPath("_embedded.sw360:releaseLinks.[]clearingState").description("The clearingState of the releaseLinks "+ Arrays.asList(ClearingState.values())),
                                 subsectionWithPath("_embedded.sw360:releaseLinks").description("An array of <<resources-releases, releases resources>>"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("page").description("Pagination information"),
+                                subsectionWithPath("page.size").description("Number of results per page"),
+                                subsectionWithPath("page.totalElements").description("Total number of results"),
+                                subsectionWithPath("page.totalPages").description("Total number of pages"),
+                                subsectionWithPath("page.number").description("Current page number (0-indexed)")
                         )));
     }
 

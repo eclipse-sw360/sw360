@@ -289,7 +289,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             ),
             @ApiResponse(responseCode = "405",
                     description = "Reject license update due to: an already checked license is not allowed" +
-                            " to become unchecked again")
+                            " to become unchecked again"),
+            @ApiResponse(responseCode = "400", description = "License update failed (permission denied or business rule violation).")
     })
     @PatchMapping(value = LICENSES_URL + "/{id}")
     public ResponseEntity<EntityModel<License>> updateLicense(
@@ -309,6 +310,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         RequestStatus requestStatus = licenseService.updateLicense(licenseUpdate, sw360User);
         if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        if (requestStatus != RequestStatus.SUCCESS) {
+            throw new BadRequestClientException("License update failed with status: " + requestStatus);
         }
         HalResource<License> halResource = createHalLicense(licenseUpdate);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
@@ -540,6 +544,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "License archive uploaded successfully.")
     })
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = LICENSES_URL + "/upload", consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> uploadLicenses(
             @Parameter(description = "The license archive file to be uploaded.")
@@ -553,6 +558,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             licenseService.uploadLicense(sw360User, file, overwriteIfExternalIdMatches,
                     overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
 	    }
@@ -593,6 +604,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                     }
             )
     })
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = LICENSES_URL + "/addLicenseType")
     public ResponseEntity<RequestStatus> createLicenseType(
             @Parameter(description = "The license type name.")

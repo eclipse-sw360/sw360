@@ -10,8 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
@@ -44,8 +42,6 @@ public class ResourceServerConfiguration {
 
     @Autowired
     SimpleAuthenticationEntryPoint saep;
-
-    private final Logger log = LogManager.getLogger(this.getClass());
 
     @Autowired
     Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;

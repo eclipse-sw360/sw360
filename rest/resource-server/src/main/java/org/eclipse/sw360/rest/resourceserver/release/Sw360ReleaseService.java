@@ -155,7 +155,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             releaseById.setAdditionalData(sortedAdditionalData);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException("Release does not exists! id=" + releaseId);
+                throw new ResourceNotFoundException("Release does not exists! id=" + releaseId, sw360Exp);
             } else {
                 throw sw360Exp;
             }
@@ -338,6 +338,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } else if (requestStatus == RequestStatus.DUPLICATE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT,
                     "A release with the same name and version already exists.");
+        } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
+            throw new AccessDeniedException("Not allowed to update release '" + SW360Utils.printName(release) + "'.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
             throw new RuntimeException(
                     "sw360 release with name '" + SW360Utils.printName(release) + " cannot be updated.");

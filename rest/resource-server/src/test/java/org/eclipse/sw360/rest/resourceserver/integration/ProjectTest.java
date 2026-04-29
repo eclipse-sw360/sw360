@@ -87,13 +87,11 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
@@ -923,6 +921,76 @@ public class ProjectTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(true);
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        VulnerabilityDTO vulnerability1 = new VulnerabilityDTO();
+        vulnerability1.setProjectRelevance("APPLICABLE");
+        VulnerabilityDTO vulnerability2 = new VulnerabilityDTO();
+        vulnerability2.setProjectRelevance("NOT_CHECKED");
+        VulnerabilityDTO vulnerability3 = new VulnerabilityDTO();
+        vulnerability3.setProjectRelevance("IRRELEVANT");
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
+                .willReturn(Arrays.asList(vulnerability1, vulnerability2, vulnerability3));
+
+        ObligationList obligationList = new ObligationList();
+        Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
+        ObligationStatusInfo obligationStatusInfo1 = new ObligationStatusInfo();
+        obligationStatusInfo1.setStatus(ObligationStatus.OPEN);
+        ObligationStatusInfo obligationStatusInfo2 = new ObligationStatusInfo();
+        obligationStatusInfo2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        linkedObligationStatus.put("obligation-1", obligationStatusInfo1);
+        linkedObligationStatus.put("obligation-2", obligationStatusInfo2);
+        obligationList.setLinkedObligationStatus(linkedObligationStatus);
+        given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(3, responseBody.get("vulnerabilityCount").asInt());
+        assertEquals(2, responseBody.get("vulnerabilityRatedCount").asInt());
+        assertEquals(2, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_with_hidden_vulnerabilities() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(false);
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+
+        ObligationList obligationList = new ObligationList();
+        Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
+        ObligationStatusInfo obligationStatusInfo1 = new ObligationStatusInfo();
+        obligationStatusInfo1.setStatus(ObligationStatus.OPEN);
+        ObligationStatusInfo obligationStatusInfo2 = new ObligationStatusInfo();
+        obligationStatusInfo2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        linkedObligationStatus.put("obligation-1", obligationStatusInfo1);
+        linkedObligationStatus.put("obligation-2", obligationStatusInfo2);
+        obligationList.setLinkedObligationStatus(linkedObligationStatus);
+        given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(-1, responseBody.get("vulnerabilityCount").asInt());
+        assertEquals(-1, responseBody.get("vulnerabilityRatedCount").asInt());
+        assertEquals(2, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
     }
 
     @Test
