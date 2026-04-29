@@ -375,7 +375,7 @@ public class ComponentImportUtils {
 
     private static RequestSummary updateComponents(Iterable<ComponentCSVRecord> compCSVRecords, ComponentService.Iface componentClient, User user) throws TException {
 
-        Set<String> componentNames = new HashSet<>();
+        Set<String> componentNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
         for (Component component : componentClient.getComponentSummaryForExport()) {
             componentNames.add(component.getName());
