@@ -86,6 +86,24 @@ include::{snippets}/should_document_get_recent_releases/http-response.adoc[]
 include::{snippets}/should_document_get_recent_releases/links.adoc[]
 
 
+[[resources-release-batch-summary]]
+==== Fetching release summaries in batch
+
+A `POST` request will return lightweight release summary data for a list of release IDs.
+
+===== Request structure
+include::{snippets}/should_document_get_release_batch_summary/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_release_batch_summary/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_batch_summary/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_batch_summary/http-response.adoc[]
+
+
 [[resources-releases-list-with-fields]]
 ==== Listing releases with fields
 
