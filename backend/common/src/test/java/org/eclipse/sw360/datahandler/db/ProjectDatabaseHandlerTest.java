@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.beans.Visibility;
 import java.util.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
@@ -39,6 +40,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
+
+import static org.junit.Assert.*;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectDatabaseHandlerTest {
@@ -444,4 +449,18 @@ public class ProjectDatabaseHandlerTest {
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {
         return new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE);
     }
+
+
+
+@Test
+public void testCopyProjectWithEmptyFields() throws Exception {
+    Set<String> emptyFields = new HashSet<>();
+    Project dummyOverride = new Project();
+    dummyOverride.setId("targetId");
+
+    AddDocumentRequestSummary result = handler.copyProject(
+        "P1", emptyFields, dummyOverride, user1);
+
+    assertNotNull("Result should not be null", result);
+}
 }
