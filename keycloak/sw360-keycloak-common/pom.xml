@@ -105,6 +105,7 @@
                                     <include>org.eclipse.sw360:nouveau-handler</include>
 
                                     <include>com.ibm.cloud:*</include>
+                                    <include>com.google.code.gson:gson</include>
                                     <include>org.apache.thrift:libthrift</include>
                                     <include>com.google.guava:guava</include>
                                     <include>com.fasterxml.jackson.*:*</include>
@@ -144,6 +145,10 @@
                                 <relocation>
                                     <pattern>com.ibm.cloud</pattern>
                                     <shadedPattern>org.eclipse.sw360.shaded.cloudant</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google.gson</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.gson</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.logging.log4j</pattern>
