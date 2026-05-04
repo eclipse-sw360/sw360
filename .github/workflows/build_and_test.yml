@@ -126,13 +126,22 @@ jobs:
             -DRunPrivateProjectAccessTest=false \
             -DRunRestForceUpdateTest=false \
             -Dsurefire.excludes="**/architecture/*Test.java" \
+            jacoco:report \
             -fae
 
       - name: Run PrivateProjectAccessTest
         run: |
           mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
-          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=.
+          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=. jacoco:report
 
       - name: Run BulkReleaseDeletingTest
         run: |
-          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
+          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=. jacoco:report
+
+      - name: Upload JaCoCo Reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: jacoco-report
+          path: "**/target/site/jacoco/"
+          retention-days: 7
