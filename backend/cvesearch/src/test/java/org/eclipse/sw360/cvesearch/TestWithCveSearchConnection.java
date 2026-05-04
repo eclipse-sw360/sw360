@@ -15,6 +15,8 @@ import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApiImpl;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.cvesearch.service.CveSearchHandler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assume;
 import org.junit.Before;
 
@@ -23,6 +25,7 @@ import java.util.Properties;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
 public abstract class TestWithCveSearchConnection {
+    private static final Logger log = LogManager.getLogger(TestWithCveSearchConnection.class);
     private String PUBLIC_CVE_SEARCH_SERVER = "https://cve.circl.lu";
 
     protected CveSearchApi cveSearchApi;
@@ -34,7 +37,7 @@ public abstract class TestWithCveSearchConnection {
 
         Assume.assumeTrue("The public CVE Search server is unreliable and tests are only executed if a different instance is configured.", ! PUBLIC_CVE_SEARCH_SERVER.equals(host));
         Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
-        System.out.println("The CVE Search host is: " + host);
+        log.info("The CVE Search host is: {}", host);
 
         cveSearchApi = new CveSearchApiImpl(host);
     }

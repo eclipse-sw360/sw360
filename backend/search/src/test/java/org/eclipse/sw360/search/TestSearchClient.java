@@ -11,6 +11,8 @@ package org.eclipse.sw360.search;
 
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.search.SearchService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -25,6 +27,7 @@ import java.util.List;
  * @author cedric.bodet@tngtech.com
  */
 public class TestSearchClient {
+    private static final Logger log = LogManager.getLogger(TestSearchClient.class);
 
     private static final String searchtext = "s*";
 
@@ -39,9 +42,9 @@ public class TestSearchClient {
 
         //  http://localhost:5984/_fti/local/sw360db/_design/lucene/all?q=type:project%20AND%20P1*
 
-        System.out.println("Fetched " + results.size() + " from search service");
+        log.info("Fetched {} from search service", results.size());
         for (SearchResult result : results) {
-            System.out.println(result.getId() + "(" + result.getType() + "): " + result.getName() + " (" + result.getScore() + ")");
+            log.info("{}({}): {} ({})", result.getId(), result.getType(), result.getName(), result.getScore());
         }
     }
 
