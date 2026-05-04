@@ -934,6 +934,9 @@ public class RestControllerHelper<T> {
         embeddedProject.setTag(project.getTag());
         embeddedProject.setType(null);
         embeddedProject.setClearingRequestId(project.getClearingRequestId());
+        if (project.isSetLinkedProjects()) {
+            embeddedProject.setLinkedProjects(project.getLinkedProjects());
+        }
         return embeddedProject;
     }
 
@@ -941,6 +944,8 @@ public class RestControllerHelper<T> {
         Project embeddedProject = new EmbeddedProject();
         embeddedProject.setName(project.getName());
         embeddedProject.setId(project.getId());
+        embeddedProject.setDescription(project.getDescription());
+        embeddedProject.setProjectResponsible(project.getProjectResponsible());
         embeddedProject.setProjectType(project.getProjectType());
         embeddedProject.setState(project.getState());
         embeddedProject.setClearingState(project.getClearingState());
