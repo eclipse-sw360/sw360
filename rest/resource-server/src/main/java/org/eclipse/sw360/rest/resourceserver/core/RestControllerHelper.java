@@ -711,14 +711,18 @@ public class RestControllerHelper<T> {
         return projectToUpdate;
     }
 
-    public Component updateComponent(Component componentToUpdate, ComponentDTO requestBodyComponent) {
+    public Component updateComponent(Component componentToUpdate, ComponentDTO requestBodyComponent,
+            Map<String, Object> reqBodyMap) {
         Component component = convertToComponent(requestBodyComponent);
-        for(Component._Fields field:Component._Fields.values()) {
+        for (Component._Fields field : Component._Fields.values()) {
             if (IMMUTABLE_COMPONENT_FIELDS.contains(field)) {
                 continue;
             }
             Object fieldValue = component.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
+                if (!reqBodyMap.containsKey(field.getFieldName())) {
+                    continue;
+                }
                 componentToUpdate.setFieldValue(field, fieldValue);
             }
         }
@@ -807,6 +811,7 @@ public class RestControllerHelper<T> {
         component.setBlog(componentDTO.getBlog());
         component.setAttachments(componentDTO.getAttachments());
         component.setVcs(componentDTO.getVcs());
+        component.setVisbility(componentDTO.getVisbility());
 
         return component;
     }

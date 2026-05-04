@@ -1000,6 +1000,32 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_preserve_visibility_when_patch_omits_visbility_field() throws Exception {
+        angularComponent.setVisbility(Visibility.ME_AND_MODERATORS);
+
+        mockMvc.perform(patch("/api/components/17653524")
+                .contentType(MediaTypes.HAL_JSON)
+                .content("{\"description\": \"Updated description\"}")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.visbility").value("ME_AND_MODERATORS"));
+    }
+
+    @Test
+    public void should_update_visibility_when_patch_explicitly_sets_visbility_to_EVERYONE() throws Exception {
+        angularComponent.setVisbility(Visibility.ME_AND_MODERATORS);
+
+        mockMvc.perform(patch("/api/components/17653524")
+                .contentType(MediaTypes.HAL_JSON)
+                .content("{\"visbility\": \"EVERYONE\"}")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.visbility").value("EVERYONE"));
+    }
+
+    @Test
     public void should_document_merge_components() throws Exception {
         ComponentMergeSelector mergeSelection = ComponentMergeSelector.from(angularTargetComponent);
         mockMvc.perform(patch("/api/components/mergecomponents")
