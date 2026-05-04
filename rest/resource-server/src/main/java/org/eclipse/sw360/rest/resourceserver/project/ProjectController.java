@@ -1550,7 +1550,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
         ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
-        if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
+        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
+        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
+        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
 
