@@ -18,6 +18,9 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Locale;
 
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -136,6 +139,26 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @Parameter(description = "Export format for projects module. Supported values: xlsx, csv, json, xml. Default is xlsx.",
                     schema = @Schema(allowableValues = {"xlsx", "csv", "json", "xml"}))
             @RequestParam(value = "format", required = false, defaultValue = "xlsx") String format,
+            @Parameter(description = "Filter projects by name. Applies to module=projects export.")
+            @RequestParam(value = "name", required = false) String name,
+            @Parameter(description = "Filter projects by type. Applies to module=projects export.")
+            @RequestParam(value = "type", required = false) String type,
+            @Parameter(description = "Filter projects by group (business unit). Applies to module=projects export.")
+            @RequestParam(value = "group", required = false) String group,
+            @Parameter(description = "Filter projects by tag. Applies to module=projects export.")
+            @RequestParam(value = "tag", required = false) String tag,
+            @Parameter(description = "Filter projects by version. Applies to module=projects export.")
+            @RequestParam(value = "version", required = false) String version,
+            @Parameter(description = "Filter projects by project responsible. Applies to module=projects export.")
+            @RequestParam(value = "projectResponsible", required = false) String projectResponsible,
+            @Parameter(description = "Filter projects by state. Applies to module=projects export.")
+            @RequestParam(value = "state", required = false) ProjectState projectState,
+            @Parameter(description = "Filter projects by clearing status. Applies to module=projects export.")
+            @RequestParam(value = "clearingStatus", required = false) ProjectClearingState projectClearingState,
+            @Parameter(description = "Filter projects by additional data. Applies to module=projects export.")
+            @RequestParam(value = "additionalData", required = false) String additionalData,
+            @Parameter(description = "Use Lucene search for filtering. Applies to module=projects export.")
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "false") boolean luceneSearch,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws TException {
@@ -149,7 +172,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             throw new BadRequestClientException("Unsupported format: " + format + ". Supported formats: " + SUPPORTED_FORMATS);
         }
         SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
-                template, externalIds, withSubProject, bomType, selectedRelRelationship, format);
+                template, externalIds, withSubProject, bomType, selectedRelRelationship, format,
+                name, type, group, tag, version, projectResponsible, projectState, projectClearingState,
+                additionalData, luceneSearch);
         String baseUrl = getBaseUrl(request);
         if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
             getProjectReports(response, sw360User, module, projectId, baseUrl, reportBean);
@@ -183,11 +208,25 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
      * @param bomType                 the type of SBOM file
      * @param selectedRelRelationship selected release relationships
      * @param format                  export format (xlsx, csv, json, xml)
+     * @param name                    filter by project name
+     * @param type                    filter by project type
+     * @param group                   filter by project group (business unit)
+     * @param tag                     filter by project tag
+     * @param version                 filter by project version
+     * @param projectResponsible      filter by project responsible
+     * @param projectState            filter by project state
+     * @param projectClearingState    filter by project clearing status
+     * @param additionalData          filter by additional data
+     * @param luceneSearch            use Lucene search for filtering
      * @return a SW360ReportBean object with the specified parameters
      */
     private SW360ReportBean createReportBeanObject(boolean withLinkedReleases, boolean excludeReleaseVersion, String generatorClassName,
                                                    String variant, String template, String externalIds, boolean withSubProject, String bomType,
-                                                   List<ReleaseRelationship> selectedRelRelationship, String format) {
+                                                   List<ReleaseRelationship> selectedRelRelationship, String format,
+                                                   String name, String type, String group, String tag, String version,
+                                                   String projectResponsible, ProjectState projectState,
+                                                   ProjectClearingState projectClearingState, String additionalData,
+                                                   boolean luceneSearch) {
         SW360ReportBean reportBean = new SW360ReportBean();
         reportBean.setWithLinkedReleases(withLinkedReleases);
         reportBean.setExcludeReleaseVersion(excludeReleaseVersion);
@@ -199,6 +238,16 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         reportBean.setBomType(bomType);
         reportBean.setSelectedRelRelationship(selectedRelRelationship);
         reportBean.setFormat(format);
+        reportBean.setName(name);
+        reportBean.setType(type);
+        reportBean.setGroup(group);
+        reportBean.setTag(tag);
+        reportBean.setVersion(version);
+        reportBean.setProjectResponsible(projectResponsible);
+        reportBean.setProjectState(projectState);
+        reportBean.setProjectClearingState(projectClearingState);
+        reportBean.setAdditionalData(additionalData);
+        reportBean.setLuceneSearch(luceneSearch);
         return reportBean;
     }
 
@@ -329,7 +378,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
             if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
                 String format = reportBean.getFormat();
-                buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId, format);
+                buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId, format, reportBean);
                 fileName = sw360ReportService.getDocumentName(user, projectId, module, format);
                 setContentTypeForFormat(response, format);
             } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
