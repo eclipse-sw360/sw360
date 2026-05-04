@@ -189,6 +189,12 @@ service UserService {
     map<PaginationData, list<User>> searchUsersByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
+     * Search users by an exact term matched against givenname, lastname, or email.
+     * Uses CouchDB $eq OR query — no wildcard or regex.
+     **/
+    map<PaginationData, list<User>> searchUsersByNameOrEmailExact(1: string searchTerm, 2: PaginationData pageData) throws (1: SW360Exception exp);
+
+    /**
      * get departments of all user
      **/
     set<string> getUserDepartments();

@@ -11,6 +11,8 @@ package org.eclipse.sw360.datahandler.db;
 
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.regex;
 
 import org.eclipse.sw360.components.summary.UserSummary;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -213,6 +215,57 @@ public class UserRepository extends SummaryAwareRepository<User> {
         PostFindOptions.Builder qb = getConnector().getQueryBuilder()
                 .selector(finalSelector)
                 .useIndex(Collections.singletonList(USER_BY_ALL_IDX));
+
+        List<User> users = getConnector().getQueryResultPaginated(
+                qb, User.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, users);
+    }
+
+    /**
+     * Search users by a term matched against givenname, lastname, or email using
+     * a case-insensitive CouchDB $regex OR query.
+     */
+    public Map<PaginationData, List<User>> searchByNameOrEmail(String searchTerm, PaginationData pageData) {
+        // Escape special regex chars, then build a case-insensitive prefix pattern
+        String escaped = searchTerm.replaceAll("([.+*?^${}()|\\[\\]\\\\])", "\\\\$1");
+        String pattern = "(?i)" + escaped;
+
+        final Map<String, Object> typeSelector = eq("type", "user");
+        final Map<String, Object> orSelector = or(List.of(
+                regex("givenname", pattern),
+                regex("lastname",  pattern),
+                regex("email",     pattern)
+        ));
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, orSelector));
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector);
+
+        List<User> users = getConnector().getQueryResultPaginated(
+                qb, User.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, users);
+    }
+
+    /**
+     * Search users where givenname, lastname, or email exactly matches the search term.
+     */
+    public Map<PaginationData, List<User>> searchByNameOrEmailExact(String searchTerm, PaginationData pageData) {
+        final Map<String, Object> typeSelector = eq("type", "user");
+        final Map<String, Object> orSelector = or(List.of(
+                eq("givenname", searchTerm),
+                eq("lastname",  searchTerm),
+                eq("email",     searchTerm)
+        ));
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, orSelector));
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector);
 
         List<User> users = getConnector().getQueryResultPaginated(
                 qb, User.class, pageData, sortSelector

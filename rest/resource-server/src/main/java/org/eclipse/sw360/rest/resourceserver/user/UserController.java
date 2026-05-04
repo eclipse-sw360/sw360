@@ -132,21 +132,31 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "Role of the users")
             @RequestParam(value = "usergroup", required = false) UserGroup usergroup,
             @Parameter(description = "luceneSearch parameter to filter the users.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "Search term to filter users by first name, last name, or email (used with luceneSearch=true).")
+            @RequestParam(value = "searchText", required = false) String searchText
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
 
         Map<PaginationData, List<User>> paginatedUsers = null;
-        Map<String, Set<String>> filterMap = getFilterMap(givenname, lastname, email, department,
-                usergroup, luceneSearch);
-        if (luceneSearch) {
-            paginatedUsers = userService.refineSearch(filterMap, pageable);
-        } else {
-            if (filterMap.isEmpty()) {
-                paginatedUsers = userService.getUsersWithPagination(pageable);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            if (luceneSearch) {
+                paginatedUsers = userService.searchUsersByNameOrEmail(searchText.trim(), pageable);
             } else {
-                paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
+                paginatedUsers = userService.searchUsersByNameOrEmailExact(searchText.trim(), pageable);
+            }
+        } else {
+            Map<String, Set<String>> filterMap = getFilterMap(givenname, lastname, email, department,
+                    usergroup, luceneSearch);
+            if (luceneSearch) {
+                paginatedUsers = userService.refineSearch(filterMap, pageable);
+            } else {
+                if (filterMap.isEmpty()) {
+                    paginatedUsers = userService.getUsersWithPagination(pageable);
+                } else {
+                    paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
+                }
             }
         }
         PaginationResult<User> paginationResult = null;

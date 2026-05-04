@@ -206,6 +206,11 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<User>> searchUsersByNameOrEmailExact(String searchTerm, PaginationData pageData) throws TException {
+        return db.searchByNameOrEmailExact(searchTerm, pageData);
+    }
+
+    @Override
     public Set<String> getUserDepartments() throws TException {
         return db.getUserDepartments();
     }

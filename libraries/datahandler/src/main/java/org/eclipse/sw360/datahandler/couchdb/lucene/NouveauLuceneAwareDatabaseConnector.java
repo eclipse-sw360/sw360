@@ -240,7 +240,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         try {
             return queryNouveau(indexName, query);
         } catch (ServiceResponseException e) {
-            log.error("Nouveau query failed: {}", e.getResponseBody(), e);
+            log.warn("Nouveau unavailable (query failed): {}", e.getMessage());
         }
         return null;
     }
@@ -276,7 +276,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
                 currentPage += 1;
             } while (moreResultsAvailable(result, previousBookmark) && currentPage <= requiredPage);
         } catch (ServiceResponseException e) {
-            log.error("Nouveau query failed: {}", e.getResponseBody(), e);
+            log.warn("Nouveau unavailable (query failed): {}", e.getMessage());
         }
         return result;
     }
