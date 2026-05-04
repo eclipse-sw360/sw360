@@ -13,6 +13,8 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -20,7 +22,6 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -80,6 +81,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 
 @RunWith(SpringRunner.class)
 public class ComponentTest extends TestIntegrationBase {
+    private static final Logger log = LogManager.getLogger(ComponentTest.class);
 
     @LocalServerPort
     private int port;
@@ -209,7 +211,7 @@ public class ComponentTest extends TestIntegrationBase {
                 new HttpEntity<>(body, headers),
                 String.class);
 
-        System.out.println("Response is" + response);
+        log.info("Response is {}", response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
     }
