@@ -4,8 +4,8 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.authserver.security;
 
+import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360OidcUserInfoService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
@@ -22,6 +22,7 @@ import java.util.Arrays;
  * @author smruti.sahoo@siemens.com
  */
 @Configuration
+@RequiredArgsConstructor
 public class Sw360TokenCustomizerConfig {
 
 	public static final String USER_NAME = "user_name";
@@ -29,8 +30,7 @@ public class Sw360TokenCustomizerConfig {
 	public static final String AUD = "aud";
 	public static final String SUB = "sub";
 	public static final String SW360_REST_API = "sw360-REST-API";
-	@Autowired
-	private Sw360OidcUserInfoService sw360OidcUserInfoService;
+	private final Sw360OidcUserInfoService sw360OidcUserInfoService;
 
 	@Bean
 	public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {

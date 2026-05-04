@@ -15,7 +15,7 @@ import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthentic
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JWTAccessTokenConverter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,19 +38,16 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class ResourceServerConfiguration {
 
-    @Autowired
-    SimpleAuthenticationEntryPoint saep;
+    private final SimpleAuthenticationEntryPoint saep;
 
-    @Autowired
-    Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
+    private final Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
 
-    @Autowired
-    private ApiTokenAuthenticationProvider authProvider;
+    private final ApiTokenAuthenticationProvider authProvider;
 
-    @Autowired
-    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     String issuerUri;

@@ -19,12 +19,12 @@ import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetai
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ContextConfiguration;
@@ -48,8 +48,7 @@ abstract public class TestIntegrationBase {
     @MockitoBean
     Sw360CustomUserDetailsService sw360CustomUserDetailsService;
 
-    @Autowired
-    private PasswordEncoder encoder;
+    private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @MockitoBean
     protected Sw360UserService userServiceMock;
