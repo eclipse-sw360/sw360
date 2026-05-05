@@ -189,8 +189,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     ) {
         String decodedEmail;
         decodedEmail = URLDecoder.decode(email, StandardCharsets.UTF_8);
+        User sw360User;
 
-        User sw360User = userService.getUserByEmail(decodedEmail);
+        try {
+            sw360User = userService.getUserByEmail(decodedEmail);
+        } catch (RuntimeException e) {
+            throw new ResourceNotFoundException("User not found");
+        }
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }

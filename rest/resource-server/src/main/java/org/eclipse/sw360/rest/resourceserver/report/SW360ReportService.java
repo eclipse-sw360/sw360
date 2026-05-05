@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -81,7 +82,6 @@ import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 
-
 @Service
 @RequiredArgsConstructor
 public class SW360ReportService {
@@ -109,36 +109,38 @@ public class SW360ReportService {
     LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
     AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
-        /*
-            * If projectId is not null, then validate the project record for the given projectId
-            * If the projectId is null, then fetch the project details which are assigned with user
-         */
-        if (projectId != null && !validateProject(projectId, user)) {
-            throw new TException("No project record found for the project Id : " + projectId);
-        }
-        return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
+        return getProjectBuffer(user, extendedByReleases, projectId, format, null);
     }
 
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
+    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format,
+                                       SW360ReportBean reportBean) throws TException {
         String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
         validateFormat(fmt);
-        if ("xlsx".equals(fmt)) {
-            if (projectId != null && !validateProject(projectId, user)) {
-                throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
-            }
-            return projectclient.getReportDataStream(user, extendedByReleases, projectId);
-        }
         try {
             List<Project> projects;
             if (projectId != null) {
+                if (!validateProject(projectId, user)) {
+                    throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
+                }
+                // For a single specific project, delegate to backend for xlsx
+                // but use ProjectExporter for other formats
+                if ("xlsx".equals(fmt)) {
+                    return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+                }
                 Project project = projectclient.getProjectById(projectId, user);
                 if (project == null) {
                     throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
                 }
                 projects = List.of(project);
             } else {
-                projects = projectclient.getAccessibleProjectsSummary(user);
+                // No specific projectId: export projects matching the given filters.
+                projects = getFilteredProjects(user, reportBean);
+                if ("xlsx".equals(fmt)) {
+                    // Build xlsx from the filtered project list via ProjectExporter
+                    ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+                    return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(projects)));
+                }
             }
             ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
             List<Map<String, String>> records = exporter.makeRecords(projects);
@@ -153,6 +155,25 @@ public class SW360ReportService {
         } catch (Exception e) {
             throw new TException("Failed to export projects in format " + fmt + ": " + e.getMessage(), e);
         }
+    }
+
+    /** Retrieves all projects matching the filters in {@code reportBean} for export. */
+    private List<Project> getFilteredProjects(User user, SW360ReportBean reportBean) throws TException {
+        Map<String, Set<String>> filterMap;
+        if (reportBean == null) {
+            filterMap = new HashMap<>();
+        } else {
+            filterMap = RestControllerHelper.getFilterMapForProject(
+                    reportBean.getTag(), reportBean.getType(), reportBean.getGroup(), reportBean.getVersion(),
+                    reportBean.getProjectResponsible(), reportBean.getProjectState(), reportBean.getProjectClearingState(),
+                    reportBean.getAdditionalData()
+            );
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getName())) {
+                filterMap.put(Project._Fields.NAME.getFieldName(), CommonUtils.splitToSet(reportBean.getName()));
+            }
+        }
+        return projectService.getFilteredProjectsForExport(filterMap, user,
+                reportBean != null && reportBean.isLuceneSearch());
     }
 
     private ByteBuffer convertToFormat(List<Map<String, String>> records, List<String> headers, String format) throws IOException {

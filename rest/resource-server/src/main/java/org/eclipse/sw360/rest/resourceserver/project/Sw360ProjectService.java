@@ -74,6 +74,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -1237,6 +1240,87 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 // Can be sorted on name and createdOn, but using different default value for score sorting
                 ProjectSortColumn.BY_TYPE, true);
         return sw360ProjectClient.refineSearchPageable(null, filterMap, sw360User, pageData);
+    }
+
+    /**
+     * Returns all projects matching the given filters for export.
+     *
+     * @param filterMap    field-name → accepted values
+     * @param sw360User    the authenticated user
+     * @param luceneSearch {@code true} for Lucene wildcard search, {@code false} for exact match
+     * @return flat list of all matching projects
+     */
+    public List<Project> getFilteredProjectsForExport(
+            Map<String, Set<String>> filterMap, User sw360User, boolean luceneSearch
+    ) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+
+        if (filterMap.isEmpty()) {
+            return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
+        }
+
+        if (luceneSearch) {
+            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
+                Set<String> wildcardNames = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(Project._Fields.NAME.getFieldName(), wildcardNames);
+            }
+            return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
+        }
+
+        return fetchAllPages((page) -> searchAccessibleProjectByExactValues(filterMap, sw360User,
+                PageRequest.of(page, DatabaseSettings.LUCENE_SEARCH_LIMIT)));
+    }
+
+    /**
+     * Fetches all pages from {@code pageSupplier} and returns a flat list of matching projects.
+     * The total page count is derived from the first page's {@link PaginationData}.
+     */
+    private List<Project> fetchAllPages(ThriftPageSupplier pageSupplier) throws TException {
+        // --- fetch the first page to learn the total row count ---
+        Map<PaginationData, List<Project>> firstResult = pageSupplier.get(0);
+        if (firstResult == null || firstResult.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Project> firstBatch = firstResult.values().iterator().next();
+        if (firstBatch == null || firstBatch.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        long totalRowCount = firstResult.keySet().iterator().next().getTotalRowCount();
+        int pageSize = firstBatch.size();
+
+        List<Project> all = new ArrayList<>((int) Math.min(totalRowCount, Integer.MAX_VALUE));
+        all.addAll(firstBatch);
+
+        if (all.size() >= totalRowCount || pageSize == 0) {
+            return all;
+        }
+
+        // --- compute the remaining number of pages and fetch each one ---
+        int totalPages = (int) Math.ceil((double) totalRowCount / pageSize);
+        for (int page = 1; page < totalPages; page++) {
+            Map<PaginationData, List<Project>> result = pageSupplier.get(page);
+            if (result == null || result.isEmpty()) {
+                break;
+            }
+            List<Project> batch = result.values().iterator().next();
+            if (batch == null || batch.isEmpty()) {
+                break; // guard: stop early if an unexpected empty page is returned
+            }
+            all.addAll(batch);
+            if (all.size() >= totalRowCount) {
+                break;
+            }
+        }
+        return all;
+    }
+
+    /** Functional interface for the paginated-fetch lambda used in {@link #fetchAllPages}. */
+    @FunctionalInterface
+    private interface ThriftPageSupplier {
+        Map<PaginationData, List<Project>> get(int page) throws TException;
     }
 
     public void copyLinkedObligationsForClonedProject(Project createDuplicateProject, Project sw360Project, User user)
