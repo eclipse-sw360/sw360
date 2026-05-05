@@ -35,11 +35,11 @@ import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthorit
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -61,8 +61,7 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
     private Project project, project1;
     private Attachment attachment,attachment1 ;
 
-    @Autowired
-    private PasswordEncoder encoder;
+    private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Before
     public void before() throws TException, IOException {

@@ -15,7 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -25,6 +25,7 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class Sw360ClientDetailsService implements RegisteredClientRepository {
 
     private final Logger log = LogManager.getLogger(this.getClass());
@@ -32,8 +33,7 @@ public class Sw360ClientDetailsService implements RegisteredClientRepository {
     @Value("${security.accesstoken.validity}")
     private Integer accessTokenValidity;
 
-    @Autowired
-    private OAuthClientRepository clientRepo;
+    private final OAuthClientRepository clientRepo;
 
     @Override
     public RegisteredClient findByClientId(String clientId) {

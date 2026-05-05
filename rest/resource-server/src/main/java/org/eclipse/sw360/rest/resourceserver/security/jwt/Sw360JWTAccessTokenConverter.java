@@ -6,13 +6,13 @@ package org.eclipse.sw360.rest.resourceserver.security.jwt;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.converter.Converter;
@@ -36,6 +36,7 @@ import java.util.stream.Stream;
  */
 @Profile("!SECURITY_MOCK")
 @Component
+@RequiredArgsConstructor
 public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
 	private static final Logger log = LogManager.getLogger(Sw360JWTAccessTokenConverter.class);
@@ -50,8 +51,7 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	@Value("${jwt.auth.converter.principle-attribute:email}")
 	private String principleAttribute;
 
-	@Autowired
-	private Sw360UserService userService;
+	private final Sw360UserService userService;
 
 	/**
 	 * Converts the JWT token into an AbstractAuthenticationToken.

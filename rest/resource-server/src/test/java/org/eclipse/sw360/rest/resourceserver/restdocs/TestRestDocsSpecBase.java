@@ -40,6 +40,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.ManualRestDocumentation;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -61,13 +62,10 @@ public abstract class TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @Autowired
     protected WebApplicationContext context;
 
-    @Autowired
     protected FilterChainProxy springSecurityFilterChain;
 
-    @Autowired
     protected ObjectMapper objectMapper;
 
     protected MockMvc mockMvc;
@@ -79,14 +77,24 @@ public abstract class TestRestDocsSpecBase {
     @MockitoBean
     Sw360CustomUserDetailsService sw360CustomUserDetailsService;
 
-    @Autowired
-    private PasswordEncoder encoder;
+    private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @MockitoBean
     protected Sw360UserService userServiceMock;
 
     @MockitoBean
     protected SW360ConfigurationsService sw360ConfigurationsServiceMock;
+
+    @Autowired
+    void setTestContextDependencies(
+            WebApplicationContext context,
+            FilterChainProxy springSecurityFilterChain,
+            ObjectMapper objectMapper
+    ) {
+        this.context = context;
+        this.springSecurityFilterChain = springSecurityFilterChain;
+        this.objectMapper = objectMapper;
+    }
 
     @Before
     public void setupRestDocs() {

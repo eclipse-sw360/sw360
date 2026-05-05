@@ -13,14 +13,12 @@ package org.eclipse.sw360.rest.resourceserver.configuration.security;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,8 +29,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class Sw360AuthorizationServerConfiguration {
 
-	@Autowired
-	Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+	private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
 
 	@Order(1)
 	@Bean
@@ -44,14 +41,10 @@ public class Sw360AuthorizationServerConfiguration {
 						.requestMatchers(HttpMethod.GET, "/api/version").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
 						.anyRequest().authenticated()
-		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
+		).authenticationProvider(sw360UserAuthenticationProvider)
+				.httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
 				.exceptionHandling(x -> x.authenticationEntryPoint(saep));
 		return httpSecurity.csrf(csrf -> csrf.disable()).build();
-	}
-
-	@Autowired
-	public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) {
-        authenticationManagerBuilder.authenticationProvider(sw360UserAuthenticationProvider);
 	}
 
 }

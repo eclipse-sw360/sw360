@@ -11,7 +11,6 @@ package org.eclipse.sw360.fossology;
 
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.apache.thrift.protocol.TCompactProtocol;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -25,7 +24,6 @@ import java.net.MalformedURLException;
 @Controller
 public class FossologyServlet extends SpringTServlet {
 
-    @Autowired
     public FossologyServlet(FossologyHandler fossologyHandler) throws MalformedURLException {
         // Create a service processor using the provided handler
         super(new FossologyService.Processor<>(fossologyHandler), new TCompactProtocol.Factory());

@@ -16,12 +16,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,21 +47,19 @@ import com.google.common.collect.Sets;
 @RestController
 @RequestMapping(path = "/" + OAuthClientController.ENDPOINT_URL)
 @PreAuthorize("hasAuthority('ADMIN')")
+@RequiredArgsConstructor
 public class OAuthClientController {
 
     public static final String ENDPOINT_URL = "client-management";
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${security.oauth2.resource.id}")
     private String resourceId;
 
-    @Autowired
-    private KeyManager keyManager;
+    private final KeyManager keyManager;
 
-    @Autowired
-    private OAuthClientRepository repo;
+    private final OAuthClientRepository repo;
 
     @GetMapping(path = "")
     public ResponseEntity<List<OAuthClientResource>> getAllClients() {

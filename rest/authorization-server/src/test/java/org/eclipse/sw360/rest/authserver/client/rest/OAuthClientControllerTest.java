@@ -15,7 +15,6 @@ import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.web.client.RestClientException;
@@ -29,8 +28,7 @@ import static org.mockito.Mockito.when;
 
 public class OAuthClientControllerTest extends IntegrationTestBase {
 
-    @Autowired
-    private TestRestTemplate template;
+    private final TestRestTemplate template = new TestRestTemplate();
 
     @Test
     public void testGetAll_basicAuth_unknownUser_fail() throws RestClientException, URISyntaxException {
@@ -43,7 +41,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
         responseEntity = template.withBasicAuth("my-unknown-user", "12345").exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+                new RequestEntity<String>(headers, HttpMethod.GET, new URI("http://localhost:" + port + "/client-management")), String.class);
 
         // then:
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
@@ -60,7 +58,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
         responseEntity = template.withBasicAuth(adminTestUser.email, "12345")
-                .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
+                .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("http://localhost:" + port + "/client-management")),
                         String.class);
 
         // then:
@@ -78,7 +76,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
         responseEntity = template.withBasicAuth(normalTestUser.email, "12345")
-                .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
+                .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("http://localhost:" + port + "/client-management")),
                         String.class);
 
         // then:
@@ -97,7 +95,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.set("authenticated-email", "my-unknown-user");
 
         responseEntity = template.exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+                new RequestEntity<String>(headers, HttpMethod.GET, new URI("http://localhost:" + port + "/client-management")), String.class);
 
         // then:
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
@@ -116,7 +114,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.set("authenticated-email", adminTestUser.email);
 
         responseEntity = template.exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+                new RequestEntity<String>(headers, HttpMethod.GET, new URI("http://localhost:" + port + "/client-management")), String.class);
 
         // then:
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
@@ -135,7 +133,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.set("authenticated-email", normalTestUser.email);
 
         responseEntity = template.exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+                new RequestEntity<String>(headers, HttpMethod.GET, new URI("http://localhost:" + port + "/client-management")), String.class);
 
         // then:
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.FORBIDDEN));
