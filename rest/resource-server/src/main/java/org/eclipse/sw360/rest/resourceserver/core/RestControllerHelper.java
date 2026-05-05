@@ -1585,7 +1585,12 @@ public class RestControllerHelper<T> {
         if (null != release.getCotsDetails() && ComponentType.COTS.equals(release.getComponentType())) {
             HalResource<COTSDetails> cotsDetailsHalResource = new HalResource<>(release.getCotsDetails());
             if (CommonUtils.isNotNullEmptyOrWhitespace(release.getCotsDetails().getCotsResponsible())) {
-                User sw360User = userService.getUserByEmail(release.getCotsDetails().getCotsResponsible());
+                User sw360User;
+                try {
+                    sw360User = userService.getUserByEmail(release.getCotsDetails().getCotsResponsible());
+                } catch (RuntimeException e) {
+                    sw360User = null;
+                }
                 if (null != sw360User) {
                     addEmbeddedUser(cotsDetailsHalResource, sw360User, "sw360:cotsResponsible");
                 }
