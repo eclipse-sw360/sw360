@@ -25,6 +25,8 @@ import java.util.List;
 import com.nimbusds.jwt.SignedJWT;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -59,6 +61,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureTestRestTemplate
 @ActiveProfiles({"dev", "test"})
 public abstract class IntegrationTestBase {
+    private static final Logger log = LogManager.getLogger(IntegrationTestBase.class);
 
     @Value("${local.server.port}")
     protected int port;
@@ -184,8 +187,8 @@ public abstract class IntegrationTestBase {
         } else {
             actualAuthorities.add(authoritiesJsonNode.asText());
         }
-        System.out.println("ACTUAL: " + actualAuthorities);
-        System.out.println("EXPECTED: " + StringUtils.join(expectedAuthority, ", "));
+        log.info("ACTUAL: {}", actualAuthorities);
+        log.info("EXPECTED: {}", StringUtils.join(expectedAuthority, ", "));
         assertThat(actualAuthorities, containsInAnyOrder(expectedAuthority));
 
         return jwtClaimsJsonNode;

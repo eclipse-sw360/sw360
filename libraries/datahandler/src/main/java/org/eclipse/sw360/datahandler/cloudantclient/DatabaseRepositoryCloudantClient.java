@@ -13,11 +13,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -244,6 +245,35 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryView(query.build());
     }
 
+    public List<T> queryViewPaginated(
+            String queryName, Object[] startKeys, Object[] endKeys, PaginationData pageData, boolean isReduced
+    ) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName)
+                .reduce(false)
+                .descending(!ascending)
+                .includeDocs(true);
+
+        if (ascending) {
+            query.startKey(startKeys)
+                    .endKey(endKeys);
+        } else {
+            query.startKey(endKeys)
+                    .endKey(startKeys);
+        }
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        paginationSetTotalRowCount(pageData, isReduced, query.build());
+
+        return queryView(query.build());
+    }
+
     public List<T> queryView(String viewName, String key) {
         PostViewOptions query = connector.getPostViewQueryBuilder(type, viewName)
                 .keys(Collections.singletonList(key))
@@ -274,6 +304,12 @@ public class DatabaseRepositoryCloudantClient<T> {
         paginationSetTotalRowCount(pageData, isReduced, query.build());
 
         return queryView(query.build());
+    }
+
+    public List<T> queryViewWithComplexKeysPaginated(String queryName, String key, PaginationData pageData) {
+        Object[] startKeys = new Object[] { key };
+        Object[] endKeys = new Object[] { key, new HashMap<String, Object>()  };
+        return queryViewPaginated(queryName, startKeys, endKeys, pageData, false);
     }
 
     public Set<String> queryForIds(PostViewOptions query) {

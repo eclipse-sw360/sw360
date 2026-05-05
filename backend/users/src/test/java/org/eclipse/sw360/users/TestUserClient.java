@@ -10,6 +10,8 @@
 package org.eclipse.sw360.users;
 
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -23,12 +25,13 @@ import java.io.IOException;
  * @author cedric.bodet@tngtech.com
  */
 public class TestUserClient {
+    private static final Logger log = LogManager.getLogger(TestUserClient.class);
 
     public static void main(String[] args) throws TException, IOException {
         THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/users/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         UserService.Iface client = new UserService.Client(protocol);
 
-        System.out.println(client.getByEmail("cedric.bodet@tngtech.com"));
+        log.info("{}", client.getByEmail("cedric.bodet@tngtech.com"));
     }
 }

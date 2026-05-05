@@ -12,10 +12,11 @@ package org.eclipse.sw360.rest.resourceserver.changelog;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URISyntaxException;
-import java.util.LinkedHashMap;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +35,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
@@ -105,10 +107,12 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
     ) throws TException, URISyntaxException, PaginationParameterException,
             ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<ChangeLogs> changelogs = sw360ChangeLogService.getChangeLogsByDocumentId(docId, sw360User);
-        changelogs.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
-        PaginationResult<ChangeLogs> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                changelogs, SW360Constants.TYPE_CHANGELOG);
+        Map<PaginationData, List<ChangeLogs>> changelogsResult = sw360ChangeLogService.getChangeLogsByDocumentIdPaginated(docId, sw360User, pageable);
+        List<ChangeLogs> changelogs = changelogsResult.values().iterator().next();
+        int totalCount = Math.toIntExact(changelogsResult.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+        PaginationResult<ChangeLogs> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, changelogs, SW360Constants.TYPE_CHANGELOG, totalCount);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);

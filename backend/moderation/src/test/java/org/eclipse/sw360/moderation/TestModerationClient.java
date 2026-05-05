@@ -13,6 +13,8 @@ package org.eclipse.sw360.moderation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -26,6 +28,7 @@ import java.util.List;
  * author: Gerrit.Grenzebach@tngtech.com
  */
 public class TestModerationClient {
+    private static final Logger log = LogManager.getLogger(TestModerationClient.class);
 
     public static void main(String[] args) throws TException, IOException {
         THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080//moderation/thrift");
@@ -34,10 +37,6 @@ public class TestModerationClient {
 
         List<ModerationRequest> requestsByModerator = client.getRequestsByModerator(new User().setId("58245y9845").setEmail("cedric.bodet@tngtech.com").setDepartment("BB"));
 
-
-        System.out.println("Fetched " + requestsByModerator.size() + " moderation requests from moderation service");
-
-
+        log.info("Fetched {} moderation requests from moderation service", requestsByModerator.size());
     }
-
 }

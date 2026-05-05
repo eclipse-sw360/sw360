@@ -27,8 +27,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Collections;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
@@ -114,7 +116,10 @@ public class ChangeLogSpecTest extends TestRestDocsSpecBase {
         changeLogs.add(changeLog);
         changeLogs.add(changeLog2);
 
-        given(this.changeLogServiceMock.getChangeLogsByDocumentId(any(), any())).willReturn(changeLogs);
+        given(this.changeLogServiceMock.getChangeLogsByDocumentIdPaginated(any(), any(), any())).willReturn(Collections.singletonMap(
+                new PaginationData().setRowsPerPage(2).setDisplayStart(0).setTotalRowCount(2),
+                changeLogs
+        ));
     }
 
     @Test
