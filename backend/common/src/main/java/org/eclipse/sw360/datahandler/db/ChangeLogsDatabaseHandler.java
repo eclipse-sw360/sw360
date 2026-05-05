@@ -63,6 +63,11 @@ public class ChangeLogsDatabaseHandler {
         List<ChangeLogs> filteredLogs = entry.getValue().stream()
                 .filter(Objects::nonNull)
                 .filter(this::isNotEmptyChangeLog)
+                .peek(c -> {
+                    if (c.isSetChangeTimestamp()) {
+                        c.setChangeTimestamp(c.getChangeTimestamp().split(" ", 2)[0]);
+                    }
+                })
                 .toList();
 
         return Collections.singletonMap(entry.getKey(), filteredLogs);
