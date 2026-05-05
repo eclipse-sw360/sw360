@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -89,11 +88,16 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 */
 	private Collection<GrantedAuthority> extractResourceRoles(Jwt jwt) {
 		String email = extractEmailFromJWT(jwt);
-		User sw360User = userService.getUserByEmail(email);
-		validateUser(email, sw360User);
+		User sw360User;
+		try {
+			sw360User = userService.getUserByEmail(email);
+		} catch (RuntimeException e) {
+			sw360User = null; // captured by validateUser()
+		}
+		validateUser(sw360User);
 		List<GrantedAuthority> grantedAuthorities = Sw360GrantedAuthoritiesCalculator.generateFromUser(sw360User);
 		Set<String> scopes = getScopes(jwt);
-		if (null == scopes || scopes.isEmpty()) {
+		if (scopes.isEmpty()) {
 			return grantedAuthorities;
 		}
 		log.debug("User {} has authorities {} while client {} has scopes {}. Setting intersection as granted authorities for access token", email, grantedAuthorities, jwt.getClaim("client_id"), scopes);
@@ -104,7 +108,7 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 * Retrieves the scopes from the JWT token.
 	 *
 	 * @param jwt the JWT token
-	 * @return a list of scopes extracted from the JWT token
+	 * @return a set of scopes extracted from the JWT token
 	 */
 	private static @NotNull Set<String> getScopes(Jwt jwt) {
 		Object scopeClaim = jwt.getClaim(SCOPE);
@@ -135,17 +139,14 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	}
 
 	/**
-	 * Validates the user based on the email and user status.
+	 * Validates the user based on its status.
 	 *
-	 * @param email the email of the user
 	 * @param sw360User the user object fetched from the user service
 	 * @throws BadCredentialsException if the user is deactivated or not available
 	 */
-	private static void validateUser(String email, User sw360User) {
-		if (email != null && CommonUtils.isNotNullEmptyOrWhitespace(email)) {
-			if (sw360User == null || sw360User.isDeactivated()) {
-				throw new BadCredentialsException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
-			}
+	private static void validateUser(User sw360User) {
+		if (sw360User == null || sw360User.isDeactivated()) {
+			throw new BadCredentialsException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
 		}
 	}
 }
