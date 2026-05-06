@@ -41,6 +41,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.all;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eqIgnoreCase;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
@@ -737,7 +738,12 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                 if (Project._Fields.ADDITIONAL_DATA.getFieldName().equals(entry.getKey())) {
                     andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
                 } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
-                    andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
+                    String value = entry.getValue().stream().findFirst().get();
+                    if (Project._Fields.NAME.getFieldName().equals(entry.getKey())) {
+                        andConditions.add(eqIgnoreCase(entry.getKey(), value));
+                    } else {
+                        andConditions.add(eq(entry.getKey(), value));
+                    }
                 }
             }
         }
