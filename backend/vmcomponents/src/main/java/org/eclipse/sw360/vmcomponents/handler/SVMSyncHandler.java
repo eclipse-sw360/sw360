@@ -35,7 +35,6 @@ import com.github.cliftonlabs.json_simple.Jsoner;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -668,7 +667,7 @@ public class SVMSyncHandler<T extends TBase> {
                 }
                 return vulIds;
 
-            } catch (IOException | RuntimeException | URISyntaxException e){
+            } catch (IOException | RuntimeException e){
                 String message = "Failed to get vulnerabilities for component "+componentVmId+" from SMV";
                 log.error(message, e);
                 return Collections.emptySet();

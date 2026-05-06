@@ -1058,6 +1058,9 @@
                   </goals>
                   <phase>package</phase>
                   <configuration>
+                    <overWriteReleases>true</overWriteReleases>
+                    <overWriteSnapshots>true</overWriteSnapshots>
+                    <overWriteIfNewer>true</overWriteIfNewer>
                     <artifactItems>
                       <artifactItem>
                         <groupId>${project.groupId}</groupId>
