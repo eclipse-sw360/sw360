@@ -66,6 +66,7 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationRequest
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserDetails;
 import org.jetbrains.annotations.NotNull;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -92,6 +93,7 @@ import org.springframework.hateoas.server.core.EmbeddedWrapper;
 import org.springframework.hateoas.server.core.EmbeddedWrappers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -195,8 +197,18 @@ public class RestControllerHelper<T> {
 
     public User getSw360UserFromAuthentication() {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null) {
+                throw new AuthenticationServiceException("Could not load user from authentication.");
+            }
+
+            Object authenticationDetails = authentication.getDetails();
+            if (authenticationDetails instanceof User cachedUser) {
+                return cachedUser;
+            }
+
             String userId = null;
-            Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Object principle = authentication.getPrincipal();
             if (principle instanceof Jwt jwt) {
                 if (jwt.getClaims().containsKey("resource_access") || !jwt.getClaims().containsKey("user_name")) {
                     userId = jwt.getClaim("email");
@@ -210,11 +222,20 @@ public class RestControllerHelper<T> {
                         return userService.getUserByEmailOrExternalId(userId);
                     }
                 }
+            } else if (principle instanceof Sw360UserDetails sw360UserDetails) {
+                return sw360UserDetails.getSw360User();
+            } else if (principle instanceof User cachedUser) {
+                return cachedUser;
             } else if (principle instanceof String) {
                 userId = principle.toString();
-            } else {
-                org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) principle;
+            } else if (principle instanceof org.springframework.security.core.userdetails.User user) {
                 userId = user.getUsername();
+            } else {
+                throw new AuthenticationServiceException("Could not load user from authentication.");
+            }
+
+            if (isNullEmptyOrWhitespace(userId)) {
+                throw new AuthenticationServiceException("Could not load user from authentication.");
             }
             return userService.getUserByEmailOrExternalId(userId);
         } catch (RuntimeException e) {

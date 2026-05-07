@@ -16,7 +16,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
- * This class offer helper methods to calculate the {@GrantedAuthority} for a
+ * This class offer helper methods to calculate the {@link GrantedAuthority} for a
  * user.
  */
 public class Sw360GrantedAuthoritiesCalculator {
@@ -28,15 +28,13 @@ public class Sw360GrantedAuthoritiesCalculator {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
 
         grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()));
-        if (user != null) {
-            if (PermissionUtils.isUserAtLeast(Sw360ResourceServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
-                log.debug("User {} has write access", user.getEmail());
-                grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
-            }
-            if (PermissionUtils.isUserAtLeast(Sw360ResourceServer.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
-                log.debug("User {} has admin access", user.getEmail());
-                grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()));
-            }
+        if (PermissionUtils.isUserAtLeast(Sw360ResourceServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
+            log.debug("User {} has write access", user.getEmail());
+            grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
+        }
+        if (PermissionUtils.isUserAtLeast(Sw360ResourceServer.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
+            log.debug("User {} has admin access", user.getEmail());
+            grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()));
         }
 
         log.info("Granted authorities for user {} are {}", user.getEmail(), grantedAuthorities);

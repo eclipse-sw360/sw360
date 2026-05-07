@@ -4,11 +4,11 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.resourceserver.security.jwt;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,10 +60,14 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 */
 	@Override
 	public AbstractAuthenticationToken convert(@NonNull Jwt jwt) {
+		User sw360User = loadSw360User(jwt);
+		Collection<GrantedAuthority> tokenCapabilities = TokenCapabilityAuthorities.fromJwtScopeClaim(jwt.getClaim(SCOPE));
 		Collection<GrantedAuthority> authorities = Stream
-				.concat(jwtGrantedAuthoritiesConverter.convert(jwt).stream(), extractResourceRoles(jwt).stream())
+				.concat(jwtGrantedAuthoritiesConverter.convert(jwt).stream(), extractResourceRoles(sw360User, jwt, tokenCapabilities).stream())
 				.collect(Collectors.toSet());
-		return new JwtAuthenticationToken(jwt, authorities, getPrincipleClaimName(jwt));
+		JwtAuthenticationToken authenticationToken = new JwtAuthenticationToken(jwt, authorities, getPrincipleClaimName(jwt));
+		authenticationToken.setDetails(sw360User);
+		return authenticationToken;
 	}
 
 	/**
@@ -86,7 +90,16 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 * @param jwt the JWT token
 	 * @return a collection of GrantedAuthority extracted from the JWT token
 	 */
-	private Collection<GrantedAuthority> extractResourceRoles(Jwt jwt) {
+	private Collection<GrantedAuthority> extractResourceRoles(User sw360User, Jwt jwt,
+			Collection<GrantedAuthority> tokenCapabilities) {
+		String email = sw360User.getEmail();
+		List<GrantedAuthority> grantedAuthorities = Sw360GrantedAuthoritiesCalculator.generateFromUser(sw360User);
+		log.debug("User {} has group authorities {} and token capabilities {} for client {}", email,
+				grantedAuthorities, tokenCapabilities, jwt.getClaim("client_id"));
+		return TokenCapabilityAuthorities.merge(grantedAuthorities, tokenCapabilities);
+	}
+
+	private User loadSw360User(Jwt jwt) {
 		String email = extractEmailFromJWT(jwt);
 		User sw360User;
 		try {
@@ -95,33 +108,7 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 			sw360User = null; // captured by validateUser()
 		}
 		validateUser(sw360User);
-		List<GrantedAuthority> grantedAuthorities = Sw360GrantedAuthoritiesCalculator.generateFromUser(sw360User);
-		Set<String> scopes = getScopes(jwt);
-		if (scopes.isEmpty()) {
-			return grantedAuthorities;
-		}
-		log.debug("User {} has authorities {} while client {} has scopes {}. Setting intersection as granted authorities for access token", email, grantedAuthorities, jwt.getClaim("client_id"), scopes);
-		return grantedAuthorities.stream().filter(s -> scopes.contains(s.toString())).toList();
-	}
-
-	/**
-	 * Retrieves the scopes from the JWT token.
-	 *
-	 * @param jwt the JWT token
-	 * @return a set of scopes extracted from the JWT token
-	 */
-	private static @NotNull Set<String> getScopes(Jwt jwt) {
-		Object scopeClaim = jwt.getClaim(SCOPE);
-		Set<String> scopes;
-
-		if (scopeClaim instanceof String scopeClaimString) {
-			scopes = new HashSet<>(Arrays.asList(scopeClaimString.split("\\s+")));
-		} else if (scopeClaim instanceof List scopeList) {
-			scopes = new HashSet<>(scopeList);
-		} else {
-			scopes = Collections.emptySet();
-		}
-		return scopes;
+		return sw360User;
 	}
 
 	/**
