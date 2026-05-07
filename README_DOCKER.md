@@ -66,7 +66,7 @@ file to tweak SW360 behaviour.
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
 * `JWKS_ISSUER_URI`: URI for JWKS issuer (default:
     `http://localhost:8080/authorization/oauth2/jwks`). Use
-    `http://localhost:8083/realms/sw360/protocol/openid-connect/certs` for
+    `http://localhost:8083/realms/sw360` for
     KeyCloak based setup.
 * `JWKS_SET_URI`: URI for JWKS set (default:
     `http://localhost:8080/authorization/oauth2/jwks`).
