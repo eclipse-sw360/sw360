@@ -49,6 +49,7 @@ public class AttachmentCleanUpController implements RepresentationModelProcessor
     private final Sw360AttachmentCleanUpService attachmentCleanUpService;
 
 	@Override
+    @PreAuthorize("hasAuthority('READ')")
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(AttachmentCleanUpController.class).slash("api" + ATTACHMENT_CLEANUP_URL).withRel("attachmentCleanUp"));
         return resource;

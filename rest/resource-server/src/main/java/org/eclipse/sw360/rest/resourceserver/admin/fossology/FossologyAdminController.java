@@ -66,6 +66,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
     Sw360FossologyAdminServices sw360FossologyAdminServices;
 
     @Override
+    @PreAuthorize("hasAuthority('READ')")
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(FossologyAdminController.class).slash("api" + FOSSOLOGY_URL).withRel("fossology"));
         return resource;

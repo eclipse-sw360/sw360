@@ -6,7 +6,7 @@ SPDX-License-Identifier: EPL-2.0
 
 # SW360 ArchUnit Test Summary
 
-> **Last Updated:** April 15, 2026
+> **Last Updated:** May 7, 2026
 > **Module:** `rest/resource-server`
 
 This document provides a comprehensive overview of all ArchUnit architecture tests in the SW360 REST resource-server module. These tests enforce architectural patterns, coding standards, and best practices.
@@ -25,14 +25,14 @@ This document provides a comprehensive overview of all ArchUnit architecture tes
 | [Naming Convention Rules](#6-naming-convention-rules) | 5 | Validates class naming patterns |
 | [OpenAPI Documentation Rules](#7-openapi-documentation-rules) | 2 | Ensures OpenAPI documentation |
 | [Package Structure Rules](#8-package-structure-rules) | 5 | Enforces package organization |
-| [Security Annotation Rules](#9-security-annotation-rules) | 4 | Validates security annotations |
+| [Security Annotation Rules](#9-security-annotation-rules) | 5 | Validates security annotations |
 | [Spring Framework Rules](#10-spring-framework-rules) | 7 | Enforces Spring best practices |
 | [Thrift Service Boundary Rules](#11-thrift-service-boundary-rules) | 3 | Prevents bypassing Thrift layer |
 | [Coding Standard Rules](#12-coding-standard-rules) | 14 | General coding standards & modern Java |
 | [Resource Management Rules](#13-resource-management-rules) | 9 | Resource lifecycle & concurrency |
 | [Dependency Governance Rules](#14-dependency-governance-rules) | 6 | Third-party dependency allowlist & bans |
 | [Test Coverage Completeness Rules](#15-test-coverage-completeness-rules) | 3 | Forced test co-evolution |
-| **Total** | **77** | **Complete architecture validation** |
+| **Total** | **78** | **Complete architecture validation** |
 
 ---
 
@@ -142,6 +142,7 @@ This document provides a comprehensive overview of all ArchUnit architecture tes
 | `noClassShouldUseRolesAllowedAnnotation` | No class should use `@RolesAllowed` — use `@PreAuthorize` instead |
 | `noClassShouldUseDeprecatedMethodSecurityAnnotation` | No class should use deprecated `@EnableGlobalMethodSecurity` — use `@EnableMethodSecurity` (Spring Security 6.x) |
 | `preAuthorizeValuesShouldUseKnownAuthorities` | `@PreAuthorize` annotations must only reference known SW360 authorities: `ADMIN`, `WRITE`, or `READ` |
+| `representationModelProcessorControllersShouldAllowReadOnProcess` | Controllers that use class-level `@PreAuthorize('ADMIN')` and implement `RepresentationModelProcessor` must mark `process(RepositoryLinksResource)` with `@PreAuthorize` including `READ` so `/api` root discovery does not fail with 403 |
 
 ---
 
