@@ -10,12 +10,12 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
+import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JWTAccessTokenConverter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,54 +38,46 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class ResourceServerConfiguration {
 
-    @Autowired
-    SimpleAuthenticationEntryPoint saep;
+    private static final String[] PUBLIC_SWAGGER_ENDPOINTS = {"/v3/api-docs/**", "/swagger-ui/**", "/index.html",
+            "/docs/**", "/mkdocs/**"};
 
-    @Autowired
-    Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
+    private static final String[] PUBLIC_API_GET_ENDPOINTS = {"/api/health", "/api/version", "/api",
+            "/api/reports/download"};
 
-    @Autowired
-    private ApiTokenAuthenticationProvider authProvider;
-
-    @Autowired
-    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    private final SimpleAuthenticationEntryPoint saep;
+    private final Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
+    private final ApiTokenAuthenticationProvider authProvider;
+    private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    String issuerUri;
+    private String issuerUri;
 
     @Value("${springdoc.swagger-ui.require-authentication:true}")
-    boolean swaggerRequireAuthentication;
+    private boolean swaggerRequireAuthentication;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         ApiTokenAuthenticationFilter apiTokenAuthenticationFilter = new ApiTokenAuthenticationFilter(authenticationManager, saep);
+        http.authenticationManager(authenticationManager);
         return http
                 .addFilterBefore(apiTokenAuthenticationFilter, BasicAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
                                 .jwkSetUri(issuerUri)).authenticationEntryPoint(saep))
                 .authorizeHttpRequests(auth -> {
-                    // Swagger/OpenAPI endpoints - configurable authentication
                     if (!swaggerRequireAuthentication) {
-                        auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
-                        auth.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
-                        auth.requestMatchers(HttpMethod.GET, "/index.html").permitAll();
-                        auth.requestMatchers(HttpMethod.GET, "/docs/**").permitAll();
-                        auth.requestMatchers(HttpMethod.GET, "/mkdocs/**").permitAll();
+                        auth.requestMatchers(HttpMethod.GET, PUBLIC_SWAGGER_ENDPOINTS).permitAll();
                     }
-                    // API endpoints
-                    auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/api/version").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, PUBLIC_API_GET_ENDPOINTS).permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
-                    auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ");
-                    auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE");
-                    auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE");
-                    auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
-                    auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
+                    auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_READ);
+                    auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
                 })
                 .httpBasic(basic -> basic.authenticationEntryPoint(saep))
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
@@ -94,9 +86,8 @@ public class ResourceServerConfiguration {
                 .csrf(csrf -> csrf.disable()).build();
     }
 
-
     @Bean
-    AuthenticationManager authenticationManager() {
+    public AuthenticationManager authenticationManager() {
         return new ProviderManager(List.of(authProvider, sw360UserAuthenticationProvider));
     }
 

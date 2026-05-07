@@ -20,14 +20,15 @@ import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
+import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter.ApiTokenAuthentication;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter.AuthType;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.resourceserver.security.jwksvalidation.JWTValidator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -36,17 +37,15 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.Math.min;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
@@ -64,7 +63,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        log.info("Authenticating for the user with authentication {}", authentication);
+        log.debug("Authenticating for the user with authentication {}", authentication);
         if (authentication.isAuthenticated()) {
             log.trace("Authentication already authenticated");
             return authentication;
@@ -169,23 +168,13 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         return tokenExpireDate.before(new Date());
     }
 
-    private Set<GrantedAuthority> getGrantedAuthoritiesFromApiToken(RestApiToken restApiToken) {
-        return restApiToken.getAuthorities()
-                .stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet());
-    }
-
-    private Set<GrantedAuthority> getGrantedAuthoritiesFromUserAccess(UserAccess userAccess) {
-        return Stream.of(userAccess.name().split("_"))
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet());
-    }
-
     private PreAuthenticatedAuthenticationToken authenticatedApiUser(User user, String credentials, RestApiToken restApiToken) {
-        Set<GrantedAuthority> grantedAuthorities = getGrantedAuthoritiesFromApiToken(restApiToken);
+        Set<GrantedAuthority> grantedAuthorities = TokenCapabilityAuthorities.merge(
+                Sw360GrantedAuthoritiesCalculator.generateFromUser(user),
+                TokenCapabilityAuthorities.fromAuthorityNames(restApiToken.getAuthorities()));
         PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken =
                 new PreAuthenticatedAuthenticationToken(user.getEmail(), credentials, grantedAuthorities);
+        preAuthenticatedAuthenticationToken.setDetails(user);
         preAuthenticatedAuthenticationToken.setAuthenticated(true);
         return preAuthenticatedAuthenticationToken;
     }
@@ -203,9 +192,12 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
             throw new AuthenticationServiceException(
                     "Your entered OIDC token is not associated with any user for authorization.");
         }
-        Set<GrantedAuthority> grantedAuthorities = getGrantedAuthoritiesFromUserAccess(access);
+        Set<GrantedAuthority> grantedAuthorities = TokenCapabilityAuthorities.merge(
+                Sw360GrantedAuthoritiesCalculator.generateFromUser(user),
+                TokenCapabilityAuthorities.fromAuthorityNames(List.of(access.name())));
         PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken = new PreAuthenticatedAuthenticationToken(
                 user.getEmail(), credentials, grantedAuthorities);
+        preAuthenticatedAuthenticationToken.setDetails(user);
         preAuthenticatedAuthenticationToken.setAuthenticated(true);
         return preAuthenticatedAuthenticationToken;
     }

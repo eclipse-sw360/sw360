@@ -56,6 +56,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     private Sw360ScheduleService scheduleService;
 
     @Override
+    @PreAuthorize("hasAuthority('READ')")
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ScheduleAdminController.class).slash("api/schedule").withRel("schedule"));
         return resource;

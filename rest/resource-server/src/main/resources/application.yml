@@ -11,8 +11,14 @@
 
 server:
   port: 8091
+  compression:
+    enabled: true
+    min-response-size: 2KB
+    mime-types: application/json,application/hal+json,text/plain,text/html,text/xml,application/xml
   servlet:
     context-path: /resource/api
+  tomcat:
+    connection-timeout: 60s
 
 management:
   endpoints:
@@ -42,6 +48,9 @@ management:
 spring:
   application:
     name: resource
+  mvc:
+    async:
+      request-timeout: 120s
   servlet:
     multipart:
       max-file-size: 500MB
