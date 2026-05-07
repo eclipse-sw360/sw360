@@ -28,6 +28,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
@@ -51,6 +53,7 @@ public class ResourceServerConfiguration {
     private final Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
     private final ApiTokenAuthenticationProvider authProvider;
     private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    private final JwtDecoder jwtDecoder;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuerUri;
@@ -88,7 +91,9 @@ public class ResourceServerConfiguration {
 
     @Bean
     public AuthenticationManager authenticationManager() {
-        return new ProviderManager(List.of(authProvider, sw360UserAuthenticationProvider));
+        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
+        jwtAuthenticationProvider.setJwtAuthenticationConverter(sw360JWTAccessTokenConverter);
+        return new ProviderManager(List.of(jwtAuthenticationProvider, authProvider, sw360UserAuthenticationProvider));
     }
 
     @Bean
