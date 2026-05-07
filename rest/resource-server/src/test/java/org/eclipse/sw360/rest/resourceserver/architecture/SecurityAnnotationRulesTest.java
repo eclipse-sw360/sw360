@@ -10,13 +10,19 @@
 package org.eclipse.sw360.rest.resourceserver.architecture;
 
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.rest.webmvc.BasePathAwareController;
+import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -128,6 +134,55 @@ class SecurityAnnotationRulesTest extends SW360ArchitectureTest {
                 .should(useOnlyKnownAuthorities)
                 .as("@PreAuthorize annotations should only reference known SW360 authorities: " +
                         "ADMIN, WRITE, or READ");
+
+        rule.check(restClasses);
+    }
+
+    @Test
+    @DisplayName("RepresentationModelProcessor controllers must allow READ on process()")
+    void representationModelProcessorControllersShouldAllowReadOnProcess() {
+        ArchCondition<JavaClass> processShouldRequireRead =
+                new ArchCondition<>("declare @PreAuthorize with READ on process(RepositoryLinksResource)") {
+                    @Override
+                    public void check(JavaClass javaClass, ConditionEvents events) {
+                        if (!javaClass.isAnnotatedWith(PreAuthorize.class)) {
+                            return;
+                        }
+                        String classLevelValue = javaClass.getAnnotationOfType(PreAuthorize.class).value();
+                        if (!classLevelValue.contains("ADMIN")) {
+                            return;
+                        }
+
+                        List<JavaMethod> processMethods = javaClass.getMethods().stream()
+                                .filter(method -> method.getName().equals("process"))
+                                .filter(method -> method.getRawParameterTypes().size() == 1)
+                                .filter(method -> method.getRawParameterTypes().getFirst()
+                                        .isEquivalentTo(RepositoryLinksResource.class))
+                                .toList();
+
+                        for (JavaMethod method : processMethods) {
+                            if (!method.isAnnotatedWith(PreAuthorize.class)) {
+                                events.add(SimpleConditionEvent.violated(javaClass,
+                                        String.format("%s.process(...) must be annotated with @PreAuthorize('hasAuthority('READ')') to keep /api root discoverable",
+                                                javaClass.getSimpleName())));
+                                continue;
+                            }
+                            String value = method.getAnnotationOfType(PreAuthorize.class).value();
+                            if (!value.contains("READ")) {
+                                events.add(SimpleConditionEvent.violated(javaClass,
+                                        String.format("%s.process(...) uses @PreAuthorize(\"%s\") but must allow READ for /api root discovery",
+                                                javaClass.getSimpleName(), value)));
+                            }
+                        }
+                    }
+                };
+
+        ArchRule rule = classes()
+                .that().areAnnotatedWith(RestController.class)
+                .and().areAnnotatedWith(BasePathAwareController.class)
+                .and().implement(org.springframework.hateoas.server.RepresentationModelProcessor.class)
+                .should(processShouldRequireRead)
+                .as("Controllers with class-level ADMIN guard must keep process() readable by READ users");
 
         rule.check(restClasses);
     }

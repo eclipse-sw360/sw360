@@ -55,6 +55,7 @@ public class DatabaseSanitationController  implements RepresentationModelProcess
     private final RestControllerHelper restControllerHelper;
 
     @Override
+    @PreAuthorize("hasAuthority('READ')")
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(DatabaseSanitationController.class).slash("api" + DATABASESANITATION_URL).withRel("databaseSanitation"));
         return resource;

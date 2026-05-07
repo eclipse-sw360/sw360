@@ -69,6 +69,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
     private final RestControllerHelper restControllerHelper;
 
     @Override
+    @PreAuthorize("hasAuthority('READ')")
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(DepartmentController.class).slash("api" + DEPARTMENT_URL).withRel("department"));
         return resource;
