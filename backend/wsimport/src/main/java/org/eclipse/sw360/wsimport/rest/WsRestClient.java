@@ -9,25 +9,23 @@
  */
 package org.eclipse.sw360.wsimport.rest;
 
-
-import org.apache.http.HttpException;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpStatus;
+import com.github.cliftonlabs.json_simple.JsonObject;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpException;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
 import org.eclipse.sw360.wsimport.utility.WsTokenType;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import com.github.cliftonlabs.json_simple.JsonObject;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author: ksoranko@verifa.io
@@ -47,31 +45,24 @@ public class WsRestClient {
         return json.toString();
     }
 
-    private HttpClient getConfiguredHttpClient() {
-        return HttpClientBuilder
-                .create()
-                .build();
-    }
-
-    private HttpResponse getWsConnection(String input, HttpClient client, String serverUrl) throws IOException{
-        HttpPost request = new HttpPost(serverUrl);
-        request.addHeader(HttpHeaders.CONTENT_TYPE, TranslationConstants.APPLICATION_JSON);
-        StringEntity stringEntity = new StringEntity(input, ContentType.create(TranslationConstants.APPLICATION_JSON));
-        request.setEntity(stringEntity);
-        return client.execute(request);
-    }
-
     String getData(String requestString, String token, WsTokenType type, TokenCredentials tokenCredentials) throws IOException, HttpException {
-        LOGGER.info("Making REST call to " + tokenCredentials.getServerUrl() + " with request: " + requestString + " and token: " + token + " and userKey: " + tokenCredentials.getUserKey());
+        LOGGER.info("Making REST call to {} with request: {} and token: {} and userKey: {}", tokenCredentials.getServerUrl(), requestString, token, tokenCredentials.getUserKey());
         String input = generateRequestBody(requestString, tokenCredentials.getUserKey(), type, token);
-        HttpClient httpClient = getConfiguredHttpClient();
-        HttpResponse response = getWsConnection(input, httpClient, tokenCredentials.getServerUrl());
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-            return IOUtils.toString(response.getEntity().getContent(), "UTF-8");
-        } else {
-            LOGGER.info("Request unsuccessful: " + response.getStatusLine().getReasonPhrase());
-            throw new HttpException("Response code from Whitesource not OK");
+
+        HttpPost request = new HttpPost(tokenCredentials.getServerUrl());
+        request.addHeader(HttpHeaders.CONTENT_TYPE, TranslationConstants.APPLICATION_JSON);
+        request.setEntity(new StringEntity(input, StandardCharsets.UTF_8));
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            return httpClient.execute(request, response -> {
+                int statusCode = response.getCode();
+                if (statusCode == HttpStatus.SC_OK) {
+                    return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                } else {
+                    LOGGER.info("Request unsuccessful: {}", response.getReasonPhrase());
+                    throw new HttpException("Response code from Whitesource not OK");
+                }
+            });
         }
     }
 }
