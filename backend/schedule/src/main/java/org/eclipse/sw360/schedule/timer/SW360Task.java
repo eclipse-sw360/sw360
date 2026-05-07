@@ -13,7 +13,6 @@ package org.eclipse.sw360.schedule.timer;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
 
 import java.util.Date;
 import java.util.TimerTask;
@@ -44,7 +43,7 @@ public abstract class SW360Task extends TimerTask {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("SW360Task{");
+        final StringBuilder sb = new StringBuilder("SW360Task{");
         sb.append("name='").append(name).append('\'');
         sb.append("id='").append(id).append('\'');
         sb.append("scheduledExecutionTime='").append(SW360Utils.getDateTimeString(new Date(this.scheduledExecutionTime()))).append('\'');
