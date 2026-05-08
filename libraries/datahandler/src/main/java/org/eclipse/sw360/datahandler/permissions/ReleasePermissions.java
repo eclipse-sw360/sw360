@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -85,6 +86,11 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
     @Override
     protected Set<String> getModerators() {
         return moderators;
+    }
+
+    @Override
+    protected Set<String> getSecurityResponsibles() {
+        return Collections.emptySet();
     }
 
     @Override
