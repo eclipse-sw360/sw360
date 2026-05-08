@@ -502,7 +502,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             Set<String> values = CommonUtils.splitToSet(email);
             if (luceneSearch) {
                 values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareFuzzyQuery)
                         .collect(Collectors.toSet());
             }
             filterMap.put(User._Fields.EMAIL.getFieldName(), values);
