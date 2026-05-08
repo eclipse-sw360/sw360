@@ -70,6 +70,7 @@ import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -336,6 +337,37 @@ public class ReleaseTest extends TestIntegrationBase {
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         TestHelper.checkResponse(response.getBody(), "releases", 2, Collections.singletonList(extraField));
+    }
+
+    @Test
+    public void should_get_release_batch_summary() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        List<String> requestedIds = Arrays.asList(TestHelper.releaseId2, TestHelper.release1Id, TestHelper.releaseId2, "missing-release");
+        LinkedHashSet<String> deduplicatedIds = new LinkedHashSet<>(Arrays.asList(TestHelper.releaseId2, TestHelper.release1Id, "missing-release"));
+        Release releaseTwo = getDummyReleaseListForTest().get(1);
+
+        given(this.releaseServiceMock.getAccessibleReleasesByIds(eq(deduplicatedIds), any()))
+                .willReturn(Arrays.asList(release, releaseTwo));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("ids", requestedIds);
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/batch-summary",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(2, responseBody.get("items").size());
+        assertEquals(TestHelper.releaseId2, responseBody.get("items").get(0).get("id").textValue());
+        assertEquals(TestHelper.release1Id, responseBody.get("items").get(1).get("id").textValue());
+        assertEquals("missing-release", responseBody.get("missingIds").get(0).textValue());
+
+        then(releaseServiceMock).should().getAccessibleReleasesByIds(eq(deduplicatedIds), any());
     }
 
     @Test
