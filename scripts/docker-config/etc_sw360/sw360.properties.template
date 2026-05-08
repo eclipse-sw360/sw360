@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+
 # ***************************************
 # Config Properties not saved in DB
 # ***************************************
@@ -20,6 +21,10 @@ rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
 
 # where the Thrift should connect
 backend.url=http://127.0.0.1:8080
+# LicenseDB integration properties
+licensedb.import.source=xml
+licensedb.url=$LICENSEDB_URL
+licensedb.access.token=$LICENSEDB_ACCESS_TOKEN
 
 org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport
 enable.sw360.change.log=false
