@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -322,6 +323,67 @@ public class ComponentDatabaseHandlerTest {
         List<Component> summaryForExport = handler.getSummaryForExport();
         // C4 should NOT be in the results
         assertTrue(containsInAnyOrder("C1", "C2", "C3").matches(getComponentIds(summaryForExport)));
+
+        Component component = getComponent(summaryForExport, "C1");
+        assertNotNull(component);
+        assertThat(getReleaseVersions(component.getReleases()), containsInAnyOrder("releaseA", "releaseB"));
+        for (Release release : component.getReleases()) {
+            assertTrue(release.isSetName());
+            assertTrue(release.isSetVersion());
+            assertEquals("", release.getComponentId());
+            assertFalse(release.isSetVendor());
+            assertFalse(release.isSetAttachments());
+        }
+    }
+
+    @Test
+    public void testGetDetailedSummaryForExport() throws Exception {
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(
+                DatabaseSettingsTest.getConfiguredClient(), dbName);
+
+        Release release = handler.getRelease("R1A", user1);
+        release.setReleaseIdToRelationship(ImmutableMap.of("R1B", ReleaseRelationship.CONTAINED));
+        release.setAttachments(new HashSet<>(Collections.singletonList(
+                new Attachment().setAttachmentContentId("ATT-1").setFilename("release-attachment.tar.gz")
+        )));
+        databaseConnector.update(release);
+
+        Component component = handler.getComponent("C1", user1);
+        component.setAttachments(new HashSet<>(Collections.singletonList(
+                new Attachment().setAttachmentContentId("COMP-1").setFilename("component-attachment.txt")
+        )));
+        databaseConnector.update(component);
+
+        List<Component> detailedSummaryForExport = handler.getComponentDetailedSummaryForExport();
+
+        Component detailedComponent = getComponent(detailedSummaryForExport, "C1");
+        assertNotNull(detailedComponent);
+        assertThat(getReleaseIds(detailedComponent.getReleases()), containsInAnyOrder("R1A", "R1B"));
+        assertThat(detailedComponent.getAttachments(), hasSize(1));
+
+        Release detailedRelease = getRelease(detailedComponent.getReleases(), "R1A");
+        assertNotNull(detailedRelease);
+        assertNotNull(detailedRelease.getVendor());
+        assertEquals("Microsoft Corporation", detailedRelease.getVendor().getFullname());
+        assertThat(detailedRelease.getAttachments(), hasSize(1));
+        assertThat(detailedRelease.getReleaseIdToRelationship(), hasEntry("R1B", ReleaseRelationship.CONTAINED));
+    }
+
+    @Test
+    public void testSearchComponentByNameForExport() throws Exception {
+        List<Component> searchResults = handler.searchComponentByNameForExport("component1", true);
+
+        assertTrue(containsInAnyOrder("C1").matches(getComponentIds(searchResults)));
+
+        Component component = getComponent(searchResults, "C1");
+        assertNotNull(component);
+        assertThat(getReleaseVersions(component.getReleases()), containsInAnyOrder("releaseA", "releaseB"));
+        for (Release release : component.getReleases()) {
+            assertTrue(release.isSetName());
+            assertTrue(release.isSetVersion());
+            assertEquals("", release.getComponentId());
+            assertFalse(release.isSetVendor());
+        }
     }
 
     @Test
@@ -1114,6 +1176,23 @@ public class ComponentDatabaseHandlerTest {
                 return true;
         }
         return false;
+    }
+
+    private static Release getRelease(Collection<Release> releases, @NotNull String id) {
+        for (Release release : releases) {
+            if (id.equals(release.getId())) {
+                return release;
+            }
+        }
+        return null;
+    }
+
+    private static Collection<String> getReleaseVersions(Collection<Release> releases) {
+        List<String> versions = new ArrayList<>();
+        for (Release release : releases) {
+            versions.add(release.getVersion());
+        }
+        return versions;
     }
 
 

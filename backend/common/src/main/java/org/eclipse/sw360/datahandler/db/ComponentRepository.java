@@ -16,9 +16,12 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
@@ -163,9 +166,20 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "}";
 
     private static final String COMPONENT_BY_ALL_IDX = "ComponentByAllIdx";
+    private final ReleaseRepository releaseRepository;
+    private final VendorRepository vendorRepository;
+    private final ComponentSummary componentSummary;
 
     public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
-        super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
+        this(db, releaseRepository, vendorRepository, new ComponentSummary());
+    }
+
+    private ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository,
+            VendorRepository vendorRepository, ComponentSummary componentSummary) {
+        super(Component.class, db, componentSummary);
+        this.releaseRepository = releaseRepository;
+        this.vendorRepository = vendorRepository;
+        this.componentSummary = componentSummary;
         Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byCreatedOn", createMapReduce(BY_CREATED_ON, null));
@@ -228,12 +242,12 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     public List<Component> getSummaryForExport() {
         final List<Component> componentList = getAll();
-        return makeSummaryFromFullDocs(SummaryType.EXPORT_SUMMARY, componentList);
+        return buildExportSummaries(componentList);
     }
 
     public List<Component> getDetailedSummaryForExport() {
         final List<Component> componentList = getAll();
-        return makeSummaryFromFullDocs(SummaryType.DETAILED_EXPORT_SUMMARY, componentList);
+        return buildDetailedExportSummaries(componentList);
     }
 
     public List<Component> getComponentSummary(User user) {
@@ -263,7 +277,45 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             componentIds = queryForIdsAsValueByPrefix("bynamelowercase", name);
         }
         final List<Component> componentList = new ArrayList<Component>(getFullDocsById(componentIds));
-        return makeSummaryFromFullDocs(SummaryType.EXPORT_SUMMARY, componentList);
+        return buildExportSummaries(componentList);
+    }
+
+    private List<Component> buildExportSummaries(Collection<Component> components) {
+        List<Component> exportSummaries = new ArrayList<>(components.size());
+        for (Component component : components) {
+            List<Release> releases = releaseRepository.getReleasesFromComponentId(component.getId());
+            exportSummaries.add(componentSummary.makeExportSummary(component, releases));
+        }
+        return exportSummaries;
+    }
+
+    private List<Component> buildDetailedExportSummaries(Collection<Component> components) {
+        List<Component> exportSummaries = new ArrayList<>(components.size());
+        for (Component component : components) {
+            List<Release> releases = releaseRepository.getReleasesFromComponentId(component.getId());
+            enrichVendors(releases);
+            exportSummaries.add(componentSummary.makeDetailedExportSummary(component, releases));
+        }
+        return exportSummaries;
+    }
+
+    private void enrichVendors(Collection<Release> releases) {
+        Set<String> vendorIds = new HashSet<>();
+        for (Release release : releases) {
+            if (release != null && release.isSetVendorId() && !CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
+                vendorIds.add(release.getVendorId());
+            }
+        }
+        if (vendorIds.isEmpty()) {
+            return;
+        }
+
+        Map<String, Vendor> vendorsById = ThriftUtils.getIdMap(vendorRepository.get(vendorIds));
+        for (Release release : releases) {
+            if (release != null && !release.isSetVendor() && release.isSetVendorId()) {
+                release.setVendor(vendorsById.get(release.getVendorId()));
+            }
+        }
     }
 
     public Set<Component> getUsingComponents(String releaseId) {
