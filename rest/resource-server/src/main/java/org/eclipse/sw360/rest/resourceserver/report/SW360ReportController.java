@@ -477,7 +477,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @Parameter(description = "Extended by releases.")
             @RequestParam(value = "extendedByReleases", required = false, defaultValue = "false") boolean extendedByReleases
     ) throws SW360Exception {
-        final User user = restControllerHelper.getUserByEmail(request.getParameter("user"));
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
         try {
             ByteBuffer buffer = null;
             String fileName = sw360ReportService.getDocumentName(user, null, module);
