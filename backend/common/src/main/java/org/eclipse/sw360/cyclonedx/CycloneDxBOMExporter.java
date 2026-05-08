@@ -107,15 +107,21 @@ public class CycloneDxBOMExporter {
             if (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true) && CommonUtils.isNotEmpty(linkedPackageIds)) {
                 List<Package> packages = packageDatabaseHandler.getPackageByIds(linkedPackageIds);
                 List<org.cyclonedx.model.Component> sbomComponents = getCycloneDxComponentsFromSw360Packages(packages);
-                Set<String> releaseIds = packages.stream()
+                Set<String> releaseIdsFromPackages = packages.stream()
                         .filter(pkg -> CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId()))
                         .map(Package::getReleaseId).collect(Collectors.toSet());
                 // remove Releases of linked packages, & include remaining Release info in SBOM export
-                if (linkedReleaseIds.removeAll(releaseIds) && CommonUtils.isNotEmpty(linkedReleaseIds)) {
+                int linkedReleasesCountBefore = linkedReleaseIds.size();
+                linkedReleaseIds.removeAll(releaseIdsFromPackages);
+                
+                if (CommonUtils.isNotEmpty(linkedReleaseIds)) {
                     List<Release> linkedReleases = componentDatabaseHandler.getReleasesByIds(linkedReleaseIds);
                     Set<String> componentIds = linkedReleases.stream().map(Release::getComponentId).filter(Objects::nonNull).collect(Collectors.toSet());
                     List<Component> components = componentDatabaseHandler.getComponentsByIds(componentIds);
                     sbomComponents.addAll(getCycloneDxComponentsFromSw360Releases(linkedReleases, components));
+                } else if (linkedReleasesCountBefore > 0 && releaseIdsFromPackages.size() > linkedReleasesCountBefore) {
+                    // All releases were from packages - this is fine, components already added from packages
+                    log.info("All releases for SBOM export came from packages for project: " + projectId);
                 }
                 bom.setComponents(sbomComponents);
             } else if (CommonUtils.isNotEmpty(linkedReleaseIds)) {
@@ -125,7 +131,12 @@ public class CycloneDxBOMExporter {
                 List<org.cyclonedx.model.Component> sbomComponents = getCycloneDxComponentsFromSw360Releases(linkedReleases, components);
                 bom.setComponents(sbomComponents);
             } else {
-                log.warn("Cannot export SBOM for project without linked releases: " + projectId);
+                String errorMsg = "Cannot export SBOM for project '" + projectId + "' - no linked releases or packages found";
+                if (includeSubProjReleases) {
+                    errorMsg += " (including sub-projects)";
+                }
+                log.error(errorMsg + ". Please ensure the project has linked releases or packages.");
+                summary.setMessage(errorMsg + ". Please ensure the project has linked releases or packages.");
                 summary.setRequestStatus(RequestStatus.FAILED_SANITY_CHECK);
                 return summary;
             }
