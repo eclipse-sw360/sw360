@@ -1,7 +1,6 @@
 # Global SW360 repo code owners ( owns all code )
-* @heliocastro @gmishx @koukihama @arunazhakesan @ag4ums
+* @GMishx @koukihama @arunazhakesan @ag4ums @rudra-superrr
 
 # Docker specific
-Dockerfile @heliocastro
-docker-compose.yml @heliocastro
-
+Dockerfile @GMishx
+docker-compose.yml @GMishx
