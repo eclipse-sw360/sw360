@@ -26,10 +26,12 @@ public class CveSearchWrapper {
     private static final Logger log = LogManager.getLogger(CveSearchWrapper.class);
 
     private final Heuristic heuristic;
+    private final CveSearchApi cveSearchApi;
 
     public CveSearchWrapper(CveSearchApi cveSearchApi) {
         SearchLevels searchLevels = new SearchLevels(cveSearchApi);
         heuristic = new Heuristic(searchLevels, cveSearchApi);
+        this.cveSearchApi = cveSearchApi;
     }
 
     public Optional<List<CveSearchData>> searchForRelease(Release release) {
@@ -39,5 +41,8 @@ public class CveSearchWrapper {
             log.error("Was not able to search for release with name=" + release.getName() + " and id=" + release.getId(), e);
         }
         return Optional.empty();
+    }
+    public List<CveSearchData> search(String vendor,String product) throws IOException {
+        return cveSearchApi.search(vendor, product);
     }
 }
