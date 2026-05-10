@@ -86,7 +86,8 @@ public class ResourceServerConfiguration {
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
                 .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.DISABLED))
                         .contentSecurityPolicy(cps -> cps.policyDirectives("script-src 'self'")))
-                .csrf(csrf -> csrf.disable()).build();
+                // Keep CSRF enabled by default and ignore stateless API endpoints using Authorization headers.
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**")).build();
     }
 
     @Bean

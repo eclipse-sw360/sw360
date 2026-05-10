@@ -45,8 +45,9 @@ public class Sw360AuthorizationServerConfiguration {
 						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
-				.exceptionHandling(x -> x.authenticationEntryPoint(saep));
-		return httpSecurity.csrf(csrf -> csrf.disable()).build();
+				.exceptionHandling(x -> x.authenticationEntryPoint(saep))
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
+		return httpSecurity.build();
 	}
 
 	@Autowired

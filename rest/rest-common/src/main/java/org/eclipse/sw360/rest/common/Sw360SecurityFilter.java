@@ -53,8 +53,8 @@ public class Sw360SecurityFilter implements Filter {
         response.setHeader("X-XSS-Protection", "0");
 
         String path = request.getRequestURI();
-        if (path != null && (path.contains("/swagger-ui") || path.contains("/v3/api-docs"))) {
-            // Relaxed CSP for Swagger UI to function
+        if (path != null && (path.contains("/swagger-ui") || path.contains("/v3/api-docs") || path.contains("/authorization/login"))) {
+            // Relaxed CSP for Swagger UI, authorization server login, and interactive pages
             response.setHeader("Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'; upgrade-insecure-requests;");
         } else {
             // Strict CSP for API responses
