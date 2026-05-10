@@ -1962,6 +1962,51 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
     }
+
+    /**
+     * Regression test for <a href="https://github.com/eclipse-sw360/sw360/issues/2569">issue #2569</a>:
+     * the {@code visibility} field in the create-project payload must be parsed
+     * case-insensitively. Sending lowercase {@code "private"} (or any other case)
+     * must succeed exactly the same way as sending uppercase {@code "PRIVATE"}.
+     */
+    @Test
+    public void should_create_project_with_lowercase_visibility() throws Exception {
+        Map<String, Object> project = new HashMap<>();
+        project.put("name", "Test Project");
+        project.put("version", "1.0");
+        // Lowercase visibility — must be accepted (issue #2569)
+        project.put("visibility", "private");
+        project.put("description", "This is the description of my Test Project");
+        project.put("projectType", ProjectType.PRODUCT.toString());
+
+        this.mockMvc.perform(post("/api/projects")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(project))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")));
+    }
+
+    /**
+     * Regression test for <a href="https://github.com/eclipse-sw360/sw360/issues/2569">issue #2569</a>:
+     * mixed-case visibility (e.g. {@code "Private"}) must also be accepted.
+     */
+    @Test
+    public void should_create_project_with_mixed_case_visibility() throws Exception {
+        Map<String, Object> project = new HashMap<>();
+        project.put("name", "Test Project");
+        project.put("version", "1.0");
+        project.put("visibility", "Private");
+        project.put("description", "This is the description of my Test Project");
+        project.put("projectType", ProjectType.PRODUCT.toString());
+
+        this.mockMvc.perform(post("/api/projects")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(project))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isCreated());
+    }
+
     @Test
     public void should_document_create_duplicate_project() throws Exception {
         Map<String, Object> projectReqs = new HashMap<>();

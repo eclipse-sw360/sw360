@@ -65,6 +65,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -3072,12 +3073,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
 
-        if (requestBody.containsKey(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY))) {
+        String visibilityKey = mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY);
+        if (requestBody.containsKey(visibilityKey)) {
             try {
-                String visibility = (String) requestBody
-                        .get(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY));
-                requestBody.put(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY),
-                        visibility.toUpperCase());
+                Object rawVisibility = requestBody.get(visibilityKey);
+                if (rawVisibility instanceof String) {
+                    Visibility parsed = parseVisibility((String) rawVisibility);
+                    if (parsed != null) {
+                        requestBody.put(visibilityKey, parsed.name());
+                    }
+                }
             } catch (IllegalArgumentException e) {
                 log.error("Error processing visibility field", e);
                 log.error("Failed requestBody: {}", requestBody);
@@ -3099,6 +3104,34 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(requestBody.get(Project._Fields.ATTACHMENTS.getFieldName()), mapper);
         projectFromRequest.setAttachments(attachments);
         return projectFromRequest;
+    }
+
+    /**
+     * Case-insensitive parser for the {@link Visibility} enum used in REST request bodies.
+     *
+     * <p>Accepts any case (e.g. {@code "private"}, {@code "Private"}, {@code "PRIVATE"}) and
+     * normalises to the canonical Thrift enum constant. Returns {@code null} for null/blank
+     * input so callers can preserve "field absent" semantics. Throws a descriptive
+     * {@link IllegalArgumentException} listing valid values for unknown input.</p>
+     *
+     * <p>Fixes <a href="https://github.com/eclipse-sw360/sw360/issues/2569">issue #2569</a>.</p>
+     *
+     * @param value the raw visibility string from the request body, may be {@code null}
+     * @return matching {@link Visibility} or {@code null} if input is null/blank
+     */
+    static Visibility parseVisibility(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Visibility.valueOf(value.trim().toUpperCase(Locale.US));
+        } catch (IllegalArgumentException e) {
+            String validValues = Arrays.stream(Visibility.values())
+                    .map(Enum::name)
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException(
+                    "Invalid visibility value: '" + value + "'. Valid values are: " + validValues);
+        }
     }
 
     public static TSerializer getJsonSerializer() {
