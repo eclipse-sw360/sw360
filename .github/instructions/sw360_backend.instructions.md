@@ -455,7 +455,6 @@ SW360 supports two authentication methods:
          resourceserver:
            jwt:
              issuer-uri: http://localhost:8083/realms/sw360
-             jwk-set-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
    ```
 
 2. **API Token (Bearer)**
@@ -595,11 +594,6 @@ enable.flexible.project.release.relationship=true
 fossology.url=http://fossology:8081
 fossology.token=<token>
 cvesearch.host=https://cve.circl.lu
-
-# JWKS validation (optional)
-jwks.issuer.url=http://localhost:8083/realms/sw360
-jwks.endpoint.url=http://localhost:8083/realms/sw360/protocol/openid-connect/certs
-jwks.validation.enabled=false
 ```
 
 ### couchdb.properties Keys

@@ -65,12 +65,8 @@ file to tweak SW360 behaviour.
 **Spring Controllers**
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
 * `JWKS_ISSUER_URI`: URI for JWKS issuer (default:
-    `http://localhost:8080/authorization/oauth2/jwks`). Use
-    `http://localhost:8083/realms/sw360` for
-    KeyCloak based setup.
-* `JWKS_SET_URI`: URI for JWKS set (default:
-    `http://localhost:8080/authorization/oauth2/jwks`).
-* `JWKS_ISSUER`: Issuer URL (default: `http://localhost:8090`).
+    `http://localhost:8080/authorization`). Use
+    `http://localhost:8083/realms/sw360` for KeyCloak based setup.
 
 **Email Configuration**
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to

@@ -287,13 +287,11 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8083/realms/sw360
-          jwk-set-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
   ```
 
   **⚠️ IMPORTANT:** If your application.yml currently has:
   ```yaml
-issuer-uri: http://localhost:8080/authorization/oauth2/jwks
-jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
+issuer-uri: http://localhost:8080/authorization
   ```
 
   **You MUST change it to use Keycloak endpoints** because:
@@ -325,7 +323,7 @@ $MAVEN_CMD clean install -DskipTests \
 9. **Start Keycloak Server (If Using Keycloak Authentication):**
   **Only perform this step if your JWT configuration points to Keycloak** (issuer-uri contains `/realms/sw360`).
 
-  If you're using the custom Spring Boot authorization server (issuer-uri: `http://localhost:8080/authorization/oauth2/jwks`), skip this step.
+  If you're using the custom Spring Boot authorization server (issuer-uri: `http://localhost:8080/authorization`), skip this step.
 
   Set environment variables and start Keycloak using the confirmed installation path:
   ```bash
@@ -738,8 +736,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
-          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
+          issuer-uri: http://localhost:8080/authorization
 ```
 Then rebuild and deploy the resource-server module.
 

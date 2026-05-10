@@ -56,9 +56,6 @@ public class ResourceServerConfiguration {
     private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
     private final JwtDecoder jwtDecoder;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String issuerUri;
-
     @Value("${springdoc.swagger-ui.require-authentication:true}")
     private boolean swaggerRequireAuthentication;
 
@@ -72,15 +69,15 @@ public class ResourceServerConfiguration {
     private boolean basicAuthEnabled;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) {
         ApiTokenAuthenticationFilter apiTokenAuthenticationFilter = new ApiTokenAuthenticationFilter(authenticationManager, saep);
         http.authenticationManager(authenticationManager);
 
         http
                 .addFilterBefore(apiTokenAuthenticationFilter, BasicAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
-                        jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
-                                .jwkSetUri(issuerUri)).authenticationEntryPoint(saep))
+                        jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter))
+                        .authenticationEntryPoint(saep))
                 .authorizeHttpRequests(auth -> {
                     if (!swaggerRequireAuthentication) {
                         auth.requestMatchers(HttpMethod.GET, PUBLIC_SWAGGER_ENDPOINTS).permitAll();

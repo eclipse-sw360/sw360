@@ -4,9 +4,11 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.resourceserver.security.jwt;
 
+import jakarta.annotation.Nullable;
 import lombok.NonNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
@@ -41,6 +43,7 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	public static final String USER_NAME = "user_name";
 	public static final String USER_IS_DEACTIVATED_OR_NOT_AVAILABLE = "User is deactivated or not available.";
 	public static final String SCOPE = "scope";
+	private static final String CLIENT_ID = "client_id";
 
 	private final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
@@ -96,18 +99,58 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 		List<GrantedAuthority> grantedAuthorities = Sw360GrantedAuthoritiesCalculator.generateFromUser(sw360User);
 		log.debug("User {} has group authorities {} and token capabilities {} for client {}", email,
 				grantedAuthorities, tokenCapabilities, jwt.getClaim("client_id"));
-		return TokenCapabilityAuthorities.merge(grantedAuthorities, tokenCapabilities);
+		return TokenCapabilityAuthorities.mergeForTokenAuthentication(grantedAuthorities, tokenCapabilities);
 	}
 
 	private User loadSw360User(Jwt jwt) {
 		String email = extractEmailFromJWT(jwt);
-		User sw360User;
-		try {
-			sw360User = userService.getUserByEmail(email);
-		} catch (RuntimeException e) {
-			sw360User = null; // captured by validateUser()
-		}
+		String clientId = extractClientIdFromJWT(jwt);
+		User sw360User = getUserFromService(email, clientId);
 		validateUser(sw360User);
+		return sw360User;
+	}
+
+	@Nullable
+	private static String extractClientIdFromJWT(Jwt jwt) {
+		Object clientIdClaim = jwt.getClaim(CLIENT_ID);
+		if (clientIdClaim instanceof Collection<?> clientIdCollection) {
+			for (Object candidate : clientIdCollection) {
+				String value = Objects.toString(candidate, null);
+				if (CommonUtils.isNotNullEmptyOrWhitespace(value)) {
+					return value;
+				}
+			}
+			return null;
+		}
+		String value = Objects.toString(clientIdClaim, null);
+		return CommonUtils.isNotNullEmptyOrWhitespace(value) ? value : null;
+	}
+
+	/**
+	 * First try to get User based on email from User Service. If not found, try
+	 * with ClientID. If that fails as well, return {@code null}.
+	 * @param email    Email to search user with.
+	 * @param clientId Client ID to search user with.
+	 * @return Return user if found from one of the parameter, null otherwise.
+	 */
+	@Nullable
+	private User getUserFromService(@Nullable String email, @Nullable String clientId) {
+		User sw360User = null;
+		if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
+			try {
+				sw360User = userService.getUserByEmail(email);
+			} catch (RuntimeException e) {
+				log.debug("Could not resolve SW360 user by email claim {}", email, e);
+			}
+		}
+
+		if (sw360User == null && CommonUtils.isNotNullEmptyOrWhitespace(clientId)) {
+			try {
+				sw360User = userService.getUserFromClientId(clientId);
+			} catch (RuntimeException e) {
+				log.debug("Could not resolve SW360 user by client_id claim {}", clientId, e);
+			}
+		}
 		return sw360User;
 	}
 
@@ -131,7 +174,7 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 * @param sw360User the user object fetched from the user service
 	 * @throws BadCredentialsException if the user is deactivated or not available
 	 */
-	private static void validateUser(User sw360User) {
+	private static void validateUser(@Nullable User sw360User) {
 		if (sw360User == null || sw360User.isDeactivated()) {
 			throw new BadCredentialsException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
 		}

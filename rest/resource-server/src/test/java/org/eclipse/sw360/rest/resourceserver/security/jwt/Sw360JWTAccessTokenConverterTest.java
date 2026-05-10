@@ -25,7 +25,12 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -64,11 +69,12 @@ public class Sw360JWTAccessTokenConverterTest {
         assertThat(authentication.getAuthorities())
                 .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))
                 .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
+                .doesNotContain(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()))
                 .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
     }
 
     @Test
-    public void shouldDefaultToReadWriteCapabilitiesWhenScopeMissing() {
+    public void shouldDefaultToReadOnlyCapabilitiesWhenScopeMissing() {
         User adminUser = new User();
         adminUser.setEmail("admin-noscope@sw360.org");
         adminUser.setUserGroup(UserGroup.ADMIN);
@@ -84,6 +90,60 @@ public class Sw360JWTAccessTokenConverterTest {
         assertThat(authentication).isNotNull();
         assertThat(authentication.getAuthorities())
                 .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+    }
+
+
+    @Test
+    public void shouldResolveUserByClientIdWhenEmailClaimIsMissing() {
+        User clientMappedUser = new User();
+        clientMappedUser.setEmail("oidc-client-user@sw360.org");
+        clientMappedUser.setUserGroup(UserGroup.USER);
+        when(userService.getUserFromClientId("trusted-sw360-client")).thenReturn(clientMappedUser);
+
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("client_id", "trusted-sw360-client")
+                .claim("scope", "READ")
+                .build();
+
+        AbstractAuthenticationToken authentication = converter.convert(jwt);
+
+        assertThat(authentication).isNotNull();
+        assertThat(authentication.getDetails()).isSameAs(clientMappedUser);
+        verify(userService).getUserFromClientId("trusted-sw360-client");
+        verify(userService, never()).getUserByEmail("trusted-sw360-client");
+    }
+
+    @Test
+    public void shouldResolveUserByFirstClientIdWhenClaimIsArray() {
+        User clientMappedUser = new User();
+        clientMappedUser.setEmail("oidc-client-user@sw360.org");
+        clientMappedUser.setUserGroup(UserGroup.USER);
+        when(userService.getUserFromClientId("trusted-sw360-client")).thenReturn(clientMappedUser);
+
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("client_id", List.of("trusted-sw360-client", "fallback-client"))
+                .claim("scope", "READ")
+                .build();
+
+        AbstractAuthenticationToken authentication = converter.convert(jwt);
+
+        assertThat(authentication).isNotNull();
+        assertThat(authentication.getDetails()).isSameAs(clientMappedUser);
+        verify(userService).getUserFromClientId("trusted-sw360-client");
+    }
+
+    @Test
+    public void shouldFailWhenJwtCannotBeMappedToSw360User() {
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("client_id", "unmapped-client")
+                .build();
+
+        assertThatThrownBy(() -> converter.convert(jwt))
+                .isInstanceOf(org.springframework.security.authentication.BadCredentialsException.class)
+                .hasMessage(Sw360JWTAccessTokenConverter.USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
     }
 }
