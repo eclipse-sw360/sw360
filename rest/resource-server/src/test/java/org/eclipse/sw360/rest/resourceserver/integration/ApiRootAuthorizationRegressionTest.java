@@ -134,7 +134,6 @@ public class ApiRootAuthorizationRegressionTest extends TestIntegrationBase {
                     .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                     .addFilterBefore(new ReadAuthorityHeaderAuthenticationFilter(), BasicAuthenticationFilter.class)
                     .httpBasic(Customizer.withDefaults())
-                    .csrf(csrf -> csrf.disable())
                     .build();
         }
     }
