@@ -39,6 +39,11 @@ sw360:
   # Allowed origins that should be set in the header
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+  security:
+    # Keep enabled for development/testing; set to false in production when
+    # all clients authenticate via OAuth2/JWT flows only.
+    http-basic:
+      enabled: true
 
 security:
   # Configuration for enabling authorization via headers, e.g. when using SSO
@@ -69,4 +74,3 @@ logging:
     org.springframework.security.oauth2.provider.token: DEBUG
     org.springframework.security.oauth2.provider.token.store: DEBUG
     org.springframework.security.oauth2.provider.token.store.jwk: DEBUG
-

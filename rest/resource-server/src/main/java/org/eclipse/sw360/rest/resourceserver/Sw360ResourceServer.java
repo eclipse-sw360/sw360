@@ -21,6 +21,7 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
@@ -32,6 +33,7 @@ import org.eclipse.sw360.rest.common.Sw360SecurityFilter;
 import org.eclipse.sw360.rest.common.Sw360XssFilter;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.health.contributor.Health;
@@ -78,6 +80,9 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Value("${spring.data.rest.default-page-size:10}")
     private int defaultPageSize;
+
+    @Value("${sw360.security.http-basic.enabled:true}")
+    private boolean basicAuthEnabled;
 
     private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String VERSION_INFO_PROPERTIES_FILE = "/restInfo.properties";
@@ -183,17 +188,23 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public OpenAPI customOpenAPI() {
         String restVersionString = String.valueOf(versionInfo.getOrDefault(VERSION_INFO_KEY,
                 "1.0.0"));
+
+        Components securityComponents = new Components()
+                .addSecuritySchemes("tokenAuth",
+                        new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("Authorization")
+                                .in(SecurityScheme.In.HEADER)
+                                .description("Enter the token with the `Token ` prefix, e.g. \"Token abcdef123456...\"."));
+
+        if (basicAuthEnabled) {
+            securityComponents.addSecuritySchemes("basic",
+                    new SecurityScheme().type(SecurityScheme.Type.HTTP).name("Basic")
+                            .scheme("basic")
+                            .description("Username & password based authentication."));
+        }
+
         return new OpenAPI()
                 .addServersItem(new Server().url("/resource/api").description("SW360 REST API Server"))
-                .components(new Components()
-                        .addSecuritySchemes("tokenAuth",
-                                new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("Authorization")
-                                        .in(SecurityScheme.In.HEADER)
-                                        .description("Enter the token with the `Bearer ` prefix, e.g. \"Bearer eyJhbGciOiJ.....\"."))
-                        .addSecuritySchemes("basic",
-                                new SecurityScheme().type(SecurityScheme.Type.HTTP).name("Basic")
-                                        .scheme("basic")
-                                        .description("Username & password based authentication.")))
+                .components(securityComponents)
                 .info(new Info().title("SW360 API").license(new License().name("EPL-2.0")
                                 .url("https://github.com/eclipse-sw360/sw360/blob/main/LICENSE"))
                         .version(restVersionString))
