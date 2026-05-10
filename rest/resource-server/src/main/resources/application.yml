@@ -84,6 +84,11 @@ sw360:
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+  security:
+    # Keep enabled for development/testing; set to false in production when
+    # all clients authenticate via JWT or API token only.
+    http-basic:
+      enabled: true
 
 blacklist:
   sw360:

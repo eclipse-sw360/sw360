@@ -36,6 +36,9 @@ sw360:
   # Allowed origins that should be set in the header
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
+  security:
+    http-basic:
+      enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
 
 security:
   # Configuration for enabling authorization via headers, e.g. when using SSO

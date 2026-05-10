@@ -113,6 +113,13 @@ file to tweak SW360 behaviour.
     `http://localhost:8080`).
 * `SW360_BASE_URL`: Base URL for SW360 server (default: `http://localhost:8080`).
 
+**Security Settings**
+* `SW360_SECURITY_HTTP_BASIC_ENABLED`: Whether HTTP Basic authentication is
+    enabled on both the authorization and resource servers (default: `true`).
+    Set this to `false` in production - clients should authenticate via
+    OAuth2/JWT or API token. Set to `true` only for local development or
+    integration testing where Basic auth is needed for convenience.
+
 ### Secrets
 
 Sensitive information is managed via secret files located in

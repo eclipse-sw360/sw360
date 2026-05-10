@@ -88,6 +88,9 @@ sw360:
   couchdb-url: $COUCHDB_URL
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
+  security:
+    http-basic:
+      enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
 
 blacklist:
   sw360:

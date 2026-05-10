@@ -104,6 +104,9 @@ ENV SVM_API_ROOT_PATH="api/v1"
 ENV SVM_SW360_API_URL="https://svm.example.org/application.json"
 ENV SVM_SW360_CERTIFICATE_FILENAME="not-configured.pfx"
 #
+# Security settings
+ENV SW360_SECURITY_HTTP_BASIC_ENABLED="true"
+#
 # Other settings
 ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
 ENV SW360_CORS_ALLOWED_ORIGIN="*"
