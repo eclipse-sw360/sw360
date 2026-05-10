@@ -86,6 +86,9 @@ include::{snippets}/should_document_get_license/links.adoc[]
 ==== Create a license
 
 A `POST` request will create a license.
+Manual license creation is deprecated and disabled by default. To enable it, set `license.manual.creation.enabled`
+to `true` in SW360 configurations. If disabled, the API responds with `403 Forbidden` and a message instructing
+you to sync licenses from LicenseDB.
 
 ===== Response structure
 include::{snippets}/should_document_create_license/response-fields.adoc[]

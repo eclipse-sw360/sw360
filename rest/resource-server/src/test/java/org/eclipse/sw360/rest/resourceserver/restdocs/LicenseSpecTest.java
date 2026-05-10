@@ -10,6 +10,8 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -28,6 +30,7 @@ import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -54,6 +57,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class LicenseSpecTest extends TestRestDocsSpecBase {
@@ -307,24 +311,29 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Map<String, String> licenseRequestBody = new HashMap<>();
         licenseRequestBody.put("fullName", "Apache 3.0");
         licenseRequestBody.put("shortName", "Apache License 3.0");
-        this.mockMvc.perform(post("/api/licenses")
-                        .contentType(MediaTypes.HAL_JSON)
-                        .content(this.objectMapper.writeValueAsString(licenseRequestBody))
-                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
-                .andExpect(status().isCreated())
-                .andDo(this.documentationHandler.document(
-                        requestFields(
-                                fieldWithPath("fullName").description("The fullName of the new license"),
-                                fieldWithPath("shortName").description("The shortname of the origin license")
-                        ),
-                        responseFields(
-                                fieldWithPath("fullName").description("The fullName of the license"),
-                                fieldWithPath("shortName").description("The shortname of the license"),
-                                fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
-                                subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
-                                fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
-                        )));
+        try (MockedStatic<SW360Utils> sw360UtilsMock = Mockito.mockStatic(SW360Utils.class)) {
+            sw360UtilsMock.when(() -> SW360Utils.readConfig(SW360ConfigKeys.LICENSE_MANUAL_CREATION_ENABLED, false))
+                    .thenReturn(true);
+            this.mockMvc.perform(post("/api/licenses")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(licenseRequestBody))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                    .andExpect(status().isCreated())
+                    .andExpect(header().string("Warning", "299 - \"Manual license creation is deprecated; sync from LicenseDB.\""))
+                    .andDo(this.documentationHandler.document(
+                            requestFields(
+                                    fieldWithPath("fullName").description("The fullName of the new license"),
+                                    fieldWithPath("shortName").description("The shortname of the origin license")
+                            ),
+                            responseFields(
+                                    fieldWithPath("fullName").description("The fullName of the license"),
+                                    fieldWithPath("shortName").description("The shortname of the license"),
+                                    fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
+                                    subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                    fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                    subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                            )));
+        }
     }
 
     @Test
