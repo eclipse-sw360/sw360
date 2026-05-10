@@ -25,6 +25,7 @@ public final class TokenCapabilityAuthorities {
 
     public static final String TOKEN_READ = "TOKEN_READ";
     public static final String TOKEN_WRITE = "TOKEN_WRITE";
+    public static final String WRITE = "WRITE";
 
     private static final Set<GrantedAuthority> READ_ONLY_AUTHORITIES =
             Set.of(new SimpleGrantedAuthority(TOKEN_READ));
@@ -64,16 +65,13 @@ public final class TokenCapabilityAuthorities {
         if (hasWrite) {
             return readWrite();
         }
-        if (hasRead) {
-            return READ_ONLY_AUTHORITIES;
-        }
-        return readWrite();
+        return READ_ONLY_AUTHORITIES;
     }
 
     public static Set<GrantedAuthority> fromJwtScopeClaim(Object scopeClaim) {
         if (scopeClaim instanceof String scopeClaimString) {
             if (scopeClaimString.isBlank()) {
-                return readWrite();
+                return READ_ONLY_AUTHORITIES;
             }
             String[] values = scopeClaimString.trim().split("\\s+");
             return fromAuthorityNames(List.of(values));
@@ -89,7 +87,7 @@ public final class TokenCapabilityAuthorities {
             return fromAuthorityNames(normalized);
         }
 
-        return readWrite();
+        return READ_ONLY_AUTHORITIES;
     }
 
     public static Set<GrantedAuthority> merge(Collection<? extends GrantedAuthority> first,
@@ -100,6 +98,18 @@ public final class TokenCapabilityAuthorities {
         }
         if (second != null) {
             merged.addAll(second);
+        }
+        return Collections.unmodifiableSet(merged);
+    }
+
+    public static Set<GrantedAuthority> mergeForTokenAuthentication(Collection<? extends GrantedAuthority> userAuthorities,
+                                                                     Collection<? extends GrantedAuthority> tokenCapabilities) {
+        Set<GrantedAuthority> merged = new HashSet<>(merge(userAuthorities, tokenCapabilities));
+        boolean hasTokenWrite = tokenCapabilities != null
+                && tokenCapabilities.contains(new SimpleGrantedAuthority(TOKEN_WRITE));
+        if (!hasTokenWrite) {
+            merged.remove(new SimpleGrantedAuthority(WRITE));
+            merged.remove(new SimpleGrantedAuthority(TOKEN_WRITE));
         }
         return Collections.unmodifiableSet(merged);
     }

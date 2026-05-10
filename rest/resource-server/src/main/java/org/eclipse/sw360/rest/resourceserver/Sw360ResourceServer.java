@@ -25,6 +25,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
+import lombok.NonNull;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
@@ -43,6 +44,8 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.hateoas.UriTemplate;
@@ -103,10 +106,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Set<String> DEFAULT_DOMAINS;
     public static final String REPORT_FILENAME_MAPPING;
-    public static final String JWKS_ISSUER_URL;
-    public static final String JWKS_ENDPOINT_URL;
-    public static final String JWT_CLAIM_AUD;
-    public static final Boolean IS_JWKS_VALIDATION_ENABLED;
     public static final UserGroup CONFIG_WRITE_ACCESS_USERGROUP;
     public static final UserGroup CONFIG_ADMIN_ACCESS_USERGROUP;
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
@@ -126,10 +125,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         DEFAULT_DOMAINS = CommonUtils.splitToSet(
                 "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics");
         REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
-        JWKS_ISSUER_URL = props.getProperty("jwks.issuer.url", null);
-        JWKS_ENDPOINT_URL = props.getProperty("jwks.endpoint.url", null);
-        JWT_CLAIM_AUD = props.getProperty("jwt.claim.aud", "");
-        IS_JWKS_VALIDATION_ENABLED = Boolean.parseBoolean(props.getProperty("jwks.validation.enabled", "false"));
         CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
         CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
         SERVER_PATH_URL = props.getProperty("backend.url", "http://localhost:8080");
@@ -141,9 +136,9 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         versionInfo.put(VERSION_INFO_KEY, getRestVersion());
 
         SpringDocUtils.getConfig()
-                .replaceParameterObjectWithClass(org.springframework.data.domain.Pageable.class,
+                .replaceParameterObjectWithClass(Pageable.class,
                         OpenAPIPaginationHelper.class)
-                .replaceParameterObjectWithClass(org.springframework.data.domain.PageRequest.class,
+                .replaceParameterObjectWithClass(PageRequest.class,
                         OpenAPIPaginationHelper.class);
     }
 
@@ -164,6 +159,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     }
 
     @Override
+    @NonNull
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
         return builder
             .sources(Sw360ResourceServer.class)
@@ -193,7 +189,12 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                 .addSecuritySchemes("tokenAuth",
                         new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("Authorization")
                                 .in(SecurityScheme.In.HEADER)
-                                .description("Enter the token with the `Token ` prefix, e.g. \"Token abcdef123456...\"."));
+                                .description("Enter the token with the `Token ` prefix, e.g. \"Token abcdef123456...\"."))
+                .addSecuritySchemes("bearerAuth",
+                        new SecurityScheme().type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("Enter a JWT access token without the `Bearer ` prefix, e.g. \"eyJhbGciOiJ...\"."));
 
         if (basicAuthEnabled) {
             securityComponents.addSecuritySchemes("basic",
@@ -220,6 +221,33 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                                                 ))
                                 ))
                 ));
+    }
+
+    /**
+     * Check for each endpoint which uses `tokenAuth` from before to also use
+     * `bearerAuth` security scheme.
+     */
+    @Bean
+    public OpenApiCustomizer bearerAuthForTokenAuthOperationsCustomizer() {
+        return openApi -> {
+            if (openApi.getPaths() == null) {
+                return;
+            }
+            openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(operation -> {
+                List<SecurityRequirement> securityRequirements = operation.getSecurity();
+                if (securityRequirements == null || securityRequirements.isEmpty()) {
+                    return;
+                }
+
+                boolean hasTokenAuth = securityRequirements.stream().anyMatch(req -> req.containsKey("tokenAuth"));
+                boolean hasBearerAuth = securityRequirements.stream().anyMatch(req -> req.containsKey("bearerAuth"));
+
+                if (hasTokenAuth && !hasBearerAuth) {
+                    // Add bearer as an alternative auth mechanism for token-auth protected endpoints.
+                    securityRequirements.add(new SecurityRequirement().addList("bearerAuth"));
+                }
+            }));
+        };
     }
 
     /**

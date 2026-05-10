@@ -108,13 +108,6 @@ svm.scheduler.email=svm@sw360.org
 svm.monitoringlist.id=org.sw360.svm.monitoringlist.id
 
 # ---------------------------------------
-# JWKS Properties
-# ---------------------------------------
-jwks.validation.enabled=true
-jwks.issuer.url=$JWKS_ISSUER/
-jwks.endpoint.url=JWKS_ISSUER/client-management/.well-known/jwks.json
-
-# ---------------------------------------
 # Scheduler Services
 # ---------------------------------------
 #general pattern for scheduling multiple services: autostart = service1,service2,service3,...
