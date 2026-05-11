@@ -48,7 +48,7 @@ public class ProjectSearchHandler {
                 "function(doc) {" +
                 OBJ_ARRAY_TO_STRING_INDEX +
                 "    if(!doc.type || doc.type != 'project') return;" +
-                "    var businessUnit = '" + SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN + "';" +
+                "    var businessUnit = '" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "';" +
                 "    if(doc.businessUnit !== undefined && doc.businessUnit != null && doc.businessUnit.length > 0) {" +
                 "      businessUnit = doc.businessUnit;" +
                 "    }" +
@@ -79,9 +79,11 @@ public class ProjectSearchHandler {
                 "    if(doc.clearingState) {" +
                 "      index('text', 'clearingState', doc.clearingState, {'store': true});" +
                 "    }" +
-                "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length >0) {" +
-                "      index('text', 'tag', doc.tag, {'store': true});" +
+                "    var tag = '" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "';" +
+                "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length > 0) {" +
+                "      tag = doc.tag;" +
                 "    }" +
+                "    index('text', 'tag', tag, {'store': true});" +
                 "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
                 "    if(doc.releaseRelationNetwork !== undefined && doc.releaseRelationNetwork != null && doc.releaseRelationNetwork.length > 0) {" +
                 "      index('text', 'releaseRelationNetwork', doc.releaseRelationNetwork, {'store': true});" +

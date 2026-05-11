@@ -267,7 +267,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The group of the project. Use '__EMPTY__' to search for projects with null, " +
                     "empty, or missing businessUnit.")
             @RequestParam(value = "group", required = false) String group,
-            @Parameter(description = "The tag of the project")
+            @Parameter(description = "The tag of the project. Use '__EMPTY__' to search for projects with null, " +
+                    "empty, or missing tag.")
             @RequestParam(value = "tag", required = false) String tag,
             @Parameter(description = "Flag to get projects with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
@@ -4697,11 +4698,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         LinkedHashSet<String> responseGroups = new LinkedHashSet<>();
-        responseGroups.add(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN);
+        responseGroups.add(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
         groups.stream()
                 .filter(Objects::nonNull)
                 .filter(group -> !group.isEmpty())
-                .filter(group -> !SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN.equals(group))
+                .filter(group -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(group))
                 .forEach(responseGroups::add);
         return new ArrayList<>(responseGroups);
     }

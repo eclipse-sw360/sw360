@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import jakarta.annotation.Nonnull;
 import org.eclipse.sw360.components.summary.ProjectSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -47,6 +48,7 @@ import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorClou
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.EMPTY_SEARCH_FIELDS;
 
 /**
  * CRUD access for the Project class
@@ -738,9 +740,9 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
                 if (Project._Fields.ADDITIONAL_DATA.getFieldName().equals(entry.getKey())) {
                     andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
-                } else if (Project._Fields.BUSINESS_UNIT.getFieldName().equals(entry.getKey())
-                        && entry.getValue().contains(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN)) {
-                    andConditions.add(buildBusinessUnitRestriction(entry.getValue()));
+                } else if (EMPTY_SEARCH_FIELDS.contains(entry.getKey())
+                        && entry.getValue().contains(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN)) {
+                    andConditions.add(buildEmptyProjectFieldRestriction(entry.getKey(), entry.getValue()));
                 } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
                     String value = entry.getValue().stream().findFirst().get();
                     if (Project._Fields.NAME.getFieldName().equals(entry.getKey())) {
@@ -754,23 +756,26 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         return and(andConditions);
     }
 
-    private Map<String, Object> buildBusinessUnitRestriction(Set<String> values) {
-        List<Map<String, Object>> businessUnitConditions = new ArrayList<>();
+    private Map<String, Object> buildEmptyProjectFieldRestriction(
+            @Nonnull String fieldName,
+            @Nonnull Set<String> values
+    ) {
+        List<Map<String, Object>> fieldConditions = new ArrayList<>();
 
-        if (values.contains(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN)) {
-            businessUnitConditions.add(eq(Project._Fields.BUSINESS_UNIT.getFieldName(), ""));
-            businessUnitConditions.add(eq(Project._Fields.BUSINESS_UNIT.getFieldName(), (String) null));
-            businessUnitConditions.add(exists(Project._Fields.BUSINESS_UNIT.getFieldName(), false));
+        if (values.contains(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN)) {
+            fieldConditions.add(eq(fieldName, ""));
+            fieldConditions.add(eq(fieldName, null));
+            fieldConditions.add(exists(fieldName, false));
         }
 
         values.stream()
                 .filter(Objects::nonNull)
                 .filter(value -> !value.isEmpty())
-                .filter(value -> !SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN.equals(value))
-                .map(value -> eq(Project._Fields.BUSINESS_UNIT.getFieldName(), value))
-                .forEach(businessUnitConditions::add);
+                .filter(value -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(value))
+                .map(value -> eq(fieldName, value))
+                .forEach(fieldConditions::add);
 
-        return businessUnitConditions.size() == 1 ? businessUnitConditions.getFirst() : or(businessUnitConditions);
+        return fieldConditions.size() == 1 ? fieldConditions.getFirst() : or(fieldConditions);
     }
 
     /**
