@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.db;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -22,6 +23,8 @@ import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,6 +116,22 @@ public class UserSearchHandler {
         String sortColumn = getSortColumnName(pageData);
         return connector.searchViewWithRestrictionsWithAnd(User.class,
                 luceneUserSearchView.getIndexName(), text, subQueryRestrictions,
+                pageData, sortColumn, pageData.isAscending());
+    }
+
+    /**
+     * Search users by a free-text term matched against givenname, lastname, or email using.
+     */
+    public Map<PaginationData, List<User>> searchByNameOrEmail(String searchText, @Nonnull PaginationData pageData) {
+        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            subQueryRestrictions.put(User._Fields.GIVENNAME.getFieldName(), Collections.singleton(searchText));
+            subQueryRestrictions.put(User._Fields.LASTNAME.getFieldName(), Collections.singleton(searchText));
+            subQueryRestrictions.put(User._Fields.EMAIL.getFieldName(), Collections.singleton(searchText));
+        }
+        String sortColumn = getSortColumnName(pageData);
+        return connector.searchViewWithRestrictionsWithOr(User.class,
+                luceneUserSearchView.getIndexName(), null, subQueryRestrictions,
                 pageData, sortColumn, pageData.isAscending());
     }
 

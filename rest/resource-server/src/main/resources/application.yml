@@ -60,9 +60,7 @@ spring:
       resourceserver:
         jwt:
           #issuer-uri: http://localhost:8083/realms/sw360
-          #jwk-set-uri: https://localhost:8083/realms/sw360/protocol/openid-connect/certs
-          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
-          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
+          issuer-uri: http://localhost:8080/authorization
 
 #logging:
 #  level:
@@ -84,6 +82,11 @@ sw360:
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+  security:
+    # Keep enabled for development/testing; set to false in production when
+    # all clients authenticate via JWT or API token only.
+    http-basic:
+      enabled: true
 
 blacklist:
   sw360:

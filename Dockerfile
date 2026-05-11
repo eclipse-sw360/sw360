@@ -82,9 +82,7 @@ ENV CLOUDANT_ENABLE_RETRIES="true"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
-ENV JWKS_ISSUER_URI="http://localhost:8080/authorization/oauth2/jwks"
-ENV JWKS_SET_URI="http://localhost:8080/authorization/oauth2/jwks"
-ENV JWKS_ISSUER="http://localhost:8090"
+ENV JWKS_ISSUER_URI="http://localhost:8080/authorization"
 #
 # Email configs
 ENV EMAIL_PROPERTIES_HOST=""
@@ -103,6 +101,9 @@ ENV SVM_API_BASE_PATH="https://svm.example.org"
 ENV SVM_API_ROOT_PATH="api/v1"
 ENV SVM_SW360_API_URL="https://svm.example.org/application.json"
 ENV SVM_SW360_CERTIFICATE_FILENAME="not-configured.pfx"
+#
+# Security settings
+ENV SW360_SECURITY_HTTP_BASIC_ENABLED="true"
 #
 # Other settings
 ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
@@ -142,7 +143,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-FROM quay.io/keycloak/keycloak:26.6.1@sha256:26ae26445475f7fac5f90ee138b1bdb64324f5815fb16133ffdbdb122d97c4d8 AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.6.1@sha256:dea26401d06341095cc4ea9d66896200b55de5ca1daa1d2fcbe58493afa6e0ad AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -161,7 +162,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-FROM quay.io/keycloak/keycloak:26.6.1@sha256:26ae26445475f7fac5f90ee138b1bdb64324f5815fb16133ffdbdb122d97c4d8 AS keycloak
+FROM quay.io/keycloak/keycloak:26.6.1@sha256:dea26401d06341095cc4ea9d66896200b55de5ca1daa1d2fcbe58493afa6e0ad AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

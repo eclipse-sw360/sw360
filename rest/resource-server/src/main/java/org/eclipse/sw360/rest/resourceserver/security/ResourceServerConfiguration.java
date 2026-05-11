@@ -26,6 +26,7 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -55,38 +56,53 @@ public class ResourceServerConfiguration {
     private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
     private final JwtDecoder jwtDecoder;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String issuerUri;
-
     @Value("${springdoc.swagger-ui.require-authentication:true}")
     private boolean swaggerRequireAuthentication;
 
+    /**
+     * Allow HTTP Basic authentication to be disabled for production environments.
+     * Basic auth is useful for development/testing but should be disabled in production
+     * when all clients authenticate via JWT or API token.
+     * Set {@code sw360.security.http-basic.enabled=false} in {@code application-prod.yml}.
+     */
+    @Value("${sw360.security.http-basic.enabled:true}")
+    private boolean basicAuthEnabled;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) {
         ApiTokenAuthenticationFilter apiTokenAuthenticationFilter = new ApiTokenAuthenticationFilter(authenticationManager, saep);
         http.authenticationManager(authenticationManager);
-        return http
+
+        http
                 .addFilterBefore(apiTokenAuthenticationFilter, BasicAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
-                        jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
-                                .jwkSetUri(issuerUri)).authenticationEntryPoint(saep))
+                        jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter))
+                        .authenticationEntryPoint(saep))
                 .authorizeHttpRequests(auth -> {
                     if (!swaggerRequireAuthentication) {
                         auth.requestMatchers(HttpMethod.GET, PUBLIC_SWAGGER_ENDPOINTS).permitAll();
                     }
                     auth.requestMatchers(HttpMethod.GET, PUBLIC_API_GET_ENDPOINTS).permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
+                    auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
                     auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_READ);
                     auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
                     auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
                     auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
                     auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
                 })
-                .httpBasic(basic -> basic.authenticationEntryPoint(saep))
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
                 .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.DISABLED))
                         .contentSecurityPolicy(cps -> cps.policyDirectives("script-src 'self'")))
-                .csrf(csrf -> csrf.disable()).build();
+                // Keep CSRF enabled by default and ignore stateless API endpoints using Authorization headers.
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
+
+        if (basicAuthEnabled) {
+            http.httpBasic(basic -> basic.authenticationEntryPoint(saep));
+        } else {
+            http.httpBasic(AbstractHttpConfigurer::disable);
+        }
+
+        return http.build();
     }
 
     @Bean

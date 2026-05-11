@@ -11,9 +11,9 @@
 package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -26,6 +26,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -34,7 +35,6 @@ public class ApiTokenAuthenticationFilter implements Filter {
 
     private static final Logger log = LogManager.getLogger(ApiTokenAuthenticationFilter.class);
     private static final String AUTHENTICATION_TOKEN_PARAMETER = "authorization";
-    private static final String OIDC_AUTHENTICATION_TOKEN_PARAMETER = "oidcauthorization";
 
     private final AuthenticationManager authenticationManager;
     private final AuthenticationEntryPoint authenticationEntryPoint;
@@ -64,18 +64,6 @@ public class ApiTokenAuthenticationFilter implements Filter {
                     if (token.length == 2 && token[0].equalsIgnoreCase("token")) {
                         Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]));
                         SecurityContextHolder.getContext().setAuthentication(auth);
-                    } else if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
-                        Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS));
-                        SecurityContextHolder.getContext().setAuthentication(auth);
-                    }
-                } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED) {
-                    String oidcAuthorization = httpRequest.getHeader(OIDC_AUTHENTICATION_TOKEN_PARAMETER);
-                    if (oidcAuthorization != null && !oidcAuthorization.isBlank()) {
-                        String[] token = oidcAuthorization.trim().split("\\s+");
-                        if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
-                            Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS));
-                            SecurityContextHolder.getContext().setAuthentication(auth);
-                        }
                     }
                 }
             } catch (AuthenticationException e) {
@@ -92,22 +80,18 @@ public class ApiTokenAuthenticationFilter implements Filter {
     public void destroy() {
     }
 
-    enum AuthType {
-        JWKS;
-    }
-
-    class ApiTokenAuthentication implements Authentication {
+    static class ApiTokenAuthentication implements Authentication {
+        @Serial
         private static final long serialVersionUID = 1L;
 
-        private String token;
-
-        private AuthType type;
+        private final String token;
 
         private ApiTokenAuthentication(String token) {
             this.token = token;
         }
 
         @Override
+        @NonNull
         public Collection<? extends GrantedAuthority> getAuthorities() {
             return new ArrayList<>();
         }
@@ -139,15 +123,6 @@ public class ApiTokenAuthenticationFilter implements Filter {
         @Override
         public String getName() {
             return null;
-        }
-
-        public AuthType getType() {
-            return type;
-        }
-
-        public ApiTokenAuthentication setType(AuthType type) {
-            this.type = type;
-            return this;
         }
     }
 }
