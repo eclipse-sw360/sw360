@@ -60,6 +60,7 @@ public class SW360Constants {
     public static final String PROJECT_IDS = "projectIds";
     public static final String RELEASE_IDS = "releaseIds";
     public static final String PACKAGE_IDS = "packageIds";
+    public static final String PROJECT_SEARCH_EMPTY_TOKEN = "__EMPTY__";
 
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";

@@ -663,6 +663,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.getGroups()).willReturn(new java.util.LinkedHashSet<>(Arrays.asList("", "sw360 AR", "sw360 EX DF")));
         given(this.projectServiceMock.refineSearch(any(), any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(projectListByName.size()).setDisplayStart(0).setTotalRowCount(projectListByName.size()),
@@ -1107,6 +1108,23 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_project_groups() throws Exception {
+        mockMvc.perform(get("/api/projects/groups")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0]").value(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN))
+                .andExpect(jsonPath("$").isArray())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("[]").description("Ordered list of unique project group keys. The first entry is always the synthetic token '"
+                                        + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN
+                                        + "', which clients can use to search for projects with null, empty, or missing businessUnit. "
+                                        + "This synthetic token is not a real business unit and should be ignored for statistics or aggregations.")
                         )));
     }
 

@@ -773,7 +773,10 @@ public class DatabaseConnectorCloudant {
         try {
             ViewResult response = this.instance.getClient().postView(viewOptions).execute().getResult();
             return response.getRows().stream()
-                    .map(r -> r.getKey().toString()).collect(Collectors.toCollection(TreeSet::new));
+                    .filter(Objects::nonNull)
+                    .map(ViewResultRow::getKey)
+                    .map(CommonUtils::nullToEmptyString)
+                    .collect(Collectors.toCollection(TreeSet::new));
         } catch (ServiceResponseException e) {
             log.error("Error in getting project groups", e);
         }
