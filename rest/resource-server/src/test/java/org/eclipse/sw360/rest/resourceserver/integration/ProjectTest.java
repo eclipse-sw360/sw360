@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -86,6 +87,7 @@ import java.util.Map;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -644,6 +646,27 @@ public class ProjectTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void should_get_project_groups_with_empty_token_first() throws IOException, TException {
+        given(this.projectServiceMock.getGroups()).willReturn(new java.util.LinkedHashSet<>(Arrays.asList("", "Group A", "Group B")));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/groups",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        List<String> groups = new ObjectMapper().readValue(response.getBody(), new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+        });
+
+        assertEquals(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN, groups.getFirst());
+        assertFalse(groups.contains(""));
+        assertEquals(Arrays.asList(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN, "Group A", "Group B"), groups);
     }
 
     @Test
