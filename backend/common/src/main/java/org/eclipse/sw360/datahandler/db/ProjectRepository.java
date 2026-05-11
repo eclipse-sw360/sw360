@@ -10,10 +10,12 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import jakarta.annotation.Nonnull;
 import org.eclipse.sw360.components.summary.ProjectSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -30,7 +32,6 @@ import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 import com.ibm.cloud.cloudant.v1.model.ViewResult;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 
@@ -41,10 +42,13 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.all;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eqIgnoreCase;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.exists;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.EMPTY_SEARCH_FIELDS;
 
 /**
  * CRUD access for the Project class
@@ -736,12 +740,42 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
                 if (Project._Fields.ADDITIONAL_DATA.getFieldName().equals(entry.getKey())) {
                     andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
+                } else if (EMPTY_SEARCH_FIELDS.contains(entry.getKey())
+                        && entry.getValue().contains(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN)) {
+                    andConditions.add(buildEmptyProjectFieldRestriction(entry.getKey(), entry.getValue()));
                 } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
-                    andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
+                    String value = entry.getValue().stream().findFirst().get();
+                    if (Project._Fields.NAME.getFieldName().equals(entry.getKey())) {
+                        andConditions.add(eqIgnoreCase(entry.getKey(), value));
+                    } else {
+                        andConditions.add(eq(entry.getKey(), value));
+                    }
                 }
             }
         }
         return and(andConditions);
+    }
+
+    private Map<String, Object> buildEmptyProjectFieldRestriction(
+            @Nonnull String fieldName,
+            @Nonnull Set<String> values
+    ) {
+        List<Map<String, Object>> fieldConditions = new ArrayList<>();
+
+        if (values.contains(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN)) {
+            fieldConditions.add(eq(fieldName, ""));
+            fieldConditions.add(eq(fieldName, null));
+            fieldConditions.add(exists(fieldName, false));
+        }
+
+        values.stream()
+                .filter(Objects::nonNull)
+                .filter(value -> !value.isEmpty())
+                .filter(value -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(value))
+                .map(value -> eq(fieldName, value))
+                .forEach(fieldConditions::add);
+
+        return fieldConditions.size() == 1 ? fieldConditions.getFirst() : or(fieldConditions);
     }
 
     /**

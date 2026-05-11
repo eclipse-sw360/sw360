@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
         with:
           egress-policy: audit
 
@@ -112,12 +112,26 @@ jobs:
             -Dmaven.plugin.validation=VERBOSE
 
       - name: Run ArchUnit Architecture Tests
+        id: archunit-tests
+        continue-on-error: false
         run: |
           mvn -pl rest/resource-server test \
             -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.*Test" \
             -Dbase.deploy.dir=${PWD}/deploy
 
+      - name: Publish Architecture Tests Results
+        if: always()
+        run: |
+          if [ "${{ steps.archunit-tests.outcome }}" = "success" ]; then
+            echo "## ✅ Architecture Tests" >> $GITHUB_STEP_SUMMARY
+            echo "All architecture constraints verified." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Architecture Violations Detected" >> $GITHUB_STEP_SUMMARY
+            echo "Review logs for constraint violations that must be fixed before merge." >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Run Unit and Integration Tests
+        continue-on-error: false
         run: |
           mvn test \
             --no-transfer-progress \
@@ -129,6 +143,25 @@ jobs:
             jacoco:report \
             -fae
 
+      - name: Extract Test Results
+        id: unit-tests
+        if: always()
+        run: |
+          TESTS=N/A
+          FAILURES=N/A
+          SKIPPED=N/A
+          FILES=$(find . -path "*/target/surefire-reports/TEST-*.xml")
+          if [ -n "$FILES" ]; then
+            TOTAL=$(grep -h "tests=\"" $FILES | sed 's/.*tests="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            FAILED=$(grep -h "failures=\"" $FILES | sed 's/.*failures="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            ERROR=$(grep -h "errors=\"" $FILES | sed 's/.*errors="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            SKIPPED=$(grep -h "skipped=\"" $FILES | sed 's/.*skipped="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            FAILED=$((FAILED + ERROR))
+          fi
+          echo "unit_tests_total=${TOTAL:-0}" >> $GITHUB_OUTPUT
+          echo "unit_tests_failed=${FAILED:-0}" >> $GITHUB_OUTPUT
+          echo "unit_tests_skipped=${SKIPPED:-0}" >> $GITHUB_OUTPUT
+
       - name: Run PrivateProjectAccessTest
         run: |
           mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
@@ -138,6 +171,21 @@ jobs:
         run: |
           mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=. jacoco:report
 
+      - name: Publish Test Results Summary
+        if: always()
+        run: |
+          TOTAL="${{ steps.unit-tests.outputs.unit_tests_total }}"
+          FAILED="${{ steps.unit-tests.outputs.unit_tests_failed }}"
+          SKIPPED="${{ steps.unit-tests.outputs.unit_tests_skipped }}"
+          
+          echo "## ✅ Unit and Integration Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Tests Run | ${TOTAL:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests Failed | ${FAILED:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests Skipped | ${SKIPPED:-N/A} |" >> $GITHUB_STEP_SUMMARY
+
       - name: Upload JaCoCo Reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -145,3 +193,14 @@ jobs:
           name: jacoco-report
           path: "**/target/site/jacoco/"
           retention-days: 7
+
+      - name: Publish Build Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "## ✅ Workflow Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Workflow Status: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the pipeline logs for details on any failures." >> $GITHUB_STEP_SUMMARY

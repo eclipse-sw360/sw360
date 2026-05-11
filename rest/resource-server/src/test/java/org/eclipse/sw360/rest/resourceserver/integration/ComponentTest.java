@@ -211,7 +211,6 @@ public class ComponentTest extends TestIntegrationBase {
                 new HttpEntity<>(body, headers),
                 String.class);
 
-        log.info("Response is {}", response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
     }

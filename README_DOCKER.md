@@ -65,12 +65,8 @@ file to tweak SW360 behaviour.
 **Spring Controllers**
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
 * `JWKS_ISSUER_URI`: URI for JWKS issuer (default:
-    `http://localhost:8080/authorization/oauth2/jwks`). Use
-    `http://localhost:8083/realms/sw360/protocol/openid-connect/certs` for
-    KeyCloak based setup.
-* `JWKS_SET_URI`: URI for JWKS set (default:
-    `http://localhost:8080/authorization/oauth2/jwks`).
-* `JWKS_ISSUER`: Issuer URL (default: `http://localhost:8090`).
+    `http://localhost:8080/authorization`). Use
+    `http://localhost:8083/realms/sw360` for KeyCloak based setup.
 
 **Email Configuration**
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to
@@ -112,6 +108,13 @@ file to tweak SW360 behaviour.
 * `SW360_THRIFT_SERVER_URL`: URL where Thrift server is running (default:
     `http://localhost:8080`).
 * `SW360_BASE_URL`: Base URL for SW360 server (default: `http://localhost:8080`).
+
+**Security Settings**
+* `SW360_SECURITY_HTTP_BASIC_ENABLED`: Whether HTTP Basic authentication is
+    enabled on both the authorization and resource servers (default: `true`).
+    Set this to `false` in production - clients should authenticate via
+    OAuth2/JWT or API token. Set to `true` only for local development or
+    integration testing where Basic auth is needed for convenience.
 
 ### Secrets
 

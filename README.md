@@ -58,6 +58,41 @@ It is recommended to use the Docker-based setup,
 
 If you intend to install in a bare metal machine or use in your own virtualized system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).
 
+### Security Configuration
+
+SW360 exposes several security flags that should be reviewed before production
+deployment.
+
+#### HTTP Basic Authentication
+
+HTTP Basic auth is **disabled by default** in production profiles. It can be
+enabled for local development and testing.
+
+| Deployment | How to enable |
+|---|---|
+| **Docker** | Set `SW360_SECURITY_HTTP_BASIC_ENABLED=true` in `config/sw360/.env.backend` |
+| **Bare metal** | Set `sw360.security.http-basic.enabled=true` in `application.yml` (or pass as JVM arg) |
+| **Spring profile** | Activate the `prod` profile; it sets the flag to `false`. Omit `prod` for dev defaults. |
+
+> ⚠️ **Do not enable Basic auth in production.** Use OAuth2/JWT (built-in
+> authorization server or Keycloak) or API tokens instead.
+
+#### Spring Profiles
+
+| Profile | Purpose |
+|---|---|
+| *(none / default)* | Development defaults — Basic auth enabled, permissive settings |
+| `prod` | Production overrides — Basic auth disabled |
+
+Activate the production profile with:
+```bash
+# As JVM argument
+-Dspring.profiles.active=prod
+
+# Or as environment variable
+export SPRING_PROFILES_ACTIVE=prod
+```
+
 ### Development
 
 If you intend to develop over SW360, few steps are needed as equal you need have base

@@ -15,6 +15,8 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * Customizes the JWT token and ID token
@@ -28,6 +30,7 @@ public class Sw360TokenCustomizerConfig {
 	public static final String CLIENT_ID = "client_id";
 	public static final String AUD = "aud";
 	public static final String SUB = "sub";
+	public static final String SCOPE = "scope";
 	public static final String SW360_REST_API = "sw360-REST-API";
 	@Autowired
 	private Sw360OidcUserInfoService sw360OidcUserInfoService;
@@ -39,6 +42,17 @@ public class Sw360TokenCustomizerConfig {
 			//JWT token customizer
 			if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
 				context.getClaims().claims((claims) -> {
+					Object scopeClaim = claims.get(SCOPE);
+					if (!(scopeClaim instanceof String scopeAsString && !scopeAsString.isBlank())
+							&& !(scopeClaim instanceof Collection<?> scopeAsCollection && !scopeAsCollection.isEmpty())) {
+						Set<String> scopes = context.getAuthorizedScopes();
+						if (scopes == null || scopes.isEmpty()) {
+							scopes = context.getRegisteredClient().getScopes();
+						}
+						if (scopes != null && !scopes.isEmpty()) {
+							claims.put(SCOPE, scopes);
+						}
+					}
 					claims.put(USER_NAME, claims.get(SUB));
 					claims.remove(SUB);
 					claims.put(CLIENT_ID, claims.get(AUD));

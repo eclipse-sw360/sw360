@@ -14,6 +14,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nonnull;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
@@ -31,13 +33,40 @@ public class ScheduleSyncTask extends SW360Task {
         this.body = body;
     }
 
+    /**
+     * Fires the task body in a dedicated daemon thread so the single-threaded
+     * {@link java.util.Timer} is never blocked by long-running Thrift calls.
+     * A per-service {@link AtomicBoolean} flag (managed in {@link Scheduler})
+     * prevents concurrent executions of the same service.
+     */
     @Override
     public void run() {
-        RequestStatus requestStatus = body.get();
-        if (RequestStatus.SUCCESS.equals(requestStatus)) {
-            log.info("Successfully finished ScheduleSyncTask name=" + getName() + " id=" + getId() + ".");
-        } else {
-            log.error("ScheduleSyncTask " + getId() + " failed.");
+        AtomicBoolean running = Scheduler.getOrCreateRunningFlag(getName());
+        if (!running.compareAndSet(false, true)) {
+            log.info("Schedule: Service '{}' (task: {}) is already running; skipping this triggered execution.",
+                    getName(), getId());
+            return;
         }
+
+        final String taskName = getName();
+        Thread thread = getThread(taskName, running);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private @Nonnull Thread getThread(String taskName, AtomicBoolean running) {
+        final String taskId = getId();
+        return new Thread(() -> {
+            try {
+                RequestStatus requestStatus = body.get();
+                if (RequestStatus.SUCCESS.equals(requestStatus)) {
+                    log.info("Successfully finished ScheduleSyncTask name={} id={}.", taskName, taskId);
+                } else {
+                    log.error("ScheduleSyncTask {} ({}) failed.", taskName, taskId);
+                }
+            } finally {
+                running.set(false);
+            }
+        }, "sw360-schedule-" + getName());
     }
 }

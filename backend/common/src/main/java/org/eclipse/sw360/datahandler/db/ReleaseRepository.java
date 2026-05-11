@@ -35,6 +35,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eqIgnoreCase;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.in;
 
 import com.google.common.collect.Maps;
@@ -247,7 +248,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         final Map<String, Object> typeSelector = eq("type", "release");
         final Map<String, Object> finalSelector;
         if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            final Map<String, Object> restrictionsSelector = eq(Release._Fields.NAME.getFieldName(), name);
+            final Map<String, Object> restrictionsSelector = eqIgnoreCase(Release._Fields.NAME.getFieldName(), name);
             finalSelector = and(List.of(typeSelector, restrictionsSelector));
         } else {
             finalSelector = and(List.of(typeSelector));

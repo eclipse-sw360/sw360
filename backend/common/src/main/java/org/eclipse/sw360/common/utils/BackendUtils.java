@@ -11,7 +11,7 @@ package org.eclipse.sw360.common.utils;
 
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import org.apache.http.HttpHeaders;
+import org.springframework.http.HttpHeaders;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.springframework.http.HttpStatus;

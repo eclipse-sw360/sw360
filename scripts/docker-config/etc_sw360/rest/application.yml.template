@@ -48,10 +48,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          #issuer-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
-          #jwk-set-uri: https://localhost:8083/realms/sw360/protocol/openid-connect/certs
+          #issuer-uri: http://localhost:8083/realms/sw360
           issuer-uri: $JWKS_ISSUER_URI
-          jwk-set-uri: $JWKS_SET_URI
 
 #logging:
 #  level:
@@ -88,6 +86,11 @@ sw360:
   couchdb-url: $COUCHDB_URL
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
+   security:
+     # Set SW360_SECURITY_HTTP_BASIC_ENABLED=true to re-enable Basic auth (dev/testing only).
+     # Default is false; production containers should authenticate via JWT or API token.
+     http-basic:
+       enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
 
 blacklist:
   sw360:

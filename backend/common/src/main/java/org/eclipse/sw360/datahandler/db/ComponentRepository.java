@@ -31,6 +31,7 @@ import java.util.*;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.all;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eqIgnoreCase;
 
 /**
  * CRUD access for the Component class
@@ -387,7 +388,12 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
                 ) {
                     andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
                 } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
-                    andConditions.add(eq(entry.getKey(), entry.getValue().stream().findFirst().get()));
+                    String value = entry.getValue().stream().findFirst().get();
+                    if (Component._Fields.NAME.getFieldName().equals(entry.getKey())) {
+                        andConditions.add(eqIgnoreCase(entry.getKey(), value));
+                    } else {
+                        andConditions.add(eq(entry.getKey(), value));
+                    }
                 }
             }
         }

@@ -14,3 +14,6 @@ couchdb:
 sw360:
   test-user-id: mockedserviceadminuser@sw360.org
   test-user-password: sw360-admin-password
+  security:
+    http-basic:
+      enabled: true

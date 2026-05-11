@@ -155,10 +155,14 @@ configure your SW360 frontend and backend to communicate with KC.
 1. In your Frontend, create the `.env` file
     - In KC UI, find the "sw360" realm and look for client called "sw360ui".
     - Use the configurations here to setup your `.env` file.
-2. In your Backend, modify the `/etc/sw360/sw360.properties`
-    - From the "sw360" realm, find your configurations to be filled in:
-      ```
-      jwks.validation.enabled=true
-      jwks.issuer.url=http://localhost:8083/kc/realms/sw360
-      jwks.endpoint.url=http://localhost:8083/kc/realms/sw360/protocol/openid-connect/certs
+2. In your Backend, configure the resource server JWT properties in
+   `/etc/sw360/rest/application.yml`:
+    - From the "sw360" realm, fill in:
+      ```yaml
+      spring:
+        security:
+          oauth2:
+            resourceserver:
+              jwt:
+                issuer-uri: http://localhost:8083/kc/realms/sw360
       ```

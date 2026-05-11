@@ -76,6 +76,7 @@ public class DatabaseConnectorCloudant {
     private static final String OPERATOR_OR = "$or";
     private static final String OPERATOR_EXISTS = "$exists";
     private static final String OPERATOR_ELEM_MATCH = "$elemMatch";
+    private static final String OPERATOR_REGEX = "$regex";
     private static final Set<String> OPERATORS = Set.of(
             OPERATOR_EQ, OPERATOR_IN, OPERATOR_ALL, OPERATOR_AND, OPERATOR_OR,
             OPERATOR_EXISTS, OPERATOR_ELEM_MATCH
@@ -772,7 +773,10 @@ public class DatabaseConnectorCloudant {
         try {
             ViewResult response = this.instance.getClient().postView(viewOptions).execute().getResult();
             return response.getRows().stream()
-                    .map(r -> r.getKey().toString()).collect(Collectors.toCollection(TreeSet::new));
+                    .filter(Objects::nonNull)
+                    .map(ViewResultRow::getKey)
+                    .map(CommonUtils::nullToEmptyString)
+                    .collect(Collectors.toCollection(TreeSet::new));
         } catch (ServiceResponseException e) {
             log.error("Error in getting project groups", e);
         }
@@ -934,6 +938,32 @@ public class DatabaseConnectorCloudant {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
                 Collections.singletonMap(OPERATOR_EQ, value));
+    }
+
+    /**
+     * Generates a $regex selector for case-insensitive exact match of the field value.
+     * Uses regex anchors (^...$) for exact matching and (?i) flag for case insensitivity.
+     * Special regex characters in the value are escaped before use.
+     * @param field Field name
+     * @param value Value to match (will be regex-escaped)
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> eqIgnoreCase(String field, String value) {
+        field = replaceFirstSymbol(field);
+        String escapedValue = escapeRegexSpecialChars(value);
+        return Collections.singletonMap(field,
+                Collections.singletonMap(OPERATOR_REGEX, "(?i)^" + escapedValue + "$"));
+    }
+
+    private static @NotNull String escapeRegexSpecialChars(@NotNull String value) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : value.toCharArray()) {
+            if ("\\^$.|?*+()[]{}".indexOf(c) >= 0) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
     /**

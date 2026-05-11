@@ -9,21 +9,20 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
-import org.eclipse.sw360.rest.authserver.client.service.Sw360OidcUserInfoService;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
@@ -41,16 +40,19 @@ import java.util.UUID;
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+    private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
 
-    @Autowired
-    Sw360ClientDetailsService sw360ClientDetailsService;
-
-    @Autowired
-    private Sw360OidcUserInfoService sw360OidcUserInfoService;
+    /**
+     * Allow HTTP Basic authentication to be disabled for production environments.
+     * Basic auth is useful for development/testing but should be disabled in production
+     * when all clients authenticate via OAuth2/JWT flows.
+     * Set {@code sw360.security.http-basic.enabled=false} in {@code application-prod.yml}.
+     */
+    @Value("${sw360.security.http-basic.enabled:true}")
+    private boolean basicAuthEnabled;
 
     @Bean
     @Order(1)
@@ -73,12 +75,21 @@ public class SecurityConfig {
     @Order(2)
     @Bean
     public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(
-                authz -> authz
-                .requestMatchers("/client-management/**").hasAuthority("ADMIN")
-                .anyRequest().authenticated()
-        ).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
-        return httpSecurity.csrf(csrf -> csrf.disable()).build();
+        httpSecurity
+                .authenticationProvider(sw360UserAuthenticationProvider)
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/client-management/**").hasAuthority("ADMIN")
+                        .anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/client-management/**"));
+
+        if (basicAuthEnabled) {
+            httpSecurity.httpBasic(Customizer.withDefaults());
+        } else {
+            httpSecurity.httpBasic(AbstractHttpConfigurer::disable);
+        }
+
+        return httpSecurity.build();
     }
 
     @Bean
@@ -105,11 +116,6 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-    }
-
-    @Autowired
-    public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) {
-        authenticationManagerBuilder.authenticationProvider(sw360UserAuthenticationProvider);
     }
 
     @Bean
