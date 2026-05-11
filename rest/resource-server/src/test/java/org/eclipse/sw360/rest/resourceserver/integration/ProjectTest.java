@@ -664,9 +664,9 @@ public class ProjectTest extends TestIntegrationBase {
         List<String> groups = new ObjectMapper().readValue(response.getBody(), new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
         });
 
-        assertEquals(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN, groups.getFirst());
+        assertEquals(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN, groups.getFirst());
         assertFalse(groups.contains(""));
-        assertEquals(Arrays.asList(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN, "Group A", "Group B"), groups);
+        assertEquals(Arrays.asList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN, "Group A", "Group B"), groups);
     }
 
     @Test

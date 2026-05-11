@@ -56,6 +56,15 @@ import static com.google.common.base.Strings.nullToEmpty;
  */
 public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
+    /**
+     * Fields in projects which can be searched with
+     * ${@code SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN}
+     */
+    public static final Set<String> EMPTY_SEARCH_FIELDS = Set.of(
+            Project._Fields.BUSINESS_UNIT.getFieldName(),
+            Project._Fields.TAG.getFieldName()
+    );
+
     private static final Logger log = LogManager.getLogger(NouveauLuceneAwareDatabaseConnector.class);
 
     private static final Joiner AND = Joiner.on(" AND ");
@@ -443,9 +452,9 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
 
     private static @NotNull String formatSubquery(@NotNull Set<String> filterSet, final String fieldName) {
         List<String> queryParts = new ArrayList<>();
-        if (Project._Fields.BUSINESS_UNIT.getFieldName().equals(fieldName)
-                && filterSet.contains(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN)) {
-            queryParts.add("%s:\"%s\"".formatted(fieldName, SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN));
+        if (EMPTY_SEARCH_FIELDS.contains(fieldName)
+                && filterSet.contains(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN)) {
+            queryParts.add("%s:\"%s\"".formatted(fieldName, SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN));
         }
 
         final Function<String, String> addType = input -> {
@@ -470,7 +479,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         };
 
         queryParts.addAll(filterSet.stream()
-                .filter(value -> !SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN.equals(value))
+                .filter(value -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(value))
                 .map(addType)
                 .toList());
         return "( " + OR.join(queryParts) + " ) ";

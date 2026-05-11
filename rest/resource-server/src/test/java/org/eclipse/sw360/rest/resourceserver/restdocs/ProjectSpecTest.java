@@ -1117,12 +1117,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN))
+                .andExpect(jsonPath("$[0]").value(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN))
                 .andExpect(jsonPath("$").isArray())
                 .andDo(this.documentationHandler.document(
                         responseFields(
                                 fieldWithPath("[]").description("Ordered list of unique project group keys. The first entry is always the synthetic token '"
-                                        + SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN
+                                        + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN
                                         + "', which clients can use to search for projects with null, empty, or missing businessUnit. "
                                         + "This synthetic token is not a real business unit and should be ignored for statistics or aggregations.")
                         )));
