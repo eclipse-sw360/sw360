@@ -13,6 +13,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -47,9 +48,11 @@ public class ProjectSearchHandler {
                 "function(doc) {" +
                 OBJ_ARRAY_TO_STRING_INDEX +
                 "    if(!doc.type || doc.type != 'project') return;" +
-                "    if(doc.businessUnit !== undefined && doc.businessUnit != null && doc.businessUnit.length >0) {" +
-                "      index('text', 'businessUnit', doc.businessUnit, {'store': true});" +
+                "    var businessUnit = '" + SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN + "';" +
+                "    if(doc.businessUnit !== undefined && doc.businessUnit != null && doc.businessUnit.length > 0) {" +
+                "      businessUnit = doc.businessUnit;" +
                 "    }" +
+                "    index('text', 'businessUnit', businessUnit, {'store': true});" +
                 "    if(doc.projectType !== undefined && doc.projectType != null && doc.projectType.length >0) {" +
                 "      index('text', 'projectType', doc.projectType, {'store': true});" +
                 "      index('string', 'projectType_sort', doc.projectType);" +

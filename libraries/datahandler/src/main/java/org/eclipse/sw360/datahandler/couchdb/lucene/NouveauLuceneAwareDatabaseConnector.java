@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -442,6 +442,12 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     private static @NotNull String formatSubquery(@NotNull Set<String> filterSet, final String fieldName) {
+        List<String> queryParts = new ArrayList<>();
+        if (Project._Fields.BUSINESS_UNIT.getFieldName().equals(fieldName)
+                && filterSet.contains(SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN)) {
+            queryParts.add("%s:\"%s\"".formatted(fieldName, SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN));
+        }
+
         final Function<String, String> addType = input -> {
             // Handle pre-formatted queries from prepareWildcardQuery
             if (input.startsWith("\"") && input.endsWith("\"")) {
@@ -463,8 +469,11 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             }
         };
 
-        Stream<String> searchFilters = filterSet.stream().map(addType);
-        return "( " + OR.join(searchFilters.collect(Collectors.toList())) + " ) ";
+        queryParts.addAll(filterSet.stream()
+                .filter(value -> !SW360Constants.PROJECT_SEARCH_MISSING_BUSINESS_UNIT_TOKEN.equals(value))
+                .map(addType)
+                .toList());
+        return "( " + OR.join(queryParts) + " ) ";
     }
 
     public static @NotNull String prepareWildcardQuery(@NotNull String query) {
