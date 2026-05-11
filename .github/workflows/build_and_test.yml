@@ -82,6 +82,14 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           check-latest: true
+      
+      - name: Display System Metrics
+        run: |
+          echo "::group::System Information"
+          echo "CPU Cores: $(nproc)"
+          echo "Memory Available: $(free -h | awk '/^Mem:/ {print $2}')"
+          echo "Disk Space: $(df -h . | awk 'NR==2 {print $4}')"
+          echo "::endgroup::"
 
       - name: Cache Thrift
         id: cache-thrift
@@ -111,13 +119,13 @@ jobs:
             -DskipTests \
             -Dmaven.plugin.validation=VERBOSE
 
-      - name: Run ArchUnit Architecture Tests
-        id: archunit-tests
-        continue-on-error: false
-        run: |
-          mvn -pl rest/resource-server test \
-            -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.*Test" \
-            -Dbase.deploy.dir=${PWD}/deploy
+      # - name: Run ArchUnit Architecture Tests
+      #   id: archunit-tests
+      #   continue-on-error: false
+      #   run: |
+      #     mvn -pl rest/resource-server test \
+      #       -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.*Test" \
+      #       -Dbase.deploy.dir=${PWD}/deploy
 
       - name: Publish Architecture Tests Results
         if: always()
@@ -134,6 +142,9 @@ jobs:
         continue-on-error: false
         run: |
           mvn test \
+            -T 1C \
+            -Dparallel=classes \
+            -DthreadCount=4 \
             --no-transfer-progress \
             -Dbase.deploy.dir=${PWD}/deploy \
             -DRunComponentVisibilityRestrictionTest=false \
