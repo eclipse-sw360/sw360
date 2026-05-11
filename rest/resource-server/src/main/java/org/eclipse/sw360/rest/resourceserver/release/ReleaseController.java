@@ -49,6 +49,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -111,6 +112,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -2138,5 +2140,86 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         log.info("Invalidating release caches. Reason: {}", reason);
         cacheManager.invalidate(CachedEndpoint.RELEASES_ALL_DETAILS);
         cacheManager.invalidate(CachedEndpoint.RELEASES_WITHOUT_DETAILS);
+    }
+
+    @Operation(
+            summary = "Get FOSSology processing information for a release.",
+            description = "Returns the FOSSology workflow status for a release, covering all three steps: " +
+                    "upload, scan, and report. Also lists available report formats once scanning is complete, " +
+                    "and the SW360 attachment ID of any downloaded report.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "FOSSology information retrieved successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = FossologyReleaseInfo.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Release not found"
+                    )
+            }
+    )
+    @GetMapping(value = RELEASES_URL + "/{id}/fossology")
+    public ResponseEntity<FossologyReleaseInfo> getFossologyInfo(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String releaseId) throws TException {
+
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
+        Release release = releaseService.getReleaseForUserById(releaseId, user);
+
+        return ResponseEntity.ok(buildFossologyReleaseInfo(release));
+    }
+
+    private FossologyReleaseInfo buildFossologyReleaseInfo(Release release) {
+        FossologyReleaseInfo.Builder builder = FossologyReleaseInfo.builder();
+
+        ExternalToolProcess process = releaseService.getExternalToolProcess(release);
+        if (process == null) {
+            return builder.build();
+        }
+
+        builder.processStatus(process.getProcessStatus().name());
+
+        if (process.isSetAttachmentId()) {
+            builder.sourceAttachmentId(process.getAttachmentId());
+        }
+
+        boolean scanDone = false;
+        if (process.getProcessSteps() != null) {
+            for (ExternalToolProcessStep step : process.getProcessSteps()) {
+                String stepName = step.getStepName();
+                ExternalToolProcessStatus stepStatus = step.getStepStatus();
+                if (stepStatus == null) {
+                    continue;
+                }
+                if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(stepName)) {
+                    builder.uploadStatus(stepStatus.name());
+                    if (stepStatus == ExternalToolProcessStatus.DONE && step.getResult() != null) {
+                        builder.uploadId(step.getResult());
+                    }
+                } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(stepName)) {
+                    builder.scanStatus(stepStatus.name());
+                    scanDone = stepStatus == ExternalToolProcessStatus.DONE;
+                } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(stepName)) {
+                    builder.reportStatus(stepStatus.name());
+                    if (stepStatus == ExternalToolProcessStatus.DONE && step.getResult() != null) {
+                        builder.reportAttachmentId(step.getResult());
+                    }
+                }
+            }
+        }
+
+        if (scanDone) {
+            builder.availableReportFormats(FossologyReleaseInfo.REPORT_FORMATS);
+        }
+
+        if (release.isSetModifiedOn()) {
+            builder.lastUpdated(release.getModifiedOn());
+        }
+
+        return builder.build();
     }
 }
