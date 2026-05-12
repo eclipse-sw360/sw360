@@ -70,9 +70,20 @@ public class SVMConstants {
     public static final int PROCESSING_KEEP_ALIVE_SECONDS   = 60;
 
     // incremental sync properties
-    public static final int COMPONENTS_MODIFIED_AFTER_DAYS; // number of days window; 0 disables parameter
-    public static final int SVMSYNC_DELTA_OFFSET_DAYS; // schedule.svmsync.delta.offset.days (fallback to COMPONENTS_MODIFIED_AFTER_DAYS or 2)
-    public static final int VULN_DELTA_OFFSET_DAYS;    // schedule.svmsync.vuln.delta.offset.days (fallback to SVMSYNC_DELTA_OFFSET_DAYS)
+    // Delta sync overlap window in days; applies to all SVM sync types
+    // Default is 1 day (24 hours): 1 day overlap ensures no changes are missed
+    // at sync boundaries. SVM recommends a minimum of 1-hour overlap.
+    // Configure via: schedule.svmsync.delta.offset.days
+    public static final int SVMSYNC_DELTA_OFFSET_DAYS;
+
+    // Cleanup frequency in days. With delta syncs, items deleted on SVM are
+    // never observed (they simply don't appear in the modified_after result).
+    // A periodic full sync is therefore required to purge them from the local
+    // database. After this many days have elapsed since the last successful
+    // sync, the next run will be a full sync (with cleanup) instead of a delta
+    // sync. Default is 7 days (weekly).
+    // Configure via: schedule.svmsync.cleanup.frequency.days
+    public static final int CLEANUP_FREQUENCY_DAYS;
 
     private static final String SVM_BASE_HOST_URL;
     private static final String SVM_API_ROOT_PATH;
@@ -89,29 +100,18 @@ public class SVMConstants {
                             SVM_BASE_HOST_URL + SVM_API_ROOT_PATH + "/components/" +COMPONENTS_ID_WILDCARD+"/notifications");
         VULNERABILITIES_URL  = props.getProperty("svm.vulnerabilities.url", SVM_BASE_HOST_URL + SVM_API_ROOT_PATH + "/notifications");
 
-        int tmpDays = 0;
+        int tmpDelta = 1;  // default: 1 day overlap (24h safety margin)
         try {
-            tmpDays = Integer.parseInt(props.getProperty("svm.sync.modifiedAfter.days", "0"));
-            if (tmpDays < 0) tmpDays = 0;
-        } catch (NumberFormatException e) {
-            tmpDays = 0; // fallback if misconfigured
-        }
-        COMPONENTS_MODIFIED_AFTER_DAYS = tmpDays;
-
-        int tmpDelta = COMPONENTS_MODIFIED_AFTER_DAYS > 0 ? COMPONENTS_MODIFIED_AFTER_DAYS : 2;
-        try {
-            tmpDelta = Integer.parseInt(props.getProperty("schedule.svmsync.delta.offset.days", String.valueOf(tmpDelta)));
+            tmpDelta = Integer.parseInt(props.getProperty("schedule.svmsync.delta.offset.days", "1"));
             if (tmpDelta < 0) tmpDelta = 2;
         } catch (NumberFormatException e) { /* keep fallback */ }
         SVMSYNC_DELTA_OFFSET_DAYS = tmpDelta;
 
-        int tmpVulnDelta = SVMSYNC_DELTA_OFFSET_DAYS;
+        int tmpCleanupFreq = 7;  // default: weekly cleanup
         try {
-            tmpVulnDelta = Integer.parseInt(props.getProperty("schedule.svmsync.vuln.delta.offset.days", String.valueOf(tmpVulnDelta)));
-            if (tmpVulnDelta < 0) tmpVulnDelta = SVMSYNC_DELTA_OFFSET_DAYS;
+            tmpCleanupFreq = Integer.parseInt(props.getProperty("schedule.svmsync.cleanup.frequency.days", "7"));
+            if (tmpCleanupFreq <= 0) tmpCleanupFreq = 7;  // enforce positive value
         } catch (NumberFormatException e) { /* keep fallback */ }
-        VULN_DELTA_OFFSET_DAYS = tmpVulnDelta;
+        CLEANUP_FREQUENCY_DAYS = tmpCleanupFreq;
     }
-
 }
-

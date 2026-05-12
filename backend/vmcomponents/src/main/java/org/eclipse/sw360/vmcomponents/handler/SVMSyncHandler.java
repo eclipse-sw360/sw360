@@ -85,7 +85,8 @@ public class SVMSyncHandler<T extends TBase> {
 
     public VMResult finishReport(String startTimeReporting){
         // get reporting element via start date
-        VMProcessReporting reporting = dbHandler.getByCreationDate(VMProcessReporting.class, startTimeReporting);
+        VMProcessReporting reporting = dbHandler.getByCreationDate(
+                VMProcessReporting.class, startTimeReporting, this.type.getSimpleName());
         if (reporting == null){
             return new VMResult(SVMUtils.newRequestSummary(RequestStatus.FAILURE, 0, 0, "cannot find "+VMProcessReporting.class.getSimpleName()+" with startDate "+startTimeReporting));
         }
@@ -93,7 +94,7 @@ public class SVMSyncHandler<T extends TBase> {
         // get last updated element for end reporting
         T lastUpdated = dbHandler.getLastUpdated(this.type);
         Boolean wasProcessed = processedFlags.get(this.type);
-        
+
         if (lastUpdated != null && Boolean.TRUE.equals(wasProcessed)){
             if (VMComponent.class.isAssignableFrom(type))
                 reporting.setEndDate(((VMComponent)lastUpdated).getLastUpdateDate());
@@ -108,7 +109,7 @@ public class SVMSyncHandler<T extends TBase> {
         } else {
             reporting.setEndDate(SW360Utils.getCreatedOnTime());
         }
-        
+
         // Clear processed flag for next run
         processedFlags.remove(this.type);
 
@@ -123,6 +124,14 @@ public class SVMSyncHandler<T extends TBase> {
 
         long processingTime = start == null || end == null ? 0 :end.getTime() - start.getTime();
         reporting.setProcessingSeconds((int) (processingTime / 1000));
+
+        // Re-fetch by ID immediately before write so we have the latest _rev
+        VMProcessReporting fresh = dbHandler.getById(VMProcessReporting.class, reporting.getId());
+        if (fresh != null) {
+            fresh.setEndDate(reporting.getEndDate());
+            fresh.setProcessingSeconds(reporting.getProcessingSeconds());
+            reporting = fresh;
+        }
 
         RequestStatus requestStatus = dbHandler.update(reporting);
 
@@ -247,7 +256,25 @@ public class SVMSyncHandler<T extends TBase> {
 
             List<String> elementIds = new ArrayList<>(ids.size());
             for (Object id : ids) {
-                elementIds.add(id.toString());
+                // SVM endpoints return either a flat array of ID strings
+                // (full sync) or an array of notification objects of the
+                // shape {"id": <number>, "last_update": ..., "publish_date": ...}
+                // (delta sync via /notifications). Extract the "id" field
+                // when present; fall back to toString() for primitive IDs.
+                String extracted;
+                if (id instanceof JsonObject obj) {
+                    Object idField = obj.get("id");
+                    if (idField == null) {
+                        log.warn("Skipping SVM " + type.getSimpleName() + " entry without 'id' field: " + obj);
+                        continue;
+                    }
+                    extracted = idField.toString();
+                } else if (id == null) {
+                    continue;
+                } else {
+                    extracted = id.toString();
+                }
+                elementIds.add(extracted);
             }
             String syncType = modifiedAfter != null ? "delta" : "full";
             String message = "Retrieved " + ids.size() + " elements using " + syncType + " sync";
@@ -270,7 +297,7 @@ public class SVMSyncHandler<T extends TBase> {
                 String baseUrl = url.contains("?") ? url.substring(0, url.indexOf("?")) : url;
                 baseUrl += "/" + SVMUtils.getVmid(element);
                 String response = SVMUtils.prepareJSONRequestAndGetResponse(baseUrl);
-                
+
                 // Mark type as processed
                 processedFlags.put(this.type, true);
 
