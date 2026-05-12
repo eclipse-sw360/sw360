@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
@@ -35,6 +36,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
  * field-level {@code @Autowired} as a proxy for constructor injection.
  */
 @DisplayName("Dependency Injection Rules")
+@Tag("unit")
 class DependencyInjectionRulesTest extends SW360ArchitectureTest {
 
     @Test

@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +28,7 @@ import java.util.List;
 import static org.eclipse.sw360.licenseinfo.TestHelper.makeAttachment;
 import static org.junit.Assert.assertTrue;
 
+@Tag("unit")
 public class LicenseInfoParserTest {
 
     private User dummyUser = new User().setEmail("dummy@some.domain");

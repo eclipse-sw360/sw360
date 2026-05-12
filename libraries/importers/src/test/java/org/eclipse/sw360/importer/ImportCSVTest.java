@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.common.ImportCSV;
 import org.apache.commons.csv.CSVRecord;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertEquals;
  * @author cedric.bodet@tngtech.com
  * @author manuel.wickmann@tngtech.com
  */
+@Tag("unit")
 public class ImportCSVTest {
 
     private static final int NUMBER_OF_LINES = 3;

@@ -33,6 +33,7 @@ import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.net.URL;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.spy;
  * also offers some functionality related to request stubbing and the handling
  * of test files.
  */
+@Tag("unit")
 public class AbstractMockServerTest {
     /**
      * Test user name for the SW360 client configuration.

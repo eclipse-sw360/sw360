@@ -13,11 +13,13 @@ import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class RestExceptionHandlerTest {
 
     private final RestExceptionHandler restExceptionHandler = new RestExceptionHandler();

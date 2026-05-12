@@ -22,6 +22,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.InputStream;
 
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class SpdxBOMImporterTest {
 
     private InputStream inputStream;

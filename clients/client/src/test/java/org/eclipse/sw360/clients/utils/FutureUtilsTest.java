@@ -13,6 +13,7 @@ package org.eclipse.sw360.clients.utils;
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,6 +30,7 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+@Tag("unit")
 public class FutureUtilsTest {
     /**
      * A defined result used by test futures.

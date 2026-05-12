@@ -17,6 +17,7 @@ import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.SW360Client;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -24,6 +25,7 @@ import java.lang.reflect.Proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@Tag("unit")
 public class SW360ConnectionFactoryTest {
     /**
      * The test configuration passed to the factory instance.

@@ -10,6 +10,7 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.Sets;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.Source;
@@ -26,6 +27,7 @@ import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@Tag("unit")
 public class AttachmentDatabaseHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

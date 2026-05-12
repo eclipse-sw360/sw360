@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableList;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.function.Function;
@@ -24,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Tag("unit")
 public class ThriftUtilsTest {
 
 

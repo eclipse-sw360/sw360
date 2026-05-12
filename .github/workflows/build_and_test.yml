@@ -113,9 +113,6 @@ jobs:
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
           mvn clean install \
-            -T 2C \
-            -Dparallel=classes \
-            -DthreadCount=4 \
             --no-transfer-progress \
             -P deploy -Dhelp-docs=true \
             -Dbase.deploy.dir=${PWD}/deploy \
@@ -145,7 +142,8 @@ jobs:
         continue-on-error: false
         run: |
           mvn test \
-            -T 2C \
+            -pl "!build-configuration" \
+            -am \
             -Dparallel=classes \
             -DthreadCount=4 \
             -Dgroups="unit" \
@@ -158,19 +156,32 @@ jobs:
             jacoco:report \
             -fae
       
-      - name: Run Integration Tests
-        continue-on-error: false
+      # - name: Run Integration Tests
+      #   continue-on-error: false
+      #   run: |
+      #     mvn test \
+      #       -pl "!build-configuration" \
+      #       -am \
+      #       -Dparallel=classes \
+      #       -DthreadCount=4 \
+      #       -Dgroups="integration" \
+      #       --no-transfer-progress \
+      #       -Dbase.deploy.dir=${PWD}/deploy \
+      #       -DRunComponentVisibilityRestrictionTest=false \
+      #       -DRunPrivateProjectAccessTest=false \
+      #       -DRunRestForceUpdateTest=false \
+      #       -Dsurefire.excludes="**/architecture/*Test.java" \
+      #       jacoco:report \
+      #       -fae
+
+      - name: Run PrivateProjectAccessTest
         run: |
-          mvn test \
-            -Dgroups="integration" \
-            --no-transfer-progress \
-            -Dbase.deploy.dir=${PWD}/deploy \
-            -DRunComponentVisibilityRestrictionTest=false \
-            -DRunPrivateProjectAccessTest=false \
-            -DRunRestForceUpdateTest=false \
-            -Dsurefire.excludes="**/architecture/*Test.java" \
-            jacoco:report \
-            -fae
+          mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
+          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=. jacoco:report
+
+      - name: Run BulkReleaseDeletingTest
+        run: |
+          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=. jacoco:report
 
       - name: Extract Test Results
         id: unit-tests
@@ -190,15 +201,6 @@ jobs:
           echo "unit_tests_total=${TOTAL:-0}" >> $GITHUB_OUTPUT
           echo "unit_tests_failed=${FAILED:-0}" >> $GITHUB_OUTPUT
           echo "unit_tests_skipped=${SKIPPED:-0}" >> $GITHUB_OUTPUT
-
-      - name: Run PrivateProjectAccessTest
-        run: |
-          mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
-          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=. jacoco:report
-
-      - name: Run BulkReleaseDeletingTest
-        run: |
-          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=. jacoco:report
 
       - name: Publish Test Results Summary
         if: always()

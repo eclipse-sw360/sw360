@@ -11,9 +11,11 @@
 package org.eclipse.sw360.clients.rest.resource.components;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360ComponentTypeTest {
     private void checkFindByValue(SW360ComponentType componentType, int value) {
         SW360ComponentType result = SW360ComponentType.findByValue(value);

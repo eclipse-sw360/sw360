@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +47,7 @@ import static org.mockito.Mockito.when;
  * @author: alex.borodin@evosoft.com
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("integration")
 public class CLIParserTest {
     private static final String CLI_TESTFILE = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n" +
             "<ComponentLicenseInformation component=\"Clearing_Report_jquery-1_12_1\" creator=\"ite40294\" date=\"30/06/2016\"  baseDoc=\"Clearing_Report_jquery-1_12_1.doc\" toolUsed=\"ReadMe Generator V0.86\" componentID=\"-1\" >\n" +

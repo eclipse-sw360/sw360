@@ -18,6 +18,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.*;
 
@@ -25,6 +26,7 @@ import static org.junit.Assert.*;
  * JUnit tests for Sw360CustomEventListenerProviderFactory.
  * Tests factory lifecycle and configuration handling.
  */
+@Tag("unit")
 public class Sw360CustomEventListenerProviderFactoryTest {
 
     private Sw360CustomEventListenerProviderFactory factory;

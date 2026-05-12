@@ -30,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -48,6 +49,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @RunWith(SpringRunner.class)
+@Tag("integration")
 public class ConfigurationsTest extends TestIntegrationBase {
 
     @LocalServerPort

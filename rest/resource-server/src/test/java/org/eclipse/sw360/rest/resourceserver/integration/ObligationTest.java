@@ -32,6 +32,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -49,6 +50,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
 @RunWith(SpringRunner.class)
+@Tag("integration")
 public class ObligationTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")

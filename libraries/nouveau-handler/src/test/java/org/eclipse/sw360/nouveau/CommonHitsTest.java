@@ -11,10 +11,12 @@
 package org.eclipse.sw360.nouveau;
 
 import junit.framework.TestCase;
+import org.junit.jupiter.api.Tag;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 
+@Tag("unit")
 public class CommonHitsTest extends TestCase {
 
     public void testGetScoreSet() {

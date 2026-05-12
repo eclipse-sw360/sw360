@@ -11,9 +11,11 @@
 package org.eclipse.sw360.clients.rest.resource.projects;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360MainlineStateTest {
     private static void checkFindByValue(SW360MainlineState state, int value) {
         SW360MainlineState result = SW360MainlineState.findByValue(value);

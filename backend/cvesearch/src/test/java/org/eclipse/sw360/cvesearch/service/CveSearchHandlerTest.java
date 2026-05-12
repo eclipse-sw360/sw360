@@ -13,10 +13,12 @@ package org.eclipse.sw360.cvesearch.service;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+@Tag("unit")
 public class CveSearchHandlerTest {
 
 	private CveSearchHandler cveSearchHandler;

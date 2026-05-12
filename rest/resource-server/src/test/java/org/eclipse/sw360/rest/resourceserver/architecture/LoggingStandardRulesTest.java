@@ -16,6 +16,7 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
@@ -33,6 +34,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * </ul>
  */
 @DisplayName("Logging Standard Rules")
+@Tag("unit")
 class LoggingStandardRulesTest extends SW360ArchitectureTest {
 
     @Test

@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.util.*;
 
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class AttachmentAwareDatabaseHandlerTest {
 
     AttachmentAwareDatabaseHandler handler;

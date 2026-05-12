@@ -19,6 +19,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,6 +46,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+@Tag("unit")
 public class SW360ProjectClientAdapterAsyncImplTest {
     private static final String PROJECT_VERSION = "1.0-projectVersion";
     private static final String PROJECT_NAME = "projectName";

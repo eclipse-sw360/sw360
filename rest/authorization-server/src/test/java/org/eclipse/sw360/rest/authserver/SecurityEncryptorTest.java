@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.authserver;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Tag;
 
 import javax.crypto.SealedObject;
 
@@ -22,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
+@Tag("unit")
 public class SecurityEncryptorTest {
 
     @Test

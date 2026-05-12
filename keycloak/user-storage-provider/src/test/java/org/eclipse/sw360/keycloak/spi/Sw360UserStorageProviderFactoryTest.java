@@ -25,6 +25,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Date;
 import java.util.List;
@@ -39,6 +40,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class Sw360UserStorageProviderFactoryTest {
 
     @Mock

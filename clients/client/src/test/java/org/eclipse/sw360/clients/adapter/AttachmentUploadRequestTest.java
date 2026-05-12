@@ -15,12 +15,14 @@ import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class AttachmentUploadRequestTest {
     @Test
     public void testEquals() {

@@ -11,9 +11,11 @@
 package org.eclipse.sw360.clients.rest.resource;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360VisibilityTest {
     private static void checkFindByValue(SW360Visibility visibility, int value) {
         SW360Visibility result = SW360Visibility.findByValue(value);

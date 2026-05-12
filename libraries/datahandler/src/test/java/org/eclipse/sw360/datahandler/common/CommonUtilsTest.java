@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Tag("unit")
 public class CommonUtilsTest {
 
     @Test

@@ -7,12 +7,14 @@ import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 import org.junit.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.*;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag("integration")
 public class GrantTypeClientCredentialsBasicAuthTest extends IntegrationTestBase {
 
     private final String clientId = "trusted-sw360-client";

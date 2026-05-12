@@ -10,6 +10,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.junit.After;
@@ -28,6 +29,7 @@ import static org.junit.Assert.*;
  * @author stefan.jaeger@evosoft.com
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class VMDatabaseHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_VM;

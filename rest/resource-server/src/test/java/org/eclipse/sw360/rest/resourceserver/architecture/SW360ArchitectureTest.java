@@ -13,6 +13,7 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 
 /**
  * Base configuration for SW360 ArchUnit architecture tests.
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
  * classes of the REST resource-server module. All concrete architecture test
  * classes should reference {@link #restClasses} for their rule checks.
  */
+@Tag("unit")
 abstract class SW360ArchitectureTest {
 
     static JavaClasses restClasses;

@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.architecture;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -28,6 +29,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * so cyclic dependency checks are not applicable at the REST module level.
  */
 @DisplayName("Package Structure Rules")
+@Tag("unit")
 class PackageStructureRulesTest extends SW360ArchitectureTest {
 
     @Test

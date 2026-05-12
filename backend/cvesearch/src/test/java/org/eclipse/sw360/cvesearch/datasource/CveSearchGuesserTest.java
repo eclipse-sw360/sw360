@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -27,6 +28,7 @@ import java.util.Properties;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 import static org.junit.Assert.*;
 
+@Tag("unit")
 public class CveSearchGuesserTest extends TestWithCveSearchConnection {
 
     private CveSearchGuesser cveSearchGuesser;

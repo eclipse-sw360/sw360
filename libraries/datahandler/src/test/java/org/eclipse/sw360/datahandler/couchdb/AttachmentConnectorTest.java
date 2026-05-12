@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,6 +29,7 @@ import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class AttachmentConnectorTest {
 
     @Mock

@@ -28,6 +28,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +50,7 @@ import static org.junit.Assume.assumeThat;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Tag("integration")
 public class RemoteAttachmentDownloaderTest {
 
     private static final String url = DatabaseSettingsTest.COUCH_DB_URL;

@@ -10,9 +10,11 @@
 package org.eclipse.sw360.keycloak.event.listener.service;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.*;
 
+@Tag("unit")
 public class OrganizationMapperTest {
 
     @Test

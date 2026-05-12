@@ -14,6 +14,7 @@ import com.google.common.collect.Sets;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.withSettings;
  * @author: maximilian.huber@tngtech.com
  */
 @RunWith(DataProviderRunner.class)
+@Tag("integration")
 public class SPDXParserTest {
 
     private User dummyUser = new User().setEmail("dummy@some.domain");

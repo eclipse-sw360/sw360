@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -47,6 +48,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class VendorSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")

@@ -11,7 +11,9 @@
 package org.eclipse.sw360.nouveau;
 
 import junit.framework.TestCase;
+import org.junit.jupiter.api.Tag;
 
+@Tag("unit")
 public class LuceneAwareCouchDbConnectorTest extends TestCase {
 
     public void testEnsureDesignIdMissing() {

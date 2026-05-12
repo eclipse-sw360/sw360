@@ -11,6 +11,7 @@
 package org.eclipse.sw360.datahandler.common;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@Tag("unit")
 public class NaturalVersionComparatorTest {
 
     private final NaturalVersionComparator comparator = NaturalVersionComparator.INSTANCE;

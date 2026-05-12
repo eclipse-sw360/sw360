@@ -23,6 +23,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.*;
@@ -48,6 +49,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")

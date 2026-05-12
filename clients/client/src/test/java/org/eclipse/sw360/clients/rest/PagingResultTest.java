@@ -12,6 +12,7 @@ package org.eclipse.sw360.clients.rest;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class PagingResultTest {
     @Test
     public void testEquals() {

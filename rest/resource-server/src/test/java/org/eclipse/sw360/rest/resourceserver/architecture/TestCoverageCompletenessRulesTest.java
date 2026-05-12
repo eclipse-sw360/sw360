@@ -20,6 +20,7 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
  * cross-cutting) are listed in {@link #EXCLUDED_CLASSES}.
  */
 @DisplayName("Test Coverage Completeness Rules")
+@Tag("integration")
 class TestCoverageCompletenessRulesTest extends SW360ArchitectureTest {
 
     /**

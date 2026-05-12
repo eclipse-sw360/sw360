@@ -11,10 +11,12 @@
 package org.eclipse.sw360.cvesearch.datasource.matcher;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.eclipse.sw360.cvesearch.datasource.matcher.ModifiedLevenshteinDistance.levenshteinMatch;
 import static org.junit.Assert.*;
 
+@Tag("unit")
 public class ModifiedLevenshteinDistanceTest {
 
     @Test

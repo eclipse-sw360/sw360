@@ -28,11 +28,13 @@ import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.rest.resource.users.SW360SparseUser;
 import org.eclipse.sw360.clients.rest.resource.users.SW360User;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 /**
  * Test class for the equals() implementations of various resource classes
  * that do not have their own test class.
  */
+@Tag("unit")
 public class SW360ResourcesEqualsTest {
     private static void testEqualsWithInheritance(Class<?> resourceClass) {
         EqualsVerifier.forClass(resourceClass)

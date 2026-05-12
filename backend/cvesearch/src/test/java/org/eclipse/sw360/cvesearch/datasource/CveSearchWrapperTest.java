@@ -20,6 +20,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.Properties;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isEquivalent;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
+@Tag("unit")
 public class CveSearchWrapperTest extends TestWithCveSearchConnection {
     private CveSearchWrapper cveSearchWrapper;
 

@@ -15,11 +15,13 @@ import org.eclipse.sw360.datahandler.thrift.components.RepositoryType;
 import org.apache.thrift.TEnum;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 
+@Tag("unit")
 public class ThriftEnumUtilsTest {
 
     @Test

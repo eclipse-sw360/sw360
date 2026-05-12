@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.common;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Collection;
 
@@ -20,6 +21,7 @@ import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInA
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Tag("unit")
 public class SW360ConstantsTest {
     @Test
     public void testProjectsCanHaveAllAttachmentTypes() {

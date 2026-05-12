@@ -29,6 +29,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 
@@ -40,6 +41,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
 @RunWith(SpringRunner.class)
+@Tag("integration")
 public class ScheduleTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")

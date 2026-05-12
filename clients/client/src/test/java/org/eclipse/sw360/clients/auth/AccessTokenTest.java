@@ -14,6 +14,7 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.function.Consumer;
 
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 public class AccessTokenTest {
     /**
      * A test access token.

@@ -11,7 +11,9 @@
 package org.eclipse.sw360.clients.rest.resource.licenses;
 
 import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
+import org.junit.jupiter.api.Tag;
 
+@Tag("unit")
 public class SW360LicenseTest extends SW360ResourcesTestUtils<SW360License> {
     @Override
     public SW360License prepareItem() {

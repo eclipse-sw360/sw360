@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 
@@ -24,6 +25,7 @@ import java.util.Collections;
  * Created by heydenrb on 06.11.15.
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class ProjectExporterTest {
     @Mock
     ComponentService.Iface componentClient;

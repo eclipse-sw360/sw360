@@ -31,6 +31,7 @@ import org.eclipse.sw360.clients.utils.SW360ClientException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 public class SW360ReleaseClientAdapterAsyncImplTest {
     private static final String RELEASE_DOWNLOAD_URL = "https://organisation-test.org/";
     private static final String RELEASE_CLEARING_STATE = "PROJECT_APPROVED";

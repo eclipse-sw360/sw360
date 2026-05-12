@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.authserver.client.persistence;
 
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
+import org.junit.jupiter.api.Tag;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import static org.junit.Assert.assertTrue;
  * Make sure to not have the OAuthClientRepository as Mockito mock in the
  * context.
  */
+@Tag("unit")
 public class OAuthClientRepositoryTest extends IntegrationTestBase {
 
     @Autowired

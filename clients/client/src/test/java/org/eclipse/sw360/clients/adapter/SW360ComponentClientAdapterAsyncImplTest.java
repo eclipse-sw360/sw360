@@ -26,6 +26,7 @@ import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
 import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,6 +46,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 public class SW360ComponentClientAdapterAsyncImplTest {
     private final static String COMPONENT_ID = "12345";
     private final static String COMPONENT_NAME = "componentName";

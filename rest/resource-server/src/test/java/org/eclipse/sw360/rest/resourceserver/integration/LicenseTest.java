@@ -39,6 +39,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -62,6 +63,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 
 @RunWith(SpringRunner.class)
+@Tag("integration")
 public class LicenseTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")

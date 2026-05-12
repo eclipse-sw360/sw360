@@ -10,6 +10,7 @@
 package org.eclipse.sw360.fossology;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.*;
  */
 @Ignore
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Tag("integration")
 public class FossologyHandlerLocalhostIntegrationTest {
 
     private static final String CONFIG_URL_VALUE = "http://localhost:8081/repo/api/v1/";

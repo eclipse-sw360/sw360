@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.Tag;
 
 import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ProviderService.USER_STORAGE_PROVIDER;
 import static org.junit.Assert.*;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
  * JUnit tests for Sw360UserService to verify direct CouchDB operations.
  * Tests cover read, write, update, and import operations without SW360 backend dependency.
  */
+@Tag("unit")
 public class Sw360UserStorageProviderTest {
     private static final Logger logger = LoggerFactory.getLogger(Sw360UserStorageProviderTest.class);
 

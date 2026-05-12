@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import com.google.common.collect.Sets;
+import org.junit.jupiter.api.Tag;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -48,6 +49,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.paramete
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")

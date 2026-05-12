@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ import static org.junit.Assert.*;
  * - testDeleteNonExistentLicense
  * - testDeleteNonExistentLicenseType
  */
+@Tag("unit")
 public class LicenseHandlerAdditionalTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

@@ -12,9 +12,11 @@ package org.eclipse.sw360.http.config;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class ProxySettingsTest {
     private static final String PROXY_HOST = "my.proxy.net";
     private static final int PROXY_PORT = 7777;

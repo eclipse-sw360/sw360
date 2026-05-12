@@ -14,12 +14,14 @@ import org.assertj.core.api.Assertions;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360AttachmentSetEmbedded;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360AttachmentSetEmbeddedTest {
 
 

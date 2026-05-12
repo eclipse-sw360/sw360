@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.*;
 
@@ -30,6 +31,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 
+@Tag("unit")
 public class ComponentSearchHandlerTest {
     private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

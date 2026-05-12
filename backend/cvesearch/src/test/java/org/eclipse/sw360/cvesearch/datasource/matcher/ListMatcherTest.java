@@ -12,10 +12,12 @@ package org.eclipse.sw360.cvesearch.datasource.matcher;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Tag("unit")
 public class ListMatcherTest {
 
     String needle1 = "needle1";

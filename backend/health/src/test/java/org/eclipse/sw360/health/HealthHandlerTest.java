@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
 import org.eclipse.sw360.health.db.HealthDatabaseHandler;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -25,6 +26,7 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
+@Tag("unit")
 public class HealthHandlerTest {
     public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(
             DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,

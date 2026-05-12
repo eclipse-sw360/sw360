@@ -11,6 +11,7 @@ package org.eclipse.sw360.datahandler.common;
 
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
+import org.junit.jupiter.api.Tag;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -19,6 +20,7 @@ import org.junit.Test;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Tag("unit")
 public class FossologyUtilsTest {
 
     @Test

@@ -13,6 +13,7 @@ package org.eclipse.sw360.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test class for {@code NewHttpClientImpl}.
  */
+@Tag("unit")
 public class NewHttpClientImplTest {
 
     private HttpClient client;

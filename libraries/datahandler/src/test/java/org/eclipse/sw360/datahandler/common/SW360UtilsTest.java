@@ -11,9 +11,11 @@
 package org.eclipse.sw360.datahandler.common;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.assertEquals;
 
+@Tag("unit")
 public class SW360UtilsTest {
 
     @Test

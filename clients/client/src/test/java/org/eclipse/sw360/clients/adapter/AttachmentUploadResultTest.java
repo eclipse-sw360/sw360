@@ -15,6 +15,7 @@ import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -27,6 +28,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
+@Tag("unit")
 public class AttachmentUploadResultTest {
     @Test
     public void testEquals() {

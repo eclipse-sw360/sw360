@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +28,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
+@Tag("unit")
 public class ConcatClosingInputStreamTest {
     @Test
     public void testReadIsEmptyForEmptyIterator() throws Exception {

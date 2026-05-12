@@ -12,6 +12,7 @@ package org.eclipse.sw360.components.db;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class ComponentDatabaseHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

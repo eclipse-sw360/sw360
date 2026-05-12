@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.web.bind.annotation.RestController;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
@@ -37,6 +38,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
  * </ul>
  */
 @DisplayName("Controller Annotation Rules")
+@Tag("unit")
 class ControllerAnnotationRulesTest extends SW360ArchitectureTest {
 
     @Test

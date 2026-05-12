@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.junit.jupiter.api.Tag;
 
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.withSettings;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class BulkDeleteUtilTest {
 
     private static final Logger log = LogManager.getLogger(BulkDeleteUtilTest.class);

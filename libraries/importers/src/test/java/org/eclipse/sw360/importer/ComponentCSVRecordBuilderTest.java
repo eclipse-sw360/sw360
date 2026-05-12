@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,6 +25,7 @@ import static org.hamcrest.core.Is.is;
  * @author johannes.najjar@tngtech.com
  * @author alex.borodin@evosoft.com
  */
+@Tag("unit")
 public class ComponentCSVRecordBuilderTest {
 
     @Test

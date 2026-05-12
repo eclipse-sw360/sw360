@@ -11,7 +11,9 @@
 package org.eclipse.sw360.clients.rest.resource.attachments;
 
 import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
+import org.junit.jupiter.api.Tag;
 
+@Tag("unit")
 public class SW360AttachmentTest extends SW360ResourcesTestUtils<SW360Attachment> {
     @Override
     public SW360Attachment prepareItem() {

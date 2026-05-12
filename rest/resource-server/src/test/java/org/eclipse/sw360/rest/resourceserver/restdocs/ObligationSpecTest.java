@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.util.*;
 
@@ -49,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class ObligationSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")

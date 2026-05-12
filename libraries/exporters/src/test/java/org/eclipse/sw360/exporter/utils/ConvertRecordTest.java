@@ -18,6 +18,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,7 @@ import static org.hamcrest.Matchers.is;
  * @author: birgit.heydenreich@tngtech.com
  */
 
+@Tag("unit")
 public class ConvertRecordTest {
 
     private List<CSVRecord> emptyRecord;

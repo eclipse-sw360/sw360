@@ -16,10 +16,12 @@ import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@Tag("unit")
 public class SW360ClientTest {
     private static final String BASE = "https://scott:tiger@www.eclipse.org";
     private static final String BASE_REST_URI = BASE + "/sw360";

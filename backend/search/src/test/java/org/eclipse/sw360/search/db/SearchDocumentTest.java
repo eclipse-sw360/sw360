@@ -11,6 +11,7 @@ package org.eclipse.sw360.search.db;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@Tag("unit")
 public class SearchDocumentTest {
 
     private Map<String, Object> document;

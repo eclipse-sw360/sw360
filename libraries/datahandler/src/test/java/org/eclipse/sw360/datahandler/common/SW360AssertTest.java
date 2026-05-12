@@ -13,9 +13,11 @@ package org.eclipse.sw360.datahandler.common;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Set;
 
+@Tag("unit")
 public class SW360AssertTest {
 
     @Test

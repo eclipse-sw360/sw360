@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestSta
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.stream.IntStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@Tag("unit")
 public class DocxGeneratorTest {
 
     private static List<ObligationParsingResult> obligationParsingResults;

@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.List;
@@ -43,6 +44,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
 @RunWith(SpringRunner.class)
+@Tag("integration")
 public class CacheAdminTest extends TestIntegrationBase {
 
     @LocalServerPort

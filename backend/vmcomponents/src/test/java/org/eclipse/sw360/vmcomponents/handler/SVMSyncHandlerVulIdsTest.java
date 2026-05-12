@@ -7,6 +7,7 @@ package org.eclipse.sw360.vmcomponents.handler;
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsoner;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.mock;
  * is required.
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class SVMSyncHandlerVulIdsTest extends AbstractJSONMockTest {
 
     // WireMock runs on port 8090 (started by the @Rule in AbstractJSONMockTest).

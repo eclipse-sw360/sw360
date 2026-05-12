@@ -11,9 +11,11 @@
 package org.eclipse.sw360.clients.rest.resource.projects;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360ProjectTypeTest {
     private void checkFindByValue(SW360ProjectType projectType, int value) {
         SW360ProjectType result = SW360ProjectType.findByValue(value);

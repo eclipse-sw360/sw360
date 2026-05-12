@@ -13,6 +13,7 @@ package org.eclipse.sw360.clients.adapter;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -34,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * checked that there is a corresponding method in the synchronous interface
  * with the same name, method parameters, and return type.
  */
+@Tag("unit")
 public class SyncClientAdaptersTest {
     /**
      * Verifies that a synchronous client adapter interface is consistent with

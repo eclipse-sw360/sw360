@@ -13,10 +13,12 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@Tag("unit")
 public class SearchHandlerTest {
 
     SearchHandler handler;

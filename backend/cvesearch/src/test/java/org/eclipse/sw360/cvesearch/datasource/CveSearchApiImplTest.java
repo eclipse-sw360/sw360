@@ -17,6 +17,7 @@ import org.eclipse.sw360.cvesearch.service.CveSearchHandler;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Properties;
 
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
+@Tag("unit")
 public class CveSearchApiImplTest extends TestWithCveSearchConnection {
 
     private String VENDOR  = "zyxel";

@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Set;
@@ -39,6 +40,7 @@ import static org.junit.Assert.fail;
  * @author daniele.fognini@tngtech.com
  */
 @Ignore("This test class is ignored for now")
+@Tag("unit")
 public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest {
 
 

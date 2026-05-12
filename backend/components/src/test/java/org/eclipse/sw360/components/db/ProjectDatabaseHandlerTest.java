@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class ProjectDatabaseHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

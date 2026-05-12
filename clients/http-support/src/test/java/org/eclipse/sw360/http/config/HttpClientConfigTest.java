@@ -13,10 +13,12 @@ package org.eclipse.sw360.http.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@Tag("unit")
 public class HttpClientConfigTest {
     @Test
     public void testBasicConfig() {

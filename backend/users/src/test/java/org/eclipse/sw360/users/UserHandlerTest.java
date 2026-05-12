@@ -15,11 +15,13 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 
+@Tag("unit")
 public class UserHandlerTest {
     private static final String DUMMY_LASTNAME = "Dummy Lastname";
 

@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.when;
  * @author: alex.borodin@evosoft.com
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class ReleasePermissionsTest {
 
     @Mock

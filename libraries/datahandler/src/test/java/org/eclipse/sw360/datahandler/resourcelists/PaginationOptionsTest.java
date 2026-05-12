@@ -14,10 +14,12 @@ package org.eclipse.sw360.datahandler.resourcelists;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class PaginationOptionsTest {
 
     @Test

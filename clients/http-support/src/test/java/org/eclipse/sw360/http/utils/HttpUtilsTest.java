@@ -14,6 +14,7 @@ import org.apache.commons.io.input.BrokenInputStream;
 import org.eclipse.sw360.http.Response;
 import org.eclipse.sw360.http.ResponseProcessor;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 public class HttpUtilsTest {
     @Test
     public void testWaitForSuccessfulFuture() throws IOException {

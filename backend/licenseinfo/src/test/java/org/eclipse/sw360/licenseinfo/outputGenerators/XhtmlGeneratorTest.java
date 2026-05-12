@@ -14,6 +14,7 @@ package org.eclipse.sw360.licenseinfo.outputGenerators;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.junit.jupiter.api.Tag;
 
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -34,6 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
+@Tag("unit")
 public class XhtmlGeneratorTest {
     static Collection<LicenseInfoParsingResult> lipresults;
     static Collection<LicenseInfoParsingResult> lipresults2;

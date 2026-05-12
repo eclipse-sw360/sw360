@@ -16,6 +16,7 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Set;
 
@@ -37,6 +38,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * add its root package to {@code ALLOWED_PACKAGE_PREFIXES} and document the rationale.
  */
 @DisplayName("Dependency Governance Rules")
+@Tag("unit")
 class DependencyGovernanceRulesTest extends SW360ArchitectureTest {
 
     /**

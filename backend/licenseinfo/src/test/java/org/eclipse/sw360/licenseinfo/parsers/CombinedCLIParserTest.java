@@ -11,6 +11,7 @@
 package org.eclipse.sw360.licenseinfo.parsers;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -53,6 +54,7 @@ import static org.mockito.Mockito.when;
  * @author: alex.borodin@evosoft.com
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("integration")
 public class CombinedCLIParserTest {
     private static final String TEST_XML_FILENAME = "CombinedCLITest.xml";
 

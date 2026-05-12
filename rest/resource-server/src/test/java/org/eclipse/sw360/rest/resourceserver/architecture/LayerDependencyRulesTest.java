@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.architecture;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
@@ -30,6 +31,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * Therefore core-to-domain dependency checks exclude {@code JacksonCustomizations}.
  */
 @DisplayName("Layered Architecture Rules")
+@Tag("unit")
 class LayerDependencyRulesTest extends SW360ArchitectureTest {
 
     @Test

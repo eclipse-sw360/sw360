@@ -52,6 +52,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,6 +81,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 
 @RunWith(SpringRunner.class)
+@Tag("integration")
 public class ComponentTest extends TestIntegrationBase {
     private static final Logger log = LogManager.getLogger(ComponentTest.class);
 

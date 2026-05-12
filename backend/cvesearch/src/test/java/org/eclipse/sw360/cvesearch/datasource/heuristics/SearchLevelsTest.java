@@ -13,7 +13,9 @@ package org.eclipse.sw360.cvesearch.datasource.heuristics;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
+@Tag("unit")
 public class SearchLevelsTest {
 
     SearchLevels searchLevels;

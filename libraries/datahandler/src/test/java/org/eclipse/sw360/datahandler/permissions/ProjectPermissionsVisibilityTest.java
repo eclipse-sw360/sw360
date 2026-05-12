@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.junit.jupiter.api.Tag;
 
 import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject.ProjectRole.*;
 import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
@@ -40,6 +41,7 @@ import static org.mockito.Mockito.withSettings;
  * @author johannes.najjar@tngtech.com
  */
 @RunWith(DataProviderRunner.class)
+@Tag("unit")
 public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject, WhenComputeVisibility, ThenVisible> {
 
     public static String theBu = "DE PA RT"; // ME NT

@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -39,6 +40,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")

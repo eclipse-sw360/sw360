@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.hamcrest.Matchers;
 import org.junit.*;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 import java.util.Map;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 
+@Tag("unit")
 public class AttachmentHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;

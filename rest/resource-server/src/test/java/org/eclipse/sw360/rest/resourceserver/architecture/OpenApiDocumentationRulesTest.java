@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.*;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
@@ -29,6 +30,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
  * comprehensive, auto-generated API documentation.
  */
 @DisplayName("OpenAPI Documentation Rules")
+@Tag("unit")
 class OpenApiDocumentationRulesTest extends SW360ArchitectureTest {
 
     @Test

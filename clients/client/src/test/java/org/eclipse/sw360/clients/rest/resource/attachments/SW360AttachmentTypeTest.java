@@ -11,9 +11,11 @@
 package org.eclipse.sw360.clients.rest.resource.attachments;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360AttachmentTypeTest {
     @Test
     public void testFindByValue() {

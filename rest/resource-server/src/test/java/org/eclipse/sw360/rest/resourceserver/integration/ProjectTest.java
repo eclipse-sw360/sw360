@@ -74,6 +74,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -96,6 +97,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class ProjectTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")

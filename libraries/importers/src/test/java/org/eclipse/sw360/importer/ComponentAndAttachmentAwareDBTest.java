@@ -25,6 +25,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +41,7 @@ import static org.mockito.Mockito.*;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Tag("unit")
 public class ComponentAndAttachmentAwareDBTest {
 
     protected ComponentService.Iface componentClient;

@@ -16,6 +16,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+@Tag("unit")
 public class SW360LicenseClientAdapterAsyncImplTest {
     private static final String LICENSE_NAME = "licenseName";
 

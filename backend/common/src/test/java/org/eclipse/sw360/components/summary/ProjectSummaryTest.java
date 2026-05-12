@@ -18,12 +18,14 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 
 import static org.eclipse.sw360.exporter.ProjectExporter.PROJECT_RENDERED_FIELDS;
 import static org.junit.Assert.assertNotNull;
 
+@Tag("unit")
 public class ProjectSummaryTest {
 
     @Test

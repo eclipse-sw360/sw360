@@ -15,6 +15,7 @@ import com.ibm.cloud.sdk.core.security.Authenticator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -22,6 +23,7 @@ import java.util.Properties;
 /**
  * Constants for the database address
  */
+@Tag("unit")
 public class DatabaseSettingsTest {
 
     private static final Logger log = LogManager.getLogger(DatabaseSettingsTest.class);

@@ -33,8 +33,10 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.Tag;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class ConfigurationsSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
     private String testUserId;

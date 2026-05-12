@@ -21,6 +21,7 @@ import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -51,6 +52,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * </ul>
  */
 @DisplayName("Security Annotation Rules")
+@Tag("unit")
 class SecurityAnnotationRulesTest extends SW360ArchitectureTest {
 
 

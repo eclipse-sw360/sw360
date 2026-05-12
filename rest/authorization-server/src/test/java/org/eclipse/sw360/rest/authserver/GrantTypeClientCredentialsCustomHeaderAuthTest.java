@@ -15,6 +15,7 @@ import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertEquals;
  * custom auth header should NOT be possible.
  */
 @Ignore("Keeeping this test for reference for header bases auth, but it is not needed anymore for now")
+@Tag("integration")
 public class GrantTypeClientCredentialsCustomHeaderAuthTest extends IntegrationTestBase {
 
     @Test

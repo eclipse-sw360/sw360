@@ -6,6 +6,7 @@ package org.eclipse.sw360.vmcomponents.handler;
 
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
+import org.junit.jupiter.api.Tag;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
@@ -46,6 +47,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  * @author stefan.jaeger@evosoft.com
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class SVMSyncHandlerTest extends AbstractJSONMockTest {
 
     private final String URL_ACTIONS = "http://localhost:8090/portal/api/v1/public/actions";

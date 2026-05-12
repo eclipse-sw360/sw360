@@ -13,6 +13,7 @@ package org.eclipse.sw360.clients.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class MultiStatusResponseTest {
     /**
      * Name of a test file that contains only successful responses.

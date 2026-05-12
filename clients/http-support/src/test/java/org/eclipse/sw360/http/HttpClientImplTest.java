@@ -18,6 +18,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.when;
  * Test class for {@code HttpClientImpl}. This class focuses on functionality
  * that is not covered by the integration test class.
  */
+@Tag("unit")
 public class HttpClientImplTest {
     /**
      * The client to be tested.

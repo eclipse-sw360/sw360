@@ -11,11 +11,13 @@
 package org.eclipse.sw360.clients.rest.resource;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360HalResourceUtilityTest {
     @Test
     public void testGetLastIndexOfSelfLinkNoLinkObjects() {

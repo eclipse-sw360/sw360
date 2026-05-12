@@ -13,6 +13,7 @@ package org.eclipse.sw360.clients.utils;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360LicenseList;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * class is tested together with the concrete client implementations. This
  * test class just deals with some corner cases.
  */
+@Tag("unit")
 public class SW360ResourceUtilsTest {
     @Test
     public void testNonExistingEmbeddedElementsAreHandled() {

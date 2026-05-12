@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.authserver.client.rest;
 
 import com.google.common.collect.Lists;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 
@@ -27,6 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 
+@Tag("integration")
 public class OAuthClientControllerTest extends IntegrationTestBase {
 
     @Autowired

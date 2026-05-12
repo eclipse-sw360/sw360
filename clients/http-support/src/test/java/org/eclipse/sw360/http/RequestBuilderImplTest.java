@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.mockito.Mockito.mock;
 
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.mock;
  * Unit test class for {@code RequestBuilderImpl}. This class tests some
  * special corner cases which are not covered by the integration test class.
  */
+@Tag("unit")
 public class RequestBuilderImplTest {
     /**
      * The builder to be tested.

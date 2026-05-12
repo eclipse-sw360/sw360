@@ -14,9 +14,11 @@ import org.eclipse.sw360.clients.rest.resource.LinkObjects;
 import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
 import org.eclipse.sw360.clients.rest.resource.Self;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
+@Tag("unit")
 public class SW360ComponentsTest extends SW360ResourcesTestUtils<SW360Component> {
     @Override
     public SW360Component prepareItem() {

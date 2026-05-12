@@ -35,6 +35,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -56,6 +57,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")

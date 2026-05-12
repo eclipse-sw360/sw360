@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.*;
 
@@ -30,6 +31,7 @@ import static org.junit.Assert.*;
  *
  * @author cedric.bodet@tngtech.com
  */
+@Tag("unit")
 public class LicenseHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

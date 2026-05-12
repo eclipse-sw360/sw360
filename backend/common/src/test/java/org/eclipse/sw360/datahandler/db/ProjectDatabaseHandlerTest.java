@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
@@ -41,6 +42,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class ProjectDatabaseHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

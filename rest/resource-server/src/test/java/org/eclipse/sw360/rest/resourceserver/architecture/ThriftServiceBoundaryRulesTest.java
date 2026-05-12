@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.architecture;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
@@ -29,6 +30,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * is prohibited from the REST layer.
  */
 @DisplayName("Thrift Service Boundary Rules")
+@Tag("unit")
 class ThriftServiceBoundaryRulesTest extends SW360ArchitectureTest {
 
     @Test

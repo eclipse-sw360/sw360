@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -22,6 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author johannes.najjar@tngtech.com
  */
+@Tag("unit")
 public class ReleaseLinkCSVRecordBuilderTest {
     @Test
     public void testFillComponent() throws Exception {

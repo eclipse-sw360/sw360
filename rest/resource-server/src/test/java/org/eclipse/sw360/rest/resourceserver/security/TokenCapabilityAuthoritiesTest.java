@@ -13,12 +13,14 @@ package org.eclipse.sw360.rest.resourceserver.security;
 import org.junit.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class TokenCapabilityAuthoritiesTest {
 
     @Test

@@ -14,6 +14,7 @@ import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
 import com.google.gson.reflect.TypeToken;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Tag("unit")
 public class CveSearchJsonParserTest {
 
     private String SEARCH_RESULT_EMPTY = "";

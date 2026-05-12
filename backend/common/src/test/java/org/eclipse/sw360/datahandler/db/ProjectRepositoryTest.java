@@ -11,6 +11,7 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
@@ -38,6 +39,7 @@ import static org.junit.Assert.*;
 /**
  * Test class for ProjectRepository, specifically testing the clearing state cache view.
  */
+@Tag("unit")
 public class ProjectRepositoryTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;

@@ -13,6 +13,7 @@ package org.eclipse.sw360.datahandler.permissions;
 import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.ComponentRole.*;
 import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
+import org.junit.jupiter.api.Tag;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent;
@@ -33,6 +34,7 @@ import com.tngtech.jgiven.junit.ScenarioTest;
  * @author kouki1.hama@toshiba.co.jp
  */
 @RunWith(DataProviderRunner.class)
+@Tag("unit")
 public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenComponent, WhenComputeComponentVisibility, ThenVisible> {
 
     public static String theBu = "DE PA RT"; // ME NT

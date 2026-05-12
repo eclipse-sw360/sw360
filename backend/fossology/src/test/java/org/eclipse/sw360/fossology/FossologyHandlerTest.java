@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
+import org.junit.jupiter.api.Tag;
 
 import org.apache.thrift.TException;
 import org.junit.Before;
@@ -35,6 +36,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@Tag("integration")
 public class FossologyHandlerTest {
 
     private static final String RELEASE_ID = "release-1";

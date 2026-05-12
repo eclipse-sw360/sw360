@@ -61,6 +61,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.core.io.ByteArrayResource;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.List;
@@ -93,6 +94,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class ReleaseTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")

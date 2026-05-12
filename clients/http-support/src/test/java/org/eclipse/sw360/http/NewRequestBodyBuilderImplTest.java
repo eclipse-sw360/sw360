@@ -13,6 +13,7 @@ package org.eclipse.sw360.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Test class for {@code NewRequestBodyBuilderImpl} file body behavior.
  */
+@Tag("unit")
 public class NewRequestBodyBuilderImplTest {
 
     @Test

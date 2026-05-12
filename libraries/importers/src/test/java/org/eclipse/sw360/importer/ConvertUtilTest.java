@@ -12,9 +12,11 @@ package org.eclipse.sw360.importer;
 
 import org.eclipse.sw360.commonIO.ConvertUtil;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.assertEquals;
 
+@Tag("unit")
 public class ConvertUtilTest {
 
     @Test

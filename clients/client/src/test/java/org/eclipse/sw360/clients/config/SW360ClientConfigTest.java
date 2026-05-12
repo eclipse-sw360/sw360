@@ -16,10 +16,12 @@ import nl.jqno.equalsverifier.Warning;
 import org.eclipse.sw360.http.HttpClient;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@Tag("unit")
 public class SW360ClientConfigTest {
     private static final String REST_URL = "https://www.sw360.org/api";
     private static final String AUTH_URL = "https://auth.sw360.org/token";

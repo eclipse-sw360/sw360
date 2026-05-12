@@ -17,6 +17,7 @@ import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360SparseAttachment;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@Tag("unit")
 public class SW360ReleaseTest extends SW360ResourcesTestUtils<SW360Release> {
     @Override
     public SW360Release prepareItem() {

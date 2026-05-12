@@ -41,6 +41,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Tag;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -58,6 +59,7 @@ import static org.mockito.BDDMockito.given;
 
 @RunWith(SpringRunner.class)
 @Import(ApiRootAuthorizationRegressionTest.ApiRootAuthorizationTestConfig.class)
+@Tag("integration")
 public class ApiRootAuthorizationRegressionTest extends TestIntegrationBase {
 
     private static final String READ_ONLY_EMAIL = "readonly@sw360.org";

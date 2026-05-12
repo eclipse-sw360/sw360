@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.when;
  * Test class for {@code RequestBodyBuilderImpl}. This class tests some special
  * corner cases; the main logic is tested by integration tests.
  */
+@Tag("unit")
 public class RequestBodyBuilderImplTest {
     /**
      * Mock for the JSON mapper.

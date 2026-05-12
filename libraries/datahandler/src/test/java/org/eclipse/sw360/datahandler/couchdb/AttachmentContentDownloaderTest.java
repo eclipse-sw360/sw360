@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +40,7 @@ import static org.mockito.Mockito.when;
  * @author daniele.fognini@tngtech.com
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class AttachmentContentDownloaderTest {
     private final Duration downloadTimeout = durationOf(2, TimeUnit.SECONDS);
     private AttachmentContentDownloader attachmentContentDownloader;

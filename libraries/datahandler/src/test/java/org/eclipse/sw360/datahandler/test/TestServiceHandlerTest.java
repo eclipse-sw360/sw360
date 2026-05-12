@@ -13,10 +13,12 @@ package org.eclipse.sw360.datahandler.test;
 import org.eclipse.sw360.testthrift.TestObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+@Tag("unit")
 public class TestServiceHandlerTest {
 
     private static final String TEST_ID = "abcdef";

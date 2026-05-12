@@ -28,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.annotation.Value;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,6 +47,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class Sw360AttachmentServiceTest {
 
     @Value("${sw360.thrift-server-url:http://localhost:8080}")

@@ -15,12 +15,14 @@ import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
 import org.eclipse.sw360.clients.rest.resource.components.SW360ComponentType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+@Tag("unit")
 public class SW360ComponentAdapterUtilsTest {
     @Test
     public void testSetComponentTypeProprietary() {

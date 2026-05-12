@@ -6,6 +6,7 @@ package org.eclipse.sw360.vmcomponents;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
+import org.junit.jupiter.api.Tag;
 
 import java.io.*;
 
@@ -14,6 +15,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 /**
  * @author stefan.jaeger@evosoft.com
  */
+@Tag("unit")
 public abstract class AbstractJSONMockTest {
 
     // mocking rest service

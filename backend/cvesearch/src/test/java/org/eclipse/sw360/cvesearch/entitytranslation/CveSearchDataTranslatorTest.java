@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.*;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
+@Tag("unit")
 public class CveSearchDataTranslatorTest extends TestWithCveSearchConnection {
 
     private CveSearchData cveSearchData;

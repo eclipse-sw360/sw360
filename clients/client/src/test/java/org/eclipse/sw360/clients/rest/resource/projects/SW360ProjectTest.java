@@ -12,10 +12,12 @@ package org.eclipse.sw360.clients.rest.resource.projects;
 
 import org.eclipse.sw360.clients.rest.resource.SW360Visibility;
 import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
+import org.junit.jupiter.api.Tag;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Tag("unit")
 public class SW360ProjectTest extends SW360ResourcesTestUtils<SW360Project> {
     @Override
     public SW360Project prepareItem() {

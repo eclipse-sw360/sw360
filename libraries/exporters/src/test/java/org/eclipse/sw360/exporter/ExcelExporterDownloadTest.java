@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Tag;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,6 +31,7 @@ import static org.junit.Assert.*;
  * path traversal protection.
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class ExcelExporterDownloadTest {
 
     @Mock

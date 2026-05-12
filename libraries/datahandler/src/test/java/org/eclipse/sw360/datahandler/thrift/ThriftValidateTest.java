@@ -13,11 +13,13 @@ import org.junit.Test;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
 import static org.junit.Assert.assertEquals;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.junit.jupiter.api.Tag;
 
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareUser;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
+@Tag("unit")
 public class ThriftValidateTest {
     final String DUMMY_EMAIL_ADDRESS = "dummy.name@dummy.domain.tld";
     final String DUMMY_MODERATION_COMMENT = "Lorem ipsum";

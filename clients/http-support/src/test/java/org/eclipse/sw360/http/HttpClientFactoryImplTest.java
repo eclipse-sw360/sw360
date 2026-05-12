@@ -15,6 +15,7 @@ import org.eclipse.sw360.http.config.HttpClientConfig;
 import org.eclipse.sw360.http.config.ProxySettings;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -23,6 +24,7 @@ import java.net.ProxySelector;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@Tag("unit")
 public class HttpClientFactoryImplTest {
     /**
      * The factory to be tested.

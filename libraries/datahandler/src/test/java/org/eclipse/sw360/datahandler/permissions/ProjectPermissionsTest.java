@@ -22,6 +22,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import com.tngtech.jgiven.junit.ScenarioTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +36,7 @@ import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
  */
 
 @RunWith(DataProviderRunner.class)
+@Tag("unit")
 public class ProjectPermissionsTest extends ScenarioTest<GivenProject, WhenComputePermissions, ThenHighestAllowedAction> {
 
     public static final List<RequestedAction> ALL_ACTIONS = ImmutableList.of(READ, WRITE, WRITE_ECC, ATTACHMENTS, DELETE, USERS, CLEARING);

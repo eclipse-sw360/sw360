@@ -16,6 +16,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 @RunWith(DataProviderRunner.class)
+@Tag("unit")
 public class DocumentPermissionsTest {
 
     @DataProvider

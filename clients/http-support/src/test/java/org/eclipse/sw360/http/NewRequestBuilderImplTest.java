@@ -13,6 +13,7 @@ package org.eclipse.sw360.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.net.http.HttpRequest;
 
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.mock;
  * Unit test class for {@code NewRequestBuilderImpl}. This class focuses on
  * request-building semantics for the native HttpClient variant.
  */
+@Tag("unit")
 public class NewRequestBuilderImplTest {
     /**
      * The builder to be tested.

@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.junit.jupiter.api.Tag;
 
 import org.junit.After;
 import org.junit.Before;
@@ -34,6 +35,7 @@ import static org.junit.Assert.fail;
 /**
  * @author daniele.fognini@tngtech.com
  */
+@Tag("unit")
 public class ComponentHandlerTest {
 
     private ComponentHandler componentHandler;

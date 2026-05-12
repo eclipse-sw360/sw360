@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
+import org.junit.jupiter.api.Tag;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -32,6 +33,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * web-layer annotations, and bean definition patterns.
  */
 @DisplayName("Spring Framework Best Practice Rules")
+@Tag("unit")
 class SpringFrameworkRulesTest extends SW360ArchitectureTest {
 
     @Test

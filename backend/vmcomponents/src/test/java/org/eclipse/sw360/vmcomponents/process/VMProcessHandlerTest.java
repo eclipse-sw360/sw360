@@ -8,6 +8,7 @@ import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
+import org.junit.jupiter.api.Tag;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
@@ -41,6 +42,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  * @author stefan.jaeger@evosoft.com
  */
 @RunWith(MockitoJUnitRunner.class)
+@Tag("unit")
 public class VMProcessHandlerTest extends AbstractJSONMockTest {
     private static final Logger log = getLogger(VMProcessHandlerTest.class);
 

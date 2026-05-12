@@ -11,9 +11,11 @@
 package org.eclipse.sw360.clients.rest.resource.users;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 public class SW360UserGroupTest {
     private void checkFindByValue(SW360UserGroup group, int value) {
         SW360UserGroup result = SW360UserGroup.findByValue(value);

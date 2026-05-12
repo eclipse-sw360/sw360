@@ -16,6 +16,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.ibm.cloud.cloudant.v1.model.Attachment;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@Tag("integration")
 public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
     private String testUserId;

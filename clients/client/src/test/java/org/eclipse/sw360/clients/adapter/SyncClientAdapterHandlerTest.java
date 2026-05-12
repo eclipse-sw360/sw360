@@ -11,6 +11,7 @@
 package org.eclipse.sw360.clients.adapter;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.CompletableFuture;
@@ -18,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+@Tag("unit")
 public class SyncClientAdapterHandlerTest {
     private static final int ANSWER = 42;
 
