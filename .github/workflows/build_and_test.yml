@@ -113,19 +113,22 @@ jobs:
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
           mvn clean install \
+            -T 2C \
+            -Dparallel=classes \
+            -DthreadCount=4 \
             --no-transfer-progress \
             -P deploy -Dhelp-docs=true \
             -Dbase.deploy.dir=${PWD}/deploy \
             -DskipTests \
             -Dmaven.plugin.validation=VERBOSE
 
-      # - name: Run ArchUnit Architecture Tests
-      #   id: archunit-tests
-      #   continue-on-error: false
-      #   run: |
-      #     mvn -pl rest/resource-server test \
-      #       -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.*Test" \
-      #       -Dbase.deploy.dir=${PWD}/deploy
+      - name: Run ArchUnit Architecture Tests
+        id: archunit-tests
+        continue-on-error: false
+        run: |
+          mvn -pl rest/resource-server test \
+            -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.*Test" \
+            -Dbase.deploy.dir=${PWD}/deploy
 
       - name: Publish Architecture Tests Results
         if: always()
@@ -138,13 +141,28 @@ jobs:
             echo "Review logs for constraint violations that must be fixed before merge." >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Run Unit and Integration Tests
+      - name: Run Unit Tests
         continue-on-error: false
         run: |
           mvn test \
-            -T 1C \
+            -T 2C \
             -Dparallel=classes \
             -DthreadCount=4 \
+            -Dgroups="unit" \
+            --no-transfer-progress \
+            -Dbase.deploy.dir=${PWD}/deploy \
+            -DRunComponentVisibilityRestrictionTest=false \
+            -DRunPrivateProjectAccessTest=false \
+            -DRunRestForceUpdateTest=false \
+            -Dsurefire.excludes="**/architecture/*Test.java" \
+            jacoco:report \
+            -fae
+      
+      - name: Run Integration Tests
+        continue-on-error: false
+        run: |
+          mvn test \
+            -Dgroups="integration" \
             --no-transfer-progress \
             -Dbase.deploy.dir=${PWD}/deploy \
             -DRunComponentVisibilityRestrictionTest=false \
