@@ -38,14 +38,15 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
     private String url;
     private boolean triggerNextStep;
     private int priority;
-    private boolean isDeltaSync = false;
+    private boolean isDeltaSync;
 
-    public VMProcessor(Class<T> elementType, List<String> input, VMProcessType task, String url, boolean triggerNextStep) {
+    public VMProcessor(Class<T> elementType, List<String> input, VMProcessType task, String url, boolean triggerNextStep, boolean isDeltaSync) {
         this.elementType = elementType;
         this.input = input;
         this.task = task;
         this.url = url;
         this.triggerNextStep = triggerNextStep;
+        this.isDeltaSync = isDeltaSync;
         this.priority = mapPrio(elementType, task);
         log.debug("Job initialized:      "+this.toString());
     }
@@ -86,31 +87,32 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
             switch (task){
 
                 case GET_IDS:
-                    // get element ids (full or delta if modified_after present)
+                    // get element ids; this is a full sync if isDeltaSync=false, or a delta sync otherwise
                     VMResult idsResult = syncHandler.getSMVElementIds(this.url);
-                    // Check if this was a delta sync based on message
-                    if (idsResult != null && idsResult.requestSummary != null && idsResult.requestSummary.message != null) {
-                        this.isDeltaSync = idsResult.requestSummary.message.contains("delta");
-                    }
                     if (triggerNextStep
                             && idsResult != null
                             && RequestStatus.SUCCESS.equals(idsResult.requestSummary.requestStatus)
                             && idsResult.elements != null
                             && !idsResult.elements.isEmpty()) {
-                        // only clean up for full sync of non-vulnerability types
-                        if (!this.isDeltaSync && !Vulnerability.class.isAssignableFrom(this.elementType)) {
+                        // Cleanup only runs for full syncs. For delta syncs, items deleted on SVM are not
+                        // observable (they simply don't appear in the modified_after result), so cleanup
+                        // would incorrectly delete unchanged local data.
+                        // The caller (VMComponentHandler) ensures a full sync is forced periodically
+                        // (see CLEANUP_FREQUENCY_DAYS) so deleted items eventually get purged.
+                        if (!this.isDeltaSync) {
                             VMProcessHandler.cleanupMissingElements(this.elementType, idsResult.elements);
-                        } else if (this.isDeltaSync) {
-                            log.debug("Skipping cleanup for incremental sync of " + elementType.getSimpleName());
+                        } else {
+                            log.debug("Skipping cleanup for delta sync of " + elementType.getSimpleName());
                         }
-                        VMProcessHandler.storeElements(this.elementType, idsResult.elements, this.url, triggerNextStep);
+                        VMProcessHandler.storeElements(this.elementType, idsResult.elements, this.url, triggerNextStep, this.isDeltaSync);
                     }
                     break;
 
                 case CLEAN_UP:
-                    // Skip cleanup for incremental runs to avoid deleting unchanged entities
+                    // Defensive: CLEAN_UP is only enqueued from a full-sync GET_IDS branch, so reaching
+                    // this point already implies a full sync. The flag check is kept as a safeguard.
                     if (this.isDeltaSync) {
-                        log.info("Skipping cleanup for incremental sync run");
+                        log.info("Skipping cleanup for delta sync run of " + elementType.getSimpleName());
                         break;
                     }
                     // delete VM elements which are not in the new vmid list anymore
@@ -126,7 +128,7 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
 
                 case STORE_NEW:
                     // save element into DB
-                    VMResult storeResult = syncHandler.storeNewElement(this.input.get(0));
+                    VMResult storeResult = syncHandler.storeNewElement(this.input.getFirst());
                     if (triggerNextStep
                             && storeResult != null
                             && RequestStatus.SUCCESS.equals(storeResult.requestSummary.requestStatus)
@@ -137,32 +139,32 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                         if (baseUrl != null && baseUrl.contains("?")) {
                             baseUrl = baseUrl.substring(0, baseUrl.indexOf('?'));
                         }
-                        VMProcessHandler.getMasterData(this.elementType, SVMUtils.getId(elementType.cast(storeResult.elements.get(0))), baseUrl, triggerNextStep);
+                        VMProcessHandler.getMasterData(this.elementType, SVMUtils.getId(elementType.cast(storeResult.elements.getFirst())), baseUrl, triggerNextStep, this.isDeltaSync);
                     }
                     break;
 
                 case MASTER_DATA:
                     // get master data from SVM
-                    VMResult getResult = syncHandler.getSMVElementMasterDataById(this.input.get(0), this.url);
+                    VMResult getResult = syncHandler.getSMVElementMasterDataById(this.input.getFirst(), this.url);
                     // update local element in db
                     if (getResult != null
                             && RequestStatus.SUCCESS.equals(getResult.requestSummary.requestStatus)
                             && getResult.elements != null
                             && !getResult.elements.isEmpty()){
-                        syncHandler.syncDatabase(elementType.cast(getResult.elements.get(0)));
+                        syncHandler.syncDatabase(elementType.cast(getResult.elements.getFirst()));
 
                         // trigger Match CPE for VMComponent elements
                         if(triggerNextStep
                                 && getResult.requestSummary.totalAffectedElements > 0
                                 && VMComponent.class.isAssignableFrom(this.elementType)){
-                            VMProcessHandler.findComponentMatch(this.input.get(0), triggerNextStep);
+                            VMProcessHandler.findComponentMatch(this.input.getFirst(), triggerNextStep, this.isDeltaSync);
                         }
                     }
                     break;
 
-                case MATCH_SVM: 
+                case MATCH_SVM:
                     // try to find a match via cpe and text
-                    VMResult<VMMatch> componentMatchResult = syncHandler.findMatchByComponent(this.input.get(0));
+                    VMResult<VMMatch> componentMatchResult = syncHandler.findMatchByComponent(this.input.getFirst());
                     if (triggerNextStep
                             && componentMatchResult != null
                             && RequestStatus.SUCCESS.equals(componentMatchResult.requestSummary.requestStatus)
@@ -170,13 +172,13 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                             && !componentMatchResult.elements.isEmpty()
                             && componentMatchResult.requestSummary.totalAffectedElements > 0){
                         // re-queue for get Vulnerabilities
-                        VMProcessHandler.getVulnerabilitiesByComponentId(this.input.get(0), SVMConstants.VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep);
+                        VMProcessHandler.getVulnerabilitiesByComponentId(this.input.getFirst(), SVMConstants.VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep, this.isDeltaSync);
                     }
                     break;
 
                 case MATCH_SW360:
                     // try to find a match via cpe and text
-                    VMResult<String> releaseMatchResult = syncHandler.findMatchByRelease(this.input.get(0));
+                    VMResult<String> releaseMatchResult = syncHandler.findMatchByRelease(this.input.getFirst());
                     if (triggerNextStep
                             && releaseMatchResult != null
                             && RequestStatus.SUCCESS.equals(releaseMatchResult.requestSummary.requestStatus)
@@ -184,12 +186,12 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                             && !releaseMatchResult.elements.isEmpty()
                             && releaseMatchResult.requestSummary.totalAffectedElements > 0){
                         // re-queue for get Vulnerabilities
-                        VMProcessHandler.getVulnerabilitiesByComponentIds(releaseMatchResult.elements, SVMConstants.VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep);
+                        VMProcessHandler.getVulnerabilitiesByComponentIds(releaseMatchResult.elements, SVMConstants.VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep, this.isDeltaSync);
                     }
                     break;
 
                 case VULNERABILITIES:
-                    VMResult vulResult = syncHandler.getVulnerabilitiesByComponentId(this.input.get(0), this.url);
+                    VMResult vulResult = syncHandler.getVulnerabilitiesByComponentId(this.input.getFirst(), this.url);
                     if (triggerNextStep
                             && vulResult != null
                             && RequestStatus.SUCCESS.equals(vulResult.requestSummary.requestStatus)
@@ -197,13 +199,13 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                             && !vulResult.elements.isEmpty()
                             && vulResult.requestSummary.totalAffectedElements > 0){
                         // get master data of the vulnerabilities
-                        VMProcessHandler.getMasterData(Vulnerability.class, vulResult.elements, SVMConstants.VULNERABILITIES_URL, true);
+                        VMProcessHandler.getMasterData(Vulnerability.class, vulResult.elements, SVMConstants.VULNERABILITIES_URL, true, this.isDeltaSync);
                     }
                     break;
 
                 case FINISH:
                     // finishing reporting
-                    syncHandler.finishReport(this.input.get(0));
+                    syncHandler.finishReport(this.input.getFirst());
                     break;
 
                 default: throw new IllegalArgumentException("unknown task '"+task+"'. do not know what to do :( "+this.toString());
@@ -229,15 +231,14 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("VMProcessor{");
-        sb.append("elementType=").append(elementType);
-        sb.append(", input=").append(input);
-        sb.append(", task=").append(task);
-        sb.append(", url='").append(url).append('\'');
-        sb.append(", triggerNextStep=").append(triggerNextStep);
-        sb.append(", priority=").append(priority);
-        sb.append('}');
-        return sb.toString();
+        return "VMProcessor{" +
+                "elementType=" + elementType +
+                ", input=" + input +
+                ", task=" + task +
+                ", url='" + url + '\'' +
+                ", triggerNextStep=" + triggerNextStep +
+                ", priority=" + priority +
+                '}';
     }
 
     @Override

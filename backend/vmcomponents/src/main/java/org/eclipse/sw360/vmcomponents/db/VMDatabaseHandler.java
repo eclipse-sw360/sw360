@@ -272,13 +272,13 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
             return super.getByExternalId(type, vmid);
     }
 
-    public <T extends TBase> T getByCreationDate(Class<T> type, String creationDate){
+    public <T extends TBase> T getByCreationDate(Class<T> type, String creationDate, String elementType) {
         if (type == null || StringUtils.isEmpty(creationDate)){
             log.error("type/creationDate cannot be null "+type+" "+creationDate);
             return null;
         }
         if (VMProcessReporting.class.isAssignableFrom(type))
-            return (T) processRepo.getProcessReportingByStartDate(creationDate);
+            return (T) processRepo.getProcessReportingByStartDate(creationDate, elementType);
         else
             throw new IllegalArgumentException("unknown type "+ type.getSimpleName());
 

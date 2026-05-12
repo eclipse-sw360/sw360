@@ -19,8 +19,6 @@ import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.process.VMProcessHandler;
 
-import java.util.Properties;
-
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -72,32 +70,28 @@ public class VMComponentHandler implements VMComponentService.Iface {
     public RequestSummary synchronizeComponents() throws TException {
         VMProcessHandler.cacheVendors(compHandler);
 
-        // Use pre-loaded delta offsets from SVMConstants to avoid cross-module dependency
-        int deltaOffsetDays = SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS;
-        int vulnDeltaOffsetDays = SVMConstants.VULN_DELTA_OFFSET_DAYS;
-
-        // synchronize VMAction with delta sync
+        // synchronize VMAction
         String actionStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMAction.class.getSimpleName(), actionStart));
-        synchronizeElementType(VMAction.class, SVMConstants.ACTIONS_URL, deltaOffsetDays);
+        synchronizeElementType(VMAction.class, SVMConstants.ACTIONS_URL);
         log.info("Storing and getting master data of "+VMAction.class.getSimpleName()+" triggered. waiting for completion...");
 
-        // synchronize VMPriority with delta sync
+        // synchronize VMPriority
         String prioStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMPriority.class.getSimpleName(), prioStart));
-        synchronizeElementType(VMPriority.class, SVMConstants.PRIORITIES_URL, deltaOffsetDays);
+        synchronizeElementType(VMPriority.class, SVMConstants.PRIORITIES_URL);
         log.info("Storing and getting master data of "+VMPriority.class.getSimpleName()+" triggered. waiting for completion...");
 
-        // synchronize VMComponent with delta sync
+        // synchronize VMComponent
         String compStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMComponent.class.getSimpleName(), compStart));
-        synchronizeElementType(VMComponent.class, SVMConstants.COMPONENTS_URL, deltaOffsetDays);
+        synchronizeElementType(VMComponent.class, SVMConstants.COMPONENTS_URL);
         log.info("Storing and getting master data of "+VMComponent.class.getSimpleName()+" triggered. waiting for completion...");
 
-        // synchronize Vulnerability (bulk notifications) with delta sync
+        // synchronize Vulnerability (bulk notifications)
         String vulnStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(Vulnerability.class.getSimpleName(), vulnStart));
-        synchronizeElementType(Vulnerability.class, SVMConstants.VULNERABILITIES_URL, vulnDeltaOffsetDays);
+        synchronizeElementType(Vulnerability.class, SVMConstants.VULNERABILITIES_URL);
         log.info("Storing and getting master data of "+Vulnerability.class.getSimpleName()+" triggered. waiting for completion...");
 
         // triggerReporting
@@ -109,22 +103,66 @@ public class VMComponentHandler implements VMComponentService.Iface {
         return new RequestSummary(RequestStatus.SUCCESS);
     }
 
-    private <T extends TBase> void synchronizeElementType(Class<T> elementType, String url, int deltaOffsetDays) {
+    /**
+     * <p>Synchronize a single SVM element type. Decides between full sync (with
+     * cleanup) and delta sync based on time elapsed since the last successful
+     * sync.</p>
+     * <p>Sync strategy:<ul>
+     * <li>First run or no previous sync: full sync (no modified_after parameter).</li>
+     * <li>{@code Elapsed >= CLEANUP_FREQUENCY_DAYS}: full sync to purge SVM-side deletions from local DB.</li>
+     * <li>Otherwise: delta sync using modified_after = {@code lastEndDate - SVMSYNC_DELTA_OFFSET_DAYS}.</li>
+     * </ul></p>
+     */
+    private <T extends TBase> void synchronizeElementType(Class<T> elementType, String url) {
         VMProcessReporting lastProcess = dbHandler.getLastSuccessfulProcessByElementType(elementType.getSimpleName());
         String modifiedAfter = null;
         String syncType = "full";
-        
+
         if (lastProcess != null && lastProcess.isSetEndDate()) {
-            modifiedAfter = SVMUtils.calculateModifiedAfter(lastProcess.getEndDate(), deltaOffsetDays);
-            syncType = "delta(" + deltaOffsetDays + "d)";
+            long daysSinceLastSync = calculateDaysSinceLastSync(lastProcess.getEndDate());
+            if (daysSinceLastSync >= SVMConstants.CLEANUP_FREQUENCY_DAYS) {
+                // Time for periodic full sync (includes cleanup of items deleted on SVM)
+                syncType = "full (cleanup)";
+            } else {
+                // Use delta sync with configured overlap window
+                modifiedAfter = SVMUtils.calculateModifiedAfter(
+                        lastProcess.getEndDate(), SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS);
+                syncType = "delta(" + SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS + "d)";
+            }
         }
-        
-        log.info(String.format("SVM Sync [%s]: %s sync, last=%s, modified_after=%s", 
-            elementType.getSimpleName(), syncType, 
-            lastProcess != null ? lastProcess.getEndDate() : "none", 
+
+        log.info(String.format("SVM Sync [%s]: %s sync, last=%s, modified_after=%s",
+            elementType.getSimpleName(), syncType,
+            lastProcess != null ? lastProcess.getEndDate() : "none",
             modifiedAfter != null ? modifiedAfter : "none"));
-        
-        VMProcessHandler.getElementIdsWithModifiedAfter(elementType, url, modifiedAfter, true);
+
+        if (modifiedAfter != null) {
+            VMProcessHandler.getElementIdsWithModifiedAfter(elementType, url, modifiedAfter, true);
+        } else {
+            VMProcessHandler.getElementIds(elementType, url, true);
+        }
+    }
+
+    /**
+     * Calculate days elapsed since last sync end date.
+     *
+     * @param lastEndDate end date from last successful sync
+     * @return number of days since last sync, or 0 if calculation fails
+     */
+    private long calculateDaysSinceLastSync(String lastEndDate) {
+        if (CommonUtils.isNullEmptyOrWhitespace(lastEndDate)) {
+            return 0;
+        }
+        try {
+            java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            java.util.Date lastDate = format.parse(lastEndDate);
+            java.util.Date now = new java.util.Date();
+            long diffMillis = now.getTime() - lastDate.getTime();
+            return diffMillis / (1000 * 60 * 60 * 24);  // convert to days
+        } catch (Exception e) {
+            log.warn("Failed to calculate days since last sync: " + e.getMessage());
+            return 0;
+        }
     }
 
     @Override

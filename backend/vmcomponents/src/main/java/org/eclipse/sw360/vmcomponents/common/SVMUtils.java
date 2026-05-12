@@ -17,8 +17,17 @@ import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.apache.thrift.TBase;
+import org.jetbrains.annotations.Contract;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 /**
  * @author stefan.jaeger@evosoft.com
@@ -65,25 +74,54 @@ public class SVMUtils {
         });
     }
 
+    /**
+     * Compute the {@code modified_after} timestamp for a delta SVM call based
+     * on last run timestamp and the offset. Calculated as
+     * {@code lastEndDate - offsetDays}.
+     * <p>
+     * SW360 stores {@code VMProcessReporting.endDate} in server's local
+     * timezone. All shift arithmetic is performed in that local zone. The
+     * resulting timestamp is then converted to <strong>UTC</strong> for the SVM
+     * request, since SVM expects {@code modified_after} in UTC
+     * ({@code yyyy-MM-dd'T'HH:mm:ss}).
+     *
+     * @param lastEndDate end-date string of the last successful sync (local time)
+     * @param offsetDays  number of days to subtract before sending to SVM (overlap window)
+     * @return UTC timestamp string suitable for SVM's {@code modified_after} parameter.
+     *         The function can return {@code null} if lastEndDate is null or
+     *         there was error in calculating the new date. This should be
+     *         handled and used for force complete sync.
+     */
+    @Nullable
     public static String calculateModifiedAfter(String lastEndDate, int offsetDays) {
         try {
-            if (lastEndDate == null || lastEndDate.isEmpty()) {
+            if (CommonUtils.isNullEmptyOrWhitespace(lastEndDate)) {
                 return null;
             }
+            // 1) Parse and shift in server-local time.
             SimpleDateFormat sw360Format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Date lastDate = sw360Format.parse(lastEndDate);
 
-            LocalDateTime lastDateTime = LocalDateTime.ofInstant(lastDate.toInstant(), java.time.ZoneId.systemDefault());
-            LocalDateTime modifiedAfterDateTime = lastDateTime.minus(offsetDays, ChronoUnit.DAYS);
+            ZoneId localZone = ZoneId.systemDefault();
+            LocalDateTime localLast = LocalDateTime.ofInstant(lastDate.toInstant(), localZone);
+            LocalDateTime localShifted = localLast.minusDays(offsetDays);
+
+            // 2) Anchor in local zone, then convert to UTC for SVM output.
+            ZonedDateTime utc = localShifted.atZone(localZone).withZoneSameInstant(ZoneOffset.UTC);
 
             DateTimeFormatter svmFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-            return modifiedAfterDateTime.format(svmFormat);
+            return utc.format(svmFormat);
         } catch (Exception e) {
-            log.error("Error calculating modified_after parameter: " + e.getMessage(), e);
+            log.error("Error calculating modified_after parameter: {}", e.getMessage(), e);
             return null;
         }
     }
 
+    /**
+     * Create new {@link RequestSummary} object with given values.
+     * @return New RequestSummary object.
+     */
+    @Contract("_, _, _, _ -> new")
     public static RequestSummary newRequestSummary(RequestStatus status, int totalElements, int totalAffectedElements, String message) {
         RequestSummary summary = new RequestSummary();
         summary.setRequestStatus(status);
@@ -93,6 +131,13 @@ public class SVMUtils {
         return summary;
     }
 
+    /**
+     * For a given SVM component, get ID.
+     * @param t Component to get ID for.
+     * @return The ID of the component in SVM.
+     * @param <T> Type of SVM Object. Can be one of: {@link VMComponent},
+     *           {@link VMAction}, {@link VMPriority} or {@link Vulnerability}.
+     */
     public static <T extends TBase> String getVmid(T t) {
         if (VMComponent.class.isAssignableFrom(t.getClass()))
             return ((VMComponent) t).getVmid();
@@ -106,6 +151,13 @@ public class SVMUtils {
             throw new IllegalArgumentException("unknown type " + t.getClass().getSimpleName());
     }
 
+    /**
+     * For a given SVM component, get CouchDB ID.
+     * @param t Component to get ID for.
+     * @return The ID of the component in CouchDB.
+     * @param <T> Type of SVM Object. Can be one of: {@link VMComponent},
+     *           {@link VMAction}, {@link VMPriority} or {@link Vulnerability}.
+     */
     public static <T extends TBase> String getId(T t) {
         if (VMComponent.class.isAssignableFrom(t.getClass()))
             return ((VMComponent) t).getId();
@@ -113,8 +165,9 @@ public class SVMUtils {
             return ((VMAction) t).getId();
         else if (VMPriority.class.isAssignableFrom(t.getClass()))
             return ((VMPriority) t).getId();
+        else if (Vulnerability.class.isAssignableFrom(t.getClass()))
+            return ((Vulnerability) t).getId();
         else
             throw new IllegalArgumentException("unknown type " + t.getClass().getSimpleName());
     }
-
 }

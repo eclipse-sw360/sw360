@@ -263,20 +263,20 @@ public class VMDatabaseHandlerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetByCreationDateException() throws Exception {
-        handler.getByCreationDate(VMAction.class, "1");
+        handler.getByCreationDate(VMAction.class, "1", VMAction.class.getSimpleName());
     }
 
     @Test
     public void testGetByCreationDate() throws Exception {
-        VMProcessReporting reporting = handler.getByCreationDate(VMProcessReporting.class, null);
+        VMProcessReporting reporting = handler.getByCreationDate(VMProcessReporting.class, null, VMAction.class.getSimpleName());
         assertNull(reporting);
 
         String time = SW360Utils.getCreatedOnTime();
-        reporting = handler.getByCreationDate(VMProcessReporting.class, time);
+        reporting = handler.getByCreationDate(VMProcessReporting.class, time, VMAction.class.getSimpleName());
         assertNull(reporting);
 
         handler.add(new VMProcessReporting(VMAction.class.getSimpleName(), time));
-        reporting = handler.getByCreationDate(VMProcessReporting.class, time);
+        reporting = handler.getByCreationDate(VMProcessReporting.class, time, VMAction.class.getSimpleName());
         assertNotNull(reporting);
         assertEquals(time, reporting.getStartDate());
         assertNull(reporting.getEndDate());
