@@ -12,10 +12,13 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -32,6 +35,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Map;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ScheduleSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
@@ -42,7 +47,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
 
     @MockitoBean
     private Sw360ScheduleService scheduleServiceMock;
-    private RequestSummary requestSummary = new RequestSummary();
+    private RequestSummary requestSummary = new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
 
     @Before
     public void before() throws TException {
@@ -53,20 +58,23 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
         sw360User.setFullname("John Doe");
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(sw360User);
         given(this.scheduleServiceMock.cancelAllServices(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.scheduleCveSearch(any())).willReturn(requestSummary);
-        given(this.scheduleServiceMock.cancelCveSearch(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.deleteAttachmentService(any())).willReturn(requestSummary);
-        given(this.scheduleServiceMock.cancelDeleteAttachment(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.cancelAttachmentDeletionLocalFS(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.triggerCveSearch(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.cancelSvmSync(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.cancelSvmReverseMatch(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.scheduleSvmReverseMatch(any())).willReturn(requestSummary);
-        given(this.scheduleServiceMock.svmReleaseTrackingFeedback(any())).willReturn(requestSummary);
-        given(this.scheduleServiceMock.svmMonitoringListUpdate(any())).willReturn(requestSummary);
-        given(this.scheduleServiceMock.triggerSrcUpload(any())).willReturn(requestSummary);
-        given(this.scheduleServiceMock.cancelSvmMonitoringListUpdate(any())).willReturn(RequestStatus.SUCCESS);
-        given(this.scheduleServiceMock.unscheduleSrcUpload(any())).willReturn(RequestStatus.SUCCESS);
+
+        // New unified endpoints
+        given(this.scheduleServiceMock.scheduleService(any(), anyString())).willReturn(requestSummary);
+        given(this.scheduleServiceMock.unscheduleService(any(), anyString())).willReturn(RequestStatus.SUCCESS);
+        given(this.scheduleServiceMock.triggerManualService(any(), anyString())).willReturn(RequestStatus.SUCCESS);
+        given(this.scheduleServiceMock.isServiceScheduled(anyString(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.scheduleServiceMock.isAnyServiceScheduled(any())).willReturn(RequestStatus.SUCCESS);
+        given(this.scheduleServiceMock.getServiceDetails(anyString(), any()))
+                .willReturn(Map.of("isScheduled", true, "firstOffsetSeconds", 0,
+                        "intervalSeconds", 86400, "nextSynchronization", "2026-05-13T00:00:00"));
+        given(this.scheduleServiceMock.getAllServicesDetails(any()))
+                .willReturn(java.util.Map.of(
+                        "cvesearchService", Map.of("isScheduled", true, "firstOffsetSeconds", 0,
+                                "intervalSeconds", 86400, "nextSynchronization", "2026-05-13T00:00:00"),
+                        "svmsyncService", Map.of("isScheduled", false, "firstOffsetSeconds", 3600,
+                                "intervalSeconds", 86400, "nextSynchronization", "N/A")
+                ));
 
     }
 
@@ -75,135 +83,81 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(post("/api/schedule/unscheduleAllServices")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isOk());
+    }
+
+    // ========== NEW UNIFIED ENDPOINT SPEC TESTS ==========
+
+    @Test
+    public void should_document_schedule_service_by_name() throws Exception {
+        mockMvc.perform(post("/api/schedule/scheduleService")
+                .param("serviceName", "cvesearchService")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void should_document_schedule_cve_service() throws Exception {
-        mockMvc.perform(post("/api/schedule/cveService")
+    public void should_document_unschedule_service_by_name() throws Exception {
+        mockMvc.perform(delete("/api/schedule/unscheduleService")
+                .param("serviceName", "cvesearchService")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void should_document_schedule_svm_sync() throws Exception {
-        mockMvc.perform(post("/api/schedule/scheduleSvmSync")
+    public void should_document_trigger_service_by_name() throws Exception {
+        mockMvc.perform(post("/api/schedule/triggerService")
+                .param("serviceName", "cvesearchService")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void should_document_cancel_schedule_svm_sync() throws Exception {
-        mockMvc.perform(delete("/api/schedule/unscheduleSvmSync")
+    public void should_document_get_service_details_for_specific_service() throws Exception {
+        mockMvc.perform(get("/api/schedule/serviceDetails")
+                .param("serviceName", "cvesearchService")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cvesearchService.isScheduled").value(true))
+                .andExpect(jsonPath("$.cvesearchService.firstOffsetSeconds").value(0))
+                .andExpect(jsonPath("$.cvesearchService.intervalSeconds").value(86400))
+                .andExpect(jsonPath("$.cvesearchService.nextSynchronization").value("2026-05-13T00:00:00"));
     }
 
     @Test
-    public void should_document_reverse_svm_match() throws Exception {
-        mockMvc.perform(post("/api/schedule/svmReverseMatch")
+    public void should_document_get_all_service_details() throws Exception {
+        mockMvc.perform(get("/api/schedule/serviceDetails")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cvesearchService").exists())
+                .andExpect(jsonPath("$.svmsyncService").exists())
+                .andExpect(jsonPath("$.cvesearchService.isScheduled").value(true))
+                .andExpect(jsonPath("$.svmsyncService.isScheduled").value(false));
     }
 
     @Test
-    public void should_document_cancel_reverse_match() throws Exception {
-        mockMvc.perform(delete("/api/schedule/unscheduleSvmReverseMatch")
+    public void should_document_is_any_service_scheduled_true() throws Exception {
+        mockMvc.perform(get("/api/schedule/isAnyServiceScheduled")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
     }
 
     @Test
-    public void should_document_track_feedback() throws Exception {
-        mockMvc.perform(post("/api/schedule/trackingFeedback")
+    public void should_document_check_service_status() throws Exception {
+        mockMvc.perform(get("/api/schedule/status")
+                .param("serviceName", "cvesearchService")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_svm_list_update() throws Exception {
-        mockMvc.perform(post("/api/schedule/monitoringListUpdate")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_cancel_monitoring_svm_list() throws Exception {
-        mockMvc.perform(delete("/api/schedule/cancelMonitoringListUpdate")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_src_upload() throws Exception {
-        mockMvc.perform(post("/api/schedule/srcUpload")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_cancel_monitoring_cancel_svm_list() throws Exception {
-        mockMvc.perform(delete("/api/schedule/cancelSrcUpload")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_unschedule_cve_search() throws Exception {
-        mockMvc.perform(post("/api/schedule/unscheduleCve")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_schedule_service_from_local() throws Exception {
-        mockMvc.perform(post("/api/schedule/deleteAttachment")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_schedule_cve_search() throws Exception {
-        mockMvc.perform(post("/api/schedule/cveSearch")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_cancel_schedule_attachment() throws Exception {
-        mockMvc.perform(post("/api/schedule/unScheduleDeleteAttachment")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void should_document_delete_old_attachment_from_local() throws Exception {
-        mockMvc.perform(post("/api/schedule/cancelAttachmentDeletion")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
-    }
-
-    @Test
-    public void schedule_source_upload() throws Exception {
-        mockMvc.perform(post("/api/schedule/scheduleSourceUploadForReleaseComponents")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.serviceName").value("cvesearchService"))
+                .andExpect(jsonPath("$.isScheduled").value(true));
     }
 
 }

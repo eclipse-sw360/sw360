@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.schedule;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -38,6 +39,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @BasePathAwareController
@@ -48,6 +50,18 @@ import java.util.Map;
 @SecurityRequirement(name = "basic")
 public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String SCHEDULE_URL = "/schedule";
+
+    private static final String SERVICE_NAME_DESCRIPTION = """
+            Name of the service. Allowed values:
+            - `cvesearchService` – CVE Search sync
+            - `svmsyncService` – SVM component sync
+            - `svmmatchService` – SVM reverse match
+            - `deleteattachmentService` – Delete old attachments
+            - `svmTrackingFeedbackService` – SVM tracking feedback
+            - `svmListUpdateService` – SVM monitoring list update
+            - `srcAttachmentUploadService` – Source attachment upload
+            - `importDepartmentService` – Import department schedule
+            """;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
@@ -62,6 +76,14 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return resource;
     }
 
+    private HttpStatus httpStatusFromRequestStatus(RequestStatus requestStatus) {
+        return switch (requestStatus) {
+            case SUCCESS -> HttpStatus.OK;
+            case ACCESS_DENIED -> HttpStatus.FORBIDDEN;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
+    }
+
     @Operation(
             summary = "Cancel all scheduled services.",
             description = "Cancel all services scheduled for the instance.",
@@ -74,316 +96,12 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                                     example = "SUCCESS")))
     })
     @PostMapping(SCHEDULE_URL + "/unscheduleAllServices")
-    public ResponseEntity<?> unscheduleAllServices()throws TException {
+    public ResponseEntity<?> unscheduleAllServices() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelAllServices(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
+        return new ResponseEntity<>(requestStatus, httpStatusFromRequestStatus(requestStatus));
     }
 
-    @Operation(
-            summary = "Schedule the CVE service.",
-            description = "Manually schedule the CVE service.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/cveService")
-    public ResponseEntity<?> scheduleCve() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.scheduleCveSearch(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestSummary, status);
-    }
-
-    @Operation(
-            summary = "Schedule the SVM sync.",
-            description = "Manually schedule the SVM Sync service.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/scheduleSvmSync")
-    public ResponseEntity<?> scheduleSvmSync()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.svmSync(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestSummary, status);
-    }
-
-    @Operation(
-            summary = "Unschedule the CVE service.",
-            description = "Unschedule the CVE service.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/unscheduleCve")
-    public ResponseEntity<?> unscheduleCveSearch() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.cancelCveSearch(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Cancel scheduled SVM sync.",
-            description = "Cancel the scheduled SVM Sync service.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @DeleteMapping(SCHEDULE_URL + "/unscheduleSvmSync")
-    public ResponseEntity<?> unscheduleSvmSync() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.cancelSvmSync(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Schedule the attachment deletion service.",
-            description = "Schedule service for attachment deletion from local FS.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/deleteAttachment")
-    public ResponseEntity<?> scheduleDeleteAttachment() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.deleteAttachmentService(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestSummary, status);
-    }
-
-    @Operation(
-            summary = "Reverse SVM match.",
-            description = "Reverse SVM match.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/svmReverseMatch")
-    public ResponseEntity<?> svmReverseMatch() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.scheduleSvmReverseMatch(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestSummary, status);
-    }
-
-    @Operation(
-            summary = "Unschedule the attachment deletion service.",
-            description = "Unschedule the service for attachment deletion from local FS.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/unScheduleDeleteAttachment")
-    public ResponseEntity<?> unscheduleDeleteAttachment()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.cancelDeleteAttachment(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Cancel scheduled reverse SVM match.",
-            description = "Cancel the scheduled reverse SVM match service.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @DeleteMapping(SCHEDULE_URL + "/unscheduleSvmReverseMatch")
-    public ResponseEntity<?> unscheduleSvmReverseMatch()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.cancelSvmReverseMatch(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Cancel the attachment deletion service.",
-            description = "Cancel service for attachment deletion from local FS.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/cancelAttachmentDeletion")
-    public ResponseEntity<?> attachmentDeleteLocalFS() throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.cancelAttachmentDeletionLocalFS(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Track the user feedback.",
-            description = "Track the user feedback.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/trackingFeedback")
-    public ResponseEntity<?> svmTrackingFeedback()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.svmReleaseTrackingFeedback(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestSummary, status);
-    }
-
-    @Operation(
-            summary = "Update the SVM list.",
-            description = "Update the SVM list.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/monitoringListUpdate")
-    public ResponseEntity<?> monitoringListUpdate()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.svmMonitoringListUpdate(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestSummary, status);
-    }
-
-    @Operation(
-            summary = "Cancel the SVM list update.",
-            description = "Cancel the scheduled SVM list update.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @DeleteMapping(SCHEDULE_URL + "/cancelMonitoringListUpdate")
-    public ResponseEntity<?> cancelMonitoringListUpdate()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.cancelSvmMonitoringListUpdate(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Schedule the CVE search.",
-            description = "Schedule the CVE search.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/cveSearch")
-    public ResponseEntity<?> cveSearch()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.triggerCveSearch(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Upload the source attachment.",
-            description = "Upload the source attachment.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/srcUpload")
-    public ResponseEntity<?> srcUpload()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.triggerSrcUpload(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestSummary, status);
-    }
-
-    @Operation(
-            summary = "Cancel the source attachment upload.",
-            description = "Cancel the source attachment upload.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @DeleteMapping(SCHEDULE_URL + "/cancelSrcUpload")
-    public ResponseEntity<?> cancelsrcUpload()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.unscheduleSrcUpload(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
-
-    @Operation(
-            summary = "Schedule the source upload for release components.",
-            description = "Schedules the source upload process for release components.",
-            tags = {"Admin"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Status in the response body.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class,
-                                    example = "SUCCESS")))
-    })
-    @PostMapping(SCHEDULE_URL + "/scheduleSourceUploadForReleaseComponents")
-    public ResponseEntity<?> scheduleSourceUploadForReleaseComponents()throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus = scheduleService.triggerSourceUploadForReleaseComponents(sw360User);
-        HttpStatus status = HttpStatus.ACCEPTED;
-        return new ResponseEntity<>(requestStatus, status);
-    }
 
     @Operation(
             summary = "Check the status of a scheduled service.",
@@ -438,4 +156,181 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         boolean isAnyServiceScheduled = scheduleService.isAnyServiceScheduled(sw360User) == RequestStatus.SUCCESS;
         return ResponseEntity.ok(isAnyServiceScheduled);
     }
+
+
+    @Operation(
+            summary = "Schedule a service.",
+            description = "Schedules a specific service for periodic execution by its service name.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Service scheduled successfully.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = RequestSummary.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request due to missing or invalid service name.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "serviceName parameter is required"))),
+            @ApiResponse(responseCode = "500", description = "Failed to schedule the service.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "FAILURE")))
+    })
+    @PostMapping(SCHEDULE_URL + "/scheduleService")
+    public ResponseEntity<?> scheduleService(
+            @Parameter(description = SERVICE_NAME_DESCRIPTION,
+                    schema = @Schema(type = "string", allowableValues = {
+                            "cvesearchService", "svmsyncService", "svmmatchService",
+                            "deleteattachmentService", "svmTrackingFeedbackService",
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                    }), required = true)
+            @RequestParam(value = "serviceName") String serviceName
+    ) throws TException {
+        if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
+            throw new BadRequestClientException("serviceName parameter is required");
+        }
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.scheduleService(sw360User, serviceName);
+        RequestStatus requestStatus = requestSummary.getRequestStatus();
+        return new ResponseEntity<>(requestSummary, httpStatusFromRequestStatus(requestStatus));
+    }
+
+
+    @Operation(
+            summary = "Unschedule a service.",
+            description = "Cancels the scheduled periodic execution of a specific service by its service name.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Service unscheduled successfully.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS"))),
+            @ApiResponse(responseCode = "400", description = "Bad request due to missing or invalid service name.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "serviceName parameter is required"))),
+            @ApiResponse(responseCode = "403", description = "Access denied. Admin privileges required.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "ACCESS_DENIED"))),
+            @ApiResponse(responseCode = "500", description = "Failed to unschedule the service.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "FAILURE")))
+    })
+    @DeleteMapping(SCHEDULE_URL + "/unscheduleService")
+    public ResponseEntity<?> unscheduleService(
+            @Parameter(description = SERVICE_NAME_DESCRIPTION,
+                    schema = @Schema(type = "string", allowableValues = {
+                            "cvesearchService", "svmsyncService", "svmmatchService",
+                            "deleteattachmentService", "svmTrackingFeedbackService",
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                    }), required = true)
+            @RequestParam(value = "serviceName") String serviceName
+    ) throws TException {
+        if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
+            throw new BadRequestClientException("serviceName parameter is required");
+        }
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.unscheduleService(sw360User, serviceName);
+        return new ResponseEntity<>(requestStatus, httpStatusFromRequestStatus(requestStatus));
+    }
+
+
+    @Operation(
+            summary = "Manually trigger a service.",
+            description = "Immediately triggers a one-time execution of a specific service by its service name, independent of its schedule.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Service triggered successfully.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS"))),
+            @ApiResponse(responseCode = "400", description = "Bad request due to missing or invalid service name.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "serviceName parameter is required"))),
+            @ApiResponse(responseCode = "403", description = "Access denied. Admin privileges required.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "ACCESS_DENIED"))),
+            @ApiResponse(responseCode = "500", description = "Failed to trigger the service.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "FAILURE")))
+    })
+    @PostMapping(SCHEDULE_URL + "/triggerService")
+    public ResponseEntity<?> triggerService(
+            @Parameter(description = SERVICE_NAME_DESCRIPTION,
+                    schema = @Schema(type = "string", allowableValues = {
+                            "cvesearchService", "svmsyncService", "svmmatchService",
+                            "deleteattachmentService", "svmTrackingFeedbackService",
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                    }), required = true)
+            @RequestParam(value = "serviceName") String serviceName
+    ) throws TException {
+        if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
+            throw new BadRequestClientException("serviceName parameter is required");
+        }
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.triggerManualService(sw360User, serviceName);
+        return new ResponseEntity<>(requestStatus, httpStatusFromRequestStatus(requestStatus));
+    }
+
+    @Operation(
+            summary = "Get scheduler details for one or all services.",
+            description = """
+                    Returns scheduler details for the specified service, or for **all registered services** if `serviceName` is omitted.
+
+                    Each entry includes:
+                    - `serviceName`: Name of the service
+                    - `isScheduled`: Whether the service is currently scheduled
+                    - `firstOffsetSeconds`: First run offset from midnight (in seconds)
+                    - `intervalSeconds`: Repeat interval (in seconds)
+                    - `nextSynchronization`: Next scheduled run time
+                    """,
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Scheduler details returned successfully.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class,
+                                    example = """
+                                            {
+                                              "cvesearchService": {
+                                                "isScheduled": true,
+                                                "firstOffsetSeconds": 0,
+                                                "intervalSeconds": 86400,
+                                                "nextSynchronization": "2026-05-13T00:00:00"
+                                              },
+                                              "svmsyncService": {
+                                                "isScheduled": false,
+                                                "firstOffsetSeconds": 3600,
+                                                "intervalSeconds": 86400,
+                                                "nextSynchronization": "N/A"
+                                              }
+                                            }"""))),
+            @ApiResponse(responseCode = "400", description = "Invalid service name provided."),
+            @ApiResponse(responseCode = "403", description = "Access denied. Admin privileges required.")
+    })
+    @GetMapping(value = SCHEDULE_URL + "/serviceDetails")
+    public ResponseEntity<Map<String, Map<String, Object>>> getServiceDetails(
+            @Parameter(description = SERVICE_NAME_DESCRIPTION + "\nOmit to retrieve details for **all services**.",
+                    schema = @Schema(type = "string", allowableValues = {
+                            "cvesearchService", "svmsyncService", "svmmatchService",
+                            "deleteattachmentService", "svmTrackingFeedbackService",
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                    }))
+            @RequestParam(value = "serviceName", required = false) String serviceName
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
+            return ResponseEntity.ok(scheduleService.getAllServicesDetails(sw360User));
+        }
+        Map<String, Object> details = scheduleService.getServiceDetails(serviceName, sw360User);
+        return ResponseEntity.ok(Map.of(serviceName, details));
+    }
+
 }
