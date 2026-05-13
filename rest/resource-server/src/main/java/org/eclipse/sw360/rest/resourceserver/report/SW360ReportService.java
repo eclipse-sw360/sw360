@@ -101,6 +101,9 @@ public class SW360ReportService {
     @NonNull
     private final Sw360LicenseInfoService licenseInfoService;
 
+    @org.springframework.beans.factory.annotation.Value("${sw360.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
     private static final Set<String> SUPPORTED_FORMATS = Set.of("xlsx", "csv", "json", "xml");
     ThriftClients thriftClients = new ThriftClients();
@@ -268,9 +271,11 @@ public class SW360ReportService {
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
                 String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId);
-                String backendURL = base + "api/reports/download?user=" + user.getEmail() + "&module=projects"
-                        + "&extendedByReleases=" + withLinkedReleases + "&projectId=" + projectId + "&token=";
-                URL emailURL = new URI(backendURL + URLEncoder.encode(projectPath, StandardCharsets.UTF_8)).toURL();
+                String downloadUrl = frontendUrl + "/reports/download?module=projects"
+                        + "&extendedByReleases=" + withLinkedReleases + "&projectId=" + projectId + "&token="
+                        + URLEncoder.encode(projectPath, StandardCharsets.UTF_8);
+                URL emailURL = new URI(downloadUrl).toURL();
+                log.debug("Report download link for user {}: {}", user.getEmail(), emailURL);
                 if (!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
                     sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
                 }
@@ -298,9 +303,11 @@ public class SW360ReportService {
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
                 String componentPath = componentclient.getComponentReportInEmail(sw360User, withLinkedReleases);
-                String backendURL = base + "api/reports/download?user=" + sw360User.getEmail() + "&module=components"
-                        + "&extendedByReleases=" + withLinkedReleases + "&token=";
-                URL emailURL = new URI(backendURL + URLEncoder.encode(componentPath, StandardCharsets.UTF_8)).toURL();
+                String downloadUrl = frontendUrl + "/reports/download?module=components"
+                        + "&extendedByReleases=" + withLinkedReleases + "&token="
+                        + URLEncoder.encode(componentPath, StandardCharsets.UTF_8);
+                URL emailURL = new URI(downloadUrl).toURL();
+                log.debug("Report download link for user {}: {}", sw360User.getEmail(), emailURL);
                 if (!CommonUtils.isNullEmptyOrWhitespace(componentPath)) {
                     sendComponentExportSpreadsheetSuccessMail(emailURL.toString(), sw360User.getEmail());
                 }

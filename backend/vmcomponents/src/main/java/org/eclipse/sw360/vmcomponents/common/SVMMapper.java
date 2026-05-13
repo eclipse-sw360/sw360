@@ -148,8 +148,8 @@ public class SVMMapper {
             String description = (String) json.get(SVMConstants.VULNERABILITY_DESCRIPTION);
             String publishDate = mapSVMDate((String) json.get(SVMConstants.VULNERABILITY_PUBLISH_DATE));
             String lastUpdate = mapSVMDate((String) json.get(SVMConstants.VULNERABILITY_LAST_UPDATE));
-            Long priority = (Long) json.get(SVMConstants.VULNERABILITY_PRIORITY);
-            Long action = (Long) json.get(SVMConstants.VULNERABILITY_ACTION);
+            Long priority = toLong(json.get(SVMConstants.VULNERABILITY_PRIORITY));
+            Long action = toLong(json.get(SVMConstants.VULNERABILITY_ACTION));
             Set<String> compVmids = mapJSONStringArray((JsonArray) json.get(SVMConstants.VULNERABILITY_COMPONENTS));
             Set<VendorAdvisory> vas = mapJSONVendorAdvisories((JsonArray) json.get(SVMConstants.VULNERABILITY_VENDOR_ADVISORIES));
             String legalNotice = (String) json.get(SVMConstants.VULNERABILITY_LEGAL_NOTICE);
@@ -199,6 +199,27 @@ public class SVMMapper {
         return set;
     }
 
+    /**
+     * Coerce a JSON numeric value to {@link Long}. The json-simple-cliftonlabs
+     * parser deserialises JSON numbers as {@link java.math.BigDecimal} by
+     * default, so a raw {@code (Long) json.get(...)} cast blows up with
+     * {@link ClassCastException}. This helper accepts any {@link Number} (and
+     * numeric strings) and returns {@code null} for missing values.
+     */
+    private static Long toLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        try {
+            return Long.parseLong(value.toString().trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     private static Set<CVEReference> mapJSONCVEReferences(JsonArray cveReferences){
         if (cveReferences == null || cveReferences.size() == 0){
             return Collections.EMPTY_SET;
@@ -206,8 +227,8 @@ public class SVMMapper {
         Set<CVEReference> set = new HashSet<>();
         for (Object cve : cveReferences) {
             JsonObject cveReference = (JsonObject) cve;
-            Long cveYear = (Long) cveReference.get(SVMConstants.VULNERABILITY_CVE_YEAR);
-            Long cveNumber = (Long) cveReference.get(SVMConstants.VULNERABILITY_CVE_NUMBER);
+            Long cveYear = toLong(cveReference.get(SVMConstants.VULNERABILITY_CVE_YEAR));
+            Long cveNumber = toLong(cveReference.get(SVMConstants.VULNERABILITY_CVE_NUMBER));
             set.add(new CVEReference(cveYear==null?null:cveYear.toString(), cveNumber==null?null:cveNumber.toString()));
         }
         return set;

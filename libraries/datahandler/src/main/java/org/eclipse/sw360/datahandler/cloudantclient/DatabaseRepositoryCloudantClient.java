@@ -367,6 +367,17 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryForIds(query);
     }
 
+    public Set<String> queryForIdsAsValue(String queryName, List<Object> keys) {
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName);
+
+        PostViewOptions req = query
+                .keys(keys)
+                .reduce(false)
+                .build();
+
+        return queryForIdsFromReqBuilder(req);
+    }
+
     public Set<String> queryForIdsPaginated(
             String queryName, String startKey, String endKey, PaginationData pageData, boolean isReduced
     ) {
