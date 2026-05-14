@@ -40,17 +40,26 @@ public class TokenCapabilityAuthoritiesTest {
     }
 
     @Test
-    public void shouldTreatUnknownScopesAsReadOnly() {
+    public void shouldTreatUnknownJwtScopesAsReadWriteIdentityToken() {
         Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromJwtScopeClaim(List.of("profile", "email"));
 
         assertThat(authorities)
                 .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
     }
 
     @Test
-    public void shouldTreatMissingScopeAsReadOnly() {
+    public void shouldTreatMissingJwtScopeAsReadWriteIdentityToken() {
         Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromJwtScopeClaim(null);
+
+        assertThat(authorities)
+                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
+                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+    }
+
+    @Test
+    public void shouldTreatUnknownApiTokenAuthoritiesAsReadOnly() {
+        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromAuthorityNames(List.of("profile", "email"));
 
         assertThat(authorities)
                 .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
@@ -69,15 +78,15 @@ public class TokenCapabilityAuthoritiesTest {
     }
 
     @Test
-    public void shouldStripWriteAuthorityForReadOnlyTokenCapabilities() {
+    public void shouldKeepUserAuthoritiesForReadOnlyTokenCapabilities() {
         Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.mergeForTokenAuthentication(
                 Set.of(new SimpleGrantedAuthority("ADMIN"), new SimpleGrantedAuthority("WRITE")),
                 Set.of(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ)));
 
         assertThat(authorities)
                 .contains(new SimpleGrantedAuthority("ADMIN"))
+                .contains(new SimpleGrantedAuthority("WRITE"))
                 .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .doesNotContain(new SimpleGrantedAuthority("WRITE"))
                 .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
     }
 
