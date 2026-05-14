@@ -20,13 +20,22 @@ import java.util.Set;
 @Getter
 public class OAuthClientResource {
 
+    /**
+     * Placeholder used for {@code client_secret} in any response that lists
+     * existing clients, so we never leak the BCrypt hash (or, worse, a legacy
+     * plaintext secret) through the admin API.
+     */
+    public static final String HIDDEN_SECRET = "<hidden>";
+
     @Setter
     @JsonProperty("description")
     private String description;
 
+    @Setter
     @JsonProperty("client_id")
     private String clientId;
 
+    @Setter
     @JsonProperty("client_secret")
     private String clientSecret;
 

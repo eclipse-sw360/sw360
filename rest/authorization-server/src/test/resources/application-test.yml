@@ -8,11 +8,6 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-security:
-  customheader:
-    headername:
-      # You have to enable authorization by headers explicitly here
-      enabled: true
 
 # Suppress warnings in test logs
 logging:
