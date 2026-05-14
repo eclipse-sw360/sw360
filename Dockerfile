@@ -83,6 +83,7 @@ ENV CLOUDANT_ENABLE_RETRIES="true"
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
 ENV JWKS_ISSUER_URI="http://localhost:8080/authorization"
+ENV SW360_SECURITY_JWT_TRUSTED_ISSUERS="http://localhost:8080/authorization,http://localhost:8083/realms/sw360"
 #
 # Email configs
 ENV EMAIL_PROPERTIES_HOST=""

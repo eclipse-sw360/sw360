@@ -11,8 +11,14 @@
 
 server:
   port: 8091
+  compression:
+    enabled: true
+    min-response-size: 2KB
+    mime-types: application/json,application/hal+json,text/plain,text/html,text/xml,application/xml
   servlet:
     context-path: /resource/api
+  tomcat:
+    connection-timeout: 60s
 
 management:
   endpoints:
@@ -48,7 +54,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          #issuer-uri: http://localhost:8083/realms/sw360
+          # Single issuer fallback used when sw360.security.jwt.trusted-issuers is not configured.
           issuer-uri: $JWKS_ISSUER_URI
 
 #logging:
@@ -86,11 +92,14 @@ sw360:
   couchdb-url: $COUCHDB_URL
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
-   security:
-     # Set SW360_SECURITY_HTTP_BASIC_ENABLED=true to re-enable Basic auth (dev/testing only).
-     # Default is false; production containers should authenticate via JWT or API token.
-     http-basic:
-       enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
+  security:
+    # Set SW360_SECURITY_HTTP_BASIC_ENABLED=true to re-enable Basic auth (dev/testing only).
+    # Production containers should authenticate via JWT or API token.
+    http-basic:
+      enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
+    jwt:
+      # Comma-separated Docker env value rendered as a YAML flow sequence.
+      trusted-issuers: [$SW360_SECURITY_JWT_TRUSTED_ISSUERS]
 
 blacklist:
   sw360:

@@ -64,9 +64,16 @@ file to tweak SW360 behaviour.
 
 **Spring Controllers**
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
-* `JWKS_ISSUER_URI`: URI for JWKS issuer (default:
-    `http://localhost:8080/authorization`). Use
-    `http://localhost:8083/realms/sw360` for KeyCloak based setup.
+* `SW360_SECURITY_JWT_TRUSTED_ISSUERS`: Comma-separated JWT issuer URLs trusted
+    by the Resource Server (default:
+    `http://localhost:8080/authorization,http://localhost:8083/realms/sw360`).
+    Configure all issuers whose Bearer tokens the REST API should accept, for
+    example the built-in SW360 Authorization Server and Keycloak. Each value
+    must exactly match the token's `iss` claim and must be reachable from the
+    `sw360` container for issuer discovery/JWKS lookup.
+* `JWKS_ISSUER_URI`: Single issuer fallback URI (default:
+    `http://localhost:8080/authorization`). This is used only if
+    `sw360.security.jwt.trusted-issuers` is not generated/configured.
 
 **Email Configuration**
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to
