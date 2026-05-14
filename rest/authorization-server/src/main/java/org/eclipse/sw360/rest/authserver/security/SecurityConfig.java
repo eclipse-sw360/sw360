@@ -10,7 +10,6 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +21,8 @@ import org.springframework.security.config.annotation.web.configuration.OAuth2Au
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
@@ -40,18 +41,13 @@ import java.util.UUID;
  *   <li>{@link #webFilterChainForOauth(HttpSecurity)} (order 1) - the OAuth2 /
  *       OIDC endpoints managed by Spring Authorization Server.</li>
  *   <li>{@link #appSecurity(HttpSecurity)} (order 2) - everything else.
- *       Anonymous browser traffic is sent to the form login page, but requests
- *       to {@code /client-management/**} are challenged with HTTP Basic so
- *       that admin automation (token-generator-bot, the install scripts,
- *       etc.) can authenticate without holding a JWT.</li>
+ *       Requests to {@code /client-management/**} accept <em>both</em> HTTP
+ *       Basic <em>and</em> Bearer JWT. The JWT's {@code scope} claim is mapped
+ *       to Spring authorities <strong>without</strong> the default
+ *       {@code SCOPE_} prefix so that {@code hasAuthority("ADMIN")} matches
+ *       tokens carrying {@code "ADMIN"} in their scope set. Anonymous browser
+ *       traffic is sent to the form login page.</li>
  * </ol>
- *
- * <p>The {@link org.springframework.security.web.authentication.www.BasicAuthenticationFilter}
- * remains installed globally - it is a passive filter that only acts when an
- * {@code Authorization: Basic ...} header is present - but the
- * {@code WWW-Authenticate: Basic} challenge is only emitted for the
- * {@code /client-management/**} path so browsers never see a Basic-Auth popup
- * on other endpoints.</p>
  *
  * @author smruti.sahoo@siemens.com
  */
@@ -67,7 +63,7 @@ public class SecurityConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain webFilterChainForOauth(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain webFilterChainForOauth(HttpSecurity httpSecurity) {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
                 new OAuth2AuthorizationServerConfigurer();
         RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
@@ -106,11 +102,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(CLIENT_MGMT_PATTERN).hasAuthority("ADMIN")
                         .anyRequest().authenticated())
-                // HTTP Basic is always active (passive filter). The custom authenticationEntryPoint
-                // avoids servlet error dispatch so callers get a clean 401 + WWW-Authenticate.
+                // HTTP Basic stays active for admin automation / curl / scripts.
                 .httpBasic(basic -> basic
                         .realmName(BASIC_REALM)
                         .authenticationEntryPoint(basicEntryPoint))
+                // JWT Bearer support - the React frontend (sw360oauth provider)
+                // authenticates via authorization_code+PKCE and then calls
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(sw360JwtAuthConverter())))
                 .formLogin(Customizer.withDefaults())
                 .exceptionHandling(eh -> eh
                         .defaultAuthenticationEntryPointFor(basicEntryPoint, clientManagementMatcher)
@@ -120,6 +119,27 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers(CLIENT_MGMT_PATTERN));
 
         return httpSecurity.build();
+    }
+
+    /**
+     * Maps JWT {@code scope} claim values (e.g. {@code READ}, {@code WRITE},
+     * {@code ADMIN}) to Spring Security authorities <em>without</em> the
+     * default {@code SCOPE_} prefix. This ensures
+     * {@code hasAuthority("ADMIN")} matches tokens minted by this
+     * authorization server, whose {@code Sw360TokenCustomizerConfig} emits
+     * plain {@code scope} values.
+     *
+     * <p>The {@code user_name} claim (set by the token customizer instead of
+     * the standard {@code sub}) is used as the principal name.</p>
+     */
+    private static JwtAuthenticationConverter sw360JwtAuthConverter() {
+        var scopesConverter = new JwtGrantedAuthoritiesConverter();
+        scopesConverter.setAuthorityPrefix("");
+        scopesConverter.setAuthoritiesClaimName("scope");
+        var converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(scopesConverter);
+        converter.setPrincipalClaimName("user_name");
+        return converter;
     }
 
     @Bean
