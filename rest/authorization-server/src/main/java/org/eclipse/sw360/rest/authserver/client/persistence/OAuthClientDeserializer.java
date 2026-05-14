@@ -52,6 +52,10 @@ public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity>
         Set<String> authorities = jsonNodeToSet(node.get("authorities"));
         client.setAuthorities(authorities);
 
+        if (node.has("owner_email") && !node.get("owner_email").isNull()) {
+            client.setOwnerEmail(node.get("owner_email").asText());
+        }
+
         return client;
     }
 

@@ -100,10 +100,23 @@ public abstract class IntegrationTestBase {
         when(mockedUserService.getByEmailOrExternalId(eq(adminTestUser.email), anyString())).thenReturn(adminTestUser);
         when(mockedUserService.getByEmailOrExternalId(eq(normalTestUser.email), anyString()))
                 .thenReturn(normalTestUser);
+        // getByEmail is consumed by Sw360UserMirrorService when /client-management
+        // validates the owner_email field.
+        when(mockedUserService.getByEmail(eq(adminTestUser.email))).thenReturn(adminTestUser);
+        when(mockedUserService.getByEmail(eq(normalTestUser.email))).thenReturn(normalTestUser);
+        when(mockedUserService.updateUser(org.mockito.ArgumentMatchers.any(User.class)))
+                .thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
         when(thriftClients.makeUserClient()).thenReturn(mockedUserService);
 
-        when(sw360UserDetailsService.loadUserByUsername(adminTestUser.email)).thenReturn(new org.springframework.security.core.userdetails.User(adminTestUser.email, encoder.encode(adminTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
-        when(sw360UserDetailsService.loadUserByUsername(normalTestUser.email)).thenReturn(new org.springframework.security.core.userdetails.User(normalTestUser.email, encoder.encode(normalTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()))));
+        // Default: any unknown user gets UsernameNotFoundException from the mock.
+        // Use doThrow so specific stubs below can override without triggering the exception.
+        org.mockito.Mockito.doThrow(new org.springframework.security.core.userdetails.UsernameNotFoundException("unknown user"))
+                .when(sw360UserDetailsService).loadUserByUsername(org.mockito.ArgumentMatchers.anyString());
+        // Known test users: override the default behaviour (last stub wins in Mockito)
+        org.mockito.Mockito.doReturn(new org.springframework.security.core.userdetails.User(adminTestUser.email, encoder.encode(adminTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))))
+                .when(sw360UserDetailsService).loadUserByUsername(adminTestUser.email);
+        org.mockito.Mockito.doReturn(new org.springframework.security.core.userdetails.User(normalTestUser.email, encoder.encode(normalTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()))))
+                .when(sw360UserDetailsService).loadUserByUsername(normalTestUser.email);
 
         setupTestClient();
         when(sw360ClientDetailsService.findByClientId(anyString())).thenReturn(testClient);

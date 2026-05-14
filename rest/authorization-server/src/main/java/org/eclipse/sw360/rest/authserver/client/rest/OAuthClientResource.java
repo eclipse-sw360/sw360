@@ -51,6 +51,15 @@ public class OAuthClientResource {
     @JsonProperty("refresh_token_validity")
     private Integer refreshTokenValidity;
 
+    /**
+     * Email of the SW360 user this client acts on behalf of for
+     * {@code client_credentials} tokens. Required at creation; ignored on
+     * update (the field is immutable once set).
+     */
+    @Setter
+    @JsonProperty("owner_email")
+    private String ownerEmail;
+
     public OAuthClientResource() {
         // if needed by frameworks
     }
@@ -63,5 +72,6 @@ public class OAuthClientResource {
         this.scope = clientEntity.getScope();
         this.accessTokenValidity = clientEntity.getAccessTokenValiditySeconds();
         this.refreshTokenValidity = clientEntity.getRefreshTokenValiditySeconds();
+        this.ownerEmail = clientEntity.getOwnerEmail();
     }
 }

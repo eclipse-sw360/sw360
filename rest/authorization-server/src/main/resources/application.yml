@@ -39,18 +39,17 @@ sw360:
   # Allowed origins that should be set in the header
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
-  security:
-    # Keep enabled for development/testing; set to false in production when
-    # all clients authenticate via OAuth2/JWT flows only.
-    http-basic:
-      enabled: true
 
 security:
   oauth2:
     resource:
       id: sw360-REST-API
   accesstoken:
+    # Fallback access-token TTL (seconds); per-client value wins.
     validity: 30
+  refreshtoken:
+    # Fallback refresh-token TTL (seconds); per-client value wins.
+    validity: 360
 
 logging:
   level:
