@@ -13,8 +13,10 @@ import com.google.common.collect.Sets;
 import jakarta.annotation.Nonnull;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
+import org.eclipse.sw360.rest.authserver.client.service.Sw360UserMirrorService;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,6 +62,13 @@ public class OAuthClientController {
      */
     private static final Set<String> ALLOWED_SCOPES = Set.of("READ", "WRITE");
 
+    /**
+     * Spring Authorization Server requires every {@code RegisteredClient} to
+     * declare at least one redirect URI, even for {@code client_credentials}-only
+     * registrations that will never invoke a redirect endpoint.
+     */
+    public static final String UNUSED_REDIRECT_URI = "https://localhost/unused-redirect";
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -69,6 +80,9 @@ public class OAuthClientController {
 
     @Autowired
     private OAuthClientRepository repo;
+
+    @Autowired
+    private Sw360UserMirrorService userMirrorService;
 
     /**
      * Normalize a caller-supplied {@code scope} set to the canonical
@@ -155,7 +169,24 @@ public class OAuthClientController {
                         HttpStatus.BAD_REQUEST);
             }
         } else {
+            // On create, the owner must exist as a SW360 user. Default to the
+            // calling admin when not supplied; reject early if no such user.
+            String ownerEmail = CommonUtils.isNotNullEmptyOrWhitespace(clientResource.getOwnerEmail())
+                    ? clientResource.getOwnerEmail().trim()
+                    : currentAdminEmail();
+            if (CommonUtils.isNullEmptyOrWhitespace(ownerEmail)) {
+                return new ResponseEntity<>(
+                        "owner_email is required and could not be derived from the caller.",
+                        HttpStatus.BAD_REQUEST);
+            }
+            User owner = userMirrorService.getByEmail(ownerEmail);
+            if (owner == null) {
+                return new ResponseEntity<>(
+                        "owner_email <" + ownerEmail + "> does not match any SW360 user.",
+                        HttpStatus.BAD_REQUEST);
+            }
             clientEntity = new OAuthClientEntity();
+            clientEntity.setOwnerEmail(owner.getEmail());
 
             // store entity to get a new id
             try {
@@ -174,6 +205,20 @@ public class OAuthClientController {
         }
         updateClientEntityFromResource(clientEntity, clientResource, normalizedScope);
         repo.update(clientEntity);
+
+        // Mirror the client_id -> ClientMetadata entry into the owner's
+        // oidcClientInfos so the resource server can resolve the SW360 user
+        // from the client_id JWT claim. We do this on both create and update
+        // so name/access stay in sync with the latest description/scope.
+        if (CommonUtils.isNotNullEmptyOrWhitespace(clientEntity.getOwnerEmail())) {
+            User owner = userMirrorService.getByEmail(clientEntity.getOwnerEmail());
+            if (owner != null) {
+                userMirrorService.mirrorClient(owner, clientEntity.getClientId(),
+                        clientEntity.getDescription(),
+                        Sw360UserMirrorService.accessFromScope(normalizedScope));
+            }
+        }
+
         OAuthClientResource responseResource = new OAuthClientResource(
                 repo.getByClientId(clientEntity.getClientId()));
         if (rawSecret != null) {
@@ -200,6 +245,14 @@ public class OAuthClientController {
                         HttpStatus.NOT_FOUND);
             }
 
+            // Unmirror from the owner user's oidcClientInfos before deleting
+            // the client doc itself. Best-effort: log-only on failure so a
+            // stale user mirror never blocks deletion.
+            if (CommonUtils.isNotNullEmptyOrWhitespace(clientEntity.getOwnerEmail())) {
+                User owner = userMirrorService.getByEmail(clientEntity.getOwnerEmail());
+                userMirrorService.unmirrorClient(owner, clientEntity.getClientId());
+            }
+
             repo.remove(clientEntity);
         } else {
             return new ResponseEntity<>(
@@ -210,6 +263,17 @@ public class OAuthClientController {
         OAuthClientResource responseResource = new OAuthClientResource(clientEntity);
         responseResource.setClientSecret(OAuthClientResource.HIDDEN_SECRET);
         return new ResponseEntity<>(responseResource, HttpStatus.OK);
+    }
+
+    /**
+     * Returns the email of the currently authenticated admin (the
+     * {@code /client-management} request is gated by HTTP Basic with
+     * {@code hasAuthority('ADMIN')}; the principal name is the SW360 user
+     * email per {@link org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService}).
+     */
+    private static String currentAdminEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : null;
     }
 
     private void updateClientEntityFromResource(
@@ -229,6 +293,6 @@ public class OAuthClientController {
                 Stream.of("client_credentials", "password", "refresh_token").collect(Collectors.toSet()));
         clientEntity.setAutoApproveScopes(Collections.singleton("true"));
         clientEntity.setResourceIds(Sets.newHashSet(resourceId));
-        clientEntity.setRegisteredRedirectUri(null);
+        clientEntity.setRegisteredRedirectUri(Collections.singleton(UNUSED_REDIRECT_URI));
     }
 }

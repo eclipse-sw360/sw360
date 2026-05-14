@@ -217,6 +217,115 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
                 response.get("client_secret").asText(), is(OAuthClientResource.HIDDEN_SECRET));
     }
 
+    // ---- Tests for owner_email association (option B / oidcClientInfos mirror) ----
+
+    @Test
+    public void createClient_admin_unknownOwnerEmail_returns400()
+            throws RestClientException, URISyntaxException {
+        stubRepoAddAndLookup();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+        // ghost@example.com is not stubbed in IntegrationTestBase, so the
+        // user service mock returns null and the controller must reject.
+        String body = "{\"description\":\"bot for ghost\",\"scope\":[\"READ\"],"
+                + "\"owner_email\":\"ghost@example.com\"}";
+
+        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+                new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    public void createClient_admin_defaultsOwnerEmailToCaller()
+            throws RestClientException, URISyntaxException, java.io.IOException {
+        stubRepoAddAndLookup();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+        String body = "{\"description\":\"bot owned by caller\",\"scope\":[\"READ\"]}";
+
+        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+                new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
+        assertThat(response.get("owner_email").asText(), is(adminTestUser.email));
+    }
+
+    @Test
+    public void createClient_admin_explicitOwnerEmail_acceptsKnownUser()
+            throws RestClientException, URISyntaxException, java.io.IOException {
+        stubRepoAddAndLookup();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+        // normalTestUser is also stubbed in IntegrationTestBase; admin can
+        // mint a client on their behalf.
+        String body = "{\"description\":\"bot for normal user\",\"scope\":[\"READ\",\"WRITE\"],"
+                + "\"owner_email\":\"" + normalTestUser.email + "\"}";
+
+        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+                new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
+        assertThat(response.get("owner_email").asText(), is(normalTestUser.email));
+    }
+
+    @Test
+    public void updateClient_admin_ignoresOwnerEmailChange()
+            throws RestClientException, URISyntaxException, java.io.IOException {
+        String existingClientId = "owned-bot";
+        OAuthClientEntity existing = new OAuthClientEntity();
+        existing.setClientId(existingClientId);
+        existing.setClientSecret("$2a$10$abcdefghijabcdefghij..");
+        existing.setOwnerEmail(adminTestUser.email);
+        when(clientRepo.getByClientId(existingClientId)).thenReturn(existing);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+        // Try to repoint ownership; the controller must silently drop it.
+        String body = "{\"client_id\":\"" + existingClientId + "\",\"description\":\"updated\","
+                + "\"scope\":[\"READ\"],\"owner_email\":\"" + normalTestUser.email + "\"}";
+
+        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+                new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
+        assertThat("owner_email is immutable on update",
+                response.get("owner_email").asText(), is(adminTestUser.email));
+    }
+
+    @Test
+    public void deleteClient_admin_returnsHiddenSecretAndKeepsRecord()
+            throws RestClientException, URISyntaxException, java.io.IOException {
+        String existingClientId = "to-delete";
+        OAuthClientEntity existing = new OAuthClientEntity();
+        existing.setClientId(existingClientId);
+        existing.setClientSecret("$2a$10$abcdefghijabcdefghij..");
+        existing.setOwnerEmail(adminTestUser.email);
+        when(clientRepo.getByClientId(existingClientId)).thenReturn(existing);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+
+        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+                new RequestEntity<>(headers, HttpMethod.DELETE,
+                        new URI("/client-management/" + existingClientId)), String.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
+        assertThat(response.get("client_secret").asText(), is(OAuthClientResource.HIDDEN_SECRET));
+    }
+
     /**
      * Wires the mocked {@link org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository}
      * so that the controller's create flow can complete: {@code add} synthesizes an {@code _id},
