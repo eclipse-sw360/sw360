@@ -84,6 +84,10 @@ sw360:
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
   security:
+    jwt:
+      trusted-issuers:
+        - http://localhost:8080/authorization
+        - http://localhost:8083/realms/sw360
     # Keep enabled for development/testing; set to false in production when
     # all clients authenticate via JWT or API token only.
     http-basic:

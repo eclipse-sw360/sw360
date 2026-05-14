@@ -31,7 +31,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.Optional;
@@ -41,7 +40,6 @@ import static java.lang.Math.min;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
 
 @Profile("!SECURITY_MOCK")
-@Component
 @RequiredArgsConstructor
 public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
