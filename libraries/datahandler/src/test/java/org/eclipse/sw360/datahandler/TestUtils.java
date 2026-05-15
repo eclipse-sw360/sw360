@@ -16,6 +16,7 @@ import com.google.common.collect.Ordering;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -131,6 +132,10 @@ public class TestUtils {
         if (instance.checkIfDbExists(dbName))
             instance.deleteDatabase(dbName);
 
+        // Forget the JVM-wide design-doc/index init cache for this database;
+        // recreating it below would otherwise skip the design-doc PUT.
+        DatabaseRepositoryCloudantClient.forgetInitialisedDesignArtifacts(dbName);
+
         // Giving 500ms Delay between Deleting and Creating test Db
         try {
             Thread.sleep(500);
@@ -147,6 +152,10 @@ public class TestUtils {
             instance.deleteDatabase(dbName);
         }
         instance.createDB(dbName);
+
+        // Newly-created DB has no design docs/indexes; clear the cache so
+        // the first repository constructed against it actually installs them.
+        DatabaseRepositoryCloudantClient.forgetInitialisedDesignArtifacts(dbName);
 
         DatabaseInstanceTrackerCloudant.destroy();
     }
