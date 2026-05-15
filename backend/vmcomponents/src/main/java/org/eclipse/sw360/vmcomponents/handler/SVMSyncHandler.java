@@ -62,7 +62,7 @@ public class SVMSyncHandler<T extends TBase> {
     private static final Map<Class<?>, Boolean> processedFlags = new ConcurrentHashMap<>();
 
     public  SVMSyncHandler(Class<T> type) throws MalformedURLException, SW360Exception {
-        this(type, null);
+        this(type, VMProcessHandler.sharedDb());
     }
 
     private SVMSyncHandler(Class<T> type, VMDatabaseHandler dbHandler) throws MalformedURLException, SW360Exception {

@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -56,12 +57,51 @@ public class DatabaseRepositoryCloudantClient<T> {
     private static final char HIGH_VALUE_UNICODE_CHARACTER = '\uFFF0';
     private static final Gson GSON = new Gson();
 
+    /**
+     * JVM-/classloader-scoped guard to avoid re-PUTting design documents and
+     * (re-)creating Mango indexes on every repository construction. Design
+     * documents and index definitions only change when code changes.
+     *
+     * Keys:
+     *  - INITIALISED_DDOCS:    "<dbName>::<designDocId>"
+     *  - INITIALISED_INDEXES:  "<dbName>::<designDocId>::<indexName>"
+     */
+    private static final Set<String> INITIALISED_DDOCS = ConcurrentHashMap.newKeySet();
+    private static final Set<String> INITIALISED_INDEXES = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Test-only hook to forget all design-document and index initialisations
+     * for the given database. Required because the tests delete and recreate
+     * databases between test methods within the same JVM; without this the
+     * JVM-wide cache would incorrectly believe the (now-deleted) database
+     * still has its design docs and indexes installed.
+     *
+     * <p>Production code never calls this. Test helpers
+     * (e.g. {@code TestUtils.deleteDatabase} / {@code TestUtils.createDatabase})
+     * call it after destroying or recreating a database.
+     *
+     * @param dbName the CouchDB/Cloudant database name to forget
+     */
+    public static void forgetInitialisedDesignArtifacts(String dbName) {
+        if (dbName == null || dbName.isEmpty()) {
+            return;
+        }
+        String prefix = dbName + "::";
+        INITIALISED_DDOCS.removeIf(k -> k.startsWith(prefix));
+        INITIALISED_INDEXES.removeIf(k -> k.startsWith(prefix));
+    }
+
     private final Class<T> type;
     private DatabaseConnectorCloudant connector;
 
     public void initStandardDesignDocument(Map<String, DesignDocumentViewsMapReduce> views,
                                            @NotNull DatabaseConnectorCloudant db) {
         String ddocId = type.getSimpleName();
+        String key = db.getDbName() + "::" + ddocId;
+        if (!INITIALISED_DDOCS.add(key)) {
+            // Already initialised in this JVM/classloader; skip
+            return;
+        }
         DesignDocument newDdoc = new DesignDocument.Builder()
                 .views(views)
                 .build();
@@ -79,6 +119,9 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     public void createIndex(String ddocId, String indexName, String[] fields,
                             DatabaseConnectorCloudant db) {
+        if (!INITIALISED_INDEXES.add(db.getDbName() + "::" + ddocId + "::" + indexName)) {
+            return;
+        }
         IndexDefinition.Builder indexDefinitionBuilder = new IndexDefinition.Builder();
         for (String fieldName : fields) {
             IndexField field = new IndexField.Builder()
@@ -103,6 +146,9 @@ public class DatabaseRepositoryCloudantClient<T> {
             String ddocId, String indexName, String type, String @NotNull [] fields,
             DatabaseConnectorCloudant db
     ) {
+        if (!INITIALISED_INDEXES.add(db.getDbName() + "::" + ddocId + "::" + indexName)) {
+            return;
+        }
         IndexDefinition.Builder indexDefinitionBuilder = new IndexDefinition.
                 Builder();
         for (String fieldName : fields) {
