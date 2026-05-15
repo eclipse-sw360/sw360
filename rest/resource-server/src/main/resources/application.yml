@@ -71,7 +71,6 @@ spring:
 jwt:
   auth:
     converter:
-      resource-id: sw360-rest-api
       principle-attribute: email
 
 sw360:
