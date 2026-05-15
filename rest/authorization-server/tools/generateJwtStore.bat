@@ -8,4 +8,4 @@ REM
 REM SPDX-License-Identifier: EPL-2.0
 REM
 
-keytool -genkeypair -alias jwt -keyalg RSA -dname "CN=jwt, L=Munich, S=Munich, C=DE" -keypass sw360SecretKey -keystore jwt-keaystore.jks -storepass sw360SecretKey
+keytool -genkeypair -alias jwt -keyalg RSA -dname "CN=jwt, L=Bengaluru, S=Karnataka, C=IN" -keypass sw360SecretKey -keystore jwt-keystore.jks -storepass sw360SecretKey
