@@ -122,6 +122,22 @@ file to tweak SW360 behaviour.
     Set this to `false` in production - clients should authenticate via
     OAuth2/JWT or API token. Set to `true` only for local development or
     integration testing where Basic auth is needed for convenience.
+* `JWT_SECRETKEY`: Password used by the Authorization Server to open
+    `/etc/sw360/jwt-keystore.jks` (default: `sw360SecretKey`).
+    **Change this in production** and keep it identical on every SW360 node
+    sharing the same JWT signing keystore.
+
+**JWT Signing Key**
+* The Authorization Server signs tokens with a JKS keystore stored at
+  `/etc/sw360/jwt-keystore.jks` (persisted by the `etc` named volume).
+* Startup seed order for `jwt-keystore.jks`:
+  1. Docker secret `JWT_KEYSTORE` (mounted at `/run/secrets/JWT_KEYSTORE`)
+  2. Existing `/etc/sw360/jwt-keystore.jks`
+  3. Bundled fallback `/app/sw360/jwt-keystore.jks`
+* To provide your own key, generate one and mount it via the `JWT_KEYSTORE`
+  compose secret or place it directly into `/etc/sw360/jwt-keystore.jks`.
+* Use `rest/authorization-server/tools/generateJwtStore.sh` to generate a
+  replacement keystore and keep `JWT_SECRETKEY` aligned with that keystore.
 
 ### Secrets
 
@@ -139,6 +155,11 @@ Sensitive information is managed via secret files located in
 * `REST_APITOKEN_HASH_SALT`: Salt for user generated API token hashing.
 * `EMAIL_PROPERTIES_USERNAME`: Username for SMTP authentication.
 * `EMAIL_PROPERTIES_PASSWORD`: Password for SMTP authentication.
+
+**JWT Keystore Secret**
+* `JWT_KEYSTORE`: Binary Docker secret containing the JWT signing keystore
+    (JKS format). In `docker-compose.yml` this defaults to the bundled
+    repository keystore and can be replaced by operators with a custom file.
 
 To update these secrets, simply edit the respective files. The
 [docker-compose.yml](docker-compose.yml) is configured to mount these secrets
