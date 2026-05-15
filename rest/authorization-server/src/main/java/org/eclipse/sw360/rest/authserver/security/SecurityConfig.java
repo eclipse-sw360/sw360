@@ -4,13 +4,16 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.authserver.security;
 
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
+import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -28,10 +31,11 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import java.security.KeyPairGenerator;
+import java.io.IOException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPublicKey;
-import java.util.UUID;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 /**
  * Configures the security settings for the authorization server.
@@ -59,7 +63,11 @@ public class SecurityConfig {
 
     private static final String BASIC_REALM = "sw360-client-management";
 
+    @NonNull
     private final Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+
+    @NonNull
+    private final KeyManager keyManager;
 
     @Bean
     @Order(1)
@@ -148,17 +156,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JWKSource<SecurityContext> jwkSource() throws NoSuchAlgorithmException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(2048);
-
-        var keys = keyPairGenerator.generateKeyPair();
-        var publicKey = (RSAPublicKey) keys.getPublic();
-        var privateKey = keys.getPrivate();
-        var rsaKey = new RSAKey.Builder(publicKey)
-                .privateKey(privateKey)
-                .keyID(UUID.randomUUID().toString())
-                .build();
+    public JWKSource<SecurityContext> jwkSource() throws NoSuchAlgorithmException,
+            UnrecoverableKeyException, CertificateException, KeyStoreException, IOException, JOSEException {
+        // The signing key is loaded from the persistent JKS keystore via
+        // KeyManager so the JWK set (and its 'kid') is stable across
+        // authorization-server restarts. Resource-server JWKS caches will
+        // continue to validate previously-issued JWTs without a cache flush.
+        RSAKey rsaKey = keyManager.rsaKey();
         JWKSet jwkSet = new JWKSet(rsaKey);
         return new ImmutableJWKSet<>(jwkSet);
     }
