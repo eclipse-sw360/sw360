@@ -16,15 +16,19 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
+import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.handler.SVMSyncHandler;
 
 import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.log4j.Logger.getLogger;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
@@ -38,12 +42,56 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertTrue;
 public class VMProcessHandler {
     private static final Logger log = getLogger(VMProcessHandler.class);
 
+    /**
+     * JVM-singleton {@link VMDatabaseHandler}. Repositories underneath are
+     * stateless wrappers around the JVM-singleton {@code Cloudant} client
+     * (see {@code DatabaseSettings#CLIENT}); the IBM Cloudant SDK uses OkHttp
+     * which performs its own thread-safe connection pooling, so all SVM worker
+     * threads can safely share a single handler instance. Lazy-initialised so
+     * that a misconfigured CouchDB at boot doesn't blow up the entire backend.
+     */
+    private static volatile VMDatabaseHandler SHARED_DB;
+
     private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(
             SVMConstants.PROCESSING_CORE_POOL_SIZE,
             SVMConstants.PROCESSING_MAX_POOL_SIZE,
             SVMConstants.PROCESSING_KEEP_ALIVE_SECONDS,
             TimeUnit.SECONDS,
-            new PriorityBlockingQueue<>());
+            new PriorityBlockingQueue<>(),
+            namedThreadFactory());
+
+    /**
+     * Names worker threads {@code sw360-vmprocessor-N} so they are identifiable
+     * in {@code jstack}, IDE debug output, {@code top -H}, and Log4j2 {@code %t}
+     * patterns.
+     */
+    private static ThreadFactory namedThreadFactory() {
+        return new ThreadFactory() {
+            private final AtomicInteger counter = new AtomicInteger(1);
+            private final ThreadFactory defaults = Executors.defaultThreadFactory();
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = defaults.newThread(r);
+                t.setName("sw360-vmprocessor-" + counter.getAndIncrement());
+                return t;
+            }
+        };
+    }
+
+    public static VMDatabaseHandler sharedDb() throws MalformedURLException {
+        VMDatabaseHandler local = SHARED_DB;
+        if (local == null) {
+            synchronized (VMProcessHandler.class) {
+                local = SHARED_DB;
+                if (local == null) {
+                    local = new VMDatabaseHandler();
+                    SHARED_DB = local;
+                }
+            }
+        }
+        return local;
+    }
 
     /**
      * it is very important to use ConcurrentHashMap to be threadsafe

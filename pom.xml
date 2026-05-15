@@ -152,7 +152,7 @@
     <poi.version>5.5.1</poi.version>
     <project-lombok.version>1.18.38</project-lombok.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <spotless.version>2.29.0</spotless.version>
+    <spotless.version>2.46.1</spotless.version>
     <spring-boot.version>4.0.6</spring-boot.version>
     <spring-restdocs.version>4.0.0</spring-restdocs.version>
     <spring-security-oauth2-authorization-server.version>7.0.4</spring-security-oauth2-authorization-server.version>
@@ -180,6 +180,16 @@
     <velocity-engine-core.version>2.4.1</velocity-engine-core.version>
     <velocity-tools-generic.version>3.1</velocity-tools-generic.version>
     <saxon-dom.version>8.7</saxon-dom.version>
+
+    <!--
+      Tip used by the spotless-maven-plugin to limit checks/auto-formatting
+      to files that differ from this git revision. Defaults to `origin/main`
+      so an unmodified working tree on the default branch reports clean.
+      Override on the command line, e.g. `-Dspotless.ratchetFrom=HEAD~1` or
+      `-Dspotless.ratchetFrom=` (empty) to disable ratcheting and check the
+      whole repo.
+    -->
+    <spotless.ratchetFrom>origin/main</spotless.ratchetFrom>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -1037,6 +1047,40 @@
         <version>${maven-scm-plugin.version}</version>
         <configuration>
           <tag>${project.artifactId}-${project.version}</tag>
+        </configuration>
+      </plugin>
+      <plugin>
+        <!--
+          Spotless enforces minimal, mechanical Java formatting rules. It is
+          configured with `ratchetFrom` so that only files that changed relative
+          to `${spotless.ratchetFrom}` (default `origin/main`) are inspected,
+          which lets us adopt formatting hygiene incrementally without a
+          one-shot reformat of the entire legacy codebase.
+
+          Usage:
+            mvn spotless:check    # verify changed files (used in pre-commit/CI)
+            mvn spotless:apply    # auto-fix changed files
+
+          Disable ratcheting (e.g. for full-repo audits):
+            mvn spotless:check -Dspotless.ratchetFrom=
+        -->
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
+          <java>
+            <includes>
+              <include>src/main/java/**/*.java</include>
+              <include>src/test/java/**/*.java</include>
+            </includes>
+            <indent>
+              <spaces>true</spaces>
+              <spacesPerTab>4</spacesPerTab>
+            </indent>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </java>
         </configuration>
       </plugin>
     </plugins>
