@@ -22,23 +22,14 @@ couchdb:
   password: sw360fossie
 
 jwt:
+  # Password used to unlock jwt-keystore.jks (alias 'jwt').
+  # Override via JWT_SECRETKEY in production.
   secretkey: sw360SecretKey
-  auth:
-    converter:
-      principle-attribute: email
 
 spring:
   jackson:
     serialization:
       indent_output: true
-  main:
-    allow-circular-references: true
-
-# Common SW360 properties
-sw360:
-  # Allowed origins that should be set in the header
-  cors:
-    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
 
 security:
   oauth2:
@@ -55,8 +46,3 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.security.oauth2: DEBUG
-    org.springframework.security.oauth2.provider.endpoint: DEBUG
-    org.springframework.security.oauth2.provider.error: DEBUG
-    org.springframework.security.oauth2.provider.token: DEBUG
-    org.springframework.security.oauth2.provider.token.store: DEBUG
-    org.springframework.security.oauth2.provider.token.store.jwk: DEBUG

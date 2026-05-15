@@ -21,21 +21,15 @@ couchdb:
   password: $COUCHDB_PASSWORD
 
 jwt:
-  secretkey: sw360SecretKey
-  auth:
-    converter:
-      principle-attribute: email
+  # Password used to unlock jwt-keystore.jks (alias 'jwt').
+  # Override via JWT_SECRETKEY environment variable. Change the default in
+  # production - the same value must be set on every authorization-server node.
+  secretkey: ${JWT_SECRETKEY:sw360SecretKey}
 
 spring:
   jackson:
     serialization:
       indent_output: true
-
-# Common SW360 properties
-sw360:
-  # Allowed origins that should be set in the header
-  cors:
-    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
 
 security:
   oauth2:
