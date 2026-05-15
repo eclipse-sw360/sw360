@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -40,41 +41,45 @@ public final class TokenCapabilityAuthorities {
     }
 
     public static Set<GrantedAuthority> fromAuthorityNames(Collection<String> authorityNames) {
-        if (authorityNames == null || authorityNames.isEmpty()) {
-            return readWrite();
+        if (CommonUtils.isNullOrEmptyCollection(authorityNames)) {
+            return READ_ONLY_AUTHORITIES;
         }
 
-        boolean hasRead = false;
-        boolean hasWrite = false;
+        ScopeFlags scopeFlags = scopeFlags(authorityNames);
+        if (scopeFlags.hasWrite()) {
+            return readWrite();
+        }
+        return READ_ONLY_AUTHORITIES;
+    }
+
+    private static ScopeFlags scopeFlags(Collection<String> authorityNames) {
+        boolean read = false;
+        boolean write = false;
         for (String authorityName : authorityNames) {
             if (authorityName == null) {
                 continue;
             }
             switch (authorityName.toUpperCase(Locale.ROOT)) {
-                case "READ", "SCOPE_READ" -> hasRead = true;
+                case "READ", "SCOPE_READ" -> read = true;
                 case "WRITE", "SCOPE_WRITE" -> {
-                    hasRead = true;
-                    hasWrite = true;
+                    read = true;
+                    write = true;
                 }
                 default -> {
                     // Unknown scopes/authorities are intentionally ignored.
                 }
             }
         }
-
-        if (hasWrite) {
-            return readWrite();
-        }
-        return READ_ONLY_AUTHORITIES;
+        return new ScopeFlags(read, write);
     }
 
     public static Set<GrantedAuthority> fromJwtScopeClaim(Object scopeClaim) {
         if (scopeClaim instanceof String scopeClaimString) {
             if (scopeClaimString.isBlank()) {
-                return READ_ONLY_AUTHORITIES;
+                return readWrite();
             }
             String[] values = scopeClaimString.trim().split("\\s+");
-            return fromAuthorityNames(List.of(values));
+            return fromJwtScopeValues(List.of(values));
         }
 
         if (scopeClaim instanceof Collection<?> scopeClaimCollection) {
@@ -84,9 +89,20 @@ public final class TokenCapabilityAuthorities {
                     normalized.add(value.toString());
                 }
             }
-            return fromAuthorityNames(normalized);
+            return fromJwtScopeValues(normalized);
         }
 
+        return readWrite();
+    }
+
+    private static Set<GrantedAuthority> fromJwtScopeValues(Collection<String> scopeValues) {
+        ScopeFlags scopeFlags = scopeFlags(scopeValues);
+        if (!scopeFlags.hasRead()) {
+            return readWrite();
+        }
+        if (scopeFlags.hasWrite()) {
+            return readWrite();
+        }
         return READ_ONLY_AUTHORITIES;
     }
 
@@ -104,13 +120,9 @@ public final class TokenCapabilityAuthorities {
 
     public static Set<GrantedAuthority> mergeForTokenAuthentication(Collection<? extends GrantedAuthority> userAuthorities,
                                                                      Collection<? extends GrantedAuthority> tokenCapabilities) {
-        Set<GrantedAuthority> merged = new HashSet<>(merge(userAuthorities, tokenCapabilities));
-        boolean hasTokenWrite = tokenCapabilities != null
-                && tokenCapabilities.contains(new SimpleGrantedAuthority(TOKEN_WRITE));
-        if (!hasTokenWrite) {
-            merged.remove(new SimpleGrantedAuthority(WRITE));
-            merged.remove(new SimpleGrantedAuthority(TOKEN_WRITE));
-        }
-        return Collections.unmodifiableSet(merged);
+        return merge(userAuthorities, tokenCapabilities);
+    }
+
+    private record ScopeFlags(boolean hasRead, boolean hasWrite) {
     }
 }

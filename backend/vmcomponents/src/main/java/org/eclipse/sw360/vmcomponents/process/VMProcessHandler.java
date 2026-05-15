@@ -4,12 +4,12 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.process;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.handler.SVMSyncHandler;
 
+import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,17 +33,17 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertTrue;
 /**
  * Created by stefan.jaeger on 10.03.16.
  *
- * @author stefan.jaeger@evosoft.com
+ * Process coordinator for SVM related background tasks.
  */
 public class VMProcessHandler {
     private static final Logger log = getLogger(VMProcessHandler.class);
 
     private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                                                                    SVMConstants.PROCESSING_CORE_POOL_SIZE,
-                                                                    SVMConstants.PROCESSING_MAX_POOL_SIZE,
-                                                                    SVMConstants.PROCESSING_KEEP_ALIVE_SECONDS,
-                                                                    TimeUnit.SECONDS,
-                                                                    new PriorityBlockingQueue<>());
+            SVMConstants.PROCESSING_CORE_POOL_SIZE,
+            SVMConstants.PROCESSING_MAX_POOL_SIZE,
+            SVMConstants.PROCESSING_KEEP_ALIVE_SECONDS,
+            TimeUnit.SECONDS,
+            new PriorityBlockingQueue<>());
 
     /**
      * it is very important to use ConcurrentHashMap to be threadsafe
@@ -53,19 +54,21 @@ public class VMProcessHandler {
 
     private VMProcessHandler(){}
 
-    public static <T extends TBase> void getVulnerabilitiesByComponentId(String componentId, String url, boolean triggerVulMasterData){
+    public static <T extends TBase> void getVulnerabilitiesByComponentId(String componentId, String url,
+            boolean triggerVulMasterData, boolean isDeltaSync){
         try {
-            queueing(VMComponent.class, componentId, VMProcessType.VULNERABILITIES, url, triggerVulMasterData);
+            queueing(VMComponent.class, componentId, VMProcessType.VULNERABILITIES, url, triggerVulMasterData, isDeltaSync);
         } catch (SW360Exception e) {
             log.error(e.getMessage(), e);
         }
     }
 
-    public static <T extends TBase> void getVulnerabilitiesByComponentIds(Collection<String> componentIds, String url, boolean triggerVulMasterData){
-        if (componentIds != null && !componentIds.isEmpty()){
+    public static <T extends TBase> void getVulnerabilitiesByComponentIds(Collection<String> componentIds, String url,
+            boolean triggerVulMasterData, boolean isDeltaSync){
+        if (!CommonUtils.isNullOrEmptyCollection(componentIds)) {
             for (String componentId : componentIds) {
                 try {
-                    queueing(VMComponent.class, componentId, VMProcessType.VULNERABILITIES, url, triggerVulMasterData);
+                    queueing(VMComponent.class, componentId, VMProcessType.VULNERABILITIES, url, triggerVulMasterData, isDeltaSync);
                 } catch (SW360Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -73,50 +76,56 @@ public class VMProcessHandler {
         }
     }
 
-    public static void findComponentMatch(String componentId, boolean triggerGettingVulnerabilities){
+    public static void findComponentMatch(String componentId, boolean triggerGettingVulnerabilities, boolean isDeltaSync){
         if (!StringUtils.isEmpty(componentId)){
             try {
-                queueing(VMComponent.class, componentId, VMProcessType.MATCH_SVM, null, triggerGettingVulnerabilities);
+                queueing(VMComponent.class, componentId, VMProcessType.MATCH_SVM, null, triggerGettingVulnerabilities, isDeltaSync);
             } catch (SW360Exception e) {
                 log.error(e.getMessage(), e);
             }
         }
     }
 
+    /**
+     * Manual reverse-match trigger (not part of an SVM sync chain). isDeltaSync is fixed to false
+     * because the request originates from user/admin action, not from a delta or full sync run.
+     */
     public static void findReleaseMatch(String releaseId, boolean triggerGettingVulnerabilities){
         if (!StringUtils.isEmpty(releaseId)){
             try {
-                queueing(Release.class, releaseId, VMProcessType.MATCH_SW360, null, triggerGettingVulnerabilities);
+                queueing(Release.class, releaseId, VMProcessType.MATCH_SW360, null, triggerGettingVulnerabilities, false);
             } catch (SW360Exception e) {
                 log.error(e.getMessage(), e);
             }
         }
     }
 
-    public static <T extends TBase> void getMasterData(Class<T> elementType, Collection<String> elementIds, String url, boolean triggerMatchCpe){
-        if (elementIds != null && elementIds.size()>0){
-            String time = SW360Utils.getCreatedOnTime();
+    public static <T extends TBase> void getMasterData(Class<T> elementType, Collection<String> elementIds, String url,
+            boolean triggerMatchCpe, boolean isDeltaSync) {
+        if (!CommonUtils.isNullOrEmptyCollection(elementIds)) {
             for (String elementId : elementIds) {
-                getMasterData(elementType, elementId, url, triggerMatchCpe);
+                getMasterData(elementType, elementId, url, triggerMatchCpe, isDeltaSync);
             }
         }
     }
 
-    public static <T extends TBase> void getMasterData(Class<T> elementType, String elementId, String url, boolean triggerMatchCpe){
+    public static <T extends TBase> void getMasterData(Class<T> elementType, String elementId, String url,
+            boolean triggerMatchCpe, boolean isDeltaSync){
         if (!StringUtils.isEmpty(elementId)){
             try {
-                queueing(elementType, elementId, VMProcessType.MASTER_DATA, url, triggerMatchCpe);
+                queueing(elementType, elementId, VMProcessType.MASTER_DATA, url, triggerMatchCpe, isDeltaSync);
             } catch (SW360Exception e) {
                 log.error(e.getMessage(), e);
             }
         }
     }
 
-    public static <T extends TBase> void storeElements(Class<T> elementType, Collection<String> elementIds, String url, boolean triggerMasterData){
-        if (elementIds != null && elementIds.size()>0){
+    public static <T extends TBase> void storeElements(Class<T> elementType, Collection<String> elementIds, String url,
+            boolean triggerMasterData, boolean isDeltaSync) {
+        if (!CommonUtils.isNullOrEmptyCollection(elementIds)) {
             for (String elementId : elementIds) {
                 try {
-                    queueing(elementType, elementId, VMProcessType.STORE_NEW, url, triggerMasterData);
+                    queueing(elementType, elementId, VMProcessType.STORE_NEW, url, triggerMasterData, isDeltaSync);
                 } catch (SW360Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -124,35 +133,85 @@ public class VMProcessHandler {
         }
     }
 
+    /**
+     * CLEAN_UP is only ever enqueued from the full-sync branch of GET_IDS in {@link VMProcessor}.
+     * The {@code isDeltaSync} flag is therefore intrinsically {@code false} for this task; it is
+     * still kept as a constructor field on the processor for defensive checks downstream.
+     */
     public static <T extends TBase> void cleanupMissingElements(Class<T> elementType, List<String> elementIds){
         try {
-            queueing(elementType, elementIds, VMProcessType.CLEAN_UP, null, false);
+            queueing(elementType, elementIds, VMProcessType.CLEAN_UP, null, false, false);
         } catch (SW360Exception e) {
             log.error(e.getMessage(), e);
         }
     }
 
+    /**
+     * Enqueue a full-sync GET_IDS task. Entry point of the sync chain; isDeltaSync is intrinsically
+     * {@code false} because this method <em>defines</em> the chain as a full sync.
+     */
     public static <T extends TBase> void getElementIds(Class<T> elementType, String url, boolean triggerStoring){
         try {
-            queueing(elementType, "", VMProcessType.GET_IDS, url, triggerStoring);
+            log.info("Full sync queued for " + elementType.getSimpleName());
+            queueing(elementType, "", VMProcessType.GET_IDS, url, triggerStoring, false);
         } catch (SW360Exception e) {
             log.error(e.getMessage(), e);
         }
     }
 
+    /**
+     * Enqueue a delta GET_IDS task with a modified_after parameter. Entry point of the sync chain;
+     * isDeltaSync is intrinsically {@code true} when {@code modifiedAfter} is non-empty because
+     * this method <em>defines</em> the chain as a delta sync.
+     *
+     * @param elementType the type of element to fetch (must not be null)
+     * @param url the base URL for the SVM API endpoint (must not be null)
+     * @param modifiedAfter timestamp for delta sync; if null or empty, falls back to full sync
+     * @param triggerStoring whether to trigger element storage if successful
+     * @param <T> the element type
+     */
+    public static <T extends TBase> void getElementIdsWithModifiedAfter(
+            @Nonnull Class<T> elementType,
+            @Nonnull String url,
+            String modifiedAfter,
+            boolean triggerStoring
+    ) {
+        try {
+            if (CommonUtils.isNullEmptyOrWhitespace(modifiedAfter)) {
+                // Defensive: caller asked for delta without a timestamp; degrade to full sync.
+                log.debug("getElementIdsWithModifiedAfter called without timestamp; queuing full sync for "
+                        + elementType.getSimpleName());
+                queueing(elementType, "", VMProcessType.GET_IDS, url, triggerStoring, false);
+                return;
+            }
+            String separator = url.contains("?") ? "&" : "?";
+            String urlWithParam = url + separator + "modified_after=" + modifiedAfter;
+            log.info("Delta sync queued for " + elementType.getSimpleName()
+                    + " with modified_after=" + modifiedAfter);
+            queueing(elementType, "", VMProcessType.GET_IDS, urlWithParam, triggerStoring, true);
+        } catch (SW360Exception e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * FINISH task closes out reporting for a sync run. The isDeltaSync flag is not used by the
+     * FINISH branch in {@link VMProcessor} (it neither cleans up nor branches on sync mode), so
+     * the value passed here is intentionally informational only and fixed to {@code false}.
+     */
     public static <T extends TBase> void triggerReport(Class<T> elementType, String startTime){
         try {
-            queueing(elementType, startTime, VMProcessType.FINISH, null, false);
+            queueing(elementType, startTime, VMProcessType.FINISH, null, false, false);
         } catch (SW360Exception e) {
             log.error(e.getMessage(), e);
         }
     }
 
-    private static synchronized <T extends TBase> void queueing(Class<T> elementType, String input, VMProcessType task, String url, boolean triggerNextStep) throws SW360Exception {
-        queueing(elementType, input == null ? Collections.emptyList() : Collections.singletonList(input), task, url, triggerNextStep);
+    private static synchronized <T extends TBase> void queueing(Class<T> elementType, String input, VMProcessType task, String url, boolean triggerNextStep, boolean isDeltaSync) throws SW360Exception {
+        queueing(elementType, input == null ? Collections.emptyList() : Collections.singletonList(input), task, url, triggerNextStep, isDeltaSync);
     }
 
-    private static synchronized <T extends TBase> void queueing(Class<T> elementType, List<String> input, VMProcessType task, String url, boolean triggerNextStep) throws SW360Exception {
+    private static synchronized <T extends TBase> void queueing(Class<T> elementType, List<String> input, VMProcessType task, String url, boolean triggerNextStep, boolean isDeltaSync) throws SW360Exception {
         assertNotNull(elementType);
         assertNotNull(input);
         assertTrue(!input.isEmpty());
@@ -167,7 +226,7 @@ public class VMProcessHandler {
             case MATCH_SW360:
             case VULNERABILITIES:
             case FINISH:
-                VMProcessor<T> processor = new VMProcessor<>(elementType, input, task, url, triggerNextStep);
+                VMProcessor<T> processor = new VMProcessor<>(elementType, input, task, url, triggerNextStep, isDeltaSync);
                 executor.execute(processor);
                 break;
 
@@ -224,8 +283,8 @@ public class VMProcessHandler {
                 SVMSyncHandler<T> syncHandler = null;
                 if (!syncHandlersFree.isEmpty()){
                     List<SVMSyncHandler> syncHandlers = syncHandlersFree.get(elementType);
-                    if(syncHandlers != null && syncHandlers.size() > 0){
-                        syncHandler = syncHandlers.remove(0);
+                    if (!CommonUtils.isNullOrEmptyCollection(syncHandlers)) {
+                        syncHandler = syncHandlers.removeFirst();
                     }
                 }
                 if (syncHandler == null){
@@ -238,11 +297,7 @@ public class VMProcessHandler {
                 assertNotNull(syncHandlerId);
                 syncHandler = syncHandlersBusy.remove(syncHandlerId);
                 if (syncHandler != null){
-                    List<SVMSyncHandler> syncHandlers = syncHandlersFree.get(syncHandler.getType());
-                    if (syncHandlers == null){
-                        syncHandlers = new ArrayList<>();
-                        syncHandlersFree.put(syncHandler.getType(), syncHandlers);
-                    }
+                    List<SVMSyncHandler> syncHandlers = syncHandlersFree.computeIfAbsent(syncHandler.getType(), k -> new ArrayList<>());
                     syncHandlers.add(syncHandler);
                 }
                 return null;

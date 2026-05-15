@@ -71,18 +71,22 @@ spring:
 jwt:
   auth:
     converter:
-      resource-id: sw360-rest-api
       principle-attribute: email
 
 sw360:
   thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
   base-url: ${SW360_BASE_URL:http://localhost:8080}
+  frontend-url: ${SW360_FRONTEND_URL:http://localhost:3000}
   test-user-id: admin@sw360.org
   test-user-password: 12345
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
   security:
+    jwt:
+      trusted-issuers:
+        - http://localhost:8080/authorization
+        - http://localhost:8083/realms/sw360
     # Keep enabled for development/testing; set to false in production when
     # all clients authenticate via JWT or API token only.
     http-basic:

@@ -49,7 +49,7 @@ public class Sw360JWTAccessTokenConverterTest {
     }
 
     @Test
-    public void shouldKeepAdminAuthorityForReadOnlyScopeToken() {
+    public void shouldKeepAdminAuthorityButNoTokenWriteForReadOnlyScopeToken() {
         User adminUser = new User();
         adminUser.setEmail("admin@sw360.org");
         adminUser.setUserGroup(UserGroup.ADMIN);
@@ -68,13 +68,13 @@ public class Sw360JWTAccessTokenConverterTest {
         assertThat(authentication.getDetails()).isSameAs(adminUser);
         assertThat(authentication.getAuthorities())
                 .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))
+                .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()))
                 .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .doesNotContain(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()))
                 .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
     }
 
     @Test
-    public void shouldDefaultToReadOnlyCapabilitiesWhenScopeMissing() {
+    public void shouldKeepUserAuthoritiesWhenJwtHasNoSw360Scope() {
         User adminUser = new User();
         adminUser.setEmail("admin-noscope@sw360.org");
         adminUser.setUserGroup(UserGroup.ADMIN);
@@ -89,8 +89,33 @@ public class Sw360JWTAccessTokenConverterTest {
 
         assertThat(authentication).isNotNull();
         assertThat(authentication.getAuthorities())
+                .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))
+                .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()))
                 .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+    }
+
+    @Test
+    public void shouldKeepUserAuthoritiesWhenJwtHasOnlyIdentityProviderScopes() {
+        User adminUser = new User();
+        adminUser.setEmail("admin-keycloak@sw360.org");
+        adminUser.setUserGroup(UserGroup.ADMIN);
+        when(userService.getUserByEmail("admin-keycloak@sw360.org")).thenReturn(adminUser);
+
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("email", "admin-keycloak@sw360.org")
+                .claim("scope", "openid profile email")
+                .build();
+
+        AbstractAuthenticationToken authentication = converter.convert(jwt);
+
+        assertThat(authentication).isNotNull();
+        assertThat(authentication.getAuthorities())
+                .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))
+                .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()))
+                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
+                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
     }
 
 

@@ -7,8 +7,7 @@ package org.eclipse.sw360.rest.resourceserver.security.basic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,12 +16,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@Service
 public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
 
 
@@ -32,17 +29,11 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
 
     private final Sw360CustomUserDetailsService userDetailsService;
 
-    @Autowired
-    public Sw360UserAuthenticationProvider(@Lazy PasswordEncoder passwordEncoder, Sw360CustomUserDetailsService userDetailsService) {
+    public Sw360UserAuthenticationProvider(PasswordEncoder passwordEncoder, Sw360CustomUserDetailsService userDetailsService) {
         this.passwordEncoder = passwordEncoder;
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * @param authentication the authentication request object.
-     * @return
-     * @throws AuthenticationException
-     */
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userName = authentication.getName();
@@ -74,12 +65,8 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
         }
     }
 
-    /**
-     * @param authentication
-     * @return
-     */
     @Override
-    public boolean supports(Class<?> authentication) {
+    public boolean supports(@NonNull Class<?> authentication) {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

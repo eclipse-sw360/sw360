@@ -20,13 +20,22 @@ import java.util.Set;
 @Getter
 public class OAuthClientResource {
 
+    /**
+     * Placeholder used for {@code client_secret} in any response that lists
+     * existing clients, so we never leak the BCrypt hash (or, worse, a legacy
+     * plaintext secret) through the admin API.
+     */
+    public static final String HIDDEN_SECRET = "<hidden>";
+
     @Setter
     @JsonProperty("description")
     private String description;
 
+    @Setter
     @JsonProperty("client_id")
     private String clientId;
 
+    @Setter
     @JsonProperty("client_secret")
     private String clientSecret;
 
@@ -42,6 +51,15 @@ public class OAuthClientResource {
     @JsonProperty("refresh_token_validity")
     private Integer refreshTokenValidity;
 
+    /**
+     * Email of the SW360 user this client acts on behalf of for
+     * {@code client_credentials} tokens. Required at creation; ignored on
+     * update (the field is immutable once set).
+     */
+    @Setter
+    @JsonProperty("owner_email")
+    private String ownerEmail;
+
     public OAuthClientResource() {
         // if needed by frameworks
     }
@@ -54,5 +72,6 @@ public class OAuthClientResource {
         this.scope = clientEntity.getScope();
         this.accessTokenValidity = clientEntity.getAccessTokenValiditySeconds();
         this.refreshTokenValidity = clientEntity.getRefreshTokenValiditySeconds();
+        this.ownerEmail = clientEntity.getOwnerEmail();
     }
 }

@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -84,7 +85,7 @@ public class DatabaseConnectorCloudant {
 
     public DatabaseConnectorCloudant(Cloudant client, String dbName) {
         this.instance = new DatabaseInstanceCloudant(client);
-        this.attachmentInstance = new AttachmentAwareDatabase(client);
+        this.attachmentInstance = DatabaseSettings.getAttachmentClient();
         this.dbName = dbName;
         // Create the database if it does not exist yet
         instance.createDB(dbName);

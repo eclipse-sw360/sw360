@@ -83,6 +83,7 @@ ENV CLOUDANT_ENABLE_RETRIES="true"
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
 ENV JWKS_ISSUER_URI="http://localhost:8080/authorization"
+ENV SW360_SECURITY_JWT_TRUSTED_ISSUERS="http://localhost:8080/authorization,http://localhost:8083/realms/sw360"
 #
 # Email configs
 ENV EMAIL_PROPERTIES_HOST=""
@@ -110,6 +111,7 @@ ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
 ENV SW360_CORS_ALLOWED_ORIGIN="*"
 ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
 ENV SW360_BASE_URL="http://localhost:8080"
+ENV SW360_FRONTEND_URL="http://localhost:3000"
 
 # Install dependencies for entrypoint
 RUN apt-get update -qq \
@@ -128,6 +130,11 @@ WORKDIR /app/sw360
 
 # Copy the configuration files
 COPY ./scripts/docker-config .
+
+# Bundled JWT signing keystore (acts as a first-run fallback; the entrypoint
+# copies it to /etc/sw360/jwt-keystore.jks if no persistent keystore exists).
+# Operators can replace it with their own keystore via the 'etc' named volume.
+COPY rest/authorization-server/src/main/resources/jwt-keystore.jks ./jwt-keystore.jks
 
 # Tomcat manager for debugging portlets
 # Make entrypoint executable

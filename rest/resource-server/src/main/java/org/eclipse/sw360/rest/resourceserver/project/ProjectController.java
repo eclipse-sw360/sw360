@@ -3473,7 +3473,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         // Handle includeSubprojects flag for "All Obligations" tab
         if (includeSubprojectObligations) {
-            // Get obligations from current project and all sub-projects with FULFILLED_AND_PARENT_MUST_ALSO_FULFILL status
+            // Get obligations from current project and all sub-projects with FULFILLED_AND_PARENT_MUST_ALSO_FULFILL
+            // and DEFERRED_TO_PARENT_PROJECT status
             obligationStatusMap = getInheritedObligationsFromProjectHierarchy(sw360Project, sw360User);
 
             // Enrich obligation status info with release data
@@ -3683,8 +3684,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     // Add project name/info to help identify source project
                     for (Map.Entry<String, ObligationStatusInfo> entry : projectObligations.entrySet()) {
                         ObligationStatusInfo statusInfo = entry.getValue();
-                        // Only add obligations with FULFILLED_AND_PARENT_MUST_ALSO_FULFILL status
-                        if (statusInfo.getStatus() == ObligationStatus.FULFILLED_AND_PARENT_MUST_ALSO_FULFILL) {
+                        // Add obligations with FULFILLED_AND_PARENT_MUST_ALSO_FULFILL and DEFERRED_TO_PARENT_PROJECT status
+                        if (
+                                statusInfo.getStatus() == ObligationStatus.FULFILLED_AND_PARENT_MUST_ALSO_FULFILL
+                                        || statusInfo.getStatus() == ObligationStatus.DEFERRED_TO_PARENT_PROJECT
+                        ) {
                             // Approach 3: Keep both with different keys
                             // Create a unique key combining project ID and obligation ID
                             String obligationId = entry.getKey();
