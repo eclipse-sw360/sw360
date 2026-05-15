@@ -106,12 +106,29 @@ mvn test -pl backend/components
 # Install pre-commit hooks (Spotless formatting)
 pip install pre-commit && pre-commit install
 
-# Format code manually
+# Auto-format only files changed vs origin/main (the project default scope)
 mvn spotless:apply
 
-# Check formatting
+# Check formatting on changed files
 mvn spotless:check
+
+# One-off: audit the entire repo (disable the ratchet) — use sparingly,
+# typically only for centralized cleanups.
+mvn spotless:check -Dspotless.ratchetFrom=
 ```
+
+> **Spotless scope (`ratchetFrom`)**: Spotless is configured in the parent
+> `pom.xml` to inspect only files that differ from `${spotless.ratchetFrom}`
+> (default `origin/main`). This lets the project adopt formatting hygiene
+> incrementally without a one-shot reformat of the entire legacy codebase.
+> Override the property on the command line to scope checks differently
+> (e.g. `-Dspotless.ratchetFrom=HEAD~1` for "the last commit only", or an
+> empty value to disable ratcheting and check everything).
+>
+> **Enforced rules** (intentionally minimal): tabs are converted to 4
+> spaces, trailing whitespace is trimmed, and every Java file ends with a
+> newline. No formatter overhaul (Eclipse/Google) is applied — the existing
+> code style is preserved.
 
 ### Thrift Generation
 ```bash
