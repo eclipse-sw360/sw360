@@ -282,6 +282,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "clearingStatus", required = false) ProjectClearingState projectClearingState,
             @Parameter(description = "The additionalData of the project")
             @RequestParam(value = "additionalData", required = false) String additionalData,
+            @Parameter(description = "Filter by attachment author email (createdBy field of attachments)")
+            @RequestParam(value = "attachmentAuthor", required = false) String attachmentAuthor,
             @Parameter(description = "List project by lucene search")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
@@ -291,7 +293,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<PaginationData, List<Project>> paginatedProjects = null;
 
         Map<String, Set<String>> filterMap = RestControllerHelper.getFilterMapForProject(
-                tag, projectType, group, version, projectResponsible, projectState, projectClearingState, additionalData);
+                tag, projectType, group, version, projectResponsible, projectState, projectClearingState, additionalData, attachmentAuthor);
         if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
             Set<String> values = Collections.singleton(name);
             filterMap.put(Project._Fields.NAME.getFieldName(), values);
@@ -303,6 +305,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(Project._Fields.NAME.getFieldName(), values);
+            }
+            if (filterMap.containsKey(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY)) {
+                Set<String> values = filterMap.get(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY).stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, values);
             }
 
             paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);

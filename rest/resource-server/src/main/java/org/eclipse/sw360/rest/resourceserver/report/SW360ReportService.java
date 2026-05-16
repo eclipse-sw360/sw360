@@ -169,7 +169,7 @@ public class SW360ReportService {
             filterMap = RestControllerHelper.getFilterMapForProject(
                     reportBean.getTag(), reportBean.getType(), reportBean.getGroup(), reportBean.getVersion(),
                     reportBean.getProjectResponsible(), reportBean.getProjectState(), reportBean.getProjectClearingState(),
-                    reportBean.getAdditionalData()
+                    reportBean.getAdditionalData(), null
             );
             if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getName())) {
                 filterMap.put(Project._Fields.NAME.getFieldName(), CommonUtils.splitToSet(reportBean.getName()));
