@@ -50,12 +50,6 @@ spring:
     multipart:
       max-file-size: 500MB
       max-request-size: 600MB
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          # Single issuer fallback used when sw360.security.jwt.trusted-issuers is not configured.
-          issuer-uri: $JWKS_ISSUER_URI
 
 #logging:
 #  level:
@@ -81,9 +75,12 @@ sw360:
     # Production containers should authenticate via JWT or API token.
     http-basic:
       enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
-    jwt:
-      # Comma-separated Docker env value rendered as a YAML flow sequence.
-      trusted-issuers: [$SW360_SECURITY_JWT_TRUSTED_ISSUERS]
+    # Trusted JWT issuers are bound directly from environment variables using
+    # Spring Boot's relaxed binding rules; nothing needs to be templated here.
+    # For each issuer slot N, set:
+    #   SW360_SECURITY_JWT_ISSUERS_<N>_ISSUER_URI=<public issuer URL>
+    #   SW360_SECURITY_JWT_ISSUERS_<N>_JWK_SET_URI=<optional loopback JWKS URL>
+    # See README_DOCKER.md and Deploy-Configuration-Files.md for the full reference.
 
 blacklist:
   sw360:

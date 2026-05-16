@@ -1,5 +1,5 @@
 #
-# Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+# Copyright Siemens AG, 2017,2026. Part of the SW360 Portal Project.
 # Copyright Bosch.IO GmbH 2020
 #
 # This program and the accompanying materials are made
@@ -77,16 +77,16 @@ sw360:
   thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
   base-url: ${SW360_BASE_URL:http://localhost:8080}
   frontend-url: ${SW360_FRONTEND_URL:http://localhost:3000}
-  test-user-id: admin@sw360.org
-  test-user-password: 12345
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
   security:
     jwt:
-      trusted-issuers:
-        - http://localhost:8080/authorization
-        - http://localhost:8083/realms/sw360
+      # supply jwk-set-uri to skip discovery and fetch JWKS directly
+      issuers:
+        - issuer-uri: http://localhost:8080/authorization
+        - issuer-uri: http://localhost:8083/realms/sw360
+          jwk-set-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
     # Keep enabled for development/testing; set to false in production when
     # all clients authenticate via JWT or API token only.
     http-basic:

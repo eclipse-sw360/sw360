@@ -69,7 +69,9 @@ public class SVMUtils {
                 throw new IOException(errorMessage);
             }
             String body = new String(response.getEntity().getContent().readAllBytes());
-            log.debug("Response from Server .... \n{}", body);
+            log.debug("Response from Server .... \n{}{}",
+                    body.substring(0, Math.min(500, body.length())),
+                    body.length() > 500 ? "..." : "");
             return body;
         });
     }
