@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018,2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -12,14 +12,19 @@ package org.eclipse.sw360.rest.resourceserver.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
+import org.eclipse.sw360.rest.resourceserver.security.jwt.JwtIssuer;
 import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JWTAccessTokenConverter;
 import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JwtIssuerProperties;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -35,8 +40,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
@@ -44,9 +53,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -132,37 +141,58 @@ public class ResourceServerConfiguration {
 
     @Bean
     public AuthenticationManagerResolver<HttpServletRequest> jwtAuthenticationManagerResolver() {
-        Set<String> trustedIssuers = trustedIssuers();
+        Map<String, JwtIssuer> trustedIssuers = trustedIssuers();
         ConcurrentMap<String, AuthenticationManager> managers = new ConcurrentHashMap<>();
 
         return new JwtIssuerAuthenticationManagerResolver(issuer -> {
-            if (!trustedIssuers.contains(issuer)) {
+            JwtIssuer entry = trustedIssuers.get(issuer);
+            if (entry == null) {
                 throw new InvalidBearerTokenException("Invalid issuer");
             }
-            return managers.computeIfAbsent(issuer, this::jwtAuthenticationManagerForIssuer);
+            return managers.computeIfAbsent(issuer, key -> jwtAuthenticationManagerForIssuer(entry));
         });
     }
 
-    private AuthenticationManager jwtAuthenticationManagerForIssuer(String issuer) {
-        JwtDecoder jwtDecoder = JwtDecoders.fromIssuerLocation(issuer);
+    @Contract("_ -> new")
+    private @NonNull AuthenticationManager jwtAuthenticationManagerForIssuer(JwtIssuer issuer) {
+        JwtDecoder jwtDecoder = buildJwtDecoder(issuer);
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
         jwtAuthenticationProvider.setJwtAuthenticationConverter(sw360JWTAccessTokenConverter);
         return new ProviderManager(jwtAuthenticationProvider);
     }
 
-    private Set<String> trustedIssuers() {
-        Set<String> issuers = new LinkedHashSet<>();
-        jwtIssuerProperties.getTrustedIssuers().stream()
-                .filter(issuer -> issuer != null && !issuer.isBlank())
-                .map(String::trim)
-                .forEach(issuers::add);
-        if (issuers.isEmpty() && fallbackIssuerUri != null && !fallbackIssuerUri.isBlank()) {
-            issuers.add(fallbackIssuerUri.trim());
+    /**
+     * Build the {@link JwtDecoder} for a trusted issuer.
+     *
+     * <p>When {@link JwtIssuer#getJwkSetUri()} is provided, the decoder is built directly
+     * against the JWKS endpoint and the issuer claim is validated against
+     * {@link JwtIssuer#getIssuerUri()}. This skips OpenID Connect discovery.</p>
+     *
+     * <p>When {@link JwtIssuer#getJwkSetUri()} is absent, the decoder is built via
+     * discovery against {@link JwtIssuer#getIssuerUri()}, which requires the issuer URL
+     * to be reachable and TLS-trusted by the JVM.</p>
+     */
+    private JwtDecoder buildJwtDecoder(@NonNull JwtIssuer issuer) {
+        if (issuer.getJwkSetUri() != null && !issuer.getJwkSetUri().isBlank()) {
+            NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(issuer.getJwkSetUri()).build();
+            OAuth2TokenValidator<Jwt> validator = JwtValidators.createDefaultWithIssuer(issuer.getIssuerUri());
+            decoder.setJwtValidator(validator);
+            return decoder;
+        }
+        return JwtDecoders.fromIssuerLocation(issuer.getIssuerUri());
+    }
+
+    private @NonNull @Unmodifiable Map<String, JwtIssuer> trustedIssuers() {
+        Map<String, JwtIssuer> issuers = new LinkedHashMap<>(jwtIssuerProperties.getEffectiveIssuers());
+        if (issuers.isEmpty() && CommonUtils.isNotNullEmptyOrWhitespace(fallbackIssuerUri)) {
+            JwtIssuer fallback = new JwtIssuer();
+            fallback.setIssuerUri(fallbackIssuerUri.trim());
+            issuers.put(fallback.getIssuerUri(), fallback);
         }
         if (issuers.isEmpty()) {
             throw new IllegalStateException("No trusted JWT issuer configured for the SW360 resource server.");
         }
-        return Set.copyOf(issuers);
+        return Map.copyOf(issuers);
     }
 
     @Bean
