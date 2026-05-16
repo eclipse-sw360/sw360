@@ -64,16 +64,26 @@ file to tweak SW360 behaviour.
 
 **Spring Controllers**
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
-* `SW360_SECURITY_JWT_TRUSTED_ISSUERS`: Comma-separated JWT issuer URLs trusted
-    by the Resource Server (default:
-    `http://localhost:8080/authorization,http://localhost:8083/realms/sw360`).
-    Configure all issuers whose Bearer tokens the REST API should accept, for
-    example the built-in SW360 Authorization Server and Keycloak. Each value
-    must exactly match the token's `iss` claim and must be reachable from the
-    `sw360` container for issuer discovery/JWKS lookup.
-* `JWKS_ISSUER_URI`: Single issuer fallback URI (default:
-    `http://localhost:8080/authorization`). This is used only if
-    `sw360.security.jwt.trusted-issuers` is not generated/configured.
+* `SW360_SECURITY_JWT_ISSUERS_<N>_ISSUER_URI`: Public issuer URL for slot
+    `<N>` (0-based). Validated against the `iss` claim of incoming Bearer
+    tokens, so the value must exactly match the token issuer (scheme, host,
+    port, context path, trailing slash). Configure one slot per trusted
+    identity provider, e.g. the built-in SW360 Authorization Server and a
+    Keycloak realm. Defaults:
+    * `SW360_SECURITY_JWT_ISSUERS_0_ISSUER_URI=http://localhost:8080/authorization`
+    * `SW360_SECURITY_JWT_ISSUERS_1_ISSUER_URI=http://localhost:8083/realms/sw360`
+* `SW360_SECURITY_JWT_ISSUERS_<N>_JWK_SET_URI`: *(Optional)* JWKS endpoint URL
+    for slot `<N>`. When set, the resource server skips OpenID Connect
+    discovery and fetches JWKS directly from this URL. Useful when the
+    identity provider sits behind a reverse proxy with a self-signed or
+    privately-issued certificate; the resource server can reach the JWKS
+    endpoint over a loopback or internal URL while clients keep using the
+    public issuer URL. Leave unset to use discovery against `_ISSUER_URI`.
+
+    Both variables are bound directly to
+    `sw360.security.jwt.issuers[N].{issuer-uri,jwk-set-uri}` via Spring Boot's
+    relaxed environment-variable binding; nothing needs to be templated in
+    `application.yml`.
 
 **Email Configuration**
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to
