@@ -59,4 +59,10 @@ service CveSearchService {
    RequestStatus update();
 
     set<string> findCpes(1: string vendor, 2: string product, 3:string version);
+
+    /**
+     * Searches CVEs for the given package using its PURL and persists any
+     * PackageVulnerabilityRelation records found.
+     */
+    VulnerabilityUpdateStatus updateForPackage(1: string packageId);
 }

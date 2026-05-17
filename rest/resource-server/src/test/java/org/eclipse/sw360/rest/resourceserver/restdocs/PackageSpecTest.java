@@ -49,16 +49,24 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.thrift.VerificationState;
+import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.PackageVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -80,6 +88,9 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
     @MockitoBean
     private Sw360ProjectService projectServiceMock;
+
+    @MockitoBean
+    private Sw360VulnerabilityService vulnerabilityServiceMock;
 
     private Package package1;
     private Package package2;
@@ -173,6 +184,35 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         given(this.packageServiceMock.getTotalPackagesCounts()).willReturn(packageList.size());
 
 
+
+        VerificationStateInfo pkgVerificationStateInfo = new VerificationStateInfo();
+        pkgVerificationStateInfo.setCheckedBy("admin@sw360.org");
+        pkgVerificationStateInfo.setCheckedOn("2024-01-15");
+        pkgVerificationStateInfo.setComment("Verified by security team");
+        pkgVerificationStateInfo.setVerificationState(VerificationState.CHECKED);
+
+        PackageVulnerabilityRelation pkgVulRelation = new PackageVulnerabilityRelation();
+        pkgVulRelation.setPackageId(package1.getId());
+        pkgVulRelation.setVulnerabilityId("vuln-001");
+        pkgVulRelation.setMatchedBy("CPE");
+        pkgVulRelation.setUsedNeedle("cpe:2.3:a:angular:angular-sanitize:1.8.2:*:*:*:*:*:*:*");
+        pkgVulRelation.setVerificationStateInfo(List.of(pkgVerificationStateInfo));
+
+        VulnerabilityDTO pkgVulDto = new VulnerabilityDTO();
+        pkgVulDto.setExternalId("CVE-2023-12345");
+        pkgVulDto.setTitle("Prototype Pollution in angular-sanitize");
+        pkgVulDto.setPriority("2 - major");
+        pkgVulDto.setComment("Needs review");
+        pkgVulDto.setAction("Update to Fixed Version");
+        pkgVulDto.setProjectRelevance("APPLICABLE");
+        pkgVulDto.setIntPackageId(package1.getId());
+        pkgVulDto.setIntPackageName("angular-sanitize 1.8.2");
+        pkgVulDto.setPackageVulnerabilityRelation(pkgVulRelation);
+
+        List<VulnerabilityDTO> pkgVulDtos = List.of(pkgVulDto);
+
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByPackageId(any(), any())).willReturn(pkgVulDtos);
+        given(this.vulnerabilityServiceMock.updatePackageVulnerabilityRelation(any(), any())).willReturn(RequestStatus.SUCCESS);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
@@ -500,6 +540,75 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void should_document_get_vulnerabilities_of_package() throws Exception {
+        mockMvc.perform(get("/api/packages/" + package1.getId() + "/vulnerabilities")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]externalId").description("The external Id of the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]title").description("The title of the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]priority").description("The priority of the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation").description("The packageVulnerabilityRelation of the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.packageId").description("The packageId of the packageVulnerabilityRelation"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.vulnerabilityId").description("The vulnerabilityId of the packageVulnerabilityRelation"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.matchedBy").description("The matcher used to find this vulnerability for the package"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.usedNeedle").description("The search needle used to find this vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]checkedOn").description("The checkedOn of verificationStateInfo"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]checkedBy").description("The checkedBy of verificationStateInfo"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]comment").description("The comment of verificationStateInfo"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]verificationState").description("The verificationState of verificationStateInfo " + Arrays.asList(VerificationState.values())),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerabilities resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_update_package_vulnerability_relation() throws Exception {
+        VulnerabilityState vulnerabilityState = new VulnerabilityState();
+        Set<ReleaseVulnerabilityRelationDTO> relationDTOs = new HashSet<>();
+        ReleaseVulnerabilityRelationDTO relationDTO = new ReleaseVulnerabilityRelationDTO();
+        relationDTO.setExternalId("CVE-2023-12345");
+        relationDTOs.add(relationDTO);
+        vulnerabilityState.setReleaseVulnerabilityRelationDTOs(relationDTOs);
+        vulnerabilityState.setComment("Change status NOT_CHECKED");
+        vulnerabilityState.setVerificationState(VerificationState.NOT_CHECKED);
+
+        mockMvc.perform(patch("/api/packages/" + package1.getId() + "/vulnerabilities")
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(vulnerabilityState))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]externalId").description("The externalId of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]title").description("The title of the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]priority").description("The priority of the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]comment").description("Any message added while updating the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectAction").description("The action of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation").description("The packageVulnerabilityRelation of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.packageId").description("The packageId of the packageVulnerabilityRelation"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.vulnerabilityId").description("The vulnerabilityId of the packageVulnerabilityRelation"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.matchedBy").description("The matcher used to find this vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.usedNeedle").description("The search needle used to find this vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]checkedOn").description("The checkedOn of verificationStateInfo"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]checkedBy").description("The checkedBy of verificationStateInfo"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]comment").description("The comment of verificationStateInfo"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageVulnerabilityRelation.verificationStateInfo.[]verificationState").description("The verificationState of verificationStateInfo " + Arrays.asList(VerificationState.values())),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
     }
 
 }
