@@ -740,6 +740,11 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
                 if (Project._Fields.ADDITIONAL_DATA.getFieldName().equals(entry.getKey())) {
                     andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
+                } else if (SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY.equals(entry.getKey())) {
+                    String value = entry.getValue().stream().findFirst().orElse("");
+                    if (!value.isEmpty()) {
+                        andConditions.add(elemMatch("attachments", eq("createdBy", value)));
+                    }
                 } else if (EMPTY_SEARCH_FIELDS.contains(entry.getKey())
                         && entry.getValue().contains(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN)) {
                     andConditions.add(buildEmptyProjectFieldRestriction(entry.getKey(), entry.getValue()));
