@@ -85,6 +85,7 @@ ENV ENABLE_DISKSPACE="false"
 # Trusted JWT issuers (Spring relaxed-binding to sw360.security.jwt.issuers[N]).
 # *_ISSUER_URI is required per slot; *_JWK_SET_URI is optional and, when set,
 # skips OpenID Connect discovery and fetches JWKS directly from that URL.
+# Shared by both /resource and /authorization Bearer JWT validation paths.
 ENV SW360_SECURITY_JWT_ISSUERS_0_ISSUER_URI="http://localhost:8080/authorization"
 ENV SW360_SECURITY_JWT_ISSUERS_1_ISSUER_URI="http://localhost:8083/realms/sw360"
 #ENV SW360_SECURITY_JWT_ISSUERS_1_JWK_SET_URI="http://localhost:8083/realms/sw360/protocol/openid-connect/certs"

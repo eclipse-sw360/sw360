@@ -73,7 +73,7 @@ file to tweak SW360 behaviour.
     * `SW360_SECURITY_JWT_ISSUERS_0_ISSUER_URI=http://localhost:8080/authorization`
     * `SW360_SECURITY_JWT_ISSUERS_1_ISSUER_URI=http://localhost:8083/realms/sw360`
 * `SW360_SECURITY_JWT_ISSUERS_<N>_JWK_SET_URI`: *(Optional)* JWKS endpoint URL
-    for slot `<N>`. When set, the resource server skips OpenID Connect
+    for slot `<N>`. When set, SW360 skips OpenID Connect
     discovery and fetches JWKS directly from this URL. Useful when the
     identity provider sits behind a reverse proxy with a self-signed or
     privately-issued certificate; the resource server can reach the JWKS
@@ -84,6 +84,9 @@ file to tweak SW360 behaviour.
     `sw360.security.jwt.issuers[N].{issuer-uri,jwk-set-uri}` via Spring Boot's
     relaxed environment-variable binding; nothing needs to be templated in
     `application.yml`.
+
+    The trusted issuer list is consumed by both `/resource` and
+    `/authorization` Bearer JWT validation paths.
 
 **Email Configuration**
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to

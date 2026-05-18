@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.rest.resourceserver.security.jwt;
+package org.eclipse.sw360.rest.common.security.jwt;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +34,8 @@ class Sw360JwtIssuerPropertiesTest {
         first.setIssuerUri("https://sw360.example.com/kc/realms/sw360");
         first.setJwkSetUri("  http://localhost:8083/kc/realms/sw360/protocol/openid-connect/certs  ");
         JwtIssuer second = new JwtIssuer();
-        second.setIssuerUri("http://localhost:8080/authorization");
-        second.setJwkSetUri("   "); // blank should be normalized to null
+        second.setIssuerUri("http://localhost:8090/authorization");
+        second.setJwkSetUri("   ");
         props.setIssuers(Arrays.asList(first, second));
 
         Map<String, JwtIssuer> result = props.getEffectiveIssuers();
@@ -43,7 +43,7 @@ class Sw360JwtIssuerPropertiesTest {
         assertThat(result).hasSize(2);
         assertThat(result.get("https://sw360.example.com/kc/realms/sw360").getJwkSetUri())
                 .isEqualTo("http://localhost:8083/kc/realms/sw360/protocol/openid-connect/certs");
-        assertThat(result.get("http://localhost:8080/authorization").getJwkSetUri()).isNull();
+        assertThat(result.get("http://localhost:8090/authorization").getJwkSetUri()).isNull();
     }
 
     @Test
