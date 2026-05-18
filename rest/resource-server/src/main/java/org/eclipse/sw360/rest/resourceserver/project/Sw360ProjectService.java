@@ -755,6 +755,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         } return updatedObligationStatusMap;
     }
 
+    public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
+                                                                            Project project) throws TException {
+        List<Obligation> obligations = SW360Utils.getObligations();
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = Maps.newHashMap();
+        ThriftClients thriftClients = new ThriftClients();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                obligationStatusMap, obligations, true);
+        return updatedObligationStatusMap;
+    }
+
     public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(
             Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
             List<Release> releases, User user) {
