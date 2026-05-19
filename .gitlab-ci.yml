@@ -29,6 +29,7 @@ include:
       stage: renovate
       autodiscover: true
       autodiscover_filter: 'sw360/sw360portal'
+      onboarding: false
       rules_renovate_all:
         - if: $CI_PIPELINE_SOURCE == "schedule"
           when: always
@@ -120,6 +121,8 @@ variables:
     fi
 
 renovate:
+  variables:
+    RENOVATE_BASE_BRANCH_PATTERNS: "mainct"
   before_script: []
 
 build:
