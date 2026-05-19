@@ -4,6 +4,7 @@
 image: debian:bookworm
 
 stages:
+  - renovate
   - build
   - images
 
@@ -13,6 +14,15 @@ include:
     file:
       - docker/build-docker-image.gitlab-ci.yml
       - general/use-proxy.gitlab-ci.yml
+  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
+  - component: code.siemens.com/code-ops/ci-components/renovate@~latest
+    inputs:
+      stage: renovate
+      autodiscover: true
+      autodiscover_filter: 'sw360/sw360portal'
+      rules_renovate_all:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: always
 
 variables:
   BUILD_ARTIFACT_ROOT: $CI_PROJECT_DIR/artifacts
@@ -25,6 +35,7 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx3072m"
   THRIFT_VERSION: "0.20.0"
   THRIFT_DIR: ${CI_PROJECT_DIR}/dist/thrift-${THRIFT_VERSION}
+  KC_VERSION: "26.5.0"
 
 ################
 # Helper anchors
@@ -99,12 +110,15 @@ variables:
       fi
     fi
 
+renovate:
+  before_script: []
+
 build:
   stage: build
   image: maven:3-eclipse-temurin-21
   extends: .awesome-ci/use-proxy
   services:
-    - couchdb:3.4
+    - couchdb:3.5
   before_script:
     - export _JAVA_OPTIONS="$_JAVA_OPTIONS -Dhttp.proxySet=true $JAVA_PROXY_OPTS"
     - export no_proxy="${no_proxy},couchdb"

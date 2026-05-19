@@ -12,6 +12,23 @@
       "registryUrls": [
         "https://code.siemens.com"
       ]
+    },
+    {
+      "description": "Group all CI image and tool updates together",
+      "matchDatasources": [
+        "docker",
+        "gitlab-tags"
+      ],
+      "matchPackageNames": [
+        "debian",
+        "maven",
+        "couchdb",
+        "keycloak/keycloak",
+        "awesome-ci/templates"
+      ],
+      "groupName": "Pipeline",
+      "semanticCommitType": "ci",
+      "automerge": false
     }
   ],
   "customManagers": [
@@ -33,11 +50,11 @@
         "/.gitlab-ci.yml/"
       ],
       "matchStrings": [
-        "KC_VERSION=(?<currentValue>\\d+(?:\\.\\d+)*)"
+        "KC_VERSION:\\s+\"?(?<currentValue>\\d+\\.\\d+\\.\\d+)\"?"
       ],
       "depNameTemplate": "keycloak/keycloak",
       "datasourceTemplate": "docker",
-      "registryUrlTemplate": "quay.io"
+      "registryUrlTemplate": "https://quay.io"
     }
   ],
   "groupName": "Pipeline",
