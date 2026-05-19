@@ -60,9 +60,54 @@ RUN pushd ${UTILS_DIR} \
 # docker-entrypoint.sh to do this at every container start.
 FROM tomcat:11-jre21-temurin-noble
 
+# Default environment variables that can be overridden at runtime
+# For more information, please check the documentation.
+#
+# CouchDB settings
+ENV COUCHDB_URL="http://couchdb:5984"
+ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
+#
+# Spring controllers
+ENV ENABLE_DISKSPACE="false"
+# Trusted JWT issuers (Spring relaxed-binding to sw360.security.jwt.issuers[N]).
+# *_ISSUER_URI is required per slot; *_JWK_SET_URI is optional and, when set,
+# skips OpenID Connect discovery and fetches JWKS directly from that URL.
+ENV SW360_SECURITY_JWT_ISSUERS_0_ISSUER_URI="http://localhost:8080/authorization"
+ENV SW360_SECURITY_JWT_ISSUERS_1_ISSUER_URI="http://localhost:8083/realms/sw360"
+#ENV SW360_SECURITY_JWT_ISSUERS_1_JWK_SET_URI="http://localhost:8083/realms/sw360/protocol/openid-connect/certs"
+#
+# Email configs
+ENV EMAIL_PROPERTIES_HOST=""
+ENV EMAIL_PROPERTIES_PORT=""
+ENV EMAIL_PROPERTIES_STARTTLS="false"
+ENV EMAIL_PROPERTIES_ENABLE_SSL="false"
+ENV EMAIL_PROPERTIES_AUTH_REQUIRED="false"
+ENV EMAIL_PROPERTIES_FROM="__No_Reply__@sw360.org"
+ENV EMAIL_PROPERTIES_SUPPORT_EMAIL="help@sw360.org"
+ENV EMAIL_PROPERTIES_TLS_PROTOCOL="TLSv1.2"
+ENV EMAIL_PROPERTIES_TLS_TRUST="*"
+ENV EMAIL_PROPERTIES_DEBUG="false"
+#
+# SVM Configs
+ENV SVM_API_BASE_PATH="https://svm.example.org"
+ENV SVM_API_ROOT_PATH="api/v1"
+ENV SVM_SW360_API_URL="https://svm.example.org/application.json"
+ENV SVM_SW360_CERTIFICATE_FILENAME="not-configured.pfx"
+#
+# Security settings
+ENV SW360_SECURITY_HTTP_BASIC_ENABLED="true"
+#
+# Other settings
+ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
+ENV SW360_CORS_ALLOWED_ORIGIN="*"
+ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
+ENV SW360_BASE_URL="http://localhost:8080"
+ENV SW360_FRONTEND_URL="http://localhost:3000"
+
 ARG TOMCAT_DIR=${CATALINA_HOME:-/usr/local/tomcat}
 
-WORKDIR /app/docker-config
+WORKDIR /app/sw360
 
 # Install required package for entrypoint script
 RUN apt-get update -qq \
@@ -76,9 +121,17 @@ COPY --from=build /build/artifacts/*.war ${TOMCAT_DIR}/webapps/
 # Copy the configuration files
 COPY ./scripts/docker-config .
 
+# Bundled JWT signing keystore (acts as a first-run fallback; the entrypoint
+# copies it to /etc/sw360/jwt-keystore.jks if no persistent keystore exists).
+# Operators can replace it with their own keystore via the 'etc' named volume.
+COPY rest/authorization-server/src/main/resources/jwt-keystore.jks ./jwt-keystore.jks
+
+# Tomcat manager for debugging portlets
 # Make entrypoint executable
-RUN chmod a+x ./docker-entrypoint.sh
+RUN mv ${CATALINA_HOME}/webapps.dist/manager ${CATALINA_HOME}/webapps/manager \
+    && mv ./manager/context.xml ${CATALINA_HOME}/webapps/manager/META-INF/context.xml \
+    && chmod a+x ./docker-entrypoint.sh
 
 EXPOSE 8080
 
-ENTRYPOINT ["/app/docker-config/docker-entrypoint.sh"]
+ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]

@@ -26,6 +26,15 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
 # Copy the optimized KC
 FROM quay.io/keycloak/keycloak:${KC_VERSION}
 
+# Default environment variables that can be overridden at runtime
+# For more information, please check the documentation.
+#
+# CouchDB settings
+ENV COUCHDB_URL="http://couchdb:5984"
+ENV COUCHDB_USER="admin"
+ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
+ENV CLOUDANT_ENABLE_RETRIES="true"
+
 # Create the /etc/sw360
 USER root
 
@@ -48,4 +57,4 @@ COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
 ENTRYPOINT ["/app/docker-config/docker-entrypoint-keycloak.sh"]
 
-CMD ["start-dev", "--debug"]
+CMD ["start", "--optimized"]
