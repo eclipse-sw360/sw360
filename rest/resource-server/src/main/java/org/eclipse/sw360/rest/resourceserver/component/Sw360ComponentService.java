@@ -491,6 +491,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 case "vendorNames" -> ComponentSortColumn.BY_VENDOR;
                 case "mainLicenseIds" -> ComponentSortColumn.BY_MAINLICENSE;
                 case "type" -> ComponentSortColumn.BY_TYPE;
+                case "score" -> ComponentSortColumn.BY_SCORE;
                 default -> column; // Default to BY_CREATEDON if no match
             };
             ascending = order.isAscending();
@@ -518,7 +519,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 case "version" -> ReleaseSortColumn.BY_VERSION;
                 case "clearingState" -> ReleaseSortColumn.BY_CLEARING_STATE;
                 case "mainlineState" -> ReleaseSortColumn.BY_MAINLINE_STATE;
-                default -> column;
+                case "score" -> ReleaseSortColumn.BY_SCORE;
+                default -> column; // Default to BY_CREATEDON if no match
             };
             ascending = order.isAscending();
         }

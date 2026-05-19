@@ -194,6 +194,8 @@ public class ProjectSearchHandler {
             case ProjectSortColumn.BY_DESCRIPTION -> "description_sort";
             case ProjectSortColumn.BY_RESPONSIBLE -> "projectResponsible_sort";
             case ProjectSortColumn.BY_STATE -> "state_sort";
+            // null signals Nouveau to skip sorting and return results ranked by relevance score
+            case ProjectSortColumn.BY_SCORE -> null;
             case null -> "name_sort";
             default -> "name_sort";
         };

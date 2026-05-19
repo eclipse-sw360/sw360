@@ -47,7 +47,7 @@ public class Sw360VendorService {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
             PaginationData pageData = pageableToPaginationData(pageable,
-                    VendorSortColumn.BY_FULLNAME, true);
+                    VendorSortColumn.BY_FULLNAME, true); // Non-search: sort by fullname
             return sw360VendorClient.getAllVendorListPaginated(pageData);
         } catch (TException e) {
             throw new RuntimeException(e);
@@ -58,7 +58,7 @@ public class Sw360VendorService {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
             PaginationData pageData = pageableToPaginationData(pageable,
-                    VendorSortColumn.BY_FULLNAME, true);
+                    VendorSortColumn.BY_SCORE, true);
             return sw360VendorClient.searchVendors(searchText, pageData);
         } catch (TException e) {
             throw new RuntimeException(e);
@@ -224,7 +224,8 @@ public class Sw360VendorService {
             column = switch (property) {
                 case "fullname" -> VendorSortColumn.BY_FULLNAME;
                 case "shortname" -> VendorSortColumn.BY_SHORTNAME;
-                default -> column; // Default to BY_NAME if no match
+                case "score" -> VendorSortColumn.BY_SCORE;
+                default -> column; // Default to BY_FULLNAME if no match
             };
             ascending = order.isAscending();
         } else {
