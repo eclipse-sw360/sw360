@@ -1026,6 +1026,10 @@
                 <requireJavaVersion>
                   <version>[21,23)</version>
                 </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[3.9.0,)</version>
+                  <message>ERROR: This project requires Maven 3.9.0 or newer.</message>
+                </requireMavenVersion>
               </rules>
               <fail>true</fail>
             </configuration>
