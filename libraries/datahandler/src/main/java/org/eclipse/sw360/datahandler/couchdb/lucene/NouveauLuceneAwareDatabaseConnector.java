@@ -486,7 +486,6 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     public static @NotNull String prepareWildcardQuery(@NotNull String query) {
-        String leadingWildcardChar = DatabaseSettings.LUCENE_LEADING_WILDCARD ? "*" : "";
         if (query.startsWith("\"") && query.endsWith("\"")) {
             // Exact phrase search - strip outer quotes first, sanitize, then add quotes back
             String innerText = query.substring(1, query.length() - 1);
@@ -495,7 +494,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             return "\"" + sanitized + "\"";
         } else {
             String wildCardQuery = Arrays.stream(sanitizeQueryInput(query)
-                    .split(" ")).map(q -> leadingWildcardChar + q + "*")
+                    .split(" ")).map(q -> q + "*")
                     .collect(Collectors.joining(" "));
             return "(\"" + wildCardQuery + "\" " + wildCardQuery + ")";
         }
