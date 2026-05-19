@@ -1,0 +1,54 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "local>awesome-ci/templates"
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": [
+        "gitlabci",
+        "gitlab-tags"
+      ],
+      "registryUrls": [
+        "https://code.siemens.com"
+      ]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/.gitlab-ci.yml/"
+      ],
+      "matchStrings": [
+        "awesome-ci/templates\\s+ref:\\s+(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "awesome-ci/templates",
+      "datasourceTemplate": "gitlab-tags",
+      "registryUrlTemplate": "https://code.siemens.com"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/.gitlab-ci.yml/"
+      ],
+      "matchStrings": [
+        "KC_VERSION=(?<currentValue>\\d+(?:\\.\\d+)*)"
+      ],
+      "depNameTemplate": "keycloak/keycloak",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "quay.io"
+    }
+  ],
+  "groupName": "Pipeline",
+  "semanticCommitType": "ci",
+  "configMigration": true,
+  "automerge": true,
+  "labels": [
+    "dependencies"
+  ],
+  "enabledManagers": [
+    "gitlabci",
+    "custom.regex"
+  ]
+}

@@ -23,6 +23,7 @@ variables:
   _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true -DSPDXParser.OnlyUseLocalLicenses=true
   # Use m2 repository in build dir for caching
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx3072m"
+  THRIFT_VERSION: "0.20.0"
   THRIFT_DIR: ${CI_PROJECT_DIR}/dist/thrift-${THRIFT_VERSION}
 
 ################
@@ -74,17 +75,28 @@ variables:
 
 .install_thrift: &install_thrift
   - |
-    if [ ! -d $THRIFT_DIR ]; then
-      mkdir -p $THRIFT_DIR;
-      apt-get update -qq
-      DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake
-      chmod +x third-party/thrift/install-thrift.sh
-      DESTDIR=$THRIFT_DIR third-party/thrift/install-thrift.sh
-      # Create GitLab package
-      tar -czvf $CI_PROJECT_DIR/dist/thrift-${THRIFT_VERSION}.tar.gz -C $THRIFT_DIR .
-      curl --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-           --upload-file $CI_PROJECT_DIR/dist/thrift-${THRIFT_VERSION}.tar.gz \
-           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/thrift/${THRIFT_VERSION}/thrift-${THRIFT_VERSION}.tar.gz"
+    THRIFT_PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
+    THRIFT_BUILD_DIR="${CI_PROJECT_DIR}/dist/thrift-build-${THRIFT_VERSION}"
+    THRIFT_SOURCE_ARCHIVE="${THRIFT_BUILD_DIR}/cache/thrift-${THRIFT_VERSION}.tar.gz"
+    THRIFT_BINARY_ARCHIVE="${CI_PROJECT_DIR}/dist/thrift-${THRIFT_VERSION}-${THRIFT_PLATFORM}.tar.gz"
+    THRIFT_BINARY_PACKAGE_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/thrift-binary/${THRIFT_VERSION}/$(basename "${THRIFT_BINARY_ARCHIVE}")"
+    THRIFT_SOURCE_PACKAGE_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/thrift-source/${THRIFT_VERSION}/thrift-${THRIFT_VERSION}.tar.gz"
+    if [ ! -x "$THRIFT_DIR/usr/local/bin/thrift" ]; then
+      mkdir -p "$THRIFT_DIR" "${THRIFT_BUILD_DIR}/cache" "$CI_PROJECT_DIR/dist"
+      if curl --fail --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --output "$THRIFT_BINARY_ARCHIVE" "$THRIFT_BINARY_PACKAGE_URL"; then
+        tar -xzf "$THRIFT_BINARY_ARCHIVE" -C "$THRIFT_DIR"
+      else
+        curl --fail --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --output "$THRIFT_SOURCE_ARCHIVE" "$THRIFT_SOURCE_PACKAGE_URL" || true
+        apt-get update -qq
+        DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake sudo
+        chmod +x third-party/thrift/install-thrift.sh
+        BASEDIR="$THRIFT_BUILD_DIR" DESTDIR="$THRIFT_DIR" third-party/thrift/install-thrift.sh
+        tar -czf "$THRIFT_BINARY_ARCHIVE" -C "$THRIFT_DIR" .
+        curl --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "$THRIFT_BINARY_ARCHIVE" "$THRIFT_BINARY_PACKAGE_URL" || true
+        if [ -f "$THRIFT_SOURCE_ARCHIVE" ]; then
+          curl --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "$THRIFT_SOURCE_ARCHIVE" "$THRIFT_SOURCE_PACKAGE_URL" || true
+        fi
+      fi
     fi
 
 build:
@@ -118,7 +130,7 @@ build:
     # Build code and create artifacts
     - |
       export PATH=$PATH:$THRIFT_DIR/usr/local/bin
-      if [ $CI_COMMIT_REF_NAME == "mainct" ]; then
+      if [ "$CI_COMMIT_REF_NAME" = "mainct" ]; then
         mvn_target="deploy"
       else
         mvn_target="install"
@@ -158,6 +170,7 @@ sw360-image:
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
     IMAGE_TAG: latest
+    ADDITIONAL_IMAGE_TAGS: $CI_COMMIT_SHORT_SHA
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.internal
     EXTRA_ARGUMENTS: --reproducible --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN
   needs:
@@ -173,6 +186,7 @@ keycloak-image:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
     EXTRA_ARGUMENTS: --reproducible --build-arg KC_VERSION=$KC_VERSION
     IMAGE_TAG: $KC_VERSION
+    ADDITIONAL_IMAGE_TAGS: $CI_COMMIT_SHORT_SHA
     BUILD_CONTEXT: $BUILD_ARTIFACT_ROOT/keycloak
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.keycloak
   needs:
