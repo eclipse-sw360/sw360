@@ -354,7 +354,9 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             case ComponentSortColumn.BY_NAME -> "byname";
             case ComponentSortColumn.BY_MAINLICENSE -> "bymainlicense";
             case ComponentSortColumn.BY_TYPE -> "bycomponenttype";
-            case null -> "all";
+            // BY_SCORE: Nouveau handles ranking; "all" view used only for total count fallback
+            case ComponentSortColumn.BY_SCORE -> "all";
+            case null, default -> "all";
         };
     }
 

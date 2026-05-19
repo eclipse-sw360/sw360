@@ -337,6 +337,10 @@ public class RestControllerHelper<T> {
         if(order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
         }
+        // When sorting by score (relevance), skip client-side re-sorting to preserve Nouveau's score order
+        if ("score".equals(order.getProperty())) {
+            return null;
+        }
         Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
         if(order.isDescending()) {
             comparator = comparator.reversed();

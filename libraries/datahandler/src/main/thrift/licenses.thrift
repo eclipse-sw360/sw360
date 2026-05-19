@@ -50,6 +50,7 @@ enum ObligationElementStatus {
 }
 
 enum ObligationSortColumn {
+    BY_SCORE = -2,
     BY_TITLE = 0,
     BY_TEXT = 1,
     BY_LEVEL = 2

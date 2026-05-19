@@ -465,6 +465,7 @@ enum BulkOperationResultState {
 }
 
 enum ComponentSortColumn {
+    BY_SCORE = -2,
     BY_CREATEDON = -1,
     BY_VENDOR = 0,
     BY_NAME = 1,
@@ -473,6 +474,7 @@ enum ComponentSortColumn {
 }
 
 enum ReleaseSortColumn {
+    BY_SCORE = -2,
     BY_CREATEDON = -1,
     BY_NAME = 0,
     BY_VERSION = 1,
