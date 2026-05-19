@@ -43,7 +43,6 @@ public class DatabaseSettings {
     public static final boolean COUCH_DB_CACHE;
 
     public static final int LUCENE_SEARCH_LIMIT;
-    public static final boolean LUCENE_LEADING_WILDCARD;
 
     public static final boolean CLOUDANT_ENABLE_RETRIES;
     public static final int CLOUDANT_MAX_RETRIES;
@@ -75,8 +74,6 @@ public class DatabaseSettings {
         COUCH_DB_CACHE = Boolean.parseBoolean(props.getProperty("couchdb.cache", "true"));
 
         LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
-        LUCENE_LEADING_WILDCARD =
-                Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
 
         CLOUDANT_ENABLE_RETRIES = Boolean.parseBoolean(props.getProperty("cloudant.enable.retries", "true"));
         CLOUDANT_MAX_RETRIES = Integer.parseInt(props.getProperty("cloudant.max.retries", "2"));
