@@ -14,7 +14,9 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTEN
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
@@ -40,7 +42,8 @@ import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core
+        .BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -401,7 +404,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (null == buff) {
                 throw new TException("No data available for the user " + user.getEmail());
             }
-            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
+            setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, buff);
         } catch (ResourceNotFoundException e) {
             throw e;
@@ -435,6 +438,18 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
     private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
         FileCopyUtils.copy(buffer.array(), response.getOutputStream());
+    }
+
+    private void setContentDisposition(HttpServletResponse response, String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            response.setHeader(CONTENT_DISPOSITION, "attachment");
+            return;
+        }
+        String asciiName = fileName.replaceAll("[^\\x20-\\x7E]", "_");
+        String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        response.setHeader(CONTENT_DISPOSITION,
+                "attachment; filename=\"" + asciiName + "\"; filename*=UTF-8''" + encodedName);
     }
 
     private void setContentTypeForFormat(HttpServletResponse response, String format) {
@@ -500,7 +515,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 throw new TException("No data available for the user " + user.getEmail());
             }
             response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
-            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
+            setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, buffer);
         } catch (ResourceNotFoundException e) {
             throw e;
@@ -531,7 +546,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (SW360Constants.XML_FILE_EXTENSION.equalsIgnoreCase(reportBean.getBomType())) {
                 response.setContentType(SW360Constants.CONTENT_TYPE_XML);
             }
-            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
+            setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, ByteBuffer.wrap(buff.getBytes()));
         }
         catch (AccessDeniedException e) {
