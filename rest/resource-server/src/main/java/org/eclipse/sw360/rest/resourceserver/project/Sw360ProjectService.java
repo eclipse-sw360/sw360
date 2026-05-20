@@ -263,7 +263,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 selectedData.add(stringResult);
             }
         }
-        log.debug("Resulting string: {}", selectedData);
+        log.trace("Resulting string: {}", selectedData);
         return selectedData;
     }
 
