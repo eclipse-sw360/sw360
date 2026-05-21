@@ -164,6 +164,10 @@ ENV KC_METRICS_ENABLED=true
 # Configure a database vendor
 ENV KC_DB=postgres
 
+# Enable hostname:v2 feature during optimized image build. This allows
+# runtime configs such as KC_HOSTNAME_BACKCHANNEL_DYNAMIC in internal stacks.
+ENV KC_FEATURE_HOSTNAME=v2
+
 WORKDIR /opt/keycloak
 
 # Copy always does root:root with 644. Thus cp within container to get
@@ -184,6 +188,10 @@ ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_USER="admin"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
 ENV CLOUDANT_ENABLE_RETRIES="true"
+
+# Keep feature-hostname aligned with the build stage so runtime `kc.sh start`
+# sees the same feature set as the optimized server image.
+ENV KC_FEATURE_HOSTNAME=v2
 
 # Create the /etc/sw360
 USER root
