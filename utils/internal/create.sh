@@ -80,9 +80,14 @@ EOF
 
 find $PROJECT_ROOT/backend $PROJECT_ROOT/rest -name "pom.xml" -exec bash -c '
     if grep -q "<packaging>war</packaging>" {}; then
-        response=$(echo "\${project.groupId}:\${project.artifactId}:\${project.version}:war \${project.build.finalName}" | mvn -N -q -DforceStdout help:evaluate -f {} -Dstyle.color=never 2>/dev/null | sed -r "s/\x1B\[[0-9;]*[mK]//g")
+        response=$(echo "\${project.groupId}:\${project.artifactId}:\${project.version}:war \${deploy.name}" | mvn -N -q -DforceStdout help:evaluate -f {} -Dstyle.color=never 2>/dev/null | sed -r "s/\x1B\[[0-9;]*[mK]//g")
         artifact=$(echo $response | awk -F " " "{print \$1}")
         war_name=$(echo $response | awk -F " " "{print \$2}")
+        # Skip war modules that do not declare a deploy.name (rare; warn loudly).
+        if [ -z "$war_name" ] || [ "$war_name" = "null object or invalid expression" ]; then
+            echo "# WARN: {} declares <packaging>war</packaging> but no <deploy.name>; skipping" 1>&2
+            exit 0
+        fi
         echo "download_and_copy \"$artifact\" \"$war_name\""
     fi
 ' \;
