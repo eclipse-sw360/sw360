@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
+
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -352,18 +353,30 @@ public class FossologyHandler implements FossologyService.Iface {
                         furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
                         furthestStep.setResult(String.valueOf(jobId));
                         log.error("FAILED to start scan job for uploadId: {}", uploadId);
+                        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
                     }
                 } catch (RuntimeException e) {
-                    bailUploadFailed(componentClient, release, user, fossologyProcess, e, furthestStep,
-                            "FOSSology scan trigger aborted for uploadId: " + uploadId,
-                            "Scan aborted");
+                    log.error("FOSSology scan trigger aborted for uploadId: {}", uploadId, e);
+                    furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
+                    furthestStep.setResult("Scan aborted");
+                    updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
                     throw e;
                 }
                 break;
 
             case IN_WORK:
                 // Query scan status using v2 API
-                int scanningJobId = Integer.parseInt(furthestStep.getProcessStepIdInTool());
+                String rawJobId = furthestStep.getProcessStepIdInTool();
+                int scanningJobId;
+                try {
+                    scanningJobId = Integer.parseInt(rawJobId);
+                } catch (NumberFormatException e) {
+                    log.error("Invalid or missing job ID in scan step (value: {}), resetting to NEW", rawJobId);
+                    furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
+                    furthestStep.setResult("Invalid job ID: " + rawJobId);
+                    updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+                    break;
+                }
                 Map<String, String> statusResponse = fossologyRestClient.checkScanStatus(scanningJobId);
                 int status = scanStatusCodeV2(statusResponse);
 
