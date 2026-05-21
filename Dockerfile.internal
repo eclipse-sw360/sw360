@@ -17,6 +17,15 @@ ENV BUILD_ARTIFACT_ROOT=/build/artifacts
 ENV WORK_DIR=/build/sw360
 ENV UTILS_DIR=$WORK_DIR/utils/internal
 
+# Runtime layout: wars live under /app/sw360/wars/ and Tomcat context
+# descriptors under conf/Catalina/localhost/. Keeping wars outside webapps/
+# means the context path is controlled exclusively by the descriptor
+# filename (e.g. resource.xml -> /resource), independent of the upstream
+# war filename (which still carries the version, e.g. resource-server-X.war).
+ENV BUILD_WARS_DIR=${BUILD_ARTIFACT_ROOT}/wars
+ENV BUILD_CONTEXT_DIR=${BUILD_ARTIFACT_ROOT}/context-descriptors
+ENV RUNTIME_WARS_DIR=/app/sw360/wars
+
 SHELL ["/bin/bash", "-c"]
 
 WORKDIR $WORK_DIR
@@ -50,7 +59,7 @@ COPY . .
 
 RUN pushd ${UTILS_DIR} \
  && chmod +x ./create.sh \
- && ./create.sh $WORK_DIR "${BUILD_ARTIFACT_ROOT}/" | tee download.sh \
+ && ./create.sh "$WORK_DIR" "$BUILD_WARS_DIR" "$BUILD_CONTEXT_DIR" "$RUNTIME_WARS_DIR" | tee download.sh \
  && chmod +x download.sh \
  && bash download.sh
 
@@ -115,8 +124,15 @@ RUN apt-get update -qq \
     gettext-base grep curl \
  && rm -rf /var/lib/apt/lists/*
 
-# Copy the webapps
-COPY --from=build /build/artifacts/*.war ${TOMCAT_DIR}/webapps/
+# Stage wars outside Tomcat's webapps/ so context paths are driven purely by
+# the per-context descriptors below. Tomcat will not auto-deploy these wars
+# from this location.
+RUN mkdir -p /app/sw360/wars ${TOMCAT_DIR}/conf/Catalina/localhost
+COPY --from=build /build/artifacts/wars/*.war /app/sw360/wars/
+
+# Per-context descriptors: filename (sans .xml) is the URL context path,
+# docBase points at the matching war under /app/sw360/wars/.
+COPY --from=build /build/artifacts/context-descriptors/*.xml ${TOMCAT_DIR}/conf/Catalina/localhost/
 
 # Copy the configuration files
 COPY ./scripts/docker-config .
