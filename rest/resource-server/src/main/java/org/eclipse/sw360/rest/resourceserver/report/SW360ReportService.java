@@ -367,7 +367,16 @@ public class SW360ReportService {
                 projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true,
                 reportBean.isWithSubProject(), sw360User);
 
-        List<AttachmentUsage> attchmntUsg = attachmentService.getAttachmentUsages(id);
+        List<AttachmentUsage> attchmntUsg = new ArrayList<>(attachmentService.getAttachmentUsages(id));
+        if (reportBean.isWithSubProject()) {
+            mappedProjectLinks.stream()
+                    .map(ProjectLink::getId)
+                    .filter(projectLinkId -> !id.equals(projectLinkId))
+                    .distinct()
+                    .forEach(subProjectId -> wrapTException(() -> {
+                        attchmntUsg.addAll(attachmentService.getAttachmentUsages(subProjectId));
+                    }));
+        }
 
         Map<Source, Set<String>> releaseIdToExcludedLicenses = attchmntUsg.stream()
                 .collect(Collectors.toMap(AttachmentUsage::getOwner,

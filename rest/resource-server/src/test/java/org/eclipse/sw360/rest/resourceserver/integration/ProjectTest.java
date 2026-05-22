@@ -1452,6 +1452,45 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_get_license_info_report_with_subproject_releases() throws IOException, TException {
+        // Parent project with NO direct releases but with a linked sub-project
+        Project parentProject = new Project();
+        parentProject.setId("parentProj123");
+        parentProject.setName("Parent No Direct Releases");
+        parentProject.setVersion("1.0");
+        parentProject.setProjectType(ProjectType.CUSTOMER);
+        parentProject.setVisbility(Visibility.EVERYONE);
+
+        // Sub-project that has releases with CLI attachments
+        Project subProject = new Project();
+        subProject.setId("subProj456");
+        subProject.setName("Sub Project With Releases");
+        subProject.setVersion("1.0");
+        Map<String, ProjectReleaseRelationship> subReleaseUsage = new HashMap<>();
+        subReleaseUsage.put(release1.getId(), new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        subProject.setReleaseIdToUsage(subReleaseUsage);
+
+        // Link sub-project to parent
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put(subProject.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        parentProject.setLinkedProjects(linkedProjects);
+
+        given(this.projectServiceMock.getProjectForUserById(eq("parentProj123"), any())).willReturn(parentProject);
+        given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), eq("parentProj123"), any()))
+                .willReturn(ByteBuffer.wrap(new byte[]{1, 2, 3, 4, 5}));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<byte[]> response =
+                new TestRestTemplate().exchange(
+                        "http://localhost:" + port + "/api/reports?module=licenseInfo&projectId=parentProj123&generatorClassName=DocxGenerator&variant=DISCLOSURE&withSubProject=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        byte[].class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue("Response body should not be empty", response.getBody().length > 0);
+    }
+
+    @Test
     public void should_get_project_licenses() throws IOException, TException {
         // Setup project with releases
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
