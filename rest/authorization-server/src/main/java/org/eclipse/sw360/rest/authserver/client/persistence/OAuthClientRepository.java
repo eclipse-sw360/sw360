@@ -33,17 +33,17 @@ public class OAuthClientRepository extends DatabaseRepositoryCloudantClient<OAut
 
     private static final String ALL =
             "function(doc) {" +
-                    "  emit(null, doc._id); " +
+                    "  if (doc.client_id) { emit(null, doc._id); } " +
                     "}";
 
     private static final String BY_IDs_VIEW =
             "function(doc) {" +
-                    "  emit(doc._id, null); " +
+                    "  if (doc.client_id) { emit(doc._id, null); } " +
                     "}";
 
     private static final String BY_CLIENT_ID_VIEW =
             "function(doc) {" +
-                    "  emit(doc.client_id, null); " +
+                    "  if (doc.client_id) { emit(doc.client_id, null); } " +
                     "}";
 
     public OAuthClientRepository() {

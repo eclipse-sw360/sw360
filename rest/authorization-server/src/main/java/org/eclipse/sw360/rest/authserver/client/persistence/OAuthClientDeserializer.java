@@ -27,14 +27,14 @@ public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity>
         JsonNode node = p.getCodec().readTree(p);
         OAuthClientEntity client = new OAuthClientEntity();
 
-        client.setId(node.get("_id").asText());
-        client.setRev(node.get("_rev").asText());
-        client.setClientId(node.get("client_id").asText());
-        client.setClientSecret(node.get("client_secret").asText());
-        client.setDescription(node.get("description").asText());
+        client.setId(asText(node, "_id"));
+        client.setRev(asText(node, "_rev"));
+        client.setClientId(asText(node, "client_id"));
+        client.setClientSecret(asText(node, "client_secret"));
+        client.setDescription(asText(node, "description"));
 
-        client.setSecretRequired(node.get("secretRequired").asBoolean());
-        client.setScoped(node.get("scoped").asBoolean());
+        client.setSecretRequired(asBoolean(node, "secretRequired"));
+        client.setScoped(asBoolean(node, "scoped"));
 
         client.setResourceIds(jsonNodeToSet(node.get("resource_ids")));
         client.setAuthorizedGrantTypes(jsonNodeToSet(node.get("authorized_grant_types")));
@@ -42,21 +42,40 @@ public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity>
         client.setRegisteredRedirectUri(jsonNodeToSet(node.get("redirect_uri")));
         client.setAutoApproveScopes(jsonNodeToSet(node.get("autoapprove")));
 
-        if (node.has("access_token_validity")) {
-            client.setAccessTokenValiditySeconds(node.get("access_token_validity").asInt());
+        JsonNode accessTokenValidity = node.get("access_token_validity");
+        if (accessTokenValidity != null && !accessTokenValidity.isNull()) {
+            client.setAccessTokenValiditySeconds(accessTokenValidity.asInt());
         }
-        if (node.has("refresh_token_validity")) {
-            client.setRefreshTokenValiditySeconds(node.get("refresh_token_validity").asInt());
+        JsonNode refreshTokenValidity = node.get("refresh_token_validity");
+        if (refreshTokenValidity != null && !refreshTokenValidity.isNull()) {
+            client.setRefreshTokenValiditySeconds(refreshTokenValidity.asInt());
         }
 
-        Set<String> authorities = jsonNodeToSet(node.get("authorities"));
-        client.setAuthorities(authorities);
+        client.setAuthorities(jsonNodeToSet(node.get("authorities")));
 
-        if (node.has("owner_email") && !node.get("owner_email").isNull()) {
-            client.setOwnerEmail(node.get("owner_email").asText());
+        JsonNode ownerEmail = node.get("owner_email");
+        if (ownerEmail != null && !ownerEmail.isNull()) {
+            client.setOwnerEmail(ownerEmail.asText());
         }
 
         return client;
+    }
+
+    /**
+     * Return the textual value of {@code field} on {@code node}, or {@code null}
+     * when the field is missing or explicitly JSON null. Guards against malformed
+     * documents in the {@code sw360oauthclients} database (e.g. migration
+     * artifacts) that would otherwise NPE during a bulk
+     * {@link OAuthClientRepository#getAll()}.
+     */
+    private static String asText(JsonNode node, String field) {
+        JsonNode child = node.get(field);
+        return (child == null || child.isNull()) ? null : child.asText();
+    }
+
+    private static boolean asBoolean(JsonNode node, String field) {
+        JsonNode child = node.get(field);
+        return child != null && !child.isNull() && child.asBoolean();
     }
 
     private Set<String> jsonNodeToSet(JsonNode node) {
