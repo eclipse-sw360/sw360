@@ -137,7 +137,7 @@
     <json.version>20251224</json.version>
     <joda-time.version>2.14.2</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
-    <junit.version>6.0.3</junit.version>
+    <junit.version>6.1.0</junit.version>
     <junit-platform-launcher.version>6.0.3</junit-platform-launcher.version>
     <log4j2.version>2.26.0</log4j2.version>
     <logback.version>1.5.32</logback.version>
