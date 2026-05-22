@@ -14,14 +14,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.rest.common.security.jwt.JwtIssuer;
 import org.eclipse.sw360.rest.common.security.jwt.JwtIssuerSupport;
-import org.eclipse.sw360.rest.common.security.jwt.LegacyAuthserverJwtSupport;
 import org.eclipse.sw360.rest.common.security.jwt.Sw360JwtIssuerProperties;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
-import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360HybridAuthenticationManagerResolver;
 import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JWTAccessTokenConverter;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.Contract;
@@ -143,19 +141,13 @@ public class ResourceServerConfiguration {
         Map<String, JwtIssuer> trustedIssuers = trustedIssuers();
         ConcurrentMap<String, AuthenticationManager> managers = new ConcurrentHashMap<>();
 
-        JwtIssuerAuthenticationManagerResolver issuerResolver = new JwtIssuerAuthenticationManagerResolver(issuer -> {
+        return new JwtIssuerAuthenticationManagerResolver(issuer -> {
             JwtIssuer entry = trustedIssuers.get(issuer);
             if (entry == null) {
                 throw new InvalidBearerTokenException("Invalid issuer");
             }
             return managers.computeIfAbsent(issuer, key -> jwtAuthenticationManagerForIssuer(entry));
         });
-
-        AuthenticationManager legacyManager = jwtIssuerProperties.getEffectiveLegacyAuthserver()
-                .map(this::legacyAuthenticationManager)
-                .orElse(null);
-
-        return new Sw360HybridAuthenticationManagerResolver(issuerResolver, legacyManager);
     }
 
     @Contract("_ -> new")
@@ -166,24 +158,11 @@ public class ResourceServerConfiguration {
         return new ProviderManager(jwtAuthenticationProvider);
     }
 
-    @Contract("_ -> new")
-    private @NonNull AuthenticationManager legacyAuthenticationManager(
-            Sw360JwtIssuerProperties.LegacyAuthserver cfg
-    ) {
-        JwtDecoder jwtDecoder = LegacyAuthserverJwtSupport.buildJwtDecoder(cfg);
-        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
-        jwtAuthenticationProvider.setJwtAuthenticationConverter(sw360JWTAccessTokenConverter);
-        return new ProviderManager(jwtAuthenticationProvider);
-    }
-
     private @NonNull @Unmodifiable Map<String, JwtIssuer> trustedIssuers() {
         Map<String, JwtIssuer> issuers = new LinkedHashMap<>(
                 JwtIssuerSupport.resolveTrustedIssuers(jwtIssuerProperties, fallbackIssuerUri));
-        if (issuers.isEmpty() && jwtIssuerProperties.getEffectiveLegacyAuthserver().isEmpty()) {
-            throw new IllegalStateException(
-                    "No trusted JWT issuer configured for the SW360 resource server. "
-                            + "Configure sw360.security.jwt.issuers[*] and/or "
-                            + "sw360.security.jwt.legacy-authserver.jwk-set-uri.");
+        if (issuers.isEmpty()) {
+            throw new IllegalStateException("No trusted JWT issuer configured for the SW360 resource server.");
         }
         return Map.copyOf(issuers);
     }
