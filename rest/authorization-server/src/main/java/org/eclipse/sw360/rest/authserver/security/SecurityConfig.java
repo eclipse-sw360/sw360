@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
 import org.springframework.security.authentication.ProviderManager;
@@ -135,6 +136,12 @@ public class SecurityConfig {
                 .authenticationProvider(sw360UserAuthenticationProvider)
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(CLIENT_MGMT_PATTERN).hasAuthority("ADMIN")
+                        // Legacy browser-friendly token bridge. The endpoint
+                        // itself authenticates the client by translating the
+                        // query-string credentials into an HTTP Basic POST
+                        // against /oauth2/token, so it must be reachable
+                        // anonymously. See BrowserTokenController.
+                        .requestMatchers(HttpMethod.GET, "/token").permitAll()
                         .anyRequest().authenticated())
                 // HTTP Basic stays active for admin automation / curl / scripts.
                 .httpBasic(basic -> basic
