@@ -30,6 +30,13 @@ spring:
   jackson:
     serialization:
       indent_output: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Optional fallback issuer (single issuer mode).
+          # Prefer sw360.security.jwt.issuers[*] for multi-issuer setups.
+          issuer-uri: ${AUTH_RESOURCE_SERVER_ISSUER_URI:}
 
 security:
   oauth2:
@@ -41,6 +48,17 @@ security:
   refreshtoken:
     # Fallback refresh-token TTL (seconds); per-client value wins.
     validity: 360
+
+# Optional trusted issuers for Bearer authentication on /client-management/**.
+# Supports both discovery mode (issuer-uri only) and direct JWKS mode
+# (issuer-uri + jwk-set-uri).
+# sw360:
+#   security:
+#     jwt:
+#       issuers:
+#         - issuer-uri: http://sw360.example.com/kc/realms/sw360
+#           jwk-set-uri: http://localhost:8083/kc/realms/sw360/protocol/openid-connect/certs
+#         - issuer-uri: http://localhost:8080/authorization
 
 logging:
   level:

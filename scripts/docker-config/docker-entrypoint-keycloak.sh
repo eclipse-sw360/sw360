@@ -23,7 +23,6 @@ couchdb.change_logs = sw360changelogs\n\
 couchdb.config = sw360config\n\
 couchdb.vulnerability_management = sw360vm\n\
 lucenesearch.limit = %d\n\
-lucenesearch.leading.wildcard = false\n\
 cloudant.enable.retries = %s\n\
 cloudant.max.retries = 2\n\
 cloudant.max.retry.interval = 5\n" \

@@ -10,13 +10,22 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
 import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
+import org.eclipse.sw360.rest.common.security.jwt.JwtIssuer;
+import org.eclipse.sw360.rest.common.security.jwt.JwtIssuerSupport;
+import org.eclipse.sw360.rest.common.security.jwt.Sw360JwtIssuerProperties;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManagerResolver;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,8 +33,9 @@ import org.springframework.security.config.annotation.web.configuration.OAuth2Au
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
+import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
@@ -36,6 +46,9 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Configures the security settings for the authorization server.
@@ -44,19 +57,20 @@ import java.security.cert.CertificateException;
  * <ol>
  *   <li>{@link #webFilterChainForOauth(HttpSecurity)} (order 1) - the OAuth2 /
  *       OIDC endpoints managed by Spring Authorization Server.</li>
- *   <li>{@link #appSecurity(HttpSecurity)} (order 2) - everything else.
+ *   <li>{@link #appSecurity(HttpSecurity, AuthenticationManagerResolver)}
+ *       (order 2) - everything else.
  *       Requests to {@code /client-management/**} accept <em>both</em> HTTP
- *       Basic <em>and</em> Bearer JWT. The JWT's {@code scope} claim is mapped
- *       to Spring authorities <strong>without</strong> the default
- *       {@code SCOPE_} prefix so that {@code hasAuthority("ADMIN")} matches
- *       tokens carrying {@code "ADMIN"} in their scope set. Anonymous browser
- *       traffic is sent to the form login page.</li>
+ *       Basic <em>and</em> Bearer JWT. For Bearer tokens, SW360 accepts both
+ *       scope-based authorities from locally issued tokens and group-based
+ *       authorities from trusted external issuers such as Keycloak. Anonymous
+ *       browser traffic is sent to the form login page.</li>
  * </ol>
  *
  * @author smruti.sahoo@siemens.com
  */
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(Sw360JwtIssuerProperties.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
     private static final String CLIENT_MGMT_PATTERN = "/client-management/**";
@@ -68,6 +82,15 @@ public class SecurityConfig {
 
     @NonNull
     private final KeyManager keyManager;
+
+    @NonNull
+    private final Sw360JwtIssuerProperties jwtIssuerProperties;
+
+    @NonNull
+    private final Sw360JwtAuthenticationConverter sw360JwtAuthenticationConverter;
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
+    private String fallbackIssuerUri;
 
     @Bean
     @Order(1)
@@ -89,15 +112,18 @@ public class SecurityConfig {
 
     @Order(2)
     @Bean
-    public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain appSecurity(
+            HttpSecurity httpSecurity,
+            AuthenticationManagerResolver<HttpServletRequest> jwtAuthenticationManagerResolver
+    ) throws Exception {
         RequestMatcher clientManagementMatcher = PathPatternRequestMatcher.pathPattern(CLIENT_MGMT_PATTERN);
         // Custom entry point that writes 401 directly without triggering servlet
         // container error dispatch (which would forward to /error and lose the status).
         var basicEntryPoint = new org.springframework.security.web.AuthenticationEntryPoint() {
             @Override
             public void commence(jakarta.servlet.http.HttpServletRequest request,
-                    jakarta.servlet.http.HttpServletResponse response,
-                    org.springframework.security.core.AuthenticationException authException) throws java.io.IOException {
+                                 jakarta.servlet.http.HttpServletResponse response,
+                                 org.springframework.security.core.AuthenticationException authException) throws java.io.IOException {
                 response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                 response.setHeader("WWW-Authenticate", "Basic realm=\"" + BASIC_REALM + "\"");
                 response.getWriter().write("Unauthorized");
@@ -117,7 +143,7 @@ public class SecurityConfig {
                 // JWT Bearer support - the React frontend (sw360oauth provider)
                 // authenticates via authorization_code+PKCE and then calls
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(sw360JwtAuthConverter())))
+                        .authenticationManagerResolver(jwtAuthenticationManagerResolver))
                 .formLogin(Customizer.withDefaults())
                 .exceptionHandling(eh -> eh
                         .defaultAuthenticationEntryPointFor(basicEntryPoint, clientManagementMatcher)
@@ -127,27 +153,6 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers(CLIENT_MGMT_PATTERN));
 
         return httpSecurity.build();
-    }
-
-    /**
-     * Maps JWT {@code scope} claim values (e.g. {@code READ}, {@code WRITE},
-     * {@code ADMIN}) to Spring Security authorities <em>without</em> the
-     * default {@code SCOPE_} prefix. This ensures
-     * {@code hasAuthority("ADMIN")} matches tokens minted by this
-     * authorization server, whose {@code Sw360TokenCustomizerConfig} emits
-     * plain {@code scope} values.
-     *
-     * <p>The {@code user_name} claim (set by the token customizer instead of
-     * the standard {@code sub}) is used as the principal name.</p>
-     */
-    private static JwtAuthenticationConverter sw360JwtAuthConverter() {
-        var scopesConverter = new JwtGrantedAuthoritiesConverter();
-        scopesConverter.setAuthorityPrefix("");
-        scopesConverter.setAuthoritiesClaimName("scope");
-        var converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(scopesConverter);
-        converter.setPrincipalClaimName("user_name");
-        return converter;
     }
 
     @Bean
@@ -170,5 +175,41 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+    }
+
+    @Bean
+    public AuthenticationManagerResolver<HttpServletRequest> jwtAuthenticationManagerResolver(JwtDecoder jwtDecoder) {
+        Map<String, JwtIssuer> trustedIssuers = trustedIssuers();
+        if (trustedIssuers.isEmpty()) {
+            AuthenticationManager localManager = localJwtAuthenticationManager(jwtDecoder);
+            // Backward-compatible mode: accept locally signed authorization-server tokens.
+            return request -> localManager;
+        }
+
+        ConcurrentMap<String, AuthenticationManager> managers = new ConcurrentHashMap<>();
+        return new JwtIssuerAuthenticationManagerResolver(issuer -> {
+            JwtIssuer entry = trustedIssuers.get(issuer);
+            if (entry == null) {
+                throw new InvalidBearerTokenException("Invalid issuer");
+            }
+            return managers.computeIfAbsent(issuer, key -> jwtAuthenticationManagerForIssuer(entry));
+        });
+    }
+
+    private AuthenticationManager localJwtAuthenticationManager(JwtDecoder jwtDecoder) {
+        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
+        jwtAuthenticationProvider.setJwtAuthenticationConverter(sw360JwtAuthenticationConverter);
+        return new ProviderManager(jwtAuthenticationProvider);
+    }
+
+    private AuthenticationManager jwtAuthenticationManagerForIssuer(@NonNull JwtIssuer issuer) {
+        JwtDecoder jwtDecoder = JwtIssuerSupport.buildJwtDecoder(issuer);
+        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
+        jwtAuthenticationProvider.setJwtAuthenticationConverter(sw360JwtAuthenticationConverter);
+        return new ProviderManager(jwtAuthenticationProvider);
+    }
+
+    private Map<String, JwtIssuer> trustedIssuers() {
+        return JwtIssuerSupport.resolveTrustedIssuers(jwtIssuerProperties, fallbackIssuerUri);
     }
 }
