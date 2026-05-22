@@ -12,7 +12,6 @@ package org.eclipse.sw360.rest.authserver.client.rest;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -80,20 +79,12 @@ public class BrowserTokenController {
     private static final String SUPPORTED_GRANT_TYPE = "client_credentials";
 
     /**
-     * Authserver HTTP port. Defaults to 8080 to match Spring Boot's default
-     * when {@code server.port} is unset.
+     * Loopback URL to the in-process Spring Authorization Server token
+     * endpoint. Hardcoded to localhost:8080/authorization so the bridge
+     * always reaches the local authserver regardless of external hostname
+     * or port configuration.
      */
-    @Value("${server.port:8080}")
-    private int serverPort;
-
-    /**
-     * Servlet context path under which Spring AS endpoints live. The legacy
-     * SW360 deployment hosts the authserver at {@code /authorization}; that
-     * is the default we fall back to so the loopback URL is correct
-     * out-of-the-box.
-     */
-    @Value("${server.servlet.context-path:/authorization}")
-    private String contextPath;
+    private static final String LOOPBACK_TOKEN_ENDPOINT = "http://localhost:8080/authorization/oauth2/token";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -131,8 +122,6 @@ public class BrowserTokenController {
 
         log.info("Browser-token bridge: issuing client_credentials token for client_id={}", clientId);
 
-        String loopbackUrl = "http://localhost:" + serverPort + contextPath + "/oauth2/token";
-
         HttpHeaders forwardHeaders = new HttpHeaders();
         forwardHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         forwardHeaders.setBasicAuth(clientId, clientSecret);
@@ -145,7 +134,7 @@ public class BrowserTokenController {
 
         try {
             ResponseEntity<String> upstream = restTemplate.exchange(
-                    loopbackUrl,
+                    LOOPBACK_TOKEN_ENDPOINT,
                     HttpMethod.POST,
                     new HttpEntity<>(form, forwardHeaders),
                     String.class);
