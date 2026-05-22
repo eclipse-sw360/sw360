@@ -2593,7 +2593,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource attachmentUsageReleases(Project sw360Project, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
         ObjectMapper oMapper = new ObjectMapper();
-        Map<String, ProjectReleaseRelationship> releaseIdToUsages = sw360Project.getReleaseIdToUsage();
         Map<String, Object> projectMap = oMapper.convertValue(sw360Project, Map.class);
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("linkedProjects", projectMap.get("linkedProjects"));
@@ -2613,7 +2612,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         HalResource halProject = new HalResource<>(resultMap);
 
-        if (releaseIdToUsages != null) {
+        if (sw360Project.getReleaseIdToUsage() != null || (releases != null && !releases.isEmpty())) {
             restControllerHelper.addEmbeddedProjectAttachmentUsage(halProject, releases, attachmentUsageMap);
         }
         return halProject;
@@ -2893,7 +2892,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource<Project> createHalLicenseClearing(Project sw360Project, List<EntityModel<Release>> releases) {
         Project sw360 = new Project();
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
         sw360.setReleaseIdToUsage(sw360Project.getReleaseIdToUsage());
         sw360.setLinkedProjects(sw360Project.getLinkedProjects());
         sw360.setId(sw360Project.getId());
@@ -2902,7 +2900,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360.unsetVisbility();
         sw360.unsetSecurityResponsibles();
         HalResource<Project> halProject = new HalResource<>(sw360);
-        if (releaseIdToUsage != null) {
+        if (sw360Project.getReleaseIdToUsage() != null || (releases != null && !releases.isEmpty())) {
             restControllerHelper.addEmbeddedProjectReleases(halProject, releases);
         }
         return halProject;
