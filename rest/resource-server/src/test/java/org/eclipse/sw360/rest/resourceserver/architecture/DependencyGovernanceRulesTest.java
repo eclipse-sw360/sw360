@@ -73,7 +73,15 @@ class DependencyGovernanceRulesTest extends SW360ArchitectureTest {
             // Annotations
             "org.jetbrains.",
             // JWT libraries
-            "org.jose4j."
+            "org.jose4j.",
+            // Nimbus JOSE + JWT — used by Sw360HybridAuthenticationManagerResolver
+            // to inspect the `iss` claim of incoming bearer tokens without
+            // signature verification, so the resolver can route between the
+            // Keycloak multi-issuer path and the legacy authserver fallback.
+            // Spring Security already pulls this in transitively via
+            // spring-security-oauth2-jose, so no new top-level dependency
+            // is introduced.
+            "com.nimbusds."
     );
 
     @Test
