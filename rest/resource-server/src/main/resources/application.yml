@@ -87,6 +87,14 @@ sw360:
         - issuer-uri: http://localhost:8080/authorization
         - issuer-uri: http://localhost:8083/realms/sw360
           jwk-set-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
+      # Legacy SW360 authorization-server fallback for JWTs that do not carry
+      # an `iss` claim. When jwk-set-uri is set, tokens with no `iss` are
+      # signature-verified against this JWKS endpoint and (optionally) checked
+      # for the configured audience. Leave the block out / unset jwk-set-uri to
+      # disable the fallback (Keycloak-only mode).
+      legacy-authserver:
+        jwk-set-uri: ${SW360_LEGACY_AUTHSERVER_JWKS_URI:http://localhost:8080/authorization/oauth2/jwks}
+        expected-audience: ${SW360_LEGACY_AUTHSERVER_EXPECTED_AUDIENCE:sw360-REST-API}
     # Keep enabled for development/testing; set to false in production when
     # all clients authenticate via JWT or API token only.
     http-basic:
