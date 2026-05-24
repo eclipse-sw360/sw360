@@ -51,6 +51,7 @@ import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.mediatype.hal.CurieProvider;
 import org.springframework.hateoas.mediatype.hal.DefaultCurieProvider;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.filter.ForwardedHeaderFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
@@ -70,7 +71,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                   "details": {
                     "Rest State": {
                       "isDbReachable": true,
-                      "isThriftReachable": true
+                      "isHealthServiceReachable": true
                     }
                   }
                 },
@@ -178,6 +179,11 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         FilterRegistrationBean<ForwardedHeaderFilter> bean = new FilterRegistrationBean<>();
         bean.setFilter(new ForwardedHeaderFilter());
         return bean;
+    }
+
+    @Bean
+    public RestClient restClient() {
+        return RestClient.builder().baseUrl(SERVER_PATH_URL).build();
     }
 
     @Bean

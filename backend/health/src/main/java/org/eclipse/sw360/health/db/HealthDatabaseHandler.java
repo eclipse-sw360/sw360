@@ -14,8 +14,8 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.sdk.core.service.exception.ServiceUnavailableException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.thrift.health.Health;
-import org.eclipse.sw360.datahandler.thrift.health.Status;
+import org.eclipse.sw360.datahandler.services.health.HealthResponse;    
+import org.eclipse.sw360.datahandler.services.health.HealthStatus;
 
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -34,12 +34,12 @@ public class HealthDatabaseHandler {
         db = new DatabaseInstanceCloudant(client);
     }
 
-    public Health getHealth() {
+    public HealthResponse getHealth() {
         return getHealthOfDbs(DATABASES_TO_CHECK);
     }
 
-    private Health getHealthOfDbs(Set<String> dbsTocheck) {
-        final Health health = new Health().setDetails(new HashMap<>());
+    private HealthResponse getHealthOfDbs(Set<String> dbsTocheck) {
+        final HealthResponse health = new HealthResponse().setDetails(new HashMap<>());
 
         for (String database : dbsTocheck) {
             try {
@@ -52,15 +52,15 @@ public class HealthDatabaseHandler {
         }
 
         if (health.getDetails().isEmpty()) {
-            return health.setStatus(Status.UP);
+            return health.setStatus(HealthStatus.UP);
         } else {
             return health.getDetails().size() == dbsTocheck.size() ?
-                    health.setStatus(Status.DOWN) :
-                    health.setStatus(Status.ERROR);
+                    health.setStatus(HealthStatus.DOWN) :
+                    health.setStatus(HealthStatus.ERROR);
         }
     }
 
-    public Health getHealthOfSpecificDbs(Set<String> dbsToCheck) {
+    public HealthResponse getHealthOfSpecificDbs(Set<String> dbsToCheck) {
         return getHealthOfDbs(dbsToCheck);
     }
 }

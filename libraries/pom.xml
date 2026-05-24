@@ -24,6 +24,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>service-api</module>
         <module>datahandler</module>
         <module>commonIO</module>
         <module>importers</module>

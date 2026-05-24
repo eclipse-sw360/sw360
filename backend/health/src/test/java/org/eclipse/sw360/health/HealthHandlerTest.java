@@ -12,8 +12,8 @@ package org.eclipse.sw360.health;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.health.Health;
-import org.eclipse.sw360.datahandler.thrift.health.Status;
+import org.eclipse.sw360.datahandler.services.health.HealthResponse;
+import org.eclipse.sw360.datahandler.services.health.HealthStatus;
 import org.eclipse.sw360.health.db.HealthDatabaseHandler;
 import org.junit.Test;
 
@@ -34,8 +34,8 @@ public class HealthHandlerTest {
     public void testGetHealthFailsUponMissingDB() throws MalformedURLException {
         TestUtils.deleteAllDatabases();
         HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
-        assertEquals(Status.DOWN, health.status);
+        final HealthResponse health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+        assertEquals(HealthStatus.DOWN, health.getStatus());
         assertEquals(DATABASES_TO_CHECK.size(), health.getDetails().size());
     }
 
@@ -46,8 +46,8 @@ public class HealthHandlerTest {
         }
 
         HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
-        assertEquals(Status.UP, health.status);
+        final HealthResponse health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+        assertEquals(HealthStatus.UP, health.getStatus());
         assertEquals(new HashMap<>(), health.getDetails());
 
         for (String database : DATABASES_TO_CHECK) {
@@ -61,8 +61,8 @@ public class HealthHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
 
         HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
-        assertEquals(Status.ERROR, health.getStatus());
+        final HealthResponse health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+        assertEquals(HealthStatus.ERROR, health.getStatus());
         assertEquals(DATABASES_TO_CHECK.size() -1, health.getDetails().size());
 
         TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
