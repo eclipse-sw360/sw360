@@ -13,50 +13,57 @@ package org.eclipse.sw360.configurations;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.SW360ConfigsDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.ConfigFor;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
+import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.converter.ThriftConverter;
+import org.springframework.stereotype.Service;
+
 import java.util.Map;
 
-public class SW360ConfigsHandler implements SW360ConfigsService.Iface {
+@Service
+public class SW360ConfigsHandler {
+
     private final SW360ConfigsDatabaseHandler sw360ConfigsDatabaseHandler;
 
     public SW360ConfigsHandler() {
         sw360ConfigsDatabaseHandler = new SW360ConfigsDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_CONFIG);
     }
 
-    @Override
     public RequestStatus createSW360Configs(ConfigContainer newConfig) {
         return RequestStatus.SUCCESS;
     }
 
-    @Override
-    public RequestStatus updateSW360Configs(Map<String, String> updatedConfigs, User user) throws SW360Exception {
-        return sw360ConfigsDatabaseHandler.updateSW360Configs(updatedConfigs, user);
+    public RequestStatus updateSW360Configs(Map<String, String> updatedConfigs, User user) {
+        try {
+            return ThriftConverter.fromThriftRequestStatus(
+                    sw360ConfigsDatabaseHandler.updateSW360Configs(updatedConfigs, user));
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    @Override
     public Map<String, String> getSW360Configs() {
         return sw360ConfigsDatabaseHandler.getSW360Configs();
     }
 
-    @Override
     public String getConfigByKey(String key) {
         return sw360ConfigsDatabaseHandler.getConfigByKey(key);
     }
 
-    @Override
     public Map<String, String> getConfigForContainer(ConfigFor configFor) {
-        return sw360ConfigsDatabaseHandler.getConfigForContainer(configFor);
+        return sw360ConfigsDatabaseHandler.getConfigForContainer(ThriftConverter.toThriftConfigFor(configFor));
     }
 
-    @Override
     public RequestStatus updateSW360ConfigForContainer(
-            ConfigFor configFor, Map<String, String> updatedConfigs, User user
-    ) throws SW360Exception {
-        return sw360ConfigsDatabaseHandler.updateSW360ConfigForContainer(configFor, updatedConfigs, user);
+            ConfigFor configFor, Map<String, String> updatedConfigs, User user) {
+        try {
+            return ThriftConverter.fromThriftRequestStatus(
+                    sw360ConfigsDatabaseHandler.updateSW360ConfigForContainer(
+                            ThriftConverter.toThriftConfigFor(configFor), updatedConfigs, user));
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 }
