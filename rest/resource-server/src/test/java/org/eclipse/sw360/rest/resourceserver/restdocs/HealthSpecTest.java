@@ -34,7 +34,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
     @Test
     public void should_document_get_health() throws Exception {
         SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
-        restState.isThriftReachable = true;
+        restState.isHealthServiceReachable = true;
         restState.isDbReachable = true;
 
         Health spring_health = Health.up()
@@ -66,7 +66,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
     @Test
     public void should_document_get_health_unhealthy() throws Exception {
         SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
-        restState.isThriftReachable = false;
+        restState.isHealthServiceReachable = false;
         restState.isDbReachable = true;
 
         Health spring_health_down = Health.down()

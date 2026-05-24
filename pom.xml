@@ -184,6 +184,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.eclipse.sw360</groupId>
+        <artifactId>service-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.apache.axis</groupId>
         <artifactId>axis</artifactId>
         <version>${axis.version}</version>

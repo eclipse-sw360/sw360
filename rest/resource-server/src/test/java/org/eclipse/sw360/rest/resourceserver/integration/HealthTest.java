@@ -10,7 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,10 +41,10 @@ public class HealthTest extends TestIntegrationBase {
     private SW360RestHealthIndicator restHealthIndicatorMock;
 
     @Before
-    public void before() throws TException {
+    public void before() {
         // Setup default healthy state
         SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
-        restState.isThriftReachable = true;
+        restState.isHealthServiceReachable = true;
         restState.isDbReachable = true;
 
         Health springHealth = Health.up()
@@ -82,7 +81,7 @@ public class HealthTest extends TestIntegrationBase {
     public void should_get_health_status_unhealthy() throws IOException {
         // Setup unhealthy state
         SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
-        restState.isThriftReachable = false;
+        restState.isHealthServiceReachable = false;
         restState.isDbReachable = true;
 
         Health springHealthDown = Health.down()
