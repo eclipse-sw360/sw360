@@ -263,7 +263,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 selectedData.add(stringResult);
             }
         }
-        log.debug("Resulting string: {}", selectedData);
+        log.trace("Resulting string: {}", selectedData);
         return selectedData;
     }
 
@@ -753,6 +753,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                     obligationStatusMap, obligations, ObligationLevel.COMPONENT_OBLIGATION, true);
             return updatedObligationStatusMap;
         } return updatedObligationStatusMap;
+    }
+
+    public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
+                                                                            Project project) throws TException {
+        List<Obligation> obligations = SW360Utils.getObligations();
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = Maps.newHashMap();
+        ThriftClients thriftClients = new ThriftClients();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                obligationStatusMap, obligations, true);
+        return updatedObligationStatusMap;
     }
 
     public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(

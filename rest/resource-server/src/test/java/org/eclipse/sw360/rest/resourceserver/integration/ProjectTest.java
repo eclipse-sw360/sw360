@@ -1452,6 +1452,45 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_get_license_info_report_with_subproject_releases() throws IOException, TException {
+        // Parent project with NO direct releases but with a linked sub-project
+        Project parentProject = new Project();
+        parentProject.setId("parentProj123");
+        parentProject.setName("Parent No Direct Releases");
+        parentProject.setVersion("1.0");
+        parentProject.setProjectType(ProjectType.CUSTOMER);
+        parentProject.setVisbility(Visibility.EVERYONE);
+
+        // Sub-project that has releases with CLI attachments
+        Project subProject = new Project();
+        subProject.setId("subProj456");
+        subProject.setName("Sub Project With Releases");
+        subProject.setVersion("1.0");
+        Map<String, ProjectReleaseRelationship> subReleaseUsage = new HashMap<>();
+        subReleaseUsage.put(release1.getId(), new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        subProject.setReleaseIdToUsage(subReleaseUsage);
+
+        // Link sub-project to parent
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put(subProject.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        parentProject.setLinkedProjects(linkedProjects);
+
+        given(this.projectServiceMock.getProjectForUserById(eq("parentProj123"), any())).willReturn(parentProject);
+        given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), eq("parentProj123"), any()))
+                .willReturn(ByteBuffer.wrap(new byte[]{1, 2, 3, 4, 5}));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<byte[]> response =
+                new TestRestTemplate().exchange(
+                        "http://localhost:" + port + "/api/reports?module=licenseInfo&projectId=parentProj123&generatorClassName=DocxGenerator&variant=DISCLOSURE&withSubProject=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        byte[].class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue("Response body should not be empty", response.getBody().length > 0);
+    }
+
+    @Test
     public void should_get_project_licenses() throws IOException, TException {
         // Setup project with releases
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
@@ -1492,5 +1531,86 @@ public class ProjectTest extends TestIntegrationBase {
         }
         assertTrue("Should contain Apache License 2.0", licenseNames.contains("Apache License 2.0"));
         assertTrue("Should contain MIT License", licenseNames.contains("MIT License"));
+    }
+
+    // ========== SUB-PROJECT TRANSITIVE RELEASE TESTS ==========
+
+    @Test
+    public void should_get_license_clearing_with_transitive_releases_from_subproject() throws IOException, TException {
+        // Parent project with NO direct releases but a linked sub-project
+        Project parentProject = new Project();
+        parentProject.setId("parentNoReleases");
+        parentProject.setName("Parent Project");
+        parentProject.setVisbility(Visibility.EVERYONE);
+        parentProject.setReleaseIdToUsage(null); // No direct releases
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put(project1.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        parentProject.setLinkedProjects(linkedProjects);
+
+        given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases"), any())).willReturn(parentProject);
+        // Transitive fetch returns releases from sub-project
+        given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases"), any(), eq(true)))
+                .willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
+        given(this.projectServiceMock.getFilteredReleases(any(), any(), any(), any(), any()))
+                .willReturn(Arrays.asList(release1, release2));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/parentNoReleases/licenseClearing?transitive=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Verify that _embedded contains releases even though parent has no direct releaseIdToUsage
+        JsonNode responseJson = new ObjectMapper().readTree(response.getBody());
+        assertTrue("Response should contain _embedded field",
+                responseJson.has("_embedded"));
+        JsonNode embedded = responseJson.get("_embedded");
+        assertTrue("Embedded should contain sw360:release",
+                embedded.has("sw360:release"));
+        assertEquals("Should contain 2 releases from sub-project",
+                2, embedded.get("sw360:release").size());
+    }
+
+    @Test
+    public void should_get_attachment_usage_with_transitive_releases_from_subproject() throws IOException, TException {
+        // Parent project with NO direct releases but a linked sub-project
+        Project parentProject = new Project();
+        parentProject.setId("parentNoReleases2");
+        parentProject.setName("Parent Project 2");
+        parentProject.setVisbility(Visibility.EVERYONE);
+        parentProject.setReleaseIdToUsage(null); // No direct releases
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put(project1.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        parentProject.setLinkedProjects(linkedProjects);
+
+        given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases2"), any())).willReturn(parentProject);
+        given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases2"), any(), eq(true)))
+                .willReturn(new HashSet<>(Arrays.asList(release1.getId())));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.releaseServiceMock.setComponentDependentFieldsInRelease(any(Release.class), any(User.class))).willReturn(release1);
+        given(this.attachmentServiceMock.getAllAttachmentUsage(eq("parentNoReleases2")))
+                .willReturn(new ArrayList<>());
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/parentNoReleases2/attachmentUsage?transitive=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Verify that _embedded contains releases even though parent has no direct releaseIdToUsage
+        JsonNode responseJson = new ObjectMapper().readTree(response.getBody());
+        assertTrue("Response should contain _embedded field",
+                responseJson.has("_embedded"));
+        JsonNode embedded = responseJson.get("_embedded");
+        assertTrue("Embedded should contain sw360:release",
+                embedded.has("sw360:release"));
     }
 }
