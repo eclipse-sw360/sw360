@@ -3979,8 +3979,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Obligation Level",
                     schema = @Schema(allowableValues = {"project", "organization", "component", "all"}))
             @RequestParam(value = "obligationLevel", required = true) String oblLevel
-    ) throws TException {
-
+    ) {
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
         try {
             final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -3989,8 +3988,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 Map<String, ObligationStatusInfo> filteredMap = requestBodyObligationStatusInfo.entrySet()
                         .stream()
                         .filter(entry -> entry.getValue() != null &&
-                                entry.getValue().getObligationLevel() != null &&
-                                !entry.getValue().getObligationLevel().toString().trim().isEmpty())
+                                entry.getValue().getObligationLevel() != null)
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
                 Map<String, ObligationStatusInfo> licenseObligationStatusMap = filteredMap.entrySet()
@@ -4029,7 +4027,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
             throw new DataIntegrityViolationException("Cannot update "+oblLevel+" Obligation");
         } catch (Exception e) {
-            log.error("Error updating {0} obligations: ", oblLevel ,e);
+            log.error("Error updating {0} obligations: {}", oblLevel ,e);
             throw new DataIntegrityViolationException("Failed to update "+oblLevel+"  Obligation: " + e.getMessage());
         }
     }
@@ -4096,7 +4094,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     ObligationStatusInfo statusInfo = requestBodyObligationStatusInfo.get(entry);
                     return statusInfo.getObligationLevel() == null;
                 })
-                .distinct()
                 .collect(Collectors.toSet())
                 .stream()
                 .allMatch(obligationStatusMap::containsKey);
