@@ -51,6 +51,12 @@ import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.mediatype.hal.CurieProvider;
 import org.springframework.hateoas.mediatype.hal.DefaultCurieProvider;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.util.Timeout;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.filter.ForwardedHeaderFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -112,6 +118,10 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String DEFAULT_ADMIN_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String SERVER_PATH_URL;
+    private static final int REST_CONNECTION_TIMEOUT;
+    private static final int REST_READ_TIMEOUT;
+    private static final int REST_POOL_MAX_TOTAL;
+    private static final int REST_POOL_MAX_PER_ROUTE;
     public static final Map<Object, Object> versionInfo;
     public static final String SVM_NOTIFICATION_URL;
 
@@ -129,6 +139,10 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
         CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
         SERVER_PATH_URL = props.getProperty("backend.url", "http://localhost:8080");
+        REST_CONNECTION_TIMEOUT = Integer.parseInt(props.getProperty("backend.timeout.connection", "5000"));
+        REST_READ_TIMEOUT = Integer.parseInt(props.getProperty("backend.timeout.read", "600000"));
+        REST_POOL_MAX_TOTAL = Integer.parseInt(props.getProperty("backend.rest.pool.max-total", "150"));
+        REST_POOL_MAX_PER_ROUTE = Integer.parseInt(props.getProperty("backend.rest.pool.max-per-route", "50"));
         SVM_NOTIFICATION_URL = props.getProperty("svm.notification.url", "");
 
         versionInfo = new HashMap<>();
@@ -183,7 +197,25 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Bean
     public RestClient restClient() {
-        return RestClient.builder().baseUrl(SERVER_PATH_URL).build();
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(REST_POOL_MAX_TOTAL);
+        connectionManager.setDefaultMaxPerRoute(REST_POOL_MAX_PER_ROUTE);
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(Timeout.ofMilliseconds(REST_CONNECTION_TIMEOUT))
+                .setResponseTimeout(Timeout.ofMilliseconds(REST_READ_TIMEOUT))
+                .setConnectionRequestTimeout(Timeout.ofMilliseconds(REST_CONNECTION_TIMEOUT))
+                .build();
+
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
+
+        return RestClient.builder()
+                .baseUrl(SERVER_PATH_URL)
+                .requestFactory(new HttpComponentsClientHttpRequestFactory(httpClient))
+                .build();
     }
 
     @Bean
