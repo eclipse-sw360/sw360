@@ -218,6 +218,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {
+        // If the clearing state was manually set to UNDER_CLEARING from an allowed
+        // source state (NEW_CLEARING or REPORT_AVAILABLE), preserve the manual override
+        // and skip the automatic recalculation based on attachments.
+        ClearingState stateBefore = releaseBefore.getClearingState();
+        ClearingState stateAfter = releaseAfter.getClearingState();
+        if (stateAfter == ClearingState.UNDER_CLEARING
+                && stateBefore != ClearingState.UNDER_CLEARING
+                && (stateBefore == ClearingState.NEW_CLEARING || stateBefore == ClearingState.REPORT_AVAILABLE)) {
+            return;
+        }
+
         Optional<Attachment> oldBestCR = getBestClearingReport(releaseBefore);
         Optional<Attachment> newBestCR = getBestClearingReport(releaseAfter);
 
