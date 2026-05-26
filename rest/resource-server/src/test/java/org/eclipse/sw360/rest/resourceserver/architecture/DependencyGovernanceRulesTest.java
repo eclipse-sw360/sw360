@@ -59,6 +59,7 @@ class DependencyGovernanceRulesTest extends SW360ArchitectureTest {
             "org.apache.thrift.",
             "org.apache.logging.",
             "org.apache.commons.",
+            "org.apache.hc.",
             // Logging
             "org.slf4j.",
             // JSON / Serialization

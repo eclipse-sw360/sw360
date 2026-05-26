@@ -14,7 +14,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.sdk.core.service.exception.ServiceUnavailableException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.services.health.HealthResponse;    
+import org.eclipse.sw360.datahandler.services.health.HealthResponse;
 import org.eclipse.sw360.datahandler.services.health.HealthStatus;
 
 import java.net.MalformedURLException;
