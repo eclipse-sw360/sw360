@@ -6,6 +6,136 @@ the first project location:
 
 https://github.com/eclipse-sw360/sw360/releases
 
+## sw360-20.1.0-rc-2
+This is the second release candidate for SW360 in the line of the next minor
+release version 20.1.0 of SW360. The candidate includes numerous features,
+corrections, and improvements over the previous release
+[20.1.0-rc-1](https://github.com/eclipse-sw360/sw360/releases/tag/sw360-20.1.0-rc-1)
+
+This release serves as a preview of the upcoming minor version 20.1.0 for
+testing and should not be used in production environments.
+
+Highlight of the changes includes:
+* **Authentication & Authorization:** Added multi-issuer JWT support with a
+  per-issuer `jwk-set-uri` override, accepted JWTs from trusted issuers, wired
+  `JWT_KEYSTORE`, returned the plaintext `client_secret` once on creation, and
+  associated each OAuth client with its owning user (**breaking change**,
+  see `fix(auth)!: associate user with client`).
+* **REST API Enhancements:** Added an `attachmentAuthor` filter on
+  `GET /projects`, manual scheduler-trigger APIs with scheduler refactoring,
+  authenticated report download links, and search flags for empty BU and empty
+  tags on projects.
+* **Obligations & Reports:** Allowed updating obligations of all levels at once,
+  and RFC 5987-encoded the `Content-Disposition` filename in report downloads.
+* **SVM Integration:** Optimized SW360 & SVM delta synchronization and
+  simplified the SVM delta sync configuration.
+* **Build & CI:** Added Spotless as a Maven plugin, required Maven 3.9,
+  added a GitHub Actions step summary, and many dependencies bumped via
+  Dependabot.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> ADITYA-CODE-SOURCE <adityavishe67@gmail.com>
+> amritkv <er.akverma8@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> developharsh <harsh237hk@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> rudra-superrr <prabhuchopra@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `df2a49e5c` feat: add batch summary endpoint for release lookups
+* `c23ea8d66` feat(authorization): support multi-issuers
+* `f06255f34` feat(rest): add attachmentAuthor filter parameter to GET /projects endpoint
+* `ef7fa8a47` feat(rest): per-issuer jwk-set-uri override
+* `6865f9a4f` feat(Scheduler): Added api to  manually  trigger the  schedulers and refactor the apis
+* `8e09f74f3` feat(SVM): Optimize the sync between SW360 and SVM
+* `9ad41c460` feat(report): authenticating the report download link.
+* `884002335` feat(search): flag to search empty tags in projects
+* `a685a9ffc` feat(search): flag to search empty bu in projects
+
+### Corrections
+* `a23a010d4` fix(components): prevent duplicate components by name only, case insensitive
+* `4f8967a08` fix(rest): fetch sub-project attachment usages for LicenseInfo report
+* `2f70346b4` fix(project): show transitive sub-project releases in licenseClearing and attachmentUsage endpoints
+* `fe216246b` fix(report): RFC 5987 encode Content-Disposition filename and reduce debug log verbosity
+* `ec7903049` fix(obligations): add functionality to update obligations of all levels
+* `3bb28a0aa` fix(pom): require maven 3.9 needed
+* `10102bec5` fix(lucene): remove leading wildcard configuration since Nouveau does not support it.
+* `bc2eab4ff` fix(docker): wire JWT_KEYSTORE and key
+* `ea6fa51a4` fix(auth): persist JWT signing key from keystore
+* `2ab7ffadf` fix(rest): preserve user roles, enforcing scope
+* `faa394244` fix(rest): accept JWTs from trusted issuers
+* `d258e0a66` fix(auth): accept JWT token from frontend
+* `80e5f495d` fix(auth)!: associate user with client
+* `8b60c44ab` fix(auth): return plaintext client_secret once
+* `533876e03` fix(cloudant): set URL before anything else
+* `d65cd86fa` fix(obligations): add obligations of status deferred to parent project to all obligations endpoint
+* `30354026e` fix(DBConnector): prevent NPE in getDistinctSortedStringKeys
+
+### Infrastructure
+* `ba641d2f4` chore(vulnerability): guards against NPE
+* `e220f7ecf` perf(DB): use singleton for design and indexes
+* `c95528d34` chore(spotless): add spotless as a plugin
+* `77aead739` chore(deps): bump org.junit.platform:junit-platform-launcher
+* `25537a451` chore(deps): bump junit.version from 6.0.3 to 6.1.0
+* `ed4e8926f` chore(deps): bump step-security/harden-runner from 2.19.3 to 2.19.4
+* `106c4030d` chore(deps): bump keycloak.version from 26.6.1 to 26.6.2
+* `53235a988` chore(deps): bump docker/build-push-action from 7.1.0 to 7.2.0
+* `751146e6a` chore(deps): bump github/codeql-action from 4.35.4 to 4.35.5
+* `a1c956fbb` chore(deps): bump keycloak/keycloak from 26.6.1 to 26.6.2
+* `b93cc55f6` chore(deps-dev): bump org.apache.maven.plugins:maven-enforcer-plugin
+* `19e5329b3` perf(obligation): optimize the steams
+* `86333ea78` chore(deps): bump com.google.code.gson:gson from 2.13.2 to 2.14.0
+* `a71baccf3` chore(deps-dev): bump io.github.git-commit-id:git-commit-id-maven-plugin
+* `fbe707f18` chore(deps): bump commons-cli:commons-cli from 1.10.0 to 1.11.0
+* `cce7dafa3` chore(deps): bump org.mockito:mockito-core from 5.21.0 to 5.23.0
+* `42b794e32` chore(deps): bump org.json:json from 20250517 to 20251224
+* `d56c59d00` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `e9991b30c` chore(deps): bump ch.qos.logback:logback-classic from 1.5.18 to 1.5.32
+* `50e4e71a9` chore(deps): bump jakarta.xml.bind:jakarta.xml.bind-api
+* `ad653f2f5` chore(deps): bump org.spdx:java-spdx-library from 2.0.2 to 2.0.3
+* `4cb50dd26` chore(deps): bump org.projectlombok:lombok from 1.18.38 to 1.18.46
+* `4964d11dc` chore(deps): bump org.apache.maven.plugins:maven-resources-plugin
+* `ba18507ec` chore(deps): bump org.jboss.logging:jboss-logging
+* `d80f0fd8d` chore(deps): bump jaxen:jaxen from 2.0.0 to 2.0.3
+* `a6a95b111` chore(deps): bump commons-io:commons-io from 2.20.0 to 2.22.0
+* `835dda3e4` chore(deps): bump org.apache.maven.plugins:maven-failsafe-plugin
+* `05ca948c8` chore(deps): bump org.jetbrains:annotations from 26.0.2-1 to 26.1.0
+* `5933a825a` chore(deps): bump joda-time:joda-time from 2.14.0 to 2.14.2
+* `b5eb5734b` chore(deps-dev): bump org.apache.maven.plugins:maven-assembly-plugin
+* `81f032588` chore(deps-dev): bump org.codehaus.mojo:versions-maven-plugin
+* `a6e9f835b` chore(deps): bump org.owasp.encoder:encoder from 1.3.1 to 1.4.0
+* `5bd330001` chore(deps): bump org.jacoco:jacoco-maven-plugin from 0.8.13 to 0.8.14
+* `aba0ea009` chore(deps-dev): bump org.apache.maven.plugins:maven-war-plugin
+* `e12613460` chore(deps): bump log4j2.version from 2.25.4 to 2.26.0
+* `8c2bd8c5a` chore(deps): bump org.ow2.asm.version from 9.9.1 to 9.10
+* `5ba4da017` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.17.8 to 1.18.8
+* `72a4910ee` chore(deps): bump org.wiremock:wiremock-standalone from 3.13.1 to 3.13.2
+* `c00bb0674` chore(deps): bump org.glassfish.jaxb:jaxb-runtime from 4.0.6 to 4.0.8
+* `e77e2920b` chore(deps): bump step-security/harden-runner from 2.19.1 to 2.19.3
+* `400e2b7d7` chore(deps): bump actions/dependency-review-action from 4.9.0 to 5.0.0
+* `e9bfa51c2` chore(deps): bump org.springframework.security:spring-security-oauth2-authorization-server
+* `dcdda3c64` chore(deps): bump com.google.guava:guava from 33.5.0-jre to 33.6.0-jre
+* `59e398084` chore(deps): bump slf4j.version from 2.0.17 to 2.0.18
+* `c490401cd` chore(deps): bump org.apache.maven.plugins:maven-surefire-plugin
+* `1d94b6814` chore(deps): bump commons-codec:commons-codec from 1.20.0 to 1.22.0
+* `70db3d143` chore(rest): remove unused spring properties
+* `be2726522` chore(auth): align JWT keystore helper scripts
+* `e2914b5ec` chore(docker): sync docker with actual config
+* `ec56521b0` refactor(svm): simplify SVM delta sync config
+* `1a4c392b4` chore(ci): Added github step summary
+
 ## sw360-20.1.0-rc-1
 This is the first release candidate for SW360 in the line of the next minor
 release version 20.1.0 of SW360. The candidate includes numerous features,
