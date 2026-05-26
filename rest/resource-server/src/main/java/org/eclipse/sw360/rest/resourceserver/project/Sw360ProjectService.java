@@ -100,6 +100,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -196,46 +197,80 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
     }
 
-    public boolean validate(List<String> changedUsages, User sw360User, Sw360ReleaseService releaseService, Set<String> totalReleaseIds) throws TException {
-		for (String data : changedUsages) {
-			String releaseId;
-			String usageData;
-			String attachmentContentId;
-			String[] parts = data.split("-");
-			if (parts.length > 1) {
-				String[] components = parts[1].split("_");
-	            releaseId = components[0];
-	            usageData = components[1];
-	            attachmentContentId = components[2];
-			}
-			else {
-				String[] components = data.split("_");
-	            releaseId = components[0];
-	            usageData = components[1];
-	            attachmentContentId = components[2];
-			}
-			boolean relPresent = totalReleaseIds.contains(releaseId);
-			if (!relPresent) {
-				return false;
-			}
-            Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
-            Set<Attachment> attachments = release.getAttachments();
-            if (usageData.equals("sourcePackage")) {
-                for (Attachment attach : attachments) {
-                    if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.SOURCE && attach.getAttachmentType() != AttachmentType.SOURCE_SELF)) {
-                        return false;
+    /**
+     * Validates changed usages and removes invalid entries instead of failing.
+     * Returns a list of warning messages for entries that were removed.
+     *
+     * @param changedUsages List of usage strings to validate (modified in place — invalid entries removed)
+     * @param sw360User Current user
+     * @param releaseService Release service for fetching release data
+     * @param totalReleaseIds Set of valid release IDs for the project
+     * @return List of warning messages for skipped entries
+     */
+    public List<String> validate(List<String> changedUsages, User sw360User, Sw360ReleaseService releaseService, Set<String> totalReleaseIds) throws TException {
+        List<String> warnings = new ArrayList<>();
+        Iterator<String> iterator = changedUsages.iterator();
+
+        while (iterator.hasNext()) {
+            String data = iterator.next();
+            String releaseId;
+            String usageData;
+            String attachmentContentId;
+            String[] parts = data.split("-");
+            if (parts.length > 1) {
+                String[] components = parts[1].split("_");
+                releaseId = components[0];
+                usageData = components[1];
+                attachmentContentId = components[2];
+            } else {
+                String[] components = data.split("_");
+                releaseId = components[0];
+                usageData = components[1];
+                attachmentContentId = components[2];
+            }
+
+            boolean relPresent = totalReleaseIds.contains(releaseId);
+            if (!relPresent) {
+                warnings.add(String.format("Release '%s' does not belong to project or its sub-projects, skipping usage: %s", releaseId, data));
+                iterator.remove();
+                continue;
+            }
+
+            try {
+                Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                Set<Attachment> attachments = release.getAttachments();
+                boolean invalidAttachment = false;
+
+                if (usageData.equals("sourcePackage")) {
+                    for (Attachment attach : attachments) {
+                        if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.SOURCE && attach.getAttachmentType() != AttachmentType.SOURCE_SELF)) {
+                            invalidAttachment = true;
+                            break;
+                        }
                     }
                 }
-            }
-            if (usageData.equals("licenseInfo")) {
-                for (Attachment attach : attachments) {
-                    if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_COMBINED && attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_XML)) {
-                        return false;
+                if (usageData.equals("licenseInfo")) {
+                    for (Attachment attach : attachments) {
+                        if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_COMBINED && attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_XML)) {
+                            invalidAttachment = true;
+                            break;
+                        }
                     }
                 }
+
+                if (invalidAttachment) {
+                    warnings.add(String.format("Not a valid attachment type for release '%s', skipping usage: %s", releaseId, data));
+                    iterator.remove();
+                }
+            } catch (Exception e) {
+                warnings.add(String.format("Could not validate release '%s': %s, skipping usage: %s", releaseId, e.getMessage(), data));
+                iterator.remove();
             }
-        } return true;
+        }
+        return warnings;
     }
+
+
 
     public List<String> savedUsages(List<AttachmentUsage> allUsagesByProject) {
         List<String> selectedData = new ArrayList<>();
@@ -2074,12 +2109,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      * @param user The current user
      * @throws TException if there's an error during processing
      */
-    public void handleIgnoredLicenses(String projectId, Map<String, List<String>> ignoredLicensesData,
+    public List<String> handleIgnoredLicenses(String projectId, Map<String, List<String>> ignoredLicensesData,
                                       Project project, User user) throws TException {
 
         // Validate ignoredLicenses structure and relationships
         validateIgnoredLicensesStructure(ignoredLicensesData);
-        validateIgnoredLicensesRelationships(projectId, ignoredLicensesData, user);
+        List<String> warnings = validateIgnoredLicensesRelationships(projectId, ignoredLicensesData, user);
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = project.getReleaseIdToUsage();
         Set<String> validReleaseIds = CommonUtils.isNullOrEmptyMap(releaseIdToUsage)
@@ -2097,7 +2132,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         if (allValidReleaseIds.isEmpty()) {
             log.warn("Project {} and its subprojects have no releases, skipping ignored licenses processing", projectId);
-            return;
+            return warnings;
         }
 
         Source projectSource = Source.projectId(projectId);
@@ -2109,12 +2144,14 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             .filter(releaseId -> !allValidReleaseIds.contains(releaseId))
             .collect(Collectors.toSet());
 
-        // If any invalid releases found, throw BadRequestClientException
+        // If any invalid releases found, warn and remove them from the map
         if (!invalidReleases.isEmpty()) {
-            String errorMessage = String.format("The following releases do not belong to project %s or its subprojects: %s",
+            String warnMessage = String.format("The following releases do not belong to project %s or its subprojects and will be skipped: %s",
                                                projectId, String.join(", ", invalidReleases));
-            log.error(errorMessage);
-            throw new BadRequestClientException(errorMessage);
+            log.warn(warnMessage);
+            warnings.add(warnMessage);
+            // Remove keys whose release ID is invalid
+            ignoredLicensesData.keySet().removeIf(key -> invalidReleases.contains(extractReleaseIdFromIgnoredLicenseKey(key)));
         }
 
         // process valid releases
@@ -2199,12 +2236,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throw e;
         } catch (AccessDeniedException e) {
             throw e;
-        } catch (BadRequestClientException e) {
-            throw e;
         } catch (Exception e) {
             log.error("Failed to process ignored licenses for project {}: {}", projectId, e.getMessage(), e);
             throw new TException("Failed to process ignored licenses", e);
         }
+        return warnings;
     }
 
     /**
@@ -2269,9 +2305,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      * @throws BadRequestClientException if validation fails
      * @throws TException if there's an error accessing project/release data
      */
-    private void validateIgnoredLicensesRelationships(String pathProjectId,
+    private List<String> validateIgnoredLicensesRelationships(String pathProjectId,
                                                        Map<String, List<String>> ignoredLicensesData,
                                                        User user) throws TException {
+        List<String> warnings = new ArrayList<>();
+        Set<String> keysToRemove = new HashSet<>();
+
         for (Map.Entry<String, List<String>> entry : ignoredLicensesData.entrySet()) {
             String key = entry.getKey();
 
@@ -2290,79 +2329,97 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
             // Validation 1: Root project in request must match path parameter
             if (!rootProjectId.equals(pathProjectId)) {
-                throw new BadRequestClientException(String.format(
-                    "Project ID mismatch in ignoredLicenses key '%s': " +
-                    "Root project ID '%s' does not match path parameter project ID '%s'",
-                    key, rootProjectId, pathProjectId));
+                String warning = String.format(
+                    "Skipping ignoredLicenses key '%s': Root project ID '%s' does not match path parameter project ID '%s'",
+                    key, rootProjectId, pathProjectId);
+                log.warn(warning);
+                warnings.add(warning);
+                keysToRemove.add(key);
+                continue;
             }
 
             // Validation 2: Validate project hierarchy (if multi-level)
             if (projectHierarchy.length > 1) {
-                validateProjectHierarchyChain(projectHierarchy, key, user);
+                String hierarchyWarning = validateProjectHierarchyChain(projectHierarchy, key, user);
+                if (hierarchyWarning != null) {
+                    warnings.add(hierarchyWarning);
+                    keysToRemove.add(key);
+                    continue;
+                }
             }
 
             // Validation 3: Validate release belongs to the correct project
-            String targetProjectId = projectHierarchy[projectHierarchy.length - 1]; // Last project in hierarchy
-            validateReleaseOwnership(parsed.releaseId, targetProjectId, key, user);
+            String targetProjectId = projectHierarchy[projectHierarchy.length - 1];
+            String ownershipWarning = validateReleaseOwnership(parsed.releaseId, targetProjectId, key, user);
+            if (ownershipWarning != null) {
+                warnings.add(ownershipWarning);
+                keysToRemove.add(key);
+            }
         }
+
+        // Remove invalid entries so they are not processed
+        keysToRemove.forEach(ignoredLicensesData::remove);
+
+        if (!warnings.isEmpty()) {
+            log.warn("Skipped {} invalid ignoredLicenses entries for project {}: {}",
+                     keysToRemove.size(), pathProjectId, String.join("; ", warnings));
+        }
+
+        return warnings;
     }
 
     /**
      * Validates that each sub-project in the hierarchy belongs to its parent project.
+     * Returns a warning message if validation fails, or null if valid.
      *
-     * @param projectHierarchy Array of project IDs representing the hierarchy
+     * @param projectHierarchy Array of project IDs forming the hierarchy chain
      * @param originalKey Original key from ignoredLicenses for error messages
      * @param user Current user
-     * @throws BadRequestClientException if validation fails
+     * @return warning message if validation fails, null if valid
      */
-    private void validateProjectHierarchyChain(String[] projectHierarchy, String originalKey, User user)
-            throws TException {
-        for (int i = 0; i < projectHierarchy.length - 1; i++) {
-            String parentProjectId = projectHierarchy[i];
-            String childProjectId = projectHierarchy[i + 1];
+    private String validateProjectHierarchyChain(String[] projectHierarchy, String originalKey, User user) {
+        try {
+            for (int i = 0; i < projectHierarchy.length - 1; i++) {
+                String parentProjectId = projectHierarchy[i];
+                String childProjectId = projectHierarchy[i + 1];
 
-            // Get parent project (getProjectForUserById maps SW360 404/403 to ResourceNotFoundException / AccessDeniedException)
-            Project parentProject = getProjectForUserById(parentProjectId, user);
-
-            // Check if child project exists in parent's linked projects
-            Map<String, ProjectProjectRelationship> linkedProjects = parentProject.getLinkedProjects();
-            if (CommonUtils.isNullOrEmptyMap(linkedProjects) || !linkedProjects.containsKey(childProjectId)) {
-                throw new BadRequestClientException(String.format(
-                    "Invalid project hierarchy in ignoredLicenses key '%s': " +
-                    "Sub-project '%s' does not belong to parent project '%s'",
-                    originalKey, childProjectId, parentProjectId));
+                Project parentProject = getProjectForUserById(parentProjectId, user);
+                Map<String, ProjectProjectRelationship> linkedProjects = parentProject.getLinkedProjects();
+                if (CommonUtils.isNullOrEmptyMap(linkedProjects) || !linkedProjects.containsKey(childProjectId)) {
+                    return String.format(
+                        "Invalid project hierarchy in key '%s': Sub-project '%s' does not belong to parent project '%s'",
+                        originalKey, childProjectId, parentProjectId);
+                }
             }
-
-            log.debug("Validated: Sub-project '{}' belongs to parent project '{}'", childProjectId, parentProjectId);
+        } catch (TException e) {
+            return String.format("Could not validate hierarchy for key '%s': %s", originalKey, e.getMessage());
         }
+        return null;
     }
 
     /**
      * Validates that a release belongs to the specified project or any of its sub-projects.
+     * Returns a warning message if validation fails, or null if valid.
      *
      * @param releaseId Release ID to validate
-     * @param projectId Project ID that should contain the release (directly or in sub-projects)
+     * @param projectId Project ID that should contain the release
      * @param originalKey Original key from ignoredLicenses for error messages
      * @param user Current user
-     * @throws BadRequestClientException if release doesn't belong to project or its sub-projects
+     * @return warning message if validation fails, null if valid
      */
-    private void validateReleaseOwnership(String releaseId, String projectId, String originalKey, User user)
-            throws TException {
-        // Validate project access (getProjectForUserById maps SW360 404/403 to ResourceNotFoundException / AccessDeniedException)
-        getProjectForUserById(projectId, user);
-
-        // Get all release IDs for this project including sub-projects (transitive=true)
-        Set<String> allReleaseIds = getReleaseIds(projectId, user, true);
-
-        // Check if release exists in project or any of its sub-projects
-        if (!allReleaseIds.contains(releaseId)) {
-            throw new BadRequestClientException(String.format(
-                "Invalid release ownership in ignoredLicenses key '%s': " +
-                "Release '%s' does not belong to project '%s' or any of its sub-projects",
-                originalKey, releaseId, projectId));
+    private String validateReleaseOwnership(String releaseId, String projectId, String originalKey, User user) {
+        try {
+            getProjectForUserById(projectId, user);
+            Set<String> allReleaseIds = getReleaseIds(projectId, user, true);
+            if (!allReleaseIds.contains(releaseId)) {
+                return String.format(
+                    "Release '%s' does not belong to project '%s' or its sub-projects (key: '%s')",
+                    releaseId, projectId, originalKey);
+            }
+        } catch (TException e) {
+            return String.format("Could not validate release ownership for key '%s': %s", originalKey, e.getMessage());
         }
-
-        log.debug("Validated: Release '{}' belongs to project '{}' or its sub-projects", releaseId, projectId);
+        return null;
     }
 
     /**
