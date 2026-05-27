@@ -73,8 +73,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED, getOrDefault(configContainer, IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED, "false"))
             .put(ATTACHMENT_DELETE_NO_OF_DAYS, getOrDefault(configContainer, ATTACHMENT_DELETE_NO_OF_DAYS, String.valueOf(SW360Constants.DEFAULT_ATTACHMENT_DELETE_NO_DAY)))
             .put(AUTO_SET_ECC_STATUS, getOrDefault(configContainer, AUTO_SET_ECC_STATUS, "false"))
-            .put(MAIL_REQUEST_FOR_PROJECT_REPORT, getOrDefault(configContainer, MAIL_REQUEST_FOR_PROJECT_REPORT, "false"))
-            .put(MAIL_REQUEST_FOR_COMPONENT_REPORT, getOrDefault(configContainer, MAIL_REQUEST_FOR_COMPONENT_REPORT, "false"))
+            .put(MAIL_REQUEST_FOR_REPORT, getOrDefault(configContainer, MAIL_REQUEST_FOR_REPORT, "false"))
             .put(IS_BULK_RELEASE_DELETING_ENABLED, getOrDefault(configContainer, IS_BULK_RELEASE_DELETING_ENABLED, "false"))
             .put(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, getOrDefault(configContainer, DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, "false"))
             .put(IS_FORCE_UPDATE_ENABLED, getOrDefault(configContainer, IS_FORCE_UPDATE_ENABLED, "false"))
@@ -195,8 +194,7 @@ public class SW360ConfigsDatabaseHandler {
                  MAINLINE_STATE_ENABLED_FOR_USER,
                  IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
                  AUTO_SET_ECC_STATUS,
-                 MAIL_REQUEST_FOR_PROJECT_REPORT,
-                 MAIL_REQUEST_FOR_COMPONENT_REPORT,
+                 MAIL_REQUEST_FOR_REPORT,
                  IS_FORCE_UPDATE_ENABLED,
                  DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
                  IS_BULK_RELEASE_DELETING_ENABLED,
