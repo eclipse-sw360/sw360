@@ -2593,7 +2593,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource attachmentUsageReleases(Project sw360Project, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
         ObjectMapper oMapper = new ObjectMapper();
-        Map<String, ProjectReleaseRelationship> releaseIdToUsages = sw360Project.getReleaseIdToUsage();
         Map<String, Object> projectMap = oMapper.convertValue(sw360Project, Map.class);
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("linkedProjects", projectMap.get("linkedProjects"));
@@ -2613,7 +2612,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         HalResource halProject = new HalResource<>(resultMap);
 
-        if (releaseIdToUsages != null) {
+        if (sw360Project.getReleaseIdToUsage() != null || (releases != null && !releases.isEmpty())) {
             restControllerHelper.addEmbeddedProjectAttachmentUsage(halProject, releases, attachmentUsageMap);
         }
         return halProject;
@@ -2893,7 +2892,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource<Project> createHalLicenseClearing(Project sw360Project, List<EntityModel<Release>> releases) {
         Project sw360 = new Project();
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
         sw360.setReleaseIdToUsage(sw360Project.getReleaseIdToUsage());
         sw360.setLinkedProjects(sw360Project.getLinkedProjects());
         sw360.setId(sw360Project.getId());
@@ -2902,7 +2900,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360.unsetVisbility();
         sw360.unsetSecurityResponsibles();
         HalResource<Project> halProject = new HalResource<>(sw360);
-        if (releaseIdToUsage != null) {
+        if (sw360Project.getReleaseIdToUsage() != null || (releases != null && !releases.isEmpty())) {
             restControllerHelper.addEmbeddedProjectReleases(halProject, releases);
         }
         return halProject;
@@ -3977,16 +3975,42 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Map of obligation status info")
             @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,
             @Parameter(description = "Obligation Level",
-                    schema = @Schema(allowableValues = {"project", "organization", "component"}))
+                    schema = @Schema(allowableValues = {"project", "organization", "component", "all"}))
             @RequestParam(value = "obligationLevel", required = true) String oblLevel
-    ) throws TException {
-
+    ) {
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
         try {
             final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             restControllerHelper.throwIfSecurityUser(sw360User);
+            if ("all".equals(oblLevel)) {
+                Map<String, ObligationStatusInfo> filteredMap = requestBodyObligationStatusInfo.entrySet()
+                        .stream()
+                        .filter(entry -> entry.getValue() != null &&
+                                entry.getValue().getObligationLevel() != null)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            obligationStatusMap = processObligations(id, sw360User, requestBodyObligationStatusInfo, oblLevel);
+                Map<String, ObligationStatusInfo> licenseObligationStatusMap = filteredMap.entrySet()
+                        .stream()
+                        .filter(entry -> ObligationLevel.LICENSE_OBLIGATION.equals(entry.getValue().getObligationLevel()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+                Map<String, ObligationStatusInfo> otherObligationStatusMap = filteredMap.entrySet()
+                        .stream()
+                        .filter(entry -> !ObligationLevel.LICENSE_OBLIGATION.equals(entry.getValue().getObligationLevel()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+                licenseObligationStatusMap = processLicenseObligations(id, sw360User, licenseObligationStatusMap);
+                otherObligationStatusMap = processObligations(id, sw360User, otherObligationStatusMap);
+
+                if (!CommonUtils.isNullOrEmptyMap(licenseObligationStatusMap)) {
+                    obligationStatusMap.putAll(licenseObligationStatusMap);
+                }
+                if (!CommonUtils.isNullOrEmptyMap(otherObligationStatusMap)) {
+                    obligationStatusMap.putAll(otherObligationStatusMap);
+                }
+            } else {
+                obligationStatusMap = processObligations(id, sw360User, requestBodyObligationStatusInfo, oblLevel);
+            }
             Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
                     .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
             Project sw360Project = projectService.getProjectForUserById(id, sw360User);
@@ -4001,7 +4025,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
             throw new DataIntegrityViolationException("Cannot update "+oblLevel+" Obligation");
         } catch (Exception e) {
-            log.error("Error updating {0} obligations: ", oblLevel ,e);
+            log.error("Error updating {0} obligations: {}", oblLevel ,e);
             throw new DataIntegrityViolationException("Failed to update "+oblLevel+"  Obligation: " + e.getMessage());
         }
     }
@@ -4044,6 +4068,41 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return obligationStatusMap;
     }
 
+    private Map<String, ObligationStatusInfo> processObligations(
+            String projectId,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo) throws TException {
+        Project sw360Project = projectService.getProjectForUserById(projectId, sw360User);
+        if (hasLinkedObligations(sw360Project)) {
+            return processExistingObligations(sw360Project, sw360User, requestBodyObligationStatusInfo);
+        }
+        return updateProjectObligations(sw360Project, sw360User, new HashMap<>());
+    }
+
+    private Map<String, ObligationStatusInfo> processExistingObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo) throws TException {
+        ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+        Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
+
+        boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
+                .stream()
+                .filter(entry -> {
+                    ObligationStatusInfo statusInfo = requestBodyObligationStatusInfo.get(entry);
+                    return statusInfo.getObligationLevel() == null;
+                })
+                .collect(Collectors.toSet())
+                .stream()
+                .allMatch(obligationStatusMap::containsKey);
+
+        if (!allObligationsPresent) {
+            return updateProjectObligations(sw360Project, sw360User, obligationStatusMap);
+        }
+
+        return obligationStatusMap;
+    }
+
     private Map<String, ObligationStatusInfo> updateProjectObligations(
             Project sw360Project,
             User sw360User,
@@ -4052,6 +4111,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
           Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService.setObligationsFromAdminSection(
                 sw360User, existingObligationStatusMap, sw360Project, oblLevel);
+
+        projectService.addLinkedObligations(sw360Project, sw360User, updatedObligationStatusMap);
+        return updatedObligationStatusMap;
+    }
+
+    private Map<String, ObligationStatusInfo> updateProjectObligations(
+            Project sw360Project,
+            User sw360User,
+            Map<String, ObligationStatusInfo> existingObligationStatusMap) throws TException {
+
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService.setObligationsFromAdminSection(
+                sw360User, existingObligationStatusMap, sw360Project);
 
         projectService.addLinkedObligations(sw360Project, sw360User, updatedObligationStatusMap);
         return updatedObligationStatusMap;
