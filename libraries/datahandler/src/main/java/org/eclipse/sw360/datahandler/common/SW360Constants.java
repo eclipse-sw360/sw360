@@ -166,6 +166,9 @@ public class SW360Constants {
             AttachmentType.COMPONENT_LICENSE_INFO_COMBINED, AttachmentType.INITIAL_SCAN_REPORT);
     public static final Collection<AttachmentType> SOURCE_CODE_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.SOURCE, AttachmentType.SOURCE_SELF);
     public static final String CONTENT_TYPE_OPENXML_SPREADSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    public static final String CONTENT_TYPE_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    public static final String CONTENT_TYPE_XHTML = "application/xhtml+xml";
+    public static final String CONTENT_TYPE_TEXT = "text/plain";
     public static final String CONTENT_TYPE_XML = "application/xml";
     public static final String CONTENT_TYPE_JSON = "application/json";
     public static final String CONTENT_TYPE_CSV = "text/csv";
