@@ -186,6 +186,15 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return limitedSet;
     }
 
+    public List<Release> getAccessibleReleasesByIds(Set<String> releaseIds, User sw360User) throws TException {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            return Collections.emptyList();
+        }
+
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getAccessibleReleasesById(releaseIds, sw360User);
+    }
+
     public List<ReleaseLink> getLinkedReleaseRelations(Release release, User user) throws TException {
         List<ReleaseLink> linkedReleaseRelations = getLinkedReleaseRelationsWithAccessibility(release, user);
         linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
