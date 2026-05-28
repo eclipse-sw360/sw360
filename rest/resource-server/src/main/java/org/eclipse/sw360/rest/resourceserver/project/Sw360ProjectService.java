@@ -1462,6 +1462,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      * @throws TException
      */
     public int countProjectsByReleaseIds(Set<String> releaseIds) {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            return 0;
+        }
         try {
             ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
             return sw360ProjectClient.getCountByReleaseIds(releaseIds);
