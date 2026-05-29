@@ -2208,16 +2208,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestStatus exportForMonitoringList() throws TException {
         // load all projects
-        log.info("SVMML: Starting export of projects to SVM monitoring lists");
+        log.info("VilocifyML: Starting export of projects to monitoring lists");
         List<Project> allProjects = getAllProjects();
-        log.info("SVMML: successfully loaded " + allProjects.size() + " projects");
+        log.info("VilocifyML: successfully loaded " + allProjects.size() + " projects");
         List<Project> projects = prepareProjectsForSVM(allProjects);
-        log.info("SVMML: after filtering out projects with missing security responsibles, " + projects.size() + " projects are left");
+        log.info("VilocifyML: after filtering out projects with missing security responsibles, " + projects.size() + " projects are left");
         // serialize projects to json
         JsonArray jsonResult = serializeProjectsToJson(projects);
         String jsonString = jsonResult.toString();
-        log.info("SVMML: projects serialized to JSON string. String length: " + jsonString.length());
-        log.info("SVMML: JSON starts with: " + StringUtils.abbreviate(jsonString, SVMML_JSON_LOG_CUTOFF_LENGTH));
+        log.info("VilocifyML: projects serialized to JSON string. String length: " + jsonString.length());
+        log.info("VilocifyML: JSON starts with: " + StringUtils.abbreviate(jsonString, SVMML_JSON_LOG_CUTOFF_LENGTH));
 
         try {
             DatabaseHandlerUtil.writeToFile(jsonString);
@@ -2225,10 +2225,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             log.warn("Unable to write to Json Output to File . ", e);
         }
 
-        // send json to svm
+        // send json to Vilocify
         try {
-            new SvmConnector().sendProjectExportForMonitoringLists(jsonString);
-            log.info("SVMML: sent JSON to SVM");
+            new VilocifyConnector().sendProjectExportForMonitoringLists(jsonString);
+            log.info("VilocifyML: sent JSON to Vilocify");
         } catch (IOException | SW360Exception e) {
             log.error(e);
             return RequestStatus.FAILURE;
