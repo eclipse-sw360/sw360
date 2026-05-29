@@ -7,45 +7,48 @@
 # which is available at https://www.eclipse.org/legal/epl-2.0/
 #
 # SPDX-License-Identifier: EPL-2.0
-#
-# This is a manual database migration script. It is assumed that a
-# dedicated framework for automatic migration will be written in the
-# future. When that happens, this script should be refactored to conform
-# to the framework's prerequisites to be run by the framework. For
-# example, server address and db name should be parameterized, the code
-# reorganized into a single class or function, etc.
-#
-# This script migrates the two separate mail export configuration keys:
-#   send.project.spreadsheet.export.to.mail.enabled
-#   send.component.spreadsheet.export.to.mail.enabled
-# into a single unified key:
-#   send.export.to.mail.enabled
-# in the SW360_CONFIGURATION document stored in CouchDB.
-#
-# Document structure (actual):
-#   {
-#     "_id": "...",
-#     "configFor": "SW360_CONFIGURATION",
-#     "configKeyToValues": {
-#       "send.project.spreadsheet.export.to.mail.enabled": ["false"],
-#       "send.component.spreadsheet.export.to.mail.enabled": ["false"],
-#       ...
-#     }
-#   }
+
+"""
+ This is a manual database migration script. It is assumed that a
+ dedicated framework for automatic migration will be written in the
+ future. When that happens, this script should be refactored to conform
+ to the framework's prerequisites to be run by the framework. For
+ example, server address and db name should be parameterized, the code
+ reorganized into a single class or function, etc.
+
+ This script migrates the two separate mail export configuration keys:
+   send.project.spreadsheet.export.to.mail.enabled
+   send.component.spreadsheet.export.to.mail.enabled
+ into a single unified key:
+   send.export.to.mail.enabled
+ in the SW360_CONFIGURATION document stored in CouchDB.
+
+ Document structure (actual):
+   {
+     "_id": "...",
+     "configFor": "SW360_CONFIGURATION",
+     "configKeyToValues": {
+       "send.project.spreadsheet.export.to.mail.enabled": ["false"],
+       "send.component.spreadsheet.export.to.mail.enabled": ["false"],
+       ...
+     }
+   }
+"""
 # -----------------------------------------------------------------------------
 
-import couchdb
-import getpass
 import json
 import time
 import sys
 from datetime import datetime
+
+import couchdb
 
 # ---------------------------------------
 # constants
 # ---------------------------------------
 
 DRY_RUN = False
+COUCHSERVER = "http://username:pwd@localhost:5984/"
 DBNAME = 'sw360config'
 
 OLD_KEY_PROJECT   = "send.project.spreadsheet.export.to.mail.enabled"
@@ -60,20 +63,6 @@ CONFIG_FIELD      = "configKeyToValues"
 # ---------------------------------------
 # database connection
 # ---------------------------------------
-
-print("--- CouchDB Connection Setup ---")
-couchdb_host = input("Enter CouchDB host [default: http://localhost:5984]: ").strip() or "http://localhost:5984"
-print(f"  Host     : {couchdb_host}")
-
-couchdb_user = input("Enter CouchDB username: ").strip()
-print(f"  Username : {couchdb_user}")
-
-couchdb_pass = getpass.getpass("Enter CouchDB password: ")
-print("  Password : ****")
-print("--------------------------------")
-
-scheme, rest = couchdb_host.rstrip("/").split("://", 1)
-COUCHSERVER = f"{scheme}://{couchdb_user}:{couchdb_pass}@{rest}/"
 
 try:
     couch = couchdb.Server(COUCHSERVER)
@@ -183,7 +172,7 @@ def migrate_mail_export_config_key():
             print(f"Error writing log file: {str(e)}")
 
         print('\n------------------------------------------')
-        print(f"\nMigration Summary:")
+        print('\nMigration Summary:')
         print(f"Total processed      : {log['statistics']['totalProcessed']}")
         print(f"Successfully updated : {log['statistics']['successCount']}")
         print(f"Skipped              : {log['statistics']['skippedCount']}")
