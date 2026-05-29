@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.SvmConnector;
+import org.eclipse.sw360.datahandler.db.VelocifyConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -39,6 +40,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.junit.Assume.assumeTrue;
@@ -90,6 +92,9 @@ public class ComponentDatabaseHandlerTest {
 
     @Mock
     SvmConnector svmConnector;
+
+    @Mock
+    VelocifyConnector velocifyConnector;
 
     @Before
     public void setUp() throws Exception {
@@ -167,16 +172,28 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
-        when(svmConnector.fetchComponentMappings())
-                .thenReturn(ImmutableMap.of("R1A", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 123),
-                        "R2B", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 456)));
+        // updateReleasesWithSvmTrackingFeedback now delegates to updateReleasesWithVelocifyTrackingFeedback.
+        // When Velocify is not configured (no API base URL / token in test properties) all
+        // component-mapping lookups return empty and the method is effectively a no-op → SUCCESS.
         RequestStatus requestStatus = handler.updateReleasesWithSvmTrackingFeedback();
+        assertEquals(RequestStatus.SUCCESS, requestStatus);
+    }
+
+    @Test
+    public void testUpdateReleasesWithVelocifyTrackingFeedback() throws Exception {
+        // Inject a mock VelocifyConnector that maps every release to a Velocify component.
+        // Notifications are empty, so no VulnerabilityService (Thrift) calls are made.
+        when(velocifyConnector.findComponentIdByRelease(any(Release.class)))
+                .thenReturn(Optional.of("velo-comp-123"));
+        when(velocifyConnector.getComponentNotificationIds("velo-comp-123"))
+                .thenReturn(Collections.emptyList());
+        handler.setVelocifyConnector(velocifyConnector);
+
+        RequestStatus requestStatus = handler.updateReleasesWithVelocifyTrackingFeedback();
 
         assertEquals(RequestStatus.SUCCESS, requestStatus);
         Release r1A = handler.getRelease("R1A", user1);
-        assertEquals("123", r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
-        Release r2B = handler.getRelease("R2B", user1);
-        assertEquals("456", r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
+        assertEquals("velo-comp-123", r1A.getExternalIds().get(SW360Constants.VELOCIFY_COMPONENT_ID));
     }
 
     @Test

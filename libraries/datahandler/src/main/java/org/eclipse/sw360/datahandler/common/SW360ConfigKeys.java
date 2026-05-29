@@ -74,7 +74,14 @@ public class SW360ConfigKeys {
 
     // This property is used to configure the SVM notification URL
     public static final String SVM_NOTIFICATION_URL = "svm.notification.url";
-
+    // This property selects the active external sync provider.
+    public static final String SYNC_INTEGRATION_PROVIDER = "sync.integration.provider";
+    // Velocify API configuration.
+    public static final String VELOCIFY_API_BASE_URL = "velocify.api.base.url";
+    public static final String VELOCIFY_API_ROOT_PATH = "velocify.api.root.path";
+    public static final String VELOCIFY_API_TOKEN = "velocify.api.token";
+    public static final String VELOCIFY_PROJECT_MONITORING_LISTS_URL = "velocify.project.monitoringlists.url";
+    public static final String VELOCIFY_SCHEDULER_EMAIL = "velocify.scheduler.email";
     // Properties purely used by UI
     // This property is used to enable/disable linked projects display in the UI
     public static final String UI_ENABLE_LINKED_PROJECTS_DISPLAY = "ui.enable.linked.projects.display";
@@ -136,6 +143,12 @@ public class SW360ConfigKeys {
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
             SVM_NOTIFICATION_URL,
+            SYNC_INTEGRATION_PROVIDER,
+            VELOCIFY_API_BASE_URL,
+            VELOCIFY_API_ROOT_PATH,
+            VELOCIFY_API_TOKEN,
+            VELOCIFY_PROJECT_MONITORING_LISTS_URL,
+            VELOCIFY_SCHEDULER_EMAIL,
             VCS_HOSTS
     );
 
@@ -157,7 +170,9 @@ public class SW360ConfigKeys {
             UI_OPERATING_SYSTEMS, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
             UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
-            UI_ENABLE_LINKED_PROJECTS_DISPLAY
+            UI_ENABLE_LINKED_PROJECTS_DISPLAY,
+            SYNC_INTEGRATION_PROVIDER, VELOCIFY_API_BASE_URL, VELOCIFY_API_ROOT_PATH,
+            VELOCIFY_API_TOKEN, VELOCIFY_PROJECT_MONITORING_LISTS_URL, VELOCIFY_SCHEDULER_EMAIL
     );
 
     private SW360ConfigKeys() {

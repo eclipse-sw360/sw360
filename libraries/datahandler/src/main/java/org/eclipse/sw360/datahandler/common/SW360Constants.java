@@ -111,11 +111,16 @@ public class SW360Constants {
     public static final String TOTAL_FILE_COUNT = "totalFileCount";
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
+        public static final String VELOCIFY_COMPONENT_ID;
+        public static final String VELOCIFY_COMPONENT_REQUEST_ID;
+        public static final String VELOCIFY_MONITORINGLIST_ID;
     public static final String MAINLINE_COMPONENT_ID;
     public static final String SVM_COMPONENT_ID_KEY;
     public static final String SVM_SHORT_STATUS;
     public static final String SVM_SHORT_STATUS_KEY;
     public static final String SVM_SCHEDULER_EMAIL;
+        public static final String VELOCIFY_SCHEDULER_EMAIL;
+        public static final String SYNC_INTEGRATION_PROVIDER;
     public static final String DATA_HANDLER_POM_FILE_PATH;
     public static final boolean ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP;
     public static final String URL_FORMATS;
@@ -239,10 +244,15 @@ public class SW360Constants {
         Properties props = CommonUtils.loadProperties(SW360Constants.class, PROPERTIES_FILE_PATH);
         SVM_COMPONENT_ID = props.getProperty("svm.component.id", "");
         MAINLINE_COMPONENT_ID = props.getProperty("mainline.component.id", "");
+        VELOCIFY_COMPONENT_ID = props.getProperty("velocify.component.id", "");
+        VELOCIFY_COMPONENT_REQUEST_ID = props.getProperty("velocify.component.request.id", "");
+        VELOCIFY_MONITORINGLIST_ID = props.getProperty("velocify.monitoringlist.id", "");
         SVM_COMPONENT_ID_KEY = props.getProperty("svm.component.id.key", "");
         SVM_SHORT_STATUS = props.getProperty("svm.short.status", "");
         SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");
         SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
+        VELOCIFY_SCHEDULER_EMAIL = props.getProperty("velocify.scheduler.email", "");
+        SYNC_INTEGRATION_PROVIDER = props.getProperty("sync.integration.provider", "velocify");
         SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
         ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = Boolean.parseBoolean(
