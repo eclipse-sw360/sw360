@@ -6,7 +6,7 @@
  *  which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
  *  SPDX-License-Identifier: EPL-2.0
-*/
+ */
 package org.eclipse.sw360.configurations;
 
 import java.util.Map;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController

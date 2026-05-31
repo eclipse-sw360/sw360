@@ -10,10 +10,9 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
-import org.eclipse.sw360.datahandler.thrift.ConfigFor;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
@@ -58,7 +57,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     private Map<String, String> allTestConfigs;
 
     @Before
-    public void before() throws TException, InvalidPropertiesFormatException {
+    public void before() throws InvalidPropertiesFormatException {
         // Setup test configuration data
         testConfigsFromProperties = new HashMap<>();
         testConfigsFromProperties.put("enable.flexible.project.release.relationship", "true");
@@ -214,7 +213,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_fail_update_configurations_with_invalid_input() throws IOException, TException {
+    public void should_fail_update_configurations_with_invalid_input() throws IOException {
         // Mock invalid input scenario
         given(this.sw360ConfigurationsServiceMock.updateSW360Configs(any(), any())).willReturn(RequestStatus.INVALID_INPUT);
 
@@ -241,7 +240,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_fail_update_configurations_when_in_use() throws IOException, TException {
+    public void should_fail_update_configurations_when_in_use() throws IOException {
         // Mock in-use scenario
         given(this.sw360ConfigurationsServiceMock.updateSW360Configs(any(), any())).willReturn(RequestStatus.IN_USE);
 
@@ -332,7 +331,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_update_with_xss_skip() throws IOException, TException {
+    public void should_update_with_xss_skip() throws IOException {
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -421,9 +420,8 @@ public class ConfigurationsTest extends TestIntegrationBase {
     // ========== EXCEPTION COVERAGE TESTS ==========
 
     @Test
-    public void should_handle_exception_in_get_configurations() throws IOException, TException {
-        // Mock TException in getSW360Configs
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
+    public void should_handle_exception_in_get_configurations() throws IOException {
+        doThrow(new RuntimeException("Test exception")).when(sw360ConfigurationsServiceMock)
                 .getSW360Configs();
 
         HttpHeaders headers = getHeaders(port);
@@ -442,9 +440,8 @@ public class ConfigurationsTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_handle_exception_in_update_configurations() throws IOException, TException {
-        // Mock TException in updateSW360Configs
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
+    public void should_handle_exception_in_update_configurations() throws IOException {
+        doThrow(new RuntimeException("Test exception")).when(sw360ConfigurationsServiceMock)
                 .updateSW360Configs(any(), any());
 
         HttpHeaders headers = getHeaders(port);
@@ -470,9 +467,8 @@ public class ConfigurationsTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_handle_exception_in_get_container_configurations() throws IOException, TException {
-        // Mock TException in getConfigForContainer
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
+    public void should_handle_exception_in_get_container_configurations() throws IOException {
+        doThrow(new RuntimeException("Test exception")).when(sw360ConfigurationsServiceMock)
                 .getConfigForContainer(any());
 
         HttpHeaders headers = getHeaders(port);
@@ -491,9 +487,8 @@ public class ConfigurationsTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_handle_exception_in_update_container_configurations() throws IOException, TException {
-        // Mock TException in updateSW360ConfigForContainer
-        doThrow(new TException("Test TException")).when(sw360ConfigurationsServiceMock)
+    public void should_handle_exception_in_update_container_configurations() throws IOException {
+        doThrow(new RuntimeException("Test exception")).when(sw360ConfigurationsServiceMock)
                 .updateSW360ConfigForContainer(any(), any(), any());
 
         HttpHeaders headers = getHeaders(port);

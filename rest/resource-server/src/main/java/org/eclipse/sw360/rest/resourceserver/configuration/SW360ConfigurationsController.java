@@ -22,9 +22,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ConfigFor;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -97,7 +97,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                     schema = @Schema(type = "boolean", example = "true")
             )
             @RequestParam(required = false, name = "changeable") Boolean changeable)
-            throws TException {
+             {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, String> configs;
         if (changeable == null) {
@@ -156,7 +156,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             )
     })
     public ResponseEntity<?> updateSW360Configurations(@RequestBody Map<String, String> configuration)
-            throws TException {
+            {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         updateConfigInService(null, configuration, sw360User);
         return ResponseEntity.ok("Configurations are updated successfully");
@@ -190,7 +190,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             )
             @PathVariable(name = "configFor") ConfigFor configFor,
             @RequestParam(required = false, name = "changeable") Boolean changeable
-    ) throws TException {
+    ) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, String> configs;
         if (changeable == null) {
@@ -262,7 +262,7 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
             @Parameter(description = "The configuration to be updated.",
                     required = true, schema = @Schema(implementation = Map.class))
             @RequestBody Map<String, String> configuration
-    ) throws TException {
+    )  {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         updateConfigInService(configFor, configuration, sw360User);
         return ResponseEntity.ok("Configurations are updated successfully");
@@ -273,11 +273,10 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
      * @param configFor If container-specific configurations are being updated, else null.
      * @param configuration The configurations to be updated, as a map of key-value pairs.
      * @param sw360User The user performing the update operation.
-     * @throws TException If there is an error communicating with the SW360 service.
      */
     private void updateConfigInService(
             ConfigFor configFor, Map<String, String> configuration, User sw360User
-    ) throws TException {
+    )  {
         // Don't update readonly keys silently
         Map<String, String> readonlyConfigs = sw360ConfigurationsService.getSW360ConfigFromProperties();
         for (String key : readonlyConfigs.keySet()) {
