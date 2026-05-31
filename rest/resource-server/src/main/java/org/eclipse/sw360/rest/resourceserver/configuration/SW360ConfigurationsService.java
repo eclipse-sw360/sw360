@@ -11,21 +11,18 @@
 
 package org.eclipse.sw360.rest.resourceserver.configuration;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.ConfigFor;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.util.HashMap;
 import java.util.InvalidPropertiesFormatException;
@@ -33,21 +30,23 @@ import java.util.Map;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class SW360ConfigurationsService {
-    private SW360ConfigsService.Iface getThriftConfigsClient() {
-        return new ThriftClients().makeSW360ConfigsClient();
+
+    private final String CONFIGS_URI = "/configurations/api/configurations";
+    private final RestClient restClient;
+
+    public SW360ConfigurationsService(RestClient restClient){
+        this.restClient = restClient;
     }
 
-    public Map<String, String> getSW360Configs() throws TException {
+    public Map<String, String> getSW360Configs() {
         Map<String, String> combinedConfig = getSW360ConfigFromDb();
         combinedConfig.putAll(getSW360ConfigFromProperties());
         return combinedConfig;
     }
 
-    public Map<String, String> getSW360ConfigFromDb() throws TException {
-        SW360ConfigsService.Iface configService = getThriftConfigsClient();
-        return configService.getSW360Configs();
+    public Map<String, String> getSW360ConfigFromDb() {
+        return restClient.get().uri(CONFIGS_URI).retrieve().body(new ParameterizedTypeReference<Map<String,String>>(){});
     }
 
     public Map<String, String> getSW360ConfigFromProperties() {
@@ -60,30 +59,40 @@ public class SW360ConfigurationsService {
         return configFromProperties;
     }
 
-    public RequestStatus updateSW360Configs(Map<String, String> updatedConfig, User user) throws TException, InvalidPropertiesFormatException {
+    public RequestStatus updateSW360Configs(Map<String, String> updatedConfig, User user) throws InvalidPropertiesFormatException {
         try {
-            SW360ConfigsService.Iface configsService = getThriftConfigsClient();
-            return configsService.updateSW360Configs(updatedConfig, user);
+            return restClient.put()
+            .uri(CONFIGS_URI)
+            .header("X-User-Email",user.getEmail())
+            .body(updatedConfig)
+            .retrieve()
+            .body(RequestStatus.class);
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }
     }
 
-    public Map<String, String> getConfigForContainer(ConfigFor configFor) throws TException {
+    public Map<String, String> getConfigForContainer(ConfigFor configFor) {
         Map<String, String> combinedConfig = getSW360ConfigFromDb(configFor);
         combinedConfig.putAll(getSW360ConfigFromProperties());
         return combinedConfig;
     }
 
-    public Map<String, String> getSW360ConfigFromDb(ConfigFor configFor) throws TException {
-        SW360ConfigsService.Iface configService = getThriftConfigsClient();
-        return configService.getConfigForContainer(configFor);
+    public Map<String, String> getSW360ConfigFromDb(ConfigFor configFor) {
+        return restClient.get()
+        .uri(CONFIGS_URI+"/group/" + configFor)
+        .retrieve()
+        .body(new ParameterizedTypeReference<Map<String,String>>() {});
     }
 
-    public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfig, User user) throws TException, InvalidPropertiesFormatException {
+    public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfig, User user) throws InvalidPropertiesFormatException {
         try {
-            SW360ConfigsService.Iface configsService = getThriftConfigsClient();
-            return configsService.updateSW360ConfigForContainer(configFor, updatedConfig, user);
+            return restClient.put()
+            .uri(CONFIGS_URI+"/group/"+configFor)
+            .header("X-User-Email", user.getEmail())
+            .body(updatedConfig)
+            .retrieve()
+            .body(RequestStatus.class);
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }

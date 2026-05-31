@@ -11,8 +11,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.junit.Before;
@@ -46,7 +45,7 @@ public class ConfigurationsSpecTest extends TestRestDocsSpecBase {
     private SW360ConfigurationsService sw360ConfigurationsService;
 
     @Before
-    public void before() throws TException, IOException {
+    public void before() throws IOException {
         Map<String, String> configsFromProperties = Map.of(
             "enable.flexible.project.release.relationship", "true",
             "svm.component.id", "svm_component_id"

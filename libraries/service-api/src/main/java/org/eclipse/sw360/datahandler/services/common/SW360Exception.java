@@ -6,7 +6,7 @@
  *  which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
  *  SPDX-License-Identifier: EPL-2.0
-*/
+ */
 package org.eclipse.sw360.datahandler.services.common;
 
 public class SW360Exception extends RuntimeException {
@@ -25,5 +25,9 @@ public class SW360Exception extends RuntimeException {
 
     public Integer getErrorCode() {
         return errorCode;
+    }
+
+    public String getWhy(){
+        return getMessage();
     }
 }
