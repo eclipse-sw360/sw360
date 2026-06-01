@@ -63,6 +63,9 @@ public class SW360ConfigKeys {
 
     public static final String IS_ADMIN_PRIVATE_ACCESS_ENABLED = "admin.private.project.access.enabled";
 
+    // This property is used to enable/disable the nested release (release-to-release linking) feature
+    public static final String IS_NESTED_RELEASE_ENABLED = "nested.release.enabled";
+
     public static final String SKIP_DOMAINS_FOR_VALID_SOURCE_CODE = "release.sourcecodeurl.skip.domains";
 
     // This property is used to configure the length of generated API tokens
@@ -74,7 +77,7 @@ public class SW360ConfigKeys {
 
     // This property is used to configure the SVM notification URL
     public static final String SVM_NOTIFICATION_URL = "svm.notification.url";
-    
+
     // Properties purely used by UI
     // This property is used to enable/disable linked projects display in the UI
     public static final String UI_ENABLE_LINKED_PROJECTS_DISPLAY = "ui.enable.linked.projects.display";
@@ -145,7 +148,7 @@ public class SW360ConfigKeys {
             USE_LICENSE_INFO_FROM_FILES, MAINLINE_STATE_ENABLED_FOR_USER, IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
             ATTACHMENT_DELETE_NO_OF_DAYS, ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_REPORT,
-            IS_BULK_RELEASE_DELETING_ENABLED,
+            IS_BULK_RELEASE_DELETING_ENABLED, IS_NESTED_RELEASE_ENABLED,
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
             TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, INHERIT_ATTACHMENT_USAGES,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,

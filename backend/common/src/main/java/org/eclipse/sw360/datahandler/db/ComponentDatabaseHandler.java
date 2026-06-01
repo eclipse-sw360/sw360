@@ -565,6 +565,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_SOURCE_CODE_URL);
         }
 
+        // Block nested release linking if disabled by configuration
+        if (!SW360Utils.readConfig(IS_NESTED_RELEASE_ENABLED, true)) {
+            Map<String, ReleaseRelationship> releaseLinks = release.getReleaseIdToRelationship();
+            if (releaseLinks != null && !releaseLinks.isEmpty()) {
+                throw new SW360Exception("Nested release linking is disabled by configuration.")
+                        .setErrorCode(403);
+            }
+        }
+
         String componentId = release.getComponentId();
         // Ensure that component exists
         Component component = componentRepository.get(componentId);
@@ -1180,6 +1189,23 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Get actual document for members that should no change
         Release actual = releaseRepository.get(release.getId());
         assertNotNull(actual, "Could not find release to update");
+
+        // Block nested release linking if disabled by configuration
+        if (!SW360Utils.readConfig(IS_NESTED_RELEASE_ENABLED, true)) {
+            Map<String, ReleaseRelationship> newLinks = release.getReleaseIdToRelationship();
+            Map<String, ReleaseRelationship> existingLinks = actual.getReleaseIdToRelationship();
+            boolean hadLinks = existingLinks != null && !existingLinks.isEmpty();
+            boolean hasLinks = newLinks != null && !newLinks.isEmpty();
+            if (hasLinks && !hadLinks) {
+                throw new SW360Exception("Nested release linking is disabled by configuration.")
+                        .setErrorCode(403);
+            }
+            if (hasLinks && !newLinks.equals(existingLinks)) {
+                throw new SW360Exception("Nested release linking is disabled by configuration.")
+                        .setErrorCode(403);
+            }
+        }
+
         ensureEccInformationIsSet(actual);
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 release.getAttachments(), user.getEmail(), release.getId());
