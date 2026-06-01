@@ -508,6 +508,29 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_update_project_when_clearing_state_is_null() throws IOException, TException {
+        // Simulate a legacy / partially-populated project without a clearing state.
+        project1.unsetClearingState();
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.projectServiceMock.updateProject(any(), any())).willReturn(RequestStatus.SUCCESS);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", "Updated Project Name");
+        body.put("description", "Updated project description");
+        body.put("version", "2.0.0");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId(),
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
     public void should_link_projects() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);

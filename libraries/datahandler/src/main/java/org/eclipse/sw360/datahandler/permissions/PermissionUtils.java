@@ -178,8 +178,11 @@ public class PermissionUtils {
         }
     }
 
-    public static boolean checkEditablePermission(String name, User user, Map<String, Object> reqBodyMap, Project sw360Project) {
-        if (!name.equals(ProjectClearingState.CLOSED.name()) || PermissionUtils.isAdmin(user)) {
+    public static boolean checkEditablePermission(ProjectClearingState state, User user, Map<String, Object> reqBodyMap, Project sw360Project) {
+        if (state == null) {
+            state = ProjectClearingState.OPEN;
+        }
+        if (!ProjectClearingState.CLOSED.equals(state) || PermissionUtils.isAdmin(user)) {
             return true;
         } else {
             if ((reqBodyMap.containsKey("attachments") || reqBodyMap.containsKey("obligationsText")
