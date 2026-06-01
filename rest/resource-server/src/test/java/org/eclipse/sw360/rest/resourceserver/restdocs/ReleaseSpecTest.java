@@ -1453,6 +1453,20 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_reject_link_releases_when_nested_release_disabled() throws Exception {
+        try (MockedStatic<SW360Utils> mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mockedStatic.when(() -> SW360Utils.readConfig(eq("nested.release.enabled"), eq(true))).thenReturn(false);
+
+            mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
+                    .contentType(MediaTypes.HAL_JSON)
+                    .content(this.objectMapper.writeValueAsString(releaseIdToRelationship1))
+                    .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                    .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    @Test
     public void should_document_link_packages() throws Exception {
         MockHttpServletRequestBuilder requestBuilder = patch("/api/releases/" + release.getId() + "/link/packages");
         link_unlink_packages(requestBuilder);
