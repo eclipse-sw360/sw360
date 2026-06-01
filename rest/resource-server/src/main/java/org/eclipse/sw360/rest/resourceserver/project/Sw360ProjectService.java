@@ -582,7 +582,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
             for (Release rel : releaseData) {
                 String releaseId = rel.getId();
-                for (Attachment attachment : rel.getAttachments()) {
+                for (Attachment attachment : CommonUtils.nullToEmptySet(rel.getAttachments())) {
                     if (CheckStatus.ACCEPTED.equals(attachment.getCheckStatus())) {
                         String attachmentContentId = attachment.getAttachmentContentId();
                         releaseIdToAcceptedCli.put(releaseId, attachmentContentId);
