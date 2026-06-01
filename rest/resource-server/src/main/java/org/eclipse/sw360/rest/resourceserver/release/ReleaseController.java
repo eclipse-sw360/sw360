@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_NESTED_RELEASE_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
@@ -1225,6 +1226,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             )
             @RequestBody Map<String, ReleaseRelationship> releaseIdToRelationship
     ) throws TException {
+        if (!SW360Utils.readConfig(IS_NESTED_RELEASE_ENABLED, true)) {
+            throw new HttpClientErrorException(HttpStatus.FORBIDDEN,
+                    "Nested release linking is disabled by configuration.");
+        }
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         if (releaseIdToRelationship.isEmpty()) {
