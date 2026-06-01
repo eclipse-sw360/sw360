@@ -554,6 +554,22 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return RequestStatus.FAILURE;
     }
 
+    private License tryGetOrCreateLicense(String licenseId, String department,
+            LicenseService.Iface licenseClient) {
+        try {
+            return licenseClient.getByID(licenseId, department);
+        } catch (TException fetchExp) {
+            log.warn("Error fetching license from backend! License Id-{}", licenseId, fetchExp);
+        }
+        try {
+            rch.createMissingLicense(licenseId);
+            return licenseClient.getByID(licenseId, department);
+        } catch (Exception createOrFetchExp) {
+            log.warn("Error creating/fetching missing license! License Id-{}", licenseId, createOrFetchExp);
+            return null;
+        }
+    }
+
     public Map<String, ObligationStatusInfo> getLicenseObligationData(
             Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
         ThriftClients thriftClients = new ThriftClients();
@@ -580,12 +596,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 limitedRelease.setComponentId(rel.getComponentId());
                 limitedSet.add(limitedRelease);
             }
-            try {
-                lic = licenseClient.getByID(entry.getKey(), user.getDepartment());
-            } catch (TException exp) {
-                log.warn("Error fetching license from backend! License Id-" + entry.getKey(), exp.getMessage());
-                return;
-            }
+            lic = tryGetOrCreateLicense(entry.getKey(), user.getDepartment(), licenseClient);
             if (lic == null || CommonUtils.isNullOrEmptyCollection(lic.getObligations()))
                 return;
 

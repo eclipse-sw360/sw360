@@ -888,7 +888,7 @@ public class RestControllerHelper<T> {
         }
     }
 
-    private void createMissingLicense(String licenseId) throws Exception {
+    public void createMissingLicense(String licenseId) throws Exception {
         License newLicense = new License();
         newLicense.setId(licenseId);
         newLicense.setShortname(licenseId);
