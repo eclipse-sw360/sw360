@@ -1950,6 +1950,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Update a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation")
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> patchProject(
             @Parameter(description = "Project ID.")
@@ -1960,7 +1964,17 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
 
-        boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState().name(), user, reqBodyMap, sw360Project);
+        String comment = (String) reqBodyMap.get("comment");
+        user.setCommentMadeDuringModerationRequest(comment);
+        if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+        }
+
+        if (sw360Project.getClearingState() == null) {
+            sw360Project.setClearingState(ProjectClearingState.OPEN);
+        }
+
+        boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState(), user, reqBodyMap, sw360Project);
         if (!editPermitted) {
             log.error("No write permission for project");
             throw new AccessDeniedException("No write permission for project");
@@ -1971,28 +1985,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             attachmentService.preserveImmutableAttachmentFields(
                     updateProject.getAttachments(), sw360Project.getAttachments(), user);
         }
-        String comment = (String) reqBodyMap.get("comment");
-        user.setCommentMadeDuringModerationRequest(comment);
-        if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {
-            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
-        } else {
-            sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
-                    mapOfProjectFieldsToRequestBody);
-            if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP
-                    && updateProject.getReleaseIdToUsage() != null) {
-                sw360Project.unsetReleaseRelationNetwork();
-                projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
-            }
-            RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-            if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-                throw new RuntimeException("Duplicate attachment detected while updating project.");
-            }
-            HalResource<Project> userHalResource = createHalProject(sw360Project, user);
-            if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-            }
-            return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
+                mapOfProjectFieldsToRequestBody);
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP
+                && updateProject.getReleaseIdToUsage() != null) {
+            sw360Project.unsetReleaseRelationNetwork();
+            projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
         }
+        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+        if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+            throw new RuntimeException("Duplicate attachment detected while updating project.");
+        }
+        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
     @Operation(
@@ -2287,11 +2295,28 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
                 changedUsages.addAll(selectedUsages);
                 changedUsages.addAll(deselectedUsages);
-                boolean valid = projectService.validate(changedUsages, user, releaseService, totalReleaseIds);
-                if (!valid) {
-                    throw new DataIntegrityViolationException("Not a valid attachment type OR release does not belong to project");
-                }
+                List<String> validationWarnings = projectService.validate(changedUsages, user, releaseService, totalReleaseIds);
+                // Also remove invalid entries from selectedUsages and deselectedUsages
+                selectedUsages.retainAll(changedUsages);
+                deselectedUsages.retainAll(changedUsages);
                 List<AttachmentUsage> allUsagesByProject = projectService.getUsedAttachments(usedBy, null);
+
+                // Self-healing: delete stale attachment usages from DB that reference
+                // releases no longer belonging to this project or its sub-projects.
+                // This ensures warnings only appear once — subsequent saves will be clean.
+                List<AttachmentUsage> staleUsages = allUsagesByProject.stream()
+                        .filter(usage -> {
+                            String releaseId = usage.getOwner().isSetReleaseId()
+                                    ? usage.getOwner().getReleaseId() : null;
+                            return releaseId != null && !totalReleaseIds.contains(releaseId);
+                        })
+                        .collect(Collectors.toList());
+                if (!staleUsages.isEmpty()) {
+                    log.info("Removing {} stale attachment usages for project {} (releases no longer linked)",
+                             staleUsages.size(), id);
+                    projectService.deleteAttachmentUsages(staleUsages);
+                    allUsagesByProject.removeAll(staleUsages);
+                }
                 List<String> savedUsages = projectService.savedUsages(allUsagesByProject);
                 savedUsages.removeAll(deselectedUsages);
                 deselectedUsages.addAll(selectedUsages);
@@ -2317,11 +2342,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 }
 
                 // Handle ignored licenses if provided
+                List<String> ignoredLicenseWarnings = Collections.emptyList();
                 if (!ignoredLicensesData.isEmpty()) {
-                    projectService.handleIgnoredLicenses(id, ignoredLicensesData, project, user);
+                    ignoredLicenseWarnings = projectService.handleIgnoredLicenses(id, ignoredLicensesData, project, user);
                 }
 
-                return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
+                // Combine all warnings
+                List<String> allWarnings = new ArrayList<>(validationWarnings);
+                allWarnings.addAll(ignoredLicenseWarnings);
+
+                if (allWarnings.isEmpty()) {
+                    return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
+                } else {
+                    Map<String, Object> responseBody = Map.of(
+                        "message", "AttachmentUsages Saved Successfully",
+                        "warnings", allWarnings
+                    );
+                    return new ResponseEntity<>(responseBody, HttpStatus.CREATED);
+                }
             } else {
                 throw new AccessDeniedException("No write permission for project");
             }

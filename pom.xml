@@ -98,7 +98,7 @@
     <!-- Dependencies version properties -->
     <assertj.version>3.27.7</assertj.version>
     <byte-buddy.version>1.18.8</byte-buddy.version>
-    <cloudantsdk.version>0.10.17</cloudantsdk.version>
+    <cloudantsdk.version>0.10.18</cloudantsdk.version>
     <commons-cli.version>1.11.0</commons-cli.version>
     <commons-codec.version>1.22.0</commons-codec.version>
     <commons-collection4.version>4.5.0</commons-collection4.version>
@@ -134,17 +134,17 @@
     <jetty.version>10.0.15</jetty.version>
     <jgiven.version>2.0.3</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
-    <json.version>20251224</json.version>
+    <json.version>20260522</json.version>
     <joda-time.version>2.14.2</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>6.1.0</junit.version>
     <junit-platform-launcher.version>6.1.0</junit-platform-launcher.version>
     <log4j2.version>2.26.0</log4j2.version>
-    <logback.version>1.5.32</logback.version>
+    <logback.version>1.5.33</logback.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
     <mockito.version>5.23.0</mockito.version>
     <okhttp.version>5.3.2</okhttp.version>
-    <org.ow2.asm.version>9.10</org.ow2.asm.version>
+    <org.ow2.asm.version>9.10.1</org.ow2.asm.version>
     <org.spdx.java.spdx.library.version>2.0.3</org.spdx.java.spdx.library.version>
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
@@ -152,7 +152,7 @@
     <poi.version>5.5.1</poi.version>
     <project-lombok.version>1.18.46</project-lombok.version>
     <slf4j.version>2.0.18</slf4j.version>
-    <spotless.version>2.46.1</spotless.version>
+    <spotless.version>3.6.0</spotless.version>
     <spring-boot.version>4.0.6</spring-boot.version>
     <spring-restdocs.version>4.0.0</spring-restdocs.version>
     <spring-security-oauth2-authorization-server.version>7.0.5</spring-security-oauth2-authorization-server.version>
