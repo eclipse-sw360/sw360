@@ -2287,11 +2287,28 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
                 changedUsages.addAll(selectedUsages);
                 changedUsages.addAll(deselectedUsages);
-                boolean valid = projectService.validate(changedUsages, user, releaseService, totalReleaseIds);
-                if (!valid) {
-                    throw new DataIntegrityViolationException("Not a valid attachment type OR release does not belong to project");
-                }
+                List<String> validationWarnings = projectService.validate(changedUsages, user, releaseService, totalReleaseIds);
+                // Also remove invalid entries from selectedUsages and deselectedUsages
+                selectedUsages.retainAll(changedUsages);
+                deselectedUsages.retainAll(changedUsages);
                 List<AttachmentUsage> allUsagesByProject = projectService.getUsedAttachments(usedBy, null);
+
+                // Self-healing: delete stale attachment usages from DB that reference
+                // releases no longer belonging to this project or its sub-projects.
+                // This ensures warnings only appear once — subsequent saves will be clean.
+                List<AttachmentUsage> staleUsages = allUsagesByProject.stream()
+                        .filter(usage -> {
+                            String releaseId = usage.getOwner().isSetReleaseId()
+                                    ? usage.getOwner().getReleaseId() : null;
+                            return releaseId != null && !totalReleaseIds.contains(releaseId);
+                        })
+                        .collect(Collectors.toList());
+                if (!staleUsages.isEmpty()) {
+                    log.info("Removing {} stale attachment usages for project {} (releases no longer linked)",
+                             staleUsages.size(), id);
+                    projectService.deleteAttachmentUsages(staleUsages);
+                    allUsagesByProject.removeAll(staleUsages);
+                }
                 List<String> savedUsages = projectService.savedUsages(allUsagesByProject);
                 savedUsages.removeAll(deselectedUsages);
                 deselectedUsages.addAll(selectedUsages);
@@ -2317,11 +2334,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 }
 
                 // Handle ignored licenses if provided
+                List<String> ignoredLicenseWarnings = Collections.emptyList();
                 if (!ignoredLicensesData.isEmpty()) {
-                    projectService.handleIgnoredLicenses(id, ignoredLicensesData, project, user);
+                    ignoredLicenseWarnings = projectService.handleIgnoredLicenses(id, ignoredLicensesData, project, user);
                 }
 
-                return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
+                // Combine all warnings
+                List<String> allWarnings = new ArrayList<>(validationWarnings);
+                allWarnings.addAll(ignoredLicenseWarnings);
+
+                if (allWarnings.isEmpty()) {
+                    return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
+                } else {
+                    Map<String, Object> responseBody = Map.of(
+                        "message", "AttachmentUsages Saved Successfully",
+                        "warnings", allWarnings
+                    );
+                    return new ResponseEntity<>(responseBody, HttpStatus.CREATED);
+                }
             } else {
                 throw new AccessDeniedException("No write permission for project");
             }

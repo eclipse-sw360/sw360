@@ -6,81 +6,74 @@ package org.eclipse.sw360.rest.resourceserver.report;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.exporter.ReleaseExporter;
-import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-
-import lombok.RequiredArgsConstructor;
-
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
-
-import org.eclipse.sw360.exporter.CSVExport;
-import org.eclipse.sw360.exporter.JsonExport;
-import org.eclipse.sw360.exporter.ProjectExporter;
-import org.eclipse.sw360.exporter.XmlExport;
-
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.StringUtils;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
+import org.eclipse.sw360.exporter.CSVExport;
+import org.eclipse.sw360.exporter.JsonExport;
+import org.eclipse.sw360.exporter.LicenseInfoExporter;
+import org.eclipse.sw360.exporter.ProjectExporter;
+import org.eclipse.sw360.exporter.ReleaseExporter;
+import org.eclipse.sw360.exporter.XmlExport;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+
 import com.google.common.base.Strings;
-
 import lombok.NonNull;
-
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
-
-import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
-
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -106,6 +99,7 @@ public class SW360ReportService {
 
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
     private static final Set<String> SUPPORTED_FORMATS = Set.of("xlsx", "csv", "json", "xml");
+    private final LicenseInfoExporter licenseInfoExporter = new LicenseInfoExporter();
     ThriftClients thriftClients = new ThriftClients();
     ProjectService.Iface projectclient = thriftClients.makeProjectClient();
     ComponentService.Iface componentclient = thriftClients.makeComponentClient();
@@ -260,6 +254,55 @@ public class SW360ReportService {
             case "xlsx":
             default:
                 return "xlsx";
+        }
+    }
+
+    public void getUploadedLicenseInfoPath(User user, boolean withSubProject, String base, String projectId,
+                                           SW360ReportBean reportBean) throws TException {
+        if (projectId != null && !validateProject(projectId, user)) {
+            throw new SW360Exception("No project record found for the project Id : " + projectId);
+        }
+        Runnable asyncRunnable = () -> wrapTException(() -> {
+            try {
+                String licenseInfoPath = generateLicenseInfoReport(user, projectId, reportBean);
+                String downloadUrl = frontendUrl + "/reports/download?module=licenseInfo"
+                        + "&withSubProject=" + withSubProject
+                        + "&projectId=" + projectId
+                        + "&generatorClassName=" + URLEncoder.encode(
+                                reportBean.getGeneratorClassName() != null ? reportBean.getGeneratorClassName() : "",
+                                StandardCharsets.UTF_8)
+                        + "&variant=" + URLEncoder.encode(
+                                reportBean.getVariant() != null ? reportBean.getVariant() : "",
+                                StandardCharsets.UTF_8)
+                        + "&token=" + URLEncoder.encode(licenseInfoPath, StandardCharsets.UTF_8);
+                URL emailURL = new URI(downloadUrl).toURL();
+                log.debug("License info report download link for user {}: {}", user.getEmail(), emailURL);
+                if (!CommonUtils.isNullEmptyOrWhitespace(licenseInfoPath)) {
+                    sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
+                }
+            } catch (ResourceNotFoundException exp) {
+                throw exp;
+            } catch (AccessDeniedException exp) {
+                throw exp;
+            } catch (Exception exp) {
+                throw new TException(exp.getMessage());
+            }
+        });
+        Thread asyncThread = new Thread(asyncRunnable);
+        asyncThread.start();
+    }
+
+    private String generateLicenseInfoReport(User user, String projectId, SW360ReportBean reportBean)
+            throws TException, IOException {
+        ByteBuffer buffer = getLicenseInfoBuffer(user, projectId, reportBean);
+        return licenseInfoExporter.saveReportToFile(buffer, user);
+    }
+
+    public ByteBuffer getLicenseInfoReportStreamFromUrl(String token) throws TException {
+        try {
+            return licenseInfoExporter.downloadReport(token);
+        } catch (Exception e) {
+            throw new TException("Failed to read license info report: " + e.getMessage(), e);
         }
     }
 

@@ -35,10 +35,8 @@ public class SW360ConfigKeys {
     // Enable auto set ECC status
     public static final String AUTO_SET_ECC_STATUS = "auto.set.ecc.status";
 
-    // This property is used to enable mail request for projects report
-    public static final String MAIL_REQUEST_FOR_PROJECT_REPORT = "send.project.spreadsheet.export.to.mail.enabled";
-    // This property is used to enable mail request for components report
-    public static final String MAIL_REQUEST_FOR_COMPONENT_REPORT = "send.component.spreadsheet.export.to.mail.enabled";
+    // This property is used to enable mail request for spreadsheet export (projects and components)
+    public static final String MAIL_REQUEST_FOR_REPORT = "send.export.to.mail.enabled";
     // This property is used to enable the bulk release deleting feature
     public static final String IS_BULK_RELEASE_DELETING_ENABLED = "bulk.release.deleting.enabled";
     // This property is used to disable the ISR generation in fossology process
@@ -146,8 +144,8 @@ public class SW360ConfigKeys {
             SPDX_DOCUMENT_ENABLED, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED,
             USE_LICENSE_INFO_FROM_FILES, MAINLINE_STATE_ENABLED_FOR_USER, IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
             ATTACHMENT_DELETE_NO_OF_DAYS, ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
-            COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_PROJECT_REPORT,
-            MAIL_REQUEST_FOR_COMPONENT_REPORT, IS_BULK_RELEASE_DELETING_ENABLED,
+            COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_REPORT,
+            IS_BULK_RELEASE_DELETING_ENABLED,
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
             TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, INHERIT_ATTACHMENT_USAGES,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,
