@@ -608,7 +608,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?type=CUSTOMER",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&type=CUSTOMER",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
@@ -617,7 +617,7 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_get_projects_by_name() throws IOException, TException {
+    public void should_get_projects_by_name_without_lucene() throws IOException, TException {
         given(this.projectServiceMock.searchAccessibleProjectByExactValues(any(), any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
@@ -627,7 +627,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?name=Alpha",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&name=Alpha",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
@@ -664,7 +664,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?group=" + project1.getBusinessUnit().replace(" ", "%20"),
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&group=" + project1.getBusinessUnit().replace(" ", "%20"),
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
@@ -703,7 +703,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?tag=test-tag",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&tag=test-tag",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
