@@ -1950,6 +1950,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             description = "Update a project.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation")
+    })
     @PatchMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> patchProject(
             @Parameter(description = "Project ID.")
@@ -1960,7 +1964,17 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
 
-        boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState().name(), user, reqBodyMap, sw360Project);
+        String comment = (String) reqBodyMap.get("comment");
+        user.setCommentMadeDuringModerationRequest(comment);
+        if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+        }
+
+        if (sw360Project.getClearingState() == null) {
+            sw360Project.setClearingState(ProjectClearingState.OPEN);
+        }
+
+        boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState(), user, reqBodyMap, sw360Project);
         if (!editPermitted) {
             log.error("No write permission for project");
             throw new AccessDeniedException("No write permission for project");
@@ -1971,28 +1985,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             attachmentService.preserveImmutableAttachmentFields(
                     updateProject.getAttachments(), sw360Project.getAttachments(), user);
         }
-        String comment = (String) reqBodyMap.get("comment");
-        user.setCommentMadeDuringModerationRequest(comment);
-        if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {
-            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
-        } else {
-            sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
-                    mapOfProjectFieldsToRequestBody);
-            if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP
-                    && updateProject.getReleaseIdToUsage() != null) {
-                sw360Project.unsetReleaseRelationNetwork();
-                projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
-            }
-            RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-            if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-                throw new RuntimeException("Duplicate attachment detected while updating project.");
-            }
-            HalResource<Project> userHalResource = createHalProject(sw360Project, user);
-            if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-            }
-            return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
+                mapOfProjectFieldsToRequestBody);
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP
+                && updateProject.getReleaseIdToUsage() != null) {
+            sw360Project.unsetReleaseRelationNetwork();
+            projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
         }
+        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+        if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+            throw new RuntimeException("Duplicate attachment detected while updating project.");
+        }
+        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
     @Operation(
