@@ -284,8 +284,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "Filter by attachment author email (createdBy field of attachments)")
             @RequestParam(value = "attachmentAuthor", required = false) String attachmentAuthor,
-            @Parameter(description = "List project by lucene search")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "List project by lucene search, default true")
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -331,7 +331,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             List<Project> sw360Projects, Map<PaginationData, List<Project>> paginatedProjects
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         PaginationResult<Project> paginationResult;
-        if (paginatedProjects != null) {
+        if (!CommonUtils.isNullOrEmptyMap(paginatedProjects)) {
             sw360Projects.addAll(paginatedProjects.values().iterator().next());
             int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
                     .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
