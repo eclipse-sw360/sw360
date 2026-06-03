@@ -40,7 +40,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.ibm.cloud.cloudant.v1.model.Attachment;
@@ -62,7 +62,7 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
     private Attachment attachment,attachment1 ;
 
     @Autowired
-    private BCryptPasswordEncoder encoder;
+    private PasswordEncoder encoder;
 
     @Before
     public void before() throws TException, IOException {

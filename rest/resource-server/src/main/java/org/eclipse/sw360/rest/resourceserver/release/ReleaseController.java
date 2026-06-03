@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +68,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Doc
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -76,12 +78,16 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.cache.ApiResponseCacheManager;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedResponse;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler.ErrorMessage;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -109,6 +115,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 
 @BasePathAwareController
@@ -118,6 +125,7 @@ import com.google.common.collect.ImmutableMap;
 @SecurityRequirement(name = "basic")
 public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
+    private static final int MAX_BATCH_SUMMARY_IDS = 200;
     private static final String SPDX_DOCUMENT = "spdxDocument";
     private static final String DOCUMENT_CREATION_INFORMATION = "documentCreationInformation";
     private static final String PACKAGE_INFORMATION = "packageInformation";
@@ -162,13 +170,22 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
+    @NonNull
+    private final ApiResponseCacheManager cacheManager;
+
     @Operation(
             summary = "List all of the service's releases.",
             description = "List all of the service's releases.",
             tags = {"Releases"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Releases successfully retrieved"),
+        @ApiResponse(responseCode = "204", description = "No content - no releases found",
+                content = @Content)
+    })
+    @CachedResponse(endpoints = {CachedEndpoint.RELEASES_ALL_DETAILS, CachedEndpoint.RELEASES_WITHOUT_DETAILS})
     @GetMapping(value = RELEASES_URL)
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesForUser(
+    public ResponseEntity<?> getReleasesForUser(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "sha1 of the release attachment")
@@ -308,6 +325,75 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             restControllerHelper.addEmbeddedReleaseLinks(halRelease, linkedReleaseRelations);
         }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get release summaries in a single batch.",
+            description = "Returns lightweight release summary data for a list of release IDs.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Batch release summary.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                        {
+                                                          "items": [
+                                                            {
+                                                              "id": "releaseId1",
+                                                              "name": "Release A",
+                                                              "version": "1.0.0",
+                                                              "clearingState": "APPROVED"
+                                                            }
+                                                          ],
+                                                          "missingIds": ["releaseId2"]
+                                                        }
+                                                        """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Invalid request body.")
+            }
+    )
+    @PostMapping(value = RELEASES_URL + "/batch-summary", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> getReleaseBatchSummary(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            examples = {
+                                    @ExampleObject(name = "Batch summary request", value = """
+                                            {
+                                              "ids": ["releaseId1", "releaseId2", "releaseId3"]
+                                            }
+                                            """)
+                            }
+                    )
+            )
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        LinkedHashSet<String> releaseIds = normalizeReleaseBatchSummaryIds(extractReleaseBatchSummaryIds(reqBodyMap));
+        List<Release> releases = releaseService.getAccessibleReleasesByIds(releaseIds, sw360User);
+        Map<String, Release> releasesById = releases.stream()
+                .collect(Collectors.toMap(Release::getId, release -> release, (existing, ignored) -> existing));
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        List<String> missingIds = new ArrayList<>();
+        for (String releaseId : releaseIds) {
+            Release release = releasesById.get(releaseId);
+            if (release == null) {
+                missingIds.add(releaseId);
+                continue;
+            }
+            items.add(createReleaseBatchSummaryItem(release));
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("items", items);
+        response.put("missingIds", missingIds);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @Operation(
@@ -477,7 +563,26 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
-        updateRelease.setClearingState(sw360Release.getClearingState());
+        attachmentService.preserveImmutableAttachmentFields(
+                updateRelease.getAttachments(), sw360Release.getAttachments(), user);
+
+        // Apply the same clearing state edit rules as the frontend:
+        // Only clearing admin/expert can change clearing state, and only to
+        // UNDER_CLEARING from NEW_CLEARING or REPORT_AVAILABLE.
+        // If conditions are not met, silently preserve existing state and proceed with other field updates.
+        if (updateRelease.isSetClearingState()
+                && updateRelease.getClearingState() == ClearingState.UNDER_CLEARING
+                && PermissionUtils.isUserAtLeastClearingAdminOrExpert(user)) {
+            ClearingState currentState = sw360Release.getClearingState();
+            if (currentState == ClearingState.NEW_CLEARING || currentState == ClearingState.REPORT_AVAILABLE) {
+                updateRelease.setClearingState(ClearingState.UNDER_CLEARING);
+            } else {
+                updateRelease.setClearingState(sw360Release.getClearingState());
+            }
+        } else {
+            updateRelease.setClearingState(sw360Release.getClearingState());
+        }
+
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
@@ -1387,14 +1492,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Set<String> otherLicenseIds = licensesInfoInRequestBody.get("otherLicenseIds");
 
         if (!CommonUtils.isNullOrEmptyCollection(licenseIds)) {
-	    sw360Release.getMainLicenseIds().clear();
+            if (sw360Release.isSetMainLicenseIds()) {
+                sw360Release.unsetMainLicenseIds();
+            }
             for (String licenseId : licenseIds) {
                 sw360Release.addToMainLicenseIds(licenseId);
             }
         }
 
         if (!CommonUtils.isNullOrEmptyCollection(otherLicenseIds)) {
-	    sw360Release.getOtherLicenseIds().clear();
+            if (sw360Release.isSetOtherLicenseIds()) {
+                sw360Release.unsetOtherLicenseIds();
+            }
             for (String licenseId : otherLicenseIds) {
                 sw360Release.addToOtherLicenseIds(licenseId);
             }
@@ -1787,6 +1896,50 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return resource;
     }
 
+    private List<String> extractReleaseBatchSummaryIds(Map<String, Object> reqBodyMap) {
+        if (reqBodyMap == null || !reqBodyMap.containsKey("ids")) {
+            throw new BadRequestClientException("The request body must contain an 'ids' array.");
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            mapper.registerModule(sw360Module);
+            return mapper.convertValue(reqBodyMap.get("ids"), new TypeReference<List<String>>() {});
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestClientException("The 'ids' field must be an array of release IDs.");
+        }
+    }
+
+    private LinkedHashSet<String> normalizeReleaseBatchSummaryIds(List<String> releaseIds) {
+        if (releaseIds == null) {
+            throw new BadRequestClientException("The 'ids' field must be an array of release IDs.");
+        }
+
+        LinkedHashSet<String> normalizedIds = new LinkedHashSet<>();
+        for (String releaseId : releaseIds) {
+            if (StringUtils.isBlank(releaseId)) {
+                throw new BadRequestClientException("The 'ids' field must not contain blank values.");
+            }
+            normalizedIds.add(releaseId);
+        }
+
+        if (normalizedIds.size() > MAX_BATCH_SUMMARY_IDS) {
+            throw new BadRequestClientException("A maximum of " + MAX_BATCH_SUMMARY_IDS + " unique release IDs is allowed.");
+        }
+
+        return normalizedIds;
+    }
+
+    private Map<String, Object> createReleaseBatchSummaryItem(Release release) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("id", release.getId());
+        item.put("name", release.getName());
+        item.put("version", release.getVersion());
+        item.put("clearingState", release.getClearingState() == null ? null : release.getClearingState().name());
+        return item;
+    }
+
     private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
         HalResource<Release> halRelease = new HalResource<>(release);
         Link componentLink = linkTo(ReleaseController.class)
@@ -2066,7 +2219,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Get usage information for release merge.",
-            description = "Get usage information for release merge including projects, attachment usages, releases, release vulnerabilities, and project ratings. " +
+            description = "Get usage information for release merge including projects, attachment usages, releases, release vulnerabilities, project ratings, and packages. " +
                     "This information helps determine the impact of merging a release.",
             tags = {"Releases"},
             responses = {
@@ -2081,7 +2234,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                                                           "attachmentUsages": 3,
                                                           "releases": 2,
                                                           "releaseVulnerabilities": 1,
-                                                          "projectRatings": 4
+                                                          "projectRatings": 4,
+                                                          "packages": 3
                                                         }
                                                         """
                                             ))
@@ -2106,5 +2260,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Map<String, Integer> usageInfo = releaseService.getUsageInformationForReleaseMerge(releaseId, user);
         Map<String, Object> result = new HashMap<>(usageInfo);
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    /**
+     * Invalidates all release-related API response caches.
+     *
+     * @param reason The operation that triggered cache invalidation (for logging/tracking)
+     */
+    private void invalidateReleaseCaches(String reason) {
+        log.info("Invalidating release caches. Reason: {}", reason);
+        cacheManager.invalidate(CachedEndpoint.RELEASES_ALL_DETAILS);
+        cacheManager.invalidate(CachedEndpoint.RELEASES_WITHOUT_DETAILS);
     }
 }

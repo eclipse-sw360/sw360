@@ -38,6 +38,13 @@ service ScheduleService {
     RequestStatus unscheduleService(1: string serviceName, 2: User user);
 
     /*
+     * manually triggers the service with the given serviceName immediately (one-time run)
+     * serviceName has to be registered in ThriftClients
+     * user has to be admin, otherwise FAILURE is returned
+     */
+    RequestStatus triggerManualService(1: string serviceName, 2: User user);
+
+    /*
      * all scheduled tasks are cancelled
      * user has to be admin, otherwise FAILURE is returned
      */

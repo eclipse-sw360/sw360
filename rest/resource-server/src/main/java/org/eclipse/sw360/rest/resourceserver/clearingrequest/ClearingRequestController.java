@@ -96,6 +96,11 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Get a clearing request by id.",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clearing request successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No clearing request found.",
+                content = @Content)
+    })
     @GetMapping(value = CLEARING_REQUEST_URL + "/{id}")
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(
             @Parameter(description = "id of the clearing request")
@@ -114,6 +119,11 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Get the ClearingRequest based on the project id.",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clearing request for project successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No clearing request found for this project.",
+                content = @Content)
+    })
     @GetMapping(value = CLEARING_REQUEST_URL + "/project/{id}")
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(
             @Parameter(description = "id of the project")
@@ -165,6 +175,11 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "List all clearing requests visible to user",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clearing requests successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No clearing requests found.",
+                content = @Content)
+    })
     @GetMapping(value = CLEARING_REQUESTS_URL)
     public ResponseEntity<CollectionModel<?>> getClearingRequests(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -215,6 +230,10 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             HttpStatus status1 = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(resources, status1);
 
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -284,6 +303,10 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             }
             HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(resources, status);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -295,6 +318,9 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             tags = {"ClearingRequest"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Comment added successfully.")
+    })
     @PostMapping(value = CLEARING_REQUEST_URL + "/{id}/comments")
     public ResponseEntity<?> addComment(
             @Parameter(description = "ID of the clearing request")
@@ -348,6 +374,9 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             description = "Update a clearing request by id.",
             tags = {"ClearingRequest"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clearing request updated successfully.")
+    })
     @PatchMapping(value = CLEARING_REQUEST_URL + "/{id}")
     public ResponseEntity<HalResource<ClearingRequest>> patchClearingRequest(
             @Parameter(description = "id of the clearing request")
@@ -356,7 +385,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                     schema = @Schema(implementation = ClearingRequest.class))
             @RequestBody Map<String, Object> reqBodyMap,
             HttpServletRequest request
-    ) {
+    ) throws SW360Exception {
         try{
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -423,8 +452,14 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             }
 
             return new ResponseEntity<>(halClearingRequest, HttpStatus.OK);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             throw new BadRequestClientException(e.getMessage(), e);
+        } catch (ResourceNotFoundException e) {
+            throw new ResourceNotFoundException("Clearing request not found.");
+        } catch (SW360Exception e) {
+            throw e;
+        } catch (TException e) {
+            throw new SW360Exception("An error occurred while processing the request.");
         }
     }
 

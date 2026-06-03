@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.configuration.security;
 
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Profile("SECURITY_MOCK")
@@ -31,26 +33,27 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class Sw360AuthorizationServerConfiguration {
 
-	@Autowired
-	Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
-
 	@Order(1)
 	@Bean
-	public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
+	public SecurityFilterChain appSecurity(HttpSecurity httpSecurity) {
 		SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
 		httpSecurity.authorizeHttpRequests(
 				authz -> authz
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/version").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
-				.exceptionHandling(x -> x.authenticationEntryPoint(saep));
-		return httpSecurity.csrf(csrf -> csrf.disable()).build();
+				.exceptionHandling(x -> x.authenticationEntryPoint(saep))
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
+		return httpSecurity.build();
 	}
 
 	@Autowired
-	public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) {
-        authenticationManagerBuilder.authenticationProvider(sw360UserAuthenticationProvider);
+	public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder,
+			PasswordEncoder passwordEncoder, Sw360CustomUserDetailsService userDetailsService) {
+		authenticationManagerBuilder.authenticationProvider(
+				new Sw360UserAuthenticationProvider(passwordEncoder, userDetailsService));
 	}
 
 }

@@ -18,8 +18,10 @@ import com.ibm.cloud.cloudant.v1.model.PutDesignDocumentOptions;
 import com.ibm.cloud.sdk.core.http.RequestBuilder;
 import com.ibm.cloud.sdk.core.http.ResponseConverter;
 import com.ibm.cloud.sdk.core.http.ServiceCall;
+import com.ibm.cloud.sdk.core.service.exception.ConflictException;
 import com.ibm.cloud.sdk.core.service.exception.NotFoundException;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
+import com.ibm.cloud.sdk.core.service.exception.TooManyRequestsException;
 import com.ibm.cloud.sdk.core.util.ResponseConverterUtils;
 import com.ibm.cloud.sdk.core.util.Validator;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -148,9 +150,28 @@ public class LuceneAwareCouchDbConnector {
                             .ddoc(ddoc)
                             .build();
 
-            DocumentResult response =
-                    this.putDesignDocument(designDocumentOptions)
+            DocumentResult response;
+            try {
+                response = this.putDesignDocument(designDocumentOptions)
+                        .execute().getResult();
+            } catch (ConflictException | TooManyRequestsException e) {
+                try {
+                    Thread.sleep(100);
+                    try {
+                        existingDoc = this.getNouveauDesignDocument(this.ddoc).execute().getResult();
+                    } catch (NotFoundException ignored) {
+                        existingDoc = null;
+                    }
+                    if (existingDoc != null) {
+                        designDocument.setId(existingDoc.getId());
+                        designDocument.setRev(existingDoc.getRev());
+                    }
+                    response = this.putDesignDocument(designDocumentOptions)
                             .execute().getResult();
+                } catch (InterruptedException ex) {
+                    throw e;
+                }
+            }
             boolean success = response.isOk();
             if (!success) {
                 throw new RuntimeException(

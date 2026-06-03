@@ -114,6 +114,8 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
 
     protected <T> boolean hasThisXMLRootElement(AttachmentContent content, String rootElementNamespace, String rootElementName, User user, T context) throws TException {
         XMLInputFactory xmlif = XMLInputFactory.newFactory();
+        xmlif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        xmlif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         XMLStreamReader xmlStreamReader = null;
         InputStream attachmentStream = null;
         try {

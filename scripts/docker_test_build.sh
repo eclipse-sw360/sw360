@@ -45,7 +45,4 @@ docker run -it --rm \
     mvn clean package \
     -P deploy \
     -Dhelp-docs=true \
-    -Dbase.deploy.dir=. \
-    -Djars.deploy.dir="${PWD}/deploy" \
-    -Dbackend.deploy.dir="${PWD}/deploy/webapps" \
-    -Drest.deploy.dir="${PWD}/deploy/webapps"
+    -Dbase.deploy.dir="${PWD}/deploy"

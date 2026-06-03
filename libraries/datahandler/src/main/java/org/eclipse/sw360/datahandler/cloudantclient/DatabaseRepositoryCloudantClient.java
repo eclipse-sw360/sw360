@@ -13,11 +13,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -55,12 +57,51 @@ public class DatabaseRepositoryCloudantClient<T> {
     private static final char HIGH_VALUE_UNICODE_CHARACTER = '\uFFF0';
     private static final Gson GSON = new Gson();
 
+    /**
+     * JVM-/classloader-scoped guard to avoid re-PUTting design documents and
+     * (re-)creating Mango indexes on every repository construction. Design
+     * documents and index definitions only change when code changes.
+     *
+     * Keys:
+     *  - INITIALISED_DDOCS:    "<dbName>::<designDocId>"
+     *  - INITIALISED_INDEXES:  "<dbName>::<designDocId>::<indexName>"
+     */
+    private static final Set<String> INITIALISED_DDOCS = ConcurrentHashMap.newKeySet();
+    private static final Set<String> INITIALISED_INDEXES = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Test-only hook to forget all design-document and index initialisations
+     * for the given database. Required because the tests delete and recreate
+     * databases between test methods within the same JVM; without this the
+     * JVM-wide cache would incorrectly believe the (now-deleted) database
+     * still has its design docs and indexes installed.
+     *
+     * <p>Production code never calls this. Test helpers
+     * (e.g. {@code TestUtils.deleteDatabase} / {@code TestUtils.createDatabase})
+     * call it after destroying or recreating a database.
+     *
+     * @param dbName the CouchDB/Cloudant database name to forget
+     */
+    public static void forgetInitialisedDesignArtifacts(String dbName) {
+        if (dbName == null || dbName.isEmpty()) {
+            return;
+        }
+        String prefix = dbName + "::";
+        INITIALISED_DDOCS.removeIf(k -> k.startsWith(prefix));
+        INITIALISED_INDEXES.removeIf(k -> k.startsWith(prefix));
+    }
+
     private final Class<T> type;
     private DatabaseConnectorCloudant connector;
 
     public void initStandardDesignDocument(Map<String, DesignDocumentViewsMapReduce> views,
                                            @NotNull DatabaseConnectorCloudant db) {
         String ddocId = type.getSimpleName();
+        String key = db.getDbName() + "::" + ddocId;
+        if (!INITIALISED_DDOCS.add(key)) {
+            // Already initialised in this JVM/classloader; skip
+            return;
+        }
         DesignDocument newDdoc = new DesignDocument.Builder()
                 .views(views)
                 .build();
@@ -78,6 +119,9 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     public void createIndex(String ddocId, String indexName, String[] fields,
                             DatabaseConnectorCloudant db) {
+        if (!INITIALISED_INDEXES.add(db.getDbName() + "::" + ddocId + "::" + indexName)) {
+            return;
+        }
         IndexDefinition.Builder indexDefinitionBuilder = new IndexDefinition.Builder();
         for (String fieldName : fields) {
             IndexField field = new IndexField.Builder()
@@ -102,6 +146,9 @@ public class DatabaseRepositoryCloudantClient<T> {
             String ddocId, String indexName, String type, String @NotNull [] fields,
             DatabaseConnectorCloudant db
     ) {
+        if (!INITIALISED_INDEXES.add(db.getDbName() + "::" + ddocId + "::" + indexName)) {
+            return;
+        }
         IndexDefinition.Builder indexDefinitionBuilder = new IndexDefinition.
                 Builder();
         for (String fieldName : fields) {
@@ -244,6 +291,35 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryView(query.build());
     }
 
+    public List<T> queryViewPaginated(
+            String queryName, Object[] startKeys, Object[] endKeys, PaginationData pageData, boolean isReduced
+    ) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
+        final boolean ascending = pageData.isAscending();
+
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName)
+                .reduce(false)
+                .descending(!ascending)
+                .includeDocs(true);
+
+        if (ascending) {
+            query.startKey(startKeys)
+                    .endKey(endKeys);
+        } else {
+            query.startKey(endKeys)
+                    .endKey(startKeys);
+        }
+
+        if (rowsPerPage != -1) {
+            query.limit(rowsPerPage).skip(offset);
+        }
+
+        paginationSetTotalRowCount(pageData, isReduced, query.build());
+
+        return queryView(query.build());
+    }
+
     public List<T> queryView(String viewName, String key) {
         PostViewOptions query = connector.getPostViewQueryBuilder(type, viewName)
                 .keys(Collections.singletonList(key))
@@ -274,6 +350,12 @@ public class DatabaseRepositoryCloudantClient<T> {
         paginationSetTotalRowCount(pageData, isReduced, query.build());
 
         return queryView(query.build());
+    }
+
+    public List<T> queryViewWithComplexKeysPaginated(String queryName, String key, PaginationData pageData) {
+        Object[] startKeys = new Object[] { key };
+        Object[] endKeys = new Object[] { key, new HashMap<String, Object>()  };
+        return queryViewPaginated(queryName, startKeys, endKeys, pageData, false);
     }
 
     public Set<String> queryForIds(PostViewOptions query) {
@@ -329,6 +411,17 @@ public class DatabaseRepositoryCloudantClient<T> {
                 .endKey(endKey)
                 .build();
         return queryForIds(query);
+    }
+
+    public Set<String> queryForIdsAsValue(String queryName, List<Object> keys) {
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName);
+
+        PostViewOptions req = query
+                .keys(keys)
+                .reduce(false)
+                .build();
+
+        return queryForIdsFromReqBuilder(req);
     }
 
     public Set<String> queryForIdsPaginated(
@@ -600,12 +693,70 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     private void paginationSetTotalRowCount(PaginationData pageData, boolean isReduced, PostViewOptions query) {
         if (!isReduced) {
-            PostViewOptions.Builder countQuery = query.newBuilder();
-            countQuery.includeDocs(false);
-            countQuery.limit(1);
-            pageData.setTotalRowCount(getViewTotalCount(countQuery.build()));
+            if (isFilteredViewQuery(query)) {
+                pageData.setTotalRowCount(getFilteredViewTotalCount(query));
+            } else {
+                PostViewOptions.Builder countQuery = query.newBuilder();
+                countQuery.includeDocs(false);
+                countQuery.limit(1);
+                pageData.setTotalRowCount(getViewTotalCount(countQuery.build()));
+            }
         } else {
             pageData.setTotalRowCount(viewReduceSum(query));
         }
+    }
+
+    private long getFilteredViewTotalCount(PostViewOptions query) {
+        ViewResult response = queryQueryResponse(buildFilteredCountQuery(query));
+        if (response == null || response.getRows() == null) {
+            return 0;
+        }
+        return response.getRows().size();
+    }
+
+    private PostViewOptions buildFilteredCountQuery(PostViewOptions query) {
+        PostViewOptions.Builder countQuery = new PostViewOptions.Builder(query.db(), query.ddoc(), query.view())
+                .includeDocs(false)
+                .reduce(false);
+
+        if (query.descending() != null) {
+            countQuery.descending(query.descending());
+        }
+        if (query.inclusiveEnd() != null) {
+            countQuery.inclusiveEnd(query.inclusiveEnd());
+        }
+        if (query.key() != null) {
+            countQuery.key(query.key());
+        }
+        if (query.keys() != null && !query.keys().isEmpty()) {
+            countQuery.keys(query.keys());
+        }
+        if (query.startKey() != null) {
+            countQuery.startKey(query.startKey());
+        }
+        if (query.endKey() != null) {
+            countQuery.endKey(query.endKey());
+        }
+        if (query.startKeyDocId() != null) {
+            countQuery.startKeyDocId(query.startKeyDocId());
+        }
+        if (query.endKeyDocId() != null) {
+            countQuery.endKeyDocId(query.endKeyDocId());
+        }
+        if (query.stable() != null) {
+            countQuery.stable(query.stable());
+        }
+        if (query.update() != null) {
+            countQuery.update(query.update());
+        }
+
+        return countQuery.build();
+    }
+
+    private static boolean isFilteredViewQuery(PostViewOptions query) {
+        return query.key() != null
+                || (query.keys() != null && !query.keys().isEmpty())
+                || query.startKey() != null
+                || query.endKey() != null;
     }
 }

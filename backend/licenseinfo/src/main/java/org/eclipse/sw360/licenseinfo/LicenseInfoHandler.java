@@ -75,7 +75,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected List<OutputGenerator<?>> outputGenerators;
     protected ComponentDatabaseHandler componentDatabaseHandler;
     protected ProjectDatabaseHandler projectDatabaseHandler;
-    protected Cache<Object[], List<LicenseInfoParsingResult>> licenseInfoCache;
+    protected Cache<String, List<LicenseInfoParsingResult>> licenseInfoCache;
     protected Cache<String, LicenseInfoParsingResult> licenseInfoCacheForEvaluation;
     protected Cache<String, List<ObligationParsingResult>> obligationCache;
     protected Cache<String, List<ObligationParsingResult>> obligationCacheForEvaluation;
@@ -576,13 +576,10 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
 
         if (licenseInfoCache != null) {
-            for (Entry<Object[], List<LicenseInfoParsingResult>> entry : licenseInfoCache.asMap().entrySet()) {
-                Object[] key = entry.getKey();
-                List<LicenseInfoParsingResult> cachedValue = entry.getValue();
-                if (attachmentContentId.equals(key[0].toString()) && includeConcludedLicense == (boolean) key[1]
-                        && cachedValue != null) {
-                    return cachedValue;
-                }
+            String cacheKey = attachmentContentId + ":" + includeConcludedLicense;
+            List<LicenseInfoParsingResult> cachedResult = licenseInfoCache.getIfPresent(cacheKey);
+            if (cachedResult != null) {
+                return cachedResult;
             }
         }
 
@@ -621,7 +618,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             results = assignReleaseToLicenseInfoParsingResults(results, release);
             results = assignComponentToLicenseInfoParsingResults(results, release, user);
 
-            Object[] cacheKey = new Object[] { attachmentContentId, includeConcludedLicense };
+            String cacheKey = attachmentContentId + ":" + includeConcludedLicense;
             licenseInfoCache.put(cacheKey, results);
             return results;
         } catch (WrappedTException exception) {
@@ -711,7 +708,16 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
         LicenseInfo licenseInfo = licenseResult.getLicenseInfo();
         licenseInfo.getLicenseNamesWithTexts()
-                .forEach(license -> license.setObligationsAtProject(licenseIdToObligations.get(license.getLicenseName())));
+                .forEach(license -> {
+                    Set<ObligationAtProject> obligations = null;
+                    if (license.isSetLicenseSpdxId()) {
+                        obligations = licenseIdToObligations.get(license.getLicenseSpdxId());
+                    }
+                    if (obligations == null) {
+                        obligations = licenseIdToObligations.get(license.getLicenseName());
+                    }
+                    license.setObligationsAtProject(obligations);
+                });
         licenseInfo.setTotalObligations(obligationResult.getObligationsAtProjectSize());
         licenseObligationMappingCache.put(licenseResult.getAttachmentContentId(), licenseResult);
         return licenseResult;

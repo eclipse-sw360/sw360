@@ -817,15 +817,30 @@ public class SW360Utils {
     public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
             Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations,
             ObligationLevel oblLevel, boolean addFromDB) {
+        return getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
+                EnumSet.of(oblLevel), addFromDB);
+    }
+
+    public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations, boolean addFromDB) {
+        return getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
+                EnumSet.of(ObligationLevel.PROJECT_OBLIGATION, ObligationLevel.COMPONENT_OBLIGATION,
+                        ObligationLevel.ORGANISATION_OBLIGATION),
+                addFromDB);
+    }
+
+    private static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations,
+            Set<ObligationLevel> obligationLevels, boolean addFromDB) {
         Map<String, ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap.entrySet().stream()
                 .filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
                 .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
-                .filter(e -> e.getValue().getObligationLevel().equals(oblLevel)).collect(Collectors.toMap(
+                .filter(e -> obligationLevels.contains(e.getValue().getObligationLevel())).collect(Collectors.toMap(
                         e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue));
         obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
 
         Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)
-                .filter(o -> Objects.nonNull(o.getObligationLevel()) && oblLevel.equals(o.getObligationLevel()))
+                .filter(o -> Objects.nonNull(o.getObligationLevel()) && obligationLevels.contains(o.getObligationLevel()))
                 .filter(o -> addFromDB || obligationAlreadyPresent
                         .containsKey(CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ")))
                 .collect(Collectors.toMap(
@@ -835,7 +850,7 @@ public class SW360Utils {
                                 return obligationAlreadyPresent.remove(key);
                             } else {
                                 return new ObligationStatusInfo().setComment(o.getComments())
-                                        .setObligationLevel(oblLevel).setObligationType(o.getObligationType())
+                                        .setObligationLevel(o.getObligationLevel()).setObligationType(o.getObligationType())
                                         .setReleaseIdToAcceptedCLI(new HashMap<>()).setText(o.getText());
                             }
                         }, (oldValue, newValue) -> oldValue));
@@ -1149,7 +1164,7 @@ public class SW360Utils {
             SW360ConfigsService.Iface configClient = new ThriftClients().makeSW360ConfigsClient();
             return configClient.getConfigByKey(key);
         } catch (TException exception) {
-            throw new SW360Exception("Unable to get configuration");
+            throw new SW360Exception("Unable to get configuration " + key);
         }
     }
 
@@ -1171,9 +1186,7 @@ public class SW360Utils {
                 case null, default -> (T) value; // Assume it's a String
             };
         } catch (Exception e) {
-            if (e instanceof SW360Exception) {
-                log.error(((SW360Exception) e).getWhy());
-            } else {
+            if (!(e instanceof SW360Exception)) {
                 log.error(e.getMessage());
             }
             return defaultValue;

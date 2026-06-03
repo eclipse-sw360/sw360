@@ -25,12 +25,12 @@ import org.junit.Assert;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -93,7 +93,7 @@ public class TestHelper {
 
         public AttachmentContentStore put(AttachmentContent attachmentContent) throws TException {
             store.put(attachmentContent.getId(), attachmentContent);
-            when(connectorMock.getAttachmentStream(eq(attachmentContent), any(), any())).thenReturn(makeAttachmentContentStream(attachmentContent.getFilename()));
+            lenient().when(connectorMock.getAttachmentStream(eq(attachmentContent), any(), any())).thenReturn(makeAttachmentContentStream(attachmentContent.getFilename()));
             return this;
         }
     }

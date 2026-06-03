@@ -11,13 +11,16 @@ package org.eclipse.sw360.rest.resourceserver.obligation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
@@ -46,6 +49,7 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -59,12 +63,13 @@ import java.util.Map;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@Slf4j
 @RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class ObligationController implements RepresentationModelProcessor<RepositoryLinksResource> {
+    private static final Logger log = LogManager.getLogger(ObligationController.class);
+
     public static final String OBLIGATION_URL = "/obligations";
 
     @NonNull
@@ -78,6 +83,11 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "List all of the service's obligations.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligations successfully retrieved."),
+            @ApiResponse(responseCode = "204", description = "No obligations found.",
+                content = @Content)
+    })
     @GetMapping(value = OBLIGATION_URL)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -137,6 +147,9 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get an obligation by id.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation successfully retrieved.")
+    })
     @GetMapping(value = OBLIGATION_URL + "/{id}")
     public ResponseEntity<EntityModel<Obligation>> getObligation(
             @Parameter(description = "The id of the obligation to be retrieved.")
@@ -148,6 +161,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             Obligation sw360Obligation = obligationService.getObligationById(id, sw360User);
             HalResource<Obligation> halResource = createHalObligation(sw360Obligation);
             return new ResponseEntity<>(halResource, HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResourceNotFoundException("Obligation does not exists! id=" + id);
         }
@@ -159,6 +176,9 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Obligation created successfully.")
+    })
     @PostMapping(value = OBLIGATION_URL)
     public ResponseEntity<HalResource<Obligation>> createObligation(
             @Parameter(description = "The obligation to be created.")
@@ -181,6 +201,9 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "207", description = "Multi-status - per-obligation delete result.")
+    })
     @DeleteMapping(value = OBLIGATION_URL + "/{ids}")
     public ResponseEntity<List<MultiStatus>> deleteObligations(
             @Parameter(description = "The ids of the obligations to be deleted.")
@@ -191,14 +214,22 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         for(String id : idsToDelete) {
             try {
                 Obligation obligation = obligationService.getObligationById(id, user);
+                if (obligation == null) {
+                    results.add(new MultiStatus(id, HttpStatus.NOT_FOUND));
+                    continue;
+                }
                 RequestStatus requestStatus = obligationService.deleteObligation(obligation.getId(), user);
                 if(requestStatus == RequestStatus.SUCCESS) {
                     results.add(new MultiStatus(id, HttpStatus.OK));
                 } else {
                     results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
                 }
-            } catch (Exception e) {
+            } catch (ResourceNotFoundException e) {
                 results.add(new MultiStatus(id, HttpStatus.NOT_FOUND));
+            } catch (AccessDeniedException e) {
+                results.add(new MultiStatus(id, HttpStatus.FORBIDDEN));
+            } catch (Exception e) {
+                results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
             }
         }
         return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
@@ -273,6 +304,12 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             Obligation updatedObligation = obligationService.updateObligation(obligation, sw360User);
             log.debug("Obligation  {} updated successfully", updatedObligation);
             return new ResponseEntity<>("Obligation with id " + updatedObligation.getId() + " has been updated successfully", HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (BadRequestClientException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error updating obligation with id {}", id, e);
             throw new SW360Exception("Unable to process the request");
@@ -284,6 +321,9 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Nodes from the server to render Obligations.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation nodes successfully retrieved.")
+    })
     @GetMapping(value = OBLIGATION_URL + "/nodes")
     public ResponseEntity<CollectionModel<ObligationNode>> getObligationNodes() {
         List<ObligationNode> obligationNodes = obligationService.getObligationNodes();
@@ -295,6 +335,9 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             description = "Get all Obligation Elements from the server to render Obligation suggestions.",
             tags = {"Obligations"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligation elements successfully retrieved.")
+    })
     @GetMapping(value = OBLIGATION_URL + "/elements")
     public ResponseEntity<CollectionModel<ObligationElement>> getObligationElements() {
         List<ObligationElement> obligationNodes = obligationService.getObligationElements();
@@ -304,6 +347,10 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
     private void checkIfObligationExists(String id) throws ResourceNotFoundException {
         try {
             obligationService.getObligationById(id, null);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error getting obligation with id {}", id, e);
             throw new ResourceNotFoundException("Obligation not found");

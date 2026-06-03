@@ -35,10 +35,8 @@ public class SW360ConfigKeys {
     // Enable auto set ECC status
     public static final String AUTO_SET_ECC_STATUS = "auto.set.ecc.status";
 
-    // This property is used to enable mail request for projects report
-    public static final String MAIL_REQUEST_FOR_PROJECT_REPORT = "send.project.spreadsheet.export.to.mail.enabled";
-    // This property is used to enable mail request for components report
-    public static final String MAIL_REQUEST_FOR_COMPONENT_REPORT = "send.component.spreadsheet.export.to.mail.enabled";
+    // This property is used to enable mail request for spreadsheet export (projects and components)
+    public static final String MAIL_REQUEST_FOR_REPORT = "send.export.to.mail.enabled";
     // This property is used to enable the bulk release deleting feature
     public static final String IS_BULK_RELEASE_DELETING_ENABLED = "bulk.release.deleting.enabled";
     // This property is used to disable the ISR generation in fossology process
@@ -76,8 +74,10 @@ public class SW360ConfigKeys {
 
     // This property is used to configure the SVM notification URL
     public static final String SVM_NOTIFICATION_URL = "svm.notification.url";
-
+    
     // Properties purely used by UI
+    // This property is used to enable/disable linked projects display in the UI
+    public static final String UI_ENABLE_LINKED_PROJECTS_DISPLAY = "ui.enable.linked.projects.display";
     // This property is used in Project Administration
     public static final String UI_CLEARING_TEAMS = "ui.clearing.teams";
     // This property add "Unknown" team to the clearing teams list
@@ -144,8 +144,8 @@ public class SW360ConfigKeys {
             SPDX_DOCUMENT_ENABLED, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED,
             USE_LICENSE_INFO_FROM_FILES, MAINLINE_STATE_ENABLED_FOR_USER, IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
             ATTACHMENT_DELETE_NO_OF_DAYS, ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
-            COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_PROJECT_REPORT,
-            MAIL_REQUEST_FOR_COMPONENT_REPORT, IS_BULK_RELEASE_DELETING_ENABLED,
+            COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_REPORT,
+            IS_BULK_RELEASE_DELETING_ENABLED,
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
             TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, INHERIT_ATTACHMENT_USAGES,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,
@@ -156,7 +156,8 @@ public class SW360ConfigKeys {
             UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
             UI_OPERATING_SYSTEMS, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
-            UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE
+            UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
+            UI_ENABLE_LINKED_PROJECTS_DISPLAY
     );
 
     private SW360ConfigKeys() {

@@ -15,8 +15,8 @@
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-# FROM maven:3-eclipse-temurin-21-noble
-FROM maven@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
+# Where code compiles
+FROM maven:3-eclipse-temurin-21-noble@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -52,9 +52,7 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -Dsurefire.failIfNoSpecifiedTests=false \
-    -Djars.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
-    -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dlistener.deploy.dir=/sw360_keycloak_listener \
     -Dhelp-docs=true
 
@@ -66,15 +64,13 @@ COPY scripts/create-slim-war-files.sh /bin/slim.sh
 RUN bash /bin/slim.sh
 
 FROM scratch AS binaries
-COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 
 #--------------------------------------------------------------------------------------------------
 # Runtime SW360 image
 
-# FROM tomcat:11-jre21-temurin-noble
-FROM tomcat@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
+FROM tomcat:11-jre21-temurin-noble@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
@@ -86,9 +82,13 @@ ENV CLOUDANT_ENABLE_RETRIES="true"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
-ENV JWKS_ISSUER_URI="http://localhost:8080/authorization/oauth2/jwks"
-ENV JWKS_SET_URI="http://localhost:8080/authorization/oauth2/jwks"
-ENV JWKS_ISSUER="http://localhost:8090"
+# Trusted JWT issuers (Spring relaxed-binding to sw360.security.jwt.issuers[N]).
+# *_ISSUER_URI is required per slot; *_JWK_SET_URI is optional and, when set,
+# skips OpenID Connect discovery and fetches JWKS directly from that URL.
+# Shared by both /resource and /authorization Bearer JWT validation paths.
+ENV SW360_SECURITY_JWT_ISSUERS_0_ISSUER_URI="http://localhost:8080/authorization"
+ENV SW360_SECURITY_JWT_ISSUERS_1_ISSUER_URI="http://localhost:8083/realms/sw360"
+#ENV SW360_SECURITY_JWT_ISSUERS_1_JWK_SET_URI="http://localhost:8083/realms/sw360/protocol/openid-connect/certs"
 #
 # Email configs
 ENV EMAIL_PROPERTIES_HOST=""
@@ -108,11 +108,15 @@ ENV SVM_API_ROOT_PATH="api/v1"
 ENV SVM_SW360_API_URL="https://svm.example.org/application.json"
 ENV SVM_SW360_CERTIFICATE_FILENAME="not-configured.pfx"
 #
+# Security settings
+ENV SW360_SECURITY_HTTP_BASIC_ENABLED="true"
+#
 # Other settings
 ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
 ENV SW360_CORS_ALLOWED_ORIGIN="*"
 ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
 ENV SW360_BASE_URL="http://localhost:8080"
+ENV SW360_FRONTEND_URL="http://localhost:3000"
 
 # Install dependencies for entrypoint
 RUN apt-get update -qq \
@@ -132,6 +136,11 @@ WORKDIR /app/sw360
 # Copy the configuration files
 COPY ./scripts/docker-config .
 
+# Bundled JWT signing keystore (acts as a first-run fallback; the entrypoint
+# copies it to /etc/sw360/jwt-keystore.jks if no persistent keystore exists).
+# Operators can replace it with their own keystore via the 'etc' named volume.
+COPY rest/authorization-server/src/main/resources/jwt-keystore.jks ./jwt-keystore.jks
+
 # Tomcat manager for debugging portlets
 # Make entrypoint executable
 RUN mv ${CATALINA_HOME}/webapps.dist/manager ${CATALINA_HOME}/webapps/manager \
@@ -146,8 +155,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-# FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.6.2@sha256:f9ba7b2af90db8dc749a57ca9aedca51e840cb9224441ab546a968da941da900 AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -166,8 +174,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-# FROM quay.io/keycloak/keycloak:26.5.5
-FROM quay.io/keycloak/keycloak@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c AS keycloak
+FROM quay.io/keycloak/keycloak:26.6.2@sha256:f9ba7b2af90db8dc749a57ca9aedca51e840cb9224441ab546a968da941da900 AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

@@ -5,13 +5,9 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.keycloak.spi;
 
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.keycloak.spi.service.Sw360UserService;
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -28,7 +24,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -38,16 +33,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.eclipse.sw360.keycloak.common.Sw360UserService;
+import org.eclipse.sw360.keycloak.common.UserMapper;
+
 public class Sw360UserStorageProviderFactory implements UserStorageProviderFactory<Sw360UserStorageProvider>, ImportSynchronization {
     public static final String PROVIDER_ID = "sw360-user-storage-jpa";
     public static final String SW360_USER_STORAGE_PROVIDER = "SW360 User Storage Provider";
     private static final Logger logger = LoggerFactory.getLogger(Sw360UserStorageProviderFactory.class);
-    private static final String CUSTOM_ATTR_DEPARTMENT = "Department";
-    private static final String CUSTOM_ATTR_EXTERNAL_ID = "externalId";
-    private static final String DEFAULT_FIRST_NAME = "Not Provided";
-    private static final String DEFAULT_LAST_NAME = "Not Provided";
-    private static final String DEFAULT_DEPARTMENT = "Unknown";
-    private static final String DEFAULT_EXTERNAL_ID = "N/A";
 
     private Sw360UserService sw360UserService;
 
@@ -85,8 +77,8 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
 
     @Override
     public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
-        logger.error("syncSince not implemented");
-        return null;
+        logger.debug("syncSince not implemented, performing no-op");
+        return SynchronizationResult.empty();
     }
 
     /**
@@ -306,87 +298,19 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
     private void processExternalUser(KeycloakSession session, RealmModel realm, User externalUser, Set<String> existingUserEmails, SynchronizationResult result) {
         UserModel user = session.users().getUserByUsername(realm, externalUser.getEmail());
         if (existingUserEmails.contains(externalUser.getEmail()) && user != null) {
-            if (updateUserInKeycloak(user, realm, externalUser, externalUser.getUserGroup())) {
+            if (updateUserInKeycloak(user, realm, externalUser)) {
                 result.increaseUpdated();
             }
         } else {
-            if (createUserInKeycloak(session, realm, externalUser, externalUser.getUserGroup())) {
+            if (createUserInKeycloak(session, realm, externalUser)) {
                 result.increaseAdded();
             }
         }
     }
 
-    /**
-     * Populates the user attributes from the external user.
-     * <p>
-     * This method sets the user's first name, last name, email, username, department, and external ID
-     * based on the attributes from the external user. If any of these attributes are null or empty,
-     * it assigns a default value and logs a warning.
-     *
-     * @param user                  the Keycloak user to be populated with attributes.
-     * @param realm                 the Keycloak realm.
-     * @param externalUser          the external user with attributes to populate.
-     * @param externalUserUserGroup the external user group for assigning to the user.
-     */
-    private void populateUserAttributes(UserModel user, RealmModel realm, User externalUser, UserGroup externalUserUserGroup) {
-        user.setFirstName(
-                Optional.ofNullable(externalUser.getGivenname())
-                        .filter(StringUtils::isNotBlank)
-                        .orElseGet(() -> {
-                            logger.warn("Given name is null or empty for user: {}", externalUser.getEmail());
-                            return DEFAULT_FIRST_NAME;
-                        })
-        );
-
-        user.setLastName(
-                Optional.ofNullable(externalUser.getLastname())
-                        .filter(StringUtils::isNotBlank)
-                        .orElseGet(() -> {
-                            logger.warn("Last name is null or empty for user: {}", externalUser.getEmail());
-                            return DEFAULT_LAST_NAME;
-                        })
-        );
-
-        user.setEmail(externalUser.getEmail());
-        user.setEmailVerified(true);
-
-        user.setUsername(externalUser.getEmail());
-
-
-        user.setSingleAttribute(CUSTOM_ATTR_DEPARTMENT,
-                Optional.ofNullable(externalUser.getDepartment())
-                        .filter(StringUtils::isNotBlank)
-                        .orElseGet(() -> {
-                            logger.warn("Department is null or empty for user: {}", externalUser.getEmail());
-                            return DEFAULT_DEPARTMENT;
-                        })
-        );
-
-        user.setSingleAttribute(CUSTOM_ATTR_EXTERNAL_ID,
-                Optional.ofNullable(externalUser.getExternalid())
-                        .filter(StringUtils::isNotBlank)
-                        .orElseGet(() -> {
-                            logger.warn("External ID is null or empty for user: {}", externalUser.getEmail());
-                            return DEFAULT_EXTERNAL_ID;
-                        })
-        );
-
-        assignGroupToUser(user, realm, externalUserUserGroup);
-    }
-
-    /**
-     * Updates the user in Keycloak with the attributes from the external user.
-     * <p>
-     * This method sets the user as enabled and populates the user attributes from the external user.
-     *
-     * @param keycloakUser          the Keycloak user to be updated.
-     * @param realm                 the Keycloak realm.
-     * @param externalUser          the external user with updated attributes.
-     * @param externalUserUserGroup the external user group.
-     */
-    private boolean updateUserInKeycloak(UserModel keycloakUser, RealmModel realm, User externalUser, UserGroup externalUserUserGroup) {
+    private boolean updateUserInKeycloak(UserModel keycloakUser, RealmModel realm, User externalUser) {
         try {
-            populateUserAttributes(keycloakUser, realm, externalUser, externalUserUserGroup);
+            UserMapper.mapSw360ToKeycloak(keycloakUser, realm, externalUser);
             logger.debug("Updated user in Keycloak: {}", keycloakUser.getEmail());
             return true;
         } catch (Exception e) {
@@ -395,73 +319,18 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
         }
     }
 
-    /**
-     * Creates a new user in Keycloak with the attributes from the external user.
-     * <p>
-     * This method sets the user as enabled and populates the user attributes from the external user.
-     * It also assigns the user to a group based on the external user's group.
-     *
-     * @param session               the Keycloak session.
-     * @param realm                 the Keycloak realm.
-     * @param externalUser          the external user to be created.
-     * @param externalUserUserGroup the external user group.
-     */
-    private boolean createUserInKeycloak(KeycloakSession session, RealmModel realm, User externalUser, UserGroup externalUserUserGroup) {
+    private boolean createUserInKeycloak(KeycloakSession session, RealmModel realm, User externalUser) {
         try {
             session.getContext().setRealm(realm);
             UserModel newUser = session.users().addUser(realm, externalUser.getEmail());
             newUser.setEnabled(true);
-            populateUserAttributes(newUser, realm, externalUser, externalUserUserGroup);
+            UserMapper.mapSw360ToKeycloak(newUser, realm, externalUser);
             logger.debug("Created new user  {}", newUser.getEmail());
             return true;
         } catch (Exception e) {
             logger.error("Error creating user in Keycloak", e);
             return false;
         }
-    }
-
-    /**
-     * Assigns the user to a group based on the external user's group.
-     * <p>
-     * This method checks if the external user group is valid and not empty. If it is valid, it assigns the user
-     * to the corresponding group in Keycloak. If the user is already in the target group, it does nothing.
-     *
-     * @param user                  the Keycloak user to be assigned to a group.
-     * @param realm                 the Keycloak realm.
-     * @param externalUserUserGroup the external user group.
-     */
-    private void assignGroupToUser(UserModel user, RealmModel realm, UserGroup externalUserUserGroup) {
-        if (externalUserUserGroup == null || StringUtils.isBlank(externalUserUserGroup.name())) {
-            logger.warn("Invalid or empty group provided for user: {}", user.getEmail());
-            return;
-        }
-
-        String groupName = externalUserUserGroup.name();
-        GroupModel targetGroup = realm.getGroupsStream()
-                .filter(g -> g.getName().equals(groupName))
-                .findFirst()
-                .orElse(null);
-
-        if (targetGroup == null) {
-            logger.warn("Group '{}' not found in Keycloak for user: {}", groupName, user.getEmail());
-            return;
-        }
-
-        // Collect current groups to avoid stream reuse
-        List<GroupModel> currentGroups = user.getGroupsStream().toList();
-
-        // Check if the user is already in the target group
-        if (currentGroups.stream().anyMatch(g -> g.equals(targetGroup))) {
-            logger.debug("User {} is already in group {}", user.getEmail(), groupName);
-            return;
-        }
-
-        // Remove user from all other groups
-        currentGroups.forEach(user::leaveGroup);
-
-        // Add user to the target group
-        user.joinGroup(targetGroup);
-        logger.debug("Assigned user {} to group {}", user.getEmail(), groupName);
     }
 
 

@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
@@ -49,5 +50,10 @@ public class SpdxPackageInfoPermissions extends DocumentPermissions<PackageInfor
     @Override
     protected Set<String> getModerators() {
         return moderators;
+    }
+
+    @Override
+    protected Set<String> getSecurityResponsibles() {
+        return Collections.emptySet();
     }
 }

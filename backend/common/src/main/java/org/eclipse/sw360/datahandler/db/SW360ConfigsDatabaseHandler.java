@@ -73,8 +73,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED, getOrDefault(configContainer, IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED, "false"))
             .put(ATTACHMENT_DELETE_NO_OF_DAYS, getOrDefault(configContainer, ATTACHMENT_DELETE_NO_OF_DAYS, String.valueOf(SW360Constants.DEFAULT_ATTACHMENT_DELETE_NO_DAY)))
             .put(AUTO_SET_ECC_STATUS, getOrDefault(configContainer, AUTO_SET_ECC_STATUS, "false"))
-            .put(MAIL_REQUEST_FOR_PROJECT_REPORT, getOrDefault(configContainer, MAIL_REQUEST_FOR_PROJECT_REPORT, "false"))
-            .put(MAIL_REQUEST_FOR_COMPONENT_REPORT, getOrDefault(configContainer, MAIL_REQUEST_FOR_COMPONENT_REPORT, "false"))
+            .put(MAIL_REQUEST_FOR_REPORT, getOrDefault(configContainer, MAIL_REQUEST_FOR_REPORT, "false"))
             .put(IS_BULK_RELEASE_DELETING_ENABLED, getOrDefault(configContainer, IS_BULK_RELEASE_DELETING_ENABLED, "false"))
             .put(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, getOrDefault(configContainer, DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, "false"))
             .put(IS_FORCE_UPDATE_ENABLED, getOrDefault(configContainer, IS_FORCE_UPDATE_ENABLED, "false"))
@@ -118,6 +117,7 @@ public class SW360ConfigsDatabaseHandler {
                 .put(UI_RELEASE_EXTERNALKEYS, getOrDefault(configContainer, UI_RELEASE_EXTERNALKEYS, "[\"org.maven.id\",\"com.github.id\",\"com.gitlab.id\",\"purl.id\"]"))
                 .put(UI_SOFTWARE_PLATFORMS, getOrDefault(configContainer, UI_SOFTWARE_PLATFORMS, "[\"Adobe AIR\",\"Adobe Flash\",\"Adobe Shockwave\",\"Binary Runtime Environment for Wireless\",\"Cocoa\",\"Cocoa Touch\",\"Java (software platform)|Java platform\",\"Java Platform, Micro Edition\",\"Java Platform, Standard Edition\",\"Java Platform, Enterprise Edition\",\"JavaFX\",\"JavaFX Mobile\",\"Microsoft XNA\",\"Mono (software)|Mono\",\"Mozilla Prism\",\".NET Framework\",\"Silverlight\",\"Open Web Platform\",\"Oracle Database\",\"Qt (framework)|Qt\",\"SAP NetWeaver\",\"Smartface\",\"Vexi\",\"Windows Runtime\"]"))
                 .put(UI_STATE, getOrDefault(configContainer, UI_STATE, "[\"Active\",\"Phase out\",\"Unknown\"]"))
+                .put(UI_ENABLE_LINKED_PROJECTS_DISPLAY, getOrDefault(configContainer, UI_ENABLE_LINKED_PROJECTS_DISPLAY, "false"))
                 .build();
         putInMemory(ConfigFor.UI_CONFIGURATION, configMap);
     }
@@ -194,14 +194,14 @@ public class SW360ConfigsDatabaseHandler {
                  MAINLINE_STATE_ENABLED_FOR_USER,
                  IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
                  AUTO_SET_ECC_STATUS,
-                 MAIL_REQUEST_FOR_PROJECT_REPORT,
-                 MAIL_REQUEST_FOR_COMPONENT_REPORT,
+                 MAIL_REQUEST_FOR_REPORT,
                  IS_FORCE_UPDATE_ENABLED,
                  DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
                  IS_BULK_RELEASE_DELETING_ENABLED,
                  IS_PACKAGE_PORTLET_ENABLED,
                  INHERIT_ATTACHMENT_USAGES,
                  IS_ADMIN_PRIVATE_ACCESS_ENABLED,
+                 UI_ENABLE_LINKED_PROJECTS_DISPLAY,
                  UI_CLEARING_TEAM_UNKNOWN_ENABLED,
                  UI_CUSTOM_WELCOME_PAGE_GUIDELINE,
                  UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON,

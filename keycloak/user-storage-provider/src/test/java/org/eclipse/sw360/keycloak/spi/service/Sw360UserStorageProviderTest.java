@@ -12,6 +12,7 @@ package org.eclipse.sw360.keycloak.spi.service;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.keycloak.common.Sw360UserService;
 import org.eclipse.sw360.keycloak.spi.Sw360UserStorageProviderFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ProviderService.USER_STORAGE_PROVIDER;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
@@ -68,10 +70,10 @@ public class Sw360UserStorageProviderTest {
     @Test
     public void testReadDataFromCouchDB() {
         // Set up mock behavior
-        when(userService.createOrUpdateUser(testUser)).thenReturn(testUser);
+        when(userService.createOrUpdateUser(testUser, USER_STORAGE_PROVIDER)).thenReturn(testUser);
         when(userService.getUserByEmail(testUser.getEmail())).thenReturn(testUser);
         when(userService.getUser(testUser.getId())).thenReturn(testUser);
-        User createdUser = userService.createOrUpdateUser(testUser);
+        User createdUser = userService.createOrUpdateUser(testUser, USER_STORAGE_PROVIDER);
         assertNotNull("Created user should not be null", createdUser);
         User retrievedByEmail = userService.getUserByEmail(testUser.getEmail());
         User retrievedById = userService.getUser(testUser.getId());
@@ -84,13 +86,13 @@ public class Sw360UserStorageProviderTest {
      */
     @Test
     public void testWriteUpdateDataToCouchDB() {
-        when(userService.createOrUpdateUser(testUser)).thenReturn(testUser);
-        User createdUser = userService.createOrUpdateUser(testUser);
+        when(userService.createOrUpdateUser(testUser, USER_STORAGE_PROVIDER)).thenReturn(testUser);
+        User createdUser = userService.createOrUpdateUser(testUser, USER_STORAGE_PROVIDER);
         assertNotNull("Created user should not be null", createdUser);
         createdUser.setDepartment("Engineering");
         createdUser.setLastname("UpdatedUser");
-        when(userService.createOrUpdateUser(createdUser)).thenReturn(createdUser);
-        User updateUser = userService.createOrUpdateUser(createdUser);
+        when(userService.createOrUpdateUser(createdUser, USER_STORAGE_PROVIDER)).thenReturn(createdUser);
+        User updateUser = userService.createOrUpdateUser(createdUser, USER_STORAGE_PROVIDER);
         assertNotNull("Update user should not be null", updateUser);
         assertFalse("Update user should contain ID", updateUser.getId().isEmpty());
     }
@@ -103,10 +105,10 @@ public class Sw360UserStorageProviderTest {
         long timestamp = System.currentTimeMillis();
         User user1 = createTestUser("import1-" + timestamp + "@example.com", "Import", "User1", "ext001-" + timestamp);
         User user2 = createTestUser("import2-" + timestamp + "@example.com", "Import", "User2", "ext002-" + timestamp);
-        when(userService.createOrUpdateUser(user1)).thenReturn(user1);
-        when(userService.createOrUpdateUser(user2)).thenReturn(user2);
-        User imported1 = userService.createOrUpdateUser(user1);
-        User imported2 = userService.createOrUpdateUser(user2);
+        when(userService.createOrUpdateUser(user1, USER_STORAGE_PROVIDER)).thenReturn(user1);
+        when(userService.createOrUpdateUser(user2, USER_STORAGE_PROVIDER)).thenReturn(user2);
+        User imported1 = userService.createOrUpdateUser(user1, USER_STORAGE_PROVIDER);
+        User imported2 = userService.createOrUpdateUser(user2, USER_STORAGE_PROVIDER);
         assertNotNull("Imported user1 should not be null", imported1);
         assertNotNull("Imported user2 should not be null", imported2);
         assertEquals("Imported user1 email should match", user1.getEmail(), imported1.getEmail());
@@ -118,16 +120,16 @@ public class Sw360UserStorageProviderTest {
      */
     @Test
     public void testUpdateOperationsToCouchDB() {
-        when(userService.createOrUpdateUser(testUser)).thenReturn(testUser);
-        User initialUser = userService.createOrUpdateUser(testUser);
+        when(userService.createOrUpdateUser(testUser, USER_STORAGE_PROVIDER)).thenReturn(testUser);
+        User initialUser = userService.createOrUpdateUser(testUser, USER_STORAGE_PROVIDER);
         assertNotNull("Initial user should not be null", initialUser);
         initialUser.setUserGroup(UserGroup.ADMIN);
-        when(userService.createOrUpdateUser(initialUser)).thenReturn(initialUser);
-        User updatedUser1 = userService.createOrUpdateUser(initialUser);
+        when(userService.createOrUpdateUser(initialUser, USER_STORAGE_PROVIDER)).thenReturn(initialUser);
+        User updatedUser1 = userService.createOrUpdateUser(initialUser, USER_STORAGE_PROVIDER);
         assertNotNull("Update user should not be null", updatedUser1);
         initialUser.setDepartment("FT");
-        when(userService.createOrUpdateUser(initialUser)).thenReturn(initialUser);
-        User updatedUser2 = userService.createOrUpdateUser(initialUser);
+        when(userService.createOrUpdateUser(initialUser, USER_STORAGE_PROVIDER)).thenReturn(initialUser);
+        User updatedUser2 = userService.createOrUpdateUser(initialUser, USER_STORAGE_PROVIDER);
         assertNotNull("Update user should not be null", updatedUser2);
     }
 
@@ -140,9 +142,9 @@ public class Sw360UserStorageProviderTest {
         assertNotNull("User service should be initialized", userService);
         long timestamp = System.currentTimeMillis();
         User directUser = createTestUser("direct-" + timestamp + "@example.com", "Direct", "Access", "direct" + timestamp);
-        when(userService.createOrUpdateUser(directUser)).thenReturn(directUser);
+        when(userService.createOrUpdateUser(directUser, USER_STORAGE_PROVIDER)).thenReturn(directUser);
         when(userService.getUserByEmail(directUser.getEmail())).thenReturn(directUser);
-        User createdDirectUser = userService.createOrUpdateUser(directUser);
+        User createdDirectUser = userService.createOrUpdateUser(directUser, USER_STORAGE_PROVIDER);
         if (createdDirectUser != null) {
             User retrievedDirectUser = userService.getUserByEmail(directUser.getEmail());
             assertNotNull("Retrieved direct user should not be null", retrievedDirectUser);
@@ -156,8 +158,8 @@ public class Sw360UserStorageProviderTest {
     @Test
     public void testErrorHandling() {
         assertNotNull("User service should be initialized", userService);
-        when(userService.createOrUpdateUser(null)).thenReturn(null);
-        User nullResult = userService.createOrUpdateUser(null);
+        when(userService.createOrUpdateUser(null, USER_STORAGE_PROVIDER)).thenReturn(null);
+        User nullResult = userService.createOrUpdateUser(null, USER_STORAGE_PROVIDER);
         assertNull("Adding null user should return null", nullResult);
         when(userService.getUserByEmail("")).thenReturn(null);
         User emptyEmailUser = userService.getUserByEmail("");
@@ -165,8 +167,8 @@ public class Sw360UserStorageProviderTest {
         when(userService.getUserByEmail(null)).thenReturn(null);
         User nullEmailUser = userService.getUserByEmail(null);
         assertNull("Null email should return null", nullEmailUser);
-        when(userService.createOrUpdateUser(null)).thenReturn(null);
-        User updatedUser1 = userService.createOrUpdateUser(null);
+        when(userService.createOrUpdateUser(null, USER_STORAGE_PROVIDER)).thenReturn(null);
+        User updatedUser1 = userService.createOrUpdateUser(null, USER_STORAGE_PROVIDER);
         assertNull("Updating null user should be NULL", updatedUser1);
     }
 
@@ -180,8 +182,8 @@ public class Sw360UserStorageProviderTest {
         long timestamp = System.currentTimeMillis();
         User syncUser1 = createTestUser("sync1-" + timestamp + "@example.com", "Sync", "User1", "sync001-" + timestamp);
         User syncUser2 = createTestUser("sync2-" + timestamp + "@example.com", "Sync", "User2", "sync002-" + timestamp);
-        when(userService.createOrUpdateUser(syncUser1)).thenReturn(syncUser1);
-        when(userService.createOrUpdateUser(syncUser2)).thenReturn(syncUser2);
+        when(userService.createOrUpdateUser(syncUser1, USER_STORAGE_PROVIDER)).thenReturn(syncUser1);
+        when(userService.createOrUpdateUser(syncUser2, USER_STORAGE_PROVIDER)).thenReturn(syncUser2);
         SynchronizationResult mockResult = new SynchronizationResult();
         mockResult.setAdded(2);
         mockResult.setUpdated(0);

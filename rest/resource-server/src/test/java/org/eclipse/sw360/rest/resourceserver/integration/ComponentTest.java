@@ -13,6 +13,8 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -20,7 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -33,8 +35,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -78,6 +81,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 
 @RunWith(SpringRunner.class)
 public class ComponentTest extends TestIntegrationBase {
+    private static final Logger log = LogManager.getLogger(ComponentTest.class);
 
     @LocalServerPort
     private int port;
@@ -207,7 +211,6 @@ public class ComponentTest extends TestIntegrationBase {
                 new HttpEntity<>(body, headers),
                 String.class);
 
-        System.out.println("Response is" + response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
     }
@@ -296,7 +299,7 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_update_component_invalid() throws IOException, TException {
-        Mockito.doThrow(TException.class).when(this.componentServiceMock)
+        Mockito.doThrow(new ResourceNotFoundException("Component not found")).when(this.componentServiceMock)
                 .getComponentForUserById(any(), any());
         String updatedComponentName = "updatedComponentName";
         HttpHeaders headers = getHeaders(port);
@@ -773,25 +776,28 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_get_releases_by_component() throws Exception {
-        List<Release> releases = new ArrayList<>();
-        Release release1 = new Release();
-        release1.setId("release-1");
-        release1.setName("Angular");
-        release1.setVersion("2.3.0");
-        release1.setMainlineState(MainlineState.OPEN);
-        release1.setClearingState(ClearingState.APPROVED);
-        releases.add(release1);
+        List<ReleaseLink> releaseLinks = new ArrayList<>();
+        ReleaseLink releaseLink1 = new ReleaseLink();
+        releaseLink1.setId("release-1");
+        releaseLink1.setName("Angular");
+        releaseLink1.setVersion("2.3.0");
+        releaseLink1.setMainlineState(MainlineState.OPEN);
+        releaseLink1.setClearingState(ClearingState.APPROVED);
+        releaseLinks.add(releaseLink1);
 
-        Release release2 = new Release();
-        release2.setId("release-2");
-        release2.setName("Angular");
-        release2.setVersion("2.4.0");
-        release2.setMainlineState(MainlineState.MAINLINE);
-        release2.setClearingState(ClearingState.UNDER_CLEARING);
-        releases.add(release2);
+        ReleaseLink releaseLink2 = new ReleaseLink();
+        releaseLink2.setId("release-2");
+        releaseLink2.setName("Angular");
+        releaseLink2.setVersion("2.4.0");
+        releaseLink2.setMainlineState(MainlineState.MAINLINE);
+        releaseLink2.setClearingState(ClearingState.UNDER_CLEARING);
+        releaseLinks.add(releaseLink2);
 
-        Mockito.doReturn(releases).when(componentServiceMock)
-                .getReleasesByComponentId(eq("component-1"), any());
+        Mockito.doReturn(Collections.singletonMap(
+                new PaginationData().setRowsPerPage(releaseLinks.size()).setDisplayStart(0).setTotalRowCount(releaseLinks.size()),
+                releaseLinks
+        )).when(componentServiceMock)
+                .getReleaseLinksByComponentIdWithPagination(eq("component-1"), any(), any());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -802,13 +808,13 @@ public class ComponentTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         JsonNode responseNode = new ObjectMapper().readTree(response.getBody());
-        JsonNode releaseLinks = responseNode.get("_embedded").get("sw360:releaseLinks");
-        assertTrue(releaseLinks.isArray());
-        assertEquals(2, releaseLinks.size());
-        assertEquals("Angular", releaseLinks.get(0).get("name").textValue());
-        assertEquals("2.3.0", releaseLinks.get(0).get("version").textValue());
-        assertEquals("OPEN", releaseLinks.get(0).get("mainlineState").textValue());
-        assertEquals("APPROVED", releaseLinks.get(0).get("clearingState").textValue());
+        JsonNode releaseLinksNode = responseNode.get("_embedded").get("sw360:releaseLinks");
+        assertTrue(releaseLinksNode.isArray());
+        assertEquals(2, releaseLinksNode.size());
+        assertEquals("Angular", releaseLinksNode.get(0).get("name").textValue());
+        assertEquals("2.3.0", releaseLinksNode.get(0).get("version").textValue());
+        assertEquals("OPEN", releaseLinksNode.get(0).get("mainlineState").textValue());
+        assertEquals("APPROVED", releaseLinksNode.get(0).get("clearingState").textValue());
     }
 
     @Test

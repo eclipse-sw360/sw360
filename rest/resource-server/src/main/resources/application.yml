@@ -1,5 +1,5 @@
 #
-# Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+# Copyright Siemens AG, 2017,2026. Part of the SW360 Portal Project.
 # Copyright Bosch.IO GmbH 2020
 #
 # This program and the accompanying materials are made
@@ -11,8 +11,14 @@
 
 server:
   port: 8091
+  compression:
+    enabled: true
+    min-response-size: 2KB
+    mime-types: application/json,application/hal+json,text/plain,text/html,text/xml,application/xml
   servlet:
     context-path: /resource/api
+  tomcat:
+    connection-timeout: 60s
 
 management:
   endpoints:
@@ -42,6 +48,9 @@ management:
 spring:
   application:
     name: resource
+  mvc:
+    async:
+      request-timeout: 120s
   servlet:
     multipart:
       max-file-size: 500MB
@@ -50,10 +59,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          #issuer-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
-          #jwk-set-uri: https://localhost:8083/realms/sw360/protocol/openid-connect/certs
-          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
-          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
+          #issuer-uri: http://localhost:8083/realms/sw360
+          issuer-uri: http://localhost:8080/authorization
 
 #logging:
 #  level:
@@ -64,17 +71,26 @@ spring:
 jwt:
   auth:
     converter:
-      resource-id: sw360-rest-api
       principle-attribute: email
 
 sw360:
   thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
   base-url: ${SW360_BASE_URL:http://localhost:8080}
-  test-user-id: admin@sw360.org
-  test-user-password: 12345
+  frontend-url: ${SW360_FRONTEND_URL:http://localhost:3000}
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+  security:
+    jwt:
+      # supply jwk-set-uri to skip discovery and fetch JWKS directly
+      issuers:
+        - issuer-uri: http://localhost:8080/authorization
+        - issuer-uri: http://localhost:8083/realms/sw360
+          jwk-set-uri: http://localhost:8083/realms/sw360/protocol/openid-connect/certs
+    # Keep enabled for development/testing; set to false in production when
+    # all clients authenticate via JWT or API token only.
+    http-basic:
+      enabled: true
 
 blacklist:
   sw360:

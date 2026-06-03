@@ -2,8 +2,14 @@
 #SPDX-License-Identifier: EPL-2.0
 
 server:
+  compression:
+    enabled: true
+    min-response-size: 2KB
+    mime-types: application/json,application/hal+json,text/plain,text/html,text/xml,application/xml
   servlet:
     context-path: /
+  tomcat:
+    connection-timeout: 60s
 
 management:
   endpoints:
@@ -35,6 +41,9 @@ spring:
     active: SECURITY_MOCK
   application:
     name: resource
+  mvc:
+    async:
+      request-timeout: 120s
   servlet:
     multipart:
       max-file-size: 500MB
@@ -43,18 +52,12 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
-          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
+          issuer-uri: http://localhost:8080/authorization
 
-#logging:
-#  level:
-#    org.springframework.security: DEBUG
-#    org.springframework.security.oauth2: DEBUG
-#    org.springframework.security.oauth2.provider.endpoint: DEBUG
-#    org.springframework.security.oauth2.provider.error: DEBUG
-#    org.springframework.security.oauth2.provider.token: DEBUG
-#    org.springframework.security.oauth2.provider.token.store: DEBUG
-#    org.springframework.security.oauth2.provider.token.store.jwk: DEBUG
+logging:
+  level:
+    org.eclipse.sw360.datahandler.common.SW360Utils: FATAL
+    org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider: WARN
 
 jwt:
   auth:
@@ -70,6 +73,11 @@ sw360:
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+  security:
+    # Keep enabled for development/testing; set to false in production when
+    # all clients authenticate via OAuth2/JWT flows only.
+    http-basic:
+      enabled: true
 
 blacklist:
   sw360:

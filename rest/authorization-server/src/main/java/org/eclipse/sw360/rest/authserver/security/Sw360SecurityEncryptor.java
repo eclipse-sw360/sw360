@@ -56,7 +56,7 @@ public class Sw360SecurityEncryptor {
             cipher.init(mode, sks);
             return cipher;
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
-            log.error("error occured by initializing cipher object", e);
+            log.error("error occurred by initializing cipher object", e);
             return null;
         }
     }

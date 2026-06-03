@@ -616,8 +616,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getLicenseInfoHeaderText()).willReturn("Default License Info Header Text");
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
-        given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any())).willReturn(projectName);
-        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any(), any())).willReturn(projectName);
+        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any(),any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getProjectReleaseSpreadSheetWithEcc(any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.searchAccessibleProjectByExactValues(any(), any(), any())).willReturn(
@@ -652,7 +652,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getProjectForUserById(eq(project9.getId()), any())).willReturn(project9);
         given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(attachmentUsageNewList);
-        given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(true);
+        given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(Collections.emptyList());
         given(this.projectServiceMock.deselectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(deselectedUsagesFromRequest);
         given(this.projectServiceMock.selectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(selectedUsagesFromRequest);
         given(this.projectServiceMock.removeOrphanObligations(eq(obligationStatusMap), any(), eq(project8), any(), eq(obligationLists))).willReturn(RequestStatus.SUCCESS);
@@ -663,6 +663,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.getGroups()).willReturn(new java.util.LinkedHashSet<>(Arrays.asList("", "sw360 AR", "sw360 EX DF")));
         given(this.projectServiceMock.refineSearch(any(), any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(projectListByName.size()).setDisplayStart(0).setTotalRowCount(projectListByName.size()),
@@ -1068,6 +1069,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]ownerGroup").description("The owner group of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]ownerCountry").description("The owner country of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]obligationsText").description("The obligations text of the project"),
+                                subsectionWithPath("_embedded.sw360:projects.[]clearingTeam").description("Clearing team working on the Project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]clearingSummary").description("The clearing summary text of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]specialRisksOSS").description("The special risks OSS text of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]generalRisks3rdParty").description("The general risks 3rd party text of the project"),
@@ -1091,7 +1093,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]clearingRequestId").description("Clearing Request id associated with project."),
                                 subsectionWithPath("_embedded.sw360:projects.[]_links").description("Self <<resources-index-links,Links>> to Project resource"),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.createdBy").description("The user who created this project"),
-                                subsectionWithPath("_embedded.sw360:projects.[]_embedded.clearingTeam").type(JsonFieldType.STRING).description("The clearingTeam of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.homepage").description("The homepage url of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.wiki").description("The wiki url of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]licenseInfoHeaderText").description("The licenseInfoHeaderText text of the project"),
@@ -1107,6 +1108,23 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_project_groups() throws Exception {
+        mockMvc.perform(get("/api/projects/groups")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0]").value(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN))
+                .andExpect(jsonPath("$").isArray())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("[]").description("Ordered list of unique project group keys. The first entry is always the synthetic token '"
+                                        + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN
+                                        + "', which clients can use to search for projects with null, empty, or missing businessUnit. "
+                                        + "This synthetic token is not a real business unit and should be ignored for statistics or aggregations.")
                         )));
     }
 
@@ -1527,6 +1545,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded['sw360:projects'][0].linkedReleases").isArray())
+                .andExpect(jsonPath("$._embedded['sw360:projects'][0].linkedProjects").isArray())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("page").description("Page of projects"),
@@ -2475,6 +2495,22 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                fieldWithPath("releaseCount").description("Total count of releases of a project including sub-projects releases"),
                                fieldWithPath("approvedCount").description("Approved license clearing state releases")
                        )));
+    }
+
+    @Test
+    public void should_document_get_project_detail_tab_counts() throws Exception {
+        mockMvc.perform(get("/api/projects/" + project8.getId() + "/tabCounts")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON)
+                        .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("vulnerabilityCount").description("Count of vulnerabilities linked to the project; returns -1 when vulnerability display is disabled for the project"),
+                                fieldWithPath("vulnerabilityRatedCount").description("Count of vulnerabilities with project relevance other than NOT_CHECKED; returns -1 when vulnerability display is disabled for the project"),
+                                fieldWithPath("obligationCount").description("Count of obligations linked to the project"),
+                                fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN")
+                        )));
     }
 
     @Test

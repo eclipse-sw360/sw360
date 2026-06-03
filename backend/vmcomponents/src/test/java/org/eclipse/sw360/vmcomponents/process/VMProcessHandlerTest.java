@@ -103,7 +103,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         assertNull(action.getText());
 
         List<String> ids = Arrays.asList(action.getId());
-        VMProcessHandler.getMasterData(VMAction.class, ids, URL_ACTIONS, false);
+        VMProcessHandler.getMasterData(VMAction.class, ids, URL_ACTIONS, false, false);
 
         Thread.sleep(timeout);
 
@@ -124,7 +124,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         assertEquals(componentId, component.getVmid());
         assertNull(component.getName());
 
-        VMProcessHandler.getMasterData(VMComponent.class, component.getId(), URL_COMPONENTS, false);
+        VMProcessHandler.getMasterData(VMComponent.class, component.getId(), URL_COMPONENTS, false, false);
 
         Thread.sleep(timeout);
 
@@ -147,7 +147,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         log.debug(prio.toString());
 
         List<String> ids = Arrays.asList(prio.getId());
-        VMProcessHandler.getMasterData(VMPriority.class, ids, URL_PRIORITIES, false);
+        VMProcessHandler.getMasterData(VMPriority.class, ids, URL_PRIORITIES, false, false);
 
         Thread.sleep(timeout);
 
@@ -170,7 +170,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         log.debug(vul.toString());
 
         List<String> ids = Arrays.asList(vul.getId());
-        VMProcessHandler.getMasterData(Vulnerability.class, ids, URL_VULNERABILITIES, false);
+        VMProcessHandler.getMasterData(Vulnerability.class, ids, URL_VULNERABILITIES, false, false);
 
         Thread.sleep(timeout);
 
@@ -195,7 +195,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
             cIds.add(comp.getId());
         }
 
-        VMProcessHandler.getMasterData(VMComponent.class, cIds, URL_COMPONENTS, false);
+        VMProcessHandler.getMasterData(VMComponent.class, cIds, URL_COMPONENTS, false, false);
 
         Thread.sleep(timeout*2);
 
@@ -257,7 +257,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         SVMSyncHandler<T> ssh = new SVMSyncHandler<T>(type);
         VMResult<String> vmResult = ssh.getSMVElementIds(url);
         log.info(vmResult.elements.size()+" vmids received. start storing elements...");
-        VMProcessHandler.storeElements(type, vmResult.elements, url, true);
+        VMProcessHandler.storeElements(type, vmResult.elements, url, true, false);
         log.info("Storing and getting master data triggered. waiting for completion...");
     }
 }

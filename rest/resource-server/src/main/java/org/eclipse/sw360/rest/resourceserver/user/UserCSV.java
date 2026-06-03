@@ -46,4 +46,36 @@ public class UserCSV {
 
     public UserCSV() {
     }
+
+    public String getGivenname() {
+        return givenname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public String getGid() {
+        return gid;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public boolean isWantsMailNotification() {
+        return wantsMailNotification;
+    }
 }

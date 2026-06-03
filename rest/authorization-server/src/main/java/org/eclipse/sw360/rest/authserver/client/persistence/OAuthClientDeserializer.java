@@ -8,25 +8,21 @@
 // SPDX-License-Identifier: EPL-2.0
 // License-Filename: LICENSE
 package org.eclipse.sw360.rest.authserver.client.persistence;
+
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity> {
 
     @Override
     public OAuthClientEntity deserialize(JsonParser p, DeserializationContext ctxt)
-            throws IOException, JsonProcessingException {
+            throws IOException {
 
         JsonNode node = p.getCodec().readTree(p);
         OAuthClientEntity client = new OAuthClientEntity();
@@ -55,6 +51,10 @@ public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity>
 
         Set<String> authorities = jsonNodeToSet(node.get("authorities"));
         client.setAuthorities(authorities);
+
+        if (node.has("owner_email") && !node.get("owner_email").isNull()) {
+            client.setOwnerEmail(node.get("owner_email").asText());
+        }
 
         return client;
     }

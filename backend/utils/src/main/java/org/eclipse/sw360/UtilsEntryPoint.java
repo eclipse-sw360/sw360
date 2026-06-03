@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.eclipse.sw360.attachments.db.RemoteAttachmentDownloader;
 import org.apache.commons.cli.*;
 
@@ -18,6 +20,7 @@ import java.net.MalformedURLException;
  * @author daniele.fognini@tngtech.com
  */
 public class UtilsEntryPoint {
+    private static final Logger log = LogManager.getLogger(UtilsEntryPoint.class);
 
     private static final String OPTION_HELP = "h";
     private static final String OPTION_DOWNLOAD = "d";
@@ -28,7 +31,7 @@ public class UtilsEntryPoint {
         try {
             cmd = parseArgs(args);
         } catch (ParseException e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
             printHelp();
             return;
         }

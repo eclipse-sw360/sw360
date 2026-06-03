@@ -6,6 +6,649 @@ the first project location:
 
 https://github.com/eclipse-sw360/sw360/releases
 
+## sw360-20.1.0-rc-2
+This is the second release candidate for SW360 in the line of the next minor
+release version 20.1.0 of SW360. The candidate includes numerous features,
+corrections, and improvements over the previous release
+[20.1.0-rc-1](https://github.com/eclipse-sw360/sw360/releases/tag/sw360-20.1.0-rc-1)
+
+This release serves as a preview of the upcoming minor version 20.1.0 for
+testing and should not be used in production environments.
+
+Highlight of the changes includes:
+* **Authentication & Authorization:** Added multi-issuer JWT support with a
+  per-issuer `jwk-set-uri` override, accepted JWTs from trusted issuers, wired
+  `JWT_KEYSTORE`, returned the plaintext `client_secret` once on creation, and
+  associated each OAuth client with its owning user (**breaking change**,
+  see `fix(auth)!: associate user with client`).
+* **REST API Enhancements:** Added an `attachmentAuthor` filter on
+  `GET /projects`, manual scheduler-trigger APIs with scheduler refactoring,
+  authenticated report download links, and search flags for empty BU and empty
+  tags on projects.
+* **Obligations & Reports:** Allowed updating obligations of all levels at once,
+  and RFC 5987-encoded the `Content-Disposition` filename in report downloads.
+* **SVM Integration:** Optimized SW360 & SVM delta synchronization and
+  simplified the SVM delta sync configuration.
+* **Build & CI:** Added Spotless as a Maven plugin, required Maven 3.9,
+  added a GitHub Actions step summary, and many dependencies bumped via
+  Dependabot.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> ADITYA-CODE-SOURCE <adityavishe67@gmail.com>
+> amritkv <er.akverma8@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> developharsh <harsh237hk@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> rudra-superrr <prabhuchopra@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `df2a49e5c` feat: add batch summary endpoint for release lookups
+* `c23ea8d66` feat(authorization): support multi-issuers
+* `f06255f34` feat(rest): add attachmentAuthor filter parameter to GET /projects endpoint
+* `ef7fa8a47` feat(rest): per-issuer jwk-set-uri override
+* `6865f9a4f` feat(Scheduler): Added api to  manually  trigger the  schedulers and refactor the apis
+* `8e09f74f3` feat(SVM): Optimize the sync between SW360 and SVM
+* `9ad41c460` feat(report): authenticating the report download link.
+* `884002335` feat(search): flag to search empty tags in projects
+* `a685a9ffc` feat(search): flag to search empty bu in projects
+
+### Corrections
+* `a23a010d4` fix(components): prevent duplicate components by name only, case insensitive
+* `4f8967a08` fix(rest): fetch sub-project attachment usages for LicenseInfo report
+* `2f70346b4` fix(project): show transitive sub-project releases in licenseClearing and attachmentUsage endpoints
+* `fe216246b` fix(report): RFC 5987 encode Content-Disposition filename and reduce debug log verbosity
+* `ec7903049` fix(obligations): add functionality to update obligations of all levels
+* `3bb28a0aa` fix(pom): require maven 3.9 needed
+* `10102bec5` fix(lucene): remove leading wildcard configuration since Nouveau does not support it.
+* `bc2eab4ff` fix(docker): wire JWT_KEYSTORE and key
+* `ea6fa51a4` fix(auth): persist JWT signing key from keystore
+* `2ab7ffadf` fix(rest): preserve user roles, enforcing scope
+* `faa394244` fix(rest): accept JWTs from trusted issuers
+* `d258e0a66` fix(auth): accept JWT token from frontend
+* `80e5f495d` fix(auth)!: associate user with client
+* `8b60c44ab` fix(auth): return plaintext client_secret once
+* `533876e03` fix(cloudant): set URL before anything else
+* `d65cd86fa` fix(obligations): add obligations of status deferred to parent project to all obligations endpoint
+* `30354026e` fix(DBConnector): prevent NPE in getDistinctSortedStringKeys
+
+### Infrastructure
+* `ba641d2f4` chore(vulnerability): guards against NPE
+* `e220f7ecf` perf(DB): use singleton for design and indexes
+* `c95528d34` chore(spotless): add spotless as a plugin
+* `77aead739` chore(deps): bump org.junit.platform:junit-platform-launcher
+* `25537a451` chore(deps): bump junit.version from 6.0.3 to 6.1.0
+* `ed4e8926f` chore(deps): bump step-security/harden-runner from 2.19.3 to 2.19.4
+* `106c4030d` chore(deps): bump keycloak.version from 26.6.1 to 26.6.2
+* `53235a988` chore(deps): bump docker/build-push-action from 7.1.0 to 7.2.0
+* `751146e6a` chore(deps): bump github/codeql-action from 4.35.4 to 4.35.5
+* `a1c956fbb` chore(deps): bump keycloak/keycloak from 26.6.1 to 26.6.2
+* `b93cc55f6` chore(deps-dev): bump org.apache.maven.plugins:maven-enforcer-plugin
+* `19e5329b3` perf(obligation): optimize the steams
+* `86333ea78` chore(deps): bump com.google.code.gson:gson from 2.13.2 to 2.14.0
+* `a71baccf3` chore(deps-dev): bump io.github.git-commit-id:git-commit-id-maven-plugin
+* `fbe707f18` chore(deps): bump commons-cli:commons-cli from 1.10.0 to 1.11.0
+* `cce7dafa3` chore(deps): bump org.mockito:mockito-core from 5.21.0 to 5.23.0
+* `42b794e32` chore(deps): bump org.json:json from 20250517 to 20251224
+* `d56c59d00` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `e9991b30c` chore(deps): bump ch.qos.logback:logback-classic from 1.5.18 to 1.5.32
+* `50e4e71a9` chore(deps): bump jakarta.xml.bind:jakarta.xml.bind-api
+* `ad653f2f5` chore(deps): bump org.spdx:java-spdx-library from 2.0.2 to 2.0.3
+* `4cb50dd26` chore(deps): bump org.projectlombok:lombok from 1.18.38 to 1.18.46
+* `4964d11dc` chore(deps): bump org.apache.maven.plugins:maven-resources-plugin
+* `ba18507ec` chore(deps): bump org.jboss.logging:jboss-logging
+* `d80f0fd8d` chore(deps): bump jaxen:jaxen from 2.0.0 to 2.0.3
+* `a6a95b111` chore(deps): bump commons-io:commons-io from 2.20.0 to 2.22.0
+* `835dda3e4` chore(deps): bump org.apache.maven.plugins:maven-failsafe-plugin
+* `05ca948c8` chore(deps): bump org.jetbrains:annotations from 26.0.2-1 to 26.1.0
+* `5933a825a` chore(deps): bump joda-time:joda-time from 2.14.0 to 2.14.2
+* `b5eb5734b` chore(deps-dev): bump org.apache.maven.plugins:maven-assembly-plugin
+* `81f032588` chore(deps-dev): bump org.codehaus.mojo:versions-maven-plugin
+* `a6e9f835b` chore(deps): bump org.owasp.encoder:encoder from 1.3.1 to 1.4.0
+* `5bd330001` chore(deps): bump org.jacoco:jacoco-maven-plugin from 0.8.13 to 0.8.14
+* `aba0ea009` chore(deps-dev): bump org.apache.maven.plugins:maven-war-plugin
+* `e12613460` chore(deps): bump log4j2.version from 2.25.4 to 2.26.0
+* `8c2bd8c5a` chore(deps): bump org.ow2.asm.version from 9.9.1 to 9.10
+* `5ba4da017` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.17.8 to 1.18.8
+* `72a4910ee` chore(deps): bump org.wiremock:wiremock-standalone from 3.13.1 to 3.13.2
+* `c00bb0674` chore(deps): bump org.glassfish.jaxb:jaxb-runtime from 4.0.6 to 4.0.8
+* `e77e2920b` chore(deps): bump step-security/harden-runner from 2.19.1 to 2.19.3
+* `400e2b7d7` chore(deps): bump actions/dependency-review-action from 4.9.0 to 5.0.0
+* `e9bfa51c2` chore(deps): bump org.springframework.security:spring-security-oauth2-authorization-server
+* `dcdda3c64` chore(deps): bump com.google.guava:guava from 33.5.0-jre to 33.6.0-jre
+* `59e398084` chore(deps): bump slf4j.version from 2.0.17 to 2.0.18
+* `c490401cd` chore(deps): bump org.apache.maven.plugins:maven-surefire-plugin
+* `1d94b6814` chore(deps): bump commons-codec:commons-codec from 1.20.0 to 1.22.0
+* `70db3d143` chore(rest): remove unused spring properties
+* `be2726522` chore(auth): align JWT keystore helper scripts
+* `e2914b5ec` chore(docker): sync docker with actual config
+* `ec56521b0` refactor(svm): simplify SVM delta sync config
+* `1a4c392b4` chore(ci): Added github step summary
+
+## sw360-20.1.0-rc-1
+This is the first release candidate for SW360 in the line of the next minor
+release version 20.1.0 of SW360. The candidate includes numerous features,
+corrections, and improvements over the previous release
+[20.0.0](https://github.com/eclipse-sw360/sw360/releases/tag/sw360-20.0.0)
+
+This release serves as a preview of the upcoming minor version 20.1.0 for
+testing and should not be used in production environments.
+
+Highlight of the changes includes:
+* **REST API Enhancements:** Added `PATCH /ecc/{releaseId}` with ECC status
+  filtering, file-based caching for the releases endpoint, and a project detail
+  tab pill-count endpoint with updated response structure.
+* **Export Improvements:** Extended project report export options with CSV,
+  JSON, and XML formats in addition to spreadsheet output.
+* **Security Hardening:** Added `@PreAuthorize` guards to license and
+  attachment admin endpoints, strengthened authentication/authorization paths,
+  sanitized attachment filenames to prevent path traversal, and hardened
+  CORS/CSP behavior including Swagger CSP fixes. This release also allows
+  disabling of basic auth and unifies Bearer token authentication across the
+  board.
+* **Performance Optimizations:** Removed an N+1 package query by release IDs,
+  improved LicenseInfo cache lookup from O(n) to O(1), and switched
+  license-type usage counting to an indexed CouchDB view.
+* **Keycloak Provider Packaging:** Consolidated provider packaging via shading,
+  reduced provider artifacts to 3 jars, lowered classpath conflicts, and
+  improved Keycloak startup time.
+* **Framework Upgrades:** Upgraded runtime and security baselines to Spring
+  Boot 4.x and Spring Security 7.x, and migrated tests from JUnit 4 to JUnit 5.
+* **Bug Fixes:** Resolved thread-safety issues in `ProjectDatabaseHandler` and
+  department import scheduling, fixed resource leaks across streams and Thrift
+  clients, and improved HTTP error mapping for 404/403/409 paths.
+* **Container & CI:** Added Sigstore/Cosign image signing in CD and published
+  JaCoCo coverage reports as CI artifacts.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> aaryan359 <aaryanmeena96@gmail.com>
+> Abhay349 <pandeyabhay967@gmail.com>
+> Aditya Vishe <adityavishe67@gmail.com>
+> afsahsyeda <afsah.syeda@siemens-healthineers.com>
+> Agastya Kataria <katariaa@tcd.ie>
+> Alex <alextanzhao22@gmail.com>
+> Aman-Cool <aman017102007@gmail.com>
+> amritkv <er.akverma8@gmail.com>
+> Bhawani Shanker Sharma <bhawanishanker2005@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> developharsh <harsh237hk@gmail.com>
+> Elbialy0 <mahmoudelbialy109@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> himanshu07gupta <himanshu29gupta0703@gmail.com>
+> Kareem74x <kareemmostafa74x@gmail.com>
+> Kaushlendra Pratap <kaushlendra-pratap.singh@siemens.com>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Mahmoud Abdulmawlaa <m.elbaadishy@gmail.com>
+> manhuu14 <umanhuu@gmail.com>
+> Nikesh Kumar <kumar.nikesh@siemens.com>
+> Priya Sharma <priyasharma1001a@gmail.com>
+> rudra-superrr <prabhuchopra@gmail.com>
+> Sandip Mandal <sandipsmmandal02@gmail.com>
+> Shivamrut <gshivamrut@gmail.com>
+> Suhyeon Park <ssantta999@gmail.com>
+> Sushant Kumar <sushant.kumar@siemens-healthineers.com>
+> Uddeshya <srivastavauddeshya98@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `a1468ca38` feat(security): unify Bearer auth
+* `8e2ff4f02` feat(security): make basic auth configurable
+* `c938d39a2` feat(UI): Add expand/collapse functionality for projects with sub-projects
+* `9fb25453d` feat(rest): unify authentication authorities
+* `c3f4c6762` feat(ci): upload JaCoCo reports to artifacts
+* `c8a7811c9` feat(rest): add PATCH /ecc/{releaseId} and eccStatus filter to GET /ecc
+* `552804a36` feat(release): catch and log exception silently
+* `3a02df85d` feat(Component): Added pagination and sorting  for release overview in components
+* `fe17994e3` feat(projects): get sorted groups
+* `fba763c5a` feat(project-pill): simplify code
+* `c8803e5b9` feat(project): enhance project detail tab counts with new response structure and tests
+* `c3f4576da` feat(project): add endpoint and tests for project detail tab pill counts
+* `c473c1db9` feat(cd): sign container images
+* `00a0e04f1` feat(cache): update default cache directory
+* `06a7fb602` feat(rest): add file-based API response cache for releases endpoint
+* `c6edadfe7` feat(export): add CSV, JSON, XML export formats for project reports
+* `b92b07274` feat(keycloak): update old README.md
+* `014c57440` feat(kc-tf): add helper script to migrate tokens
+* `3cfdb9590` feat(thrift): add build dependencies
+
+### Corrections
+* `2236df6c1` fix(csrf): enable and document CSRF
+* `7f7eb90c7` Fix(Rest): Added code to fix exactmatch search if name is case-insensitive
+* `3d7b9121e` fix(users): revert default behavior
+* `85bd7d11a` fix(rest): Added code to filter user based on givenname lastname emailid.
+* `5d3913d23` fix(docs): fix docker application template
+* `fc4e4045e` fix(rest): register JwtAuthenticationProvider
+* `eb694593a` fix(rest): allow /api root read for READ tokens
+* `bdfaa110f` fix(rest): handle broken pipe gracefully
+* `7b99a4d15` fix(backend): prevent thread blocking in scheduler
+* `22780de39` fix(backend): upgrade SVM client, add custom JKS
+* `57786ed2b` fix(user): catch Runtime error of unknown user
+* `bc8d31677` fix(ExportSpreadsheet): Fixed export spreadsheet in project with search results
+* `4eaf7ac4d` fix(changelog): fix timestamp format to show just the date
+* `0c953166e` fix(keycloak): gson dependency issue.
+* `5596befa2` fix(surefire): fix args and mockito jar path
+* `a19247a36` fix(test): remove System.out and System.err
+* `643094cac` fix(changelog): add sorting by change timestamp in changelog
+* `ded8aa233` fix(rest): use BadRequestClientException instead of RuntimeException
+* `98d5daddd` fix(rest): correct status code, improve error messages, add test
+* `2c1e30d09` fix(rest): return 500 instead of 200 on license update failure
+* `8a127bb4d` fix(rest): Preserve 404/403 and others when mapping controller exceptions
+* `7f1347d59` fix(rest): extract PasswordEncoder config to fix circular dependency
+* `7029ef920` fix(rest): filter license obligations by project release main...
+* `dfbd81a4a` fix(Rest) : Backend API for All Obligation Tab
+* `0ff1aa515` fix(UserHandler): fix compiler symbol not found
+* `3568c988e` fix: Prevent externalId overwrite in getByEmailOrExternalId
+* `5c90f3a57` fix(users): :Update differing externalId in getByEmailOrExternalId
+* `75e5aaf89` fix(http-support): implement native file request body support
+* `3b812a63f` fix(http-support): correct native request builder URI/body/header semantics
+* `3a4ce2737` fix(security): add @PreAuthorize ADMIN check to AttachmentCleanUpController
+* `ec5eba472` fix(base): remove duplicate @PreAuthorize annotation from ScheduleAdminController
+* `6b223609f` fix(rest): Add missing @PreAuthorize annotations on license endpoints
+* `813381a34` fix(css): fix code scanning alert no. 96
+* `ebd497894` fix(css): fix code scanning alert no. 95
+* `cf2f6a365` fix(rest): prevent empty email backend queries
+* `ac6add4c9` fix(rest): migrate custom serializers to Jackson 3
+* `64e4a15d5` fix(rest): update CSP configuration for swagger
+* `e44954bf2` fix(LicenseInfo): use SPDX ID for obligation-to-license mapping
+* `41fa5997f` fix(rest): harden headers and fix CORS origin
+* `787b5aa7f` fix(rest): add detailed exception handling for patchClearingRequest
+* `f7ab7bf36` fix(vul): hande not found exceptions for loading releases/candidates while fetching vulnerabilities
+* `1701644b9` fix(backend): fix thread safety in ProjectDatabaseHandler
+* `d466912dd` fix(licenseinfo): accumulate all obligations per license in DOCX report
+* `687ca811c` fix(db): csv-reader resource leak in UserDatabaseHandler
+* `4a84ee580` fix(vmcomponents): resource leak in svmutils
+* `9f3ab07b8` fix(rest): avoid NPE on JWKS API-token auth when user or OIDC client metadata is missing
+* `068c3c667` fix(docker): use tag name and sha for dependabot
+* `806f15ee6` fix(rest): restricting modification of fields.
+* `d2329d341` fix(fossology): revert clearing state on upload/scan trigger failure
+* `048faa2d9` fix(backend): add SLF4J provider to backend WARs
+* `f23134295` fix: corrected the pagination counts for vendor search
+* `76a1bf898` fix(thrift): add sudo in thrift docker build stage
+* `371ac33fc` fix(rest): validate department log date as yyyy-MM-dd before Thrift call
+* `102c10692` fix(release): check set for NPE
+* `a947e0228` fix(rest): resolve Authorization header lookup via servlet getHeader
+* `2020b2d44` fix(rest): sanitize filename in addAttachment to prevent path traversal
+* `f34128ed6` fix(release-service): ensure proper lock handling in Fossology process
+* `1c79fa170` fix(http-support): make NewHttpClientImpl.execute non-blocking
+* `1835e799c` fix(licenseinfo): Fix project clearing report issues
+* `b57ec9665` fix(user): prevent permanent import lockout on unchecked exceptions...
+* `46699bfc8` fix(projects): fix NPE and Thrift client leak in attachment usage inheritance
+* `b33414e4a` fix(jwt): remove nbf claim which is optional in kc
+* `45c5c6265` fix(project): reduce memory consumption by using optimized CouchDB view for project cache
+* `eb1c46bdd` fix(schedule): follow deploy.name pattern
+* `4fb3f28e7` fix(rest): fix NPEs and missing security annotation in ProjectController
+* `c2c08674d` fix(keycloak): add missing sl4j deps
+* `6f2c37c5c` fix(license): Improve exception handling
+* `e3f484f31` fix(attachment): Restrict access to security user.
+* `f381c05ce` fix(sbom): exclude component main licenses from release license aggregation
+* `44e7eeae6` fix(rest): prevent IndexOutOfBoundsException for out-of-range pagination
+* `f6b5154d4` fix(logging): correct spelling of occured to occurred in log messages
+* `480635f01` fix(component): close FileInputStream in uploadAttachment
+* `d32f3e0d8` fix(rest): handle DUPLICATE status in updateProjectForAttachment
+* `d04bf0678` fix(rest): return 409 Conflict on duplicate name/version for release,...
+* `f712b5b60` fix(cyclonedx): count validation failures in compImportErrorCount
+* `4be5409fb` fix: report errors instead of unconditional SUCCESS in CycloneDX SBOM import
+* `b65b700a4` fix(sorting): use natural version ordering instead of lexicographic
+* `4c5e0aceb` fix(http-support): return null for missing native response headers
+* `e5208792e` fix(cyclonedx): use full createRelease overload to preserve metadata
+* `98c91155d` fix(rest): avoid NPE in obligation Boolean filter
+* `931b19f12` fix(component): fix unreachable forceDelete logic in deleteComponent
+* `810532bb1` fix(REST): Remove extra brackets from embedded attachment response
+* `788bcb41c` fix(clearingrequest): surface CR cleanup failure in response body
+* `e56fb73b3` fix(rest): delete clearing request only after project deletion succeeds
+* `db12fd524` fix(rest):  Fixed typo in Sw360AuthorizationServerConfiguration
+* `dd5bfeb8f` fix(report): fix the file traversal path vulnerability.
+* `0aba60c36` fix(compile): fix annotation processing for lombok
+* `8c5d1190e` fix(test): align JUnit 5 and resolve WireMock
+* `3d554fd96` fix(junit): upgrade to JUnit5
+* `86e578885` fix(Rest) : Acknowledgement missing from ReadmeOSS for license with same name
+* `f8e63854d` fix(keycloak-tf): fix client_id for null
+
+### Infrastructure
+* `5211c4beb` chore(codeowners): add @rudra-superrr as CODEOWNERS
+* `6f163c6d2` chore(deps): bump org.cyclonedx:cyclonedx-core-java
+* `615c8bf1c` chore(deps): bump keycloak/keycloak from `26ae264` to `dea2640`
+* `deac05e7d` chore(deps): bump com.puppycrawl.tools:checkstyle from 10.21.4 to 13.4.2
+* `fcb56e4a3` chore(deps): bump sigstore/cosign-installer from 4.1.1 to 4.1.2
+* `9a3eaf3de` chore(deps): bump step-security/harden-runner from 2.19.0 to 2.19.1
+* `31d82a4d1` chore(deps): bump github/codeql-action from 4.35.2 to 4.35.4
+* `1135f0fa6` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `acc1b9576` chore(deps): bump poi.version from 5.5.0 to 5.5.1
+* `92bcc6777` chore(deps): bump org.apache.maven.plugins:maven-shade-plugin
+* `37492c950` chore(deps): bump com.ibm.cloud:cloudant from 0.10.16 to 0.10.17
+* `584862469` chore(deps): bump com.jayway.jsonpath:json-path from 2.10.0 to 3.0.0
+* `88604afe5` chore(deps): bump jackson.version from 2.21.1 to 2.21.3
+* `532965928` chore(deps): bump webiny/action-conventional-commits from 1.3.1 to 1.4.2
+* `ccd3dbf24` chore(deps): bump com.tngtech.archunit:archunit-junit5
+* `a21a4e52b` chore(deps): bump spring-boot.version from 4.0.5 to 4.0.6
+* `94f80ea33` chore(rest): add visible-for-testing comment and note @Value limitation in test
+* `357f16d4a` test(rest): add service-level unit test and fix controller test for license update failure
+* `898bf57aa` chore(rest): avoid extra object by injecting shared PasswordEncoder in auth server
+* `4050c1e3a` chore(rest): removed the unused logger in ResourceServerConfiguration
+* `a6daf8b6c` test(licenseinfo): add edge-case test coverage for CLIParser
+* `dcf63aae5` chore(resource): implement review comments
+* `51043fe4d` chore(deps): bump springframework.version from 7.0.6 to 7.0.7
+* `3c8a7daed` chore(deps): bump httpcore5.version from 5.3.6 to 5.4.2
+* `2746ebbd4` chore(deps): bump org.springframework.security:spring-security-core
+* `8d93886c9` chore(deps): bump step-security/harden-runner from 2.18.0 to 2.19.0
+* `8f38fe218` chore(deps): bump org.apache.maven.plugins:maven-compiler-plugin
+* `316d30b6a` chore(deps): bump org.apache.maven.plugins:maven-source-plugin
+* `f4c812213` chore(deps): bump keycloak/keycloak from 26.6.0 to 26.6.1
+* `d2aee4458` chore(deps): bump docker/build-push-action from 7.0.0 to 7.1.0
+* `b14bd6d56` chore(deps): bump actions/cache from 5.0.4 to 5.0.5
+* `17745d429` chore(deps): bump github/codeql-action from 4.35.1 to 4.35.2
+* `bac88c4ff` chore(deps): bump keycloak.version from 26.5.6 to 26.6.1
+* `2cb98abb6` chore(deps): bump actions/upload-artifact from 7.0.0 to 7.0.1
+* `09bf98f75` chore(deps): bump step-security/harden-runner from 2.17.0 to 2.18.0
+* `4f53c8670` chore(deps): bump springdoc-openapi-stater-common.version
+* `0d7c9e141` test(rest): enhance ArchUnit tests with dependency governance and resource management rules
+* `060b574ef` refactor(jackson): reuse mixin registrations
+* `5b3ae5e91` chore(deps): upgrade to Spring Boot 4.x and Spring Security 7.x
+* `d3050e8bb` test(rest): add ArchUnit tests for SW360 REST architecture
+* `cec129ade` chore(deps): bump keycloak/keycloak from `45ae201` to `b0e5dbc`
+* `d5a1f5b2b` chore(deps): bump org.apache.logging.log4j:log4j-core
+* `4efe3a84f` chore(deps): bump step-security/harden-runner from 2.16.1 to 2.17.0
+* `86d138560` chore(deps): bump org.apache.maven.plugins:maven-dependency-plugin
+* `d2b279120` refactor(resource): refactor resource-server
+* `5ad1329b8` chore(fossology): simplify FossologyHandler
+* `acfb91a7b` test(fossology): add unit tests for FossologyHandler to validate preconditions
+* `4584a5fbe` perf(licenseinfo): fix O(n) cache lookup to use O(1) direct access
+* `9ed7f04c0` perf(packages): eliminate N+1 query problem in getPackagesByReleaseIds
+* `f9d5a2189` test(licenses): add test coverage for LicenseHandler methods
+* `7705870b0` chore(docs/swagger): add OpenAPI annotations for ComponentController
+* `ceec3d08f` chore(keycloak): common code to keycloak-common
+* `276506c8d` chore(keycloak): shared shaded common library
+* `e0595383b` chore(keycloak): prevent dependency split
+* `6659cf96a` test(sbom): add tests to prevent component license leakage
+* `956ee7e09` perf(license): optimize getLicenseTypeUsageCount to use database view...
+* `6d20f2d7d` refactor: replace printStackTrace with logger
+* `4793d5509` refactor(backend) : extract persistence logic in LicenseDatabaseHandler
+* `5c018017d` refactor(wsimport): improve duplicate releaseId logging in ThriftUploader
+* `8a31ff682` chore(deps): bump spring-boot from 3.5.3 to 3.5.12
+* `52fd56e17` test(warning): suppress repetitive log msgs
+* `536347327` chore(osgi): remove unused osgi code and flags
+* `f50b3c091` chore(pom): housekeeping moving to parent
+* `2bf538f34` chore(okhttp): update to 5.3.2
+* `a4af101fa` chore(deps): bump com.squareup.okhttp3:okhttp from 4.12.0 to 5.0.0
+* `f20c0a97a` chore(deps): bump https://github.com/gitleaks/gitleaks
+* `1ec5e2185` chore(deps): bump org.codehaus.plexus:plexus-utils from 4.0.2 to 4.0.3
+* `93b1f9484` chore(deps): bump step-security/harden-runner from 2.16.0 to 2.16.1
+* `4cb4678ce` chore(deps): bump github/codeql-action from 4.33.0 to 4.35.1
+* `6e41dbaf4` chore(deps): bump docker/login-action from 4.0.0 to 4.1.0
+* `6f3a13d92` chore(deps): update version comment
+* `5a84c16b4` chore(deps): bump keycloak/keycloak from `8d44614` to `45ae201`
+* `955875e50` chore(tf): make idp alias as variable
+* `0c1bacac0` chore(deps): bump org.keycloak:keycloak-model-jpa from 26.5.2 to 26.5.6
+
+## sw360-20.0.0
+We are proud to announce the release of SW360 version 20.0.0. This major release
+brings significant architectural changes, security enhancements, and performance
+improvements over the 19.2.x series. The most notable update in this version is
+the removal of the Liferay UI; the SW360 backend is now fully decoupled, and
+users must set up the new Next.js-based frontend from the
+[eclipse-sw360/sw360-frontend](https://github.com/eclipse-sw360/sw360-frontend)
+repository.
+
+Highlight of the changes in this version includes:
+* **Frontend Decoupling:** Complete removal of the legacy Liferay UI,
+  introducing a standalone backend with expanded endpoints to support the new
+  Next.js frontend.
+* **Security Improvements:** Addressed multiple vulnerabilities including XXE
+  and path traversal, added XSS protection headers, and reinforced endpoint
+  security.
+* **API & Documentation:** Introduced extensive OpenAPI documentation and
+  implemented robust pagination under the hood.
+* **User & Identity Management:** Enhanced Keycloak user synchronization with
+  CouchDB, and added batch processing.
+* **Performance & Stability:** Implemented database-side pagination, optimized
+  memory usage, and improved indexing and search speeds.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Aashish Jha <aashishjha1107@gmail.com>
+> Abhay349 <pandeyabhay967@gmail.com>
+> Achal Jhawar <35405812+achaljhawar@users.noreply.github.com>
+> Aditya Vishe <adityavishe67@gmail.com>
+> afsahsyeda <afsah.syeda@siemens-healthineers.com>
+> airajena <airajena0@gmail.com>
+> Akshit Joshi <akshit.joshi@siemens-healthineers.com>
+> Alex <alextanzhao22@gmail.com>
+> Ali <aligadallah14@gmail.com>
+> Aman-Cool <aman017102007@gmail.com>
+> amritkv <er.akverma8@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> drockparashar <pranshu007parashar@gmail.com>
+> Elbialy0 <mahmoudelbialy109@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> harshdeveloper21 <harsh237hk@gmail.com>
+> harshitg927 <121371860+harshitg927@users.noreply.github.com>
+> Helio Chissini de Castro <dev@heliocastro.info>
+> himanshu07gupta <himanshu29gupta0703@gmail.com>
+> Himanshu A Garode <himanshu2006garode@gmail.com>
+> Hritik Raj <hritik23154049@akgec.ac.in>
+> Kareem74x <kareemmostafa74x@gmail.com>
+> Kaushlendra Pratap <kaushlendra-pratap.singh@siemens.com>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Mahmoud Abdulmawlaa <m.elbaadishy@gmail.com>
+> Matthew Pappas <matteopappas@gmail.com>
+> Md Ali <mdali620563@gmail.com>
+> Mohamed Hanafy <mohamed.hanfy.dev@outlook.com>
+> naitikk31 <DARJINAITIK7@GMAIL.COM>
+> Nikesh Kumar <kumar.nikesh@siemens.com>
+> pranayh24 <pranayheda24@gmail.com>
+> Prathmesh <dhoneprathmesh72@gmail.com>
+> Priya Sharma <priyasharma1001a@gmail.com>
+> Rajnish Kumar <22it3036@rgipt.ac.in>
+> RITANKAR SAHA <ritankar.saha786@gmail.com>
+> rohit <brohit11544@gmail.com>
+> Rudra Chopra <prabhuchopra@gmail.com>
+> saiteja-in <vurukondasaiteja13@gmail.com>
+> Sameed Ahmad <sameed.ahmad@siemens-healthineers.com>
+> Sandip Mandal <sandipsmmandal02@gmail.com>
+> Sathwik Hejamady Bhat <sathwikhbhat@gmail.com>
+> sathwik-y <sathwik.yellapragada@gmail.com>
+> Shivamrut <gshivamrut@gmail.com>
+> Suhas2109 <suhas.n@siemens-healthineers.com>
+> suvrat1629 <suvrat1629@gmail.com>
+> Taanvi Khevaria <149520227+taanvi2205@users.noreply.github.com>
+> tanwar-div <tanwarkheritalwana@gmail.com>
+> VanKhanhAnny <arianne.dangvankhanh@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `7d37bb9b8` feat(version): update /version endpoint
+
+### Corrections
+* `ba842fcaa` fix(UI): The Linked Packages is not appearing in the project
+  details page, even though packages are linked to the project.
+* `29af0f8fb` fix(Release): merge release issue fixed.
+
+### Infrastructure
+* `924ca4397` chore(lang): remove old README_LANG.md
+
+## sw360-20.0.0-rc-2
+This is the second release candidate for SW360 in the line of next major release
+version 20.0.0 of SW360. The candidate includes numerous features, corrections,
+and improvements over the previous release
+[20.0.0-rc-1](https://github.com/eclipse-sw360/sw360/releases/tag/sw360-20.0.0-rc-1)
+
+This release serves as a preview of the upcoming major version 20.0.0 for
+testing and should not be used in production environments.
+
+Highlight of the changes includes:
+* **Security Enhancements:** Addressed XXE vulnerabilities in parsers, fixed
+  header injection issues, added XSS protection headers, and reinforced endpoint security.
+* **API & Documentation:** Expanded OpenAPI documentation across multiple core controllers.
+* **Performance & Stability:** Optimize memory usage with static client reuse.
+* **Infrastructure:** Updated container infrastructure for v20 and improve CI checks.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Abhay349 <pandeyabhay967@gmail.com>
+> ADITYA-CODE-SOURCE <adityavishe67@gmail.com>
+> afsahsyeda <afsah.syeda@siemens-healthineers.com>
+> Alex <alextanzhao22@gmail.com>
+> Ali <aligadallah14@gmail.com>
+> Aman-Cool <aman017102007@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> Elbialy0 <mahmoudelbialy109@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> harshdeveloper21 <harsh237hk@gmail.com>
+> himanshu07gupta <himanshu29gupta0703@gmail.com>
+> Kareem74x <kareemmostafa74x@gmail.com>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Mahmoud Abdulmawlaa <m.elbaadishy@gmail.com>
+> Matthew Pappas <matteopappas@gmail.com>
+> Nikesh Kumar <kumar.nikesh@siemens.com>
+> Prathmesh <dhoneprathmesh72@gmail.com>
+> Priya Sharma <priyasharma1001a@gmail.com>
+> rudra-superrr <prabhuchopra@gmail.com>
+> saiteja-in <vurukondasaiteja13@gmail.com>
+> Sandip Mandal <sandipsmmandal02@gmail.com>
+> Shivamrut <gshivamrut@gmail.com>
+> VanKhanhAnny <arianne.dangvankhanh@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `a3b728052` feat(attachments): add test for attachment service
+* `064862f46` feat(agents): add AGENTS.md ref existing doc
+* `857e32f78` feat(vmprocess): add shutdown hook to close thread
+* `3ad882f4a` feat(container): add steps for keycloak image
+* `5ff8538df` feat(container): update container for version 20
+* `fba2f20ff` feat(Project): Handle case sensitive for export spreadsheet
+* `2982f9d65` feat(checkstyle): add Checkstyle configuration
+* `187b7b068` feat(http-support): implement file upload method in NewRequestBodyBuilderImpl
+* `18c916a29` feat(AttachmentUsages): Save existing attachment usages of sub-project at parent project level
+* `e1180015e` feat(Email): Enhancement of e-mail notifications for updation of project
+* `31d4b31f1` feat(licenseInfo): Normalise license text and optimise performance
+
+### Corrections
+* `3597da377` fix(clearingteam): Add clearing team to project api responses
+* `8702d8c43` fix(docker): correct runtime startup configuration Refs: #3945 Signed-off-by: VanKhanhAnny <arianne.dangvankhanh@gmail.com>
+* `8ac24b639` fix(rest): close streams and temp files in attachment bundle download
+* `021dff813` fix(rest): prevent NPE in vulnerability tracking sorting and clean error message
+* `bd3a16194` fix(report): respect withSubProject semantics for licenseInfo
+* `7e8dd3413` fix: XXE vulnerability in SPDX parser
+* `09cecb788` fix(license): include timestamp in backup filename
+* `9a7acdb57` fix(nouveau): add ConflictException retry to putNouveauDesignDocument
+* `ada574770` fix(datahandler): add ConflictException retry to putDesignDocument
+* `342df4f9c` fix(attachmentUsages): fix null owner corruption and infinite recursion in sub-project inheritance
+* `f7786d1c2` fix(attachment): urlencode filename to get
+* `d3ed1ce48` fix(project): ClearingTeam is a string, not user
+* `1acec288d` fix(Docker): add missing runtime dependency
+* `ecbac4f45` fix(release): fix test of attach field in merge
+* `bdac2d5f7` fix(rest): X-XSS-Protection Header
+* `fa0e2d515` fix(clearingrequest): replace per-call THttpClient with shared ThriftClients instance
+* `709dfaeac` fix(rest) : Compilation error fix from different PRs
+* `2b2b0c75c` fix(components): correct clearing state priority in autosetReleaseClearingState
+* `61933e7d2` fix(rest): update clearing request after editing in request tab
+* `5c11a3834` fix(security): Add @PreAuthorize annotation to AttachmentController
+* `bafbd42ac` fix(security): Add @PreAuthorize to ScheduleAdminController
+* `f874c08c2` fix(project): add null checks for both project and actual in updateProject to prevent NPE
+* `b9a63e0fe` fix(vmcomponents): handle NPE and ClassCastException in getVulIdsPerComponentVmId (#3780)
+* `e05569f31` fix(rest): Add null check for getReleaseIdToUsage() ...
+* `ffa9aad1f` fix(rest): return 400 for missing required request parameters instead of 500
+* `96f1a5963` fix(SvmConnector): handle missing keystore
+* `251a50819` fix(backend): close FileInputStream in SvmConnector to prevent resource leak
+* `05b632d05` fix(importCDX):do not alter unknown domain VCS and revert old changes
+* `0c3a7c29d` fix(rest): Unauthorrrized access to backend configurations.
+* `1876d51e3` fix(index): check if vcs exists
+* `61fe5227e` fix(view): check release.eccInformation not null
+* `d8acc1273` Fix/jwt claim validation (#3753)
+* `b33e1be65` Fix CORS filter activation and allowed methods (#3735)
+* `c7534cf0e` fix(rest): Add logic to delete open clearing requests from request tab, when the project has deleted.
+* `34d133488` fix(security): replace newInstance() with newDefaultInstance()
+* `738366d2d` fix(security): fix XXE vulnerability in XML parsing
+* `79ce6f23b` fix: prevent NoSuchElementException when ...
+* `1ed5584d4` fix(licenseinfo): check Optional.isPresent() before get() in DocxGenerator
+* `3b0c53f2a` fix(CR): header injection vulnerability.
+* `de763bb7c` fix: Prevent NullPointerException in Sw360ProjectService
+* `8416467ef` fix(rest): users receive email notification to download project reports for project-only/with-linked-releases
+* `5b8bca91a` fix(RepositoryUrl): update default value VCS_HOST
+* `9720ece9e` fix(config): update VCS_HOSTS to use JSON array format for config consistency
+* `d8e8e7502` fix: Exception Swallowing in UserRepository
+
+### Infrastructure
+* `912b15d27` refactor(licenses): replace String concatenation with StringBuilder
+* `b990ed902` docs(api): add Swagger @ApiResponse status code documentation for additional controllers
+* `842d5ee76` chore(docs/swagger): add @ApiResponses annotations for ...
+* `ba7d5a24d` chore(docs/swagger): add OpenAPI annotations for ImportExportController, LicenseController and UserController
+* `3739ad2f4` chore(core): remove redundant String.format
+* `76caf9ae4` chore(docs/swagger): add OpenAPI annotations for ReleaseController
+* `414a2f62c` chore(docs/swagger): add OpenAPI annotations for ProjectController
+* `aeae97f81` chore(deps): bump org.springframework:spring-webmvc
+* `8979d0ec0` chore(deps): bump actions/cache from 5.0.3 to 5.0.4
+* `b149d3a08` chore(deps): bump github/codeql-action from 4.32.6 to 4.33.0
+* `ebe9dcc80` chore(deps): bump keycloak/keycloak from `a7b0cb7` to `8d44614`
+* `e2ab8ca4d` perf(cloudant): use static client with retries
+* `805205f3e` perf(gson): reuse Gson objects
+* `eec790b27` chore(deps): bump step-security/harden-runner from 2.15.1 to 2.16.0
+* `6904e658b` chore(deps): bump https://github.com/gitleaks/gitleaks
+* `93cb74714` perf(licenseinfo): remove redundant stream collection in obligation mapping
+* `3584fc7f2` chore(deps): bump https://github.com/pre-commit/pre-commit-hooks
+* `847926002` chore(deps): bump https://github.com/compilerla/conventional-pre-commit
+* `58a065cac` chore(deps): bump actions/dependency-review-action from 4.8.3 to 4.9.0
+* `f904ba4f2` chore(deps): bump https://github.com/pylint-dev/pylint
+* `5efa1d134` chore(deps): bump docker/setup-qemu-action from 3.7.0 to 4.0.0
+* `52c9d90b5` chore(deps): bump https://github.com/gitleaks/gitleaks
+* `70ffa370b` chore(deps): bump docker/metadata-action from 5.10.0 to 6.0.0
+* `a08389fc8` chore(workflow): update workflow for containers
+* `e4ec0c915` chore(config): remove unused config
+* `6a35ca228` chore(lint): fix some style linter errors
+* `26a083764` docs: update README for CouchDB password setup
+* `e13be358d` chore(deps): bump docker/login-action from 3.7.0 to 4.0.0
+* `9dd307df6` chore(deps): bump step-security/harden-runner from 2.15.0 to 2.15.1
+* `0a8c4bab5` chore(deps): bump docker/setup-buildx-action from 3.12.0 to 4.0.0
+* `8cd0f096b` chore(deps): bump docker/build-push-action from 6.19.2 to 7.0.0
+* `1fd521312` chore(deps): bump github/codeql-action from 4.32.4 to 4.32.6
+* `4df420199` chore(deps): bump com.fasterxml.jackson.core:jackson-core
+* `b35f52c48` chore(deps): bump actions/upload-artifact from 6.0.0 to 7.0.0
+* `043db8adb` chore(deps): bump step-security/harden-runner from 2.14.2 to 2.15.0
+* `4955cc43e` chore(deps): bump actions/dependency-review-action from 4.8.2 to 4.8.3
+* `205f8d670` chore(deps): bump github/codeql-action from 4.32.3 to 4.32.4
+* `d444ed5bf` ci: cancel stale PR workflow runs using concurrency
+
 ## sw360-20.0.0-rc-1
 This is a first release candidate for SW360 in the line of next major release
 version 20.0.0 of SW360. The candidate includes numerous features, corrections,

@@ -18,6 +18,7 @@ frontend_base_url = "http://localhost:3000"
 tenant              = "azure-ad-tenant"
 azure_client_id     = "azure-idp-client-id"
 azure_client_secret = "azure-idp-client-secret"
+azure_idp_alias     = "azure-sw360"
 # Uncomment following to setup SMTP in KeyCloak for sending emails
 # smtp_from     = "admin@sw360.org"
 # smtp_username = "my-smtp-user"

@@ -43,7 +43,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentServic
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.EntityModel;
@@ -74,11 +73,8 @@ public class Sw360AttachmentService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
 
-    @Value("${sw360.couchdb-url:http://localhost:5984}")
-    private String couchdbUrl;
-
     @NonNull
-    private final RestControllerHelper restControllerHelper;
+    private final RestControllerHelper<Attachment> restControllerHelper;
 
     private static final Logger log = LogManager.getLogger(Sw360AttachmentService.class);
 
@@ -88,7 +84,7 @@ public class Sw360AttachmentService {
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
 
-    public List<AttachmentUsage> getAttachemntUsages(String projectId) throws TException {
+    public List<AttachmentUsage> getAttachmentUsages(String projectId) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         return attachmentClient.getUsedAttachments(Source.projectId(projectId),
                 UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
@@ -100,7 +96,7 @@ public class Sw360AttachmentService {
         if (attachments.isEmpty()) {
             throw new ResourceNotFoundException("Attachment not found.");
         }
-        return createAttachmentInfo(attachmentClient, attachments.get(0));
+        return createAttachmentInfo(attachmentClient, attachments.getFirst());
     }
 
     public List<AttachmentUsage> getAttachmentUseById(String id) throws TException {
@@ -166,7 +162,7 @@ public class Sw360AttachmentService {
             throws TException {
         AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
         attachmentInfo.setOwner(attachmentClient
-                .getAttachmentOwnersByIds(Collections.singleton(attachment.getAttachmentContentId())).get(0));
+                .getAttachmentOwnersByIds(Collections.singleton(attachment.getAttachmentContentId())).getFirst());
         return attachmentInfo;
     }
 
@@ -200,28 +196,44 @@ public class Sw360AttachmentService {
             return;
         }
         List<File> files = new ArrayList<>();
-        for (Attachment attachment : attachments) {
-            AttachmentContent attachmentContent = getAttachmentContent(attachment.getAttachmentContentId());
-            InputStream inputStream = getStreamToAttachments(Collections.singleton(attachmentContent), user, context);
-            String fileType = getFileType(attachmentContent.getFilename());
-            File sourceFile = saveAsTempFile(inputStream, attachment.getAttachmentContentId(), fileType);
-            File file = renameFile(sourceFile, attachment.getFilename());
-            files.add(file);
-            FileUtils.delete(sourceFile);
+        File sourceFile = null;
+        try {
+            for (Attachment attachment : attachments) {
+                AttachmentContent attachmentContent = getAttachmentContent(attachment.getAttachmentContentId());
+                try (InputStream inputStream = getStreamToAttachments(Collections.singleton(attachmentContent), user, context)) {
+                    String fileType = getFileType(attachmentContent.getFilename());
+                    sourceFile = saveAsTempFile(inputStream, attachment.getAttachmentContentId(), fileType);
+                    File file = renameFile(sourceFile, attachment.getFilename());
+                    files.add(file);
+                } finally {
+                    if (sourceFile != null) {
+                        FileUtils.delete(sourceFile);
+                    }
+                }
+            }
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
+            try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                for (File file : files) {
+                    // Sanitize filename for ZIP entry to prevent path traversal
+                    String sanitizedName = CommonUtils.sanitizeFilename(file.getName());
+                    zipOutputStream.putNextEntry(new ZipEntry(sanitizedName));
+                    try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                        IOUtils.copy(fileInputStream, zipOutputStream);
+                    } finally {
+                        zipOutputStream.closeEntry();
+                        FileUtils.deleteQuietly(file);
+                    }
+                }
+            }
+        } finally {
+            for (File file : files) {
+                if (file.exists()) {
+                    FileUtils.deleteQuietly(file);
+                }
+            }
         }
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
-        ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());
-        for (File file : files) {
-            // Sanitize filename for ZIP entry to prevent path traversal
-            String sanitizedName = CommonUtils.sanitizeFilename(file.getName());
-            zipOutputStream.putNextEntry(new ZipEntry(sanitizedName));
-            FileInputStream fileInputStream = new FileInputStream(file);
-            IOUtils.copy(fileInputStream, zipOutputStream);
-            fileInputStream.close();
-            zipOutputStream.closeEntry();
-        }
-        zipOutputStream.close();
+
     }
 
     public <T> InputStream getStreamToAttachments(Set<AttachmentContent> attachments, User sw360User, T context) throws IOException, TException {
@@ -275,8 +287,9 @@ public class Sw360AttachmentService {
 
     public Attachment addAttachment(MultipartFile file, User sw360User) throws IOException, TException {
         String fileName = file.getOriginalFilename();
+        String sanitizedFileName = CommonUtils.sanitizeFilename(fileName);
         String contentType = file.getContentType();
-        final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
+        final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
         final AttachmentConnector attachmentConnector = getConnector();
         Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
@@ -471,19 +484,13 @@ public class Sw360AttachmentService {
 
     private  Set<ProjectUsage> getProjectAttachmentUsages(List<AttachmentUsage> attachmentUsages, User user) {
         Set<ProjectUsage> projectUsages = new HashSet<>();
-        attachmentUsages.stream().forEach(attachmentUsage -> {
+        attachmentUsages.forEach(attachmentUsage -> {
             try {
                 Project project = getThriftProjectClient().getProjectById(attachmentUsage.getUsedBy().getProjectId(), user);
 
-                StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.append(project.getName());
-                stringBuilder.append("(");
-                stringBuilder.append(project.getVersion());
-                stringBuilder.append(")");
-
                 ProjectUsage projectUsage = new ProjectUsage();
                 projectUsage.setProjectId(attachmentUsage.getUsedBy().getProjectId());
-                projectUsage.setProjectName(stringBuilder.toString());
+                projectUsage.setProjectName(project.getName() + "(" + project.getVersion() + ")");
 
                 projectUsages.add(projectUsage);
             } catch (TException e) {
@@ -584,6 +591,38 @@ public class Sw360AttachmentService {
             attachment.unsetCheckedTeam();
             attachment.setCheckedComment("");
             attachment.unsetCheckedOn();
+        }
+    }
+
+    /**
+     * Preserves immutable attachment fields (createdBy, createdTeam, createdOn)
+     * from stored attachments. For existing attachments, these fields are restored
+     * from the stored version. For new attachments, they are set from the current user.
+     *
+     * @param incomingAttachments the attachments from the request body
+     * @param storedAttachments   the attachments currently stored in the database
+     * @param user                the current user (used for new attachments)
+     */
+    public void preserveImmutableAttachmentFields(Set<Attachment> incomingAttachments,
+            Set<Attachment> storedAttachments, User user) {
+        if (incomingAttachments == null || incomingAttachments.isEmpty()) {
+            return;
+        }
+        Map<String, Attachment> storedMap = new HashMap<>();
+        if (storedAttachments != null) {
+            storedAttachments.forEach(att -> storedMap.put(att.getAttachmentContentId(), att));
+        }
+        for (Attachment incoming : incomingAttachments) {
+            Attachment stored = storedMap.get(incoming.getAttachmentContentId());
+            if (stored != null) {
+                incoming.setCreatedBy(stored.getCreatedBy());
+                incoming.setCreatedTeam(stored.getCreatedTeam());
+                incoming.setCreatedOn(stored.getCreatedOn());
+            } else {
+                incoming.setCreatedBy(user.getEmail());
+                incoming.setCreatedTeam(user.getDepartment());
+                incoming.setCreatedOn(SW360Utils.getCreatedOn());
+            }
         }
     }
 

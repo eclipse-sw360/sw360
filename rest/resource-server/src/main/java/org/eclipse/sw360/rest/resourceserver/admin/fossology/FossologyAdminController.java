@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.StringToClassMapItem;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -33,6 +34,8 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,6 +66,7 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
     Sw360FossologyAdminServices sw360FossologyAdminServices;
 
     @Override
+    @PreAuthorize("hasAuthority('READ')")
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(FossologyAdminController.class).slash("api" + FOSSOLOGY_URL).withRel("fossology"));
         return resource;
@@ -73,6 +77,11 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Save the FOSSology service configuration.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "FOSSology configuration saved." ),
+            @ApiResponse(responseCode = "400", description = "Invalid FOSSology configuration."),
+            @ApiResponse(responseCode = "500", description = "FOSSology configuration save failed.")
+    })
     @PostMapping(value = FOSSOLOGY_URL + "/saveConfig", consumes  = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> saveConfigration(
             @Parameter(description = "Request body containing the configuration parameters. The parameters are:\n" +
@@ -116,6 +125,10 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             throw new BadRequestClientException(e.getWhy(), e);
         } catch (BadRequestClientException e) {
             throw e;
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -127,6 +140,9 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             description = "Make a test call and check the FOSSology server connection.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "FOSSology server connection successful.")
+    })
     @GetMapping(value = FOSSOLOGY_URL + "/reServerConnection")
     public ResponseEntity<?> checkServerConnection() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();

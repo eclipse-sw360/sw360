@@ -36,6 +36,7 @@ public class OAuthClientEntity implements Serializable {
     private Integer accessTokenValiditySeconds;
     private Integer refreshTokenValiditySeconds;
     private Set<String> autoApproveScopes;
+    private String ownerEmail;
 
     @JsonProperty("_id")
     public void setId(String id) {
@@ -181,6 +182,20 @@ public class OAuthClientEntity implements Serializable {
         this.autoApproveScopes = autoApproveScopes;
     }
 
+    /**
+     * Email address of the SW360 user this client acts on behalf of when
+     * {@code client_credentials} tokens are minted.
+     */
+    @JsonProperty("owner_email")
+    public String getOwnerEmail() {
+        return ownerEmail;
+    }
+
+    @JsonProperty("owner_email")
+    public void setOwnerEmail(String ownerEmail) {
+        this.ownerEmail = ownerEmail;
+    }
+
 
     public boolean isSecretRequired() {
         return this.secretRequired;
@@ -206,6 +221,7 @@ public class OAuthClientEntity implements Serializable {
                 ", accessTokenValiditySeconds=" + accessTokenValiditySeconds +
                 ", refreshTokenValiditySeconds=" + refreshTokenValiditySeconds +
                 ", autoApproveScopes=" + autoApproveScopes +
+                ", ownerEmail='" + ownerEmail + '\'' +
                 '}';
     }
 }

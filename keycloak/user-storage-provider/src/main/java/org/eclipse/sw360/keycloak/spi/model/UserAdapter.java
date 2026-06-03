@@ -83,7 +83,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     @Override
     public void setAttribute(String name, List<String> values) {
         if (name.equals(DEPARTMENT)) {
-            entity.setDepartment(values.get(0));
+            entity.setDepartment(values.getFirst());
         } else {
             super.setAttribute(name, values);
         }

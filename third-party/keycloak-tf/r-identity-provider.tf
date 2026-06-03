@@ -6,7 +6,7 @@
 # 1. Identity provider
 resource "keycloak_oidc_identity_provider" "entra_id" {
   realm        = keycloak_realm.sw360.id
-  alias        = "azure-foss360"
+  alias        = var.azure_idp_alias
   display_name = "Login with EntraID"
 
   authorization_url  = "https://login.microsoftonline.com/${var.tenant}/oauth2/v2.0/authorize"

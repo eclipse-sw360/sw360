@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +68,7 @@ public class DatabaseConnectorCloudant {
 
     private final String dbName;
     private final DatabaseInstanceCloudant instance;
+    private final AttachmentAwareDatabase attachmentInstance;
 
     private static final String OPERATOR_EQ = "$eq";
     private static final String OPERATOR_IN = "$in";
@@ -74,6 +77,7 @@ public class DatabaseConnectorCloudant {
     private static final String OPERATOR_OR = "$or";
     private static final String OPERATOR_EXISTS = "$exists";
     private static final String OPERATOR_ELEM_MATCH = "$elemMatch";
+    private static final String OPERATOR_REGEX = "$regex";
     private static final Set<String> OPERATORS = Set.of(
             OPERATOR_EQ, OPERATOR_IN, OPERATOR_ALL, OPERATOR_AND, OPERATOR_OR,
             OPERATOR_EXISTS, OPERATOR_ELEM_MATCH
@@ -81,6 +85,7 @@ public class DatabaseConnectorCloudant {
 
     public DatabaseConnectorCloudant(Cloudant client, String dbName) {
         this.instance = new DatabaseInstanceCloudant(client);
+        this.attachmentInstance = DatabaseSettings.getAttachmentClient();
         this.dbName = dbName;
         // Create the database if it does not exist yet
         instance.createDB(dbName);
@@ -94,9 +99,36 @@ public class DatabaseConnectorCloudant {
         DocumentResult resp;
         if (document != null) {
             if (document instanceof AttachmentContent content) {
-                InputStream in = getAttachment(content.getId(), content.getFilename());
+                // Retrieve all attachment names from the existing document
+                // before the update replaces it (losing inline attachments).
+                // This is only called by
+                // AttachmentStreamConnector::downloadRemoteAttachmentAndUpdate
+                // to download remote attachment and set remote only as false.
+                Map<String, InputStream> attachmentStreams = new LinkedHashMap<>();
+                try {
+                    Document existingDoc = getDocument(content.getId());
+                    Map<String, Attachment> existingAttachments = existingDoc.getAttachments();
+                    if (existingAttachments != null) {
+                        for (String attachmentName : existingAttachments.keySet()) {
+                            try {
+                                attachmentStreams.put(attachmentName,
+                                        getAttachment(content.getId(), attachmentName));
+                            } catch (Exception e) {
+                                log.warn("Could not read attachment '{}' from document {}",
+                                        attachmentName, content.getId(), e);
+                            }
+                        }
+                    }
+                } catch (SW360Exception e) {
+                    log.error("Cannot find document for attachment content: {}",
+                            content.getId(), e);
+                }
                 resp = this.updateWithResponse(document);
-                createAttachment(resp.getId(), content.getFilename(), in, content.getContentType());
+                // Re-attach all attachments (base file + any _partN files)
+                for (Map.Entry<String, InputStream> entry : attachmentStreams.entrySet()) {
+                    createAttachment(resp.getId(), entry.getKey(),
+                            entry.getValue(), content.getContentType());
+                }
             } else {
                 resp = this.updateWithResponse(document);
             }
@@ -491,7 +523,7 @@ public class DatabaseConnectorCloudant {
                         .attachmentName(attachmentName)
                         .build();
 
-        return this.instance.getClient().getAttachment(attachmentOptions).execute()
+        return this.attachmentInstance.getAttachment(attachmentOptions).execute()
                 .getResult();
     }
 
@@ -514,7 +546,7 @@ public class DatabaseConnectorCloudant {
                         .rev(revision)
                         .build();
 
-        this.instance.getClient().putAttachment(attachmentOptions).execute()
+        this.attachmentInstance.putAttachment(attachmentOptions).execute()
                 .getResult();
     }
 
@@ -617,10 +649,26 @@ public class DatabaseConnectorCloudant {
                 .ddoc(ddoc)
                 .build();
 
-        DocumentResult response =
-            this.instance.getClient()
-                .putDesignDocument(designDocumentOptions).execute()
-                .getResult();
+        DocumentResult response;
+        try {
+            response = this.instance.getClient()
+                    .putDesignDocument(designDocumentOptions).execute()
+                    .getResult();
+        } catch (ConflictException | TooManyRequestsException e) {
+            try {
+                Thread.sleep(Duration.ofMillis(100));
+                existingDoc = getDesignDocument(ddoc);
+                if (existingDoc != null) {
+                    designDocument.setId(existingDoc.getId());
+                    designDocument.setRev(existingDoc.getRev());
+                }
+                response = this.instance.getClient()
+                        .putDesignDocument(designDocumentOptions).execute()
+                        .getResult();
+            } catch (InterruptedException ex) {
+                throw e;
+            }
+        }
         boolean success = response.isOk();
         if (!success) {
             log.error("Unable to put design document {} to {}. Error: {}",
@@ -726,7 +774,10 @@ public class DatabaseConnectorCloudant {
         try {
             ViewResult response = this.instance.getClient().postView(viewOptions).execute().getResult();
             return response.getRows().stream()
-                    .map(r -> r.getKey().toString()).collect(Collectors.toCollection(TreeSet::new));
+                    .filter(Objects::nonNull)
+                    .map(ViewResultRow::getKey)
+                    .map(CommonUtils::nullToEmptyString)
+                    .collect(Collectors.toCollection(TreeSet::new));
         } catch (ServiceResponseException e) {
             log.error("Error in getting project groups", e);
         }
@@ -888,6 +939,32 @@ public class DatabaseConnectorCloudant {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
                 Collections.singletonMap(OPERATOR_EQ, value));
+    }
+
+    /**
+     * Generates a $regex selector for case-insensitive exact match of the field value.
+     * Uses regex anchors (^...$) for exact matching and (?i) flag for case insensitivity.
+     * Special regex characters in the value are escaped before use.
+     * @param field Field name
+     * @param value Value to match (will be regex-escaped)
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> eqIgnoreCase(String field, String value) {
+        field = replaceFirstSymbol(field);
+        String escapedValue = escapeRegexSpecialChars(value);
+        return Collections.singletonMap(field,
+                Collections.singletonMap(OPERATOR_REGEX, "(?i)^" + escapedValue + "$"));
+    }
+
+    private static @NotNull String escapeRegexSpecialChars(@NotNull String value) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : value.toCharArray()) {
+            if ("\\^$.|?*+()[]{}".indexOf(c) >= 0) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
     /**

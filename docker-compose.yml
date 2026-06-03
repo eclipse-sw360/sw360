@@ -16,6 +16,7 @@ services:
     secrets:
       - COUCHDB_SECRETS
       - SW360_SECRETS
+      - JWT_KEYSTORE
     depends_on:
       - couchdb
     ports:
@@ -23,8 +24,6 @@ services:
       - "11311:11311"
     stdin_open: true
     tty: true
-    networks:
-      - sw360-network
     volumes:
       - etc:/etc/sw360
     healthcheck:
@@ -77,3 +76,5 @@ secrets:
     file: ./config/sw360/default_secrets
   COUCHDB_SECRETS:
     file: ./config/couchdb/default_secrets
+  JWT_KEYSTORE:
+    file: ./rest/authorization-server/src/main/resources/jwt-keystore.jks

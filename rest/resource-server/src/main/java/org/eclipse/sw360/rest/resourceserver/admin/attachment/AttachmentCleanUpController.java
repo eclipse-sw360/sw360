@@ -13,6 +13,9 @@ package org.eclipse.sw360.rest.resourceserver.admin.attachment;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -22,6 +25,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import lombok.NonNull;
@@ -32,6 +36,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @BasePathAwareController
 @RequiredArgsConstructor
+@SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class AttachmentCleanUpController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String ATTACHMENT_CLEANUP_URL = "/attachmentCleanUp";
 
@@ -42,6 +49,7 @@ public class AttachmentCleanUpController implements RepresentationModelProcessor
     private final Sw360AttachmentCleanUpService attachmentCleanUpService;
 
 	@Override
+    @PreAuthorize("hasAuthority('READ')")
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(AttachmentCleanUpController.class).slash("api" + ATTACHMENT_CLEANUP_URL).withRel("attachmentCleanUp"));
         return resource;
@@ -52,6 +60,9 @@ public class AttachmentCleanUpController implements RepresentationModelProcessor
             description = "Cleanup all the unused attachments.",
             tags = {"Admin"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Attachment clean up request created.")
+    })
     @DeleteMapping(value = ATTACHMENT_CLEANUP_URL + "/deleteAll")
     public ResponseEntity<RequestSummary> cleanUpAttachment() throws TException  {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();

@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.security.CouchDbSessionAuthenticator;
+import org.eclipse.sw360.datahandler.cloudantclient.AttachmentAwareDatabase;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,7 +43,6 @@ public class DatabaseSettings {
     public static final boolean COUCH_DB_CACHE;
 
     public static final int LUCENE_SEARCH_LIMIT;
-    public static final boolean LUCENE_LEADING_WILDCARD;
 
     public static final boolean CLOUDANT_ENABLE_RETRIES;
     public static final int CLOUDANT_MAX_RETRIES;
@@ -74,8 +74,6 @@ public class DatabaseSettings {
         COUCH_DB_CACHE = Boolean.parseBoolean(props.getProperty("couchdb.cache", "true"));
 
         LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
-        LUCENE_LEADING_WILDCARD =
-                Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
 
         CLOUDANT_ENABLE_RETRIES = Boolean.parseBoolean(props.getProperty("cloudant.enable.retries", "true"));
         CLOUDANT_MAX_RETRIES = Integer.parseInt(props.getProperty("cloudant.max.retries", "2"));
@@ -83,29 +81,52 @@ public class DatabaseSettings {
     }
 
     private static final Cloudant CLIENT = createConfiguredClient();
+    /**
+     * Singleton attachment-aware client. Constructed once at static init while
+     * no other threads can access {@link #CLIENT}, so the unavoidable
+     * authenticator-mutation side effect of {@code new Cloudant(...)}
+     * (which also invokes {@code authenticator.setSessionUrl(...)} and
+     * {@code authenticator.invalidateToken()} on the SHARED authenticator)
+     * cannot race with any in-flight token refresh. Never re-create at runtime.
+     */
+    private static final AttachmentAwareDatabase ATTACHMENT_CLIENT =
+            new AttachmentAwareDatabase(CLIENT);
 
     public static @NotNull Cloudant getConfiguredClient() {
         return CLIENT;
     }
 
+    public static @NotNull AttachmentAwareDatabase getAttachmentClient() {
+        return ATTACHMENT_CLIENT;
+    }
+
     private static @NotNull Cloudant createConfiguredClient() {
         Cloudant client;
-        if (COUCH_DB_USERNAME.isPresent() && COUCH_DB_PASSWORD.isPresent()) {
+        if (hasValue(COUCH_DB_USERNAME) && hasValue(COUCH_DB_PASSWORD)) {
             Authenticator authenticator = CouchDbSessionAuthenticator
                     .newAuthenticator(COUCH_DB_USERNAME.get(), COUCH_DB_PASSWORD.get());
             client = new Cloudant("sw360-couchdb", authenticator);
         } else {
             client = Cloudant.newInstance("sw360-couchdb");
         }
-        if (CLOUDANT_ENABLE_RETRIES) {
-            client.enableRetries(CLOUDANT_MAX_RETRIES, CLOUDANT_MAX_RETRY_INTERVAL);
-        }
+        // Set the service URL BEFORE enabling retries. enableRetries() reconfigures
+        // the underlying OkHttp client and, with CouchDbSessionAuthenticator, leaves
+        // the authenticator's /_session call wired to the SDK default host.
+        // Setting the URL first ensures the authenticator inherits the correct
+        // host before the retry layer wraps it.
         try {
             client.setServiceUrl(COUCH_DB_URL);
         } catch (IllegalArgumentException e) {
             log.error("Error creating client: {}", e.getMessage(), e);
         }
+        if (CLOUDANT_ENABLE_RETRIES) {
+            client.enableRetries(CLOUDANT_MAX_RETRIES, CLOUDANT_MAX_RETRY_INTERVAL);
+        }
         return client;
+    }
+
+    private static boolean hasValue(@NotNull Optional<String> value) {
+        return value.isPresent() && !value.get().isBlank();
     }
 
     private DatabaseSettings() {

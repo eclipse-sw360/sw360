@@ -53,12 +53,12 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: webiny/action-conventional-commits@faccb24fc2550dd15c0390d944379d2d8ed9690e # v1.3.1
+      - uses: webiny/action-conventional-commits@7f91b1595ca1951cdb671ddc9f07a49081ec5b69 # v1.4.2
 
       - name: Verify license headers
         run: |
@@ -85,7 +85,7 @@ jobs:
 
       - name: Cache Thrift
         id: cache-thrift
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
@@ -101,27 +101,106 @@ jobs:
           chmod +x third-party/thrift/install-thrift.sh
           DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
 
-      - name: Build SW360
+      - name: Build SW360 (compile only)
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
           mvn clean install \
             --no-transfer-progress \
             -P deploy -Dhelp-docs=true \
-            -Dbase.deploy.dir=. \
-            -Djars.deploy.dir=${PWD}/deploy \
-            -Dbackend.deploy.dir=${PWD}/deploy/webapps \
-            -Drest.deploy.dir=${PWD}/deploy/webapps \
+            -Dbase.deploy.dir=${PWD}/deploy \
+            -DskipTests \
+            -Dmaven.plugin.validation=VERBOSE
+
+      - name: Run ArchUnit Architecture Tests
+        id: archunit-tests
+        continue-on-error: false
+        run: |
+          mvn -pl rest/resource-server test \
+            -Dtest="org.eclipse.sw360.rest.resourceserver.architecture.*Test" \
+            -Dbase.deploy.dir=${PWD}/deploy
+
+      - name: Publish Architecture Tests Results
+        if: always()
+        run: |
+          if [ "${{ steps.archunit-tests.outcome }}" = "success" ]; then
+            echo "## ✅ Architecture Tests" >> $GITHUB_STEP_SUMMARY
+            echo "All architecture constraints verified." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Architecture Violations Detected" >> $GITHUB_STEP_SUMMARY
+            echo "Review logs for constraint violations that must be fixed before merge." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Run Unit and Integration Tests
+        continue-on-error: false
+        run: |
+          mvn test \
+            --no-transfer-progress \
+            -Dbase.deploy.dir=${PWD}/deploy \
             -DRunComponentVisibilityRestrictionTest=false \
             -DRunPrivateProjectAccessTest=false \
             -DRunRestForceUpdateTest=false \
-            -fae \
-            -Dmaven.plugin.validation=VERBOSE
+            -Dsurefire.excludes="**/architecture/*Test.java" \
+            jacoco:report \
+            -fae
+
+      - name: Extract Test Results
+        id: unit-tests
+        if: always()
+        run: |
+          TESTS=N/A
+          FAILURES=N/A
+          SKIPPED=N/A
+          FILES=$(find . -path "*/target/surefire-reports/TEST-*.xml")
+          if [ -n "$FILES" ]; then
+            TOTAL=$(grep -h "tests=\"" $FILES | sed 's/.*tests="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            FAILED=$(grep -h "failures=\"" $FILES | sed 's/.*failures="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            ERROR=$(grep -h "errors=\"" $FILES | sed 's/.*errors="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            SKIPPED=$(grep -h "skipped=\"" $FILES | sed 's/.*skipped="\([0-9]*\)".*/\1/' | awk '{sum+=$1} END {print sum}')
+            FAILED=$((FAILED + ERROR))
+          fi
+          echo "unit_tests_total=${TOTAL:-0}" >> $GITHUB_OUTPUT
+          echo "unit_tests_failed=${FAILED:-0}" >> $GITHUB_OUTPUT
+          echo "unit_tests_skipped=${SKIPPED:-0}" >> $GITHUB_OUTPUT
 
       - name: Run PrivateProjectAccessTest
         run: |
           mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
-          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=.
+          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=. jacoco:report
 
       - name: Run BulkReleaseDeletingTest
         run: |
-          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
+          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=. jacoco:report
+
+      - name: Publish Test Results Summary
+        if: always()
+        run: |
+          TOTAL="${{ steps.unit-tests.outputs.unit_tests_total }}"
+          FAILED="${{ steps.unit-tests.outputs.unit_tests_failed }}"
+          SKIPPED="${{ steps.unit-tests.outputs.unit_tests_skipped }}"
+          
+          echo "## ✅ Unit and Integration Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Tests Run | ${TOTAL:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests Failed | ${FAILED:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests Skipped | ${SKIPPED:-N/A} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload JaCoCo Reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: jacoco-report
+          path: "**/target/site/jacoco/"
+          retention-days: 7
+
+      - name: Publish Build Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "## ✅ Workflow Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Workflow Status: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the pipeline logs for details on any failures." >> $GITHUB_STEP_SUMMARY

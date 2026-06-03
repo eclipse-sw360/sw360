@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
@@ -29,6 +30,11 @@ public class Scheduler {
     private static final Logger log = LogManager.getLogger(Scheduler.class);
     private static Date nextSync = null;
     private static final ConcurrentHashMap<String, SW360Task> scheduledJobs = new ConcurrentHashMap<>();
+    /**
+     * Tracks which services currently have an active execution in progress.
+     * Used by {@link ScheduleSyncTask} to prevent concurrent runs of the same service.
+     */
+    private static final ConcurrentHashMap<String, AtomicBoolean> serviceRunningFlags = new ConcurrentHashMap<>();
 
     private static Timer timer = null;
 
@@ -36,13 +42,17 @@ public class Scheduler {
         //only static members
     }
 
-    public static Date getNextSync() {
-        return nextSync;
+    /**
+     * Returns (creating if absent) the per-service {@link AtomicBoolean} that
+     * {@link ScheduleSyncTask} uses to guard against concurrent executions.
+     */
+    public static AtomicBoolean getOrCreateRunningFlag(String serviceName) {
+        return serviceRunningFlags.computeIfAbsent(serviceName, k -> new AtomicBoolean(false));
     }
 
     public static synchronized boolean scheduleNextSync(Supplier<RequestStatus> body, String serviceName) {
         if (timer == null) {
-            timer = new Timer();
+            timer = new Timer("sw360-scheduler", true);
         }
         ScheduleSyncTask syncTask = new ScheduleSyncTask(body, serviceName);
         Integer firstRunOffset = ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName);
@@ -57,7 +67,7 @@ public class Scheduler {
         }
 
         scheduledJobs.put(syncTask.getId(), syncTask);
-        log.info("New task scheduled. Interval=" + syncInterval + "sec " + syncTask.toString());
+        log.info("New task scheduled. Interval={}sec {}", syncInterval, syncTask.toString());
         return true;
     }
 
@@ -111,15 +121,15 @@ public class Scheduler {
             return RequestStatus.FAILURE;
         }
         scheduledJobs.remove(job.getId());
-        log.info("Task " + job.getClass().getSimpleName() + " for " + SW360Utils.getDateTimeString(new Date(executionTime)) + " cancelled. " + job.toString());
+        log.info("Task {} for {} cancelled. {}",
+                job.getClass().getSimpleName(), SW360Utils.getDateTimeString(new Date(executionTime)),
+                job.toString());
         return RequestStatus.SUCCESS;
     }
 
     public static boolean isServiceScheduled(String serviceName) {
-        boolean scheduledJobsContainsMatchingJob = scheduledJobs.values().stream()
-                .filter(job -> serviceName.equals(job.getName()))
-                .findAny().isPresent();
-        return scheduledJobsContainsMatchingJob;
+        return scheduledJobs.values().stream()
+                .anyMatch(job -> serviceName.equals(job.getName()));
     }
 
     public static boolean isAnyServiceScheduled() {

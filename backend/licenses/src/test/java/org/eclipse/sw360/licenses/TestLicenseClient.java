@@ -12,6 +12,8 @@ package org.eclipse.sw360.licenses;
 import com.google.common.collect.ImmutableList;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -26,6 +28,7 @@ import java.util.List;
  * @author cedric.bodet@tngtech.com
  */
 public class TestLicenseClient {
+    private static final Logger log = LogManager.getLogger(TestLicenseClient.class);
 
     public static void main(String[] args) throws TException, IOException {
         THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/licenses/thrift");
@@ -34,10 +37,10 @@ public class TestLicenseClient {
 
         List<License> licenses = client.getLicenseSummary();
 
-        System.out.println("Fetched " + licenses.size() + " licenses from license service");
+        log.info("Fetched {} licenses from license service", licenses.size());
 
         final List<License> licenseList = client.getDetailedLicenseSummary("", ImmutableList.of("AFL-2.1","Artistic-1.0"));
-        System.out.println(licenseList.toString());
+        log.info(licenseList.toString());
 
     }
 

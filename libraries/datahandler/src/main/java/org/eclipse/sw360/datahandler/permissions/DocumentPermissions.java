@@ -49,6 +49,8 @@ public abstract class DocumentPermissions<T> {
 
     protected abstract Set<String> getModerators();
 
+    protected abstract Set<String> getSecurityResponsibles();
+
     public boolean areActionsAllowed(List<RequestedAction> actions) {
         boolean result = true;
 
@@ -74,6 +76,10 @@ public abstract class DocumentPermissions<T> {
 
     protected boolean isModerator() {
         return user != null && CommonUtils.contains(user.email, getModerators());
+    }
+
+    protected boolean isSecurityResponsible() {
+        return user != null && CommonUtils.contains(user.email, getSecurityResponsibles());
     }
 
     public void fillPermissions() {
@@ -102,6 +108,8 @@ public abstract class DocumentPermissions<T> {
             case WRITE:
             case ATTACHMENTS:
                 return PermissionUtils.isUserAtLeast(ADMIN, user) || isContributor() || isUserOfOwnGroupHasRole(clearingAdminRoles, UserGroup.CLEARING_ADMIN) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
+            case WRITE_VULNERABILITY:
+                return PermissionUtils.isSecurityAdmin(user) && isSecurityResponsible();
             case DELETE:
             case USERS:
             case CLEARING:
@@ -156,7 +164,7 @@ public abstract class DocumentPermissions<T> {
     // useful for tests, maybe this needs to go somewhere else
     public List<RequestedAction> getAllAllowedActions(){
         return ImmutableSet
-                .of(READ, WRITE, WRITE_ECC, ATTACHMENTS, DELETE, USERS, CLEARING)
+                .of(READ, WRITE, WRITE_ECC, WRITE_VULNERABILITY, ATTACHMENTS, DELETE, USERS, CLEARING)
                 .stream()
                 .filter(this::isActionAllowed)
                 .collect(Collectors.toList());
