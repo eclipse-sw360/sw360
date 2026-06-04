@@ -20,6 +20,16 @@ rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
 
 # where the Thrift should connect
 backend.url=http://127.0.0.1:8080
+# Increased to 4 GB by GMishra due to ListView not working for large projects
+# Java Max limit for int
+backend.thrift.max.message.size=$BACKEND_THRIFT_MAX_MESSAGE_SIZE
+backend.thrift.max.frame.size=$BACKEND_THRIFT_MAX_FRAME_SIZE
+
+## These properties help setup the connection pool for thrift transport
+backend.thrift.max.connections.total=$BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL
+backend.thrift.max.connections.per.route=$BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE
+backend.thrift.idle.evict.seconds=$BACKEND_THRIFT_IDLE_EVICT_SECONDS
+backend.thrift.connection.ttl.seconds=$BACKEND_THRIFT_CONNECTION_TTL_SECONDS
 
 org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport
 enable.sw360.change.log=false

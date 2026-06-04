@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Server port="8005" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+  </GlobalNamingResources>
+
+  <Service name="Catalina">
+
+    <!-- Shared thread pool for high-concurrency workloads -->
+    <Executor name="tomcatThreadPool" namePrefix="catalina-exec-"
+              maxThreads="400" minSpareThreads="50"
+              maxIdleTime="60000" prestartMinSpareThreads="true"
+    />
+
+    <!-- HTTP/1.1 Connector with tuned keepalive and connection pooling
+         All timeout/connection values are passed via system properties (-D flags)
+         from CATALINA_OPTS to avoid hardcoding and allow runtime override.
+    -->
+    <Connector executor="tomcatThreadPool"
+               port="8080" protocol="HTTP/1.1"
+               connectionTimeout="${tomcat.http.connectionTimeout}"
+               keepAliveTimeout="${tomcat.http.keepAliveTimeout}"
+               maxKeepAliveRequests="${tomcat.http.maxKeepAliveRequests}"
+               maxConnections="${tomcat.http.maxConnections}"
+               acceptCount="${tomcat.http.acceptCount}"
+               maxHttpHeaderSize="65536"
+               redirectPort="8443" />
+
+    <!-- Define an Engine for request processing -->
+    <Engine name="Catalina" defaultHost="localhost">
+
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+               resourceName="UserDatabase"/>
+      </Realm>
+
+      <Host name="localhost" appBase="webapps"
+            unpackWARs="true" autoDeploy="true">
+
+        <!-- Access log (optional for production) -->
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log" suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+

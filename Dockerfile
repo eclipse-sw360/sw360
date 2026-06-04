@@ -147,6 +147,9 @@ COPY ./scripts/docker-config .
 # Operators can replace it with their own keystore via the 'etc' named volume.
 COPY rest/authorization-server/src/main/resources/jwt-keystore.jks ./jwt-keystore.jks
 
+# Copy tuned Tomcat server.xml with connection pooling and keepalive config
+COPY config/tomcat/server.xml ${CATALINA_HOME}/conf/server.xml
+
 # Tomcat manager for debugging portlets
 # Make entrypoint executable
 RUN mv ${CATALINA_HOME}/webapps.dist/manager ${CATALINA_HOME}/webapps/manager \
