@@ -61,7 +61,7 @@ import static org.mockito.Mockito.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FossologyHandlerLocalhostIntegrationTest {
 
-    private static final String CONFIG_URL_VALUE = "http://localhost:8081/repo/api/v1/";
+    private static final String CONFIG_URL_VALUE = "http://localhost:8081/repo/api/v2/";
     private static final String CONFIG_TOKEN_VALUE = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJsb2NhbGhvc3QiLCJhdWQiOiJsb2NhbGhvc3QiLCJleHAiOjE1NzA3NTE5OTksIm5iZiI6MTU2ODA3MzYwMCwianRpIjoiTkM0eiIsInNjb3BlIjoid3JpdGUifQ.WU63wqKXqf0byMBh9Bw0mU0Obt-1srw5VwJq2R9UXNg";
     private static final String CONFIG_FOLDER_ID_VALUE = "3";
 
@@ -103,7 +103,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
 
         attachmentConnector = mock(AttachmentConnector.class);
 
-        uut = new FossologyHandler(thriftClients, restConfig, fossologyRestClient, attachmentConnector);
+        uut = spy(new FossologyHandler(restConfig, fossologyRestClient, attachmentConnector));
     }
 
     @Test
@@ -167,7 +167,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         when(componentClient.getSourceAttachments(sharedRelease.getId()))
                 .thenReturn(Stream.of(sourceAttachment).collect(Collectors.toSet()));
 
-        when(thriftClients.makeComponentClient()).thenReturn(componentClient);
+        when(uut.getComponentClient()).thenReturn(componentClient);
     }
 
     @Test

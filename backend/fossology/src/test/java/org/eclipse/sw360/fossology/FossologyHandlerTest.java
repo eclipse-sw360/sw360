@@ -11,9 +11,8 @@ package org.eclipse.sw360.fossology;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
@@ -30,6 +29,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -41,24 +41,22 @@ public class FossologyHandlerTest {
 
     private FossologyHandler uut;
 
-    private ThriftClients thriftClients;
     private FossologyRestClient fossologyRestClient;
     private AttachmentConnector attachmentConnector;
-    private Iface componentClient;
+    private ComponentService.Iface componentClient;
     private User user;
 
     @Before
     public void setUp() {
-        thriftClients = mock(ThriftClients.class);
         fossologyRestClient = mock(FossologyRestClient.class);
         attachmentConnector = mock(AttachmentConnector.class);
-        componentClient = mock(Iface.class);
+        componentClient = mock(ComponentService.Iface.class);
         user = TestUtils.getAdminUser(getClass());
 
-        uut = new FossologyHandler(thriftClients, mock(FossologyRestConfig.class), fossologyRestClient,
-                attachmentConnector);
+        uut = spy(new FossologyHandler(mock(FossologyRestConfig.class), fossologyRestClient,
+                attachmentConnector));
 
-        when(thriftClients.makeComponentClient()).thenReturn(componentClient);
+        when(uut.getComponentClient()).thenReturn(componentClient);
     }
 
     @Test

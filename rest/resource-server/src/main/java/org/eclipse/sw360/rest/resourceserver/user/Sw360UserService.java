@@ -16,9 +16,6 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -35,7 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
+import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -64,8 +61,6 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRIT
 @Service
 public class Sw360UserService {
     private static final Logger log = LogManager.getLogger(Sw360UserService.class);
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
     public static final String AUTHORITIES_READ = "READ";
     public static final String AUTHORITIES_WRITE = "WRITE";
     public static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
@@ -149,9 +144,7 @@ public class Sw360UserService {
     }
 
     private UserService.Iface getThriftUserClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/users/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new UserService.Client(protocol);
+        return getUserClient();
     }
 
     public void updateUser(User sw360User) throws TException {
@@ -323,14 +316,13 @@ public class Sw360UserService {
     /**
      * Sync a single UserCSV with Thrift Database
      *
-     * @param userRec       UserCSV record to sync
-     * @param thriftClients Thrift object to create clients
+     * @param userRec UserCSV record to sync
      * @return True if the user was synced successfully, false otherwise.
      */
-    public static boolean syncUser(UserCSV userRec, ThriftClients thriftClients) {
+    public static boolean syncUser(UserCSV userRec) {
         User thriftUser = null;
         try {
-            thriftUser = synchronizeUserWithDatabase(userRec, thriftClients, userRec::getEmail, userRec::getGid, Sw360UserService::fillThriftUserFromUserCSV);
+            thriftUser = synchronizeUserWithDatabase(userRec, userRec::getEmail, userRec::getGid, Sw360UserService::fillThriftUserFromUserCSV);
         } catch (Exception e) {
             log.error("Error creating a new user", e);
             return false;
@@ -344,7 +336,6 @@ public class Sw360UserService {
      * if found the user is updated. Otherwise, the user is inserted in the database.
      *
      * @param source        User record to be synced.
-     * @param thriftClients Thrift clients.
      * @param emailSupplier Function to get user's email.
      * @param extIdSupplier Function to get user's external id.
      * @param synchronizer  Function to transfer properties from source to thrift object.
@@ -352,9 +343,9 @@ public class Sw360UserService {
      * @return Object of newly created or updated user on success or null on failure.
      */
     public static <T> User synchronizeUserWithDatabase(
-            T source, ThriftClients thriftClients, Supplier<String> emailSupplier,
+            T source, Supplier<String> emailSupplier,
             Supplier<String> extIdSupplier, BiConsumer<User, T> synchronizer) {
-        UserService.Iface client = thriftClients.makeUserClient();
+        UserService.Iface client = getUserClient();
 
         User existingThriftUser = null;
 
@@ -385,6 +376,10 @@ public class Sw360UserService {
             log.error("Thrift exception when saving the user", e);
         }
         return resultUser;
+    }
+
+    static UserService.@NonNull Iface getUserClient() {
+        return ThriftClients.makeUserClient();
     }
 
     /**

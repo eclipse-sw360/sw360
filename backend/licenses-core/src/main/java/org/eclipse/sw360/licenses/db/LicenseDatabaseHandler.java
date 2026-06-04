@@ -182,9 +182,8 @@ public class LicenseDatabaseHandler {
     }
 
     private LicenseExporter getLicenseExporterObject() {
-        ThriftClients thriftClients = new ThriftClients();
         Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
-            LicenseService.Iface client = thriftClients.makeLicenseClient();
+            LicenseService.Iface client = ThriftClients.makeLicenseClient();
             try {
                 return client.getLicenseTypes();
             } catch (TException e) {
@@ -197,9 +196,8 @@ public class LicenseDatabaseHandler {
 
     public ByteBuffer downloadExcel(String token) throws SW360Exception {
         try {
-            ThriftClients thriftClients = new ThriftClients();
             Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
-                LicenseService.Iface client = thriftClients.makeLicenseClient();
+                LicenseService.Iface client = ThriftClients.makeLicenseClient();
                 try {
                     return client.getLicenseTypes();
                 } catch (TException e) {

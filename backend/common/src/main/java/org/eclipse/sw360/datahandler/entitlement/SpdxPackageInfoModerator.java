@@ -34,19 +34,10 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
 
     private static final Logger log = LogManager.getLogger(SpdxPackageInfoModerator.class);
 
-
-    public SpdxPackageInfoModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public SpdxPackageInfoModerator() {
-        super(new ThriftClients());
-    }
-
     public RequestStatus updateSpdxPackageInfo(PackageInformation packageInfo, User user) {
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createSpdxPackageInfoRequest(packageInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
@@ -57,7 +48,7 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
 
     public RequestStatus deleteSpdxPackageInfo(PackageInformation packageInfo, User user) {
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createSpdxPackageInfoDeleteRequest(packageInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {

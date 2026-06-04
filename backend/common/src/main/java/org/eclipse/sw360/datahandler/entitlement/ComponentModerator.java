@@ -13,7 +13,6 @@ import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
@@ -31,18 +30,10 @@ public class ComponentModerator extends Moderator<Component._Fields, Component> 
 
     private static final Logger log = LogManager.getLogger(ComponentModerator.class);
 
-    public ComponentModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public ComponentModerator() {
-        super(new ThriftClients());
-    }
-
     public RequestStatus updateComponent(Component component, User user) {
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createComponentRequest(component, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
@@ -91,7 +82,7 @@ public class ComponentModerator extends Moderator<Component._Fields, Component> 
     }
     public RequestStatus deleteComponent(Component component, User user) {
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createComponentDeleteRequest(component, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {

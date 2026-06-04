@@ -16,7 +16,6 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.apache.logging.log4j.LogManager;
@@ -42,17 +41,12 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
  */
 public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
-    protected final ThriftClients thriftClients;
     AttachmentConnector attachmentConnector = null;
     private static final Logger log = LogManager.getLogger(Moderator.class);
 
-    public Moderator(ThriftClients thriftClients) {
-        this.thriftClients = thriftClients;
-    }
-
     public void notifyModeratorOnDelete(String documentId) {
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.deleteRequestsOnDocument(documentId);
         } catch (TException e) {
             log.error("Could not notify moderation client, that I delete document with id " + documentId, e);
@@ -61,7 +55,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
     public List<ModerationRequest> getModerationRequestsForDocumentId(String documentId) {
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             return client.getModerationRequestByDocumentId(documentId);
 
         } catch (TException e) {

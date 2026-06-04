@@ -10,10 +10,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
-import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.springframework.stereotype.Component;
@@ -21,9 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ThriftAttachmentServiceProvider implements ThriftServiceProvider<AttachmentService.Iface> {
     @Override
-    public AttachmentService.Iface getService(String thriftServerUrl) throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/attachments/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new AttachmentService.Client(protocol);
+    public AttachmentService.Iface getService(String thriftServerUrl) {
+        return ThriftClients.makeAttachmentClient();
     }
 }

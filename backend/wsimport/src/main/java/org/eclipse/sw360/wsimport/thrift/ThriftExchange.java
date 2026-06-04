@@ -42,7 +42,6 @@ import static org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus.SUCC
 public class ThriftExchange {
 
     private static final Logger LOGGER = LogManager.getLogger(ThriftExchange.class);
-    private static ThriftClients thriftClients = new ThriftClients();
 
     //public ThriftExchange(ThriftClients thriftClients) {
     //    this.thriftClients = thriftClients;
@@ -58,7 +57,7 @@ public class ThriftExchange {
     public String addProject(Project project, User user) {
         String projectId = null;
         try {
-            AddDocumentRequestSummary summary = thriftClients.makeProjectClient().addProject(project, user);
+            AddDocumentRequestSummary summary = ThriftClients.makeProjectClient().addProject(project, user);
             if (SUCCESS.equals(summary.getRequestStatus())) {
                 projectId = summary.getId();
             } else {
@@ -80,7 +79,7 @@ public class ThriftExchange {
     public String addComponent(Component component, User user) {
         String componentId = null;
         try {
-            AddDocumentRequestSummary summary = thriftClients.makeComponentClient().addComponent(component, user);
+            AddDocumentRequestSummary summary = ThriftClients.makeComponentClient().addComponent(component, user);
             if (SUCCESS.equals(summary.getRequestStatus())) {
                 componentId = summary.getId();
             } else {
@@ -102,7 +101,7 @@ public class ThriftExchange {
     public String addRelease(Release release, User user) {
         String releaseId = null;
         try {
-            AddDocumentRequestSummary summary = thriftClients.makeComponentClient().addRelease(release, user);
+            AddDocumentRequestSummary summary = ThriftClients.makeComponentClient().addRelease(release, user);
             if (SUCCESS.equals(summary.getRequestStatus())) {
                 releaseId = summary.getId();
             } else {
@@ -122,7 +121,7 @@ public class ThriftExchange {
      * @return license-String from DB
      */
     public String addLicense(License license, User user) {
-        LicenseService.Iface  client = thriftClients.makeLicenseClient();
+        LicenseService.Iface  client = ThriftClients.makeLicenseClient();
         List<License> licenses = null;
         try {
             licenses = client.addLicenses(Collections.singletonList(license), user);
@@ -139,7 +138,7 @@ public class ThriftExchange {
     public Optional<List<Release>> searchReleaseByNameAndVersion(String name, String version) {
         List<Release> releases = null;
         try {
-            releases = thriftClients.makeComponentClient().searchReleaseByNamePrefix(name);
+            releases = ThriftClients.makeComponentClient().searchReleaseByNamePrefix(name);
         } catch (TException e) {
             LOGGER.error("Could not fetch Release list for name=[" + name + "], version=[" + version + "]:" + e);
         }
@@ -155,7 +154,7 @@ public class ThriftExchange {
 
     public Optional<List<Component>> searchComponentByName(String name) {
         try {
-            return Optional.of(thriftClients.makeComponentClient().searchComponentForExport(name, true));
+            return Optional.of(ThriftClients.makeComponentClient().searchComponentForExport(name, true));
         } catch (TException e) {
             LOGGER.error("Could not fetch Component list for name=[" + name + "]:" + e);
             return Optional.empty();
@@ -192,7 +191,7 @@ public class ThriftExchange {
 
     private Optional<List<License>> getFilteredLicenseList(Predicate<License> filter, String selector) {
         try {
-            return Optional.of(thriftClients.makeLicenseClient()
+            return Optional.of(ThriftClients.makeLicenseClient()
                     .getLicenses()
                     .stream()
                     .filter(filter)
@@ -206,7 +205,7 @@ public class ThriftExchange {
     private List<Project> getAccessibleProjectsSummary(User user) {
         List<Project> accessibleProjectsSummary = null;
         try {
-            accessibleProjectsSummary = thriftClients.makeProjectClient().getAccessibleProjectsSummary(user);
+            accessibleProjectsSummary = ThriftClients.makeProjectClient().getAccessibleProjectsSummary(user);
         } catch (TException e) {
             LOGGER.error("Could not fetch Project list for user with email=[" + user.getEmail() + "]:" + e);
         }
