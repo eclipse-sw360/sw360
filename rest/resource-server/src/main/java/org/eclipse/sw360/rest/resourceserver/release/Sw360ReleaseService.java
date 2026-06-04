@@ -23,9 +23,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -66,8 +63,6 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -109,8 +104,6 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 @Slf4j
 @RequiredArgsConstructor
 public class Sw360ReleaseService implements AwareOfRestServices<Release> {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
 
     @NonNull
     private RestControllerHelper rch;
@@ -357,7 +350,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdxDocumentRequest, String releaseId, User user) throws TException {
-        SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
+        SPDXDocumentService.Iface spdxClient = ThriftClients.makeSPDXClient();
         if (null == spdxDocumentRequest) {
             return null;
         }
@@ -618,7 +611,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInformationRequest, String spdxId, User user) throws TException {
-        DocumentCreationInformationService.Iface documentClient = new ThriftClients().makeSPDXDocumentInfoClient();
+        DocumentCreationInformationService.Iface documentClient = ThriftClients.makeSPDXDocumentInfoClient();
         if (isNullOrEmpty(documentCreationInformationRequest.getSpdxDocumentId())) {
             documentCreationInformationRequest.setSpdxDocumentId(spdxId);
         }
@@ -737,7 +730,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public RequestStatus updatePackageInformation(PackageInformation packageInformationRequest, String spdxId, User user) throws TException {
-        PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
+        PackageInformationService.Iface packageClient = ThriftClients.makeSPDXPackageInfoClient();
         if (isNullOrEmpty(packageInformationRequest.getSpdxDocumentId())) {
             packageInformationRequest.setSpdxDocumentId(spdxId);
         }
@@ -1308,33 +1301,25 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+        ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
         return componentClient;
     }
 
-    private SPDXDocumentService.Iface getThriftSPDXDocumentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxdocument/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new SPDXDocumentService.Client(protocol);
+    private SPDXDocumentService.Iface getThriftSPDXDocumentClient() {
+        return ThriftClients.makeSPDXClient();
     }
 
-    private DocumentCreationInformationService.Iface getThriftDocumentCreationInformation() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxdocumentcreationinfo/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new DocumentCreationInformationService.Client(protocol);
+    private DocumentCreationInformationService.Iface getThriftDocumentCreationInformation() {
+        return ThriftClients.makeSPDXDocumentInfoClient();
     }
 
-    private PackageInformationService.Iface getThriftIPackageInformation() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxpackageinfo/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new PackageInformationService.Client(protocol);
+    private PackageInformationService.Iface getThriftIPackageInformation() {
+        return ThriftClients.makeSPDXPackageInfoClient();
     }
 
-    private FossologyService.Iface getThriftFossologyClient() throws TTransportException {
+    private FossologyService.Iface getThriftFossologyClient() {
         if (fossologyClient == null) {
-            THttpClient thriftClient = new THttpClient(thriftServerUrl + "/fossology/thrift");
-            TProtocol protocol = new TCompactProtocol(thriftClient);
-            fossologyClient = new FossologyService.Client(protocol);
+            fossologyClient = ThriftClients.makeFossologyClient();
         }
 
         return fossologyClient;
@@ -1430,8 +1415,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public List<Map<String,String>> getReleaseLicenseInfo(Release rel, User sw360User, String attachContentId) throws TException{
-        ThriftClients thriftClients = new ThriftClients();
-        LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
         List<LicenseInfoParsingResult> licenseInfos = licenseClient.getLicenseInfoForAttachment(rel, attachContentId, false, sw360User);
         List<Map<String, String>> licenses = Lists.newArrayList();
         licenseInfos.forEach(licenseInfoResult ->
@@ -1474,8 +1458,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User, String attachmentId) throws TException{
-        ThriftClients thriftClients = new ThriftClients();
-        LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
         final Predicate<Attachment> isSupportedAttachment = attachment ->
                 AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
                 || AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(attachment.getAttachmentType())
@@ -1646,26 +1629,25 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<String, Integer> getUsageInformationForReleaseMerge(String releaseSourceId, User sessionUser) throws TException {
         Map<String, Integer> usageInformation = new HashMap<>();
-        ThriftClients thriftClients = new ThriftClients();
-        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
         Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projects", projects.size());
 
-        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
         List<AttachmentUsage> attachmentUsages = attachmentClient.getAttachmentUsagesByReleaseId(releaseSourceId);
         usageInformation.put("attachmentUsages", attachmentUsages.size());
 
-        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
         List<Release> releases = componentClient.getReferencingReleases(releaseSourceId);
         usageInformation.put("releases", releases.size());
 
-        VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
+        VulnerabilityService.Iface vulnerabilityClient = ThriftClients.makeVulnerabilityClient();
         List<ReleaseVulnerabilityRelation> releaseVulnerabilities = vulnerabilityClient.getReleaseVulnerabilityRelationsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("releaseVulnerabilities", releaseVulnerabilities.size());
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
 
-        PackageService.Iface packageClient = thriftClients.makePackageClient();
+        PackageService.Iface packageClient = ThriftClients.makePackageClient();
         Set<Package> packages = packageClient.getPackagesByReleaseId(releaseSourceId);
         usageInformation.put("packages", packages.size());
 
@@ -1683,7 +1665,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         try {
-            PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+            PackageService.Iface packageClient = ThriftClients.makePackageClient();
             return packageClient.getPackageWithReleaseByPackageIds(release.getPackageIds());
         } catch (TTransportException e) {
             throw new TException("Unable to get package client", e);

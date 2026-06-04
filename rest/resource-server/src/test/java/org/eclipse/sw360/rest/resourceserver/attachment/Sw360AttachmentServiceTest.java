@@ -27,7 +27,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +40,7 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -48,10 +48,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class Sw360AttachmentServiceTest {
 
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
-    @Spy
+    @Mock
     private ThriftServiceProvider<AttachmentService.Iface> serviceProvider;
 
     @Mock
@@ -60,6 +57,7 @@ public class Sw360AttachmentServiceTest {
     @Mock
     private AttachmentService.Iface thriftService;
 
+    @Spy
     @InjectMocks
     private Sw360AttachmentService attachmentService;
 
@@ -67,7 +65,7 @@ public class Sw360AttachmentServiceTest {
 
     @Before
     public void setUp() throws TTransportException {
-        when(serviceProvider.getService(thriftServerUrl)).thenReturn(thriftService);
+        doReturn(thriftService).when(attachmentService).getThriftAttachmentClient();
     }
 
     private static String attachmentId(int idx) {

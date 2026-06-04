@@ -888,7 +888,7 @@ public class RestControllerHelper<T> {
         }
     }
 
-    private void createMissingLicense(String licenseId) throws Exception {
+    public void createMissingLicense(String licenseId) throws Exception {
         License newLicense = new License();
         newLicense.setId(licenseId);
         newLicense.setShortname(licenseId);
@@ -1750,6 +1750,10 @@ public class RestControllerHelper<T> {
 
     public boolean isWriteActionAllowed(Object object, User user) {
         return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);
+    }
+
+    public boolean isSecurityAdminWriteActionAllowedForVulRating(Object object, User user) {
+        return makePermission(object, user).isActionAllowed(RequestedAction.WRITE_VULNERABILITY);
     }
 
     public void throwIfSecurityUser(User user) {

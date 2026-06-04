@@ -308,7 +308,7 @@ public class SpdxDocumentDatabaseHandler {
         // Add SPDXDocument
         SPDXDocument spdx = SW360Utils.generateSpdxDocument();
         spdx.setModerators(moderators);
-        SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
+        SPDXDocumentService.Iface spdxClient = ThriftClients.makeSPDXClient();
         if (isNullOrEmpty(spdx.getReleaseId()) && !isNullOrEmpty(releaseId)) {
             spdx.setReleaseId(releaseId);
         }
@@ -324,7 +324,7 @@ public class SpdxDocumentDatabaseHandler {
         // Add DocumentCreationInformation
         DocumentCreationInformation document = SW360Utils.generateDocumentCreationInformation();
         document.setModerators(moderators);
-        DocumentCreationInformationService.Iface documentClient = new ThriftClients().makeSPDXDocumentInfoClient();
+        DocumentCreationInformationService.Iface documentClient = ThriftClients.makeSPDXDocumentInfoClient();
         if (isNullOrEmpty(document.getSpdxDocumentId())) {
             document.setSpdxDocumentId(spdxDocumentId);
         }
@@ -339,7 +339,7 @@ public class SpdxDocumentDatabaseHandler {
         // Add PackageInformation
         PackageInformation packageInfo = SW360Utils.generatePackageInformation();
         packageInfo.setModerators(moderators);
-        PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
+        PackageInformationService.Iface packageClient = ThriftClients.makeSPDXPackageInfoClient();
         if (isNullOrEmpty(packageInfo.getSpdxDocumentId())) {
             packageInfo.setSpdxDocumentId(spdxDocumentId);
         }

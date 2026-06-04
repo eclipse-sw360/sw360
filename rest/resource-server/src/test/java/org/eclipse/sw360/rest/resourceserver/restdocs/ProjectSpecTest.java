@@ -69,6 +69,7 @@ import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -159,6 +160,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @MockitoBean
     private SW360ReportService sw360ReportServiceMock;
+
+    @MockitoBean
+    private Sw360ModerationRequestService moderationRequestServiceMock;
 
     private Project project;
     private Project project8;
@@ -612,6 +616,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.projectServiceMock.createClearingRequest(any(),any(),any(),eq(project.getId()))).willReturn(requestSummaryForCR);
         given(this.projectServiceMock.loadPreferredClearingDateLimit()).willReturn(Integer.valueOf(7));
+        given(this.moderationRequestServiceMock.getOpenCriticalCrCountByGroup(any())).willReturn(0);
+        given(this.moderationRequestServiceMock.getClearingRequestByProjectId(any(), any())).willReturn(null);
+        given(this.moderationRequestServiceMock.deleteClearingRequest(any(), any())).willReturn(RequestStatus.SUCCESS);
 
         given(this.projectServiceMock.getLicenseInfoHeaderText()).willReturn("Default License Info Header Text");
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);

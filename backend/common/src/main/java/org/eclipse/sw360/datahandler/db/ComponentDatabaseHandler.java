@@ -213,11 +213,18 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         this.dbHandlerUtil = new DatabaseHandlerUtil(db);
     }
 
-    public ComponentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ThriftClients thriftClients) throws MalformedURLException {
-        this(client, dbName, attachmentDbName, new ComponentModerator(thriftClients), new ReleaseModerator(thriftClients), new ProjectModerator(thriftClients));
-    }
-
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {
+        // If the clearing state was manually set to UNDER_CLEARING from an allowed
+        // source state (NEW_CLEARING or REPORT_AVAILABLE), preserve the manual override
+        // and skip the automatic recalculation based on attachments.
+        ClearingState stateBefore = releaseBefore.getClearingState();
+        ClearingState stateAfter = releaseAfter.getClearingState();
+        if (stateAfter == ClearingState.UNDER_CLEARING
+                && stateBefore != ClearingState.UNDER_CLEARING
+                && (stateBefore == ClearingState.NEW_CLEARING || stateBefore == ClearingState.REPORT_AVAILABLE)) {
+            return;
+        }
+
         Optional<Attachment> oldBestCR = getBestClearingReport(releaseBefore);
         Optional<Attachment> newBestCR = getBestClearingReport(releaseAfter);
 
@@ -1000,7 +1007,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isComponentUnderModeration(String componentSourceId) throws TException {
-        ModerationService.Iface moderationClient = new ThriftClients().makeModerationClient();
+        ModerationService.Iface moderationClient = ThriftClients.makeModerationClient();
         List<ModerationRequest> sourceModerationRequests = moderationClient.getModerationRequestByDocumentId(componentSourceId);
         return sourceModerationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }
@@ -1617,7 +1624,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      **/
     private boolean verifyLinkedPackages(Set<String> currentPackageIds, Set<String> updatedPackageIds, String releaseId) throws SW360Exception {
         Set<String> addedPackageIds = Sets.difference(updatedPackageIds, currentPackageIds);
-        PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+        PackageService.Iface packageClient = ThriftClients.makePackageClient();
         if (CommonUtils.isNotEmpty(addedPackageIds)) {
             try {
                 long addedCount = addedPackageIds.size();
@@ -1642,7 +1649,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void updateLinkedPackages(Set<String> currentPackageIds, Set<String> updatedPackageIds, String releaseId, User user) throws SW360Exception {
         Set<String> removedPacakgeIds = Sets.difference(currentPackageIds, updatedPackageIds);
         Set<String> addedPacakgeIds = Sets.difference(updatedPackageIds, currentPackageIds);
-        PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+        PackageService.Iface packageClient = ThriftClients.makePackageClient();
         try {
             if (CommonUtils.isNotEmpty(removedPacakgeIds)) {
                 List<Package> removedPackages = packageRepository.get(removedPacakgeIds);
@@ -1753,7 +1760,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isReleaseUnderModeration(String releaseId) throws TException {
-        ModerationService.Iface moderationClient = new ThriftClients().makeModerationClient();
+        ModerationService.Iface moderationClient = ThriftClients.makeModerationClient();
         List<ModerationRequest> moderationRequests = moderationClient.getModerationRequestByDocumentId(releaseId);
         return moderationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }
@@ -1926,7 +1933,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInProjects(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
 
         final String userEmail = sessionUser.getEmail();
         Set<Project> projects = projectRepository.searchByReleaseId(mergeSourceId);
@@ -1948,7 +1955,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInAttachmentUsages(String mergeTargetId, String mergeSourceId) throws TException {
-        AttachmentService.Iface attachmentClient = new ThriftClients().makeAttachmentClient();
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
 
         List<AttachmentUsage> usages = attachmentClient.getAttachmentUsagesByReleaseId(mergeSourceId);
         for(AttachmentUsage usage : usages) {
@@ -1978,7 +1985,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInVulnerabilities(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
+        VulnerabilityService.Iface vulnerabilityService = ThriftClients.makeVulnerabilityClient();
 
         List<ReleaseVulnerabilityRelation> relations = vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(mergeSourceId, sessionUser);
         for(ReleaseVulnerabilityRelation relation : relations) {
@@ -1993,7 +2000,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInProjectRatings(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
+        VulnerabilityService.Iface vulnerabilityService = ThriftClients.makeVulnerabilityClient();
 
         List<ProjectVulnerabilityRating> ratings = vulnerabilityService.getProjectVulnerabilityRatingsByReleaseId(mergeSourceId, sessionUser);
         for(ProjectVulnerabilityRating rating : ratings) {
@@ -2012,7 +2019,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInPackages(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        PackageService.Iface packageClient = new ThriftClients().makePackageClient();
+        PackageService.Iface packageClient = ThriftClients.makePackageClient();
 
         Set<Package> packages = packageClient.getPackagesByReleaseId(mergeSourceId);
         Release mergeTarget = releaseRepository.get(mergeTargetId);
@@ -3253,14 +3260,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private ComponentExporter getComponentExporterObject(List<Component> componentList ,User user,
                                                          boolean extendedByRelease) throws SW360Exception {
-        ThriftClients thriftClients = new ThriftClients();
-        return new ComponentExporter(thriftClients.makeComponentClient(), componentList, user,extendedByRelease);
+        return new ComponentExporter(ThriftClients.makeComponentClient(), componentList, user,extendedByRelease);
     }
 
     public ByteBuffer downloadExcel(User user,boolean extendedByReleases,String token) throws SW360Exception {
         try {
-            ThriftClients thriftClients = new ThriftClients();
-            ComponentExporter exporter = new ComponentExporter(thriftClients.makeComponentClient(), user,
+            ComponentExporter exporter = new ComponentExporter(ThriftClients.makeComponentClient(), user,
                     extendedByReleases);
             InputStream stream = exporter.downloadExcelSheet(token);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));

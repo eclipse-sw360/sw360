@@ -62,6 +62,14 @@ file to tweak SW360 behaviour.
 * `COUCHDB_LUCENESEARCH_LIMIT`: Limit for Lucene search results (default: `1000`).
 * `CLOUDANT_ENABLE_RETRIES`: Enable retries in Cloudant (default: `true`).
 
+**Thrift Backend Connection Pooling**
+* `BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL`: Max total pooled connections to backend (default: `200`).
+* `BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE`: Max pooled connections per backend route (default: `100`).
+* `BACKEND_THRIFT_IDLE_EVICT_SECONDS`: Validate idle pooled connections before reuse; set below
+    Tomcat's `keepAliveTimeout` (default: `15` seconds).
+* `BACKEND_THRIFT_CONNECTION_TTL_SECONDS`: Force-retire pooled connections older than this,
+    even if active (default: `60` seconds).
+
 **Spring Controllers**
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
 * `SW360_SECURITY_JWT_ISSUERS_<N>_ISSUER_URI`: Public issuer URL for slot

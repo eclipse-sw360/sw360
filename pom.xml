@@ -923,7 +923,7 @@
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven-resources-plugin.version}</version>
           <configuration>
-            <overwrite>true</overwrite>
+            <changeDetection>always</changeDetection>
           </configuration>
         </plugin>
         <plugin>

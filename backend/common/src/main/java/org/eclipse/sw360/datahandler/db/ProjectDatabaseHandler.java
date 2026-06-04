@@ -70,7 +70,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -152,7 +151,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.LICENSE_INFO_HEADER_TEXT);
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
-    private final ThriftClients thriftClients;
 
     public ProjectDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
         this(client, dbName, attachmentDbName, new ProjectModerator(),
@@ -203,8 +201,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         this.packageDatabaseHandler = packageDatabaseHandler;
         DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
-
-        thriftClients = new ThriftClients();
     }
 
     /////////////////////
@@ -527,7 +523,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             buildProjectPaths(project, null, projectPaths, new HashSet<>());
             projectPaths.remove(projectId);
             if (!projectPaths.isEmpty()) {
-                AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+                AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
                 List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths, projectId, attachmentClient);
                 attachmentClient.makeAttachmentUsages(newAttachmentUsages);
             }
@@ -937,7 +933,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final ProjectReleaseRelationship releaseRelation = new ProjectReleaseRelationship(ReleaseRelationship.UNKNOWN, MainlineState.OPEN);
         if (CommonUtils.isNotEmpty(linkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = thriftClients.makePackageClient();
+                PackageService.Iface packageClient = ThriftClients.makePackageClient();
                 List<Package> addedPackages = packageClient.getPackageByIds(linkedPacakgeIds);
 
                 Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = addedPackages.stream().map(Package::getReleaseId)
@@ -969,7 +965,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (CommonUtils.isNotEmpty(unlinkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = thriftClients.makePackageClient();
+                PackageService.Iface packageClient = ThriftClients.makePackageClient();
                 List<Package> removedPackages = packageClient.getPackageWithReleaseByPackageIds(unlinkedPacakgeIds);
 
                 Map<String, Set<String>> releaseIdToPackageIdsMap = removedPackages.stream()
@@ -2140,7 +2136,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Map<String, String> getGidsByEmail() throws TException {
-        UserService.Iface userClient = thriftClients.makeUserClient();
+        UserService.Iface userClient = ThriftClients.makeUserClient();
         Map<String, String> gidByEmail = new HashMap<>();
         userClient
                 .getAllUsers()
@@ -2461,8 +2457,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
     private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
-    	return new ProjectExporter(thriftClients.makeComponentClient(),
-                thriftClients.makeProjectClient(), user, documents, extendedByReleases);
+    	return new ProjectExporter(ThriftClients.makeComponentClient(),
+                ThriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
 
     public String getReportInEmail(User user,
@@ -2482,8 +2478,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
      private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
-         final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true,
-                 thriftClients, log, user);
+         final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true, log, user);
          if (projectLinks.isEmpty()) {
              throw new TException("For the projectId : " + projectId
                      + ", No data available. Please check the projectId and try again.");
@@ -2493,8 +2488,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
      public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
-        ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
-				thriftClients.makeProjectClient(), user, extendedByReleases);
+        ProjectExporter exporter = new ProjectExporter(ThriftClients.makeComponentClient(),
+				ThriftClients.makeProjectClient(), user, extendedByReleases);
 		try {
 			InputStream stream = exporter.downloadExcelSheet(token);
 			return ByteBuffer.wrap(IOUtils.toByteArray(stream));

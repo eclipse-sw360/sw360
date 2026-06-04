@@ -24,7 +24,6 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -36,7 +35,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SW360ConfigurationsService {
     private SW360ConfigsService.Iface getThriftConfigsClient() {
-        return new ThriftClients().makeSW360ConfigsClient();
+        return ThriftClients.makeSW360ConfigsClient();
     }
 
     public Map<String, String> getSW360Configs() throws TException {

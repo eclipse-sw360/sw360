@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -130,7 +129,7 @@ public class SW360SPDXDocumentService {
     }
 
     public String addSPDXDocument(Release release, User user) throws TException {
-        SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
+        SPDXDocumentService.Iface spdxClient = ThriftClients.makeSPDXClient();
         String spdxId = "";
         SPDXDocument spdxDocumentGenerate = SW360Utils.generateSpdxDocument();
         spdxDocumentGenerate.setModerators(release.getModerators());
@@ -142,7 +141,7 @@ public class SW360SPDXDocumentService {
     }
 
     public void addDocumentCreationInformation(String spdxId, Set<String> moderators, User user) throws TException {
-        DocumentCreationInformationService.Iface documentClient = new ThriftClients().makeSPDXDocumentInfoClient();
+        DocumentCreationInformationService.Iface documentClient = ThriftClients.makeSPDXDocumentInfoClient();
         DocumentCreationInformation documentCreationInformation = SW360Utils.generateDocumentCreationInformation();
         documentCreationInformation.setModerators(moderators);
         if (isNullOrEmpty(documentCreationInformation.getSpdxDocumentId())) {
@@ -154,7 +153,7 @@ public class SW360SPDXDocumentService {
     }
 
     public void addPackageInformation(String spdxId, Set<String> moderators, User user) throws TException {
-        PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
+        PackageInformationService.Iface packageClient = ThriftClients.makeSPDXPackageInfoClient();
         PackageInformation packageInformation = SW360Utils.generatePackageInformation();
         packageInformation.setModerators(moderators);
         if (isNullOrEmpty(packageInformation.getSpdxDocumentId())) {

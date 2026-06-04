@@ -12,7 +12,6 @@ package org.eclipse.sw360.rest.resourceserver.clearingrequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -24,7 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -47,11 +46,9 @@ import lombok.RequiredArgsConstructor;
 public class Sw360ClearingRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ClearingRequestService.class);
 
-    private final ThriftClients thriftClients = new ThriftClients();
-
     public ClearingRequest getClearingRequestByProjectId(String projectId, User sw360User) throws TException {
         try {
-            return thriftClients.makeModerationClient().getClearingRequestByProjectId(projectId, sw360User);
+            return ThriftClients.makeModerationClient().getClearingRequestByProjectId(projectId, sw360User);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested ClearingRequest not found");
@@ -67,7 +64,7 @@ public class Sw360ClearingRequestService {
 
     public ClearingRequest getClearingRequestById(String id, User sw360User) throws TException {
         try {
-            return thriftClients.makeModerationClient().getClearingRequestById(id, sw360User);
+            return ThriftClients.makeModerationClient().getClearingRequestById(id, sw360User);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested ClearingRequest not found");
@@ -82,8 +79,8 @@ public class Sw360ClearingRequestService {
     }
 
     public Set<ClearingRequest> getMyClearingRequests(User sw360User, ClearingRequestState state) throws TException {
-        Set<ClearingRequest> clearingrequests = new HashSet<>(thriftClients.makeModerationClient().getMyClearingRequests(sw360User));
-        clearingrequests.addAll(thriftClients.makeModerationClient().getClearingRequestsByBU(sw360User.getDepartment()));
+        Set<ClearingRequest> clearingrequests = new HashSet<>(ThriftClients.makeModerationClient().getMyClearingRequests(sw360User));
+        clearingrequests.addAll(ThriftClients.makeModerationClient().getClearingRequestsByBU(sw360User.getDepartment()));
         if (state!= null) {
             clearingrequests = clearingrequests.parallelStream().filter(cr -> { return cr.getClearingState() == state; }).collect(Collectors.toSet());
         }
@@ -101,7 +98,7 @@ public class Sw360ClearingRequestService {
         comment.setCommentedBy(sw360User.getEmail());
         comment.setText(comment.getText().trim());
 
-        ModerationService.Iface clearingRequestClient = thriftClients.makeModerationClient();
+        ModerationService.Iface clearingRequestClient = ThriftClients.makeModerationClient();
         RequestStatus requestStatus = clearingRequestClient.addCommentToClearingRequest(crId, comment, sw360User);
         if (requestStatus != RequestStatus.SUCCESS) {
             throw new TException("Error adding comment to clearing request");
@@ -110,7 +107,7 @@ public class Sw360ClearingRequestService {
     }
 
     public RequestStatus updateClearingRequest(ClearingRequest clearingRequest, User sw360User, String baseUrl, String projectId) throws TException {
-        ModerationService.Iface sw360ModerationClient = thriftClients.makeModerationClient();
+        ModerationService.Iface sw360ModerationClient = ThriftClients.makeModerationClient();
         String projectUrl = baseUrl + "/projects/-/project/detail/" + projectId;
 
         RequestStatus requestStatus;
@@ -140,12 +137,16 @@ public class Sw360ClearingRequestService {
 
     public String getUserNameByEmail(String userEmail) throws TException {
         try {
-            UserService.Iface userClient = thriftClients.makeUserClient();
+            UserService.Iface userClient = getUserClient();
             User sw360User = userClient.getByEmail(userEmail);
             return sw360User.getFullname();
         } catch (TException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    UserService.@NonNull Iface getUserClient() {
+        return ThriftClients.makeUserClient();
     }
 
     public static String convertTimestampToDateTime(long timestamp) {
@@ -158,14 +159,14 @@ public class Sw360ClearingRequestService {
 
     public Map<PaginationData, List<ClearingRequest>> getRecentClearingRequestsWithPagination(
             User sw360User, Pageable pageable) throws TException {
-        ModerationService.Iface sw360ModerationClient = thriftClients.makeModerationClient();
+        ModerationService.Iface sw360ModerationClient = ThriftClients.makeModerationClient();
         PaginationData pageData = pageableToPaginationData(pageable);
         return sw360ModerationClient.getRecentClearingRequestsWithPagination(sw360User, pageData);
     }
 
     public Map<PaginationData, List<ClearingRequest>> searchClearingRequestsByFilters(
             User sw360User, Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
-        ModerationService.Iface sw360ModerationClient = thriftClients.makeModerationClient();
+        ModerationService.Iface sw360ModerationClient = ThriftClients.makeModerationClient();
         PaginationData pageData = pageableToPaginationData(pageable);
         return sw360ModerationClient.searchClearingRequestsByFilters(sw360User, filterMap, pageData);
     }

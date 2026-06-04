@@ -64,7 +64,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -82,7 +81,6 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
@@ -284,8 +282,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "Filter by attachment author email (createdBy field of attachments)")
             @RequestParam(value = "attachmentAuthor", required = false) String attachmentAuthor,
-            @Parameter(description = "List project by lucene search")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "List project by lucene search, default true")
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -331,7 +329,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             List<Project> sw360Projects, Map<PaginationData, List<Project>> paginatedProjects
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         PaginationResult<Project> paginationResult;
-        if (paginatedProjects != null) {
+        if (!CommonUtils.isNullOrEmptyMap(paginatedProjects)) {
             sw360Projects.addAll(paginatedProjects.values().iterator().next());
             int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
                     .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
@@ -737,15 +735,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         // The CR must only be removed after confirming the project deletion succeeded;
         // deleting it first and then discovering the project is IN_USE causes permanent
         // data loss — the project remains but its clearing history is gone.
-        ThriftClients thriftClients = new ThriftClients();
-        ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
-        ClearingRequest clearingRequest = null;
-
-        try {
-            clearingRequest = moderationClient.getClearingRequestByProjectId(id, sw360User);
-        } catch (TException e) {
-            log.info("No clearing request found for project: " + id + " (exception: " + e.getMessage() + ")");
-        }
+        ClearingRequest clearingRequest = moderationRequestService.getClearingRequestByProjectId(id, sw360User);
 
         // Delete the project first. If this fails the clearing request is left
         // completely untouched — no data loss.
@@ -763,7 +753,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         // is still safe at this point.
         if (clearingRequest != null && !isClosedClearingRequest(clearingRequest)) {
             try {
-                RequestStatus crStatus = moderationClient.deleteClearingRequest(clearingRequest.getId(), sw360User);
+                RequestStatus crStatus = moderationRequestService.deleteClearingRequest(clearingRequest.getId(), sw360User);
                 if (crStatus != RequestStatus.SUCCESS) {
                     log.warn("Project {} deleted but clearing request {} could not be removed",
                             id, clearingRequest.getId());
@@ -1530,7 +1520,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
         ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
-        if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
+        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
+        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
+        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
 
@@ -3699,7 +3691,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         // Get all linked sub-projects recursively
         try {
             Collection<ProjectLink> linkedProjectLinks = SW360Utils.getLinkedProjectsAsFlatList(
-                    rootProject, true, new ThriftClients(), log, sw360User);
+                    rootProject, true, log, sw360User);
 
             // Fetch full project objects for each linked project
             for (ProjectLink projectLink : linkedProjectLinks) {

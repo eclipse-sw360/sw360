@@ -972,7 +972,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     }
 
     private List<LicenseInfoParsingResult> assignComponentToLicenseInfoParsingResults(List<LicenseInfoParsingResult> parsingResults, Release release, User user) throws TException {
-        final ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+        final ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
         final Component component = componentClient.getComponentById(release.getComponentId(), user);
 
         parsingResults.forEach(result -> {

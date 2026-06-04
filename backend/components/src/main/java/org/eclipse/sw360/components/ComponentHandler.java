@@ -57,17 +57,6 @@ public class ComponentHandler implements ComponentService.Iface {
         releaseSearchHandler = new ReleaseSearchHandler(cClient, dbName);
     }
 
-    // TODO use dependency injection instead of this constructors mess
-    public ComponentHandler(ThriftClients thriftClients) throws IOException {
-        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
-    }
-
-    public ComponentHandler(Cloudant client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
-        handler = new ComponentDatabaseHandler(client, dbName, changeLogsDBName, attachmentDbName, thriftClients);
-        componentSearchHandler = new ComponentSearchHandler(client, dbName);
-        releaseSearchHandler = new ReleaseSearchHandler(client, dbName);
-    }
-
     /////////////////////
     // SUMMARY GETTERS //
     /////////////////////
