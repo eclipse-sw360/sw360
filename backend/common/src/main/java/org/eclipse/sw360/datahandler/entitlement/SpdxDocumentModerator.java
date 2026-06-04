@@ -33,18 +33,10 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentModerator.class);
 
-    public SpdxDocumentModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public SpdxDocumentModerator() {
-        super(new ThriftClients());
-    }
-
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) {
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createSPDXDocumentRequest(spdx, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
@@ -55,7 +47,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
 
     public RequestStatus deleteSPDXDocument(SPDXDocument spdx, User user) {
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createSPDXDocumentDeleteRequest(spdx, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {

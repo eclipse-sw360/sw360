@@ -29,7 +29,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -167,11 +166,11 @@ public class Sw360VendorService {
     }
 
     private VendorService.Iface getThriftVendorClient() throws TTransportException {
-        return new ThriftClients().makeVendorClient();
+        return ThriftClients.makeVendorClient();
     }
 
     public ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        return new ThriftClients().makeComponentClient();
+        return ThriftClients.makeComponentClient();
     }
 
     public ByteBuffer exportExcel() throws TException {

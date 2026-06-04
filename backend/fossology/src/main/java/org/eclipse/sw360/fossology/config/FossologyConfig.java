@@ -92,11 +92,6 @@ public class FossologyConfig {
         return new AttachmentConnector(getConfiguredClient(), COUCH_DB_ATTACHMENTS, downloadTimeout);
     }
 
-    @Bean
-    public ThriftClients thriftClients() {
-        return new ThriftClients();
-    }
-
     /**
      * Enhanced RestTemplate configuration for v2 API
      */

@@ -213,7 +213,7 @@ public class VendorDatabaseHandler {
     }
 
     private RequestSummary updateComponents(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
-        ComponentService.Iface componentsClient = new ThriftClients().makeComponentClient();
+        ComponentService.Iface componentsClient = ThriftClients.makeComponentClient();
 
         Set<Component> components = componentsClient.getComponentsByDefaultVendorId(mergeSource.getId());
         components.stream().forEach(component -> {
@@ -224,7 +224,7 @@ public class VendorDatabaseHandler {
     }
 
     private RequestSummary updateReleases(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
-        ComponentService.Iface componentsClient = new ThriftClients().makeComponentClient();
+        ComponentService.Iface componentsClient = ThriftClients.makeComponentClient();
 
         Set<String> componentIds = new HashSet<>();
         Set<Release> releases = componentsClient.getReleasesByVendorId(mergeSource.getId());
@@ -247,7 +247,7 @@ public class VendorDatabaseHandler {
     }
 
     private boolean isVendorUnderModeration(String vendorId) throws TException {
-        ModerationService.Iface moderationClient = new ThriftClients().makeModerationClient();
+        ModerationService.Iface moderationClient = ThriftClients.makeModerationClient();
         List<ModerationRequest> sourceModerationRequests = moderationClient.getModerationRequestByDocumentId(vendorId);
         return sourceModerationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }

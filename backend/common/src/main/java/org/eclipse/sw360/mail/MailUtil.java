@@ -165,7 +165,7 @@ public class MailUtil extends BackendUtils {
     private boolean isMailWantedBy(String userEmail, String notificationPreferenceKey){
         User user;
         try {
-            user = (new ThriftClients()).makeUserClient().getByEmail(userEmail);
+            user = ThriftClients.makeUserClient().getByEmail(userEmail);
         } catch (TException e){
             log.info("Problem fetching user:" + e);
             return false;

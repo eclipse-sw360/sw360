@@ -22,9 +22,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -43,7 +40,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentServic
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
@@ -70,9 +66,6 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 @Service
 @RequiredArgsConstructor
 public class Sw360AttachmentService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
     @NonNull
     private final RestControllerHelper<Attachment> restControllerHelper;
 
@@ -380,8 +373,8 @@ public class Sw360AttachmentService {
         }
     }
 
-    private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {
-        return thriftAttachmentServiceProvider.getService(thriftServerUrl);
+    AttachmentService.Iface getThriftAttachmentClient() {
+        return ThriftClients.makeAttachmentClient();
     }
 
     private void updateAttachment(Attachment attachmentToUpdate, Attachment reqBodyAttachment, User user) {
@@ -518,14 +511,11 @@ public class Sw360AttachmentService {
     }
 
     private ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ProjectService.Client(protocol);
+        return ThriftClients.makeProjectClient();
     }
 
     private SPDXDocumentService.Iface getThriftSpdxDocumentClient() {
-        ThriftClients thriftClients = new ThriftClients();
-        return thriftClients.makeSPDXClient();
+        return ThriftClients.makeSPDXClient();
     }
 
     private Stream<String> distinctProjectIdsFromAttachmentUsages (List<AttachmentUsage> usages){

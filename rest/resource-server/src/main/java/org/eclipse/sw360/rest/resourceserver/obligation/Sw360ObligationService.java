@@ -31,7 +31,6 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.security.access.AccessDeniedException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -85,8 +84,7 @@ public class Sw360ObligationService {
     }
 
     private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        ThriftClients thriftClients = new ThriftClients();
-        return thriftClients.makeLicenseClient();
+        return ThriftClients.makeLicenseClient();
     }
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {

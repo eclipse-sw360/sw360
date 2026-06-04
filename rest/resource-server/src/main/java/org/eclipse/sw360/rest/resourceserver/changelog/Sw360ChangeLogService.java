@@ -9,27 +9,19 @@
  */
 package org.eclipse.sw360.rest.resourceserver.changelog;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.Maps;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
-import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangelogSortColumn;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -41,13 +33,8 @@ import lombok.RequiredArgsConstructor;
 public class Sw360ChangeLogService {
     private static final Logger log = LogManager.getLogger(Sw360ChangeLogService.class);
 
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
-    private ChangeLogsService.Iface getThriftChangeLogClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/changelogs/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ChangeLogsService.Client(protocol);
+    private ChangeLogsService.Iface getThriftChangeLogClient() {
+        return ThriftClients.makeChangeLogsClient();
     }
 
     public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) throws TException {

@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,7 +17,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 /**
@@ -27,9 +28,6 @@ import org.springframework.stereotype.Service;
 public class Sw360UserDetailsProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
-
-    @Autowired
-    private ThriftClients thriftClients;
 
     public User provideUserDetails(String email, String extId) {
         User result = null;
@@ -50,7 +48,7 @@ public class Sw360UserDetailsProvider {
     private User getUserByEmailOrExternalId(String email, String externalId) {
         // client should be put into threadlocal some day after this pattern proofed
         // itself
-        UserService.Iface client = thriftClients.makeUserClient();
+        UserService.Iface client = getUserClient();
         try {
             if (StringUtils.isNotEmpty(email) || StringUtils.isNotEmpty(externalId)) {
                 return client.getByEmailOrExternalId(email, externalId);
@@ -59,5 +57,10 @@ public class Sw360UserDetailsProvider {
             // do nothing
         }
         return null;
+    }
+
+    @VisibleForTesting
+    public UserService.@NonNull Iface getUserClient() {
+        return ThriftClients.makeUserClient();
     }
 }

@@ -850,7 +850,7 @@ public class ModerationDatabaseHandler {
     }
 
     private String getDepartmentByUserEmail(String userEmail) throws TException {
-        UserService.Iface client = (new ThriftClients()).makeUserClient();
+        UserService.Iface client = ThriftClients.makeUserClient();
         return client.getDepartmentByEmail(userEmail);
     }
 
@@ -956,7 +956,7 @@ public class ModerationDatabaseHandler {
     private List<User> getAllSW360Users() {
         List<User> sw360users = Collections.emptyList();
         try {
-            UserService.Iface client = (new ThriftClients()).makeUserClient();
+            UserService.Iface client = ThriftClients.makeUserClient();
             sw360users = CommonUtils.nullToEmptyList(client.getAllUsers());
         } catch (TException e) {
             log.error("Problem with user client", e);

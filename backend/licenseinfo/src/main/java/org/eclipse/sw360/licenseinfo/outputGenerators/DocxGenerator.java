@@ -339,7 +339,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         int currentRow = 7;
 
-        UserService.Iface userClient = new ThriftClients().makeUserClient();
+        UserService.Iface userClient = ThriftClients.makeUserClient();
 
         if (project.isSetProjectOwner() && !project.getProjectOwner().isEmpty()) {
             User owner = null;
@@ -584,7 +584,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             if (r.getLanguagesSize() == 0 && r.getOperatingSystemsSize() == 0 && r.getSoftwarePlatformsSize() == 0) {
                 try {
                     org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface componentClient =
-                            new ThriftClients().makeComponentClient();
+                            ThriftClients.makeComponentClient();
                     Release fullRelease = componentClient.getReleaseById(r.getId(), user);
                     if (fullRelease != null) {
                         r = fullRelease;
@@ -966,7 +966,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private static List<License> getLicenses() throws TException {
-        LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
+        LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
         return licenseClient.getLicenses();
     }
 

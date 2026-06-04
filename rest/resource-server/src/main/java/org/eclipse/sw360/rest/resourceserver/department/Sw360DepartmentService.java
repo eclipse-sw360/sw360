@@ -36,8 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -47,16 +46,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Sw360DepartmentService {
     private static final Logger log = LogManager.getLogger(Sw360DepartmentService.class);
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-    ThriftClients thriftClients = new ThriftClients();
 
     public RequestSummary importDepartmentManually(User sw360User) throws TException {
         try {
             if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
                 throw new AccessDeniedException("User is not admin");
             }
-            UserService.Iface userClient = thriftClients.makeUserClient();
+            UserService.Iface userClient = getUserClient();
             return userClient.importFileToDB();
         } catch (TException e) {
             log.error("Error occurred while scheduling service", e);
@@ -64,11 +60,15 @@ public class Sw360DepartmentService {
         }
     }
 
+    UserService.@NonNull Iface getUserClient() {
+        return ThriftClients.makeUserClient();
+    }
+
     public boolean isDepartmentScheduled(User user) throws TException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
             throw new AccessDeniedException("User is not an admin");
         }
-        ScheduleService.Iface scheduleClient = thriftClients.makeScheduleClient();
+        ScheduleService.Iface scheduleClient = ThriftClients.makeScheduleClient();
         RequestStatusWithBoolean requestStatus = scheduleClient
                 .isServiceScheduled(ThriftClients.IMPORT_DEPARTMENT_SERVICE, user);
         if (RequestStatus.SUCCESS.equals(requestStatus.getRequestStatus())) {
@@ -82,7 +82,7 @@ public class Sw360DepartmentService {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
             throw new AccessDeniedException("User is not an admin");
         }
-        ScheduleService.Iface scheduleClient = thriftClients.makeScheduleClient();
+        ScheduleService.Iface scheduleClient = ThriftClients.makeScheduleClient();
         RequestStatusWithBoolean requestStatus = scheduleClient
                 .isServiceScheduled(ThriftClients.IMPORT_DEPARTMENT_SERVICE, user);
         if (RequestStatus.SUCCESS.equals(requestStatus.getRequestStatus()) && requestStatus.isAnswerPositive()) {
@@ -92,7 +92,7 @@ public class Sw360DepartmentService {
     }
 
     public RequestStatus unScheduleImportDepartment(User user) throws TException {
-        return thriftClients.makeScheduleClient().unscheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE,
+        return ThriftClients.makeScheduleClient().unscheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE,
                 user);
     }
 
@@ -100,7 +100,7 @@ public class Sw360DepartmentService {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
             throw new AccessDeniedException("User is not an admin");
         }
-        UserService.Iface userClient = thriftClients.makeUserClient();
+        UserService.Iface userClient = getUserClient();
         if (userClient == null) {
             throw new SW360Exception("Failed to create UserService client");
         }
@@ -108,9 +108,8 @@ public class Sw360DepartmentService {
     }
 
     public Map<String, Object> getImportInformation(User user) throws TException {
-        ThriftClients thriftClients = new ThriftClients();
-        UserService.Iface userClient = thriftClients.makeUserClient();
-        ScheduleService.Iface scheduleClient = thriftClients.makeScheduleClient();
+        UserService.Iface userClient = getUserClient();
+        ScheduleService.Iface scheduleClient = ThriftClients.makeScheduleClient();
 
         Map<String, Object> response = new HashMap<>();
         response.put(SW360Constants.IMPORT_DEPARTMENT_IS_SCHEDULED, isDepartmentScheduled(user));
@@ -122,15 +121,13 @@ public class Sw360DepartmentService {
     }
 
     public Set<String> getLogFileList() throws TException {
-        ThriftClients thriftClients = new ThriftClients();
-        UserService.Iface userClient = thriftClients.makeUserClient();
+        UserService.Iface userClient = getUserClient();
 
         return userClient.getListFileLog();
     }
 
     public List<String> getLogFileContentByDate(String date) throws TException {
-        ThriftClients thriftClients = new ThriftClients();
-        UserService.Iface userClient = thriftClients.makeUserClient();
+        UserService.Iface userClient = getUserClient();
         if (!isValidDate(date)) {
             throw new SW360Exception("Invalid date time format, must be: yyyy-MM-dd");
         }
@@ -157,8 +154,7 @@ public class Sw360DepartmentService {
 
     public Map<String, List<String>> getSecondaryDepartmentMembers() {
         try {
-            ThriftClients thriftClients = new ThriftClients();
-            UserService.Iface userClient = thriftClients.makeUserClient();
+            UserService.Iface userClient = getUserClient();
             return userClient.getSecondaryDepartmentMemberEmails();
         } catch (TException e) {
             log.error(e.getMessage());
@@ -168,8 +164,7 @@ public class Sw360DepartmentService {
 
     public Map<String, List<String>> getMemberEmailsBySecondaryDepartmentName(String departmentName) {
         try {
-            ThriftClients thriftClients = new ThriftClients();
-            UserService.Iface userClient = thriftClients.makeUserClient();
+            UserService.Iface userClient = getUserClient();
             List<String> memberEmails = List.copyOf(userClient.getMemberEmailsBySecondaryDepartmentName(departmentName));
             return Map.of(departmentName, memberEmails);
         } catch (TException e) {
@@ -192,22 +187,19 @@ public class Sw360DepartmentService {
 
     private void deleteMembersFromDepartment(String departmentName, List<String> removedMemberEmails) throws TException {
         List<User> addedMembers = getUsersByEmails(removedMemberEmails);
-        ThriftClients thriftClients = new ThriftClients();
-        UserService.Iface userClient = thriftClients.makeUserClient();
+        UserService.Iface userClient = getUserClient();
         userClient.deleteSecondaryDepartmentFromListUser(addedMembers, departmentName);
     }
 
     private void addMembersToDepartment(String departmentName, List<String> addedMemberEmails) throws TException {
         List<User> addedMembers = getUsersByEmails(addedMemberEmails);
-        ThriftClients thriftClients = new ThriftClients();
-        UserService.Iface userClient = thriftClients.makeUserClient();
+        UserService.Iface userClient = getUserClient();
         userClient.updateDepartmentToListUser(addedMembers, departmentName);
     }
 
     private List<User> getUsersByEmails(List<String> emails) {
         try {
-            ThriftClients thriftClients = new ThriftClients();
-            UserService.Iface userClient = thriftClients.makeUserClient();
+            UserService.Iface userClient = getUserClient();
             return userClient.getAllUserByEmails(emails);
         } catch (TException exception) {
             return Collections.emptyList();

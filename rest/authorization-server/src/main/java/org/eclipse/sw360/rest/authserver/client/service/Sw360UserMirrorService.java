@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -23,7 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.users.ClientMetadata;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 /**
@@ -45,9 +46,6 @@ public class Sw360UserMirrorService {
 
     private static final Logger log = LogManager.getLogger(Sw360UserMirrorService.class);
 
-    @Autowired
-    private ThriftClients thriftClients;
-
     /**
      * Look up the SW360 user record by email, returning {@code null} when no
      * user with that primary email exists.
@@ -57,7 +55,7 @@ public class Sw360UserMirrorService {
             return null;
         }
         try {
-            User user = thriftClients.makeUserClient().getByEmail(email);
+            User user = getUserClient().getByEmail(email);
             // Thrift may return an empty User stub instead of null on miss
             // depending on backend version; treat missing email as "not found".
             if (user == null || CommonUtils.isNullEmptyOrWhitespace(user.getEmail())) {
@@ -68,6 +66,11 @@ public class Sw360UserMirrorService {
             log.warn("Failed to look up user by email <{}>", email, e);
             return null;
         }
+    }
+
+    @VisibleForTesting
+    public UserService.@NonNull Iface getUserClient() {
+        return ThriftClients.makeUserClient();
     }
 
     /**
@@ -134,7 +137,7 @@ public class Sw360UserMirrorService {
 
     private boolean updateUser(User user) {
         try {
-            UserService.Iface client = thriftClients.makeUserClient();
+            UserService.Iface client = getUserClient();
             RequestStatus status = client.updateUser(user);
             if (status != RequestStatus.SUCCESS) {
                 log.warn("updateUser returned non-SUCCESS status {} for user <{}>", status, user.getEmail());

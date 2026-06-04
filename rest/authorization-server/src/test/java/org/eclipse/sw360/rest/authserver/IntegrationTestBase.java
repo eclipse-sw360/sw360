@@ -28,13 +28,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService;
+import org.eclipse.sw360.rest.authserver.client.service.Sw360UserMirrorService;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 import org.junit.Before;
@@ -51,6 +51,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -66,18 +67,17 @@ public abstract class IntegrationTestBase {
     @Value("${local.server.port}")
     protected int port;
 
-    @MockitoBean
-    protected ThriftClients thriftClients;
+    @MockitoSpyBean
+    protected Sw360UserDetailsProvider sw360UserDetailsProvider;
+
+    @MockitoSpyBean
+    protected Sw360UserMirrorService sw360UserMirrorService;
 
     @MockitoBean
     protected Sw360ClientDetailsService sw360ClientDetailsService;
 
     @MockitoBean
     protected OAuthClientRepository clientRepo;
-
-    @MockitoBean
-    Sw360UserDetailsProvider sw360UserDetailsProvider;
-
 
     protected User adminTestUser;
 
@@ -106,7 +106,8 @@ public abstract class IntegrationTestBase {
         when(mockedUserService.getByEmail(eq(normalTestUser.email))).thenReturn(normalTestUser);
         when(mockedUserService.updateUser(org.mockito.ArgumentMatchers.any(User.class)))
                 .thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
-        when(thriftClients.makeUserClient()).thenReturn(mockedUserService);
+        org.mockito.Mockito.doReturn(mockedUserService).when(sw360UserDetailsProvider).getUserClient();
+        org.mockito.Mockito.doReturn(mockedUserService).when(sw360UserMirrorService).getUserClient();
 
         // Default: any unknown user gets UsernameNotFoundException from the mock.
         // Use doThrow so specific stubs below can override without triggering the exception.

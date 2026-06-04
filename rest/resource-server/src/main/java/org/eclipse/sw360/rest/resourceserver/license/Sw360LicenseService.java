@@ -15,9 +15,7 @@ import lombok.RequiredArgsConstructor;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -35,8 +33,6 @@ import org.eclipse.sw360.exporter.LicsExporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
 import org.eclipse.sw360.importer.LicsImporter;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -57,8 +53,6 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Service
 @RequiredArgsConstructor
 public class Sw360LicenseService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
     private static final String CONTENT_TYPE = "application/zip";
     LicenseType lType = new LicenseType();
 
@@ -226,10 +220,9 @@ public class Sw360LicenseService {
 
     // visible for testing
     LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new LicenseService.Client(protocol);
+        return ThriftClients.makeLicenseClient();
     }
+
     public RequestSummary importSpdxInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
