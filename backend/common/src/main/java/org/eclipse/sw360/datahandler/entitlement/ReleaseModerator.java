@@ -34,19 +34,11 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
     private static final Logger log = LogManager.getLogger(ReleaseModerator.class);
 
-    public ReleaseModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public ReleaseModerator() {
-        super(new ThriftClients());
-    }
-
     public RequestStatus updateRelease(Release release, User user) {
 
         RequestStatus requestStatus;
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             requestStatus=client.createReleaseRequest(release, user);
             return requestStatus;
         } catch (TException e) {
@@ -58,7 +50,7 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
     public RequestStatus updateReleaseEccInfo(Release release, User user) {
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createReleaseRequestForEcc(release, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
@@ -69,7 +61,7 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
     public RequestStatus deleteRelease(Release release, User user) {
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createReleaseDeleteRequest(release, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {

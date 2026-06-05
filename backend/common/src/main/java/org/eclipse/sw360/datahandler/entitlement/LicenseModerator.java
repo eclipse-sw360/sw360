@@ -37,19 +37,10 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
 
     private static final Logger log = LogManager.getLogger(LicenseModerator.class);
 
-
-    public LicenseModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public LicenseModerator() {
-        super(new ThriftClients());
-    }
-
     public RequestStatus updateLicense(License license, User user) {
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createLicenseRequest(license, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {

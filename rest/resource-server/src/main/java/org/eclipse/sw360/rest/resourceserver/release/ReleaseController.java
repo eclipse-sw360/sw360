@@ -68,6 +68,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Doc
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -564,7 +565,24 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         attachmentService.preserveImmutableAttachmentFields(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
-        updateRelease.setClearingState(sw360Release.getClearingState());
+
+        // Apply the same clearing state edit rules as the frontend:
+        // Only clearing admin/expert can change clearing state, and only to
+        // UNDER_CLEARING from NEW_CLEARING or REPORT_AVAILABLE.
+        // If conditions are not met, silently preserve existing state and proceed with other field updates.
+        if (updateRelease.isSetClearingState()
+                && updateRelease.getClearingState() == ClearingState.UNDER_CLEARING
+                && PermissionUtils.isUserAtLeastClearingAdminOrExpert(user)) {
+            ClearingState currentState = sw360Release.getClearingState();
+            if (currentState == ClearingState.NEW_CLEARING || currentState == ClearingState.REPORT_AVAILABLE) {
+                updateRelease.setClearingState(ClearingState.UNDER_CLEARING);
+            } else {
+                updateRelease.setClearingState(sw360Release.getClearingState());
+            }
+        } else {
+            updateRelease.setClearingState(sw360Release.getClearingState());
+        }
+
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);

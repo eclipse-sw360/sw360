@@ -92,12 +92,12 @@
     <json-path.version>3.0.0</json-path.version>
     <json-smart.version>2.6.0</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
-    <jackson.version>2.21.3</jackson.version>
-    <jackson.annotation.version>2.21</jackson.annotation.version>
+    <jackson.version>2.22.0</jackson.version>
+    <jackson.annotation.version>2.22</jackson.annotation.version>
 
     <!-- Dependencies version properties -->
     <assertj.version>3.27.7</assertj.version>
-    <byte-buddy.version>1.18.8</byte-buddy.version>
+    <byte-buddy.version>1.18.10</byte-buddy.version>
     <cloudantsdk.version>0.10.18</cloudantsdk.version>
     <commons-cli.version>1.11.0</commons-cli.version>
     <commons-codec.version>1.22.0</commons-codec.version>
@@ -126,7 +126,7 @@
     <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
     <jakarta.mail-api.version>2.0.2</jakarta.mail-api.version>
     <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
-    <jaxen.version>2.0.3</jaxen.version>
+    <jaxen.version>2.0.5</jaxen.version>
     <jboss-logging.version>3.6.3.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.55</jcraft.version>
@@ -162,7 +162,7 @@
     <thrift.version>0.20.0</thrift.version>
     <archunit.version>1.4.2</archunit.version>
     <wiremock.version>3.13.2</wiremock.version>
-    <keycloak.version>26.6.2</keycloak.version>
+    <keycloak.version>26.6.3</keycloak.version>
     <org.owasp.encoder.version>1.4.0</org.owasp.encoder.version>
     <write.properties.file.version>2.0.0</write.properties.file.version>
     <!-- Deployment artifact name (Tomcat context root). Defaults to artifactId.
@@ -915,7 +915,7 @@
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven-resources-plugin.version}</version>
           <configuration>
-            <overwrite>true</overwrite>
+            <changeDetection>always</changeDetection>
           </configuration>
         </plugin>
         <plugin>

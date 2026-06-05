@@ -100,11 +100,10 @@ public class SW360ReportService {
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
     private static final Set<String> SUPPORTED_FORMATS = Set.of("xlsx", "csv", "json", "xml");
     private final LicenseInfoExporter licenseInfoExporter = new LicenseInfoExporter();
-    ThriftClients thriftClients = new ThriftClients();
-    ProjectService.Iface projectclient = thriftClients.makeProjectClient();
-    ComponentService.Iface componentclient = thriftClients.makeComponentClient();
-    LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-    AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+    ProjectService.Iface projectclient = ThriftClients.makeProjectClient();
+    ComponentService.Iface componentclient = ThriftClients.makeComponentClient();
+    LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
+    AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
         return getProjectBuffer(user, extendedByReleases, projectId, format, null);
@@ -571,7 +570,7 @@ public class SW360ReportService {
         final Set<String> attachmentIds = new HashSet<>();
         final Set<Project> projects = new HashSet<>(List.of(sw360Project));
         if (withSubProject) {
-            final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(sw360Project, true, thriftClients, log, sw360User);
+            final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(sw360Project, true, log, sw360User);
             projects.addAll(linkedProjects.stream().map(link -> wrapTException(() -> projectService.getProjectForUserById(link.getId(), sw360User))).toList());
         }
         for (Project project : projects) {

@@ -32,18 +32,10 @@ public class SpdxDocumentCreationInfoModerator
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentCreationInfoModerator.class);
 
-    public SpdxDocumentCreationInfoModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
-
-    public SpdxDocumentCreationInfoModerator() {
-        super(new ThriftClients());
-    }
-
     public RequestStatus updateSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createSpdxDocumentCreationInfoRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
@@ -55,7 +47,7 @@ public class SpdxDocumentCreationInfoModerator
 
     public RequestStatus deleteSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ModerationService.Iface client = ThriftClients.makeModerationClient();
             client.createSpdxDocumentCreationInfoDeleteRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {

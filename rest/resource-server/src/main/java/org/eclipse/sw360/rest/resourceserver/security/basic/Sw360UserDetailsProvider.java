@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Repository;
 
@@ -19,8 +20,6 @@ import org.springframework.stereotype.Repository;
 public class Sw360UserDetailsProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
-
-    private final ThriftClients thriftClients = new ThriftClients();
 
     public User provideUserDetails(String email, String extId) {
         log.debug("Looking up user with email <{}> and external id <{}>.", email, extId);
@@ -36,7 +35,7 @@ public class Sw360UserDetailsProvider {
     }
 
     private User getUserByEmailOrExternalId(String email, String externalId) {
-        UserService.Iface client = thriftClients.makeUserClient();
+        UserService.Iface client = getUserClient();
         try {
             if (StringUtils.isNotEmpty(email) || StringUtils.isNotEmpty(externalId)) {
                 return client.getByEmailOrExternalId(email, externalId);
@@ -45,5 +44,9 @@ public class Sw360UserDetailsProvider {
             // do nothing
         }
         return null;
+    }
+
+    UserService.@NonNull Iface getUserClient() {
+        return ThriftClients.makeUserClient();
     }
 }

@@ -37,13 +37,11 @@ public class Sw360AttachmentCleanUpService {
     AttachmentService.Iface attachmentClient;
 
     private ComponentService.Iface getThriftComponentClient() {
-        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
-        return componentClient;
+        return ThriftClients.makeComponentClient();
     }
 
     private AttachmentService.Iface getThriftAttachmentClient() {
-        AttachmentService.Iface attachmentClient = new ThriftClients().makeAttachmentClient();
-        return attachmentClient;
+        return ThriftClients.makeAttachmentClient();
     }
 
     public RequestSummary cleanUpAttachments(User sw360User) throws TException {

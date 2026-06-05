@@ -111,6 +111,12 @@ ENV SVM_SW360_CERTIFICATE_FILENAME="not-configured.pfx"
 # Security settings
 ENV SW360_SECURITY_HTTP_BASIC_ENABLED="true"
 #
+# Thrift server settings
+ENV BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL=200
+ENV BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE=100
+ENV BACKEND_THRIFT_IDLE_EVICT_SECONDS=15
+ENV BACKEND_THRIFT_CONNECTION_TTL_SECONDS=60
+#
 # Other settings
 ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
 ENV SW360_CORS_ALLOWED_ORIGIN="*"
@@ -155,7 +161,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-FROM quay.io/keycloak/keycloak:26.6.2@sha256:f9ba7b2af90db8dc749a57ca9aedca51e840cb9224441ab546a968da941da900 AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.6.3@sha256:5fdbf2dbb5897cc34e82de49d13e23db011f9925089dbc555fc095f2c8bc1dac AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -174,7 +180,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-FROM quay.io/keycloak/keycloak:26.6.2@sha256:f9ba7b2af90db8dc749a57ca9aedca51e840cb9224441ab546a968da941da900 AS keycloak
+FROM quay.io/keycloak/keycloak:26.6.3@sha256:5fdbf2dbb5897cc34e82de49d13e23db011f9925089dbc555fc095f2c8bc1dac AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
