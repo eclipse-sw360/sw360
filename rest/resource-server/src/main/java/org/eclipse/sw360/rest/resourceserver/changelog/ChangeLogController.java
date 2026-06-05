@@ -94,7 +94,6 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
                     content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
                             schema = @Schema(implementation = ChangeLogs.class))}
             ),
-            @ApiResponse(responseCode = "204", description = "No change logs found.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Failed to retrieve change logs.")
     })
     @GetMapping(value = CHANGE_LOG_URL + "/document/{id}")
