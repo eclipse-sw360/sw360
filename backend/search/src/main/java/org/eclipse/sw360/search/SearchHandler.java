@@ -16,13 +16,13 @@ import com.google.common.collect.Sets;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
-import org.eclipse.sw360.datahandler.thrift.search.SearchService;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,12 +34,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Implementation of the Thrift service
- *
- * @author cedric.bodet@tngtech.com
- */
-public class SearchHandler implements SearchService.Iface {
+
+@Service
+public class SearchHandler{
 
     private static final Logger log = LogManager.getLogger(SearchHandler.class);
 
@@ -57,10 +54,9 @@ public class SearchHandler implements SearchService.Iface {
         dbSw360users = new Sw360usersDatabaseSearchHandler(client, dbName);
     }
 
-    @Override
-    public List<SearchResult> searchFiltered(String text, User user, List<String> typeMask) throws TException {
+    public List<SearchResult> searchFiltered(String text, User user, List<String> typeMask) throws SW360Exception {
         if(text == null) {
-            throw new TException("Search text was null.");
+            throw new SW360Exception("Search text was null.");
         }
         if(text.isEmpty()) {
             return Collections.emptyList();
@@ -135,9 +131,9 @@ public class SearchHandler implements SearchService.Iface {
         }
     }
 
-    @Override
-    public List<SearchResult> search(String text, User user) throws TException {
-        return searchFiltered(text,user,null);
+
+    public List<SearchResult> search(String text, User user) throws Exception{
+        return searchFiltered(text,user,Collections.emptyList());
     }
 
 

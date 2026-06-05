@@ -18,7 +18,7 @@ import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.NouveauResult;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -210,15 +210,15 @@ public abstract class AbstractDatabaseSearchHandler {
         SearchResult result = new SearchResult();
 
         // Set row properties
-        result.id = hit.getId();
-        result.score = hit.getScore();
+        result.setId(hit.getId());
+        result.setScore(hit.getScore());
 
         // Get document and
         SearchDocument parser = new SearchDocument(hit.getDoc());
 
         // Get basic search results information
-        result.type = parser.getType();
-        result.name = parser.getName();
+        result.setType(parser.getType());
+        result.setName(parser.getName());
 
         return result;
     }

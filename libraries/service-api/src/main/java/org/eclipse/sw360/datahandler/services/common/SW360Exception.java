@@ -18,11 +18,21 @@ public class SW360Exception extends RuntimeException {
         this.errorCode = null;
     }
 
+    public SW360Exception(String why, Throwable cause) {
+        super(why, cause);
+        this.errorCode = null;
+    }
+
     public SW360Exception(String why, Integer errorCode) {
         super(why);
         this.errorCode = errorCode;
     }
 
+    public SW360Exception(String why, Integer errorCode, Throwable cause) {
+        super(why, cause);
+        this.errorCode = errorCode;
+    }
+    
     public Integer getErrorCode() {
         return errorCode;
     }

@@ -25,8 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.junit.Before;
@@ -50,7 +49,7 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
     private Sw360SearchService searchServiceMock;
 
     @Before
-    public void before() throws TException, IOException {
+    public void before() throws Exception {
         SearchResult sr = new SearchResult();
         sr.setId("376570");
         sr.setType("project");

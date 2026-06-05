@@ -27,13 +27,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -98,7 +97,7 @@ public class SearchController implements RepresentationModelProcessor<Repository
             )
             @RequestParam(value = "typeMasks") Optional<List<String>> typeMasks,
             HttpServletRequest request
-    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+    ) throws Exception, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<SearchResult> searchResults = sw360SearchService.search(searchText, sw360User, typeMasks);

@@ -20,10 +20,10 @@ import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.permissions.ComponentPermissions;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.permissions.ReleasePermissions;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
@@ -61,14 +61,14 @@ public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler 
     }
 
     protected boolean isVisibleToUser(SearchResult result, User user) {
-        if (result.type.equals(SW360Constants.TYPE_PROJECT)) {
-	        Project project = projectRepository.get(result.id);
+        if (result.getType().equals(SW360Constants.TYPE_PROJECT)) {
+	        Project project = projectRepository.get(result.getId());
 	        return ProjectPermissions.isVisible(user).test(project);
-        } else if(result.type.equals(SW360Constants.TYPE_COMPONENT)) {
-            Component component = componentRepository.get(result.id);
+        } else if(result.getType().equals(SW360Constants.TYPE_COMPONENT)) {
+            Component component = componentRepository.get(result.getId());
             return ComponentPermissions.isVisible(user).test(component);    	
-        } else if(result.type.equals(SW360Constants.TYPE_RELEASE)) {
-            Release release = releaseRepository.get(result.id);
+        } else if(result.getType().equals(SW360Constants.TYPE_RELEASE)) {
+            Release release = releaseRepository.get(result.getId());
             boolean isReleaseVisible = ReleasePermissions.isVisible(user).test(release);
             boolean isComponentVisible = false;
             String componentId = release.getComponentId();

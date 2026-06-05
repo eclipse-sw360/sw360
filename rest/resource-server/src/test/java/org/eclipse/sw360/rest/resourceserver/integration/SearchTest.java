@@ -11,8 +11,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.junit.Before;
@@ -50,7 +49,7 @@ public class SearchTest extends TestIntegrationBase {
     private List<SearchResult> searchResults;
 
     @Before
-    public void before() throws TException {
+    public void before() throws Exception {
         searchResults = new ArrayList<>();
 
         // Create test search results
@@ -146,7 +145,7 @@ public class SearchTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_search() throws Exception {
         // Mock search service to throw an exception
-        doThrow(new TException("Test exception")).when(this.searchServiceMock).search(any(), any(), any());
+        doThrow(new RuntimeException("Test exception")).when(this.searchServiceMock).search(any(), any(), any());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
