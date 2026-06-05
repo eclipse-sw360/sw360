@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.ProjectAttachmentUsage;
@@ -45,7 +47,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
@@ -200,7 +201,7 @@ public class JacksonCustomizations {
         registrar.accept(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
         registrar.accept(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class);
         registrar.accept(Repository.class, Sw360Module.RepositoryMixin.class);
-        registrar.accept(SearchResult.class, Sw360Module.SearchResultMixin.class);
+
         registrar.accept(ChangeLogs.class, Sw360Module.ChangeLogsMixin.class);
         registrar.accept(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class);
         registrar.accept(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class);
@@ -2393,20 +2394,6 @@ public class JacksonCustomizations {
         public static abstract class RepositoryMixin extends Repository {
         }
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        @JsonIgnoreProperties({
-                "score",
-                "details",
-                "setScore",
-                "detailsSize",
-                "detailsIterator",
-                "setDetails",
-                "setId",
-                "setType",
-                "setName"
-        })
-        public static abstract class SearchResultMixin extends SearchResult {
-        }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({

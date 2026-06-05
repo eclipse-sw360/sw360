@@ -10,7 +10,7 @@
 package org.eclipse.sw360.search;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 
