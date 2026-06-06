@@ -196,8 +196,8 @@ sw360-image:
   stage: images
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
-    IMAGE_TAG: latest
-    ADDITIONAL_IMAGE_TAGS: $CI_COMMIT_SHORT_SHA
+    IMAGE_TAG: "$CI_COMMIT_SHORT_SHA-$ARCH"
+    ADDITIONAL_IMAGE_TAGS: latest
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.internal
     EXTRA_ARGUMENTS: --reproducible --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN
   needs:
@@ -212,8 +212,8 @@ keycloak-image:
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
     EXTRA_ARGUMENTS: --reproducible --build-arg KC_VERSION=$KC_VERSION
-    IMAGE_TAG: $KC_VERSION
-    ADDITIONAL_IMAGE_TAGS: $CI_COMMIT_SHORT_SHA
+    IMAGE_TAG: "$CI_COMMIT_SHORT_SHA-$ARCH"
+    ADDITIONAL_IMAGE_TAGS: $KC_VERSION
     BUILD_CONTEXT: $BUILD_ARTIFACT_ROOT/keycloak
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.keycloak
   needs:
@@ -228,6 +228,7 @@ sw360-image-merge:
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
     MULTI_ARCH_IMAGE_TAG: latest
+    TEMPLATE: $CI_REGISTRY_IMAGE/sw360-new:$CI_COMMIT_SHORT_SHA-ARCH
   needs:
     - sw360-image
 
@@ -237,5 +238,6 @@ keycloak-image-merge:
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
     MULTI_ARCH_IMAGE_TAG: $KC_VERSION
+    TEMPLATE: $CI_REGISTRY_IMAGE/keycloak:$CI_COMMIT_SHORT_SHA-ARCH
   needs:
     - keycloak-image
