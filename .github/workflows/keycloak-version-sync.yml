@@ -1,0 +1,101 @@
+# Copyright (c) 2026 Siemens AG. Part of the SW360 Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+# License-Filename: LICENSE
+
+name: Keycloak Version Sync
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/keycloak-version-sync.yml'
+
+permissions: read-all
+
+jobs:
+  sync-keycloak-version:
+    if: ${{ github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]' || github.actor == 'GMishx' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout source code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # Checkout the PR branch so commits can be pushed back to it.
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Extract Keycloak version from Dockerfile
+        id: extract_version
+        shell: bash
+        run: |
+          # Extract version from Dockerfile (e.g., 26.6.3 from "FROM quay.io/keycloak/keycloak:26.6.3@sha256:...")
+          KC_VERSION=$(grep -oP 'FROM quay\.io/keycloak/keycloak:\K[0-9]+\.[0-9]+\.[0-9]+' Dockerfile | head -1)
+
+          if [ -z "$KC_VERSION" ]; then
+            echo "Failed to extract Keycloak version from Dockerfile"
+            echo "keycloak_version=" >> "$GITHUB_OUTPUT"
+          else
+            echo "keycloak_version=$KC_VERSION" >> "$GITHUB_OUTPUT"
+            echo "Extracted Keycloak version: $KC_VERSION"
+          fi
+
+      - name: Check if sw360_container.yml needs update
+        id: check_update
+        shell: bash
+        env:
+          KC_VERSION: ${{ steps.extract_version.outputs.keycloak_version }}
+        run: |
+          # Check if the version in sw360_container.yml matches the Dockerfile version
+          if [ -z "$KC_VERSION" ]; then
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping update: Could not extract Keycloak version from Dockerfile"
+            exit 0
+          fi
+
+          CURRENT_VERSION=$(grep -oP 'type=raw,value=\K[0-9]+\.[0-9]+\.[0-9]+' .github/workflows/sw360_container.yml)
+
+          if [ "$CURRENT_VERSION" != "$KC_VERSION" ]; then
+            echo "needs_update=true" >> "$GITHUB_OUTPUT"
+            echo "Current version in sw360_container.yml: $CURRENT_VERSION"
+            echo "New version from Dockerfile: $KC_VERSION"
+          else
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            echo "Versions already match: $KC_VERSION"
+          fi
+
+      - name: Update Keycloak version in sw360_container.yml
+        if: steps.check_update.outputs.needs_update == 'true'
+        shell: bash
+        env:
+          KC_VERSION: ${{ steps.extract_version.outputs.keycloak_version }}
+        run: |
+          # Update the raw tag value in meta_keycloak section
+          sed -i "s/type=raw,value=[0-9]\+\.[0-9]\+\.[0-9]\+/type=raw,value=$KC_VERSION/g" .github/workflows/sw360_container.yml
+          echo "Updated sw360_container.yml with Keycloak version: $KC_VERSION"
+
+      - name: Commit changes
+        if: steps.check_update.outputs.needs_update == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --exit-code; then
+            echo "No changes detected"
+          else
+            git add .github/workflows/sw360_container.yml
+            git commit -m "chore: update Keycloak version in sw360_container.yml to match Dockerfile"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
