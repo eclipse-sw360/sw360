@@ -21,7 +21,8 @@ include:
   - project: awesome-ci/templates
     ref: v3.0.0 # Insert desired version from https://code.siemens.com/awesome-ci/templates/-/releases
     file:
-      - docker/build-docker-image.gitlab-ci.yml
+      - build-multi-arch-docker-images.gitlab-ci.yml
+      - docker/merge-multi-arch-image.gitlab-ci.yml
       - general/use-proxy.gitlab-ci.yml
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
   - component: code.siemens.com/code-ops/ci-components/renovate@~latest
@@ -191,7 +192,7 @@ build:
       - $BUILD_ARTIFACT_ROOT/keycloak
 
 sw360-image:
-  extends: .awesome-ci/build-docker-image
+  extends: .awesome-ci/build-multi-arch-docker-images
   stage: images
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
@@ -206,7 +207,7 @@ sw360-image:
     - if: $CI_COMMIT_BRANCH == "mainct"
 
 keycloak-image:
-  extends: .awesome-ci/build-docker-image
+  extends: .awesome-ci/build-multi-arch-docker-images
   stage: images
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
@@ -220,3 +221,21 @@ keycloak-image:
       artifacts: true
   rules:
     - if: $CI_COMMIT_BRANCH == "mainct"
+
+sw360-image-merge:
+  extends: .awesome-ci/merge-multi-arch-image
+  stage: images
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
+    MULTI_ARCH_IMAGE_TAG: latest
+  needs:
+    - sw360-image
+
+keycloak-image-merge:
+  extends: .awesome-ci/merge-multi-arch-image
+  stage: images
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
+    MULTI_ARCH_IMAGE_TAG: $KC_VERSION
+  needs:
+    - keycloak-image
