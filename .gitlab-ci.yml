@@ -199,7 +199,7 @@ sw360-image:
     IMAGE_TAG: "$CI_COMMIT_SHORT_SHA-$ARCH"
     ADDITIONAL_IMAGE_TAGS: latest
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.internal
-    EXTRA_ARGUMENTS: --reproducible --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN
+    EXTRA_ARGUMENTS: --reproducible --build-arg ARCH=$ARCH --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN
   needs:
     - job: build
       artifacts: false
@@ -211,7 +211,7 @@ keycloak-image:
   stage: images
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
-    EXTRA_ARGUMENTS: --reproducible --build-arg KC_VERSION=$KC_VERSION
+    EXTRA_ARGUMENTS: --reproducible --build-arg ARCH=$ARCH --build-arg KC_VERSION=$KC_VERSION
     IMAGE_TAG: "$CI_COMMIT_SHORT_SHA-$ARCH"
     ADDITIONAL_IMAGE_TAGS: $KC_VERSION
     BUILD_CONTEXT: $BUILD_ARTIFACT_ROOT/keycloak
