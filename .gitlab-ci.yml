@@ -21,7 +21,7 @@ include:
   - project: awesome-ci/templates
     ref: v3.0.0 # Insert desired version from https://code.siemens.com/awesome-ci/templates/-/releases
     file:
-      - build-multi-arch-docker-images.gitlab-ci.yml
+      - docker/build-multi-arch-docker-images.gitlab-ci.yml
       - docker/merge-multi-arch-image.gitlab-ci.yml
       - general/use-proxy.gitlab-ci.yml
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
