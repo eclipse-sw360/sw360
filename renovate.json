@@ -24,7 +24,7 @@
         "debian",
         "maven",
         "couchdb",
-        "keycloak/keycloak",
+        "eclipse-sw360/sw360/keycloak",
         "awesome-ci/templates"
       ],
       "groupName": "Pipeline",
@@ -51,11 +51,11 @@
         "/.gitlab-ci.yml/"
       ],
       "matchStrings": [
-        "KC_VERSION:\\s+\"?(?<currentValue>\\d+\\.\\d+\\.\\d+)\"?"
+        "KC_VERSION:\\s+\\\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\\\""
       ],
-      "depNameTemplate": "keycloak/keycloak",
+      "depNameTemplate": "eclipse-sw360/sw360/keycloak",
       "datasourceTemplate": "docker",
-      "registryUrlTemplate": "https://quay.io"
+      "registryUrlTemplate": "https://ghcr.io"
     }
   ],
   "groupName": "Pipeline",
