@@ -18,9 +18,8 @@ import org.eclipse.sw360.rest.resourceserver.cache.ApiResponseCacheManager;
 import org.eclipse.sw360.rest.resourceserver.cache.CacheState;
 import org.eclipse.sw360.rest.resourceserver.cache.CacheStatistics;
 import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -29,20 +28,18 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
-@RunWith(SpringRunner.class)
 public class CacheAdminTest extends TestIntegrationBase {
 
     @LocalServerPort
@@ -53,7 +50,7 @@ public class CacheAdminTest extends TestIntegrationBase {
 
     private List<CacheStatistics> testStats;
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
         User user = TestHelper.getTestUser();
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);

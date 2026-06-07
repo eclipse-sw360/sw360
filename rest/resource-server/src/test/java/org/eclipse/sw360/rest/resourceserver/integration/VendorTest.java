@@ -1,5 +1,6 @@
 /*
 * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+* Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
 *
 * This program and the accompanying materials are made
 * available under the terms of the Eclipse Public License 2.0
@@ -19,9 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -31,21 +31,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringRunner.class)
 public class VendorTest extends TestIntegrationBase {
 
     @LocalServerPort
@@ -58,7 +56,7 @@ public class VendorTest extends TestIntegrationBase {
     private Vendor testVendor2;
     private Set<Release> testReleases;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, ResourceClassNotFoundException {
         // Setup test vendor data
         testVendor = new Vendor();
@@ -133,10 +131,10 @@ public class VendorTest extends TestIntegrationBase {
 
         // Verify response structure
         String responseBody = response.getBody();
-        assertTrue("Response should contain vendors", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:vendors", responseBody.contains("sw360:vendors"));
-        assertTrue("Response should contain Google vendor", responseBody.contains("Google Inc."));
-        assertTrue("Response should contain Pivotal vendor", responseBody.contains("Pivotal Software"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain vendors");
+        assertTrue(responseBody.contains("sw360:vendors"), "Response should contain sw360:vendors");
+        assertTrue(responseBody.contains("Google Inc."), "Response should contain Google vendor");
+        assertTrue(responseBody.contains("Pivotal Software"), "Response should contain Pivotal vendor");
     }
 
     @Test
@@ -153,9 +151,9 @@ public class VendorTest extends TestIntegrationBase {
 
         // Verify pagination structure
         String responseBody = response.getBody();
-        assertTrue("Response should contain page information", responseBody.contains("page"));
-        assertTrue("Response should contain totalElements", responseBody.contains("totalElements"));
-        assertTrue("Response should contain totalPages", responseBody.contains("totalPages"));
+        assertTrue(responseBody.contains("page"), "Response should contain page information");
+        assertTrue(responseBody.contains("totalElements"), "Response should contain totalElements");
+        assertTrue(responseBody.contains("totalPages"), "Response should contain totalPages");
     }
 
     @Test
@@ -180,7 +178,7 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain Google vendor", responseBody.contains("Google Inc."));
+        assertTrue(responseBody.contains("Google Inc."), "Response should contain Google vendor");
     }
 
     // ========== GET SINGLE VENDOR TESTS ==========
@@ -199,10 +197,10 @@ public class VendorTest extends TestIntegrationBase {
 
         // Verify vendor details
         String responseBody = response.getBody();
-        assertTrue("Response should contain vendor fullname", responseBody.contains("Google Inc."));
-        assertTrue("Response should contain vendor shortname", responseBody.contains("Google"));
-        assertTrue("Response should contain vendor URL", responseBody.contains("https://google.com"));
-        assertTrue("Response should contain self link", responseBody.contains("_links"));
+        assertTrue(responseBody.contains("Google Inc."), "Response should contain vendor fullname");
+        assertTrue(responseBody.contains("Google"), "Response should contain vendor shortname");
+        assertTrue(responseBody.contains("https://google.com"), "Response should contain vendor URL");
+        assertTrue(responseBody.contains("_links"), "Response should contain self link");
     }
 
     @Test
@@ -239,10 +237,10 @@ public class VendorTest extends TestIntegrationBase {
 
         // Verify releases structure
         String responseBody = response.getBody();
-        assertTrue("Response should contain releases", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:releases", responseBody.contains("sw360:releases"));
-        assertTrue("Response should contain Release_1", responseBody.contains("Release_1"));
-        assertTrue("Response should contain Release_2", responseBody.contains("Release_2"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain releases");
+        assertTrue(responseBody.contains("sw360:releases"), "Response should contain sw360:releases");
+        assertTrue(responseBody.contains("Release_1"), "Response should contain Release_1");
+        assertTrue(responseBody.contains("Release_2"), "Response should contain Release_2");
     }
 
     @Test
@@ -286,9 +284,9 @@ public class VendorTest extends TestIntegrationBase {
 
         // Verify created vendor
         String responseBody = response.getBody();
-        assertTrue("Response should contain Apache vendor", responseBody.contains("Apache Software Foundation"));
-        assertTrue("Response should contain self link", responseBody.contains("_links"));
-        assertNotNull("Response should contain location header", response.getHeaders().getLocation());
+        assertTrue(responseBody.contains("Apache Software Foundation"), "Response should contain Apache vendor");
+        assertTrue(responseBody.contains("_links"), "Response should contain self link");
+        assertNotNull(response.getHeaders().getLocation(), "Response should contain location header");
     }
 
     @Test
@@ -338,7 +336,7 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain success message", responseBody.contains("Vendor updated successfully"));
+        assertTrue(responseBody.contains("Vendor updated successfully"), "Response should contain success message");
     }
 
     @Test
@@ -365,7 +363,7 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain duplicate error message", responseBody.contains("already exists"));
+        assertTrue(responseBody.contains("already exists"), "Response should contain duplicate error message");
     }
 
     @Test
@@ -388,7 +386,7 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error message", responseBody.contains("cannot be null"));
+        assertTrue(responseBody.contains("cannot be null"), "Response should contain error message");
     }
 
     // ========== DELETE VENDOR TESTS ==========
@@ -406,8 +404,8 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain success message", responseBody.contains("deleted successfully"));
-        assertTrue("Response should contain vendor name", responseBody.contains("Google Inc."));
+        assertTrue(responseBody.contains("deleted successfully"), "Response should contain success message");
+        assertTrue(responseBody.contains("Google Inc."), "Response should contain vendor name");
     }
 
     @Test
@@ -440,12 +438,10 @@ public class VendorTest extends TestIntegrationBase {
 
         // Verify response headers for file download
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertTrue("Should indicate file download",
-                Objects.requireNonNull(responseHeaders.getFirst("Content-Disposition")).contains("attachment"));
-        assertTrue("Should specify Excel filename",
-                Objects.requireNonNull(responseHeaders.getFirst("Content-Disposition")).contains(".xlsx"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertTrue(Objects.requireNonNull(responseHeaders.getFirst("Content-Disposition")).contains("attachment"), "Should indicate file download");
+        assertTrue(Objects.requireNonNull(responseHeaders.getFirst("Content-Disposition")).contains(".xlsx"), "Should specify Excel filename");
     }
 
     // ========== MERGE VENDOR TESTS ==========
@@ -473,7 +469,7 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain SUCCESS status", responseBody.contains("SUCCESS"));
+        assertTrue(responseBody.contains("SUCCESS"), "Response should contain SUCCESS status");
     }
 
     @Test
@@ -514,8 +510,7 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Response should contain error information");
     }
 
     @Test
@@ -535,8 +530,7 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Response should contain error information");
     }
 
     @Test
@@ -563,7 +557,6 @@ public class VendorTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Response should contain error information");
     }
 }

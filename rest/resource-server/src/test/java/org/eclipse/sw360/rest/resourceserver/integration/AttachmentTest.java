@@ -16,15 +16,12 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -32,13 +29,13 @@ import org.springframework.util.MultiValueMap;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class AttachmentTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
@@ -53,7 +50,7 @@ public class AttachmentTest extends TestIntegrationBase {
     private final String shaInvalid = "56789";
     private final String attachmentId = "test-attachment-123";
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
 
         given(this.attachmentServiceMock.getAttachmentsBySha1(eq(TestHelper.attachmentShaUsedMultipleTimes))).willReturn(TestHelper.getDummyAttachmentInfoListForTest());
@@ -112,11 +109,11 @@ public class AttachmentTest extends TestIntegrationBase {
         // Verify the response contains attachment data at root level
         // The response structure has attachment fields directly, not nested under "attachment"
         String responseBody = response.getBody();
-        Assert.assertNotNull(responseBody);
-        assertTrue("Response should contain attachmentContentId", responseBody.contains("attachmentContentId"));
-        assertTrue("Response should contain filename", responseBody.contains("filename"));
-        assertTrue("Response should contain _links", responseBody.contains("_links"));
-        assertTrue("Response should contain _embedded", responseBody.contains("_embedded"));
+        assertNotNull(responseBody);
+        assertTrue(responseBody.contains("attachmentContentId"), "Response should contain attachmentContentId");
+        assertTrue(responseBody.contains("filename"), "Response should contain filename");
+        assertTrue(responseBody.contains("_links"), "Response should contain _links");
+        assertTrue(responseBody.contains("_embedded"), "Response should contain _embedded");
     }
 
     @Test
@@ -148,10 +145,10 @@ public class AttachmentTest extends TestIntegrationBase {
 
         // Verify the response contains attachment data
         String responseBody = response.getBody();
-        Assert.assertNotNull(responseBody);
-        assertTrue("Response should contain attachments", responseBody.contains("attachments"));
-        assertTrue("Response should contain attachmentContentId", responseBody.contains("attachmentContentId"));
-        assertTrue("Response should contain filename", responseBody.contains("filename"));
+        assertNotNull(responseBody);
+        assertTrue(responseBody.contains("attachments"), "Response should contain attachments");
+        assertTrue(responseBody.contains("attachmentContentId"), "Response should contain attachmentContentId");
+        assertTrue(responseBody.contains("filename"), "Response should contain filename");
     }
 
     @Test

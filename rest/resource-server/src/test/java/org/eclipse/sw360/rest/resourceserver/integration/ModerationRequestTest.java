@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -22,9 +23,8 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRe
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -34,7 +34,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,14 +41,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ModerationRequestTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
@@ -70,7 +69,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
     private User adminUser;
     private ModerationRequest openMr;
 
-    @Before
+    @BeforeEach
     public void setUp() throws TException {
         adminUser = new User();
         adminUser.setEmail("admin@sw360.org");
@@ -109,6 +108,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("MR-1"));
         assertTrue(response.getBody().contains("requestingUser"));
     }
@@ -133,6 +133,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("APPROVED"));
     }
 
@@ -156,6 +157,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("REJECTED"));
     }
 
@@ -178,6 +180,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("PENDING"));
     }
 
@@ -200,6 +203,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("INPROGRESS"));
     }
 
@@ -223,6 +227,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("INPROGRESS"));
     }
 
@@ -263,6 +268,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("deleted"));
     }
 
@@ -283,6 +289,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("permission"));
     }
 
@@ -306,6 +313,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("Some requests were deleted"));
     }
 
@@ -345,6 +353,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assert response.getBody() != null;
         assertTrue(response.getBody().contains("invalid"));
     }
 
@@ -493,7 +502,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody() != null);
+        assertNotNull(response.getBody());
     }
 
     @Test

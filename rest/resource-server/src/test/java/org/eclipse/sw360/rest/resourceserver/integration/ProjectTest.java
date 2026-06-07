@@ -55,9 +55,8 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.ByteArrayResource;
@@ -71,7 +70,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -86,16 +84,15 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
@@ -136,7 +133,7 @@ public class ProjectTest extends TestIntegrationBase {
     private User testUser;
     private final Set<Project> projectList = new HashSet<>();
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         setupTestUser();
         setupTestProjects();
@@ -1510,7 +1507,8 @@ public class ProjectTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         byte[].class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue("Response body should not be empty", response.getBody().length > 0);
+        assert response.getBody() != null;
+        assertTrue(response.getBody().length > 0, "Response body should not be empty");
     }
 
     @Test
@@ -1548,12 +1546,12 @@ public class ProjectTest extends TestIntegrationBase {
         Set<String> licenseNames = new HashSet<>();
         for (int i = 0; i < licenses.size(); i++) {
             JsonNode license = licenses.get(i);
-            assertTrue("License should have 'fullName' field", license.has("fullName"));
-            assertTrue("License should have 'checked' field", license.has("checked"));
+            assertTrue(license.has("fullName"), "License should have 'fullName' field");
+            assertTrue(license.has("checked"), "License should have 'checked' field");
             licenseNames.add(license.get("fullName").textValue());
         }
-        assertTrue("Should contain Apache License 2.0", licenseNames.contains("Apache License 2.0"));
-        assertTrue("Should contain MIT License", licenseNames.contains("MIT License"));
+        assertTrue(licenseNames.contains("Apache License 2.0"), "Should contain Apache License 2.0");
+        assertTrue(licenseNames.contains("MIT License"), "Should contain MIT License");
     }
 
     // ========== SUB-PROJECT TRANSITIVE RELEASE TESTS ==========
@@ -1590,13 +1588,10 @@ public class ProjectTest extends TestIntegrationBase {
 
         // Verify that _embedded contains releases even though parent has no direct releaseIdToUsage
         JsonNode responseJson = new ObjectMapper().readTree(response.getBody());
-        assertTrue("Response should contain _embedded field",
-                responseJson.has("_embedded"));
+        assertTrue(responseJson.has("_embedded"), "Response should contain _embedded field");
         JsonNode embedded = responseJson.get("_embedded");
-        assertTrue("Embedded should contain sw360:release",
-                embedded.has("sw360:release"));
-        assertEquals("Should contain 2 releases from sub-project",
-                2, embedded.get("sw360:release").size());
+        assertTrue(embedded.has("sw360:release"), "Embedded should contain sw360:release");
+        assertEquals(2, embedded.get("sw360:release").size(), "Should contain 2 releases from sub-project");
     }
 
     @Test
@@ -1630,10 +1625,8 @@ public class ProjectTest extends TestIntegrationBase {
 
         // Verify that _embedded contains releases even though parent has no direct releaseIdToUsage
         JsonNode responseJson = new ObjectMapper().readTree(response.getBody());
-        assertTrue("Response should contain _embedded field",
-                responseJson.has("_embedded"));
+        assertTrue(responseJson.has("_embedded"), "Response should contain _embedded field");
         JsonNode embedded = responseJson.get("_embedded");
-        assertTrue("Embedded should contain sw360:release",
-                embedded.has("sw360:release"));
+        assertTrue(embedded.has("sw360:release"), "Embedded should contain sw360:release");
     }
 }
