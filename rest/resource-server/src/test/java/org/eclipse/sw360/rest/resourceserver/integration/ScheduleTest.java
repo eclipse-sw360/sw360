@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -17,9 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.schedule.Sw360ScheduleService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
@@ -28,21 +28,19 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringRunner.class)
 public class ScheduleTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
@@ -54,7 +52,7 @@ public class ScheduleTest extends TestIntegrationBase {
     private RequestSummary testRequestSummary;
     private ObjectMapper objectMapper;
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
         testRequestSummary = new RequestSummary();
         testRequestSummary.setRequestStatus(RequestStatus.SUCCESS);
@@ -98,7 +96,7 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain SUCCESS status", response.getBody().contains("SUCCESS"));
+        assertTrue(response.getBody().contains("SUCCESS"), "Response should contain SUCCESS status");
     }
 
     @Test
@@ -130,7 +128,7 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain requestStatus", response.getBody().contains("requestStatus"));
+        assertTrue(response.getBody().contains("requestStatus"), "Response should contain requestStatus");
     }
 
     @Test
@@ -158,7 +156,7 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain SUCCESS", response.getBody().contains("SUCCESS"));
+        assertTrue(response.getBody().contains("SUCCESS"), "Response should contain SUCCESS");
     }
 
     @Test
@@ -186,7 +184,7 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain SUCCESS", response.getBody().contains("SUCCESS"));
+        assertTrue(response.getBody().contains("SUCCESS"), "Response should contain SUCCESS");
     }
 
     @Test
@@ -214,11 +212,11 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain service name key", response.getBody().contains("cvesearchService"));
-        assertTrue("Response should contain isScheduled", response.getBody().contains("isScheduled"));
-        assertTrue("Response should contain intervalSeconds", response.getBody().contains("intervalSeconds"));
-        assertTrue("Response should contain firstOffsetSeconds", response.getBody().contains("firstOffsetSeconds"));
-        assertTrue("Response should contain nextSynchronization", response.getBody().contains("nextSynchronization"));
+        assertTrue(response.getBody().contains("cvesearchService"), "Response should contain service name key");
+        assertTrue(response.getBody().contains("isScheduled"), "Response should contain isScheduled");
+        assertTrue(response.getBody().contains("intervalSeconds"), "Response should contain intervalSeconds");
+        assertTrue(response.getBody().contains("firstOffsetSeconds"), "Response should contain firstOffsetSeconds");
+        assertTrue(response.getBody().contains("nextSynchronization"), "Response should contain nextSynchronization");
     }
 
     @Test
@@ -233,8 +231,8 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain cvesearchService", response.getBody().contains("cvesearchService"));
-        assertTrue("Response should contain svmsyncService", response.getBody().contains("svmsyncService"));
+        assertTrue(response.getBody().contains("cvesearchService"), "Response should contain cvesearchService");
+        assertTrue(response.getBody().contains("svmsyncService"), "Response should contain svmsyncService");
     }
 
     @Test
@@ -275,7 +273,7 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should be true", response.getBody().contains("true"));
+        assertTrue(response.getBody().contains("true"), "Response should be true");
     }
 
     @Test
@@ -292,7 +290,7 @@ public class ScheduleTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should be false", response.getBody().contains("false"));
+        assertTrue(response.getBody().contains("false"), "Response should be false");
     }
 
     @Test

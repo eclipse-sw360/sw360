@@ -1,6 +1,6 @@
 /*
- * Copyright 2025 Pranay Heda pranayheda24@gmail.com
- * Part of the SW360 Portal Project.
+ * Copyright 2025 Pranay Heda pranayheda24@gmail.com. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -19,9 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -33,20 +32,19 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
+
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringRunner.class)
 public class EccTest extends TestIntegrationBase {
 
     @LocalServerPort
@@ -59,7 +57,7 @@ public class EccTest extends TestIntegrationBase {
     private Release release1;
     private Release release2;
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
         releaseList = new ArrayList<>();
 
@@ -217,8 +215,8 @@ public class EccTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain eccInformation", response.getBody().contains("eccInformation"));
-        assertTrue("Untouched assessorContactPerson should survive", response.getBody().contains("john.doe@example.com"));
+        assertTrue(response.getBody().contains("eccInformation"), "Response should contain eccInformation");
+        assertTrue(response.getBody().contains("john.doe@example.com"), "Untouched assessorContactPerson should survive");
     }
 
     @Test
