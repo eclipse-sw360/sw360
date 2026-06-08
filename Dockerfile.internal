@@ -136,6 +136,7 @@ COPY --from=build /build/artifacts/context-descriptors/*.xml ${TOMCAT_DIR}/conf/
 
 # Copy the configuration files
 COPY ./scripts/docker-config .
+COPY ./config/tomcat/server.xml ${TOMCAT_DIR}/conf/server.xml
 
 # Bundled JWT signing keystore (acts as a first-run fallback; the entrypoint
 # copies it to /etc/sw360/jwt-keystore.jks if no persistent keystore exists).
