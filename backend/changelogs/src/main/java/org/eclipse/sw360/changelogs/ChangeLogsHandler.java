@@ -10,31 +10,28 @@
 package org.eclipse.sw360.changelogs;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.apache.thrift.TException;
+import org.eclipse.sw360.common.converter.ThriftConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ChangeLogsDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.springframework.stereotype.Service;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
-/**
- * Implementation of the Thrift service
- *
- * @author jaideep.palit@siemens.com
- */
-public class ChangeLogsHandler implements ChangeLogsService.Iface {
+@Service
+public class ChangeLogsHandler {
 
     private final ChangeLogsDatabaseHandler handler;
 
@@ -46,30 +43,69 @@ public class ChangeLogsHandler implements ChangeLogsService.Iface {
         handler = new ChangeLogsDatabaseHandler(client, dbName);
     }
 
-    @Override
     public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) throws SW360Exception {
-        assertNotEmpty(docId);
-        assertUser(user);
-        return handler.getChangeLogsByDocumentId(user, docId);
+        try{
+            assertNotEmpty(docId);
+            assertUser(user);
+
+            List<org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs> thriftList = handler.getChangeLogsByDocumentId(user, docId);
+        
+            if (thriftList == null || thriftList.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return thriftList.stream()
+            .map(ThriftConverter::fromThriftChangeLogs)
+            .collect(Collectors.toList());
+
+        } catch(org.eclipse.sw360.datahandler.thrift.SW360Exception ex){
+            throw ThriftConverter.fromThriftException(ex);
+        }
+        
     }
 
-    @Override
     public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
-        assertNotEmpty(id);
-        return handler.getChangeLogsById(id);
+        try{
+            assertNotEmpty(id);
+            return ThriftConverter.fromThriftChangeLogs( handler.getChangeLogsById(id));
+
+        } catch(org.eclipse.sw360.datahandler.thrift.SW360Exception ex){
+            throw ThriftConverter.fromThriftException(ex);
+        }
     }
 
-    @Override
-    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(User user, String docId, PaginationData pageData) throws SW360Exception, TException {
-        assertNotEmpty(docId);
-        assertUser(user);
-        return handler.getChangeLogsByDocumentIdPaginated(user, docId, pageData);
+    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(User user, String docId, PaginationData pageData) throws SW360Exception{ 
+        try{
+            assertNotEmpty(docId);
+            assertUser(user);
+            org.eclipse.sw360.datahandler.thrift.PaginationData thriftPageData = ThriftConverter.toThriftPaginationData(pageData);
+            Map<org.eclipse.sw360.datahandler.thrift.PaginationData,List<org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs>> thriftMap = handler.getChangeLogsByDocumentIdPaginated(user, docId, thriftPageData);
+            if (thriftMap == null || thriftMap.isEmpty()) {
+                return Collections.emptyMap();
+            }
+            return thriftMap.entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+                entry -> ThriftConverter.fromThriftPaginationData(entry.getKey()),
+                entry -> entry.getValue() == null? Collections.emptyList():
+                            entry.getValue()
+                        .stream()
+                        .map(ThriftConverter::fromThriftChangeLogs)
+                        .collect(Collectors.toList())
+                    ));
+
+        } catch(org.eclipse.sw360.datahandler.thrift.SW360Exception ex){
+            throw ThriftConverter.fromThriftException(ex);
+        }
     }
 
-    @Override
     public RequestStatus deleteChangeLogsByDocumentId(String docId, User user) throws SW360Exception {
-        assertNotEmpty(docId);
-        assertUser(user);
-        return handler.deleteChangeLogsByDocumentId(docId, user);
+        try{
+            assertNotEmpty(docId);
+            assertUser(user);
+            return ThriftConverter.fromThriftRequestStatus( handler.deleteChangeLogsByDocumentId(docId, user));
+        } catch(org.eclipse.sw360.datahandler.thrift.SW360Exception ex){
+            throw ThriftConverter.fromThriftException(ex);
+        }
+        
     }
 }

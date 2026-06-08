@@ -19,6 +19,16 @@
         <groupId>org.eclipse.sw360</groupId>
         <version>20.1.0-rc-2</version>
     </parent>
+    <build>
+        <finalName>changelogs</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+            </plugin>
+        </plugins>
+    </build>
 
     <artifactId>backend-changelogs</artifactId>
     <packaging>war</packaging>
@@ -34,6 +44,23 @@
           <artifactId>backend-common</artifactId>
           <version>${project.version}</version>
       </dependency>
+      <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>service-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <version>${spring-boot.version}</version>
+            <scope>provided</scope>
+        </dependency>
   </dependencies>
 
 </project>

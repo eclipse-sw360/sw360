@@ -21,7 +21,6 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,13 +28,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Collections;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -68,7 +66,7 @@ public class ChangeLogSpecTest extends TestRestDocsSpecBase {
             new ModerationRequest().getType());
 
     @Before
-    public void before() throws TException, IOException {
+    public void before() throws Exception {
         ChangeLogs changeLog = new ChangeLogs();
         changeLog.setId("1234");
         changeLog.setDocumentId("4567");
@@ -117,7 +115,7 @@ public class ChangeLogSpecTest extends TestRestDocsSpecBase {
         changeLogs.add(changeLog2);
 
         given(this.changeLogServiceMock.getChangeLogsByDocumentIdPaginated(any(), any(), any())).willReturn(Collections.singletonMap(
-                new PaginationData().setRowsPerPage(2).setDisplayStart(0).setTotalRowCount(2),
+                new PaginationData().setRowsPerPage(2).setDisplayStart(0).setTotalRowCount(2L),
                 changeLogs
         ));
     }

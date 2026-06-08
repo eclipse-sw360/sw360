@@ -11,12 +11,11 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.changelog.Sw360ChangeLogService;
@@ -25,7 +24,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -36,11 +34,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -69,7 +67,7 @@ public class ChangeLogTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_get_change_logs_for_document() throws IOException, TException {
+    public void should_get_change_logs_for_document() throws Exception {
         List<ChangeLogs> changeLogs = new ArrayList<>();
 
         ChangeLogs changeLog = new ChangeLogs();
@@ -113,7 +111,7 @@ public class ChangeLogTest extends TestIntegrationBase {
         changeLogs.add(changeLog2);
 
         given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willReturn(Collections.singletonMap(
-                new PaginationData().setRowsPerPage(2).setDisplayStart(0).setTotalRowCount(2),
+                new PaginationData().setRowsPerPage(2).setDisplayStart(0).setTotalRowCount(2L),
                 changeLogs
         ));
 
@@ -138,9 +136,9 @@ public class ChangeLogTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_return_empty_change_logs_for_unknown_document() throws IOException, TException {
+    public void should_return_empty_change_logs_for_unknown_document() throws Exception {
         given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willReturn(Collections.singletonMap(
-                new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0),
+                new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0L),
                 Collections.<ChangeLogs>emptyList()
         ));
 
@@ -160,8 +158,8 @@ public class ChangeLogTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_handle_service_exception() throws IOException, TException {
-        given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willThrow(new TException("thrift error"));
+    public void should_handle_service_exception() throws Exception {
+        given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willThrow(new Exception("service error"));
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -180,7 +178,7 @@ public class ChangeLogTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_handle_invalid_change_field_values_gracefully() throws IOException, TException {
+    public void should_handle_invalid_change_field_values_gracefully() throws Exception {
         List<ChangeLogs> changeLogs = new ArrayList<>();
 
         ChangeLogs changeLog = new ChangeLogs();
@@ -202,7 +200,7 @@ public class ChangeLogTest extends TestIntegrationBase {
 
         changeLogs.add(changeLog);
         given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willReturn(Collections.singletonMap(
-                new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0),
+                new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0L),
                 changeLogs
         ));
 

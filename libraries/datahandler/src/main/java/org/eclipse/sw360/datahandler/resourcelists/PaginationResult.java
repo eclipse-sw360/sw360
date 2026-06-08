@@ -28,7 +28,7 @@ public class PaginationResult<T> {
         pagingActive = false;
     }
 
-    PaginationResult(List<T> resources, int totalCount, PaginationOptions<T> paginationOptions) {
+    public PaginationResult(List<T> resources, int totalCount, PaginationOptions<T> paginationOptions) {
         this.resources = resources;
         this.totalCount = totalCount;
         this.paginationOptions = paginationOptions;
