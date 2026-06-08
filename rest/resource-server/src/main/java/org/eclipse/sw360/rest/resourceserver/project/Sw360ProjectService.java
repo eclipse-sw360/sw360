@@ -2045,6 +2045,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 case "description" -> ProjectSortColumn.BY_DESCRIPTION;
                 case "projectResponsible" -> ProjectSortColumn.BY_RESPONSIBLE;
                 case "state" -> ProjectSortColumn.BY_STATE;
+                case "score" -> ProjectSortColumn.BY_SCORE;
                 default -> column; // Default to BY_NAME if no match
             };
             ascending = order.isAscending();

@@ -380,6 +380,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
             case ReleaseSortColumn.BY_NAME -> "byname";
             case ReleaseSortColumn.BY_VERSION -> "releaseByVersion";
+            case ReleaseSortColumn.BY_SCORE -> "all";
             case null -> "all";
             default -> "byCreatedOn";
         };

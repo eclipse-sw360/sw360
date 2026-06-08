@@ -53,6 +53,7 @@ enum RequestedAction {
 }
 
 enum UserSortColumn {
+    BY_SCORE = -2,
     BY_GIVENNAME = -1,
     BY_LASTNAME = 0,
     BY_EMAIL = 1,

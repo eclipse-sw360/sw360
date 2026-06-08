@@ -305,6 +305,7 @@ public class Sw360UserService {
                 case "deactivated" -> UserSortColumn.BY_STATUS;
                 case "department" -> UserSortColumn.BY_DEPARTMENT;
                 case "primaryRoles" -> UserSortColumn.BY_ROLE;
+                case "score" -> UserSortColumn.BY_SCORE;
                 default -> column; // Default to BY_GIVENNAME if no match
             };
             ascending = order.isAscending();

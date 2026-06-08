@@ -148,6 +148,7 @@ public class UserSearchHandler {
             case UserSortColumn.BY_STATUS -> "deactivated";
             case UserSortColumn.BY_DEPARTMENT -> "department_sort";
             case UserSortColumn.BY_ROLE -> "primaryroles_sort";
+            case UserSortColumn.BY_SCORE -> null;
             case null -> "givenname_sort";
             default -> "givenname_sort";
         };

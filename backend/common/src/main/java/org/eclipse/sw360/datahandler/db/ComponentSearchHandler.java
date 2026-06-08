@@ -138,6 +138,8 @@ public class ComponentSearchHandler {
             case ComponentSortColumn.BY_VENDOR -> "vendorNames_sort";
             case ComponentSortColumn.BY_MAINLICENSE -> "mainLicenseIds_sort";
             case ComponentSortColumn.BY_TYPE -> "componentType_sort";
+            // null signals Nouveau to skip sorting and return results ranked by relevance score
+            case ComponentSortColumn.BY_SCORE -> null;
             case null -> "createdOn";
             default -> "createdOn";
         };
