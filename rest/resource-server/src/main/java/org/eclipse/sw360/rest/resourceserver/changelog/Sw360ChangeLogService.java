@@ -9,41 +9,62 @@
  */
 package org.eclipse.sw360.rest.resourceserver.changelog;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangelogSortColumn;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangelogSortColumn;
+import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class Sw360ChangeLogService {
     private static final Logger log = LogManager.getLogger(Sw360ChangeLogService.class);
 
-    private ChangeLogsService.Iface getThriftChangeLogClient() {
-        return ThriftClients.makeChangeLogsClient();
+    private final RestClient restClient;
+    private final String CHANGELOGS_URI = "/changelogs/api/changelogs";
+
+    public Sw360ChangeLogService(RestClient restClient){
+        this.restClient = restClient;
     }
 
-    public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) throws TException {
-        return getThriftChangeLogClient().getChangeLogsByDocumentId(sw360User, docId);
+    public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) throws Exception {
+        return restClient.get()
+        .uri(CHANGELOGS_URI+"/doc/"+docId)
+        .header("X-User-Email", sw360User.getEmail())
+        .retrieve()
+        .body(new ParameterizedTypeReference<List<ChangeLogs>>() {});
     }
 
-    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, User sw360User, Pageable pageable) throws TException {
+    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, User sw360User, Pageable pageable) throws Exception {
         PaginationData pageData = pageableToPaginationData(pageable);
-        return getThriftChangeLogClient().getChangeLogsByDocumentIdPaginated(sw360User, docId, pageData);
+        PaginatedResult<ChangeLogs> result = restClient.get()
+        .uri(uriBuilder -> uriBuilder
+            .path(CHANGELOGS_URI + "/doc/" + docId + "/page")
+            .queryParam("ascending", pageData.getAscending())
+            .queryParam("displayStart", pageData.getDisplayStart())
+            .queryParam("rowsPerPage", pageData.getRowsPerPage())
+            .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
+            .build())
+        .header("X-User-Email", sw360User.getEmail())
+        .retrieve()
+        .body(new ParameterizedTypeReference<PaginatedResult<ChangeLogs>>() {});
+
+        if (result == null) {
+            return Collections.emptyMap();
+        }
+        return Collections.singletonMap(result.getPaginationData(), result.getData());
     }
 
     /**
@@ -62,6 +83,6 @@ public class Sw360ChangeLogService {
             ascending = order.isAscending();
         }
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
-                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.ordinal()).setAscending(ascending);
     }
 }

@@ -7,23 +7,23 @@
  * 
  *  SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.datahandler.services.health;
+package org.eclipse.sw360.datahandler.services.changelogs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 import lombok.experimental.Accessors;
-
-import java.util.Map;
 
 @Data
 @Accessors(chain = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class HealthResponse {
-
+public class ChangedFields {
+    
     @JsonProperty(required = true)
-    private HealthStatus status = HealthStatus.UNKNOWN;
+    private String fieldName;
 
-    @JsonProperty(required = true)
-    private Map<String, String> details;
+    private String fieldValueOld;
+
+    private String fieldValueNew;
 }

@@ -44,5 +44,5 @@ public class Sw360SearchService {
         .header("X-User-Email", sw360User.getEmail())
         .retrieve()
         .body(new ParameterizedTypeReference<List<SearchResult>>() {});
-    }
+    }   
 }
