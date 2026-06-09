@@ -12,7 +12,6 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -22,7 +21,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.nio.ByteBuffer;
 
@@ -37,9 +35,6 @@ public class ReportTest extends TestIntegrationBase {
 
     @LocalServerPort
     private int port;
-
-    @MockitoBean
-    private SW360ReportService sw360ReportServiceMock;
 
     @BeforeEach
     public void before() throws Exception {

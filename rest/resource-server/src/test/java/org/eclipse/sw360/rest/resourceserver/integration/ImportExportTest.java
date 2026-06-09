@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +30,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -51,9 +49,6 @@ public class ImportExportTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
-
-    @MockitoBean
-    private Sw360ImportExportService importExportServiceMock;
 
     @BeforeEach
     public void before() throws TException, ServletException, IOException {

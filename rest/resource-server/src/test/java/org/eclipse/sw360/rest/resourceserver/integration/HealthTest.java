@@ -23,7 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 
@@ -35,9 +34,6 @@ public class HealthTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
-
-    @MockitoBean
-    private SW360RestHealthIndicator restHealthIndicatorMock;
 
     @BeforeEach
     public void before() throws TException {

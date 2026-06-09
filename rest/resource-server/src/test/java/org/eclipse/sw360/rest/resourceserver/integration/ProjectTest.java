@@ -46,14 +46,6 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
-import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +61,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -97,30 +88,6 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
-
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
-
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    private Sw360AttachmentService attachmentServiceMock;
-
-    @MockitoBean
-    private Sw360LicenseInfoService licenseInfoMockService;
-
-    @MockitoBean
-    private SW360PackageService packageServiceMock;
-
-    @MockitoBean
-    private SW360ReportService sw360ReportServiceMock;
-
-    @MockitoBean
-    private Sw360VulnerabilityService vulnerabilityServiceMock;
-
-    @MockitoBean
-    private Sw360LicenseService sw360LicenseServiceMock;
 
     // Test data
     private Project project1;

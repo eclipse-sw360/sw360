@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.cache.ApiResponseCacheManager;
 import org.eclipse.sw360.rest.resourceserver.cache.CacheState;
 import org.eclipse.sw360.rest.resourceserver.cache.CacheStatistics;
 import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
@@ -27,7 +26,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,9 +42,6 @@ public class CacheAdminTest extends TestIntegrationBase {
 
     @LocalServerPort
     private int port;
-
-    @MockitoBean
-    private ApiResponseCacheManager cacheManagerMock;
 
     private List<CacheStatistics> testStats;
 
