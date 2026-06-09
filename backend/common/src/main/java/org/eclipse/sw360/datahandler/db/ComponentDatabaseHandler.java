@@ -2123,14 +2123,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public boolean checkIfInUse(Set<String> releaseIds) {
-        if (releaseIds != null && releaseIds.size() > 0) {
+        if (!CommonUtils.isNullOrEmptyCollection(releaseIds)) {
             final Set<Component> usingComponents = componentRepository.getUsingComponents(releaseIds);
-            if (usingComponents.size() > 0)
+            if (usingComponents.stream().anyMatch(c -> !c.getReleaseIds().containsAll(releaseIds))) {
                 return true;
+            }
 
             final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseIds);
-            if (usingProjects.size() > 0)
-                return true;
+            return !CommonUtils.isNullOrEmptyCollection(usingProjects);
         }
         return false;
     }
@@ -2138,11 +2138,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public boolean checkIfInUse(String releaseId) {
 
         final Set<Component> usingComponents = componentRepository.getUsingComponents(releaseId);
-        if (usingComponents.size() > 0)
+        if (!CommonUtils.isNullOrEmptyCollection(usingComponents))
             return true;
 
         final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseId);
-        return (usingProjects.size() > 0);
+        return !CommonUtils.isNullOrEmptyCollection(usingProjects);
     }
 
     private Component removeReleaseAndCleanUp(Release release, User user) throws SW360Exception {
