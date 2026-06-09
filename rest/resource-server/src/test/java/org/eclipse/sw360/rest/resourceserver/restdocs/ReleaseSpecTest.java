@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -42,6 +43,7 @@ import java.util.UUID;
 
 import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -1443,6 +1445,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_link_releases_to_release() throws Exception {
+        assumeTrue("Not running since Releases cannot be interlinked",
+                SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
 
         mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
                 .contentType(MediaTypes.HAL_JSON)
@@ -1454,15 +1458,20 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_reject_link_releases_when_nested_release_disabled() throws Exception {
-        try (MockedStatic<SW360Utils> mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
-            mockedStatic.when(() -> SW360Utils.readConfig(eq("nested.release.enabled"), eq(true))).thenReturn(false);
-
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
-                    .contentType(MediaTypes.HAL_JSON)
-                    .content(this.objectMapper.writeValueAsString(releaseIdToRelationship1))
-                    .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                    .accept(MediaTypes.HAL_JSON))
-                    .andExpect(status().isForbidden());
+                            .contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(releaseIdToRelationship1))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(releaseIdToRelationship1))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isCreated());
         }
     }
 

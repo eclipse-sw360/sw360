@@ -559,11 +559,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         // Block nested release linking if disabled by configuration
-        if (!SW360Utils.readConfig(IS_NESTED_RELEASE_ENABLED, true)) {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             Map<String, ReleaseRelationship> releaseLinks = release.getReleaseIdToRelationship();
-            if (releaseLinks != null && !releaseLinks.isEmpty()) {
-                throw new SW360Exception("Nested release linking is disabled by configuration.")
-                        .setErrorCode(403);
+            if (!CommonUtils.isNullOrEmptyMap(releaseLinks)) {
+                throw new SW360Exception(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
             }
         }
 
@@ -1184,18 +1183,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(actual, "Could not find release to update");
 
         // Block nested release linking if disabled by configuration
-        if (!SW360Utils.readConfig(IS_NESTED_RELEASE_ENABLED, true)) {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             Map<String, ReleaseRelationship> newLinks = release.getReleaseIdToRelationship();
             Map<String, ReleaseRelationship> existingLinks = actual.getReleaseIdToRelationship();
             boolean hadLinks = existingLinks != null && !existingLinks.isEmpty();
             boolean hasLinks = newLinks != null && !newLinks.isEmpty();
             if (hasLinks && !hadLinks) {
-                throw new SW360Exception("Nested release linking is disabled by configuration.")
-                        .setErrorCode(403);
+                throw new SW360Exception(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
             }
             if (hasLinks && !newLinks.equals(existingLinks)) {
-                throw new SW360Exception("Nested release linking is disabled by configuration.")
-                        .setErrorCode(403);
+                throw new SW360Exception(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
             }
         }
 
