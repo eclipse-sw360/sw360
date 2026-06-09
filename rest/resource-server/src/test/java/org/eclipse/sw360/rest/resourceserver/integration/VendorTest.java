@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -30,7 +29,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -48,9 +46,6 @@ public class VendorTest extends TestIntegrationBase {
 
     @LocalServerPort
     private int port;
-
-    @MockitoBean
-    private Sw360VendorService vendorServiceMock;
 
     private Vendor testVendor;
     private Vendor testVendor2;
@@ -100,19 +95,19 @@ public class VendorTest extends TestIntegrationBase {
         pageData.setDisplayStart(0);
         pageData.setSortColumnNumber(0);
         Map<PaginationData, List<Vendor>> paginatedVendors = Map.of(pageData, vendorList);
-        given(this.vendorServiceMock.getVendors(any())).willReturn(paginatedVendors);
-        given(this.vendorServiceMock.getVendorById(eq(testVendor.getId()))).willReturn(testVendor);
-        given(this.vendorServiceMock.getVendorById(eq(testVendor2.getId()))).willReturn(testVendor2);
-        given(this.vendorServiceMock.getAllReleaseList(eq(testVendor.getId()))).willReturn(testReleases);
-        given(this.vendorServiceMock.deleteVendorByid(any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.vendorServiceMock.mergeVendors(any(), any(), any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.vendorServiceMock.exportExcel()).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360VendorService.getVendors(any())).willReturn(paginatedVendors);
+        given(this.sw360VendorService.getVendorById(eq(testVendor.getId()))).willReturn(testVendor);
+        given(this.sw360VendorService.getVendorById(eq(testVendor2.getId()))).willReturn(testVendor2);
+        given(this.sw360VendorService.getAllReleaseList(eq(testVendor.getId()))).willReturn(testReleases);
+        given(this.sw360VendorService.deleteVendorByid(any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.sw360VendorService.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.sw360VendorService.mergeVendors(any(), any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.sw360VendorService.exportExcel()).willReturn(ByteBuffer.allocate(10000));
 
         // Setup create vendor mock
         Vendor createdVendor = new Vendor("Apache", "Apache Software Foundation", "https://www.apache.org/");
         createdVendor.setId("987567468");
-        given(this.vendorServiceMock.createVendor(any())).willReturn(createdVendor);
+        given(this.sw360VendorService.createVendor(any())).willReturn(createdVendor);
     }
 
     // ========== GET VENDORS TESTS ==========
@@ -165,7 +160,7 @@ public class VendorTest extends TestIntegrationBase {
         pageData.setDisplayStart(0);
         pageData.setSortColumnNumber(0);
         Map<PaginationData, List<Vendor>> paginatedVendors = Map.of(pageData, Collections.singletonList(testVendor));
-        given(this.vendorServiceMock.searchVendors(eq("Google"), any())).willReturn(paginatedVendors);
+        given(this.sw360VendorService.searchVendors(eq("Google"), any())).willReturn(paginatedVendors);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -206,7 +201,7 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_return_400_for_nonexistent_vendor() throws IOException {
         // Mock vendor not found - the controller doesn't check for null, it just returns the result
-        given(this.vendorServiceMock.getVendorById("nonexistent")).willReturn(null);
+        given(this.sw360VendorService.getVendorById("nonexistent")).willReturn(null);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -246,7 +241,7 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_return_404_for_vendor_releases_when_vendor_not_found() throws IOException {
         // Mock vendor not found
-        given(this.vendorServiceMock.getVendorById("nonexistent")).willReturn(null);
+        given(this.sw360VendorService.getVendorById("nonexistent")).willReturn(null);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -342,7 +337,7 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_fail_update_vendor_with_duplicate_name() throws IOException {
         // Mock duplicate vendor scenario
-        given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.DUPLICATE);
+        given(this.sw360VendorService.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.DUPLICATE);
 
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -411,7 +406,7 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_fail_delete_nonexistent_vendor() throws IOException {
         // Mock vendor not found
-        given(this.vendorServiceMock.getVendorById("nonexistent")).willReturn(null);
+        given(this.sw360VendorService.getVendorById("nonexistent")).willReturn(null);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -496,7 +491,7 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_get_vendor_releases() throws IOException, TException {
         // Mock TException in getAllReleaseList
-        doThrow(new TException("Test TException")).when(vendorServiceMock)
+        doThrow(new TException("Test TException")).when(sw360VendorService)
                 .getAllReleaseList(any());
 
         HttpHeaders headers = getHeaders(port);
@@ -516,7 +511,7 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_export_vendors() throws IOException, TException {
         // Mock exception in exportExcel
-        doThrow(new TException("Test TException")).when(vendorServiceMock)
+        doThrow(new TException("Test TException")).when(sw360VendorService)
                 .exportExcel();
 
         HttpHeaders headers = getHeaders(port);
@@ -536,7 +531,7 @@ public class VendorTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_in_merge_vendors() throws IOException, TException, ResourceClassNotFoundException {
         // Mock TException in mergeVendors
-        doThrow(new TException("Test TException")).when(vendorServiceMock)
+        doThrow(new TException("Test TException")).when(sw360VendorService)
                 .mergeVendors(any(), any(), any(), any());
 
         HttpHeaders headers = getHeaders(port);

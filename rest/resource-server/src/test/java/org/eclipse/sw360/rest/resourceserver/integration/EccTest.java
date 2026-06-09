@@ -18,7 +18,6 @@ import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -31,7 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 
 import java.util.ArrayList;
@@ -49,9 +47,6 @@ public class EccTest extends TestIntegrationBase {
 
     @LocalServerPort
     private int port;
-
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
 
     private List<Release> releaseList;
     private Release release1;

@@ -14,7 +14,6 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -24,7 +23,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,9 +38,6 @@ public class SearchTest extends TestIntegrationBase {
 
     @LocalServerPort
     private int port;
-
-    @MockitoBean
-    private Sw360SearchService searchServiceMock;
 
     private List<SearchResult> searchResults;
 

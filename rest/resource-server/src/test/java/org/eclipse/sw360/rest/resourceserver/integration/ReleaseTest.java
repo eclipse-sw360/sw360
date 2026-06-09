@@ -1,6 +1,7 @@
 /*
  * Copyright Bosch Software Innovations GmbH, 2018.
  * Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -36,14 +37,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
-import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
-import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
-import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +50,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.core.io.ByteArrayResource;
@@ -98,34 +91,6 @@ public class ReleaseTest extends TestIntegrationBase {
     @Value("${local.server.port}")
     @SuppressWarnings("unused")
     private int port;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360LicenseService licenseServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360AttachmentService attachmentServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private SW360PackageService packageServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360VulnerabilityService vulnerabilityServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360VendorService sw360VendorService;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360LicenseInfoService licenseInfoMockService;
 
     private Release release;
     public static String attachmentShaInvalid = "999";

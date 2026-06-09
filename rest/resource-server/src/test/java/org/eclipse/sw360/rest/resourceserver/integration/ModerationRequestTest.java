@@ -19,10 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
-import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +29,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -48,23 +43,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willReturn;
 
 public class ModerationRequestTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
-
-    @MockitoBean
-    private Sw360ModerationRequestService moderationServiceMock;
-
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
-
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    private Sw360ComponentService componentServiceMock;
 
     private User adminUser;
     private ModerationRequest openMr;
@@ -91,7 +75,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         // Stubs for embedding calls in controller when fetching by ID
         given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
         given(releaseServiceMock.getReleaseForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.components.Release());
-        given(componentServiceMock.getComponentForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.components.Component());
+        willReturn(new org.eclipse.sw360.datahandler.thrift.components.Component()).given(componentServiceMock).getComponentForUserById(anyString(), any());
     }
 
     @Test
