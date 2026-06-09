@@ -75,7 +75,6 @@ public class SW360ConfigsDatabaseHandler {
             .put(AUTO_SET_ECC_STATUS, getOrDefault(configContainer, AUTO_SET_ECC_STATUS, "false"))
             .put(MAIL_REQUEST_FOR_REPORT, getOrDefault(configContainer, MAIL_REQUEST_FOR_REPORT, "false"))
             .put(IS_BULK_RELEASE_DELETING_ENABLED, getOrDefault(configContainer, IS_BULK_RELEASE_DELETING_ENABLED, "false"))
-            .put(IS_NESTED_RELEASE_ENABLED, getOrDefault(configContainer, IS_NESTED_RELEASE_ENABLED, "true"))
             .put(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, getOrDefault(configContainer, DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, "false"))
             .put(IS_FORCE_UPDATE_ENABLED, getOrDefault(configContainer, IS_FORCE_UPDATE_ENABLED, "false"))
             .put(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, getOrDefault(configContainer, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER.name()))
@@ -199,7 +198,6 @@ public class SW360ConfigsDatabaseHandler {
                  IS_FORCE_UPDATE_ENABLED,
                  DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
                  IS_BULK_RELEASE_DELETING_ENABLED,
-                 IS_NESTED_RELEASE_ENABLED,
                  IS_PACKAGE_PORTLET_ENABLED,
                  INHERIT_ATTACHMENT_USAGES,
                  IS_ADMIN_PRIVATE_ACCESS_ENABLED,
