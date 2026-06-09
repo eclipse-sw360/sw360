@@ -22,6 +22,14 @@ lucenesearch.limit = $COUCHDB_LUCENESEARCH_LIMIT
 # Use retires from cloudant
 cloudant.enable.retries = $CLOUDANT_ENABLE_RETRIES
 # How many retries before failure
-cloudant.max.retries = 2
+cloudant.max.retries = $CLOUDANT_MAX_RETRIES
 # Interval between retries (in seconds)
-cloudant.max.retry.interval = 5
+cloudant.max.retry.interval = $CLOUDANT_MAX_RETRY_INTERVAL
+
+# Optional Cloudant HTTP connection-pool tuning (disabled unless > 0)
+cloudant.pool.max.idle.connections = $CLOUDANT_POOL_MAX_IDLE_CONNECTIONS
+cloudant.pool.keepalive.seconds = $CLOUDANT_POOL_KEEPALIVE_SECONDS
+
+# Optional dispatcher concurrency controls (disabled unless > 0)
+cloudant.max.requests = $CLOUDANT_MAX_REQUESTS
+cloudant.max.requests.per.host = $CLOUDANT_MAX_REQUESTS_PER_HOST

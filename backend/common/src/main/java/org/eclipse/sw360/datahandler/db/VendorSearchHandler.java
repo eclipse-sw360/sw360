@@ -137,6 +137,7 @@ public class VendorSearchHandler {
         return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
             case VendorSortColumn.BY_SHORTNAME -> "shortname_sort";
             case VendorSortColumn.BY_FULLNAME -> "fullname_sort";
+            case VendorSortColumn.BY_SCORE -> null;
             case null -> "fullname_sort";
             default -> "fullname_sort";
         };

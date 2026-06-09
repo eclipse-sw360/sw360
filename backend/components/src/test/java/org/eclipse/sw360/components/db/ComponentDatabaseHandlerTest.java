@@ -19,12 +19,14 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.SvmConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -39,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
+import static org.junit.Assume.assumeTrue;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getComponentIds;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getReleaseIds;
@@ -73,6 +76,7 @@ public class ComponentDatabaseHandlerTest {
     private List<Release> releases;
     private Map<String, Vendor> vendors;
     private ComponentDatabaseHandler handler;
+    private ProjectDatabaseHandler projectHandler;
 
     private int nextReleaseVersion = 0;
 
@@ -153,6 +157,7 @@ public class ComponentDatabaseHandlerTest {
         // Prepare the handler
         handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
         handler.setSvmConnector(svmConnector);
+        projectHandler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
     }
 
     @After
@@ -180,8 +185,10 @@ public class ComponentDatabaseHandlerTest {
         component.addToCategories(category);
         final HashMap<String, ReleaseRelationship> releaseLink = new HashMap<>();
 
-        releaseLink.put("R1A", ReleaseRelationship.CONTAINED);
-        releaseLink.put("R2A", ReleaseRelationship.CONTAINED);
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            releaseLink.put("R1A", ReleaseRelationship.CONTAINED);
+            releaseLink.put("R2A", ReleaseRelationship.CONTAINED);
+        }
 
         Release release = new Release().setId("LinkingRelease").setComponentId("Linking").setName("Linking").setVersion("1.0")
                 .setCreatedBy(email1).setVendorId("V1").setReleaseIdToRelationship(releaseLink);
@@ -189,7 +196,12 @@ public class ComponentDatabaseHandlerTest {
         handler.addComponent(component, email1);
         handler.addRelease(release, user1);
 
-        final Set<Component> usingComponents = handler.getUsingComponents("R1A");
+        Set<Component> usingComponents;
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            usingComponents = handler.getUsingComponents("R1A");
+        } else {
+            usingComponents = handler.getUsingComponents(ImmutableSet.of("LinkingRelease"));
+        }
 
         assertTrue(containsInAnyOrder("Linking").matches(getComponentIds(usingComponents)));
     }
@@ -201,8 +213,10 @@ public class ComponentDatabaseHandlerTest {
         component.addToCategories(category);
         final HashMap<String, ReleaseRelationship> releaseLink = new HashMap<>();
 
-        releaseLink.put("R1A", ReleaseRelationship.CONTAINED);
-        releaseLink.put("R2A", ReleaseRelationship.CONTAINED);
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            releaseLink.put("R1A", ReleaseRelationship.CONTAINED);
+            releaseLink.put("R2A", ReleaseRelationship.CONTAINED);
+        }
 
         Release release = new Release().setId("LinkingRelease").setComponentId("Linking").setName("Linking").setVersion("1.0")
                 .setCreatedBy(email1).setVendorId("V1").setReleaseIdToRelationship(releaseLink);
@@ -210,7 +224,12 @@ public class ComponentDatabaseHandlerTest {
         handler.addComponent(component, email1);
         handler.addRelease(release, user1);
 
-        final Set<Component> usingComponents = handler.getUsingComponents(ImmutableSet.of("R1A", "R2A"));
+        Set<Component> usingComponents;
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            usingComponents = handler.getUsingComponents(ImmutableSet.of("R1A", "R2A"));
+        } else {
+            usingComponents = handler.getUsingComponents(ImmutableSet.of("LinkingRelease"));
+        }
 
         assertTrue(containsInAnyOrder("Linking").matches(getComponentIds(usingComponents)));
     }
@@ -359,6 +378,8 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testGetLinkedReleases() throws Exception {
+        assumeTrue("Not running since Releases cannot be interlinked",
+                SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
 
         final Map<String, ReleaseRelationship> relations = new HashMap<>();
         relations.put("R1A", ReleaseRelationship.REFERRED);
@@ -420,6 +441,8 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testGetLinkedReleases2() throws Exception {
+        assumeTrue("Not running since Releases cannot be interlinked",
+                SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
 
         final Map<String, ReleaseRelationship> relations = new HashMap<>();
         relations.put("R1A", ReleaseRelationship.REFERRED);
@@ -537,9 +560,16 @@ public class ComponentDatabaseHandlerTest {
         handler.addRelease(release, user1);
 
         // Make release "DelR" in use by linking it from another release
-        final Release r1A = handler.getRelease("R1A", user1);
-        r1A.setReleaseIdToRelationship(ImmutableMap.of("DelR", ReleaseRelationship.CONTAINED));
-        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            final Release r1A = handler.getRelease("R1A", user1);
+            r1A.setReleaseIdToRelationship(ImmutableMap.of("DelR", ReleaseRelationship.CONTAINED));
+            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        } else {
+            Project project = new Project().setReleaseIdToUsage(
+                    ImmutableMap.of("DelR", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+            ).setName("Project").setCreatedBy(email1);
+            projectHandler.addProject(project, user1);
+        }
 
         RequestStatus status = handler.deleteComponent("Del", user1);
 
@@ -1026,9 +1056,16 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testDontDeleteUsedComponent() throws Exception {
-        final Release r1A = handler.getRelease("R1A", user1);
-        r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            final Release r1A = handler.getRelease("R1A", user1);
+            r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
+            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        } else {
+            Project project = new Project().setReleaseIdToUsage(
+                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+            ).setName("Project").setCreatedBy(email1);
+            projectHandler.addProject(project, user1);
+        }
 
         RequestStatus status = handler.deleteComponent("C2", user1);
         assertEquals(RequestStatus.IN_USE, status);
@@ -1056,9 +1093,16 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testDontDeleteUsedRelease() throws Exception {
 
-        final Release r1A = handler.getRelease("R1A", user1);
-        r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            final Release r1A = handler.getRelease("R1A", user1);
+            r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
+            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        } else {
+            Project project = new Project().setReleaseIdToUsage(
+                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+            ).setName("Project").setCreatedBy(email1);
+            projectHandler.addProject(project, user1);
+        }
 
         RequestStatus status = handler.deleteRelease("R2A", user1);
         assertEquals(RequestStatus.IN_USE, status);

@@ -98,6 +98,8 @@ public class ReleaseSearchHandler {
         return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
             case ReleaseSortColumn.BY_NAME -> "name_sort";
             case ReleaseSortColumn.BY_VERSION -> "version_sort";
+            // null signals Nouveau to skip sorting and return results ranked by relevance score
+            case ReleaseSortColumn.BY_SCORE -> null;
             case null -> "createdOn";
             default -> "createdOn";
         };

@@ -149,6 +149,7 @@ public class ObligationSearchHandler {
         return switch (ObligationSortColumn.findByValue(pageData.getSortColumnNumber())) {
             case ObligationSortColumn.BY_TEXT -> "text_sort";
             case ObligationSortColumn.BY_LEVEL -> "obligationLevel_sort";
+            case ObligationSortColumn.BY_SCORE -> null;
             case null, default -> "title_sort";
         };
     }

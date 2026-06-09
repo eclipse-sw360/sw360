@@ -159,7 +159,9 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
             case VendorSortColumn.BY_FULLNAME -> "vendorbyfullname";
             case VendorSortColumn.BY_SHORTNAME -> "vendorbyshortname";
-            case null -> "all";
+            // BY_SCORE: Nouveau handles ranking; "all" view used only for total count fallback
+            case VendorSortColumn.BY_SCORE -> "all";
+            case null, default -> "all";
         };
     }
 

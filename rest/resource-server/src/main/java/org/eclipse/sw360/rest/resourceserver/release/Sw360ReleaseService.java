@@ -1616,6 +1616,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                 case "createdOn" -> ReleaseSortColumn.BY_CREATEDON;
                 case "name" -> ReleaseSortColumn.BY_NAME;
                 case "version" -> ReleaseSortColumn.BY_VERSION;
+                case "score" -> ReleaseSortColumn.BY_SCORE;
                 default -> column; // Default to BY_CREATEDON if no match
             };
             ascending = order.isAscending();

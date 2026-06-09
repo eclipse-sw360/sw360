@@ -83,6 +83,13 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "    }" +
             "  }" +
             "}";
+    private static final String COMPONENT_BY_LINKING_RELEASE = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    for(var i in doc.releaseIds) {" +
+            "      emit(doc.releaseIds[i], doc._id);" +
+            "    }" +
+            "  }" +
+            "}";
     private static final String BY_FOSSOLOGY_ID = "function(doc) {\n" +
             "  if (doc.type == 'release') {\n" +
             "    if (Array.isArray(doc.externalToolProcesses)) {\n" +
@@ -177,6 +184,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         views.put("bycomponenttype", createMapReduce(BY_COMPONENT_TYPE, null));
         views.put("fullbyname", createMapReduce(FULL_BY_NAME, null));
         views.put("byLinkingRelease", createMapReduce(BY_LINKING_RELEASE, null));
+        views.put("componentByLinkingRelease", createMapReduce(COMPONENT_BY_LINKING_RELEASE, null));
         views.put("byFossologyId", createMapReduce(BY_FOSSOLOGY_ID, null));
         views.put("byExternalIds", createMapReduce(BY_EXTERNAL_IDS, null));
         views.put("byDefaultVendorId", createMapReduce(BY_DEFAULT_VENDOR_ID, null));
@@ -280,7 +288,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     public Set<Component> getUsingComponents(Set<String> releaseIds) {
-        final Set<String> componentIdsByLinkingRelease = queryForIdsAsValue("byLinkingRelease", releaseIds);
+        final Set<String> componentIdsByLinkingRelease = queryForIdsAsValue("componentByLinkingRelease", releaseIds);
         return new HashSet<>(get(componentIdsByLinkingRelease));
     }
 
@@ -354,7 +362,9 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             case ComponentSortColumn.BY_NAME -> "byname";
             case ComponentSortColumn.BY_MAINLICENSE -> "bymainlicense";
             case ComponentSortColumn.BY_TYPE -> "bycomponenttype";
-            case null -> "all";
+            // BY_SCORE: Nouveau handles ranking; "all" view used only for total count fallback
+            case ComponentSortColumn.BY_SCORE -> "all";
+            case null, default -> "all";
         };
     }
 

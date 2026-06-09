@@ -565,6 +565,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_SOURCE_CODE_URL);
         }
 
+        // Block nested release linking if disabled by configuration
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            Map<String, ReleaseRelationship> releaseLinks = release.getReleaseIdToRelationship();
+            if (!CommonUtils.isNullOrEmptyMap(releaseLinks)) {
+                throw new SW360Exception(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
+            }
+        }
+
         String componentId = release.getComponentId();
         // Ensure that component exists
         Component component = componentRepository.get(componentId);
@@ -1180,6 +1188,21 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Get actual document for members that should no change
         Release actual = releaseRepository.get(release.getId());
         assertNotNull(actual, "Could not find release to update");
+
+        // Block nested release linking if disabled by configuration
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            Map<String, ReleaseRelationship> newLinks = release.getReleaseIdToRelationship();
+            Map<String, ReleaseRelationship> existingLinks = actual.getReleaseIdToRelationship();
+            boolean hadLinks = existingLinks != null && !existingLinks.isEmpty();
+            boolean hasLinks = newLinks != null && !newLinks.isEmpty();
+            if (hasLinks && !hadLinks) {
+                throw new SW360Exception(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
+            }
+            if (hasLinks && !newLinks.equals(existingLinks)) {
+                throw new SW360Exception(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
+            }
+        }
+
         ensureEccInformationIsSet(actual);
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 release.getAttachments(), user.getEmail(), release.getId());
@@ -2107,14 +2130,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public boolean checkIfInUse(Set<String> releaseIds) {
-        if (releaseIds != null && releaseIds.size() > 0) {
+        if (!CommonUtils.isNullOrEmptyCollection(releaseIds)) {
             final Set<Component> usingComponents = componentRepository.getUsingComponents(releaseIds);
-            if (usingComponents.size() > 0)
+            if (usingComponents.stream().anyMatch(c -> !c.getReleaseIds().containsAll(releaseIds))) {
                 return true;
+            }
 
             final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseIds);
-            if (usingProjects.size() > 0)
-                return true;
+            return !CommonUtils.isNullOrEmptyCollection(usingProjects);
         }
         return false;
     }
@@ -2122,11 +2145,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public boolean checkIfInUse(String releaseId) {
 
         final Set<Component> usingComponents = componentRepository.getUsingComponents(releaseId);
-        if (usingComponents.size() > 0)
+        if (!CommonUtils.isNullOrEmptyCollection(usingComponents))
             return true;
 
         final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseId);
-        return (usingProjects.size() > 0);
+        return !CommonUtils.isNullOrEmptyCollection(usingProjects);
     }
 
     private Component removeReleaseAndCleanUp(Release release, User user) throws SW360Exception {
