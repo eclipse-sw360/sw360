@@ -11,9 +11,8 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.schedule.Sw360ScheduleService;
@@ -55,7 +54,7 @@ public class ScheduleTest extends TestIntegrationBase {
     private ObjectMapper objectMapper;
 
     @Before
-    public void before() throws TException {
+    public void before() throws Exception {
         testRequestSummary = new RequestSummary();
         testRequestSummary.setRequestStatus(RequestStatus.SUCCESS);
         testRequestSummary.setMessage("Service scheduled successfully");
@@ -102,7 +101,7 @@ public class ScheduleTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_handle_exception_in_cancel_all_services() throws IOException, TException {
+    public void should_handle_exception_in_cancel_all_services() throws IOException {
         doThrow(new RuntimeException("Service cancellation failed"))
                 .when(scheduleServiceMock).cancelAllServices(any());
 
@@ -279,7 +278,7 @@ public class ScheduleTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_return_false_when_no_service_is_scheduled() throws IOException, TException {
+    public void should_return_false_when_no_service_is_scheduled() throws IOException {
         given(this.scheduleServiceMock.isAnyServiceScheduled(any())).willReturn(RequestStatus.FAILURE);
 
         HttpHeaders headers = getHeaders(port);
@@ -296,7 +295,7 @@ public class ScheduleTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_handle_exception_in_schedule_service() throws IOException, TException {
+    public void should_handle_exception_in_schedule_service() throws IOException {
         doThrow(new RuntimeException("Schedule service failed"))
                 .when(scheduleServiceMock).scheduleService(any(), eq("cvesearchService"));
 

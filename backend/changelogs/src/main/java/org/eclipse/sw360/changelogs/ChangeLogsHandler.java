@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.eclipse.sw360.common.converter.ThriftConverter;
+import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ChangeLogsDatabaseHandler;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;

@@ -31,6 +31,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -141,16 +142,30 @@ public class ThriftClients {
     private static final String PACKAGE_SERVICE_URL = "/packages/thrift";
     private static final String SW360_CONFIGS_SERVICE_URL = "/configurations/thrift";
 
-    // A service which has to be scheduled by the scheduler should be registered here!
-    // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
-    public static final String CVESEARCH_SERVICE = "cvesearchService";
-    public static final String SVMSYNC_SERVICE = "svmsyncService";
-    public static final String SVMMATCH_SERVICE = "svmmatchService";
-    public static final String SVM_LIST_UPDATE_SERVICE = "svmListUpdateService";
-    public static final String SVM_TRACKING_FEEDBACK_SERVICE = "svmTrackingFeedbackService";
-    public static final String DELETE_ATTACHMENT_SERVICE = "deleteattachmentService";
-    public static final String IMPORT_DEPARTMENT_SERVICE = "importdepartmentService";
-    public static final String SRC_UPLOAD_SERVICE = "srcAttachmentUploadService";
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String CVESEARCH_SERVICE = ServiceNames.CVESEARCH_SERVICE;
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String SVMSYNC_SERVICE = ServiceNames.SVMSYNC_SERVICE;
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String SVMMATCH_SERVICE = ServiceNames.SVMMATCH_SERVICE;
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String SVM_LIST_UPDATE_SERVICE = ServiceNames.SVM_LIST_UPDATE_SERVICE;
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String SVM_TRACKING_FEEDBACK_SERVICE = ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE;
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String DELETE_ATTACHMENT_SERVICE = ServiceNames.DELETE_ATTACHMENT_SERVICE;
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String IMPORT_DEPARTMENT_SERVICE = ServiceNames.IMPORT_DEPARTMENT_SERVICE;
+    /** @deprecated Use {@link ServiceNames} directly. Kept for backward compatibility. */
+    @Deprecated
+    public static final String SRC_UPLOAD_SERVICE = ServiceNames.SRC_UPLOAD_SERVICE;
 
 
     static {

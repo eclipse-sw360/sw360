@@ -63,7 +63,9 @@ public class SW360ConfigurationsService {
         try {
             return restClient.put()
             .uri(CONFIGS_URI)
-            .header("X-User-Email",user.getEmail())
+            .header("X-User-Email", user.getEmail())
+            .header("X-User-Department", user.getDepartment())
+            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "")
             .body(updatedConfig)
             .retrieve()
             .body(RequestStatus.class);
@@ -90,6 +92,8 @@ public class SW360ConfigurationsService {
             return restClient.put()
             .uri(CONFIGS_URI+"/group/"+configFor)
             .header("X-User-Email", user.getEmail())
+            .header("X-User-Department", user.getDepartment())
+            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "")
             .body(updatedConfig)
             .retrieve()
             .body(RequestStatus.class);

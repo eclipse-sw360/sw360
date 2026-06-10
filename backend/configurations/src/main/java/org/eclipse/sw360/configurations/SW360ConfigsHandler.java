@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.common.converter.ThriftConverter;
+import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;

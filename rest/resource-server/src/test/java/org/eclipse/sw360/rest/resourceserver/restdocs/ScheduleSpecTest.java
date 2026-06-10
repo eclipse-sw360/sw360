@@ -20,10 +20,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.schedule.Sw360ScheduleService;
@@ -50,7 +48,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
     private RequestSummary requestSummary = new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
 
     @Before
-    public void before() throws TException {
+    public void before() throws Exception {
 
         User sw360User = new User();
         sw360User.setId("123456789");
