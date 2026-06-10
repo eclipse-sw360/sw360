@@ -11,6 +11,7 @@ package org.eclipse.sw360.search;
 
 import java.util.List;
 
+import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,17 +32,18 @@ public class SearchController {
 
     @GetMapping
     List<SearchResult> searchFiltered(
-        @RequestParam(name = "text", required = true) String text, 
+        @RequestParam(name = "text", required = true) String text,
         @RequestHeader("X-User-Email") String userEmail,
+        @RequestHeader(value = "X-User-Department", required = false) String department,
         @RequestParam(name = "typeMask", required = false) List<String> typeMask) {
         try {
-            if(typeMask == null) 
-                return handler.search(text, null);
-            else 
-                return handler.searchFiltered(text, null,typeMask);
-        } catch (Exception ex) { 
+            if(typeMask == null)
+                return handler.search(text, UserUtils.buildUser(userEmail, department, null));
+            else
+                return handler.searchFiltered(text, UserUtils.buildUser(userEmail, department, null), typeMask);
+        } catch (Exception ex) {
             throw new SW360Exception("Search execution failed for text: " + text, ex);
         }
     }
-    
+
 }

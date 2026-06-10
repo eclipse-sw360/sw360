@@ -20,7 +20,6 @@
         <version>20.1.0-rc-2</version>
     </parent>
     <build>
-        <finalName>changelogs</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

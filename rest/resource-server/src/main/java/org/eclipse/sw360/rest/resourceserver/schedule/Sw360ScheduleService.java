@@ -13,15 +13,18 @@ package org.eclipse.sw360.rest.resourceserver.schedule;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestStatusWithBoolean;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,188 +35,152 @@ import static org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper.th
 public class Sw360ScheduleService {
     private static final Logger log = LogManager.getLogger(Sw360ScheduleService.class);
 
-    public RequestSummary scheduleService(User sw360User, String serviceName) throws TException {
+    private static final String SCHEDULE_URI = "/schedule/api/schedule";
+
+    private final RestClient restClient;
+
+    private void addUserHeaders(RestClient.RequestHeadersSpec<?> spec, User user) {
+        spec.header("X-User-Email", user.getEmail())
+            .header("X-User-Department", user.getDepartment())
+            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
+    }
+
+    public RequestSummary scheduleService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        return ThriftClients.makeScheduleClient().scheduleService(serviceName);
+        var req = restClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path(SCHEDULE_URI + "/scheduleService")
+                        .queryParam("serviceName", serviceName)
+                        .build());
+        return req.retrieve().body(RequestSummary.class);
     }
 
-    public RequestStatus unscheduleService(User sw360User, String serviceName) throws TException {
+    public RequestStatus unscheduleService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        return ThriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
+        var req = restClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path(SCHEDULE_URI + "/unscheduleService")
+                        .queryParam("serviceName", serviceName)
+                        .build());
+        addUserHeaders(req, sw360User);
+        return req.retrieve().body(RequestStatus.class);
     }
 
-    public RequestStatus triggerManualService(User sw360User, String serviceName) throws TException {
+    public RequestStatus triggerManualService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        return ThriftClients.makeScheduleClient().triggerManualService(serviceName, sw360User);
+        var req = restClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path(SCHEDULE_URI + "/triggerManualService")
+                        .queryParam("serviceName", serviceName)
+                        .build());
+        addUserHeaders(req, sw360User);
+        return req.retrieve().body(RequestStatus.class);
     }
 
-    public RequestStatus cancelAllServices(User sw360User) throws TException {
+    public RequestStatus cancelAllServices(User sw360User) {
         throwIfNotAdmin(sw360User);
-        return ThriftClients.makeScheduleClient().unscheduleAllServices(sw360User);
+        var req = restClient.post()
+                .uri(SCHEDULE_URI + "/unscheduleAllServices");
+        addUserHeaders(req, sw360User);
+        return req.retrieve().body(RequestStatus.class);
     }
 
-    public RequestSummary scheduleCveSearch(User sw360User) throws TException {
-        return scheduleService(sw360User, ThriftClients.CVESEARCH_SERVICE);
-    }
-
-    public RequestStatus cancelCveSearch(User sw360User) throws TException {
-        return unscheduleService(sw360User, ThriftClients.CVESEARCH_SERVICE);
-    }
-
-    public RequestSummary deleteAttachmentService(User sw360User) throws TException {
-        return scheduleService(sw360User, ThriftClients.DELETE_ATTACHMENT_SERVICE);
-    }
-
-    public RequestStatus cancelDeleteAttachment(User sw360User) throws TException {
-        return unscheduleService(sw360User, ThriftClients.DELETE_ATTACHMENT_SERVICE);
-    }
-
-    public RequestStatus cancelAttachmentDeletionLocalFS(User sw360User) throws TException {
-        return ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem();
-    }
-
-    public RequestStatus triggerCveSearch(User sw360User) throws TException {
+    public RequestStatus isServiceScheduled(String serviceName, User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            return ThriftClients.makeCvesearchClient().update();
-        } catch (TException | RuntimeException e) {
-            log.error("Error occurred while triggering CVE search: {}", e.getMessage(), e);
-            throw e;
+            var req = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path(SCHEDULE_URI + "/isServiceScheduled")
+                            .queryParam("serviceName", serviceName)
+                            .build());
+            addUserHeaders(req, sw360User);
+            RequestStatusWithBoolean result = req.retrieve().body(RequestStatusWithBoolean.class);
+            boolean isScheduled = result != null && Boolean.TRUE.equals(result.getAnswerPositive());
+            return isScheduled ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         } catch (Exception e) {
-            log.error("Unexpected error occurred while triggering CVE search: {}", e.getMessage(), e);
-            throw new TException("Unexpected error", e);
-        }
-    }
-
-    public RequestSummary svmSync(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SVMSYNC_SERVICE;
-        return ThriftClients.makeScheduleClient().scheduleService(serviceName);
-    }
-
-    public RequestStatus cancelSvmSync(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SVMSYNC_SERVICE;
-        return ThriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
-    }
-
-    public RequestSummary scheduleSvmReverseMatch(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SVMMATCH_SERVICE;
-        return ThriftClients.makeScheduleClient().scheduleService(serviceName);
-    }
-
-    public RequestStatus cancelSvmReverseMatch(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SVMMATCH_SERVICE;
-        return ThriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
-    }
-
-    public RequestSummary svmReleaseTrackingFeedback(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE;
-        return ThriftClients.makeScheduleClient().scheduleService(serviceName);
-    }
-
-    public RequestSummary svmMonitoringListUpdate(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SVM_LIST_UPDATE_SERVICE;
-        return ThriftClients.makeScheduleClient().scheduleService(serviceName);
-    }
-
-    public RequestStatus cancelSvmMonitoringListUpdate(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SVM_LIST_UPDATE_SERVICE;
-        return ThriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
-    }
-
-    public RequestSummary triggerSrcUpload(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SRC_UPLOAD_SERVICE;
-        return ThriftClients.makeScheduleClient().scheduleService(serviceName);
-    }
-
-    public RequestStatus unscheduleSrcUpload(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        String serviceName = ThriftClients.SRC_UPLOAD_SERVICE;
-        return ThriftClients.makeScheduleClient().unscheduleService(serviceName, sw360User);
-    }
-
-    public RequestStatus triggerSourceUploadForReleaseComponents(User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        return ThriftClients.makeComponentClient()
-                .uploadSourceCodeAttachmentToReleases();
-    }
-
-    public RequestStatus isServiceScheduled(String serviceName, User sw360User) throws TException {
-        throwIfNotAdmin(sw360User);
-        try {
-            boolean requestStatusWithBoolean = ThriftClients
-                    .makeScheduleClient()
-                    .isServiceScheduled(serviceName, sw360User)
-                    .isAnswerPositive();
-
-            return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
-        } catch (TException e) {
             log.error("Error occurred while fetching the status of service '{}':", serviceName, e);
-            throw e;
+            throw new SW360Exception("Failed to check schedule status for service: " + serviceName, e);
         }
     }
 
-    public RequestStatus isAnyServiceScheduled(User sw360User) throws TException {
+    public RequestStatus isAnyServiceScheduled(User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            boolean requestStatusWithBoolean = ThriftClients
-                    .makeScheduleClient()
-                    .isAnyServiceScheduled(sw360User)
-                    .isAnswerPositive();
-
-            return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
-        } catch (TException e) {
+            var req = restClient.get()
+                    .uri(SCHEDULE_URI + "/isAnyServiceScheduled");
+            addUserHeaders(req, sw360User);
+            RequestStatusWithBoolean result = req.retrieve().body(RequestStatusWithBoolean.class);
+            boolean isAny = result != null && Boolean.TRUE.equals(result.getAnswerPositive());
+            return isAny ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
+        } catch (Exception e) {
             log.error("Error occurred while fetching the status of services", e);
-            throw e;
+            throw new SW360Exception("Failed to check if any service is scheduled", e);
         }
     }
 
-    public Map<String, Object> getServiceDetails(String serviceName, User sw360User) throws TException {
+    public Map<String, Object> getServiceDetails(String serviceName, User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            var client = ThriftClients.makeScheduleClient();
-            boolean isScheduled = client.isServiceScheduled(serviceName, sw360User).isAnswerPositive();
-            int offsetSeconds = client.getFirstRunOffset(serviceName);
-            int intervalSeconds = client.getInterval(serviceName);
-            String nextSync = client.getNextSync(serviceName);
+            var isScheduledReq = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path(SCHEDULE_URI + "/isServiceScheduled")
+                            .queryParam("serviceName", serviceName)
+                            .build());
+            addUserHeaders(isScheduledReq, sw360User);
+            RequestStatusWithBoolean statusResult = isScheduledReq.retrieve().body(RequestStatusWithBoolean.class);
+            boolean isScheduled = statusResult != null && Boolean.TRUE.equals(statusResult.getAnswerPositive());
+
+            Integer offsetSeconds = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path(SCHEDULE_URI + "/getFirstRunOffset")
+                            .queryParam("serviceName", serviceName)
+                            .build())
+                    .retrieve().body(Integer.class);
+
+            Integer intervalSeconds = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path(SCHEDULE_URI + "/getInterval")
+                            .queryParam("serviceName", serviceName)
+                            .build())
+                    .retrieve().body(Integer.class);
+
+            String nextSync = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path(SCHEDULE_URI + "/getNextSync")
+                            .queryParam("serviceName", serviceName)
+                            .build())
+                    .retrieve().body(String.class);
 
             return Map.of(
                     "isScheduled", isScheduled,
-                    "firstOffsetSeconds", offsetSeconds,
-                    "intervalSeconds", intervalSeconds,
+                    "firstOffsetSeconds", offsetSeconds != null ? offsetSeconds : 0,
+                    "intervalSeconds", intervalSeconds != null ? intervalSeconds : 0,
                     "nextSynchronization", nextSync != null ? nextSync : "N/A"
             );
-        } catch (TException e) {
+        } catch (Exception e) {
             log.error("Error occurred while fetching details for service '{}':", serviceName, e);
-            throw e;
+            throw new SW360Exception("Failed to fetch details for service: " + serviceName, e);
         }
     }
 
-    public Map<String, Map<String, Object>> getAllServicesDetails(User sw360User) throws TException {
+    public Map<String, Map<String, Object>> getAllServicesDetails(User sw360User) {
         throwIfNotAdmin(sw360User);
         List<String> services = List.of(
-                ThriftClients.CVESEARCH_SERVICE,
-                ThriftClients.SVMSYNC_SERVICE,
-                ThriftClients.SVMMATCH_SERVICE,
-                ThriftClients.DELETE_ATTACHMENT_SERVICE,
-                ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE,
-                ThriftClients.SVM_LIST_UPDATE_SERVICE,
-                ThriftClients.SRC_UPLOAD_SERVICE,
-                ThriftClients.IMPORT_DEPARTMENT_SERVICE
+                ServiceNames.CVESEARCH_SERVICE,
+                ServiceNames.SVMSYNC_SERVICE,
+                ServiceNames.SVMMATCH_SERVICE,
+                ServiceNames.DELETE_ATTACHMENT_SERVICE,
+                ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE,
+                ServiceNames.SVM_LIST_UPDATE_SERVICE,
+                ServiceNames.SRC_UPLOAD_SERVICE,
+                ServiceNames.IMPORT_DEPARTMENT_SERVICE
         );
 
-        Map<String, Map<String, Object>> result = new java.util.LinkedHashMap<>();
+        Map<String, Map<String, Object>> result = new LinkedHashMap<>();
         for (String svc : services) {
             try {
                 result.put(svc, getServiceDetails(svc, sw360User));
-            } catch (TException e) {
+            } catch (Exception e) {
                 log.warn("Could not fetch details for service '{}': {}", svc, e.getMessage());
                 result.put(svc, Map.of("error", "Failed to retrieve details"));
             }

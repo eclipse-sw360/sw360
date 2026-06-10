@@ -542,6 +542,16 @@ public class CommonUtils {
         return RequestStatus.FAILURE;
     }
 
+    public static org.eclipse.sw360.datahandler.services.common.RequestStatus reduceRequestStatus(
+            org.eclipse.sw360.datahandler.services.common.RequestStatus r1,
+            org.eclipse.sw360.datahandler.services.common.RequestStatus r2) {
+        if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(r1)
+                && org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(r2)) {
+            return org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS;
+        }
+        return org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE;
+    }
+
     public static RequestSummary addToMessage(RequestSummary left, RequestSummary right, String info) {
         left.setRequestStatus(reduceRequestStatus(left.requestStatus, right.requestStatus));
 

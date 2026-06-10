@@ -39,15 +39,16 @@ public class Sw360ChangeLogService {
         this.restClient = restClient;
     }
 
-    public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) throws Exception {
+    public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) {
         return restClient.get()
         .uri(CHANGELOGS_URI+"/doc/"+docId)
         .header("X-User-Email", sw360User.getEmail())
+        .header("X-User-Department", sw360User.getDepartment())
         .retrieve()
         .body(new ParameterizedTypeReference<List<ChangeLogs>>() {});
     }
 
-    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, User sw360User, Pageable pageable) throws Exception {
+    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, User sw360User, Pageable pageable) {
         PaginationData pageData = pageableToPaginationData(pageable);
         PaginatedResult<ChangeLogs> result = restClient.get()
         .uri(uriBuilder -> uriBuilder
@@ -58,6 +59,7 @@ public class Sw360ChangeLogService {
             .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
             .build())
         .header("X-User-Email", sw360User.getEmail())
+        .header("X-User-Department", sw360User.getDepartment())
         .retrieve()
         .body(new ParameterizedTypeReference<PaginatedResult<ChangeLogs>>() {});
 

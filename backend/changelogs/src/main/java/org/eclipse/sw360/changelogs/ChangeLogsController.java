@@ -12,11 +12,11 @@ package org.eclipse.sw360.changelogs;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -45,14 +45,14 @@ public class ChangeLogsController {
         @PathVariable String docId,
         @RequestHeader("X-User-Email") String userEmail
     ) {
-        return handler.deleteChangeLogsByDocumentId(docId, makeUser(userEmail));
+        return handler.deleteChangeLogsByDocumentId(docId, UserUtils.buildUser(userEmail));
     }
 
     @GetMapping("/doc/{docId}")
     public List<ChangeLogs> getChangeLogsByDocumentId(
     @RequestHeader("X-User-Email") String userEmail,
     @PathVariable String docId) {
-        return handler.getChangeLogsByDocumentId(makeUser(userEmail), docId);
+        return handler.getChangeLogsByDocumentId(UserUtils.buildUser(userEmail), docId);
     }
 
     @GetMapping("/doc/{docId}/page")
@@ -61,15 +61,8 @@ public class ChangeLogsController {
     @PathVariable String docId,
     @ModelAttribute PaginationData pageData) {
         Map<PaginationData, List<ChangeLogs>> result =
-                handler.getChangeLogsByDocumentIdPaginated(makeUser(userEmail), docId, pageData);
+                handler.getChangeLogsByDocumentIdPaginated(UserUtils.buildUser(userEmail), docId, pageData);
         Map.Entry<PaginationData, List<ChangeLogs>> entry = result.entrySet().iterator().next();
         return new PaginatedResult<>(entry.getKey(), entry.getValue());
-    }
-
-    private static User makeUser(String email) {
-        User user = new User();
-        user.setEmail(email);
-        user.setDepartment("REST");
-        return user;
     }
 }

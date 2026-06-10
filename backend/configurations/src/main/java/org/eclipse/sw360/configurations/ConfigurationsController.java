@@ -11,6 +11,7 @@ package org.eclipse.sw360.configurations;
 
 import java.util.Map;
 
+import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
@@ -54,12 +55,21 @@ public class ConfigurationsController {
     }
 
     @PutMapping
-    public RequestStatus updateSW360Configs(@RequestBody Map<String,String> updatedConfigs, @RequestHeader("X-User-Email") String userEmail){
-        return handler.updateSW360Configs(updatedConfigs, null);
+    public RequestStatus updateSW360Configs(
+            @RequestBody Map<String,String> updatedConfigs,
+            @RequestHeader("X-User-Email") String userEmail,
+            @RequestHeader("X-User-Department") String department,
+            @RequestHeader("X-User-Group") String userGroup) {
+        return handler.updateSW360Configs(updatedConfigs, UserUtils.buildUser(userEmail, department, userGroup));
     }
 
     @PutMapping("/group/{configFor}")
-    public RequestStatus updateSW360ConfigForContainer(@PathVariable ConfigFor configFor, @RequestBody Map<String,String> updatedConfigs, @RequestHeader("X-User-Email") String userEmail){
-        return handler.updateSW360ConfigForContainer(configFor, updatedConfigs, null);
+    public RequestStatus updateSW360ConfigForContainer(
+            @PathVariable ConfigFor configFor,
+            @RequestBody Map<String,String> updatedConfigs,
+            @RequestHeader("X-User-Email") String userEmail,
+            @RequestHeader("X-User-Department") String department,
+            @RequestHeader("X-User-Group") String userGroup) {
+        return handler.updateSW360ConfigForContainer(configFor, updatedConfigs, UserUtils.buildUser(userEmail, department, userGroup));
     }
 }

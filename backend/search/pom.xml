@@ -24,8 +24,7 @@
       <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
       <deploy.name>search</deploy.name>
   </properties>
-  <build>
-        <finalName>search</finalName>
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

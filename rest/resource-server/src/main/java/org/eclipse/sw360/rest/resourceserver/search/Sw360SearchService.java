@@ -33,7 +33,7 @@ public class Sw360SearchService {
         this.restClient = restClient;
     }
 
-    public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional) throws Exception {
+    public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional) {
         List<String> typeMasks = typeMaskOptional.orElse(Collections.emptyList());
         return restClient.get()
         .uri(uriBuidler -> uriBuidler
@@ -42,6 +42,7 @@ public class Sw360SearchService {
             .queryParam("typeMask", typeMasks)
             .build())
         .header("X-User-Email", sw360User.getEmail())
+        .header("X-User-Department", sw360User.getDepartment())
         .retrieve()
         .body(new ParameterizedTypeReference<List<SearchResult>>() {});
     }   

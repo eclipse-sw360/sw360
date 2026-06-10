@@ -14,11 +14,9 @@ package org.eclipse.sw360.rest.resourceserver.schedule;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -96,7 +94,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                                     example = "SUCCESS")))
     })
     @PostMapping(SCHEDULE_URL + "/unscheduleAllServices")
-    public ResponseEntity<?> unscheduleAllServices() throws TException {
+    public ResponseEntity<?> unscheduleAllServices() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelAllServices(sw360User);
         return new ResponseEntity<>(requestStatus, httpStatusFromRequestStatus(requestStatus));
@@ -122,7 +120,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     public ResponseEntity<Map<String, Object>> checkServiceStatus(
             @Parameter(description = "Name of the service")
             @RequestParam(value = "serviceName", required = true) String serviceName
-    ) throws TException {
+    ) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
@@ -151,7 +149,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                                     example = "true")))
     })
     @GetMapping(value = SCHEDULE_URL + "/isAnyServiceScheduled")
-    public ResponseEntity<Boolean> isAnyServiceScheduled() throws TException {
+    public ResponseEntity<Boolean> isAnyServiceScheduled() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         boolean isAnyServiceScheduled = scheduleService.isAnyServiceScheduled(sw360User) == RequestStatus.SUCCESS;
         return ResponseEntity.ok(isAnyServiceScheduled);
@@ -185,7 +183,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
                     }), required = true)
             @RequestParam(value = "serviceName") String serviceName
-    ) throws TException {
+    ) {
         if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
             throw new BadRequestClientException("serviceName parameter is required");
         }
@@ -228,7 +226,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
                     }), required = true)
             @RequestParam(value = "serviceName") String serviceName
-    ) throws TException {
+    ) {
         if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
             throw new BadRequestClientException("serviceName parameter is required");
         }
@@ -270,7 +268,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
                     }), required = true)
             @RequestParam(value = "serviceName") String serviceName
-    ) throws TException {
+    ) {
         if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
             throw new BadRequestClientException("serviceName parameter is required");
         }
@@ -324,7 +322,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
                     }))
             @RequestParam(value = "serviceName", required = false) String serviceName
-    ) throws TException {
+    ) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
             return ResponseEntity.ok(scheduleService.getAllServicesDetails(sw360User));
