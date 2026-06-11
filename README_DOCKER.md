@@ -61,6 +61,16 @@ file to tweak SW360 behaviour.
 * `COUCHDB_URL`: URL of the CouchDB instance (default: `http://couchdb:5984`).
 * `COUCHDB_LUCENESEARCH_LIMIT`: Limit for Lucene search results (default: `1000`).
 * `CLOUDANT_ENABLE_RETRIES`: Enable retries in Cloudant (default: `true`).
+* `CLOUDANT_MAX_RETRIES`: Max Cloudant retries when enabled (default: `2`).
+* `CLOUDANT_MAX_RETRY_INTERVAL`: Max retry interval in seconds (default: `5`).
+* `CLOUDANT_POOL_MAX_IDLE_CONNECTIONS`: Optional OkHttp pool idle-connection cap
+    (default: `-1`, disabled).
+* `CLOUDANT_POOL_KEEPALIVE_SECONDS`: Optional pooled connection keepalive in
+    seconds (default: `-1`, disabled).
+* `CLOUDANT_MAX_REQUESTS`: Optional OkHttp dispatcher max in-flight requests
+    (default: `-1`, disabled).
+* `CLOUDANT_MAX_REQUESTS_PER_HOST`: Optional OkHttp dispatcher max in-flight
+    requests per host (default: `-1`, disabled).
 
 **Thrift Backend Connection Pooling**
 * `BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL`: Max total pooled connections to backend (default: `200`).

@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -87,6 +88,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -685,6 +687,9 @@ public class ReleaseTest extends TestIntegrationBase {
 
     @Test
     public void should_link_releases_to_release() throws IOException, TException {
+        assumeTrue("Not running since Releases cannot be interlinked",
+                SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
+
         given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
 
         HttpHeaders headers = getHeaders(port);

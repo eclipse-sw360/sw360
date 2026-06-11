@@ -74,7 +74,7 @@ public class SW360ConfigKeys {
 
     // This property is used to configure the SVM notification URL
     public static final String SVM_NOTIFICATION_URL = "svm.notification.url";
-    
+
     // Properties purely used by UI
     // This property is used to enable/disable linked projects display in the UI
     public static final String UI_ENABLE_LINKED_PROJECTS_DISPLAY = "ui.enable.linked.projects.display";
