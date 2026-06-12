@@ -24,6 +24,7 @@
 
     <modules>
         <module>common</module>
+        <module>vilocify</module>
         <module>changelogs</module>
         <module>attachments</module>
         <module>components</module>

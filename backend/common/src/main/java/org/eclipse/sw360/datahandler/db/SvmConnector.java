@@ -16,6 +16,7 @@ import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import java.io.IOException;
@@ -51,8 +52,23 @@ public class SvmConnector {
         COMPONENT_MAPPINGS_API_URL = props.getProperty("svm.sw360.componentmappings.api.url", "");
     }
 
+    /**
+     * Returns {@code true} when the SVM integration is the active provider.
+     * When {@code sync.integration.provider=velocify} the SVM connector is
+     * disabled and all operations become no-ops.
+     */
+    public boolean isEnabled() {
+        String provider = SW360Constants.SYNC_INTEGRATION_PROVIDER;
+        // If the provider is explicitly set to 'velocify', SVM is disabled.
+        if (provider != null && "velocify".equalsIgnoreCase(provider.trim())) {
+            return false;
+        }
+        return !CommonUtils.isNullEmptyOrWhitespace(MONITORING_LIST_API_URL)
+                || !CommonUtils.isNullEmptyOrWhitespace(COMPONENT_MAPPINGS_API_URL);
+    }
+
     public void sendProjectExportForMonitoringLists(String jsonString) throws IOException, SW360Exception {
-        if (CommonUtils.isNullEmptyOrWhitespace(MONITORING_LIST_API_URL)) {
+        if (!isEnabled() || CommonUtils.isNullEmptyOrWhitespace(MONITORING_LIST_API_URL)) {
             return;
         }
 
@@ -79,7 +95,7 @@ public class SvmConnector {
     }
 
     public Map<String, Map<String, Object>> fetchComponentMappings() throws SW360Exception, IOException {
-        if (CommonUtils.isNullEmptyOrWhitespace(COMPONENT_MAPPINGS_API_URL)) {
+        if (!isEnabled() || CommonUtils.isNullEmptyOrWhitespace(COMPONENT_MAPPINGS_API_URL)) {
             return Collections.emptyMap();
         }
 
