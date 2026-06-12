@@ -11,7 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver.vendor;
 
 import lombok.RequiredArgsConstructor;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;

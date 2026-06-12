@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.common.utils;
 
+import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.changelogs.ChangeLogsConverter;
 import org.eclipse.sw360.common.utils.converter.changelogs.ChangedFieldsConverter;
 import org.eclipse.sw360.common.utils.converter.changelogs.ReferenceDocDataConverter;
@@ -19,14 +20,17 @@ import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.SW360ExceptionConverter;
 import org.eclipse.sw360.common.utils.converter.cvesearch.UpdateTypeConverter;
 import org.eclipse.sw360.common.utils.converter.cvesearch.VulnerabilityUpdateStatusConverter;
+import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.services.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.services.cvesearch.VulnerabilityUpdateStatus;
 
@@ -66,6 +70,21 @@ public final class ThriftConverter {
 
     public static org.eclipse.sw360.datahandler.thrift.ConfigContainer toThriftConfigContainer(ConfigContainer pojo) {
         return ConfigContainerConverter.toThrift(pojo);
+    }
+
+    public static AddDocumentRequestSummary fromThriftAddDocumentRequestSummary(
+            org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary thrift) {
+        return AddDocumentRequestSummaryConverter.fromThrift(thrift);
+    }
+
+    // ---- Vendors ----
+
+    public static Vendor fromThriftVendor(org.eclipse.sw360.datahandler.thrift.vendors.Vendor thrift) {
+        return VendorConverter.fromThrift(thrift);
+    }
+
+    public static org.eclipse.sw360.datahandler.thrift.vendors.Vendor toThriftVendor(Vendor pojo) {
+        return VendorConverter.toThrift(pojo);
     }
 
     // ---- Changelogs ----

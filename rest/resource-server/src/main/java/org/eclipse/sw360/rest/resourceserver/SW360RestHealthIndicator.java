@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.services.health.HealthResponse;
 import org.eclipse.sw360.datahandler.services.health.HealthStatus;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;

@@ -201,7 +201,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
-        given(this.sw360VendorService.getVendorById(any())).willReturn(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
+        given(this.sw360VendorService.getThriftVendorById(any()))
+                .willReturn(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
         given(this.attachmentServiceMock.isAttachmentContentExist(eq("1231231254"))).willReturn(true);
         given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
 

@@ -573,9 +573,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             restControllerHelper.addEmbeddedModifiedBy(halPackage, sw360User, "modifiedBy");
         }
         if (sw360Package.getVendorId() != null) {
-            Vendor vendor = vendorService.getVendorById(sw360Package.getVendorId());
+            org.eclipse.sw360.datahandler.services.vendors.Vendor vendor =
+                    vendorService.getVendorById(sw360Package.getVendorId());
             if (vendor != null) {
-                Vendor vendorHalResource = restControllerHelper.convertToEmbeddedVendor(vendor);
+                org.eclipse.sw360.datahandler.services.vendors.Vendor vendorHalResource =
+                        restControllerHelper.convertToEmbeddedVendor(vendor);
                 halPackage.addEmbeddedResource("sw360:vendors", vendorHalResource);
             } else {
                 log.warn("Vendor not found for ID: {}", sw360Package.getVendorId());
@@ -2972,8 +2974,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (sw360Project.getVendor() != null) {
-            Vendor vendor = sw360Project.getVendor();
-            Vendor vendorHalResource = restControllerHelper.convertToEmbeddedVendor(vendor);
+            org.eclipse.sw360.datahandler.services.vendors.Vendor vendorHalResource =
+                    restControllerHelper.convertToEmbeddedVendor(sw360Project.getVendor());
             halProject.addEmbeddedResource("sw360:vendors", vendorHalResource);
             sw360Project.setVendor(null);
         }

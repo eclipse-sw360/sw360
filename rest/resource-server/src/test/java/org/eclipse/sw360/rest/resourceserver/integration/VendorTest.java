@@ -12,11 +12,11 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.junit.Before;
@@ -79,13 +79,13 @@ public class VendorTest extends TestIntegrationBase {
         release1.setId("12345");
         release1.setName("Release_1");
         release1.setVersion("1.0.0");
-        release1.setVendor(testVendor);
+        release1.setVendor(toThriftVendor(testVendor));
 
         Release release2 = new Release();
         release2.setId("123456");
         release2.setName("Release_2");
         release2.setVersion("2.0.0");
-        release2.setVendor(testVendor);
+        release2.setVendor(toThriftVendor(testVendor));
 
         testReleases.add(release1);
         testReleases.add(release2);
@@ -112,9 +112,20 @@ public class VendorTest extends TestIntegrationBase {
         given(this.vendorServiceMock.exportExcel()).willReturn(ByteBuffer.allocate(10000));
 
         // Setup create vendor mock
-        Vendor createdVendor = new Vendor("Apache", "Apache Software Foundation", "https://www.apache.org/");
-        createdVendor.setId("987567468");
+        Vendor createdVendor = new Vendor()
+                .setShortname("Apache")
+                .setFullname("Apache Software Foundation")
+                .setUrl("https://www.apache.org/")
+                .setId("987567468");
         given(this.vendorServiceMock.createVendor(any())).willReturn(createdVendor);
+    }
+
+    private static org.eclipse.sw360.datahandler.thrift.vendors.Vendor toThriftVendor(Vendor vendor) {
+        return new org.eclipse.sw360.datahandler.thrift.vendors.Vendor()
+                .setId(vendor.getId())
+                .setShortname(vendor.getShortname())
+                .setFullname(vendor.getFullname())
+                .setUrl(vendor.getUrl());
     }
 
     // ========== GET VENDORS TESTS ==========

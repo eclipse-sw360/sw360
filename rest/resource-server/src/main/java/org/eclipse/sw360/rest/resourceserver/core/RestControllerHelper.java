@@ -543,7 +543,8 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedVendors(HalResource<Component> halComponent, Set<String> vendorFullnames) {
         for (String vendorFullName : vendorFullnames) {
-            HalResource<Vendor> vendorHalResource = addEmbeddedVendor(vendorFullName);
+            HalResource<org.eclipse.sw360.datahandler.services.vendors.Vendor> vendorHalResource =
+                    addEmbeddedVendor(vendorFullName);
             halComponent.addEmbeddedResource("sw360:vendors", vendorHalResource);
         }
     }
@@ -565,12 +566,14 @@ public class RestControllerHelper<T> {
         halResource.addEmbeddedResource("sw360:attachmentUsages", attachmentUsageMap);
     }
 
-    public HalResource<Vendor> addEmbeddedVendor(String vendorFullName) {
-        Vendor embeddedVendor = convertToEmbeddedVendor(vendorFullName);
-        HalResource<Vendor> halVendor = new HalResource<>(embeddedVendor);
+    public HalResource<org.eclipse.sw360.datahandler.services.vendors.Vendor> addEmbeddedVendor(String vendorFullName) {
+        org.eclipse.sw360.datahandler.services.vendors.Vendor embeddedVendor = convertToEmbeddedVendor(vendorFullName);
+        HalResource<org.eclipse.sw360.datahandler.services.vendors.Vendor> halVendor =
+                new HalResource<>(embeddedVendor);
         try {
-            Vendor vendorByFullName = vendorService.getVendorByFullName(vendorFullName);
-            if(vendorByFullName != null) {
+            org.eclipse.sw360.datahandler.services.vendors.Vendor vendorByFullName =
+                    vendorService.getVendorByFullName(vendorFullName);
+            if (vendorByFullName != null) {
                 Link vendorSelfLink = linkTo(UserController.class)
                         .slash("api" + VendorController.VENDORS_URL + "/" + vendorByFullName.getId()).withSelfRel();
                 halVendor.add(vendorSelfLink);
@@ -583,11 +586,16 @@ public class RestControllerHelper<T> {
     }
 
     public HalResource<Vendor> addEmbeddedVendor(Vendor vendor) {
-        Vendor embeddedVendor = convertToEmbeddedVendor(vendor);
+        Vendor embeddedVendor = new Vendor();
+        embeddedVendor.setId(vendor.getId());
+        embeddedVendor.setShortname(vendor.getShortname());
+        embeddedVendor.setFullname(vendor.getFullname());
+        embeddedVendor.setUrl(vendor.getUrl());
         HalResource<Vendor> halVendor = new HalResource<>(embeddedVendor);
         try {
-            Vendor vendorByFullName = vendorService.getVendorByFullName(vendor.getFullname());
-            if(vendorByFullName != null) {
+            org.eclipse.sw360.datahandler.services.vendors.Vendor vendorByFullName =
+                    vendorService.getVendorByFullName(vendor.getFullname());
+            if (vendorByFullName != null) {
                 Link vendorSelfLink = linkTo(UserController.class)
                         .slash("api" + VendorController.VENDORS_URL + "/" + vendorByFullName.getId()).withSelfRel();
                 halVendor.add(vendorSelfLink);
@@ -1006,8 +1014,16 @@ public class RestControllerHelper<T> {
         embeddedComponent.setVcs(component.getVcs());
         if (CommonUtils.isNotNullEmptyOrWhitespace(component.getDefaultVendorId())) {
             try {
-                Vendor defaultVendor = vendorService.getVendorById(component.getDefaultVendorId());
-                embeddedComponent.setDefaultVendor(defaultVendor);
+                org.eclipse.sw360.datahandler.services.vendors.Vendor defaultVendorPojo =
+                        vendorService.getVendorById(component.getDefaultVendorId());
+                if (defaultVendorPojo != null) {
+                    Vendor defaultVendor = new Vendor();
+                    defaultVendor.setId(defaultVendorPojo.getId());
+                    defaultVendor.setShortname(defaultVendorPojo.getShortname());
+                    defaultVendor.setFullname(defaultVendorPojo.getFullname());
+                    defaultVendor.setUrl(defaultVendorPojo.getUrl());
+                    embeddedComponent.setDefaultVendor(defaultVendor);
+                }
             } catch (RuntimeException e) {
                 LOGGER.error("Failed to retrieve default vendor '{}' from SW360 database.",
                         component.getDefaultVendorId(), e);
@@ -1183,8 +1199,10 @@ public class RestControllerHelper<T> {
         return embeddedObligation;
     }
 
-    public Vendor convertToEmbeddedVendor(Vendor vendor) {
-        Vendor embeddedVendor = new Vendor();
+    public org.eclipse.sw360.datahandler.services.vendors.Vendor convertToEmbeddedVendor(
+            org.eclipse.sw360.datahandler.services.vendors.Vendor vendor) {
+        org.eclipse.sw360.datahandler.services.vendors.Vendor embeddedVendor =
+                new org.eclipse.sw360.datahandler.services.vendors.Vendor();
         embeddedVendor.setId(vendor.getId());
         embeddedVendor.setShortname(vendor.getShortname());
         embeddedVendor.setFullname(vendor.getFullname());
@@ -1192,8 +1210,19 @@ public class RestControllerHelper<T> {
         return embeddedVendor;
     }
 
-    public Vendor convertToEmbeddedVendor(String fullName) {
-        Vendor embeddedVendor = new Vendor();
+    public org.eclipse.sw360.datahandler.services.vendors.Vendor convertToEmbeddedVendor(Vendor vendor) {
+        org.eclipse.sw360.datahandler.services.vendors.Vendor embeddedVendor =
+                new org.eclipse.sw360.datahandler.services.vendors.Vendor();
+        embeddedVendor.setId(vendor.getId());
+        embeddedVendor.setShortname(vendor.getShortname());
+        embeddedVendor.setFullname(vendor.getFullname());
+        embeddedVendor.setUrl(vendor.getUrl());
+        return embeddedVendor;
+    }
+
+    public org.eclipse.sw360.datahandler.services.vendors.Vendor convertToEmbeddedVendor(String fullName) {
+        org.eclipse.sw360.datahandler.services.vendors.Vendor embeddedVendor =
+                new org.eclipse.sw360.datahandler.services.vendors.Vendor();
         embeddedVendor.setFullname(fullName);
         embeddedVendor.setType(null);
         return embeddedVendor;
