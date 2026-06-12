@@ -35,6 +35,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -49,6 +50,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.PackageVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
@@ -56,6 +61,7 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -103,6 +109,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
+
+    @NonNull
+    private final Sw360VulnerabilityService vulnerabilityService;
 
     @Operation(
             summary = "Create a new package.",
@@ -473,5 +482,90 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         response.put("count", usageCount);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get vulnerabilities of a package.",
+            description = "Get all vulnerabilities linked to the package with the given id.",
+            tags = {"Packages"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vulnerabilities retrieved successfully."),
+            @ApiResponse(responseCode = "404", description = "Package not found.",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GetMapping(value = PACKAGES_URL + "/{id}/vulnerabilities")
+    public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfPackage(
+            @Parameter(description = "The id of the package.")
+            @PathVariable("id") String id
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        List<VulnerabilityDTO> vulnDtos = vulnerabilityService.getVulnerabilitiesByPackageId(id, user);
+        return new ResponseEntity<>(CollectionModel.of(vulnDtos), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update vulnerability verification state for a package.",
+            description = "Update the verification state of vulnerabilities linked to the package with the given id.",
+            tags = {"Packages"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vulnerability relation updated successfully."),
+            @ApiResponse(responseCode = "400", description = "Invalid request body."),
+            @ApiResponse(responseCode = "404", description = "Package not found.")
+    })
+    @PatchMapping(value = PACKAGES_URL + "/{id}/vulnerabilities")
+    public ResponseEntity<CollectionModel<VulnerabilityDTO>> patchPackageVulnerabilityRelation(
+            @Parameter(description = "The id of the package.")
+            @PathVariable("id") String id,
+            @Parameter(description = "The vulnerability state to apply.")
+            @RequestBody VulnerabilityState vulnerabilityState
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (CommonUtils.isNullOrEmptyCollection(vulnerabilityState.getReleaseVulnerabilityRelationDTOs())) {
+            throw new BadRequestClientException("Required field releaseVulnerabilityRelationDTOs is not present");
+        }
+        if (vulnerabilityState.getVerificationState() == null) {
+            throw new BadRequestClientException("Required field verificationState is not present");
+        }
+
+        List<VulnerabilityDTO> currentVulns = vulnerabilityService.getVulnerabilitiesByPackageId(id, user);
+        Set<String> currentExternalIds = currentVulns.stream()
+                .map(VulnerabilityDTO::getExternalId)
+                .collect(java.util.stream.Collectors.toSet());
+        Set<String> requestedExternalIds = vulnerabilityState.getReleaseVulnerabilityRelationDTOs().stream()
+                .map(ReleaseVulnerabilityRelationDTO::getExternalId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (!currentExternalIds.containsAll(requestedExternalIds)) {
+            throw new BadRequestClientException("One or more external IDs are not linked to this package");
+        }
+
+        for (VulnerabilityDTO vDto : currentVulns) {
+            if (!requestedExternalIds.contains(vDto.getExternalId())) {
+                continue;
+            }
+            if (!vDto.isSetPackageVulnerabilityRelation()) {
+                continue;
+            }
+            PackageVulnerabilityRelation relation = vDto.getPackageVulnerabilityRelation();
+            VerificationStateInfo info = new VerificationStateInfo();
+            info.setCheckedBy(user.getEmail());
+            info.setCheckedOn(org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOnTime());
+            info.setVerificationState(vulnerabilityState.getVerificationState());
+            if (vulnerabilityState.isSetComment()) {
+                info.setComment(vulnerabilityState.getComment());
+            }
+            List<VerificationStateInfo> stateInfos = relation.isSetVerificationStateInfo()
+                    ? new ArrayList<>(relation.getVerificationStateInfo())
+                    : new ArrayList<>();
+            stateInfos.add(info);
+            relation.setVerificationStateInfo(stateInfos);
+            vulnerabilityService.updatePackageVulnerabilityRelation(relation, user);
+        }
+
+        List<VulnerabilityDTO> updated = vulnerabilityService.getVulnerabilitiesByPackageId(id, user);
+        return new ResponseEntity<>(CollectionModel.of(updated), HttpStatus.OK);
     }
 }
