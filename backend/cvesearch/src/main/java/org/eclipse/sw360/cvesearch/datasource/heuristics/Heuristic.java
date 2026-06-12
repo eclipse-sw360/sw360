@@ -13,7 +13,7 @@ package org.eclipse.sw360.cvesearch.datasource.heuristics;
 
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,10 +50,7 @@ public class Heuristic {
                             .setUsedNeedle(needleWithMeta.needle)
                             .setMatchedBy(needleWithMeta.description));
         } catch (IOException e) {
-            log.error("IOException in searchlevel" +
-                    "\n\twith description=" + needleWithMeta.description +
-                    "\n\twith needle=" + needleWithMeta.needle +
-                    "\n\twith exception message=" + e.getMessage(), e);
+            log.warn("Skipping search needle ({}): {}", needleWithMeta.description, e.getMessage());
             return Stream.empty();
         }
     }

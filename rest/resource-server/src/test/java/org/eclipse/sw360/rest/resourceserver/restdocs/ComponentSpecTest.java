@@ -361,7 +361,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(
                 new User("john@sw360.org", "sw360").setId("74427996"));
 
-        given(this.vendorServiceMock.getVendorById("vendorId")).willReturn(vendor);
+        given(this.vendorServiceMock.getThriftVendorById("vendorId")).willReturn(vendor);
 
         List<Release> releaseList = new ArrayList<>();
         release = new Release();

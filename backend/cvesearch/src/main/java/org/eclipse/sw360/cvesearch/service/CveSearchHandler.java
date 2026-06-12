@@ -11,57 +11,62 @@
  */
 package org.eclipse.sw360.cvesearch.service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.cvesearch.datasink.VulnerabilityConnector;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApiImpl;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchWrapper;
 import org.eclipse.sw360.cvesearch.entitytranslation.CveSearchDataTranslator;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
-import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
-import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.cvesearch.UpdateType;
+import org.eclipse.sw360.datahandler.services.cvesearch.VulnerabilityUpdateStatus;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.cvesearch.helper.VulnerabilityUtils.*;
+import org.eclipse.sw360.cvesearch.helper.VulnerabilityUtils;
 
-public class CveSearchHandler implements CveSearchService.Iface {
+import static org.eclipse.sw360.cvesearch.helper.VulnerabilityUtils.getEmptyVulnerabilityUpdateStatus;
+
+@Service
+public class CveSearchHandler {
 
     private static final Logger log = LogManager.getLogger(CveSearchHandler.class);
 
     public static final String CVESEARCH_HOST_PROPERTY = "cvesearch.host";
-    private VulnerabilityConnector vulnerabilityConnector;
-    private CveSearchWrapper cveSearchWrapper;
 
+    private final VulnerabilityConnector vulnerabilityConnector;
+    private final CveSearchWrapper cveSearchWrapper;
 
-    public CveSearchHandler() {
-        try {
-            vulnerabilityConnector = new VulnerabilityConnector();
-        } catch (IOException ioe) {
-            log.error("Exception when creating CveSearchHandler", ioe);
-        }
+    public CveSearchHandler() throws IOException {
+        this(new VulnerabilityConnector());
+    }
+
+    CveSearchHandler(VulnerabilityConnector vulnerabilityConnector) throws IOException {
+        this.vulnerabilityConnector = vulnerabilityConnector;
 
         Properties props = CommonUtils.loadProperties(CveSearchHandler.class, "/cvesearch.properties");
         String host = props.getProperty(CVESEARCH_HOST_PROPERTY, "https://localhost:5000");
 
-        log.info("Using " + host + " for CVE search...");
+        log.info("Using {} for CVE search...", host);
 
         cveSearchWrapper = new CveSearchWrapper(new CveSearchApiImpl(host));
     }
 
     private VulnerabilityUpdateStatus updateForRelease(Release release) {
         Optional<List<CveSearchData>> cveSearchDatas = cveSearchWrapper.searchForRelease(release);
-        if(!cveSearchDatas.isPresent()) {
-            return new VulnerabilityUpdateStatus().setRequestStatus(RequestStatus.FAILURE);
+        if (cveSearchDatas.isEmpty()) {
+            return getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE);
         }
 
         CveSearchDataTranslator cveSearchDataTranslator = new CveSearchDataTranslator();
@@ -75,7 +80,8 @@ public class CveSearchHandler implements CveSearchService.Iface {
 
         VulnerabilityUpdateStatus updateStatus = getEmptyVulnerabilityUpdateStatus();
         for (CveSearchDataTranslator.VulnerabilityWithRelation vulnerabilityWithRelation : translated) {
-            updateStatus = vulnerabilityConnector.addOrUpdate(vulnerabilityWithRelation.vulnerability,
+            updateStatus = vulnerabilityConnector.addOrUpdate(
+                    vulnerabilityWithRelation.vulnerability,
                     vulnerabilityWithRelation.relation,
                     updateStatus);
         }
@@ -83,65 +89,58 @@ public class CveSearchHandler implements CveSearchService.Iface {
         return updateStatus;
     }
 
-    @Override
     public VulnerabilityUpdateStatus updateForRelease(String releaseId) {
         Optional<Release> release = vulnerabilityConnector.getRelease(releaseId);
-        Optional<VulnerabilityUpdateStatus> updateStatus = release.map(this::updateForRelease);
-        return updateStatus.orElse(getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
+        return release.map(this::updateForRelease)
+                .orElseGet(() -> getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
     }
 
-    @Override
-    public VulnerabilityUpdateStatus updateForComponent(String componentId) throws TException {
+    public VulnerabilityUpdateStatus updateForComponent(String componentId) {
         Optional<Component> component = vulnerabilityConnector.getComponent(componentId);
 
-        return component.map(
-                c -> c.isSetReleaseIds()
+        return component.map(c -> c.getReleaseIds() != null
                         ? c.getReleaseIds().stream()
                                 .map(this::updateForRelease)
-                                .reduce(getEmptyVulnerabilityUpdateStatus(),
-                                        (r1, r2) -> reduceVulnerabilityUpdateStatus(r1,r2))
-                        : getEmptyVulnerabilityUpdateStatus()
-            ).orElse(getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
+                                .reduce(getEmptyVulnerabilityUpdateStatus(), (a, b) -> VulnerabilityUtils.reduceVulnerabilityUpdateStatus(a, b))
+                        : getEmptyVulnerabilityUpdateStatus())
+                .orElseGet(() -> getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
     }
 
-    @Override
-    public VulnerabilityUpdateStatus updateForProject(String projectId) throws TException {
+    public VulnerabilityUpdateStatus updateForProject(String projectId) {
         Optional<Project> project = vulnerabilityConnector.getProject(projectId);
 
-        return project.map(
-                r -> r.isSetReleaseIdToUsage()
-                        ? r.getReleaseIdToUsage().keySet().stream()
+        return project.map(p -> p.getReleaseIdToUsage() != null
+                        ? p.getReleaseIdToUsage().keySet().stream()
                                 .map(this::updateForRelease)
-                                .reduce(getEmptyVulnerabilityUpdateStatus(),
-                                    (r1, r2) -> reduceVulnerabilityUpdateStatus(r1,r2))
-                        : getEmptyVulnerabilityUpdateStatus()
-            ).orElse(getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
+                                .reduce(getEmptyVulnerabilityUpdateStatus(), (a, b) -> VulnerabilityUtils.reduceVulnerabilityUpdateStatus(a, b))
+                        : getEmptyVulnerabilityUpdateStatus())
+                .orElseGet(() -> getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
     }
 
-    @Override
-    public VulnerabilityUpdateStatus fullUpdate() throws TException {
+    public VulnerabilityUpdateStatus fullUpdate() {
         List<Release> allReleases = vulnerabilityConnector.getAllReleases();
 
         return allReleases.stream()
                 .map(this::updateForRelease)
-                .reduce(getEmptyVulnerabilityUpdateStatus(),
-                        (r1, r2) -> reduceVulnerabilityUpdateStatus(r1,r2));
+                .reduce(getEmptyVulnerabilityUpdateStatus(), (a, b) -> VulnerabilityUtils.reduceVulnerabilityUpdateStatus(a, b));
     }
 
-    @Override
-    public RequestStatus update() throws TException {
+    public RequestStatus update() {
         log.info("Starting CveSearch update...");
         VulnerabilityUpdateStatus vulnerabilityUpdateStatus = fullUpdate();
-        log.info("CveSearch update finished with status:" + vulnerabilityUpdateStatus.getRequestStatus());
-        log.info("The following vulnerability/ies could not be imported:" + vulnerabilityUpdateStatus.getStatusToVulnerabilityIds().get(UpdateType.FAILED) + "\n"+
-                        "The following vulnerability/ies were updated:" + vulnerabilityUpdateStatus.getStatusToVulnerabilityIds().get(UpdateType.UPDATED) + "\n"+
-                        "The following vulnerability/ies were added:" + vulnerabilityUpdateStatus.getStatusToVulnerabilityIds().get(UpdateType.NEW));
+        log.info("CveSearch update finished with status: {}", vulnerabilityUpdateStatus.getRequestStatus());
+        log.info("The following vulnerability/ies could not be imported: {}\n"
+                        + "The following vulnerability/ies were updated: {}\n"
+                        + "The following vulnerability/ies were added: {}",
+                vulnerabilityUpdateStatus.getStatusToVulnerabilityIds().get(UpdateType.FAILED),
+                vulnerabilityUpdateStatus.getStatusToVulnerabilityIds().get(UpdateType.UPDATED),
+                vulnerabilityUpdateStatus.getStatusToVulnerabilityIds().get(UpdateType.NEW));
 
         return vulnerabilityUpdateStatus.getRequestStatus();
     }
 
-    @Override
-    public Set<String> findCpes(String vendor, String product, String version) throws TException {
-        throw new UnsupportedOperationException("Not implemented yet.");
+    public Set<String> findCpes(String vendor, String product, String version) {
+        log.warn("findCpes is not implemented (vendor={}, product={}, version={})", vendor, product, version);
+        return Set.of();
     }
 }

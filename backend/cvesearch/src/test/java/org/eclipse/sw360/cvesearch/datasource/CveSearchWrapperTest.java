@@ -13,8 +13,8 @@ package org.eclipse.sw360.cvesearch.datasource;
 
 import org.eclipse.sw360.cvesearch.TestWithCveSearchConnection;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.cvesearch.service.CveSearchHandler;
 import org.junit.Assume;
 import org.junit.Before;
@@ -65,53 +65,17 @@ public class CveSearchWrapperTest extends TestWithCveSearchConnection {
         }
 
         public Release get() {
-            return new Release() {
-                @Override
-                public String getName() {
-                    return releaseName;
-                }
-                @Override
-                public boolean isSetName() {
-                    return name!=null;
-                }
-                @Override
-                public String getVersion() {
-                    return releaseVersion;
-                }
-                @Override
-                public boolean isSetVersion() {
-                    return releaseVersion!=null;
-                }
-                @Override
-                public Vendor getVendor() {
-                    return new Vendor() {
-                        @Override
-                        public String getFullname() {
-                            return vendorFullname;
-                        }
-                        @Override
-                        public boolean isSetFullname() {
-                            return vendorFullname!=null;
-                        }
-                        @Override
-                        public String getShortname() {
-                            return vendorShortname;
-                        }
-                        @Override
-                        public boolean isSetShortname() {
-                            return vendorShortname!=null;
-                        }
-                    };
-                }
-                @Override
-                public String getCpeid() {
-                    return cpe;
-                }
-                @Override
-                public boolean isSetCpeid() {
-                    return cpe!=null;
-                }
-            };
+            Release release = new Release();
+            release.setName(releaseName);
+            release.setVersion(releaseVersion);
+            release.setCpeid(cpe);
+            if (vendorFullname != null || vendorShortname != null) {
+                Vendor vendor = new Vendor();
+                vendor.setFullname(vendorFullname);
+                vendor.setShortname(vendorShortname);
+                release.setVendor(vendor);
+            }
+            return release;
         }
     }
 

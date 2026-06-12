@@ -10,6 +10,17 @@
 package org.eclipse.sw360.datahandler.services.vendors;
 
 public enum VendorSortColumn {
-    BY_FULLNAME,
-    BY_SHORTNAME
+    BY_SCORE(-2),
+    BY_FULLNAME(0),
+    BY_SHORTNAME(1);
+
+    private final int value;
+
+    VendorSortColumn(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
+    }
 }
