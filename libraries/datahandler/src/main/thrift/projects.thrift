@@ -104,8 +104,8 @@ struct ProjectData {
     2: required list<Project> first250Projects,
     3: optional list<string> projectIdsOfRemainingProject
 }
-struct Project {
 
+struct Project {
     // General information
     1: optional string id,
     2: optional string revision,
@@ -129,7 +129,6 @@ struct Project {
     22: optional string projectResponsible,
     23: optional string leadArchitect,
     25: optional set<string> moderators = [],
-//    26: optional set<string> comoderators, //deleted
     27: optional set<string> contributors = [],
     28: optional Visibility visbility = sw360.Visibility.EVERYONE,
     29: optional map<string,set<string>> roles, //customized roles with set of mail addresses
@@ -143,7 +142,6 @@ struct Project {
     30: optional map<string, ProjectProjectRelationship> linkedProjects,
     31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
     32: optional map<string, ProjectPackageRelationship> packageIds,
-    //32: optional set<string> packageIds,
 
     // Admin data
     40: optional string clearingTeam;
@@ -174,7 +172,6 @@ struct Project {
     80: optional string clearingRequestId,
 
     // Optional fields for summaries!
-//    100: optional set<string> releaseIds, //deleted
     101: optional ReleaseClearingStateSummary releaseClearingStateSummary,
 
     // linked release obligations
@@ -196,7 +193,6 @@ struct ProjectLink {
     2: required string name,
     3: optional ProjectRelationship relation,
     4: optional string version,
-//    5: optional string parentId,
     6: optional string nodeId,
     7: optional string parentNodeId,
     8: optional ProjectType projectType,
@@ -299,7 +295,6 @@ struct ProjectDTO{
     22: optional string projectResponsible,
     23: optional string leadArchitect,
     25: optional set<string> moderators = [],
-//    26: optional set<string> comoderators, //deleted
     27: optional set<string> contributors = [],
     28: optional Visibility visbility = sw360.Visibility.BUISNESSUNIT_AND_MODERATORS,
     29: optional map<string,set<string>> roles, //customized roles with set of mail addresses
@@ -336,7 +331,6 @@ struct ProjectDTO{
     80: optional string clearingRequestId,
 
     // Optional fields for summaries!
-//    100: optional set<string> releaseIds, //deleted
     101: optional ReleaseClearingStateSummary releaseClearingStateSummary,
 
     // linked release obligations
@@ -703,14 +697,17 @@ service ProjectService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+    
     /*
     * make excel export
     */
     binary getReportDataStream(1: User user,2: bool extendedByReleases,3: string projectId) throws (1: SW360Exception exp);
-     /*
+     
+    /*
     * excel export - return the filepath
     */
     string getReportInEmail(1: User user, 2: bool extendedByReleases, string projectId) throws (1: SW360Exception exp);
+    
     /*
     * download excel
     */
@@ -764,4 +761,10 @@ service ProjectService {
     * Get linked releases information in dependency network of a project
     */
     list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
+    
+    /**
+     * Method to copy a project with specific fields
+     */
+    AddDocumentRequestSummary copyProject(1: string projectId, 2: set<string> fieldsToCopy, 3: Project overrideFields, 4: User user) throws (1: SW360Exception exp);
+
 }
