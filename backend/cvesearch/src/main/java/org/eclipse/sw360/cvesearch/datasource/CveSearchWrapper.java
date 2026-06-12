@@ -12,7 +12,7 @@ package org.eclipse.sw360.cvesearch.datasource;
 
 import org.eclipse.sw360.cvesearch.datasource.heuristics.Heuristic;
 import org.eclipse.sw360.cvesearch.datasource.heuristics.SearchLevels;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Release;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +36,11 @@ public class CveSearchWrapper {
         try {
             return Optional.of(heuristic.run(release));
         } catch (IOException e) {
-            log.error("Was not able to search for release with name=" + release.getName() + " and id=" + release.getId(), e);
+            log.error("Was not able to search for release with name={} and id={}: {}",
+                    release.getName(), release.getId(), e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Unexpected error during CVE search for release with name={} and id={}",
+                    release.getName(), release.getId(), e);
         }
         return Optional.empty();
     }

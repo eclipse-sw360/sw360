@@ -17,7 +17,8 @@ import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchGuesser;
 import org.eclipse.sw360.cvesearch.datasource.matcher.Match;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -129,7 +130,7 @@ public class SearchLevels {
     }
 
     private void addCPESearchLevel() {
-        Predicate<Release> isPossible = r -> r.isSetCpeid() && isCpe(r.getCpeid().toLowerCase());
+        Predicate<Release> isPossible = r -> r.getCpeid() != null && isCpe(r.getCpeid().toLowerCase());
         searchLevels.add(r -> {
             if(isPossible.test(r)){
                 return singletonList(new NeedleWithMeta(cleanupCPE(r.getCpeid()), "CPE"));
@@ -153,17 +154,17 @@ public class SearchLevels {
 
 
     private List<NeedleWithMeta> guessForRelease(CveSearchGuesser cveSearchGuesser, Release release, boolean useVersionInformation) throws IOException {
-        if (useVersionInformation && !release.isSetVersion()) {
+        if (useVersionInformation && release.getVersion() == null) {
             return Collections.emptyList();
         }
 
         List<Match> vendorProductList;
 
         String productHaystack = release.getName();
-        if (release.isSetVendor() &&
-                (release.getVendor().isSetShortname() || release.getVendor().isSetFullname())) {
-            String vendorHaystack = nullToEmptyString(release.getVendor().getShortname()) + " " +
-                    nullToEmptyString(release.getVendor().getFullname());
+        Vendor vendor = release.getVendor();
+        if (vendor != null && (vendor.getShortname() != null || vendor.getFullname() != null)) {
+            String vendorHaystack = nullToEmptyString(vendor.getShortname()) + " " +
+                    nullToEmptyString(vendor.getFullname());
             vendorProductList = cveSearchGuesser.guessVendorAndProducts(vendorHaystack, productHaystack);
         } else {
             vendorProductList = cveSearchGuesser.guessVendorAndProducts(productHaystack);
