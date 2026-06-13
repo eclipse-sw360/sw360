@@ -122,6 +122,12 @@ public class SW360ConfigKeys {
     // This property is used to create State of Projects
     public static final String UI_STATE = "ui.state";
 
+    // LicenseDB integration configuration
+    public static final String LICENSEDB_ENABLED = "licensedb.enabled";
+    public static final String LICENSEDB_BASE_URL = "licensedb.base.url";
+    public static final String LICENSEDB_USERNAME = "licensedb.username";
+    public static final String LICENSEDB_PASSWORD = "licensedb.password";
+
     // Configuration keys that should only be visible to ADMIN and SW360_ADMIN users
     public static final Set<String> ADMIN_ONLY_CONFIG_KEYS = Set.of(
             RELEASE_FRIENDLY_URL,
@@ -136,7 +142,10 @@ public class SW360ConfigKeys {
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
             SVM_NOTIFICATION_URL,
-            VCS_HOSTS
+            VCS_HOSTS,
+            LICENSEDB_BASE_URL,
+            LICENSEDB_USERNAME,
+            LICENSEDB_PASSWORD
     );
 
     // List of all known config keys
@@ -157,7 +166,8 @@ public class SW360ConfigKeys {
             UI_OPERATING_SYSTEMS, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
             UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
-            UI_ENABLE_LINKED_PROJECTS_DISPLAY
+            UI_ENABLE_LINKED_PROJECTS_DISPLAY,
+            LICENSEDB_ENABLED, LICENSEDB_BASE_URL, LICENSEDB_USERNAME, LICENSEDB_PASSWORD
     );
 
     private SW360ConfigKeys() {

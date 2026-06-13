@@ -139,6 +139,7 @@ enum ConfigFor {
     SW360_CONFIGURATION = 1,
 //    SW360_SCHEDULER = 2,   // Reverted in https://github.com/eclipse-sw360/sw360/pull/3244
     UI_CONFIGURATION = 3,
+    LICENSEDB_REST = 4,
 }
 
 enum ObligationStatus {
