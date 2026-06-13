@@ -56,6 +56,12 @@ public class SW360ConfigsDatabaseHandler {
             log.error(exception.getMessage());
             loadToConfigsInMemForUi(null);
         }
+        try {
+            loadToConfigsInMemForLicenseDB(repository.getByConfigFor(ConfigFor.LICENSEDB_REST));
+        } catch (IllegalStateException exception) {
+            log.error(exception.getMessage());
+            loadToConfigsInMemForLicenseDB(null);
+        }
     }
 
     private void putInMemory(ConfigFor configFor, Map<String, String> configMap) {
@@ -92,6 +98,16 @@ public class SW360ConfigsDatabaseHandler {
                 .put(INHERIT_ATTACHMENT_USAGES, getOrDefault(configContainer, INHERIT_ATTACHMENT_USAGES, "false"))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
+    }
+
+    private void loadToConfigsInMemForLicenseDB(ConfigContainer configContainer) {
+        ImmutableMap<String, String> configMap = ImmutableMap.<String, String>builder()
+                .put(LICENSEDB_ENABLED, getOrDefault(configContainer, LICENSEDB_ENABLED, "false"))
+                .put(LICENSEDB_BASE_URL, getOrDefault(configContainer, LICENSEDB_BASE_URL, ""))
+                .put(LICENSEDB_USERNAME, getOrDefault(configContainer, LICENSEDB_USERNAME, ""))
+                .put(LICENSEDB_PASSWORD, getOrDefault(configContainer, LICENSEDB_PASSWORD, ""))
+                .build();
+        putInMemory(ConfigFor.LICENSEDB_REST, configMap);
     }
 
     private void loadToConfigsInMemForUi(ConfigContainer configContainer) {
@@ -231,6 +247,14 @@ public class SW360ConfigsDatabaseHandler {
                  PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE
                     -> isValidEnumValue(configValue, UserGroup.class);
 
+            case LICENSEDB_ENABLED
+                    -> isBooleanValue(configValue);
+
+            case LICENSEDB_BASE_URL,
+                 LICENSEDB_USERNAME,
+                 LICENSEDB_PASSWORD
+                    -> configValue != null;
+
             // validate set of strings
             case UI_CLEARING_TEAMS,
                  UI_COMPONENT_CATEGORIES,
@@ -269,6 +293,7 @@ public class SW360ConfigsDatabaseHandler {
         ConfigFor configFor = null;
         Map<String, String> sw360Configs = configsMapInMem.getOrDefault(ConfigFor.SW360_CONFIGURATION, Collections.emptyMap());
         Map<String, String> uiConfigs = configsMapInMem.getOrDefault(ConfigFor.UI_CONFIGURATION, Collections.emptyMap());
+        Map<String, String> licenseDbConfigs = configsMapInMem.getOrDefault(ConfigFor.LICENSEDB_REST, Collections.emptyMap());
 
         // Guess the ConfigFor based on the keys in updatedConfigs
         for (String key : updatedConfigs.keySet()) {
@@ -278,6 +303,10 @@ public class SW360ConfigsDatabaseHandler {
             }
             if (uiConfigs.containsKey(key)) {
                 configFor = ConfigFor.UI_CONFIGURATION;
+                break;
+            }
+            if (licenseDbConfigs.containsKey(key)) {
+                configFor = ConfigFor.LICENSEDB_REST;
                 break;
             }
         }
@@ -324,6 +353,8 @@ public class SW360ConfigsDatabaseHandler {
             loadToConfigsInMemForSw360(configContainer);
         } else if (configFor == ConfigFor.UI_CONFIGURATION) {
             loadToConfigsInMemForUi(configContainer);
+        } else if (configFor == ConfigFor.LICENSEDB_REST) {
+            loadToConfigsInMemForLicenseDB(configContainer);
         } else {
             log.warn("Unknown ConfigFor: {}", configFor);
         }
