@@ -10,9 +10,9 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -33,9 +33,8 @@ import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -44,9 +43,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class UserTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
@@ -57,7 +54,7 @@ public class UserTest extends TestIntegrationBase {
     private List<RestApiToken> restApiTokens;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
         userList = new ArrayList<>();
         restApiTokens = new ArrayList<>();
@@ -156,13 +153,13 @@ public class UserTest extends TestIntegrationBase {
         assertFalse(body.get("deactivated").booleanValue());
 
         // Verify complex nested objects exist
-        assertTrue("Should have secondaryDepartmentsAndRoles", body.has("secondaryDepartmentsAndRoles"));
-        assertTrue("Should have formerEmailAddresses", body.has("formerEmailAddresses"));
-        assertTrue("Should have notificationPreferences", body.has("notificationPreferences"));
+        assertTrue(body.has("secondaryDepartmentsAndRoles"), "Should have secondaryDepartmentsAndRoles");
+        assertTrue(body.has("formerEmailAddresses"), "Should have formerEmailAddresses");
+        assertTrue(body.has("notificationPreferences"), "Should have notificationPreferences");
 
         // Verify the self link contains the user ID
         JsonNode selfLink = body.get("_links").get("self").get("href");
-        assertTrue("Self link should contain user ID", selfLink.textValue().contains(user.getId()));
+        assertTrue(selfLink.textValue().contains(user.getId()), "Self link should contain user ID");
     }
 
 
@@ -184,9 +181,9 @@ public class UserTest extends TestIntegrationBase {
         assertFalse(body.get("deactivated").booleanValue());
 
         // Verify complex nested objects exist
-        assertTrue("Should have secondaryDepartmentsAndRoles", body.has("secondaryDepartmentsAndRoles"));
-        assertTrue("Should have formerEmailAddresses", body.has("formerEmailAddresses"));
-        assertTrue("Should have notificationPreferences", body.has("notificationPreferences"));
+        assertTrue(body.has("secondaryDepartmentsAndRoles"), "Should have secondaryDepartmentsAndRoles");
+        assertTrue(body.has("formerEmailAddresses"), "Should have formerEmailAddresses");
+        assertTrue(body.has("notificationPreferences"), "Should have notificationPreferences");
     }
 
     @Test
@@ -207,9 +204,9 @@ public class UserTest extends TestIntegrationBase {
         assertFalse(body.get("deactivated").booleanValue());
 
         // Verify complex nested objects exist
-        assertTrue("Should have secondaryDepartmentsAndRoles", body.has("secondaryDepartmentsAndRoles"));
-        assertTrue("Should have formerEmailAddresses", body.has("formerEmailAddresses"));
-        assertTrue("Should have notificationPreferences", body.has("notificationPreferences"));
+        assertTrue(body.has("secondaryDepartmentsAndRoles"), "Should have secondaryDepartmentsAndRoles");
+        assertTrue(body.has("formerEmailAddresses"), "Should have formerEmailAddresses");
+        assertTrue(body.has("notificationPreferences"), "Should have notificationPreferences");
     }
 
     @Test
@@ -262,8 +259,8 @@ public class UserTest extends TestIntegrationBase {
         assertEquals("FTest", body.get("givenName").textValue());
         assertEquals("lTest", body.get("lastName").textValue());
         assertFalse(body.get("deactivated").booleanValue());
-        assertTrue("Should have wantsMailNotification field", body.has("wantsMailNotification"));
-        assertTrue("Should have _links section", body.has("_links"));
+        assertTrue(body.has("wantsMailNotification"), "Should have wantsMailNotification field");
+        assertTrue(body.has("_links"), "Should have _links section");
     }
 
     @Test
@@ -365,12 +362,10 @@ public class UserTest extends TestIntegrationBase {
 
         // Verify the token length matches the DB configured value
         String responseBody = response.getBody();
-        assertFalse("Response body should not be null or empty",
-                responseBody == null || responseBody.isEmpty());
+        assertFalse(responseBody == null || responseBody.isEmpty(), "Response body should not be null or empty");
 
         String generatedToken = objectMapper.readValue(responseBody, String.class);
-        assertEquals("Token length should match DB configured value of " + dbConfiguredTokenLength,
-                dbConfiguredTokenLength, generatedToken.length());
+        assertEquals(dbConfiguredTokenLength, generatedToken.length(), "Token length should match DB configured value of " + dbConfiguredTokenLength);
     }
 
     @Test

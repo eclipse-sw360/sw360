@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -11,10 +12,8 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -22,28 +21,22 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringRunner.class)
 public class ReportTest extends TestIntegrationBase {
 
     @LocalServerPort
     private int port;
 
-    @MockitoBean
-    private SW360ReportService sw360ReportServiceMock;
-
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org"))
                 .willReturn(TestHelper.getTestUser());
@@ -78,14 +71,11 @@ public class ReportTest extends TestIntegrationBase {
         String contentDisposition = response.getHeaders().getFirst("Content-Disposition");
         assertNotNull("Content-Disposition header should be present", contentDisposition);
         // ASCII fallback should have non-ASCII replaced with underscore
-        assertTrue("Should contain ASCII fallback filename",
-                contentDisposition.contains("filename=\"LicenseInfo-Gridscale X_ Protection-1.2.1-2026-05-16_16_09_30.docx\""));
+        assertTrue(contentDisposition.contains("filename=\"LicenseInfo-Gridscale X_ Protection-1.2.1-2026-05-16_16_09_30.docx\""), "Should contain ASCII fallback filename");
         // RFC 5987 encoded filename should be present
-        assertTrue("Should contain RFC 5987 filename*",
-                contentDisposition.contains("filename*=UTF-8''"));
+        assertTrue(contentDisposition.contains("filename*=UTF-8''"), "Should contain RFC 5987 filename*");
         // Should contain URL-encoded trademark symbol
-        assertTrue("Should contain encoded TM symbol",
-                contentDisposition.contains("%E2%84%A2"));
+        assertTrue(contentDisposition.contains("%E2%84%A2"), "Should contain encoded TM symbol");
     }
 
     @Test
@@ -113,10 +103,8 @@ public class ReportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         String contentDisposition = response.getHeaders().getFirst("Content-Disposition");
-        assertNotNull("Content-Disposition header should be present", contentDisposition);
-        assertTrue("Should contain the original filename",
-                contentDisposition.contains("filename=\"LicenseInfo-SimpleProject-1.0-2026-05-16.docx\""));
-        assertTrue("Should contain RFC 5987 filename*",
-                contentDisposition.contains("filename*=UTF-8''"));
+        assertNotNull(contentDisposition, "Content-Disposition header should be present");
+        assertTrue(contentDisposition.contains("filename=\"LicenseInfo-SimpleProject-1.0-2026-05-16.docx\""), "Should contain the original filename");
+        assertTrue(contentDisposition.contains("filename*=UTF-8''"), "Should contain RFC 5987 filename*");
     }
 }

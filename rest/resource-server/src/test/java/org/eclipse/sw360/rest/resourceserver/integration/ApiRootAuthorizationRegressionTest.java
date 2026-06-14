@@ -15,9 +15,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -40,7 +39,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -52,11 +50,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringRunner.class)
 @Import(ApiRootAuthorizationRegressionTest.ApiRootAuthorizationTestConfig.class)
 public class ApiRootAuthorizationRegressionTest extends TestIntegrationBase {
 
@@ -66,7 +63,7 @@ public class ApiRootAuthorizationRegressionTest extends TestIntegrationBase {
     @Value("${local.server.port}")
     private int port;
 
-    @Before
+    @BeforeEach
     public void setUpReadOnlyUser() {
         User readOnlyUser = new User();
         readOnlyUser.setEmail(READ_ONLY_EMAIL);

@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -18,10 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -30,8 +29,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -39,29 +36,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringRunner.class)
 public class ObligationTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
 
-    @MockitoBean
-    private Sw360ObligationService obligationServiceMock;
-
     private Obligation obligation1, obligation2;
     private List<Obligation> obligationList;
     private ObjectMapper objectMapper;
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
         // Setup test user
         User user = TestHelper.getTestUser();
@@ -132,12 +125,12 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded obligations", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:obligations", responseBody.contains("sw360:obligations"));
-        assertTrue("Response should contain pagination info", responseBody.contains("page"));
-        assertTrue("Response should contain totalElements", responseBody.contains("totalElements"));
-        assertTrue("Response should contain Obligation 1", responseBody.contains("Obligation 1"));
-        assertTrue("Response should contain Obligation 2", responseBody.contains("Obligation 2"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded obligations");
+        assertTrue(responseBody.contains("sw360:obligations"), "Response should contain sw360:obligations");
+        assertTrue(responseBody.contains("page"), "Response should contain pagination info");
+        assertTrue(responseBody.contains("totalElements"), "Response should contain totalElements");
+        assertTrue(responseBody.contains("Obligation 1"), "Response should contain Obligation 1");
+        assertTrue(responseBody.contains("Obligation 2"), "Response should contain Obligation 2");
     }
 
     @Test
@@ -153,9 +146,9 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded obligations", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:obligations", responseBody.contains("sw360:obligations"));
-        assertTrue("Response should contain LICENSE_OBLIGATION", responseBody.contains("LICENSE_OBLIGATION"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded obligations");
+        assertTrue(responseBody.contains("sw360:obligations"), "Response should contain sw360:obligations");
+        assertTrue(responseBody.contains("LICENSE_OBLIGATION"), "Response should contain LICENSE_OBLIGATION");
     }
 
     @Test
@@ -171,14 +164,14 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain obligation title", responseBody.contains("title"));
-        assertTrue("Response should contain obligation text", responseBody.contains("text"));
-        assertTrue("Response should contain obligation level", responseBody.contains("obligationLevel"));
-        assertTrue("Response should contain obligation type", responseBody.contains("obligationType"));
-        assertTrue("Response should contain Obligation 1", responseBody.contains("Obligation 1"));
-        assertTrue("Response should contain License Obligation", responseBody.contains("License Obligation"));
-        assertTrue("Response should contain LICENSE_OBLIGATION", responseBody.contains("LICENSE_OBLIGATION"));
-        assertTrue("Response should contain PERMISSION", responseBody.contains("PERMISSION"));
+        assertTrue(responseBody.contains("title"), "Response should contain obligation title");
+        assertTrue(responseBody.contains("text"), "Response should contain obligation text");
+        assertTrue(responseBody.contains("obligationLevel"), "Response should contain obligation level");
+        assertTrue(responseBody.contains("obligationType"), "Response should contain obligation type");
+        assertTrue(responseBody.contains("Obligation 1"), "Response should contain Obligation 1");
+        assertTrue(responseBody.contains("License Obligation"), "Response should contain License Obligation");
+        assertTrue(responseBody.contains("LICENSE_OBLIGATION"), "Response should contain LICENSE_OBLIGATION");
+        assertTrue(responseBody.contains("PERMISSION"), "Response should contain PERMISSION");
     }
 
     @Test
@@ -204,14 +197,14 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain obligation title", responseBody.contains("title"));
-        assertTrue("Response should contain obligation text", responseBody.contains("text"));
-        assertTrue("Response should contain obligation level", responseBody.contains("obligationLevel"));
-        assertTrue("Response should contain obligation type", responseBody.contains("obligationType"));
-        assertTrue("Response should contain Test Obligation", responseBody.contains("Test Obligation"));
-        assertTrue("Response should contain This is the text of my Test Obligation", responseBody.contains("This is the text of my Test Obligation"));
-        assertTrue("Response should contain LICENSE_OBLIGATION", responseBody.contains("LICENSE_OBLIGATION"));
-        assertTrue("Response should contain PERMISSION", responseBody.contains("PERMISSION"));
+        assertTrue(responseBody.contains("title"), "Response should contain obligation title");
+        assertTrue(responseBody.contains("text"), "Response should contain obligation text");
+        assertTrue(responseBody.contains("obligationLevel"), "Response should contain obligation level");
+        assertTrue(responseBody.contains("obligationType"), "Response should contain obligation type");
+        assertTrue(responseBody.contains("Test Obligation"), "Response should contain Test Obligation");
+        assertTrue(responseBody.contains("This is the text of my Test Obligation"), "Response should contain This is the text of my Test Obligation");
+        assertTrue(responseBody.contains("LICENSE_OBLIGATION"), "Response should contain LICENSE_OBLIGATION");
+        assertTrue(responseBody.contains("PERMISSION"), "Response should contain PERMISSION");
     }
 
     @Test
@@ -237,8 +230,8 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain success message", responseBody.contains("has been updated successfully"));
-        assertTrue("Response should contain obligation ID", responseBody.contains(obligation1.getId()));
+        assertTrue(responseBody.contains("has been updated successfully"), "Response should contain success message");
+        assertTrue(responseBody.contains(obligation1.getId()), "Response should contain obligation ID");
     }
 
     @Test
@@ -254,10 +247,10 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain resourceId", responseBody.contains("resourceId"));
-        assertTrue("Response should contain status", responseBody.contains("status"));
-        assertTrue("Response should contain obligation IDs", responseBody.contains(obligation1.getId()));
-        assertTrue("Response should contain obligation IDs", responseBody.contains(obligation2.getId()));
+        assertTrue(responseBody.contains("resourceId"), "Response should contain resourceId");
+        assertTrue(responseBody.contains("status"), "Response should contain status");
+        assertTrue(responseBody.contains(obligation1.getId()), "Response should contain obligation IDs");
+        assertTrue(responseBody.contains(obligation2.getId()), "Response should contain obligation IDs");
     }
 
     // ========== ERROR HANDLING TESTS ==========
@@ -416,8 +409,7 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain server error status for unexpected failure",
-                responseBody.contains("500"));
+        assertTrue(responseBody.contains("500"), "Response should contain server error status for unexpected failure");
     }
 
     @Test
@@ -436,6 +428,6 @@ public class ObligationTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain not found status", responseBody.contains("404"));
+        assertTrue(responseBody.contains("404"), "Response should contain not found status");
     }
 }
