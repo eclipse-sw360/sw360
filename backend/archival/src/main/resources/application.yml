@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: sw360-archival
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  servlet:
+    context-path: /archival
+
+logging:
+  level:
+    org.eclipse.sw360.archival: INFO
