@@ -29,6 +29,7 @@
         <module>importers</module>
         <module>exporters</module>
         <module>nouveau-handler</module>
+        <module>service-api</module>
     </modules>
 
     <build>
