@@ -357,7 +357,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                 .useIndex(Collections.singletonList(indexName));
 
         List<Release> releases = getConnector().getQueryResultPaginated(
-                qb, Release.class, pageData, sortSelector);
+                qb, Release.class, pageData, sortSelector, indexName, true);
 
         return Collections.singletonMap(pageData, releases);
     }
