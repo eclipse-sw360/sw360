@@ -1,0 +1,16 @@
+#
+# Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+
+# Suppress warnings in test logs
+logging:
+  level:
+    org.eclipse.sw360.datahandler.common.SW360Utils: FATAL
+    org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider: WARN

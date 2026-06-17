@@ -1,0 +1,43 @@
+#
+# Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+# Port to open in standalone mode
+server:
+  port: 8090
+
+# Connection to the couch databases. Will be used to store client credentials
+couchdb:
+  url: $COUCHDB_URL
+  database: sw360oauthclients
+  # if your couchdb does not use authentication, pls just don't use the settings for username and password
+  username: $COUCHDB_USER
+  password: $COUCHDB_PASSWORD
+
+jwt:
+  # Password used to unlock jwt-keystore.jks (alias 'jwt').
+  # Override via JWT_SECRETKEY environment variable. Change the default in
+  # production - the same value must be set on every authorization-server node.
+  secretkey: ${JWT_SECRETKEY:sw360SecretKey}
+
+spring:
+  jackson:
+    serialization:
+      indent_output: true
+
+security:
+  oauth2:
+    resource:
+      id: sw360-REST-API
+  accesstoken:
+    # Fallback access-token TTL (seconds); per-client value wins.
+    validity: 90
+  refreshtoken:
+    # Fallback refresh-token TTL (seconds); per-client value wins.
+    validity: 120

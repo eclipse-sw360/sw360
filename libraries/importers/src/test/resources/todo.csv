@@ -1,0 +1,7 @@
+'ID', 'Text', 'Development', 'Distribution'
+1, 'Todo1', 1, 0
+2, 'Todo2', 1, 1
+3, 'Todo3', 1, NULL
+5, 'Todo5', 1, 1
+6, 'Todo6', 0, 1
+9, 'Todo9', 1, 1

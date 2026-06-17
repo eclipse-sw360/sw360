@@ -1,0 +1,178 @@
+//
+// Copyright Siemens Healthineers GmBH, 2023. Part of the SW360 Portal package.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-packages]]
+=== Packages
+
+The Packages resource is used to create and list packages.
+
+
+[[resources-packages-list]]
+==== List packages
+
+A `GET` request will list all of the service's packages with minimal details.
+
+===== Request parameter
+include::{snippets}/should_document_get_packages/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_packages/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_packages/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_packages/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_packages/links.adoc[]
+
+[[resources-packages-list-all-details]]
+==== List packages with all details
+
+A `GET` request will list all of the service's packages with all details.
+
+===== Request parameter
+include::{snippets}/should_document_get_packages_with_all_details/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_packages_with_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_packages_with_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_packages_with_all_details/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_packages_with_all_details/links.adoc[]
+
+[[resources-package-get]]
+==== List a single package with all details
+
+A `GET` request will get a single package with all details.
+
+===== Response structure
+include::{snippets}/should_document_get_package/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_package/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_package/links.adoc[]
+
+[[resources-search-packages]]
+==== Search packages
+
+A `GET` request will filter and list all of the service's packages by name, version, purl and packageManager.
+
+===== Request parameter
+include::{snippets}/should_document_search_packages/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_search_packages/response-fields.adoc[]
+
+===== Example request 1
+include::{snippets}/should_document_search_packages_by_name/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_search_packages_by_name/http-response.adoc[]
+
+===== Example request 2
+include::{snippets}/should_document_search_packages/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_search_packages/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_search_packages/links.adoc[]
+
+[[resources-packages-create]]
+==== Creating a package
+
+A `POST` request is used to create a package
+
+===== Request structure
+include::{snippets}/should_document_create_package/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_package/http-response.adoc[]
+
+[[resources-package-update]]
+==== Update a package
+
+A `PATCH` request is used to update an existing package
+
+===== Response structure
+include::{snippets}/should_document_update_package/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_package/http-response.adoc[]
+
+[[resources-packages-delete]]
+==== Delete a package
+
+A `DELETE` request will delete a package.
+
+===== Example request
+include::{snippets}/should_document_delete_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_package/http-response.adoc[]
+
+
+[[resources-package-usage]]
+==== Get Package Usage Information
+
+A `GET` request to `/api/packages/{id}/usage` will get the usage information for a specific package, including whether the package is being used and the count of projects using it.
+
+===== Path parameters
+[cols="2,1,2"]
+|===
+|Name |Type |Description
+
+|id
+|String
+|The ID of the package to check usage for
+|===
+
+===== Response structure
+[cols="2,1,2"]
+|===
+|Path |Type |Description
+
+|count
+|Number
+|Number of projects using this package
+
+|isUsed
+|Boolean
+|Flag indicating if the package is used in any project
+|===
+
+===== Example request
+include::{snippets}/should_document_get_package_usage/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_package_usage/http-response.adoc[]
+
+===== Error response
+When the package is not found:
+
+include::{snippets}/should_document_get_package_usage_not_found/http-response.adoc[]

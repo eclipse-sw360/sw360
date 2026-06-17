@@ -1,0 +1,59 @@
+<!--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+-->
+<!doctype html>
+<html>
+  <head>
+    <style type="text/css">
+        table {border: 1px solid black; border-collapse:collapse; text-align:center}
+        table tr th {border: 1px solid black; padding: 7px;}
+        table tr td {border: 1px solid black; padding: 7px;}
+    </style>
+  </head>
+  <body>
+	<p>*** This is an automatically generated email, please do not reply. ***</p>
+	<p>Dear SW360-user,
+	    <br>sw360 <b>%s</b>, has raised clearing request <b>%s</b> for project: <b><a href="%s">%s</a></b>
+	</p>
+
+	<label>Linked Project / Release count</label>
+	<table>
+	    <tr>
+	        <th>Linked Project(s)</th>
+	        <th>Linked Release(s)</th>
+	    </tr>
+	    <tr>
+	        <td><b>%s</b></td>
+	        <td><b>%s</b></td>
+	    </tr>
+	</table>
+	<br>
+	<label>Linked Release clearing status (excluding sub-projects).</label>
+	<table>
+	    <tr>
+	        <th>Total Release(s)</th>
+	        <th >Approved Release(s)</th>
+	    </tr>
+	    <tr>
+	        <td><b>%s</b></td>
+	        <td><b>%s</b></td>
+	    </tr>
+	</table>
+	<p>
+	    Preferred clearing Date: <b>%s</b>
+	    <br>
+	    Number of COTS components: <b>%s</b>
+	</p>
+	List of Releases with Clearing Status <b>New</b>
+	<ul>%s</ul>
+	<p>With best regards,
+	    <br>SW360-support
+	</p>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+//
+// Copyright Siemens AG, 2023. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+// SPDX-FileCopyrightText: 2023, Siemens AG. Part of the SW360 Portal Project.
+//
+
+[[resources-attachmentCleanUp]]
+=== AttachmentCleanUp
+
+The AttachmentCleanUp resource is used to cleanup all the request.
+
+[[attachment-clean-up]]
+==== Cleanup all the attachment.
+
+A `DELETE` request will cleanUp all the attachment.
+
+===== Example request
+include::{snippets}/should_document_cleanup_all_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_cleanup_all_attachment/http-response.adoc[]

@@ -1,0 +1,14 @@
+{
+  "externalIds": {
+    "SPDX-License-Identifier": "0TST"
+  },
+  "text": "Copyright (C) 2020 Bosch.IO GmbH \nThis is a demo license text.",
+  "checked": true,
+  "shortName": "0TST",
+  "fullName": "Test License",
+  "_links": {
+    "self": {
+      "href": "https://sw360.test.com/resource/api/licenses/0TST"
+    }
+  }
+}

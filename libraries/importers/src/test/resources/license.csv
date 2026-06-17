@@ -1,0 +1,4 @@
+'Identifier', 'Fullname', 'Type', 'Gplv2compat', 'Gplv3compat', 'reviewdate'
+'AFL-2.1', 'Academic Free License v2.1', 4, 0, NULL, CAST(0xC9370B00 AS Date)
+'Apache-2.0', 'Apache License 2.0', 5, 0, 1, CAST(0xC9370B00 AS Date)
+'Artistic-1.0-Perl', 'Artistic License special for Perl', 2, NULL, 0, CAST(0x55380B00 AS Date)

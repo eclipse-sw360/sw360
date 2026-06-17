@@ -1,0 +1,101 @@
+{
+  "name": "example-project",
+  "description": "example-project 1.0.0-RC5-94-g08d9854",
+  "version": "1.0.0-RC5-94-g08d9854",
+  "createdOn": "2020-01-13",
+  "businessUnit": "INST-CSS/BSV-OS",
+  "securityResponsibles": [],
+  "enableSvm": false,
+  "enableVulnerabilitiesDisplay": false,
+  "projectType": "PRODUCT",
+  "visibility": "BUISNESSUNIT_AND_MODERATORS",
+  "linkedReleases": [
+    {
+      "release": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzzb63e99bd",
+      "mainlineState": "OPEN",
+      "relation": "CONTAINED"
+    },
+    {
+      "release": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz63eb3ec",
+      "mainlineState": "OPEN",
+      "relation": "CONTAINED"
+    },
+    {
+      "release": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz63e08fe",
+      "mainlineState": "OPEN",
+      "relation": "CONTAINED"
+    },
+    {
+      "release": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz641f479",
+      "mainlineState": "OPEN",
+      "relation": "CONTAINED"
+    },
+    {
+      "release": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz641e225",
+      "mainlineState": "OPEN",
+      "relation": "CONTAINED"
+    }
+  ],
+  "_links": {
+    "self": {
+      "href": "https://sw360.test.com/resource/api/projects/xxxxxxyyyyyzzzzz41cb6e"
+    }
+  },
+  "_embedded": {
+    "createdBy": {
+      "email": "osi9be@bosch.com",
+      "_links": {
+        "self": {
+          "href": "https://sw360.test.com/resource/api/users/xxxxxxyyyyyzzzzz0008ed"
+        }
+      }
+    },
+    "sw360:releases": [
+      {
+        "name": "log4j-core",
+        "version": "2.6.2",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz63e99bd"
+          }
+        }
+      },
+      {
+        "name": "commons-csv",
+        "version": "1.4",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzzec"
+          }
+        }
+      },
+      {
+        "name": "system",
+        "version": "1.0.0",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz8fe"
+          }
+        }
+      },
+      {
+        "name": "org.mapstruct",
+        "version": "1.3.1.Final",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzzf479"
+          }
+        }
+      },
+      {
+        "name": "org.infinispan",
+        "version": "9.4.14.Final",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz1e225"
+          }
+        }
+      }
+    ]
+  }
+}

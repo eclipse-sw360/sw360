@@ -1,0 +1,22 @@
+[{
+		"name": "jackson-annotations",
+		"createdOn": "2019-11-13",
+		"languages": [],
+		"componentType": "OSS",
+		"operatingSystems": []
+	},
+	{
+		"name": "jakarta.validation-api",
+		"createdOn": "2019-11-13",
+		"languages": [],
+		"componentType": "OSS",
+		"operatingSystems": []
+	},
+	{
+		"name": "jsoup",
+		"createdOn": "2019-11-13",
+		"languages": [],
+		"componentType": "OSS",
+		"operatingSystems": []
+	}
+]

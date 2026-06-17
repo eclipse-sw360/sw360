@@ -1,0 +1,63 @@
+{
+  "_embedded": {
+    "sw360:projects": [
+      {
+        "name": "Project_Foo",
+        "version": "1.0.0",
+        "securityResponsibles": [],
+        "projectType": "PRODUCT",
+        "visibility": "BUISNESSUNIT_AND_MODERATORS",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/projects/xxxxxxyyyyyzzzzzae6d8"
+          }
+        }
+      },
+      {
+        "name": "Project_Bar",
+        "version": "1.0.0",
+        "securityResponsibles": [],
+        "projectType": "CUSTOMER",
+        "visibility": "BUISNESSUNIT_AND_MODERATORS",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/projects/xxxxxxyyyyyzzzzzd4328"
+          }
+        }
+      },
+      {
+        "name": "Project_other",
+        "version": "1.0.0",
+        "securityResponsibles": [],
+        "projectType": "PRODUCT",
+        "visibility": "BUISNESSUNIT_AND_MODERATORS",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/projects/xxxxxxyyyyyzzzzzf0223"
+          }
+        }
+      },
+      {
+        "name": "Project_test",
+        "version": "1.0.0",
+        "securityResponsibles": [],
+        "projectType": "PRODUCT",
+        "visibility": "BUISNESSUNIT_AND_MODERATORS",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/projects/xxxxxxyyyyyzzzzzde2c3"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "curies": [
+      {
+        "href": "https://sw360.test.com/resource/docs/{rel}.html",
+        "name": "sw360",
+        "templated": true
+      }
+    ]
+  }
+}

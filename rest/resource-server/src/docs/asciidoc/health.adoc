@@ -1,0 +1,54 @@
+//
+// Copyright Bosch.IO GmbH 2020.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+[[resources-health]]
+=== Health
+
+The Health resource is used to give an information about the health status.
+A response with a detailed status can only be provided, if the `application properties file`
+for the spring configuration contains the following settings:
+
+```
+endpoints:
+  enabled: false
+  info:
+    enabled: true
+    sensitive: true
+  health:
+    enabled: true
+    sensitive: false
+
+```
+
+Additional behaviour can be configured following
+https://docs.spring.io/spring-boot/docs/1.5.3.RELEASE/reference/htmlsingle/#production-ready[the Spring Boot Actuator documentation].
+
+[[resources-health-get]]
+==== Getting health
+
+A `GET` request will get the service's health.
+
+===== Example request
+include::{snippets}/should_document_get_health/curl-request.adoc[]
+
+The response structure is the health object of the spring boot actuator.
+
+===== Response structure
+include::{snippets}/should_document_get_health/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_health/http-response.adoc[]
+
+Whenever the service is unhealthy it reflects this with a status "DOWN" and an additional response field.
+
+===== Responste Structure
+include::{snippets}/should_document_get_health_unhealthy/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_health_unhealthy/http-response.adoc[]

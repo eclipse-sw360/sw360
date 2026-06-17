@@ -1,0 +1,68 @@
+//
+// Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-attachments]]
+=== Attachments
+
+The Attachments resource is used to list attachment information.
+
+
+[[resources-attachment-information-get]]
+==== Get attachment info
+
+A `GET` request will get attachment information.
+
+===== Response structure
+include::{snippets}/should_document_get_attachment/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_attachment/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_attachment/links.adoc[]
+
+[[should_document_get_attachments_by_sha1]]
+==== Get attachment info by SHA1
+
+A `GET` request will get attachment information with the given sha1 and the resources having it. Please set the request parameter `&sha1=<SHA1>`.
+
+===== Response structure
+include::{snippets}/should_document_get_attachments_by_sha1/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_attachments_by_sha1/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_attachments_by_sha1/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_attachments_by_sha1/links.adoc[]
+
+[[resources-attachment-create]]
+==== Create attachment
+
+A `POST` request is used to create attachment
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|files
+|file
+|File path of the attachment
+|===
+===== Example request
+include::{snippets}/should_document_create_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_attachment/http-response.adoc[]

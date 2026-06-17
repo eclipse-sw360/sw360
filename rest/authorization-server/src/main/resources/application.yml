@@ -1,0 +1,66 @@
+#
+# Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+# Copyright Cariad SE, 2024. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+# Port to open in standalone mode
+server:
+  port: 8090
+
+# Connection to the couch databases. Will be used to store client credentials
+couchdb:
+  url: http://localhost:5984
+  database: sw360oauthclients
+  # if your couchdb does not use authentication, pls just don't use the settings for username and password
+  username: sw360
+  password: sw360fossie
+
+jwt:
+  # Password used to unlock jwt-keystore.jks (alias 'jwt').
+  # Override via JWT_SECRETKEY in production.
+  secretkey: sw360SecretKey
+
+spring:
+  jackson:
+    serialization:
+      indent_output: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Optional fallback issuer (single issuer mode).
+          # Prefer sw360.security.jwt.issuers[*] for multi-issuer setups.
+          issuer-uri: ${AUTH_RESOURCE_SERVER_ISSUER_URI:}
+
+security:
+  oauth2:
+    resource:
+      id: sw360-REST-API
+  accesstoken:
+    # Fallback access-token TTL (seconds); per-client value wins.
+    validity: 30
+  refreshtoken:
+    # Fallback refresh-token TTL (seconds); per-client value wins.
+    validity: 360
+
+# Optional trusted issuers for Bearer authentication on /client-management/**.
+# Supports both discovery mode (issuer-uri only) and direct JWKS mode
+# (issuer-uri + jwk-set-uri).
+# sw360:
+#   security:
+#     jwt:
+#       issuers:
+#         - issuer-uri: http://sw360.example.com/kc/realms/sw360
+#           jwk-set-uri: http://localhost:8083/kc/realms/sw360/protocol/openid-connect/certs
+#         - issuer-uri: http://localhost:8080/authorization
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG

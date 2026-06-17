@@ -1,0 +1,138 @@
+/*
+ * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
+ * With modifications from Bosch Software Innovations GmbH, 2016.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.eclipse.sw360.schedule.timer;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
+/**
+ * creates new {@link TimerTask} which will be executed on the next valid time
+ *
+ * @author stefan.jaeger@evosoft.com
+ */
+public class Scheduler {
+    private static final Logger log = LogManager.getLogger(Scheduler.class);
+    private static Date nextSync = null;
+    private static final ConcurrentHashMap<String, SW360Task> scheduledJobs = new ConcurrentHashMap<>();
+    /**
+     * Tracks which services currently have an active execution in progress.
+     * Used by {@link ScheduleSyncTask} to prevent concurrent runs of the same service.
+     */
+    private static final ConcurrentHashMap<String, AtomicBoolean> serviceRunningFlags = new ConcurrentHashMap<>();
+
+    private static Timer timer = null;
+
+    private Scheduler() {
+        //only static members
+    }
+
+    /**
+     * Returns (creating if absent) the per-service {@link AtomicBoolean} that
+     * {@link ScheduleSyncTask} uses to guard against concurrent executions.
+     */
+    public static AtomicBoolean getOrCreateRunningFlag(String serviceName) {
+        return serviceRunningFlags.computeIfAbsent(serviceName, k -> new AtomicBoolean(false));
+    }
+
+    public static synchronized boolean scheduleNextSync(Supplier<RequestStatus> body, String serviceName) {
+        if (timer == null) {
+            timer = new Timer("sw360-scheduler", true);
+        }
+        ScheduleSyncTask syncTask = new ScheduleSyncTask(body, serviceName);
+        Integer firstRunOffset = ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName);
+        Integer syncInterval = ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName);
+        nextSync = getNextSyncDate(firstRunOffset, syncInterval);
+
+        try {
+            timer.scheduleAtFixedRate(syncTask, nextSync, syncInterval * 1000L);
+        } catch (IllegalStateException e) {
+            log.error(e.getMessage(), e);
+            return false;
+        }
+
+        scheduledJobs.put(syncTask.getId(), syncTask);
+        log.info("New task scheduled. Interval={}sec {}", syncInterval, syncTask.toString());
+        return true;
+    }
+
+    private static Date getNextSyncDate(int firstRunOffset, int interval) {
+        GregorianCalendar calendar = new GregorianCalendar(); // use today 00:00:00.000 as base date
+        long now = calendar.getTime().getTime();
+        calendar.set(GregorianCalendar.HOUR_OF_DAY, 0);
+        calendar.set(GregorianCalendar.MINUTE, 0);
+        calendar.set(GregorianCalendar.SECOND, 0);
+        calendar.set(GregorianCalendar.MILLISECOND, 0);
+
+        calendar.add(GregorianCalendar.SECOND, firstRunOffset);//today with offset time as specified
+
+        // if firstRunOffset is in the past compute next run
+        if (calendar.getTime().getTime() < now) {
+            long timeLeftToNextRunInMilliSeconds = interval * 1000L - ((now - calendar.getTime().getTime()) % (interval * 1000L));
+            calendar.setTimeInMillis(now + timeLeftToNextRunInMilliSeconds);
+        }
+        ;
+        return calendar.getTime();
+    }
+
+    public static Optional<Date> getNextSync(String serviceName) {
+        if (ScheduleConstants.invalidConfiguredServices.contains(serviceName)) {
+            return Optional.empty();
+        }
+        return Optional.of(getNextSyncDate(
+                ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName),
+                ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName)));
+    }
+
+    public static synchronized RequestStatus cancelAllSyncJobs() {
+        return scheduledJobs.values().stream()
+                .map(Scheduler::cancelJob)
+                .reduce(RequestStatus.SUCCESS, CommonUtils::reduceRequestStatus);
+    }
+
+    public static synchronized RequestStatus cancelSyncJobOfService(String serviceName) {
+        return scheduledJobs.values().stream()
+                .filter(job -> serviceName.equals(job.getName()))
+                .map(Scheduler::cancelJob)
+                .reduce(RequestStatus.SUCCESS, CommonUtils::reduceRequestStatus);
+    }
+
+    private static synchronized RequestStatus cancelJob(SW360Task job) {
+        long executionTime = job.scheduledExecutionTime();
+        try {
+            job.cancel();
+        } catch (IllegalStateException e) {
+            log.error(e.getMessage(), e);
+            return RequestStatus.FAILURE;
+        }
+        scheduledJobs.remove(job.getId());
+        log.info("Task {} for {} cancelled. {}",
+                job.getClass().getSimpleName(), SW360Utils.getDateTimeString(new Date(executionTime)),
+                job.toString());
+        return RequestStatus.SUCCESS;
+    }
+
+    public static boolean isServiceScheduled(String serviceName) {
+        return scheduledJobs.values().stream()
+                .anyMatch(job -> serviceName.equals(job.getName()));
+    }
+
+    public static boolean isAnyServiceScheduled() {
+        return (!scheduledJobs.isEmpty());
+    }
+}

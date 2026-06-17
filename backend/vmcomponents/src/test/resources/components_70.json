@@ -1,0 +1,14 @@
+{
+  "vendor":         "Apache Software Foundation",
+  "component_name": "Tomcat",
+  "version":        "3.2.1",
+  "url":            "http://tomcat.apache.org/",
+  "security_url":   null,
+  "eol_reached":    true,
+  "cpe_name":       "cpe:/a:apache:tomcat:3.2.1",
+  "minimum_patch_levels": {
+    "priority_1": null,
+    "priority_2": "6.0.36",
+    "priority_3": null
+  }
+}

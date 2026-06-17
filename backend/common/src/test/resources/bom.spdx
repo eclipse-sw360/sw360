@@ -1,0 +1,56 @@
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+DocumentNamespace: http://www.spdx.org/spdxdocs/8f141b09-1138-4fc5-aecb-fc10d9ac1eed
+DocumentName: SBOM toy exaple
+SPDXID: SPDXRef-DOCUMENT
+Creator: Organization: NTIA Standards and Formats Workgroup
+Created: 2019-08-31T11:29:46Z
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-asoftware-v1.1
+
+PackageName: asoftware
+SPDXID: SPDXRef-asoftware-v1.1
+PackageVersion: 1.1
+PackageSupplier: Organization: Acme
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageChecksum: SHA1: 75068c26abbed3ad3980685bae21d7202d288317
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+Relationship: SPDXRef-asoftware-v1.1 CONTAINS SPDXRef-Browser-v2.1
+Relationship: SPDXRef-asoftware-v1.1 CONTAINS SPDXRef-Buffer-v2.2
+
+PackageName: Browser
+SPDXID: SPDXRef-Browser-v2.1
+PackageVersion: 2.1
+PackageSupplier: Person: Bob
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageChecksum: SHA1: 94568c26abbed3ad3980685deaf1d7202d268314
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+Relationship: SPDXRef-Browser-v2.1 CONTAINS SPDXRef-CompressionEng-v3.1
+
+PackageName: Buffer
+SPDXID: SPDXRef-Buffer-v2.2
+PackageVersion: 2.2
+PackageSupplier: Organization: Bingo
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageChecksum: SHA1: 84568c26aabad3ad3980685beef1d7202d26831d
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: CompressionEng
+SPDXID: SPDXRef-CompressionEng-v3.1
+PackageVersion: 3.1
+PackageSupplier: Person: Carol
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageChecksum: SHA1: 63568c26aebad3ad398bb85ce1f1d7202d27731a
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+

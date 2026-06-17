@@ -1,0 +1,1268 @@
+//
+// Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-projects]]
+=== Projects
+
+The Projects resource is used to create and list projects.
+
+
+[[resources-projects-list]]
+==== Listing projects
+
+A `GET` request will list all of the service's projects.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects/links.adoc[]
+
+
+[[resources-projects-list-all-details]]
+==== Listing projects with all details
+
+A `GET` request will list all of the service's projects.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_with_all_details/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_with_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_with_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_with_all_details/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_with_all_details/links.adoc[]
+
+[[resources-projects-list-by-lucene-search]]
+==== Listing by lucene search
+
+A `GET` request will list all of the service's projects by lucene search.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_lucene_search/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_lucene_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_lucene_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_lucene_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_lucene_search/links.adoc[]
+
+[[resources-projects-list-by-name]]
+==== Listing by name
+
+A `GET` request will list all of the service's projects by project name.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_name/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_name/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_name/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_name/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_name/links.adoc[]
+
+
+[[resources-projects-list-by-type]]
+==== Listing by type
+
+A `GET` request will list all of the service's projects by project type.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_type/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_type/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_type/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_type/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_type/links.adoc[]
+
+
+[[resources-projects-list-by-group]]
+==== Listing by group
+
+A `GET` request will list all of the service's projects by group.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_group/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_group/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_group/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_group/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_group/links.adoc[]
+
+
+[[resources-projects-list-by-tag]]
+==== Listing by tag
+
+A `GET` request will list all of the service's projects by tag.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_tag/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_tag/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_tag/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_tag/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_tag/links.adoc[]
+
+
+[[resources-project-get-project-by-externalids]]
+==== Listing by external ids
+
+A `GET` request will get all projects corresponding to external ids +
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
+It's possible to search for projects only by the external id key by leaving the value.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_external-ids/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_external-ids/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_external-ids/http-response.adoc[]
+
+
+[[resources-projects-myprojects]]
+==== Listing my projects
+
+A `GET` request will list all projects associated to the user.
+
+===== Request parameter
+include::{snippets}/should_document_get_my_projects/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_my_projects/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_my_projects/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_my_projects/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_my_projects/links.adoc[]
+
+
+[[resources-project-attachment-info-get]]
+==== Listing attachment info
+
+A `GET` request will get all attachment information of a project.
+
+===== Response structure
+include::{snippets}/should_document_get_project_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_attachment_info/http-response.adoc[]
+
+[[resources-project-attachment-info-update]]
+==== Update attachment info
+
+A `PATCH` request is used to update an attachment info
+
+===== Request structure
+include::{snippets}/should_document_update_project_attachment_info/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_attachment_info/http-response.adoc[]
+
+[[resources-project-attachment-upload]]
+==== Upload attachment to project
+
+A `POST` request is used to upload attachment to project
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|file
+|file
+|File path of the attachment
+
+|attachment.filename
+|String
+|Name of the file
+
+|attachment.attachmentContentId
+|String
+|Id of attachment info
+
+|attachment.attachmentType
+|String
+|Type of attachment, possible values are: [DOCUMENT, SOURCE, DESIGN, REQUIREMENT, CLEARING_REPORT, COMPONENT_LICENSE_INFO_XML, COMPONENT_LICENSE_INFO_COMBINED, SCAN_RESULT_REPORT, SCAN_RESULT_REPORT_XML, SOURCE_SELF, BINARY, BINARY_SELF, DECISION_REPORT, LEGAL_EVALUATION, LICENSE_AGREEMENT, SCREENSHOT, OTHER, README_OSS]
+
+|attachment.checkStatus
+|String
+|Status of attachment, possible values are: [NOTCHECKED, ACCEPTED, REJECTED]
+
+|attachment.createdComment
+|String
+|Comment while uploading attachment.
+|===
+
+[red]#Response structure#
+|===
+|Complete Project will be returned
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_attachment_to_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_attachment_to_project/http-response.adoc[]
+
+[[resources-project-attachment-get]]
+==== Download attachment
+
+A `GET` request will allow you to download an attachment of a project. +
+Please set the Accept-Header `application/*`. Only this Accept-Header is supported.
+
+===== Example request
+include::{snippets}/should_document_get_project_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_attachment/http-response.adoc[]
+
+
+[[resources-project-get]]
+==== Get a single project
+
+A `GET` request will get a single project.
+
+===== Response structure
+include::{snippets}/should_document_get_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project/links.adoc[]
+
+
+[[resources-project-get-linked-projects]]
+==== Listing linked projects
+
+A `GET` request will get linked projects of a single project. +
+Only linked projects without any projects of sub-projects `&transitive=false`.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_projects/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_projects/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_projects/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_linked_projects/links.adoc[]
+
+
+[[resources-project-get-linked-projects-transitive]]
+==== Listing linked projects (transitive)
+
+A `GET` request will get linked projects of a single project. +
+Please set the request parameter `&transitive=true`.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_projects_transitive/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_projects_transitive/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_projects_transitive/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_linked_projects_transitive/links.adoc[]
+
+
+[[resources-project-get-project-releases]]
+==== Listing releases
+
+A `GET` request will get releases of a single project. +
+Only linked releases without any releases of sub-projects `&transitive=false`.
+
+===== Response structure
+include::{snippets}/should_document_get_project_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_releases/links.adoc[]
+
+[[resources-project-get-projects-releases]]
+==== Listing releases of multiple projects
+
+A `GET` request will get releases of multiple projects. Please pass an array of project ids as request body
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_releases/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_releases/links.adoc[]
+
+
+[[resources-project-get-project-releases-transitive]]
+==== Listing releases (transitive)
+
+A `GET` request will get all releases of a single project (transitive). +
+Please set the request parameter `&transitive=true`.
+
+===== Response structure
+include::{snippets}/should_document_get_project_releases_transitive/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_releases_transitive/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_releases_transitive/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_releases_transitive/links.adoc[]
+
+[[resources-project-get-linked-project-releases]]
+==== Listing linked project's releases
+
+A `GET` request will get all releases of linked projects for a project.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_project_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_project_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_project_releases/http-response.adoc[]
+
+[[resources-project-get-project-releases-ecc-information]]
+==== Listing releases with ECC
+
+A `GET` request will get all releases with ECC information of a single project.
+This works also with the transitive request parameter (&transitive=true)
+
+===== Request parameter
+include::{snippets}/should_document_get_project_releases_ecc_information/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_releases_ecc_information/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_releases_ecc_information/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_releases_ecc_information/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_releases_ecc_information/links.adoc[]
+
+[[resources-project-get-license-obligation-information]]
+==== Listing obligations from licenseDB
+
+A `GET` request will get all license obligations from licenseDB.
+
+===== Response structure
+include::{snippets}/should_document_get_obligations_from_license_db/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_obligations_from_license_db/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_obligations_from_license_db/http-response.adoc[]
+
+[[resources-project-add-license-obligation-information]]
+==== Adding obligations from licenseDB to project
+
+A `POST` request will add the license obligations from licenseDB to project.
+
+===== Request structure
+Pass an array of license obligation ids to be added as request body.
+
+===== Example request
+include::{snippets}/should_document_add_obligations_from_license_db/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_add_obligations_from_license_db/http-response.adoc[]
+
+[[resources-project-update-license-obligation-information]]
+==== Update License Obligations for a project
+
+A `PATCH` request will update the license obligations for the given project id.
+
+===== Request structure
+Pass a map having key as Obligation Title and value as Obligation Status and Obligation Comment which you want to update.
+Possible Obligation Status values are [FULFILLED_AND_PARENT_MUST_ALSO_FULFILL, ESCALATED, WILL_BE_FULFILLED_BEFORE_RELEASE, DEFERRED_TO_PARENT_PROJECT, ACKNOWLEDGED_OR_FULFILLED, NOT_APPLICABLE, OPEN]
+
+===== Example request
+include::{snippets}/should_document_update_license_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_license_obligations/http-response.adoc[]
+
+[[resources-project-get-license-clearing-information-information]]
+==== Project's license clearing count
+
+A `GET` request will get license clearing count of a project.
+
+===== Example request
+include::{snippets}/should_document_get_license_clearing_information/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_clearing_information/http-response.adoc[]
+
+[[resources-project-get-license-obligations-information]]
+==== List license obligations
+
+A `GET` request will get license obligations of a project.
+
+===== Response structure
+include::{snippets}/should_document_get_license_obligations/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_license_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_obligations/http-response.adoc[]
+
+[[resources-project-get-project-page-obligations-information]]
+==== List project page obligations
+
+A `GET` request will list obligations of a project depending upon the type of obigation level.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_page_obligations/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_page_obligations/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_page_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_page_obligations/http-response.adoc[]
+
+[[resources-projects-create]]
+==== Creating a project
+
+A `POST` request is used to create a project
+
+===== Request structure
+include::{snippets}/should_document_create_project/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_project/http-response.adoc[]
+
+[[resources-projects-create-duplicate]]
+==== Creating a duplicate project
+
+A `POST` request is used to create a duplicate project
+
+===== Request structure
+include::{snippets}/should_document_create_duplicate_project/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_duplicate_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_duplicate_project/http-response.adoc[]
+
+[[resources-projects-update]]
+==== Update a project
+
+A `PATCH` request is used to update an existing project
+
+===== Request structure
+Almost every editable fields can be updated. Only a few fields are explicitly given as an example.
+include::{snippets}/should_document_update_project/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project/http-response.adoc[]
+
+[[resources-projects-delete]]
+==== Delete a project
+
+A `DELETE` request will delete a project.
+
+===== Example request
+include::{snippets}/should_document_delete_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_project/http-response.adoc[]
+
+[[resources-projects-remove-orphaned-obligations]]
+==== Remove orphaned obligations
+
+A `PATCH` request will update the project's obligations.
+
+===== Request structure 1
+Pass an array of orphaned obligations title in request body.
+
+===== Example request
+include::{snippets}/should_document_remove_orphaned_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_remove_orphaned_obligations/http-response.adoc[]
+
+[[resources-project-link-projects]]
+==== Link project to the projects
+
+A `POST` request is used to link project to the projects. Please pass an array of project ids as request body. The project passed in the url will become the child project of all the projects passed in the request body.
+
+===== Request structure 1
+Pass an array of project ids as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_projects/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_projects/http-response.adoc[]
+
+[[resources-project-link-releases]]
+==== Link Releases to the project
+
+A `POST` request is used to link releases to the project. Please pass an array of release ids or a map of release id to usage to be linked as request body.
+
+===== Request structure 1
+Pass an array of release ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_releases/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_releases/http-response.adoc[]
+
+===== Request structure 2
+Pass a map of release id to usage to be linked as request body.
+
+===== Example request 2
+include::{snippets}/should_document_link_releases_with_project_release_relation/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_link_releases_with_project_release_relation/http-response.adoc[]
+
+[[resources-project-patch-releases]]
+==== Patch Releases to the project
+
+A `PATCH` request to append new releases to existing releases in a project. Please pass an array of release ids or a map of release id to usage to be linked as request body.
+
+===== Request structure 1
+Pass an array of release ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_patch_releases/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_patch_releases/http-response.adoc[]
+
+===== Request structure 2
+Pass a map of release id to usage to be linked as request body.
+
+===== Example request 2
+include::{snippets}/should_document_patch_releases_with_project_release_relation/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_patch_releases_with_project_release_relation/http-response.adoc[]
+
+[[resources-project-patch-release-usage]]
+==== Update Project Release Relationship
+
+A `PATCH` request is used to update Project Release Relationship
+
+===== Request structure
+include::{snippets}/should_document_update_project_release_relationship/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project_release_relationship/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_release_relationship/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_release_relationship/http-response.adoc[]
+
+[[resources-project-link-packages]]
+==== Link packages to the project
+
+A `PATCH` request to add/link packages to the project. Please pass a set of package ids to be linked as request body.
+
+===== Request structure
+Pass a set of package ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_packages/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_packages/http-response.adoc[]
+
+[[resources-project-unlink-packages]]
+==== Unlink packages from the project
+
+A `PATCH` request to remove/unlink packages from a project. Please pass a set of package ids to be unlinked as request body.
+
+===== Request structure
+Pass a set of package ids to be unlinked as request body.
+
+===== Example request
+include::{snippets}/should_document_unlink_packages/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_unlink_packages/http-response.adoc[]
+
+[[resources-project-get-project-license-clearing-information]]
+==== Listing license clearing information
+
+A `GET` request will get all releases of license clearing
+
+===== Response structure
+include::{snippets}/should_document_get_license_clearing/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_license_clearing/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_clearing/http-response.adoc[]
+
+[[resources-project-get-download-licenseinfo]]
+==== Download License Info
+
+A `GET` request is used to download license info for the project. Please set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose specific template.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info/http-response.adoc[]
+
+[[resources-project-get-download-licenseinfo-with-all-attachments]]
+==== Download License Info with all attachments
+
+A `GET` request is used to download the project's license information. The resulting file will include findings from the CLX, and if not available, the ISR attachment of a linked release.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/http-response.adoc[]
+
+[[resources-project-get-download-licenseinfo-without-release-version]]
+==== Download License Info without component versions
+
+A `GET` request is used to download license info for the project. If the `excludeReleaseVersion` parameter is set to true, the component versions will be omitted from the output file.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info_without_release_version/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info_without_release_version/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info_without_release_version/http-response.adoc[]
+
+[[resources-project-usedby-list]]
+==== Resources using the project
+
+A `GET` request will display all the projects where the project is used.
+
+===== Response structure
+include::{snippets}/should_document_get_usedbyresource_for_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_usedbyresource_for_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_usedbyresource_for_project/http-response.adoc[]
+
+[[resources-project-get-attachmentusage]]
+==== AttachmentUsages of the project
+
+A `GET` request will display all attachmentUsages of the projects.
+
+===== Request parameter
+include::{snippets}/should_document_get_attachment_usage_for_project/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_attachment_usage_for_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_attachment_usage_for_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_attachment_usage_for_project/http-response.adoc[]
+
+[[resources-project-save-attachmentUsages]]
+==== Save attachmentUsages of the project
+
+A `POST` request is used to save attachmentUsages of the project. Please pass a Map<String, List<String>> having string as key and list<string> as value in request body.
+
+===== Request structure 1
+Pass a Map<String, List<String>> in request body.
+
+Keys can be selected, deselected, selectedConcludedUsages or deselectedConcludedUsages.
+
+Format of String inside list varies according to the usageFields (sourcePackage, licenseInfo, manuallySet) :
+
+for `sourcePackage`, releaseId_sourcePakage_attachmentContentId
+
+for `licenseInfo`, projectId-releaseId_licenseInfo_attachmentContentId (for directly linked project) OR projectPath-releaseId_licenseInfo_attachmentContentId (for nested projects)
+
+for `manuallySet`, releaseId_manuallySet_attachmentContentId
+
+===== Example request 1
+include::{snippets}/should_document_save_usages/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_save_usages/http-response.adoc[]
+
+[[resources-project-get-project-vulnerabilities]]
+==== Listing project vulnerabilities
+
+A `GET` request will get vulnerabilities of a single projects.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerabilities/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerabilities/links.adoc[]
+
+[[resources-project-get-project-vulnerability-summary]]
+==== Listing project vulnerability summary
+
+A `GET` request will get vulnerability summary of a single project.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerability_summary/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerability_summary/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerability_summary/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerability_summary/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerability_summary/links.adoc[]
+
+[[resources-project-get-project-vulnerabilities-by-release-id-and-external-id]]
+==== Listing project vulnerabilities by release id and external id
+
+A `GET` request will get vulnerabilities of a single project by release id and external id.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/links.adoc[]
+
+[[resources-project-update-project-vulnerabilities]]
+==== Update project vulnerabilities
+
+A `PATCH` request will patch vulnerabilities of a single project.
+
+===== Response structure
+include::{snippets}/should_document_update_project_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_project_vulnerabilities/links.adoc[]
+
+[[resources-import-sbom]]
+==== Import SBOM
+
+A `POST` request is used to import a SBOM. Only SPDX and CycloneDX files are accepted.
+
+[red]#Request parameter#
+|===
+|Parameter |Description
+
+|type
+|File type of SBOM
+|===
+
+[red]#Request body#
+|===
+Type |Description
+
+|file
+|Path of the SBOM file
+|===
+
+[red]#Response structure#
+|===
+|Complete Project will be returned
+|===
+
+===== Example request 1
+include::{snippets}/should_document_import_spdx/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_import_spdx/http-response.adoc[]
+
+===== Example request 2
+include::{snippets}/should_document_import_cyclonedx/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_import_cyclonedx/http-response.adoc[]
+
+[[resources-import-sbom-on-project]]
+==== Import SBOM on project
+
+A `POST` request is used to import a SBOM on a project. The project’s releases and packages will be replaced with the latest data from the SBOM. Currently only CycloneDX(.xml/.json) files are supported.
+
+[red]#Request parameter#
+|===
+|Parameter |Description
+
+|doNotReplacePackageAndRelease
+|When importing an SBOM into an existing project, the project’s releases and packages will be replaced with the latest data from the SBOM. Use the parameter `doNotReplacePackageAndRelease=true` to import new data without replacing the existing releases and packages.
+|===
+
+[red]#Request body#
+|===
+Type |Description
+
+|file
+|Path of the SBOM file
+|===
+
+[red]#Response structure#
+|===
+|Complete Project will be returned
+|===
+
+===== Example request 1
+include::{snippets}/should_document_import_cyclonedx_on_project/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_import_cyclonedx_on_project/http-response.adoc[]
+
+[[resources-project-getprojectcount]]
+==== Get project count of a user
+
+A `GET` request will get project count of a user.
+
+===== Example request
+include::{snippets}/should_document_get_project_count/curl-request.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_count/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_count/http-response.adoc[]
+
+[[resources-project-getprojectcount]]
+==== Get license info header text
+
+A `GET` request will get the default license info header text.
+
+===== Example request
+include::{snippets}/should_document_get_license_info_header/curl-request.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_license_info_header/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_info_header/http-response.adoc[]
+
+[[resources-project-get-summaryadministraion-project]]
+==== Administration and Summary Info
+
+A `GET` request will get summary and administration page of project tab.
+
+===== Response structure
+include::{snippets}/should_document_create_summary_administration/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_summary_administration/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_summary_administration/http-response.adoc[]
+
+[[resources-projects-download-report]]
+==== Downloading project report
+
+A `GET` request help to download the projects report.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_report/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_report/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_report/http-response.adoc[]
+
+[[resources-project-get-with-network]]
+==== Get a single project with dependencies network
+
+A `GET` request will get a single project with dependencies network.
+
+===== Response structure
+include::{snippets}/should_document_get_project_with_dependencies_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_with_dependencies_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_with_dependencies_network/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_with_dependencies_network/links.adoc[]
+
+[[resources-projects-create-with-network]]
+==== Creating a project with dependencies network
+
+A `POST` request is used to create a project with dependencies network
+
+===== Request structure
+include::{snippets}/should_document_create_project_with_network/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_project_with_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_project_with_network/http-response.adoc[]
+
+[[resources-projects-update-with-network]]
+==== Update a project with dependencies network
+
+A `PATCH` request is used to update an existing project with dependencies network
+
+===== Request structure
+Almost every editable fields can be updated. Only a few fields are explicitly given as an example.
+include::{snippets}/should_document_update_project_with_network/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project_with_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_with_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_with_network/http-response.adoc[]
+
+[[resources-projects-duplicate-with-network]]
+==== Duplicate a project with dependencies network
+
+A `POST` request is used to duplicate a project with dependencies network
+
+===== Request structure
+include::{snippets}/should_document_duplicate_project_with_dependency_network/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_duplicate_project_with_dependency_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_duplicate_project_with_dependency_network/http-response.adoc[]
+
+[[resources-linked-releases-in-dependency-network-of-project]]
+==== Get linked releases in dependency network of a project
+
+A `GET` request is used to get linked releases in dependency network of a project.
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_of_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_of_project/http-response.adoc[]
+
+[[resources-projects-download-licenseclearing-report]]
+==== Downloading project license clearing report
+
+A `GET` request help to download project license clearing report.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/http-response.adoc[]
+
+[[resources-clearing-request-create]]
+==== Creating a clearing request
+
+A `POST` request is used to create the clearing request for a project.
+
+===== Request structure
+include::{snippets}/should_document_create_clearing_request/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_create_clearing_request/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
+
+[[resources-projects-get-network-in-list-view]]
+==== Get list view of a project's dependencies network
+
+A `GET` request is used to get list view of a project's dependencies network
+
+===== Example response
+include::{snippets}/should_document_get_list_view_of_dependencies_network/http-response.adoc[]
+
+[[resources-project-get-linked-resources-in-dependency-network]]
+==== Get linked resources (projects, releases) in dependency network of a project
+
+A `GET` request will get linked resources (projects, releases) in dependency network of a project
+
+===== Request parameters
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/http-response.adoc[]
+
+[[resources-project-get-indirect-linked-release-of-project-in-dependency-network-by-index-path]]
+
+==== Get indirect linked releases of a project in dependency network by release's index path
+
+A `GET` request will get indirect linked releases of a project in dependency network by release's index path
+
+===== Request parameters
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/http-response.adoc[]
+
+[[resources-projects-download-sourcebundle]]
+==== Downloading resource sourcebundle
+
+A `GET` request help to download the projects license clearing resource bundle.
+
+===== Request parameter
+include::{snippets}/should_document_get_resource_source_bundle/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_resource_source_bundle/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_resource_source_bundle/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_resource_source_bundle/http-response.adoc[]
+
+[[resources-get-linked-releases-of-linked-projects]]
+==== Get linked releases of linked projects
+
+A `GET` request is used to Get linked releases of linked projects.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/http-response.adoc[]
+
+[[resources-compare-dependency-network-with-relationship-between-releases]]
+==== Compare dependency network with default network (relationships between releases)
+
+A `POST` request is used to compare dependency network with default network (relationships between releases).
+
+===== Example request
+include::{snippets}/should_document_compare_dependency_network_with_default_releases_relationship/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_compare_dependency_network_with_default_releases_relationship/http-response.adoc[]
+
+[[resources-projects-download-releases-ecc-report]]
+==== Downloading project release with ecc information
+
+A `GET` request help to download the project release with ecc information report.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/http-response.adoc[]
+
+
+[[resources-project-get-download-project-clearing-report]]
+==== Export Create Project Clearing Report
+
+A `GET` request is used to export Create Project Clearing Report.
+
+===== Request parameter
+include::{snippets}/should_document_get_export_project_create_clearing_request/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_export_project_create_clearing_request/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_export_project_create_clearing_request/http-response.adoc[]
+
+[[resources-projects-list-by-search]]
+==== Filtering with more fields
+
+A `GET` request to fetch filtered list of projects.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_advance_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_advance_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_advance_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_advance_search/links.adoc[]
+
+[[resources-package-get-by-project]]
+==== Get Package by ProjectId
+
+A GET request is used to retrieve a package using a given projectId.
+
+===== Request parameter
+include::{snippets}/should_document_get_package_by_project_id/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_package_by_project_id-id/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_package_by_project_id-id/http-response.adoc[]

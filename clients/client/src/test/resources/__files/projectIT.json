@@ -1,0 +1,12 @@
+{
+  "name": "example-project-IT",
+  "description": "example-project 1.0.0-RC5-94-g08d9854",
+  "version": "2",
+  "createdOn": "2020-01-13",
+  "businessUnit": "INST-CSS/BSV-OS",
+  "securityResponsibles": [],
+  "enableSvm": false,
+  "enableVulnerabilitiesDisplay": false,
+  "projectType": "PRODUCT",
+  "visibility": "BUISNESSUNIT_AND_MODERATORS"
+}

@@ -1,0 +1,662 @@
+//
+// Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-releases]]
+=== Releases
+
+The Releases resource is used to create and list releases.
+
+
+[[resources-releases-list]]
+==== Listing releases
+
+A `GET` request will list all of the service's releases.
+
+===== Response structure
+include::{snippets}/should_document_get_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases/links.adoc[]
+
+
+[[resources-releases-list-all-details]]
+==== Listing releases with all details
+
+A `GET` request will list all of the service's releases with all details. +
+Please set the request parameter `&allDetails=<true|false>`, to get projects with all Details.
+
+===== Response structure
+include::{snippets}/should_document_get_release_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_all_details/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_release_all_details/links.adoc[]
+
+[[resources-releases-list-lucene-search]]
+==== Listing releases by lucene search
+
+A `GET` request will list all of the service's releases by lucene search.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_lucene_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_lucene_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_lucene_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_lucene_search/links.adoc[]
+
+
+[[resources-recent-releases-list]]
+==== Listing recent releases
+
+A `GET` request will list 5 of the service's most recently created releases.
+
+===== Response structure
+include::{snippets}/should_document_get_recent_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_recent_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_recent_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_recent_releases/links.adoc[]
+
+
+[[resources-release-batch-summary]]
+==== Fetching release summaries in batch
+
+A `POST` request will return lightweight release summary data for a list of release IDs.
+
+===== Request structure
+include::{snippets}/should_document_get_release_batch_summary/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_release_batch_summary/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_batch_summary/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_batch_summary/http-response.adoc[]
+
+
+[[resources-releases-list-with-fields]]
+==== Listing releases with fields
+
+A `GET` request will list all of the service's releases. The `fields` parameter defines which component object properties should be contained in the response.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_with_fields/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_with_fields/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_with_fields/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_with_fields/links.adoc[]
+
+
+[[resources-releases-list-by-name]]
+==== Listing releases by name
+
+A `GET` request will list all of the service's releases by name. +
+Please set the request parameter `&name=<NAME>`.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_name/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_name/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_name/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_name/links.adoc[]
+
+
+[[resources-releases-list-by-isNewClearingWithSourceAvailable-filter]]
+==== Listing releases in new clearing state with a source attachment available
+
+A `GET` request will list all the releases in NEW_CLEARING state that have a source attachment available. +
+Please set the request parameter `&isNewClearingWithSourceAvailable=true`.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/links.adoc[]
+
+
+[[resources-releases-get-by-externalids]]
+==== Listing by external ids
+
+A `GET` request will get all releases corresponding to external ids. A request body has to be passed where a single key(external ID) can take different values. It is possible to search for releases by omitting the values and passing the external ID as the key.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_external-ids/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_external-ids/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_external-ids/http-response.adoc[]
+
+[[should_document_get_releases_by_sha1]]
+==== Listing by attachments with SHA1
+
+A `GET` request will get a collection of releases that have attachments with the given sha1. Please set the request parameter `&sha1=<SHA1>`.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_sha1/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_sha1/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_sha1/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_sha1/links.adoc[]
+
+
+
+[[resources-release-attachment-info-get]]
+==== Listing attachment info
+
+A `GET` request will get all attachment information of a release.
+
+===== Response structure
+include::{snippets}/should_document_get_release_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_attachment_info/http-response.adoc[]
+
+
+[[resources-release-attachment-info-update]]
+==== Update attachment info
+
+A `PATCH` request is used to update an attachment info
+
+===== Request structure
+include::{snippets}/should_document_update_release_attachment_info/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_release_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_release_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_release_attachment_info/http-response.adoc[]
+
+[[resources-release-attachment-upload]]
+==== Upload attachment to release
+
+A `POST` request is used to upload attachment to release
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|file
+|file
+|File path of the attachment
+
+|attachment.filename
+|String
+|Name of the file
+
+|attachment.attachmentContentId
+|String
+|Id of attachment info
+
+|attachment.attachmentType
+|String
+|Type of attachment, possible values are: [DOCUMENT, SOURCE, DESIGN, REQUIREMENT, CLEARING_REPORT, COMPONENT_LICENSE_INFO_XML, COMPONENT_LICENSE_INFO_COMBINED, SCAN_RESULT_REPORT, SCAN_RESULT_REPORT_XML, SOURCE_SELF, BINARY, BINARY_SELF, DECISION_REPORT, LEGAL_EVALUATION, LICENSE_AGREEMENT, SCREENSHOT, OTHER, README_OSS]
+
+|attachment.checkStatus
+|String
+|Status of attachment, possible values are: [NOTCHECKED, ACCEPTED, REJECTED]
+
+|attachment.createdComment
+|String
+|Comment while uploading attachment.
+|===
+
+[red]#Response structure#
+|===
+|Complete Release will be returned
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_attachment_to_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_attachment_to_release/http-response.adoc[]
+
+[[resources-release-attachment-get]]
+==== Download attachment
+
+A `GET` request will allow you to download an attachment of a release. +
+Please set the Accept-Header `application/*`. Only this Accept-Header is supported.
+
+===== Example request
+include::{snippets}/should_document_get_release_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_attachment/http-response.adoc[]
+
+[[resources-release-attachment-bundle-get]]
+==== Download attachment bundle
+
+A `GET` request will allow you to download the attachment bundle of a release. +
+Please set the Accept-Header `application/zip`. Only this Accept-Header is supported.
+
+===== Example request
+include::{snippets}/should_document_get_release_attachment_bundle/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_attachment_bundle/http-response.adoc[]
+
+[[resources-release-external-id]]
+==== Get releases by external IDs
+
+A `GET` request will allow you to get releases by external IDs.
+Put the external ID as query parameter and its value as parameter's value.
+
+===== Example request
+
+include::{snippets}/should_document_get_releases_by_externalIds/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_releases_by_externalIds/http-response.adoc[]
+
+[[resources-release-attachment-delete]]
+==== Delete attachments
+
+With a `DELETE` request one or multiple attachments can be deleted from a release.
+To delete multiple attachments at once, just specify a comma-separated list of
+attachment IDs.
+
+Note that attachments can only be deleted if they are not used by a project.
+Requests that cannot delete any of the attachments specified fail with response
+status 500.
+
+===== Example request
+include::{snippets}/should_document_delete_release_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_release_attachment/http-response.adoc[]
+
+The response contains the updated release. Here the set of attachments is especially
+relevant. If multiple attachments were to be deleted, but the deletion failed for
+some of them, those can still be found in the set. So callers should inspect
+the set of attachments in the result to find out whether all delete operations
+have been successful.
+
+[[resources-trigger_fossology_process-get]]
+==== Trigger FOSSology process
+
+A `GET` request will allow you to Trigger FOSSology process for a release. +
+Please set the request parameter  +
+   `&markFossologyProcessOutdated=<true|false>` to set previous FOSSology process outdated and generate new. +
+   `&uploadDescription=uploadDescription` with the upload description to FOSSology +
+
+===== Response structure
+include::{snippets}/should_document_trigger_fossology_process/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_trigger_fossology_process/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_trigger_fossology_process/http-response.adoc[]
+
+[[resources-check_fossology_process_status-get]]
+==== Check FOSSology process status
+
+A `GET` request will allow you to check status of triggered FOSSology process of a release.
+
+===== Response structure
+include::{snippets}/should_document_check_fossology_process_status/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_check_fossology_process_status/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_check_fossology_process_status/http-response.adoc[]
+
+[[resources-trigger_reload_fossology_report-get]]
+==== Re-generate fossology report
+
+A `GET` request will allow you to Re-generate fossology report
+
+===== Response structure
+include::{snippets}/should_document_trigger_reload_fossology_report/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_trigger_reload_fossology_report/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_trigger_reload_fossology_report/http-response.adoc[]
+
+[[resources-release-get]]
+==== Get a single release
+
+A `GET` request will get a single release.
+
+===== Response structure
+include::{snippets}/should_document_get_release/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_release/links.adoc[]
+
+
+[[resources-releases-create]]
+==== Creating a release
+
+A `POST` request is used to create a release
+
+===== Request structure
+include::{snippets}/should_document_create_release/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_release/http-response.adoc[]
+
+
+[[resources-release-update]]
+==== Update a release
+
+A `PATCH` request is used to update an existing release
+
+===== Response structure
+include::{snippets}/should_document_update_release/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_release/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_release/links.adoc[]
+
+[[resources-SPDX-Document-update]]
+==== Update a SPDX Document
+
+A `PATCH` request is used to update an existing SPDX Document
+
+===== Response structure
+include::{snippets}/should_document_update_spdx/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_spdx/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_spdx/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_spdx/links.adoc[]
+
+
+[[resources-release-delete]]
+==== Delete a release
+
+A `DELETE` request is used to delete an existing release
+
+===== Response structure
+include::{snippets}/should_document_delete_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_delete_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_releases/http-response.adoc[]
+
+
+[[resources-release-link]]
+==== Link release to release
+
+A `POST` request is used to link releases to the release.
+
+===== Request structure
+Pass a map of Release Relationship to usage to be linked as request body.
+
+===== Example request
+include::{snippets}/should_document_link_releases_to_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_link_releases_to_release/http-response.adoc[]
+
+[[resources-release-link-packages]]
+==== Link packages to the release
+
+A `PATCH` request to add/link packages to the release. Please pass a set of package ids to be linked as request body.
+
+===== Request structure
+Pass a set of package ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_packages/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_packages/http-response.adoc[]
+
+[[resources-release-unlink-packages]]
+==== Unlink packages from the release
+
+A `PATCH` request to remove/unlink packages from a release. Please pass a set of package ids to be unlinked as request body.
+
+===== Request structure
+Pass a set of package ids to be unlinked as request body.
+
+===== Example request
+include::{snippets}/should_document_unlink_packages/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_unlink_packages/http-response.adoc[]
+
+
+[[resources-release-usedby-list]]
+==== Resources using the release
+
+A `GET` request will display all the resources where the release is used.
+
+===== Response structure
+include::{snippets}/should_document_get_usedbyresource_for_release/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_usedbyresource_for_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_usedbyresource_for_release/http-response.adoc[]
+
+[[resources-release-get-release-vulnerabilities]]
+==== Listing release vulnerabilities
+
+A `GET` request will get vulnerabilities of a single release.
+
+===== Response structure
+include::{snippets}/should_document_get_release_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_release_vulnerabilities/links.adoc[]
+
+[[resources-release-subscription]]
+==== Listing releases subscription
+
+A `GET` request will list all the service's releases subscription.
+
+===== Response structure
+
+include::{snippets}/should_document_get_release_subscription/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_release_subscription/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_release_subscription/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_release_subscription/links.adoc[]
+
+[[resources-project-update-release-vulnerabilities]]
+==== Update release vulnerabilities
+
+A `PATCH` request will patch vulnerabilities of a release.
+
+===== Response structure
+include::{snippets}/should_document_update_release_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_release_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_release_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_release_vulnerabilities/links.adoc[]
+
+[[resources-write-spdx-license-info-into-release]]
+==== Write SPDX license info into release
+
+A `POST` request will write SPDX license info into release
+
+===== Request structure
+include::{snippets}/should_document_write_spdx_licenses_info_into_release/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_write_spdx_licenses_info_into_release/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_write_spdx_licenses_info_into_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_write_spdx_licenses_info_into_release/http-response.adoc[]
+
+[[resources-load-SPDX-license-info-from-attachment-of-release]]
+==== Get SPDX License Info from attachment of release
+
+A `GET` request will retrieve SPDX License Information from the attachment of the release.
+
+===== Example request
+include::{snippets}/should_document_load_spdx_licenses_info_from_isr/curl-request.adoc[]
+
+===== Example response for Initial Scan Report (ISR) type
+include::{snippets}/should_document_load_spdx_licenses_info_from_isr/http-response.adoc[]
+
+===== Example response for Component license information (CLX or CLI) type
+include::{snippets}/should_document_load_spdx_licenses_info_from_clx_or_cli/http-response.adoc[]
+
+[[resources-load-assessment-summary-info-of-release]]
+==== Get assessment summary info of release
+
+A `GET` request will get assessment summary info of release (Have one CLI file only)
+
+===== Example request
+include::{snippets}/should_document_load_release_assessment_summary_information/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_load_release_assessment_summary_information/http-response.adoc[]
+
+[[resources-get-linked-releases-of-release]]
+==== Get direct linked releases
+
+A `GET` request will get direct linked releases of a single release
+
+===== Response structure
+include::{snippets}/should_document_get_direct_linked_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_direct_linked_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_direct_linked_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_direct_linked_releases/links.adoc[]
+
+[[resources-get-linked-releases-of-release-transitive]]
+==== Get linked releases (transitive)
+
+A `GET` request will get linked releases of a single release (transitive)
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_transitively/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_transitively/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_transitively/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_linked_releases_transitively/links.adoc[]
+
+[[resources-check-cyclic-hierarchy-of-a-release]]
+==== Check cyclic hierarchy of a release with other releases
+A `POST` request will check cyclic hierarchy of a release with other releases.
+
+===== Example request
+include::{snippets}/should_document_check_cyclic_hierarchy_of_a_release_with_other_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_check_cyclic_hierarchy_of_a_release_with_other_releases/http-response.adoc[]

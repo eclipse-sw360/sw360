@@ -1,0 +1,6 @@
+# Global SW360 repo code owners ( owns all code )
+* @GMishx @koukihama @arunazhakesan @ag4ums @rudra-superrr
+
+# Docker specific
+Dockerfile @GMishx
+docker-compose.yml @GMishx

@@ -1,0 +1,77 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.eclipse.sw360.rest.authserver.client.rest;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
+
+import java.util.Set;
+
+@Getter
+public class OAuthClientResource {
+
+    /**
+     * Placeholder used for {@code client_secret} in any response that lists
+     * existing clients, so we never leak the BCrypt hash (or, worse, a legacy
+     * plaintext secret) through the admin API.
+     */
+    public static final String HIDDEN_SECRET = "<hidden>";
+
+    @Setter
+    @JsonProperty("description")
+    private String description;
+
+    @Setter
+    @JsonProperty("client_id")
+    private String clientId;
+
+    @Setter
+    @JsonProperty("client_secret")
+    private String clientSecret;
+
+    @JsonProperty("authorities")
+    private Set<String> authorities;
+
+    @JsonProperty("scope")
+    private Set<String> scope;
+
+    @JsonProperty("access_token_validity")
+    private Integer accessTokenValidity;
+
+    @JsonProperty("refresh_token_validity")
+    private Integer refreshTokenValidity;
+
+    /**
+     * Email of the SW360 user this client acts on behalf of for
+     * {@code client_credentials} tokens. Required at creation; ignored on
+     * update (the field is immutable once set).
+     */
+    @Setter
+    @JsonProperty("owner_email")
+    private String ownerEmail;
+
+    public OAuthClientResource() {
+        // if needed by frameworks
+    }
+
+    public OAuthClientResource(OAuthClientEntity clientEntity) {
+        this.description = clientEntity.getDescription();
+        this.clientId = clientEntity.getClientId();
+        this.clientSecret = clientEntity.getClientSecret();
+        this.authorities = clientEntity.getAuthorities();
+        this.scope = clientEntity.getScope();
+        this.accessTokenValidity = clientEntity.getAccessTokenValiditySeconds();
+        this.refreshTokenValidity = clientEntity.getRefreshTokenValiditySeconds();
+        this.ownerEmail = clientEntity.getOwnerEmail();
+    }
+}

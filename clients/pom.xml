@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright Bosch.IO GmbH 2020.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.eclipse.sw360</groupId>
+        <artifactId>sw360</artifactId>
+        <version>20.1.0-rc-2</version>
+    </parent>
+
+    <name>SW360 Client Utilities</name>
+    <description>SW360 client utilities</description>
+    <url>https://eclipse.org/sw360</url>
+    <licenses>
+        <license>
+            <name>Eclipse Public License 2.0</name>
+            <url>https://www.eclipse.org/legal/epl-2.0/</url>
+        </license>
+    </licenses>
+    <organization>
+        <name>Eclipse SW360</name>
+        <url>https://eclipse.org/sw360</url>
+    </organization>
+    <developers>
+        <developer>
+            <name>SW360 Team</name>
+            <organization>SW360</organization>
+            <organizationUrl>https://eclipse.org/sw360</organizationUrl>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/eclipse-sw360/sw360</connection>
+    </scm>
+
+    <artifactId>clients</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>http-support</module>
+        <module>client</module>
+    </modules>
+
+</project>

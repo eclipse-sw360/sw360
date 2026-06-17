@@ -1,0 +1,24 @@
+//
+// Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+= SW360 REST API
+Documentation; Version {project-version}
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+
+SW360 is the upcoming tool for our OSS management and clearing activities. +
+Here you find information about the REST API for SW360.
+
+The REST API is in early stage, link:https://github.com/eclipse/sw360/issues[feedback/issues] is very welcome. +
+
+* link:api-guide.html[API Guide]
+* link:https://github.com/eclipse/sw360[Git Repository]
+* link:../api/browser/index.html#/resource/api[Interactive API Browser]

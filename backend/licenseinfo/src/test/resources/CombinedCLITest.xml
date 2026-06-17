@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  -->
+<CombinedCLI component="InternalComponent 1.0" creator="Creative Employee" date="15.03.2017" baseDoc="-" componentID="1111">
+    <License type="global" name="License1" subtype="global" srcFile="some_cli_file.xml" srcComponent="1234">
+        <Content><![CDATA[License1Text
+]]></Content>
+        <Files><![CDATA[\file1.txt
+]]></Files>
+    </License>
+    <License type="other" name="License2" subtype="other" srcFile="some_other_cli_file.xml" srcComponent="1234">
+        <Content><![CDATA[License2Text
+]]></Content>
+        <Files><![CDATA[\contrib\file2.h
+]]></Files>
+   <Acknowledgements><![CDATA[License2Acknowledgements
+]]></Acknowledgements>
+    </License>
+    <License type="other" name="License3" subtype="other" srcFile="some_cli_file.xml" srcComponent="1234">
+        <Content><![CDATA[License3&amp;&apos;Text
+]]></Content>
+        <Files><![CDATA[\contrib\file3.c
+]]></Files>
+    </License>
+    <Copyright srcComponent="1234" srcFile="some_other_cli_file.xml">
+        <Content><![CDATA[Copyright1
+]]></Content>
+        <Files><![CDATA[\contrib\file3.c
+]]></Files>
+    </Copyright>
+    <Copyright srcComponent="1234" srcFile="some_other_cli_file.xml">
+        <Content><![CDATA[Copyright2
+]]></Content>
+        <Files><![CDATA[\contrib\file3.c
+]]></Files>
+    </Copyright>
+    <Copyright srcComponent="1234" srcFile="some_other_cli_file.xml">
+        <Content><![CDATA[Copyright3
+]]></Content>
+        <Files><![CDATA[\contrib\file3.c
+\SomeClass.java
+]]></Files>
+    </Copyright>
+    <Copyright srcComponent="1234" srcFile="some_other_cli_file.xml">
+        <Content><![CDATA[Copyright4
+]]></Content>
+        <Files><![CDATA[\contrib\file3.c
+]]></Files>
+    </Copyright>
+    <Copyright srcComponent="1234" srcFile="some_other_cli_file.xml">
+        <Content><![CDATA[Copyright5
+]]></Content>
+        <Files><![CDATA[\contrib\manager.c
+\contrib\factory.c
+\contrib\problem.cpp
+]]></Files>
+    </Copyright>
+</CombinedCLI>

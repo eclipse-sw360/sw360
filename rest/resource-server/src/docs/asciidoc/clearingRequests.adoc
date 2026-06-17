@@ -1,0 +1,131 @@
+//
+// Copyright Siemens AG, 2021. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-clearingRequest]]
+=== ClearingRequest
+
+The ClearingRequest resource is used to get and list the clearing requests
+
+
+[[resources-clearingRequest-by-id]]
+==== Get clearingRequest by id
+
+A `GET` request will display the ClearingRequest by id
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequest/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequest/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequest/http-response.adoc[]
+
+
+[[resources-clearingRequest-by-project-id]]
+==== Get clearingRequest by project id
+
+A `GET` request will display the ClearingRequest based on the project id
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequest_by_projectid/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequest_by_projectid/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequest_by_projectid/http-response.adoc[]
+
+
+[[resources-clearingRequests]]
+==== List all clearingRequest
+
+A `GET` request will list all the Clearing Requests visible to the user
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequests/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequests/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequests/http-response.adoc[]
+
+
+[[resources-clearingRequest-by-state]]
+==== List all clearingRequest by clearing state
+
+A `GET` request will list all the Clearing Requests visible to the user based on the clearing state
+
+===== Request parameter
+include::{snippets}/should_document_get_clearingrequests_by_state/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequests_by_state/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequests_by_state/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequests_by_state/http-response.adoc[]
+
+
+[[resources-comments-list]]
+==== Listing comments for a clearing request
+
+A `GET` request will list all comments associated with a specific clearing request.
+
+===== Request parameter
+include::{snippets}/should_document_get_comments_by_clearing_request_id/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_comments_by_clearing_request_id/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_comments_by_clearing_request_id/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_comments_by_clearing_request_id/http-response.adoc[]
+[[resources-add-comment-to-clearingrequest]]
+==== Add a new comment to a clearing request
+
+A `POST` request will add a new comment to a specific clearing request.
+
+===== Request Parameters
+
+include::{snippets}/should_document_add_comment_to_clearingrequest/request-parameters.adoc[]
+
+===== Request Example
+
+include::{snippets}/should_document_add_comment_to_clearingrequest/curl-request.adoc[]
+
+===== Response Structure
+
+include::{snippets}/should_document_add_comment_to_clearingrequest/response-fields.adoc[]
+
+===== Response Example
+
+include::{snippets}/should_document_add_comment_to_clearingrequest/http-response.adoc[]
+
+
+[[resources-clearingRequest-update]]
+==== Update a clearingRequest
+
+A `PATCH` request is used to update an existing clearingRequest
+
+===== Response structure
+include::{snippets}/should_document_patch_clearingrequest/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_patch_clearingrequest/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_patch_clearingrequest/http-response.adoc[]
+
