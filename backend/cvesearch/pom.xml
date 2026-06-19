@@ -29,7 +29,6 @@
     </properties>
 
     <build>
-        <finalName>cvesearch</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
