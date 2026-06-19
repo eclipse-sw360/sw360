@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.schedule.client.CveSearchRestClient;
 import org.eclipse.sw360.schedule.timer.ScheduleConstants;
 import org.eclipse.sw360.schedule.timer.Scheduler;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,12 @@ import java.util.function.Supplier;
 @Service
 public class ScheduleHandler {
     private static final Logger log = LogManager.getLogger(ScheduleHandler.class);
+
+    private final CveSearchRestClient cveSearchRestClient;
+
+    public ScheduleHandler(CveSearchRestClient cveSearchRestClient) {
+        this.cveSearchRestClient = cveSearchRestClient;
+    }
 
     @PostConstruct
     public void autoStart() {
@@ -71,6 +78,18 @@ public class ScheduleHandler {
         return Scheduler.scheduleNextSync(wrappedBody, serviceName);
     }
 
+    private boolean wrapForScheduler(Supplier<RequestStatus> call, String serviceName) {
+        Supplier<RequestStatus> wrappedBody = () -> {
+            try {
+                return call.get();
+            } catch (Exception e) {
+                log.error("Was not able to schedule sync for client with name:{} message:{}", serviceName, e.getMessage(), e);
+                return RequestStatus.FAILURE;
+            }
+        };
+        return Scheduler.scheduleNextSync(wrappedBody, serviceName);
+    }
+
     public RequestSummary scheduleService(String serviceName) {
         if (ScheduleConstants.invalidConfiguredServices.contains(serviceName)) {
             log.info("Could not schedule {} because of invalid configuration.", serviceName);
@@ -81,7 +100,7 @@ public class ScheduleHandler {
 
         boolean successSync = switch (serviceName) {
             case ServiceNames.CVESEARCH_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeCvesearchClient().update(), serviceName);
+                    wrapForScheduler(cveSearchRestClient::update, serviceName);
             case ServiceNames.SVMSYNC_SERVICE ->
                     wrapForScheduler(() -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus(), serviceName);
             case ServiceNames.SVMMATCH_SERVICE ->
@@ -124,7 +143,7 @@ public class ScheduleHandler {
         }
         return switch (serviceName) {
             case ServiceNames.CVESEARCH_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeCvesearchClient().update());
+                    cveSearchRestClient.update();
             case ServiceNames.SVMSYNC_SERVICE ->
                     callDownstreamService(() -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus());
             case ServiceNames.SVMMATCH_SERVICE ->
