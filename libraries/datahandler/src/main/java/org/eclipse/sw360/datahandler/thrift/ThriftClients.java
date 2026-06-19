@@ -36,7 +36,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
-import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
@@ -119,7 +118,6 @@ public class ThriftClients {
     //! Service addresses
     private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
     private static final String COMPONENT_SERVICE_URL = "/components/thrift";
-    private static final String CVESEARCH_SERVICE_URL = "/cvesearch/thrift";
     private static final String FOSSOLOGY_SERVICE_URL = "/fossology/thrift";
     private static final String LICENSE_SERVICE_URL = "/licenses/thrift";
     private static final String MODERATION_SERVICE_URL = "/moderation/thrift";
@@ -339,10 +337,6 @@ public class ThriftClients {
 
     public static ComponentService.Iface makeComponentClient() {
         return new ComponentService.Client(makeProtocol(COMPONENT_SERVICE_URL));
-    }
-
-    public static CveSearchService.Iface makeCvesearchClient() {
-        return new CveSearchService.Client(makeProtocol(CVESEARCH_SERVICE_URL));
     }
 
     public static FossologyService.Iface makeFossologyClient() {
