@@ -17,6 +17,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/licensedb/integration
     paths-ignore:
       - third-party/**
       - Dockerfile
@@ -177,7 +178,7 @@ jobs:
           TOTAL="${{ steps.unit-tests.outputs.unit_tests_total }}"
           FAILED="${{ steps.unit-tests.outputs.unit_tests_failed }}"
           SKIPPED="${{ steps.unit-tests.outputs.unit_tests_skipped }}"
-          
+
           echo "## ✅ Unit and Integration Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
