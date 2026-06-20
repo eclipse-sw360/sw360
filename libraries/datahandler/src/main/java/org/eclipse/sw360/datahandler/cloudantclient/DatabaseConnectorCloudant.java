@@ -735,16 +735,35 @@ public class DatabaseConnectorCloudant {
             PostFindOptions.Builder qb, Class<T> type, PaginationData pageData,
             Map<String, String> sortSelector
     ) {
+        return getQueryResultPaginated(qb, type, pageData, sortSelector, "PaginationIdx");
+    }
+
+    public <T> List<T> getQueryResultPaginated(
+            PostFindOptions.Builder qb, Class<T> type, PaginationData pageData,
+            Map<String, String> sortSelector, String countIndexName
+    ) {
+        return getQueryResultPaginated(qb, type, pageData, sortSelector, countIndexName, false);
+    }
+
+    public <T> List<T> getQueryResultPaginated(
+            PostFindOptions.Builder qb, Class<T> type, PaginationData pageData,
+            Map<String, String> sortSelector, String countIndexName, boolean sortCountQuery
+    ) {
         final int rowsPerPage = pageData.getRowsPerPage();
         final int skip = pageData.getDisplayStart();
 
         long rowQueryLimit = Math.max(rowsPerPage, LUCENE_SEARCH_LIMIT);
 
-        PostFindOptions countQuery = qb.build().newBuilder()
-                .fields(Collections.singletonList("_id"))
-                .limit(rowQueryLimit)
-                .useIndex(Collections.singletonList("PaginationIdx"))
-                .build();
+        PostFindOptions.Builder countQueryBuilder = qb.build().newBuilder()
+            .fields(Collections.singletonList("_id"))
+            .limit(rowQueryLimit)
+            .useIndex(Collections.singletonList(countIndexName));
+
+        if (sortCountQuery) {
+            countQueryBuilder.addSort(sortSelector);
+        }
+
+        PostFindOptions countQuery = countQueryBuilder.build();
 
         try {
             FindResult result = this.instance.getClient().postFind(countQuery).execute().getResult();

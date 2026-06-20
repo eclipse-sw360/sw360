@@ -1,6 +1,6 @@
 /*
- * Copyright 2025 Pranay Heda pranayheda24@gmail.com
- * Part of the SW360 Portal Project.
+ * Copyright 2025 Pranay Heda pranayheda24@gmail.com. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -13,10 +13,8 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -24,31 +22,25 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringRunner.class)
 public class SearchTest extends TestIntegrationBase {
 
     @LocalServerPort
     private int port;
 
-    @MockitoBean
-    private Sw360SearchService searchServiceMock;
-
     private List<SearchResult> searchResults;
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         searchResults = new ArrayList<>();
 

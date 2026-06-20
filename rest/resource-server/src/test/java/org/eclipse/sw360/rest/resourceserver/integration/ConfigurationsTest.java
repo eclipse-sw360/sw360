@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -15,10 +16,8 @@ import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -27,18 +26,16 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.InvalidPropertiesFormatException;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -46,7 +43,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
-@RunWith(SpringRunner.class)
 public class ConfigurationsTest extends TestIntegrationBase {
 
     @LocalServerPort
@@ -56,8 +52,8 @@ public class ConfigurationsTest extends TestIntegrationBase {
     private Map<String, String> testConfigsFromDb;
     private Map<String, String> allTestConfigs;
 
-    @Before
-    public void before() throws InvalidPropertiesFormatException {
+    @BeforeEach
+    public void before() throws Exception, InvalidPropertiesFormatException {
         // Setup test configuration data
         testConfigsFromProperties = new HashMap<>();
         testConfigsFromProperties.put("enable.flexible.project.release.relationship", "true");
@@ -104,14 +100,10 @@ public class ConfigurationsTest extends TestIntegrationBase {
 
         // Verify response structure
         String responseBody = response.getBody();
-        assertTrue("Response should contain flexible project configuration",
-                responseBody.contains("enable.flexible.project.release.relationship"));
-        assertTrue("Response should contain SVM component ID",
-                responseBody.contains("svm.component.id"));
-        assertTrue("Response should contain SPDX document configuration",
-                responseBody.contains("spdx.document.enabled"));
-        assertTrue("Response should contain SW360 tool name",
-                responseBody.contains("sw360.tool.name"));
+        assertTrue(responseBody.contains("enable.flexible.project.release.relationship"), "Response should contain flexible project configuration");
+        assertTrue(responseBody.contains("svm.component.id"), "Response should contain SVM component ID");
+        assertTrue(responseBody.contains("spdx.document.enabled"), "Response should contain SPDX document configuration");
+        assertTrue(responseBody.contains("sw360.tool.name"), "Response should contain SW360 tool name");
     }
 
     @Test
@@ -128,12 +120,9 @@ public class ConfigurationsTest extends TestIntegrationBase {
 
         // Verify only changeable configurations (from DB) are returned
         String responseBody = response.getBody();
-        assertTrue("Response should contain SPDX document configuration",
-                responseBody.contains("spdx.document.enabled"));
-        assertTrue("Response should contain SW360 tool name",
-                responseBody.contains("sw360.tool.name"));
-        assertFalse("Response should not contain properties configurations",
-                responseBody.contains("enable.flexible.project.release.relationship"));
+        assertTrue(responseBody.contains("spdx.document.enabled"), "Response should contain SPDX document configuration");
+        assertTrue(responseBody.contains("sw360.tool.name"), "Response should contain SW360 tool name");
+        assertFalse(responseBody.contains("enable.flexible.project.release.relationship"), "Response should not contain properties configurations");
     }
 
     @Test
@@ -150,12 +139,9 @@ public class ConfigurationsTest extends TestIntegrationBase {
 
         // Verify only non-changeable configurations (from properties) are returned
         String responseBody = response.getBody();
-        assertTrue("Response should contain flexible project configuration",
-                responseBody.contains("enable.flexible.project.release.relationship"));
-        assertTrue("Response should contain SVM component ID",
-                responseBody.contains("svm.component.id"));
-        assertFalse("Response should not contain DB configurations",
-                responseBody.contains("spdx.document.enabled"));
+        assertTrue(responseBody.contains("enable.flexible.project.release.relationship"), "Response should contain flexible project configuration");
+        assertTrue(responseBody.contains("svm.component.id"), "Response should contain SVM component ID");
+        assertFalse(responseBody.contains("spdx.document.enabled"), "Response should not contain DB configurations");
     }
 
     // ========== UPDATE CONFIGURATIONS TESTS ==========
@@ -182,8 +168,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain success message",
-                responseBody.contains("Configurations are updated successfully"));
+        assertTrue(responseBody.contains("Configurations are updated successfully"), "Response should contain success message");
     }
 
     @Test
@@ -208,8 +193,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain unauthorized message",
-                responseBody.contains("Unauthorized") || responseBody.contains("unauthorized"));
+        assertTrue(responseBody.contains("Unauthorized") || responseBody.contains("unauthorized"), "Response should contain unauthorized message");
     }
 
     @Test
@@ -235,8 +219,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain invalid input message",
-                responseBody.contains("Invalid configurations") || responseBody.contains("unable to find DB container"));
+        assertTrue(responseBody.contains("Invalid configurations") || responseBody.contains("unable to find DB container"), "Response should contain invalid input message");
     }
 
     @Test
@@ -262,8 +245,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain in-use message",
-                responseBody.contains("being updated by another administrator"));
+        assertTrue(responseBody.contains("being updated by another administrator"), "Response should contain in-use message");
     }
 
     // ========== CONTAINER-SPECIFIC CONFIGURATIONS TESTS ==========
@@ -281,10 +263,8 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain container configurations",
-                responseBody.contains("spdx.document.enabled"));
-        assertTrue("Response should contain SW360 tool name",
-                responseBody.contains("sw360.tool.name"));
+        assertTrue(responseBody.contains("spdx.document.enabled"), "Response should contain container configurations");
+        assertTrue(responseBody.contains("sw360.tool.name"), "Response should contain SW360 tool name");
     }
 
     @Test
@@ -300,10 +280,8 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain container configurations",
-                responseBody.contains("spdx.document.enabled"));
-        assertTrue("Response should contain SW360 tool name",
-                responseBody.contains("sw360.tool.name"));
+        assertTrue(responseBody.contains("spdx.document.enabled"), "Response should contain container configurations");
+        assertTrue(responseBody.contains("sw360.tool.name"), "Response should contain SW360 tool name");
     }
 
     @Test
@@ -326,8 +304,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain success message",
-                responseBody.contains("Configurations are updated successfully"));
+        assertTrue(responseBody.contains("Configurations are updated successfully"), "Response should contain success message");
     }
 
     @Test
@@ -363,8 +340,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
                         any());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain success message",
-                responseBody.contains("Configurations are updated successfully"));
+        assertTrue(responseBody.contains("Configurations are updated successfully"), "Response should contain success message");
     }
 
     @Test
@@ -387,8 +363,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain success message",
-                responseBody.contains("Configurations are updated successfully"));
+        assertTrue(responseBody.contains("Configurations are updated successfully"), "Response should contain success message");
     }
 
     @Test
@@ -413,8 +388,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain unauthorized message",
-                responseBody.contains("Unauthorized") || responseBody.contains("unauthorized"));
+        assertTrue(responseBody.contains("Unauthorized") || responseBody.contains("unauthorized"), "Response should contain unauthorized message");
     }
 
     // ========== EXCEPTION COVERAGE TESTS ==========
@@ -435,8 +409,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Response should contain error information");
     }
 
     @Test
@@ -462,8 +435,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Response should contain error information");
     }
 
     @Test
@@ -482,8 +454,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Response should contain error information");
     }
 
     @Test
@@ -509,8 +480,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Response should contain error information");
     }
 
     @Test
@@ -538,8 +508,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain InvalidPropertiesFormatException message",
-                responseBody.contains("Invalid configuration format"));
+        assertTrue(responseBody.contains("Invalid configuration format"), "Response should contain InvalidPropertiesFormatException message");
     }
 
     @Test
@@ -567,7 +536,6 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain InvalidPropertiesFormatException message",
-                responseBody.contains("Invalid container configuration format"));
+        assertTrue(responseBody.contains("Invalid container configuration format"), "Response should contain InvalidPropertiesFormatException message");
     }
 }

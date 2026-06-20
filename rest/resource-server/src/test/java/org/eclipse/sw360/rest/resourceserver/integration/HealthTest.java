@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra 2025.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -11,9 +12,8 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -22,16 +22,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class HealthTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
@@ -40,8 +37,8 @@ public class HealthTest extends TestIntegrationBase {
     @MockitoBean
     private SW360RestHealthIndicator restHealthIndicatorMock;
 
-    @Before
-    public void before() {
+    @BeforeEach
+    public void before() throws Exception {
         // Setup default healthy state
         SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
         restState.isHealthServiceReachable = true;
@@ -66,15 +63,16 @@ public class HealthTest extends TestIntegrationBase {
 
         // Verify the response contains health data
         String responseBody = response.getBody();
-        assertTrue("Response should contain status", responseBody.contains("status"));
-        assertTrue("Response should contain components", responseBody.contains("components"));
-        assertTrue("Response should contain diskSpace", responseBody.contains("diskSpace"));
-        assertTrue("Response should contain ping", responseBody.contains("ping"));
-        assertTrue("Response should contain total", responseBody.contains("total"));
-        assertTrue("Response should contain free", responseBody.contains("free"));
-        assertTrue("Response should contain threshold", responseBody.contains("threshold"));
-        assertTrue("Response should contain path", responseBody.contains("path"));
-        assertTrue("Response should contain exists", responseBody.contains("exists"));
+        assert responseBody != null;
+        assertTrue(responseBody.contains("status"), "Response should contain status");
+        assertTrue(responseBody.contains("components"), "Response should contain components");
+        assertTrue(responseBody.contains("diskSpace"), "Response should contain diskSpace");
+        assertTrue(responseBody.contains("ping"), "Response should contain ping");
+        assertTrue(responseBody.contains("total"), "Response should contain total");
+        assertTrue(responseBody.contains("free"), "Response should contain free");
+        assertTrue(responseBody.contains("threshold"), "Response should contain threshold");
+        assertTrue(responseBody.contains("path"), "Response should contain path");
+        assertTrue(responseBody.contains("exists"), "Response should contain exists");
     }
 
     @Test
@@ -102,15 +100,16 @@ public class HealthTest extends TestIntegrationBase {
 
         // Verify the response contains health data
         String responseBody = response.getBody();
-        assertTrue("Response should contain status", responseBody.contains("status"));
-        assertTrue("Response should contain components", responseBody.contains("components"));
-        assertTrue("Response should contain diskSpace", responseBody.contains("diskSpace"));
-        assertTrue("Response should contain ping", responseBody.contains("ping"));
-        assertTrue("Response should contain total", responseBody.contains("total"));
-        assertTrue("Response should contain free", responseBody.contains("free"));
-        assertTrue("Response should contain threshold", responseBody.contains("threshold"));
-        assertTrue("Response should contain path", responseBody.contains("path"));
-        assertTrue("Response should contain exists", responseBody.contains("exists"));
+        assert responseBody != null;
+        assertTrue(responseBody.contains("status"), "Response should contain status");
+        assertTrue(responseBody.contains("components"), "Response should contain components");
+        assertTrue(responseBody.contains("diskSpace"), "Response should contain diskSpace");
+        assertTrue(responseBody.contains("ping"), "Response should contain ping");
+        assertTrue(responseBody.contains("total"), "Response should contain total");
+        assertTrue(responseBody.contains("free"), "Response should contain free");
+        assertTrue(responseBody.contains("threshold"), "Response should contain threshold");
+        assertTrue(responseBody.contains("path"), "Response should contain path");
+        assertTrue(responseBody.contains("exists"), "Response should contain exists");
     }
 
     @Test
@@ -126,7 +125,8 @@ public class HealthTest extends TestIntegrationBase {
 
         // Verify the response contains health data
         String responseBody = response.getBody();
-        assertTrue("Response should contain status", responseBody.contains("status"));
-        assertTrue("Response should contain components", responseBody.contains("components"));
+        assert responseBody != null;
+        assertTrue(responseBody.contains("status"), "Response should contain status");
+        assertTrue(responseBody.contains("components"), "Response should contain components");
     }
 }

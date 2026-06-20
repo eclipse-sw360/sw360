@@ -1,6 +1,7 @@
 /*
  * Copyright Bosch Software Innovations GmbH, 2018.
  * Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -36,17 +37,9 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
-import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
-import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
-import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.hateoas.CollectionModel;
@@ -57,8 +50,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.core.io.ByteArrayResource;
@@ -84,56 +75,27 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ReleaseTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     @SuppressWarnings("unused")
     private int port;
 
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360LicenseService licenseServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360AttachmentService attachmentServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private SW360PackageService packageServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360VulnerabilityService vulnerabilityServiceMock;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360VendorService sw360VendorService;
-
-    @MockitoBean
-    @SuppressWarnings("unused")
-    private Sw360LicenseInfoService licenseInfoMockService;
-
     private Release release;
     public static String attachmentShaInvalid = "999";
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         Attachment attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
@@ -687,9 +649,7 @@ public class ReleaseTest extends TestIntegrationBase {
 
     @Test
     public void should_link_releases_to_release() throws IOException, TException {
-        assumeTrue("Not running since Releases cannot be interlinked",
-                SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
-
+        assumeTrue(SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, "Not running since Releases cannot be interlinked");
         given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
 
         HttpHeaders headers = getHeaders(port);

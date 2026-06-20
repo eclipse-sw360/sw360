@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -18,11 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.ByteArrayResource;
@@ -32,33 +30,27 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
 import java.util.Objects;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringRunner.class)
 public class ImportExportTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
 
-    @MockitoBean
-    private Sw360ImportExportService importExportServiceMock;
-
-    @Before
+    @BeforeEach
     public void before() throws TException, ServletException, IOException {
         // Setup successful responses with detailed data
         RequestSummary successSummary = new RequestSummary();
@@ -154,14 +146,13 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers indicate file download
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertTrue("Should be CSV content",
-                Objects.requireNonNull(responseHeaders.getFirst("Content-Disposition")).contains("test.csv"));
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertTrue(Objects.requireNonNull(responseHeaders.getFirst("Content-Disposition")).contains("test.csv"), "Should be CSV content");
 
         // Verify response body contains CSV data
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("test,csv,data"));
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("test,csv,data"), "Response should contain CSV data");
     }
 
     @Test
@@ -177,22 +168,20 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertNotNull("Should have Content-Type header", responseHeaders.getFirst("Content-Type"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertNotNull(responseHeaders.getFirst("Content-Type"), "Should have Content-Type header");
 
         // Verify response body
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("attachment,template,data"));
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("attachment,template,data"), "Response should contain CSV data");
 
         // Verify specific header values
         String contentDisposition = responseHeaders.getFirst("Content-Disposition");
         assertNotNull(contentDisposition);
-        assertTrue("Content-Disposition should indicate attachment",
-                contentDisposition.contains("attachment"));
-        assertTrue("Content-Disposition should specify filename",
-                contentDisposition.contains("attachment_template.csv"));
+        assertTrue(contentDisposition.contains("attachment"), "Content-Disposition should indicate attachment");
+        assertTrue(contentDisposition.contains("attachment_template.csv"), "Content-Disposition should specify filename");
     }
 
     @Test
@@ -208,22 +197,20 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertNotNull("Should have Content-Type header", responseHeaders.getFirst("Content-Type"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertNotNull(responseHeaders.getFirst("Content-Type"), "Should have Content-Type header");
 
         // Verify response body
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("attachment,info,data"));
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("attachment,info,data"), "Response should contain CSV data");
 
         // Verify specific header values
         String contentDisposition = responseHeaders.getFirst("Content-Disposition");
         assertNotNull(contentDisposition);
-        assertTrue("Content-Disposition should indicate attachment",
-                contentDisposition.contains("attachment"));
-        assertTrue("Content-Disposition should specify filename",
-                contentDisposition.contains("attachment_info.csv"));
+        assertTrue(contentDisposition.contains("attachment"), "Content-Disposition should indicate attachment");
+        assertTrue(contentDisposition.contains("attachment_info.csv"), "Content-Disposition should specify filename");
     }
 
     @Test
@@ -239,22 +226,20 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertNotNull("Should have Content-Type header", responseHeaders.getFirst("Content-Type"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertNotNull(responseHeaders.getFirst("Content-Type"), "Should have Content-Type header");
 
         // Verify response body
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("release,sample,data"));
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("release,sample,data"), "Response should contain CSV data");
 
         // Verify specific header values
         String contentDisposition = responseHeaders.getFirst("Content-Disposition");
         assertNotNull(contentDisposition);
-        assertTrue("Content-Disposition should indicate attachment",
-                contentDisposition.contains("attachment"));
-        assertTrue("Content-Disposition should specify filename",
-                contentDisposition.contains("release_sample.csv"));
+        assertTrue(contentDisposition.contains("attachment"), "Content-Disposition should indicate attachment");
+        assertTrue(contentDisposition.contains("release_sample.csv"), "Content-Disposition should specify filename");
     }
 
     @Test
@@ -270,22 +255,20 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertNotNull("Should have Content-Type header", responseHeaders.getFirst("Content-Type"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertNotNull(responseHeaders.getFirst("Content-Type"), "Should have Content-Type header");
 
         // Verify response body
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("release,link,data"));
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("release,link,data"), "Response should contain CSV data");
 
         // Verify specific header values
         String contentDisposition = responseHeaders.getFirst("Content-Disposition");
         assertNotNull(contentDisposition);
-        assertTrue("Content-Disposition should indicate attachment",
-                contentDisposition.contains("attachment"));
-        assertTrue("Content-Disposition should specify filename",
-                contentDisposition.contains("release_link.csv"));
+        assertTrue(contentDisposition.contains("attachment"), "Content-Disposition should indicate attachment");
+        assertTrue(contentDisposition.contains("release_link.csv"), "Content-Disposition should specify filename");
     }
 
     @Test
@@ -301,22 +284,20 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertNotNull("Should have Content-Type header", responseHeaders.getFirst("Content-Type"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertNotNull(responseHeaders.getFirst("Content-Type"), "Should have Content-Type header");
 
         // Verify response body
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("component,details,data"));
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("component,details,data"), "Response should contain CSV data");
 
         // Verify specific header values
         String contentDisposition = responseHeaders.getFirst("Content-Disposition");
         assertNotNull(contentDisposition);
-        assertTrue("Content-Disposition should indicate attachment",
-                contentDisposition.contains("attachment"));
-        assertTrue("Content-Disposition should specify filename",
-                contentDisposition.contains("component_details.csv"));
+        assertTrue(contentDisposition.contains("attachment"), "Content-Disposition should indicate attachment");
+        assertTrue(contentDisposition.contains("component_details.csv"), "Content-Disposition should specify filename");
     }
 
     @Test
@@ -332,22 +313,20 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertNotNull("Should have Content-Type header", responseHeaders.getFirst("Content-Type"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertNotNull(responseHeaders.getFirst("Content-Type"), "Should have Content-Type header");
 
         // Verify response body
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("users,data,export"));
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("users,data,export"), "Response should contain CSV data");
 
         // Verify specific header values
         String contentDisposition = responseHeaders.getFirst("Content-Disposition");
         assertNotNull(contentDisposition);
-        assertTrue("Content-Disposition should indicate attachment",
-                contentDisposition.contains("attachment"));
-        assertTrue("Content-Disposition should specify filename",
-                contentDisposition.contains("users.csv"));
+        assertTrue(contentDisposition.contains("attachment"), "Content-Disposition should indicate attachment");
+        assertTrue(contentDisposition.contains("users.csv"), "Content-Disposition should specify filename");
     }
 
     @Test
@@ -376,7 +355,7 @@ public class ImportExportTest extends TestIntegrationBase {
                         RequestSummary.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Assert.assertNotNull(response.getBody());
+        assertNotNull(response.getBody());
         assertEquals(RequestStatus.SUCCESS, response.getBody().getRequestStatus());
     }
 
@@ -406,7 +385,7 @@ public class ImportExportTest extends TestIntegrationBase {
                         RequestSummary.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Assert.assertNotNull(response.getBody());
+        assertNotNull(response.getBody());
         assertEquals(RequestStatus.SUCCESS, response.getBody().getRequestStatus());
     }
 
@@ -436,7 +415,7 @@ public class ImportExportTest extends TestIntegrationBase {
                         RequestSummary.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Assert.assertNotNull(response.getBody());
+        assertNotNull(response.getBody());
         assertEquals(RequestStatus.SUCCESS, response.getBody().getRequestStatus());
     }
 
@@ -526,20 +505,19 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Comprehensive response verification
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Assert.assertNotNull(response.getBody());
+        assertNotNull(response.getBody());
 
         RequestSummary responseBody = response.getBody();
         assertEquals(RequestStatus.SUCCESS, responseBody.getRequestStatus());
-        assertEquals("Operation completed successfully", responseBody.getMessage());
+        assertEquals(responseBody.getMessage(), "Operation completed successfully");
         assertEquals(5, responseBody.getTotalElements());
         assertEquals(5, responseBody.getTotalAffectedElements());
 
         // Verify the response structure is complete
-        assertEquals("Response should indicate success", RequestStatus.SUCCESS, responseBody.getRequestStatus());
-        assertTrue("Response should have a meaningful message",
-                responseBody.getMessage() != null && !responseBody.getMessage().isEmpty());
-        assertTrue("Total elements should be positive", responseBody.getTotalElements() > 0);
-        assertTrue("Affected elements should be positive", responseBody.getTotalAffectedElements() > 0);
+        assertEquals(RequestStatus.SUCCESS, responseBody.getRequestStatus(), "Response should indicate success");
+        assertTrue(responseBody.getMessage() != null && !responseBody.getMessage().isEmpty(), "Response should have a meaningful message");
+        assertTrue(responseBody.getTotalElements() > 0, "Total elements should be positive");
+        assertTrue(responseBody.getTotalAffectedElements() > 0, "Affected elements should be positive");
     }
 
     @Test
@@ -555,23 +533,21 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Verify response headers
         HttpHeaders responseHeaders = response.getHeaders();
-        assertNotNull("Response headers should not be null", responseHeaders);
-        assertNotNull("Should have Content-Disposition header", responseHeaders.getFirst("Content-Disposition"));
-        assertNotNull("Should have Content-Type header", responseHeaders.getFirst("Content-Type"));
+        assertNotNull(responseHeaders, "Response headers should not be null");
+        assertNotNull(responseHeaders.getFirst("Content-Disposition"), "Should have Content-Disposition header");
+        assertNotNull(responseHeaders.getFirst("Content-Type"), "Should have Content-Type header");
 
         // Verify response body
         String responseBody = response.getBody();
-        assertNotNull("Response body should not be null", responseBody);
-        assertTrue("Response should contain CSV data", responseBody.contains("test,csv,data"));
-        assertTrue("Response should not be empty", !responseBody.isEmpty());
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody.contains("test,csv,data"), "Response should contain CSV data");
+        assertTrue(!responseBody.isEmpty(), "Response should not be empty");
 
         // Verify specific header values
         String contentDisposition = responseHeaders.getFirst("Content-Disposition");
         assertNotNull(contentDisposition);
-        assertTrue("Content-Disposition should indicate attachment",
-                contentDisposition.contains("attachment"));
-        assertTrue("Content-Disposition should specify filename",
-                contentDisposition.contains("filename"));
+        assertTrue(contentDisposition.contains("attachment"), "Content-Disposition should indicate attachment");
+        assertTrue(contentDisposition.contains("filename"), "Content-Disposition should specify filename");
     }
 
     @Test
@@ -603,35 +579,33 @@ public class ImportExportTest extends TestIntegrationBase {
                         RequestSummary.class);
 
         // Comprehensive response assertions
-        assertEquals("HTTP status should be OK", HttpStatus.OK, response.getStatusCode());
-        Assert.assertNotNull("Response body should not be null", response.getBody());
+        assertEquals(HttpStatus.OK, response.getStatusCode(), "HTTP status should be OK");
+        assertNotNull(response.getBody(), "Response body should not be null");
 
         RequestSummary responseBody = response.getBody();
 
         // Verify RequestStatus
-        assertEquals("Request status should be SUCCESS", RequestStatus.SUCCESS, responseBody.getRequestStatus());
-        assertEquals("Request status should indicate success", RequestStatus.SUCCESS, responseBody.getRequestStatus());
+        assertEquals(RequestStatus.SUCCESS, responseBody.getRequestStatus(), "Request status should be SUCCESS");
+        assertEquals(RequestStatus.SUCCESS, responseBody.getRequestStatus(), "Request status should indicate success");
 
         // Verify message content
-        assertEquals("Message should match expected", "Operation completed successfully", responseBody.getMessage());
-        assertNotNull("Message should not be null", responseBody.getMessage());
-        assertFalse("Message should not be empty", responseBody.getMessage().isEmpty());
-        assertTrue("Message should contain 'completed'", responseBody.getMessage().contains("completed"));
+        assertEquals(responseBody.getMessage(), "Operation completed successfully");
+        assertNotNull(responseBody.getMessage(), "Message should not be null");
+        assertFalse(responseBody.getMessage().isEmpty(), "Message should not be empty");
+        assertTrue(responseBody.getMessage().contains("completed"), "Message should contain 'completed'");
 
         // Verify element counts
-        assertEquals("Total elements should be 5", 5, responseBody.getTotalElements());
-        assertEquals("Affected elements should be 5", 5, responseBody.getTotalAffectedElements());
-        assertTrue("Total elements should be positive", responseBody.getTotalElements() > 0);
-        assertTrue("Affected elements should be positive", responseBody.getTotalAffectedElements() > 0);
-        assertTrue("Affected elements should not exceed total elements",
-                responseBody.getTotalAffectedElements() <= responseBody.getTotalElements());
+        assertEquals(5, responseBody.getTotalElements(), "Total elements should be 5");
+        assertEquals(5, responseBody.getTotalAffectedElements(), "Affected elements should be 5");
+        assertTrue(responseBody.getTotalElements() > 0, "Total elements should be positive");
+        assertTrue(responseBody.getTotalAffectedElements() > 0, "Affected elements should be positive");
+        assertTrue(responseBody.getTotalAffectedElements() <= responseBody.getTotalElements(), "Affected elements should not exceed total elements");
 
         // Verify response structure integrity
-        assertTrue("Response should be complete",
-                responseBody.isSetRequestStatus() &&
-                        responseBody.isSetMessage() &&
-                        responseBody.isSetTotalElements() &&
-                        responseBody.isSetTotalAffectedElements());
+        assertTrue(responseBody.isSetRequestStatus() &&
+                responseBody.isSetMessage() &&
+                responseBody.isSetTotalElements() &&
+                responseBody.isSetTotalAffectedElements(), "Response should be complete");
     }
 
     @Test
@@ -651,17 +625,15 @@ public class ImportExportTest extends TestIntegrationBase {
                         String.class);
 
         // Verify error response
-        assertEquals("HTTP status should be BAD_REQUEST",
-                HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), "HTTP status should be BAD_REQUEST");
 
         // Verify error response body
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertFalse("Error response should not be empty", responseBody.isEmpty());
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertFalse(responseBody.isEmpty(), "Error response should not be empty");
 
         // Verify error response structure (JSON error response)
-        assertTrue("Error response should contain error information",
-                responseBody.contains("error") || responseBody.contains("message") || responseBody.contains("status"));
+        assertTrue(responseBody.contains("error") || responseBody.contains("message") || responseBody.contains("status"), "Error response should contain error information");
     }
 
 
@@ -684,9 +656,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain IO exception message",
-                responseBody.contains("Error downloading component template"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading component template"), "Error response should contain IO exception message");
     }
 
     @Test
@@ -706,9 +677,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain IO exception message",
-                responseBody.contains("Error downloading attachment sample"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading attachment sample"), "Error response should contain IO exception message");
     }
 
     @Test
@@ -728,9 +698,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain IO exception message",
-                responseBody.contains("Error downloading attachment info"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading attachment info"), "Error response should contain IO exception message");
     }
 
     @Test
@@ -750,9 +719,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain TException message",
-                responseBody.contains("Error downloading release sample"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading release sample"), "Error response should contain TException message");
     }
 
     @Test
@@ -772,9 +740,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain IO exception message",
-                responseBody.contains("Error downloading release sample"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading release sample"), "Error response should contain IO exception message");
     }
 
     @Test
@@ -794,9 +761,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain TException message",
-                responseBody.contains("Error downloading release link"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading release link"), "Error response should contain TException message");
     }
 
     @Test
@@ -816,9 +782,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain IO exception message",
-                responseBody.contains("Error downloading release link"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading release link"), "Error response should contain IO exception message");
     }
 
     @Test
@@ -838,9 +803,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain TException message",
-                responseBody.contains("Error downloading component"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading component"), "Error response should contain TException message");
     }
 
     @Test
@@ -860,9 +824,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain IO exception message",
-                responseBody.contains("Error downloading component"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error downloading component"), "Error response should contain IO exception message");
     }
 
     @Test
@@ -882,9 +845,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain TException message",
-                responseBody.contains("Error download users"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error download users"), "Error response should contain TException message");
     }
 
     @Test
@@ -904,9 +866,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain IO exception message",
-                responseBody.contains("Error download users"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("Error download users"), "Error response should contain IO exception message");
     }
 
     @Test
@@ -941,9 +902,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain exception information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Error response should contain exception information");
     }
 
     @Test
@@ -978,9 +938,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain exception information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Error response should contain exception information");
     }
 
     @Test
@@ -1015,9 +974,8 @@ public class ImportExportTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
         String responseBody = response.getBody();
-        assertNotNull("Error response body should not be null", responseBody);
-        assertTrue("Error response should contain exception information",
-                responseBody.contains("error") || responseBody.contains("message"));
+        assertNotNull(responseBody, "Error response body should not be null");
+        assertTrue(responseBody.contains("error") || responseBody.contains("message"), "Error response should contain exception information");
     }
 
 }

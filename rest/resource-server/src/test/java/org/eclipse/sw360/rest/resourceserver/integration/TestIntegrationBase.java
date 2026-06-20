@@ -13,12 +13,33 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
+import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.cache.ApiResponseCacheManager;
+import org.eclipse.sw360.rest.resourceserver.changelog.Sw360ChangeLogService;
+import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
+import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
+import org.eclipse.sw360.rest.resourceserver.databasesanitation.Sw360DatabaseSanitationService;
+import org.eclipse.sw360.rest.resourceserver.department.Sw360DepartmentService;
+import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
+import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
+import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
+import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
+import org.eclipse.sw360.rest.resourceserver.schedule.Sw360ScheduleService;
+import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.junit.Before;
+import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -28,6 +49,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -40,7 +62,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @SpringBootTest(classes = Sw360ResourceServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration
 abstract public class TestIntegrationBase {
 
     private static final String AUTH_BASIC = "Basic ";
@@ -57,9 +78,74 @@ abstract public class TestIntegrationBase {
     @MockitoBean
     protected SW360ConfigurationsService sw360ConfigurationsServiceMock;
 
+    @MockitoBean
+    protected Sw360AttachmentService attachmentServiceMock;
+
+    @MockitoBean
+    protected Sw360ReleaseService releaseServiceMock;
+
+    @MockitoBean
+    protected ApiResponseCacheManager cacheManagerMock;
+
+    @MockitoBean
+    protected Sw360ChangeLogService changeLogServiceMock;
+
+    @MockitoBean
+    protected Sw360ClearingRequestService clearingServiceMock;
+
+    @MockitoBean
+    protected Sw360ProjectService projectServiceMock;
+
+    @MockitoBean
+    protected Sw360ModerationRequestService moderationServiceMock;
+
+    @MockitoSpyBean
+    protected Sw360ComponentService componentServiceMock;
+
+    @MockitoBean
+    protected SW360ReportService sw360ReportServiceMock;
+
+    @MockitoBean
+    protected Sw360DatabaseSanitationService sanitationServiceMock;
+
+    @MockitoBean
+    protected Sw360DepartmentService departmentServiceMock;
+
+    @MockitoBean
+    protected SW360RestHealthIndicator restHealthIndicatorMock;
+
+    @MockitoBean
+    protected Sw360ImportExportService importExportServiceMock;
+
+    @MockitoBean
+    protected Sw360LicenseService licenseServiceMock;
+
+    @MockitoBean
+    protected Sw360ObligationService obligationServiceMock;
+
+    @MockitoBean
+    protected SW360PackageService packageServiceMock;
+
+    @MockitoBean
+    protected Sw360LicenseInfoService licenseInfoMockService;
+
+    @MockitoBean
+    protected Sw360VulnerabilityService vulnerabilityServiceMock;
+
+    @MockitoBean
+    protected Sw360LicenseService sw360LicenseServiceMock;
+
+    @MockitoBean
+    protected Sw360VendorService sw360VendorService;
+
+    @MockitoBean
+    protected Sw360ScheduleService scheduleServiceMock;
+
+    @MockitoBean
+    protected Sw360SearchService searchServiceMock;
 
 
-    @Before
+    @BeforeEach
     public void setupMockerUser(){
         when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenReturn(new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
     }

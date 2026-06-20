@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -18,11 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
@@ -31,8 +29,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,9 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -52,24 +48,16 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringRunner.class)
 public class PackageTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
 
-    @MockitoBean
-    private SW360PackageService packageServiceMock;
-
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
-
-
     private Package package1, package2, package3;
     private Set<String> licenseIds;
     private ObjectMapper objectMapper;
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
         // Setup object mapper
         objectMapper = new ObjectMapper();
@@ -184,12 +172,12 @@ public class PackageTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded packages", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:packages", responseBody.contains("sw360:packages"));
-        assertTrue("Response should contain pagination info", responseBody.contains("page"));
-        assertTrue("Response should contain totalElements", responseBody.contains("totalElements"));
-        assertTrue("Response should contain angular-sanitize package", responseBody.contains("angular-sanitize"));
-        assertTrue("Response should contain applicationinsights-web package", responseBody.contains("applicationinsights-web"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded packages");
+        assertTrue(responseBody.contains("sw360:packages"), "Response should contain sw360:packages");
+        assertTrue(responseBody.contains("page"), "Response should contain pagination info");
+        assertTrue(responseBody.contains("totalElements"), "Response should contain totalElements");
+        assertTrue(responseBody.contains("angular-sanitize"), "Response should contain angular-sanitize package");
+        assertTrue(responseBody.contains("applicationinsights-web"), "Response should contain applicationinsights-web package");
     }
 
     @Test
@@ -205,19 +193,19 @@ public class PackageTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded packages", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:packages", responseBody.contains("sw360:packages"));
-        assertTrue("Response should contain package IDs", responseBody.contains("id"));
-        assertTrue("Response should contain package names", responseBody.contains("name"));
-        assertTrue("Response should contain package versions", responseBody.contains("version"));
-        assertTrue("Response should contain package types", responseBody.contains("packageType"));
-        assertTrue("Response should contain created dates", responseBody.contains("createdOn"));
-        assertTrue("Response should contain package managers", responseBody.contains("packageManager"));
-        assertTrue("Response should contain PURLs", responseBody.contains("purl"));
-        assertTrue("Response should contain VCS URLs", responseBody.contains("vcs"));
-        assertTrue("Response should contain homepage URLs", responseBody.contains("homepageUrl"));
-        assertTrue("Response should contain license IDs", responseBody.contains("licenseIds"));
-        assertTrue("Response should contain descriptions", responseBody.contains("description"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded packages");
+        assertTrue(responseBody.contains("sw360:packages"), "Response should contain sw360:packages");
+        assertTrue(responseBody.contains("id"), "Response should contain package IDs");
+        assertTrue(responseBody.contains("name"), "Response should contain package names");
+        assertTrue(responseBody.contains("version"), "Response should contain package versions");
+        assertTrue(responseBody.contains("packageType"), "Response should contain package types");
+        assertTrue(responseBody.contains("createdOn"), "Response should contain created dates");
+        assertTrue(responseBody.contains("packageManager"), "Response should contain package managers");
+        assertTrue(responseBody.contains("purl"), "Response should contain PURLs");
+        assertTrue(responseBody.contains("vcs"), "Response should contain VCS URLs");
+        assertTrue(responseBody.contains("homepageUrl"), "Response should contain homepage URLs");
+        assertTrue(responseBody.contains("licenseIds"), "Response should contain license IDs");
+        assertTrue(responseBody.contains("description"), "Response should contain descriptions");
     }
 
     @Test
@@ -233,20 +221,20 @@ public class PackageTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain package ID", responseBody.contains("id"));
-        assertTrue("Response should contain package name", responseBody.contains("name"));
-        assertTrue("Response should contain package version", responseBody.contains("version"));
-        assertTrue("Response should contain package type", responseBody.contains("packageType"));
-        assertTrue("Response should contain created date", responseBody.contains("createdOn"));
-        assertTrue("Response should contain package manager", responseBody.contains("packageManager"));
-        assertTrue("Response should contain PURL", responseBody.contains("purl"));
-        assertTrue("Response should contain VCS URL", responseBody.contains("vcs"));
-        assertTrue("Response should contain homepage URL", responseBody.contains("homepageUrl"));
-        assertTrue("Response should contain license IDs", responseBody.contains("licenseIds"));
-        assertTrue("Response should contain release ID", responseBody.contains("releaseId"));
-        assertTrue("Response should contain description", responseBody.contains("description"));
-        assertTrue("Response should contain angular-sanitize", responseBody.contains("angular-sanitize"));
-        assertTrue("Response should contain 1.8.2", responseBody.contains("1.8.2"));
+        assertTrue(responseBody.contains("id"), "Response should contain package ID");
+        assertTrue(responseBody.contains("name"), "Response should contain package name");
+        assertTrue(responseBody.contains("version"), "Response should contain package version");
+        assertTrue(responseBody.contains("packageType"), "Response should contain package type");
+        assertTrue(responseBody.contains("createdOn"), "Response should contain created date");
+        assertTrue(responseBody.contains("packageManager"), "Response should contain package manager");
+        assertTrue(responseBody.contains("purl"), "Response should contain PURL");
+        assertTrue(responseBody.contains("vcs"), "Response should contain VCS URL");
+        assertTrue(responseBody.contains("homepageUrl"), "Response should contain homepage URL");
+        assertTrue(responseBody.contains("licenseIds"), "Response should contain license IDs");
+        assertTrue(responseBody.contains("releaseId"), "Response should contain release ID");
+        assertTrue(responseBody.contains("description"), "Response should contain description");
+        assertTrue(responseBody.contains("angular-sanitize"), "Response should contain angular-sanitize");
+        assertTrue(responseBody.contains("1.8.2"), "Response should contain 1.8.2");
     }
 
     @Test
@@ -277,20 +265,20 @@ public class PackageTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain package ID", responseBody.contains("id"));
-        assertTrue("Response should contain package name", responseBody.contains("name"));
-        assertTrue("Response should contain package version", responseBody.contains("version"));
-        assertTrue("Response should contain package type", responseBody.contains("packageType"));
-        assertTrue("Response should contain created date", responseBody.contains("createdOn"));
-        assertTrue("Response should contain package manager", responseBody.contains("packageManager"));
-        assertTrue("Response should contain PURL", responseBody.contains("purl"));
-        assertTrue("Response should contain VCS URL", responseBody.contains("vcs"));
-        assertTrue("Response should contain homepage URL", responseBody.contains("homepageUrl"));
-        assertTrue("Response should contain license IDs", responseBody.contains("licenseIds"));
-        assertTrue("Response should contain release ID", responseBody.contains("releaseId"));
-        assertTrue("Response should contain description", responseBody.contains("description"));
-        assertTrue("Response should contain _links", responseBody.contains("_links"));
-        assertTrue("Response should contain _embedded", responseBody.contains("_embedded"));
+        assertTrue(responseBody.contains("id"), "Response should contain package ID");
+        assertTrue(responseBody.contains("name"), "Response should contain package name");
+        assertTrue(responseBody.contains("version"), "Response should contain package version");
+        assertTrue(responseBody.contains("packageType"), "Response should contain package type");
+        assertTrue(responseBody.contains("createdOn"), "Response should contain created date");
+        assertTrue(responseBody.contains("packageManager"), "Response should contain package manager");
+        assertTrue(responseBody.contains("purl"), "Response should contain PURL");
+        assertTrue(responseBody.contains("vcs"), "Response should contain VCS URL");
+        assertTrue(responseBody.contains("homepageUrl"), "Response should contain homepage URL");
+        assertTrue(responseBody.contains("licenseIds"), "Response should contain license IDs");
+        assertTrue(responseBody.contains("releaseId"), "Response should contain release ID");
+        assertTrue(responseBody.contains("description"), "Response should contain description");
+        assertTrue(responseBody.contains("_links"), "Response should contain _links");
+        assertTrue(responseBody.contains("_embedded"), "Response should contain _embedded");
     }
 
     @Test
@@ -314,20 +302,20 @@ public class PackageTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain package ID", responseBody.contains("id"));
-        assertTrue("Response should contain package name", responseBody.contains("name"));
-        assertTrue("Response should contain package version", responseBody.contains("version"));
-        assertTrue("Response should contain package type", responseBody.contains("packageType"));
-        assertTrue("Response should contain created date", responseBody.contains("createdOn"));
-        assertTrue("Response should contain package manager", responseBody.contains("packageManager"));
-        assertTrue("Response should contain PURL", responseBody.contains("purl"));
-        assertTrue("Response should contain VCS URL", responseBody.contains("vcs"));
-        assertTrue("Response should contain updated homepage URL", responseBody.contains("https://angularJS.org"));
-        assertTrue("Response should contain updated description", responseBody.contains("Updated Description"));
-        assertTrue("Response should contain license IDs", responseBody.contains("licenseIds"));
-        assertTrue("Response should contain release ID", responseBody.contains("releaseId"));
-        assertTrue("Response should contain _links", responseBody.contains("_links"));
-        assertTrue("Response should contain _embedded", responseBody.contains("_embedded"));
+        assertTrue(responseBody.contains("id"), "Response should contain package ID");
+        assertTrue(responseBody.contains("name"), "Response should contain package name");
+        assertTrue(responseBody.contains("version"), "Response should contain package version");
+        assertTrue(responseBody.contains("packageType"), "Response should contain package type");
+        assertTrue(responseBody.contains("createdOn"), "Response should contain created date");
+        assertTrue(responseBody.contains("packageManager"), "Response should contain package manager");
+        assertTrue(responseBody.contains("purl"), "Response should contain PURL");
+        assertTrue(responseBody.contains("vcs"), "Response should contain VCS URL");
+        assertTrue(responseBody.contains("https://angularJS.org"), "Response should contain updated homepage URL");
+        assertTrue(responseBody.contains("Updated Description"), "Response should contain updated description");
+        assertTrue(responseBody.contains("licenseIds"), "Response should contain license IDs");
+        assertTrue(responseBody.contains("releaseId"), "Response should contain release ID");
+        assertTrue(responseBody.contains("_links"), "Response should contain _links");
+        assertTrue(responseBody.contains("_embedded"), "Response should contain _embedded");
     }
 
     @Test
@@ -357,9 +345,9 @@ public class PackageTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded packages", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:packages", responseBody.contains("sw360:packages"));
-        assertTrue("Response should contain pagination info", responseBody.contains("page"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded packages");
+        assertTrue(responseBody.contains("sw360:packages"), "Response should contain sw360:packages");
+        assertTrue(responseBody.contains("page"), "Response should contain pagination info");
     }
 
     @Test
@@ -375,9 +363,9 @@ public class PackageTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded packages", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:packages", responseBody.contains("sw360:packages"));
-        assertTrue("Response should contain angular-sanitize", responseBody.contains("angular-sanitize"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded packages");
+        assertTrue(responseBody.contains("sw360:packages"), "Response should contain sw360:packages");
+        assertTrue(responseBody.contains("angular-sanitize"), "Response should contain angular-sanitize");
     }
 
     // ========== EXCEPTION HANDLING TESTS ==========
