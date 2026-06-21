@@ -34,9 +34,9 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilitySummary;
@@ -49,12 +49,12 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMapForEcc = generateReleaseMapForEccComparator();
     private static final Map<EccInformation._Fields, Comparator<Release>> eccInfoMap = generateEccInfoMap();
-    private static final Map<Vendor._Fields, Comparator<Vendor>> vendorMap = generateVendorMap();
+    private static final Map<String, Comparator<Vendor>> vendorMap = generateVendorMap();
     private static final Map<License._Fields, Comparator<License>> licenseMap = generateLicenseMap();
     private static final Map<Obligation._Fields, Comparator<Obligation>> obligationMap = generateObligationMap();
     private static final Map<Package._Fields, Comparator<Package>> packageMap = generatePackageMap();
     private static final Map<ReleaseLink._Fields, Comparator<ReleaseLink>> releaseLinkMap = generateReleaseLinkMap();
-    private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
+    private static final Map<String, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
     private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
     private static final Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vDtoMap = generateVulDtoMap();
     private static final Map<Vulnerability._Fields, Comparator<Vulnerability>> vMap = generateVulMap();
@@ -154,10 +154,16 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(eccInfoMap);
     }
 
-    private static Map<Vendor._Fields, Comparator<Vendor>> generateVendorMap() {
-        Map<Vendor._Fields, Comparator<Vendor>> vendorMap = new HashMap<>();
-        vendorMap.put(Vendor._Fields.FULLNAME, Comparator.comparing(Vendor::getFullname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        vendorMap.put(Vendor._Fields.SHORTNAME, Comparator.comparing(Vendor::getShortname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+    private static Map<String, Comparator<Vendor>> generateVendorMap() {
+        Map<String, Comparator<Vendor>> vendorMap = new HashMap<>();
+        Comparator<Vendor> byFullname = Comparator.comparing(
+                Vendor::getFullname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER));
+        Comparator<Vendor> byShortname = Comparator.comparing(
+                Vendor::getShortname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER));
+        vendorMap.put("fullname", byFullname);
+        vendorMap.put("fullName", byFullname);
+        vendorMap.put("shortname", byShortname);
+        vendorMap.put("shortName", byShortname);
         return Collections.unmodifiableMap(vendorMap);
     }
 
@@ -176,10 +182,14 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(releaseLinkMap);
     }
 
-    private static Map<SearchResult._Fields, Comparator<SearchResult>> generateSearchResultMap() {
-        Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = new HashMap<>();
-        searchResultMap.put(SearchResult._Fields.NAME, Comparator.comparing(SearchResult::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        searchResultMap.put(SearchResult._Fields.TYPE, Comparator.comparing(SearchResult::getType, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+    private static Map<String, Comparator<SearchResult>> generateSearchResultMap() {
+        Map<String, Comparator<SearchResult>> searchResultMap = new HashMap<>();
+        Comparator<SearchResult> byName = Comparator.comparing(
+                SearchResult::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER));
+        Comparator<SearchResult> byType = Comparator.comparing(
+                SearchResult::getType, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER));
+        searchResultMap.put("name", byName);
+        searchResultMap.put("type", byType);
         return Collections.unmodifiableMap(searchResultMap);
     }
 
@@ -341,14 +351,7 @@ public class ResourceComparatorGenerator<T> {
                 }
                 return generateReleaseComparatorWithFields(type, releaeFields);
             case SW360Constants.TYPE_VENDOR:
-                List<Vendor._Fields> vendorFields = new ArrayList<>();
-                for(String property:properties) {
-                    Vendor._Fields field = Vendor._Fields.findByName(property);
-                    if (field != null) {
-                        vendorFields.add(field);
-                    }
-                }
-                return generateVendorComparatorWithFields(type, vendorFields);
+                return (Comparator<T>) vendorComparator(properties);
             case SW360Constants.TYPE_PACKAGE:
                 List<Package._Fields> packageFields = new ArrayList<>();
                 for (String property:properties) {
@@ -359,14 +362,7 @@ public class ResourceComparatorGenerator<T> {
                 }
                 return generatePackageComparatorWithFields(type, packageFields);
             case SW360Constants.TYPE_SEARCHRESULT:
-                List<SearchResult._Fields> searchReult = new ArrayList<>();
-                for(String property:properties) {
-                    SearchResult._Fields field = SearchResult._Fields.findByName(property);
-                    if (field != null) {
-                        searchReult.add(field);
-                    }
-                }
-                return generateSearchResultComparatorWithFields(type, searchReult);
+                return (Comparator<T>) searchResultComparator(properties);
             case SW360Constants.TYPE_CHANGELOG:
                 List<ChangeLogs._Fields> changeLogs = new ArrayList<>();
                 for(String property : properties) {
@@ -522,10 +518,11 @@ public class ResourceComparatorGenerator<T> {
         }
     }
 
-    public Comparator<T> generateVendorComparatorWithFields(String type, List<Vendor._Fields> fields) throws ResourceClassNotFoundException {
+    public Comparator<T> generateVendorComparatorWithFields(String type, List<String> properties)
+            throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_VENDOR:
-                return (Comparator<T>)vendorComparator(fields);
+                return (Comparator<T>) vendorComparator(properties);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -549,10 +546,10 @@ public class ResourceComparatorGenerator<T> {
         }
     }
 
-    public Comparator<T> generateSearchResultComparatorWithFields(String type, List<SearchResult._Fields> fields) throws ResourceClassNotFoundException {
+    public Comparator<T> generateSearchResultComparatorWithFields(String type, List<String> properties) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_SEARCHRESULT:
-                return (Comparator<T>)searchResultComparator(fields);
+                return (Comparator<T>) searchResultComparator(properties);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -703,11 +700,11 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
-    private Comparator<Vendor> vendorComparator(List<Vendor._Fields> fields) {
+    private Comparator<Vendor> vendorComparator(List<String> properties) {
         Comparator<Vendor> comparator = Comparator.comparing(x -> true);
-        for (Vendor._Fields field:fields) {
-            Comparator<Vendor> fieldComparator = vendorMap.get(field);
-            if(fieldComparator != null) {
+        for (String property : properties) {
+            Comparator<Vendor> fieldComparator = vendorMap.get(property);
+            if (fieldComparator != null) {
                 comparator = comparator.thenComparing(fieldComparator);
             }
         }
@@ -741,11 +738,11 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
-    private Comparator<SearchResult> searchResultComparator(List<SearchResult._Fields> fields) {
+    private Comparator<SearchResult> searchResultComparator(List<String> properties) {
         Comparator<SearchResult> comparator = Comparator.comparing(x -> true);
-        for (SearchResult._Fields field:fields) {
-            Comparator<SearchResult> fieldComparator = searchResultMap.get(field);
-            if(fieldComparator != null) {
+        for (String property : properties) {
+            Comparator<SearchResult> fieldComparator = searchResultMap.get(property);
+            if (fieldComparator != null) {
                 comparator = comparator.thenComparing(fieldComparator);
             }
         }
@@ -866,11 +863,11 @@ public class ResourceComparatorGenerator<T> {
     }
 
     private Comparator<Vendor> defaultVendorComparator() {
-        return vendorMap.get(Vendor._Fields.FULLNAME);
+        return vendorMap.get("fullname");
     }
 
     private Comparator<SearchResult> defaultSearchResultComparator() {
-        return searchResultMap.get(SearchResult._Fields.NAME);
+        return searchResultMap.get("name");
     }
 
     private Comparator<ChangeLogs> defaultChangeLogComparator() {

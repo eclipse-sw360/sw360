@@ -14,7 +14,9 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -130,6 +132,11 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
             throw new IllegalArgumentException("PaginationData cannot be null");
         }
 
+        if (searchText != null && !searchText.isBlank()
+                && VendorSortColumn.findByValue(pageData.getSortColumnNumber()) == VendorSortColumn.BY_SCORE) {
+            return searchVendorsByNamePrefix(searchText, pageData);
+        }
+
         String viewName = getViewFromPagination(pageData);
         List<Vendor> vendors;
         if (searchText == null || searchText.isBlank()) {
@@ -140,6 +147,35 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
 
         return Collections.singletonMap(pageData, vendors);
+    }
+
+    /**
+     * CouchDB fallback when Nouveau/Lucene is unavailable and sort is BY_SCORE.
+     * Prefix-match on both shortname and fullname views (same fields Lucene indexes).
+     */
+    private Map<PaginationData, List<Vendor>> searchVendorsByNamePrefix(String searchText, PaginationData pageData) {
+        String prefix = searchText.toLowerCase();
+        Set<String> vendorIds = new LinkedHashSet<>();
+        vendorIds.addAll(getVendorByLowercaseShortnamePrefix(prefix));
+        vendorIds.addAll(getVendorByLowercaseFullnamePrefix(prefix));
+
+        List<Vendor> vendors = new ArrayList<>();
+        for (String vendorId : vendorIds) {
+            Vendor vendor = get(vendorId);
+            if (vendor != null) {
+                vendors.add(vendor);
+            }
+        }
+        vendors.sort(Comparator.comparing(Vendor::getFullname, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+
+        int totalCount = vendors.size();
+        pageData.setTotalRowCount(totalCount);
+        int fromIndex = pageData.getDisplayStart();
+        if (fromIndex >= totalCount) {
+            return Collections.singletonMap(pageData, Collections.emptyList());
+        }
+        int toIndex = Math.min(fromIndex + pageData.getRowsPerPage(), totalCount);
+        return Collections.singletonMap(pageData, vendors.subList(fromIndex, toIndex));
     }
 
     public Map<PaginationData, List<Vendor>> getVendorsWithPagination(PaginationData pageData) {

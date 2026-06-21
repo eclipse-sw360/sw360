@@ -34,9 +34,6 @@ public class HealthTest extends TestIntegrationBase {
     @Value("${local.server.port}")
     private int port;
 
-    @MockitoBean
-    private SW360RestHealthIndicator restHealthIndicatorMock;
-
     @BeforeEach
     public void before() throws Exception {
         // Setup default healthy state

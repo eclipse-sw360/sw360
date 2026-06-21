@@ -30,10 +30,10 @@ public class Vendor {
 
     private String type;
 
-    @JsonProperty(required = true)
+    @JsonProperty(value = "shortName", required = true)
     private String shortname;
 
-    @JsonProperty(required = true)
+    @JsonProperty(value = "fullName", required = true)
     private String fullname;
 
     @JsonProperty(required = true)

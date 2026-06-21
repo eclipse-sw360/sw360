@@ -15,6 +15,8 @@ import java.util.Set;
 
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.cvesearch.VulnerabilityUpdateStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -42,6 +44,9 @@ public class CveSearchController implements RepresentationModelProcessor<Reposit
     public static final String CVE_SEARCH_URL = "/cvesearch";
 
     @NonNull
+    private final RestControllerHelper restControllerHelper;
+
+    @NonNull
     private final Sw360CveSearchService cveSearchService;
 
     @Override
@@ -55,6 +60,8 @@ public class CveSearchController implements RepresentationModelProcessor<Reposit
     @PostMapping(CVE_SEARCH_URL + "/releases/{releaseId}")
     public ResponseEntity<VulnerabilityUpdateStatus> updateForRelease(
             @Parameter(description = "Release id") @PathVariable String releaseId) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         return ResponseEntity.ok(cveSearchService.updateForRelease(releaseId));
     }
 
@@ -62,6 +69,8 @@ public class CveSearchController implements RepresentationModelProcessor<Reposit
     @PostMapping(CVE_SEARCH_URL + "/components/{componentId}")
     public ResponseEntity<VulnerabilityUpdateStatus> updateForComponent(
             @Parameter(description = "Component id") @PathVariable String componentId) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         return ResponseEntity.ok(cveSearchService.updateForComponent(componentId));
     }
 
@@ -69,18 +78,24 @@ public class CveSearchController implements RepresentationModelProcessor<Reposit
     @PostMapping(CVE_SEARCH_URL + "/projects/{projectId}")
     public ResponseEntity<VulnerabilityUpdateStatus> updateForProject(
             @Parameter(description = "Project id") @PathVariable String projectId) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         return ResponseEntity.ok(cveSearchService.updateForProject(projectId));
     }
 
     @Operation(summary = "Import CVEs for all releases in the database.")
     @PostMapping(CVE_SEARCH_URL + "/full-update")
     public ResponseEntity<VulnerabilityUpdateStatus> fullUpdate() {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         return ResponseEntity.ok(cveSearchService.fullUpdate());
     }
 
     @Operation(summary = "Run full CVE search sync (same as scheduled job).")
     @PostMapping(CVE_SEARCH_URL + "/update")
     public ResponseEntity<RequestStatus> update() {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         return ResponseEntity.ok(cveSearchService.update());
     }
 
@@ -90,6 +105,8 @@ public class CveSearchController implements RepresentationModelProcessor<Reposit
             @RequestParam String vendor,
             @RequestParam String product,
             @RequestParam String version) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         return ResponseEntity.ok(cveSearchService.findCpes(vendor, product, version));
     }
 }

@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.search;
 
-import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +26,7 @@ public class SearchHandlerTest {
         handler = new SearchHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
     }
 
-    @Test(expected = TException.class)
+    @Test(expected = SW360Exception.class)
     public void testSearchNull() throws Exception {
         handler.search(null, null);
     }

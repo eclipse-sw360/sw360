@@ -184,6 +184,8 @@ public class JacksonCustomizations {
         registrar.accept(ProjectAttachmentUsage.class, Sw360Module.ProjectAttachmentUsageMixin.class);
         registrar.accept(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class);
         registrar.accept(Vendor.class, Sw360Module.VendorMixin.class);
+        registrar.accept(org.eclipse.sw360.datahandler.services.vendors.Vendor.class,
+                Sw360Module.ServiceVendorMixin.class);
         registrar.accept(License.class, Sw360Module.LicenseMixin.class);
         registrar.accept(LicenseType.class, Sw360Module.LicenseTypeMixin.class);
         registrar.accept(Obligation.class, Sw360Module.ObligationMixin.class);
@@ -1672,6 +1674,24 @@ public class JacksonCustomizations {
             @JsonProperty("shortName")
             @Schema(description = "The Short Name of the vendor")
             abstract public String getShortname();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({"permissions", "type", "revision"})
+        static abstract class ServiceVendorMixin {
+            @JsonProperty("fullName")
+            @Schema(description = "The full name of the vendor")
+            abstract String getFullname();
+
+            @JsonProperty("fullName")
+            abstract void setFullname(String fullname);
+
+            @JsonProperty("shortName")
+            @Schema(description = "The Short Name of the vendor")
+            abstract String getShortname();
+
+            @JsonProperty("shortName")
+            abstract void setShortname(String shortname);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -53,6 +53,8 @@ public class HalResource<T> extends EntityModel<T> {
             ((Obligation) content).setType(null);
         } else if (content instanceof Vendor) {
             ((Vendor) content).setType(null);
+        } else if (content instanceof org.eclipse.sw360.datahandler.services.vendors.Vendor serviceVendor) {
+            serviceVendor.setType(null);
         } else if (content instanceof Vulnerability) {
             ((Vulnerability) content).setType(null);
         } else if (content instanceof VulnerabilityDTO) {
