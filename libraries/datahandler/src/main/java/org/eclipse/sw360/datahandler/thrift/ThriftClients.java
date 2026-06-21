@@ -387,6 +387,11 @@ public class ThriftClients {
         return new ScheduleService.Client(makeProtocol(SCHEDULE_SERVICE_URL));
     }
 
+    /**
+     * @deprecated WhiteSource import is exposed via REST at {@code /wsimport/api/wsimport}.
+     *             Use {@code RestClient} against that service instead.
+     */
+    @Deprecated
     public static ProjectImportService.Iface makeWsImportClient() {
         return new ProjectImportService.Client(makeProtocol(WSIMPORT_SERVICE_URL));
     }

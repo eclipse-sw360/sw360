@@ -20,9 +20,11 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
+import org.eclipse.sw360.datahandler.services.projectimport.TokenCredentials;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
 import org.eclipse.sw360.wsimport.utility.WsTokenType;
+
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,12 +32,10 @@ import java.nio.charset.StandardCharsets;
 /**
  * @author: ksoranko@verifa.io
  */
+@Component
 public class WsRestClient {
 
     private static final Logger LOGGER = LogManager.getLogger(WsRestClient.class);
-
-    WsRestClient() {
-    }
 
     private String generateRequestBody(String requestType, String userKey, WsTokenType tokenType, String token) {
         JsonObject json = new JsonObject();

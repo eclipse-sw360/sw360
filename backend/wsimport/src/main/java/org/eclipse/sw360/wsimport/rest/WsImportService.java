@@ -14,9 +14,10 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
+import org.eclipse.sw360.datahandler.services.projectimport.TokenCredentials;
 import org.eclipse.sw360.wsimport.domain.*;
 import org.eclipse.sw360.wsimport.utility.WsTokenType;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
@@ -26,11 +27,16 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.GET_PROJEC
 /**
  * @author ksoranko@verifa.io
  */
+@Service
 public class WsImportService {
 
     private static final Logger LOGGER = LogManager.getLogger(WsImportService.class);
-    private static final WsRestClient restClient = new WsRestClient();
-    private static final Gson gson = new Gson();
+    private final WsRestClient restClient;
+    private final Gson gson = new Gson();
+
+    public WsImportService(WsRestClient restClient) {
+        this.restClient = restClient;
+    }
 
     public WsProject getWsProject(String projectToken, TokenCredentials tokenCredentials) throws JsonSyntaxException {
         String projectVitalString;
