@@ -50,7 +50,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
+import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
@@ -116,6 +116,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     @NonNull
     private final SpdxTypeBridge spdxTypeBridge;
+
+    @NonNull
+    private final SW360PackageService packageService;
 
     private static FossologyService.Iface fossologyClient;
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
@@ -1645,9 +1648,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
 
-        PackageService.Iface packageClient = ThriftClients.makePackageClient();
-        Set<Package> packages = packageClient.getPackagesByReleaseId(releaseSourceId);
-        usageInformation.put("packages", packages.size());
+        usageInformation.put("packages", packageService.getLinkedPackagesForRelease(releaseSourceId).size());
 
         return usageInformation;
     }
@@ -1662,11 +1663,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             return new ArrayList<>();
         }
 
-        try {
-            PackageService.Iface packageClient = ThriftClients.makePackageClient();
-            return packageClient.getPackageWithReleaseByPackageIds(release.getPackageIds());
-        } catch (TTransportException e) {
-            throw new TException("Unable to get package client", e);
-        }
+        return packageService.getPackageWithReleaseByPackageIds(release.getPackageIds());
     }
 }

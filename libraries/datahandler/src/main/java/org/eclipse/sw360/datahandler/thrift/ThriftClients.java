@@ -436,6 +436,10 @@ public class ThriftClients {
         return new FileInformationService.Client(makeProtocol(SPDX_FILE_INFO_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /packages/api/packages} instead.
+     */
+    @Deprecated
     public static PackageService.Iface makePackageClient() {
         return new PackageService.Client(makeProtocol(PACKAGE_SERVICE_URL));
     }

@@ -46,7 +46,6 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -131,6 +130,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final PackageRepository packageRepository;
+    private PackageDatabaseHandler packageDatabaseHandler;
     private DatabaseHandlerUtil dbHandlerUtil;
     private BulkDeleteUtil bulkDeleteUtil;
 
@@ -194,6 +194,23 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // Create the spdx document database handler
         this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
+    }
+
+    private PackageDatabaseHandler getPackageDatabaseHandler() throws SW360Exception {
+        if (packageDatabaseHandler == null) {
+            try {
+                packageDatabaseHandler = new PackageDatabaseHandler(
+                        DatabaseSettings.getConfiguredClient(),
+                        DatabaseSettings.COUCH_DB_DATABASE,
+                        DatabaseSettings.COUCH_DB_CHANGE_LOGS,
+                        DatabaseSettings.COUCH_DB_ATTACHMENTS,
+                        attachmentDatabaseHandler,
+                        this);
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("Failed to initialize PackageDatabaseHandler", e);
+            }
+        }
+        return packageDatabaseHandler;
     }
 
     public ComponentDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
@@ -1647,11 +1664,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      **/
     private boolean verifyLinkedPackages(Set<String> currentPackageIds, Set<String> updatedPackageIds, String releaseId) throws SW360Exception {
         Set<String> addedPackageIds = Sets.difference(updatedPackageIds, currentPackageIds);
-        PackageService.Iface packageClient = ThriftClients.makePackageClient();
         if (CommonUtils.isNotEmpty(addedPackageIds)) {
             try {
                 long addedCount = addedPackageIds.size();
-                List<Package> addedPackages = packageClient.getPackageByIds(addedPackageIds);
+                List<Package> addedPackages = getPackageDatabaseHandler().getPackageByIds(addedPackageIds);
                 Predicate<Package> orphanReleaseFilter = pkg -> CommonUtils.isNullEmptyOrWhitespace(pkg.getReleaseId());
                 Predicate<Package> linkedReleaseFilter = pkg -> releaseId.equals(pkg.getReleaseId());
                 long orphanCount = addedPackages.stream().filter(orphanReleaseFilter).count();
@@ -1672,7 +1688,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void updateLinkedPackages(Set<String> currentPackageIds, Set<String> updatedPackageIds, String releaseId, User user) throws SW360Exception {
         Set<String> removedPacakgeIds = Sets.difference(currentPackageIds, updatedPackageIds);
         Set<String> addedPacakgeIds = Sets.difference(updatedPackageIds, currentPackageIds);
-        PackageService.Iface packageClient = ThriftClients.makePackageClient();
         try {
             if (CommonUtils.isNotEmpty(removedPacakgeIds)) {
                 List<Package> removedPackages = packageRepository.get(removedPacakgeIds);
@@ -1681,19 +1696,19 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     // update the package, if it contains linked release Id
                     if (CommonUtils.isNotNullEmptyOrWhitespace(relId) && releaseId.equals(relId)) {
                         pkg.unsetReleaseId();
-                        RequestStatus status = packageClient.updatePackage(pkg, user);
+                        RequestStatus status = getPackageDatabaseHandler().updatePackage(pkg, user);
                         log.info(String.format("Unlinked package <%s> from release <%s>, Unlinking status: <%s>", pkg.getId(), releaseId, status.name()));
                     }
                 }
             }
             if (CommonUtils.isNotEmpty(addedPacakgeIds)) {
-                List<Package> addedPackages = packageClient.getPackageByIds(addedPacakgeIds);
+                List<Package> addedPackages = getPackageDatabaseHandler().getPackageByIds(addedPacakgeIds);
                 for (Package pkg : addedPackages) {
                     String relId = pkg.getReleaseId();
                     // update only orphan packages
                     if (CommonUtils.isNullEmptyOrWhitespace(relId)) {
                         pkg.setReleaseId(releaseId);
-                        RequestStatus status = packageClient.updatePackage(pkg, user);
+                        RequestStatus status = getPackageDatabaseHandler().updatePackage(pkg, user);
                         log.info(String.format("Linked package <%s> to release <%s>, Linking status: <%s>", pkg.getId(), releaseId, status.name()));
                     } else if (!relId.equals(releaseId)) {
                         log.warn(String.format("Linked-ReleasId <%s> in Package <%s>, and Linked-PackageId <%s> in Release <%s> association is incorrect",
@@ -2042,14 +2057,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInPackages(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        PackageService.Iface packageClient = ThriftClients.makePackageClient();
-
-        Set<Package> packages = packageClient.getPackagesByReleaseId(mergeSourceId);
+        Set<Package> packages = getPackageDatabaseHandler().getPackagesByReleaseId(mergeSourceId);
         Release mergeTarget = releaseRepository.get(mergeTargetId);
         for (Package pkg : packages) {
             Package packageBefore = pkg.deepCopy();
             pkg.setReleaseId(mergeTargetId);
-            packageClient.updatePackage(pkg, sessionUser);
+            getPackageDatabaseHandler().updatePackage(pkg, sessionUser);
             mergeTarget.addToPackageIds(pkg.getId());
             dbHandlerUtil.addChangeLogs(pkg, packageBefore, sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);

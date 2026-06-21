@@ -41,7 +41,6 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -933,8 +932,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final ProjectReleaseRelationship releaseRelation = new ProjectReleaseRelationship(ReleaseRelationship.UNKNOWN, MainlineState.OPEN);
         if (CommonUtils.isNotEmpty(linkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = ThriftClients.makePackageClient();
-                List<Package> addedPackages = packageClient.getPackageByIds(linkedPacakgeIds);
+                List<Package> addedPackages = packageDatabaseHandler.getPackageByIds(linkedPacakgeIds);
 
                 Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = addedPackages.stream().map(Package::getReleaseId)
                         .filter(CommonUtils::isNotNullEmptyOrWhitespace)
@@ -965,8 +963,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (CommonUtils.isNotEmpty(unlinkedPacakgeIds)) {
             try {
-                PackageService.Iface packageClient = ThriftClients.makePackageClient();
-                List<Package> removedPackages = packageClient.getPackageWithReleaseByPackageIds(unlinkedPacakgeIds);
+                List<Package> removedPackages = packageDatabaseHandler.getPackageWithReleaseByPackageIds(unlinkedPacakgeIds);
 
                 Map<String, Set<String>> releaseIdToPackageIdsMap = removedPackages.stream()
                         .filter(packageFilter -> packageFilter.getRelease() != null)
