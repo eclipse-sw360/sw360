@@ -375,6 +375,10 @@ public class ThriftClients {
         return new VulnerabilityService.Client(makeProtocol(VULNERABILITY_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /vmcomponents/api/vmcomponents} instead.
+     */
+    @Deprecated
     public static VMComponentService.Iface makeVMClient() {
         return new VMComponentService.Client(makeProtocol(VM_SERVICE_URL));
     }

@@ -4,95 +4,103 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TBase;
+import org.eclipse.sw360.common.utils.ThriftConverter;
+import org.eclipse.sw360.common.utils.converter.vmcomponents.VMMatchConverter;
+import org.eclipse.sw360.common.utils.converter.vmcomponents.VMProcessReportingConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
+import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatch;
+import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatchState;
+import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
+import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMProcessReporting;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.process.VMProcessHandler;
-
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TException;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static org.apache.log4j.Logger.getLogger;
 
 /**
- * Implementation of the Thrift service
+ * SVM vulnerability monitoring service handler.
  *
  * @author stefan.jaeger@evosoft.com
  * @author alex.borodin@evosoft.com
  */
-public class VMComponentHandler implements VMComponentService.Iface {
+@Service
+public class VMComponentHandler {
 
     private static final Logger log = getLogger(VMComponentHandler.class);
 
     private final VMDatabaseHandler dbHandler;
     private final ComponentDatabaseHandler compHandler;
 
-
     public VMComponentHandler() throws IOException {
         dbHandler = new VMDatabaseHandler();
         compHandler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
     }
 
-    @Override
-    public List<VMProcessReporting> getAllProcesses(User user) throws TException {
-        if (PermissionUtils.isAdmin(user)){
-            return dbHandler.getAll(VMProcessReporting.class);
+    public List<org.eclipse.sw360.datahandler.services.vmcomponents.VMProcessReporting> getAllProcesses(User user) {
+        if (PermissionUtils.isAdmin(user)) {
+            return dbHandler.getAll(VMProcessReporting.class).stream()
+                    .map(VMProcessReportingConverter::fromThrift)
+                    .toList();
         }
         return Collections.emptyList();
     }
 
-    @Override
-    public List<VMMatch> getAllMatches(User user) throws TException {
-        if (!PermissionUtils.isAdmin(user)){
+    public List<org.eclipse.sw360.datahandler.services.vmcomponents.VMMatch> getAllMatches(User user) {
+        if (!PermissionUtils.isAdmin(user)) {
             return Collections.emptyList();
         }
-        return dbHandler.getAll(VMMatch.class);
+        return dbHandler.getAll(VMMatch.class).stream()
+                .map(VMMatchConverter::fromThrift)
+                .toList();
     }
 
-    @Override
-    public RequestSummary synchronizeComponents() throws TException {
+    public RequestSummary synchronizeComponents() {
         VMProcessHandler.cacheVendors(compHandler);
 
         // synchronize VMAction
         String actionStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMAction.class.getSimpleName(), actionStart));
         synchronizeElementType(VMAction.class, SVMConstants.ACTIONS_URL);
-        log.info("Storing and getting master data of "+VMAction.class.getSimpleName()+" triggered. waiting for completion...");
+        log.info("Storing and getting master data of " + VMAction.class.getSimpleName() + " triggered. waiting for completion...");
 
         // synchronize VMPriority
         String prioStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMPriority.class.getSimpleName(), prioStart));
         synchronizeElementType(VMPriority.class, SVMConstants.PRIORITIES_URL);
-        log.info("Storing and getting master data of "+VMPriority.class.getSimpleName()+" triggered. waiting for completion...");
+        log.info("Storing and getting master data of " + VMPriority.class.getSimpleName() + " triggered. waiting for completion...");
 
         // synchronize VMComponent
         String compStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMComponent.class.getSimpleName(), compStart));
         synchronizeElementType(VMComponent.class, SVMConstants.COMPONENTS_URL);
-        log.info("Storing and getting master data of "+VMComponent.class.getSimpleName()+" triggered. waiting for completion...");
+        log.info("Storing and getting master data of " + VMComponent.class.getSimpleName() + " triggered. waiting for completion...");
 
         // synchronize Vulnerability (bulk notifications)
         String vulnStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(Vulnerability.class.getSimpleName(), vulnStart));
         synchronizeElementType(Vulnerability.class, SVMConstants.VULNERABILITIES_URL);
-        log.info("Storing and getting master data of "+Vulnerability.class.getSimpleName()+" triggered. waiting for completion...");
+        log.info("Storing and getting master data of " + Vulnerability.class.getSimpleName() + " triggered. waiting for completion...");
 
         // triggerReporting
         VMProcessHandler.triggerReport(VMAction.class, actionStart);
@@ -100,7 +108,7 @@ public class VMComponentHandler implements VMComponentService.Iface {
         VMProcessHandler.triggerReport(VMComponent.class, compStart);
         VMProcessHandler.triggerReport(Vulnerability.class, vulnStart);
 
-        return new RequestSummary(RequestStatus.SUCCESS);
+        return new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
     }
 
     /**
@@ -165,38 +173,35 @@ public class VMComponentHandler implements VMComponentService.Iface {
         }
     }
 
-    @Override
-    public RequestSummary triggerReverseMatch() throws TException {
+    public RequestSummary triggerReverseMatch() {
         Set<String> releaseIds = compHandler.getAllReleaseIds();
-        if (releaseIds != null && !releaseIds.isEmpty()){
-            for (String releaseId: releaseIds) {
+        if (releaseIds != null && !releaseIds.isEmpty()) {
+            for (String releaseId : releaseIds) {
                 VMProcessHandler.findReleaseMatch(releaseId, true);
             }
         }
-        log.info("Reverse match triggered for "+(releaseIds==null?0:releaseIds.size())+" releases. waiting for completion...");
-        return new RequestSummary(RequestStatus.SUCCESS);
+        log.info("Reverse match triggered for " + (releaseIds == null ? 0 : releaseIds.size()) + " releases. waiting for completion...");
+        return new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
     }
 
-    @Override
-    public RequestSummary acceptMatch(User user, String matchId) throws TException {
+    public RequestSummary acceptMatch(User user, String matchId) {
         return setMatchState(user, matchId, VMMatchState.ACCEPTED);
     }
 
-    @Override
-    public RequestSummary declineMatch(User user, String matchId) throws TException {
+    public RequestSummary declineMatch(User user, String matchId) {
         return setMatchState(user, matchId, VMMatchState.DECLINED);
     }
 
-    private RequestSummary setMatchState(User user, String matchId, VMMatchState state){
-        if (!PermissionUtils.isAdmin(user) || StringUtils.isEmpty(matchId)){
-            return new RequestSummary(RequestStatus.FAILURE);
+    private RequestSummary setMatchState(User user, String matchId, VMMatchState state) {
+        if (!PermissionUtils.isAdmin(user) || StringUtils.isEmpty(matchId)) {
+            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
 
         VMMatch match = dbHandler.getById(VMMatch.class, matchId);
-        if (match == null){
-            return new RequestSummary(RequestStatus.FAILURE);
+        if (match == null) {
+            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
         match.setState(state);
-        return new RequestSummary(dbHandler.update(match));
+        return new RequestSummary().setRequestStatus(ThriftConverter.fromThriftRequestStatus(dbHandler.update(match)));
     }
 }
