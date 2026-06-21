@@ -14,6 +14,7 @@ package org.eclipse.sw360.wsimport.thrift;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.common.utils.converter.projectimport.TokenCredentialsConverter;
 import org.eclipse.sw360.wsimport.domain.*;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLibraryToSw360ComponentTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLibraryToSw360ReleaseTranslator;
@@ -26,6 +27,7 @@ import org.eclipse.sw360.wsimport.thrift.helper.ProjectImportResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.springframework.stereotype.Service;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -46,6 +48,7 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.UNKNOWN;
 /**
  * @author: ksoranko@verifa.io
  */
+@Service
 public class ThriftUploader {
 
     private static final Logger LOGGER = LogManager.getLogger(ThriftUploader.class);
@@ -54,9 +57,11 @@ public class ThriftUploader {
     private final WsLicenseToSw360LicenseTranslator licenseToLicenseTranslator = new WsLicenseToSw360LicenseTranslator();
     private final WsProjectToSw360ProjectTranslator projectToProjectTranslator = new WsProjectToSw360ProjectTranslator();
 
-    private ThriftExchange thriftExchange;
+    private final ThriftExchange thriftExchange;
+    private final WsImportService wsImportService;
 
-    public ThriftUploader() {
+    public ThriftUploader(WsImportService wsImportService) {
+        this.wsImportService = wsImportService;
         this.thriftExchange = new ThriftExchange();
     }
 
@@ -222,7 +227,9 @@ public class ThriftUploader {
     private Set<ReleaseRelation> createReleases(WsProject wsProject, User sw360User, TokenCredentials tokenCredentials) {
         WsLibrary[] libraries = null;
         try {
-            libraries =  new WsImportService().getProjectLicenses(wsProject.getProjectToken(), tokenCredentials);
+            libraries = wsImportService.getProjectLicenses(
+                    wsProject.getProjectToken(),
+                    TokenCredentialsConverter.fromThrift(tokenCredentials));
         } catch (JsonSyntaxException jse) {
             LOGGER.error(jse);
         }
