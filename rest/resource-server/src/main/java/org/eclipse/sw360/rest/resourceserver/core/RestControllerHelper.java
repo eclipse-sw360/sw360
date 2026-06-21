@@ -533,7 +533,14 @@ public class RestControllerHelper<T> {
         User embeddedUser = convertToEmbeddedUser(user);
         EntityModel<User> embeddedUserResource = EntityModel.of(embeddedUser);
         try {
-            Link userLink = linkTo(UserController.class).slash("api/users/byid/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
+            String userRef = user.getId();
+            if (CommonUtils.isNullEmptyOrWhitespace(userRef)) {
+                userRef = user.getEmail();
+            }
+            if (CommonUtils.isNullEmptyOrWhitespace(userRef)) {
+                return;
+            }
+            Link userLink = linkTo(UserController.class).slash("api/users/byid/" + URLEncoder.encode(userRef, "UTF-8")).withSelfRel();
             embeddedUserResource.add(userLink);
             halResource.addEmbeddedResource(relation, embeddedUserResource);
         } catch (UnsupportedEncodingException e) {
