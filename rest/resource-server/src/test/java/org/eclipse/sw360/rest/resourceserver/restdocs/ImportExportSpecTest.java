@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2023-2024. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2023-2024,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -21,16 +21,13 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ImportExportSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
     private String testUserId;
@@ -41,7 +38,7 @@ public class ImportExportSpecTest extends TestRestDocsSpecBase {
     @MockitoBean
     private Sw360ImportExportService importExportService;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         User sw360User = new User();
         sw360User.setId("123456789");

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2021. Part of the SW360 Portal Obligation.
+ * Copyright Siemens AG, 2021,2026. Part of the SW360 Portal Obligation.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -20,13 +20,11 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.*;
 
@@ -48,7 +46,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ObligationSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -62,7 +59,7 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
 
     private Obligation obligation;
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
         obligation  = new Obligation();
         obligation.setId("888888888");

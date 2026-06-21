@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2023-2024.
+ * Copyright Siemens AG, 2023-2024,2026.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -27,17 +27,14 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.schedule.Sw360ScheduleService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Map;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ScheduleSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
     private String testUserId;
@@ -49,7 +46,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
     private Sw360ScheduleService scheduleServiceMock;
     private RequestSummary requestSummary = new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
 
-    @Before
+    @BeforeEach
     public void before() throws TException {
 
         User sw360User = new User();

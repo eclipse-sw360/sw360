@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017,2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017,2019,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -30,8 +30,8 @@ import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsSe
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -88,7 +88,7 @@ public abstract class TestRestDocsSpecBase {
     @MockitoBean
     protected SW360ConfigurationsService sw360ConfigurationsServiceMock;
 
-    @Before
+    @BeforeEach
     public void setupRestDocs() {
         this.restDocumentation.beforeTest(getClass(), "setupRestDocs");
 
@@ -118,7 +118,7 @@ public abstract class TestRestDocsSpecBase {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDownRestDocs() {
         this.restDocumentation.afterTest();
     }

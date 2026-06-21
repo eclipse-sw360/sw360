@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2021. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2021,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -39,15 +39,12 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -67,7 +64,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
     ClearingRequest cr2 = new ClearingRequest();
     List<Comment> comments = new ArrayList<Comment>();
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
 
         clearingRequest.setId("CR-101");

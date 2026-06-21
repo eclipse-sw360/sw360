@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2023-2024.
+ * Copyright Siemens AG, 2023-2024,2026.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -30,15 +30,12 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.admin.attachment.Sw360AttachmentCleanUpService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -55,7 +52,7 @@ public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
     @MockitoBean
     AttachmentService.Iface attachmentClient;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         componentClient = mock(ComponentService.Iface.class);
         attachmentClient = mock(AttachmentService.Iface.class);
