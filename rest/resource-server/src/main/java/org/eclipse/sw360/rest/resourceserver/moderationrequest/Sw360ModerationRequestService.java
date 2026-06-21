@@ -31,9 +31,8 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
+import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
+import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jetbrains.annotations.NotNull;
@@ -55,6 +54,9 @@ import java.util.Set;
 public class Sw360ModerationRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ModerationRequestService.class);
 
+    private final Sw360SpdxServices spdxServices;
+    private final SpdxTypeBridge spdxTypeBridge;
+
     public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
         return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
     }
@@ -75,17 +77,6 @@ public class Sw360ModerationRequestService {
         return ThriftClients.makeLicenseClient();
     }
 
-    private SPDXDocumentService.Iface getThriftSPDXDocumentClient() {
-        return ThriftClients.makeSPDXClient();
-    }
-
-    private DocumentCreationInformationService.Iface getThriftDocumentCreationInfo()  throws TTransportException {
-        return ThriftClients.makeSPDXDocumentInfoClient();
-    }
-
-    private PackageInformationService.Iface getThriftPackageInfo()  throws TTransportException {
-        return ThriftClients.makeSPDXPackageInfoClient();
-    }
     private UserService.Iface getThriftUserClient() throws TTransportException {
         return ThriftClients.makeUserClient();
     }
@@ -297,34 +288,41 @@ public class Sw360ModerationRequestService {
                 }
                 break;
                 case SPDX_DOCUMENT: {
-                    SPDXDocumentService.Iface sw360SPDXClient = getThriftSPDXDocumentClient();
                     if (request.isRequestDocumentDelete()) {
-                        actionStatus = sw360SPDXClient.deleteSPDXDocument(request.getDocumentId(), reviewer);
+                        actionStatus = spdxTypeBridge.toThriftRequestStatus(
+                                spdxServices.deleteSPDXDocument(request.getDocumentId(), reviewer));
                     } else {
-                        actionStatus = sw360SPDXClient.updateSPDXDocumentFromModerationRequest(
-                                request.getSPDXDocumentAdditions(), request.getSPDXDocumentDeletions(), reviewer);
+                        actionStatus = spdxTypeBridge.toThriftRequestStatus(
+                                spdxServices.updateSPDXDocumentFromModerationRequest(
+                                        spdxTypeBridge.toPojo(request.getSPDXDocumentAdditions()),
+                                        spdxTypeBridge.toPojo(request.getSPDXDocumentDeletions()),
+                                        reviewer));
                     }
                 }
                 break;
                 case SPDX_DOCUMENT_CREATION_INFO: {
-                    DocumentCreationInformationService.Iface documentCreationInfoClient = getThriftDocumentCreationInfo();
                     if (request.isRequestDocumentDelete()) {
-                        actionStatus = documentCreationInfoClient.deleteDocumentCreationInformation(request.getDocumentId(),
-                                reviewer);
+                        actionStatus = spdxTypeBridge.toThriftRequestStatus(
+                                spdxServices.deleteDocumentCreationInformation(request.getDocumentId(), reviewer));
                     } else {
-                        actionStatus = documentCreationInfoClient.updateDocumentCreationInfomationFromModerationRequest(
-                                request.getDocumentCreationInfoAdditions(), request.getDocumentCreationInfoDeletions(),
-                                reviewer);
+                        actionStatus = spdxTypeBridge.toThriftRequestStatus(
+                                spdxServices.updateDocumentCreationInfomationFromModerationRequest(
+                                        spdxTypeBridge.toPojo(request.getDocumentCreationInfoAdditions()),
+                                        spdxTypeBridge.toPojo(request.getDocumentCreationInfoDeletions()),
+                                        reviewer));
                     }
                 }
                 break;
                 case SPDX_PACKAGE_INFO: {
-                    PackageInformationService.Iface packageInfoClient = getThriftPackageInfo();
                     if (request.isRequestDocumentDelete()) {
-                        actionStatus = packageInfoClient.deletePackageInformation(request.getDocumentId(), reviewer);
+                        actionStatus = spdxTypeBridge.toThriftRequestStatus(
+                                spdxServices.deletePackageInformation(request.getDocumentId(), reviewer));
                     } else {
-                        actionStatus = packageInfoClient.updatePackageInfomationFromModerationRequest(
-                                request.getPackageInfoAdditions(), request.getPackageInfoDeletions(), reviewer);
+                        actionStatus = spdxTypeBridge.toThriftRequestStatus(
+                                spdxServices.updatePackageInfomationFromModerationRequest(
+                                        spdxTypeBridge.toPojo(request.getPackageInfoAdditions()),
+                                        spdxTypeBridge.toPojo(request.getPackageInfoDeletions()),
+                                        reviewer));
                     }
                 }
                 break;

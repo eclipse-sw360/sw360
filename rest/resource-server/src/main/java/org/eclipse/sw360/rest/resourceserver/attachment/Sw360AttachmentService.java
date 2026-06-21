@@ -36,10 +36,10 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
+import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
@@ -73,6 +73,9 @@ public class Sw360AttachmentService {
 
     @NonNull
     private final ThriftServiceProvider<AttachmentService.Iface> thriftAttachmentServiceProvider;
+
+    @NonNull
+    private final Sw360SpdxServices spdxServices;
 
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
@@ -514,10 +517,6 @@ public class Sw360AttachmentService {
         return ThriftClients.makeProjectClient();
     }
 
-    private SPDXDocumentService.Iface getThriftSpdxDocumentClient() {
-        return ThriftClients.makeSPDXClient();
-    }
-
     private Stream<String> distinctProjectIdsFromAttachmentUsages (List<AttachmentUsage> usages){
         return nullToEmptyList(usages).stream()
                 .map(AttachmentUsage::getUsedBy)
@@ -616,7 +615,7 @@ public class Sw360AttachmentService {
         }
     }
 
-    public boolean isValidSbomFile(MultipartFile file, String type) throws TException {
+    public boolean isValidSbomFile(MultipartFile file, String type) {
         if (file == null || file.isEmpty()) {
             return false;
         }
@@ -626,10 +625,8 @@ public class Sw360AttachmentService {
             return false;
         }
 
-        SPDXDocumentService.Iface spdxClient = getThriftSpdxDocumentClient();
         try (InputStream inputStream = file.getInputStream()) {
-            ByteBuffer fileBuffer = ByteBuffer.wrap(inputStream.readAllBytes());
-            return spdxClient.isValidSbomFile(fileBuffer, type, fileExtension);
+            return spdxServices.isValidSbomFile(inputStream.readAllBytes(), type, fileExtension);
         } catch (IOException e) {
             log.error("Error reading file", e);
             return false;
