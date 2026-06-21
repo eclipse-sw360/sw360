@@ -33,18 +33,15 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class EccSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -59,7 +56,7 @@ public class EccSpecTest extends TestRestDocsSpecBase {
     private Release rel1;
     private Release rel2;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, URISyntaxException {
         List<Release> releaseList = new ArrayList<>();
 

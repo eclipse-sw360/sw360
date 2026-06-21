@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -21,14 +21,12 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
@@ -48,7 +46,6 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class AttachmentSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -65,7 +62,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
 
     private Attachment attachment, attachment1;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         List<Attachment> attachments = new ArrayList<>();
         attachment = new Attachment();

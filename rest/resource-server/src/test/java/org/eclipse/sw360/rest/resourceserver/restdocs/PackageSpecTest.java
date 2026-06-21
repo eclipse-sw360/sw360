@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens Healthineers GmBH, 2023. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -54,16 +55,13 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class PackageSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -86,7 +84,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
     private Package package3;
     private Set<String> licenseIds;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         Set<Attachment> setOfAttachment = new HashSet<Attachment>();
         Attachment att1 = new Attachment("1234", "test.zip").setAttachmentType(AttachmentType.SOURCE)

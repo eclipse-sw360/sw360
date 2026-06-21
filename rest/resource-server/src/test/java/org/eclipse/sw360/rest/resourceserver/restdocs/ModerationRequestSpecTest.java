@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2023. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2023,2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -33,15 +33,13 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,7 +68,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -92,7 +89,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
     private Project project;
     private ModerationRequest moderationRequest;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         Set<String> moderatorList = new HashSet<>();
         moderatorList.add("admin@sw360.org");

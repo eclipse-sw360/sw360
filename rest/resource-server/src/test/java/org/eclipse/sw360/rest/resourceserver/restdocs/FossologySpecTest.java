@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2023-2024.
+ * Copyright Siemens AG, 2023-2024,2026.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -30,17 +30,14 @@ import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.admin.fossology.Sw360FossologyAdminServices;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class FossologySpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -58,7 +55,7 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
     @MockitoBean
     private ConfigContainer fossologyConfig;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException,TTransportException {
         fossologyClient = mock(FossologyService.Iface.class);
         User sw360User = new User();

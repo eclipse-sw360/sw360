@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2024-2025.
+ * Copyright Siemens AG, 2024-2025,2026.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -25,18 +25,15 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import jakarta.servlet.ServletException;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ImportExportSpec extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -50,7 +47,7 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
 
     private RequestSummary requestSummary = new RequestSummary();
 
-    @Before
+    @BeforeEach
     @SuppressWarnings("unchecked")
     public void before() throws TException, IOException, ServletException {
         User sw360User = new User();
