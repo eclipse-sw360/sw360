@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.schedule.client.CveSearchRestClient;
+import org.eclipse.sw360.schedule.client.VMComponentsRestClient;
 import org.eclipse.sw360.schedule.timer.ScheduleConstants;
 import org.eclipse.sw360.schedule.timer.Scheduler;
 import org.springframework.stereotype.Service;
@@ -36,9 +37,11 @@ public class ScheduleHandler {
     private static final Logger log = LogManager.getLogger(ScheduleHandler.class);
 
     private final CveSearchRestClient cveSearchRestClient;
+    private final VMComponentsRestClient vmComponentsRestClient;
 
-    public ScheduleHandler(CveSearchRestClient cveSearchRestClient) {
+    public ScheduleHandler(CveSearchRestClient cveSearchRestClient, VMComponentsRestClient vmComponentsRestClient) {
         this.cveSearchRestClient = cveSearchRestClient;
+        this.vmComponentsRestClient = vmComponentsRestClient;
     }
 
     @PostConstruct
@@ -102,9 +105,9 @@ public class ScheduleHandler {
             case ServiceNames.CVESEARCH_SERVICE ->
                     wrapForScheduler(cveSearchRestClient::update, serviceName);
             case ServiceNames.SVMSYNC_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus(), serviceName);
+                    wrapForScheduler(vmComponentsRestClient::synchronizeComponents, serviceName);
             case ServiceNames.SVMMATCH_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus(), serviceName);
+                    wrapForScheduler(vmComponentsRestClient::triggerReverseMatch, serviceName);
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
                     wrapForScheduler(() -> ThriftClients.makeProjectClient().exportForMonitoringList(), serviceName);
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
@@ -145,9 +148,9 @@ public class ScheduleHandler {
             case ServiceNames.CVESEARCH_SERVICE ->
                     cveSearchRestClient.update();
             case ServiceNames.SVMSYNC_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus());
+                    vmComponentsRestClient.synchronizeComponents();
             case ServiceNames.SVMMATCH_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus());
+                    vmComponentsRestClient.triggerReverseMatch();
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
                     callDownstreamService(() -> ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem());
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
