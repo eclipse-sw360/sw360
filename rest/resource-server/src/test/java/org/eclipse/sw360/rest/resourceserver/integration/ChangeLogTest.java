@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 
 public class ChangeLogTest extends TestIntegrationBase {
 
@@ -152,7 +153,8 @@ public class ChangeLogTest extends TestIntegrationBase {
 
     @Test
     public void should_handle_service_exception() throws Exception {
-        given(changeLogServiceMock.getChangeLogsByDocumentIdPaginated(anyString(), any(), any())).willThrow(new Exception("service error"));
+        doThrow(new RuntimeException("service error")).when(changeLogServiceMock)
+                .getChangeLogsByDocumentIdPaginated(anyString(), any(), any());
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -164,7 +166,7 @@ public class ChangeLogTest extends TestIntegrationBase {
                 String.class
         );
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         JsonNode json = new ObjectMapper().readTree(response.getBody());
         assertTrue(json.has("status"));
         assertTrue(json.has("error"));

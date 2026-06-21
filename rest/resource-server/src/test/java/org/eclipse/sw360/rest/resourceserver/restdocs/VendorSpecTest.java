@@ -11,11 +11,11 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -90,13 +90,13 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         release1.setId("12345");
         release1.setName("Release_1");
         release1.setVersion("1.0.0");
-        release1.setVendor(vendor);
+        release1.setVendor(toThriftVendor(vendor));
 
         Release release2 = new Release();
         release2.setId("123456");
         release2.setName("Release_2");
         release2.setVersion("2.0.0");
-        release2.setVendor(vendor);
+        release2.setVendor(toThriftVendor(vendor));
 
         releases.add(release1);
         releases.add(release2);
@@ -119,7 +119,19 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
 
         when(this.vendorServiceMock.createVendor(any())).then(invocation ->
-        new Vendor ("Apache", "Apache Software Foundation", "https://www.apache.org/").setId("987567468"));
+                new Vendor()
+                        .setShortname("Apache")
+                        .setFullname("Apache Software Foundation")
+                        .setUrl("https://www.apache.org/")
+                        .setId("987567468"));
+    }
+
+    private static org.eclipse.sw360.datahandler.thrift.vendors.Vendor toThriftVendor(Vendor vendor) {
+        return new org.eclipse.sw360.datahandler.thrift.vendors.Vendor()
+                .setId(vendor.getId())
+                .setShortname(vendor.getShortname())
+                .setFullname(vendor.getFullname())
+                .setUrl(vendor.getUrl());
     }
 
     @Test
@@ -165,6 +177,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-vendors,Vendors resource>>")
                         ),
                         responseFields(
+                                subsectionWithPath("id").description("The id of the vendor"),
                                 subsectionWithPath("fullName").description("The full name of the vendor"),
                                 subsectionWithPath("shortName").description("The short name of the vendor, optional"),
                                 subsectionWithPath("url").description("The vendor's home page URL"),
@@ -220,6 +233,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("url").description("The vendor's home page URL")
                         ),
                         responseFields(
+                                subsectionWithPath("id").description("The id of the vendor"),
                                 subsectionWithPath("fullName").description("The full name of the vendor"),
                                 subsectionWithPath("shortName").description("The short name of the vendor, optional"),
                                 subsectionWithPath("url").description("The vendor's home page URL"),
@@ -269,7 +283,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("fullName").description("The full name of the vendor"),
                                 fieldWithPath("shortName").description("The short name of the vendor"),
                                 fieldWithPath("url").description("The vendor's home page URL"),
-                                fieldWithPath("type").description("The type of document")
+                                fieldWithPath("id").description("The id of the vendor")
                         )));
     }
 }

@@ -548,7 +548,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                 URI vendorURI = new URI(vendorUriString);
                 String path = vendorURI.getPath();
                 String vendorId = path.substring(path.lastIndexOf('/') + 1);
-                Vendor vendor = vendorService.getVendorById(vendorId);
+                Vendor vendor = vendorService.getThriftVendorById(vendorId);
                 String vendorFullName = vendor.getFullname();
                 vendors.add(vendorFullName);
             }
@@ -879,7 +879,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             Vendor defaultVendor;
             if (sw360Component.getDefaultVendor() == null
                     || !sw360Component.getDefaultVendor().getId().equals(sw360Component.getDefaultVendorId())) {
-                defaultVendor = vendorService.getVendorById(sw360Component.getDefaultVendorId());
+                defaultVendor = vendorService.getThriftVendorById(sw360Component.getDefaultVendorId());
             } else {
                 defaultVendor = sw360Component.getDefaultVendor();
             }

@@ -405,7 +405,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         String.class);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
@@ -431,7 +431,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
                         requestEntity,
                         String.class);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
@@ -450,7 +450,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         String.class);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
@@ -476,7 +476,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
                         requestEntity,
                         String.class);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();

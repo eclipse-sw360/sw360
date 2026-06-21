@@ -225,7 +225,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             for (Release release : sw360Releases) {
                 if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
                     try {
-                        Vendor relVendor = vendorService.getVendorById(release.getVendorId());
+                        Vendor relVendor = vendorService.getThriftVendorById(release.getVendorId());
                         release.setVendor(relVendor);
                     } catch (RuntimeException ignore) {
                         log.error("Unable to find vendor with ID {}", release.getVendorId());
