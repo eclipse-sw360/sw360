@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
@@ -28,12 +27,12 @@ import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelement
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
+import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -47,6 +46,12 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 public class SW360SPDXDocumentService {
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
+
+    @NonNull
+    private final Sw360SpdxServices spdxServices;
+
+    @NonNull
+    private final SpdxTypeBridge spdxTypeBridge;
     private static final ObjectMapper mapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -128,43 +133,40 @@ public class SW360SPDXDocumentService {
         return packageInformation;
     }
 
-    public String addSPDXDocument(Release release, User user) throws TException {
-        SPDXDocumentService.Iface spdxClient = ThriftClients.makeSPDXClient();
+    public String addSPDXDocument(Release release, User user) {
         String spdxId = "";
         SPDXDocument spdxDocumentGenerate = SW360Utils.generateSpdxDocument();
         spdxDocumentGenerate.setModerators(release.getModerators());
         spdxDocumentGenerate.setReleaseId(release.getId());
         if (CommonUtils.isNullEmptyOrWhitespace(spdxDocumentGenerate.getId())) {
-            spdxId = spdxClient.addSPDXDocument(spdxDocumentGenerate, user).getId();
+            spdxId = spdxServices.addSPDXDocument(spdxTypeBridge.toPojo(spdxDocumentGenerate), user);
         }
         return spdxId;
     }
 
-    public void addDocumentCreationInformation(String spdxId, Set<String> moderators, User user) throws TException {
-        DocumentCreationInformationService.Iface documentClient = ThriftClients.makeSPDXDocumentInfoClient();
+    public void addDocumentCreationInformation(String spdxId, Set<String> moderators, User user) {
         DocumentCreationInformation documentCreationInformation = SW360Utils.generateDocumentCreationInformation();
         documentCreationInformation.setModerators(moderators);
         if (isNullOrEmpty(documentCreationInformation.getSpdxDocumentId())) {
             documentCreationInformation.setSpdxDocumentId(spdxId);
         }
         if (isNullOrEmpty(documentCreationInformation.getId())) {
-            documentClient.addDocumentCreationInformation(documentCreationInformation, user);
+            spdxServices.addDocumentCreationInformation(spdxTypeBridge.toPojo(documentCreationInformation), user);
         }
     }
 
-    public void addPackageInformation(String spdxId, Set<String> moderators, User user) throws TException {
-        PackageInformationService.Iface packageClient = ThriftClients.makeSPDXPackageInfoClient();
+    public void addPackageInformation(String spdxId, Set<String> moderators, User user) {
         PackageInformation packageInformation = SW360Utils.generatePackageInformation();
         packageInformation.setModerators(moderators);
         if (isNullOrEmpty(packageInformation.getSpdxDocumentId())) {
             packageInformation.setSpdxDocumentId(spdxId);
         }
         if (isNullOrEmpty(packageInformation.getId())) {
-            packageClient.addPackageInformation(packageInformation, user);
+            spdxServices.addPackageInformation(spdxTypeBridge.toPojo(packageInformation), user);
         }
     }
 
-    public String addSPDX(Release release, User user) throws TException {
+    public String addSPDX(Release release, User user) {
         String spdxId = addSPDXDocument(release, user);
         if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
             throw new BadRequestClientException("Add SPDXDocument Failed!");

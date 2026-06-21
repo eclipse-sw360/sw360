@@ -408,14 +408,26 @@ public class ThriftClients {
         return new HealthService.Client(makeProtocol(HEALTH_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /spdxdocument/api/spdx-documents} instead.
+     */
+    @Deprecated
     public static SPDXDocumentService.Iface makeSPDXClient() {
         return new SPDXDocumentService.Client(makeProtocol(SPDX_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /spdxdocumentcreationinfo/api/document-creation-information} instead.
+     */
+    @Deprecated
     public static DocumentCreationInformationService.Iface makeSPDXDocumentInfoClient() {
         return new DocumentCreationInformationService.Client(makeProtocol(SPDX_DOCUMENT_INFO_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /spdxpackageinfo/api/package-information} instead.
+     */
+    @Deprecated
     public static PackageInformationService.Iface makeSPDXPackageInfoClient() {
         return new PackageInformationService.Client(makeProtocol(SPDX_PACKAGE_INFO_SERVICE_URL));
     }

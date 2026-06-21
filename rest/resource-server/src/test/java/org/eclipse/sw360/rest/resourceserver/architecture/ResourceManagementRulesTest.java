@@ -154,7 +154,8 @@ class ResourceManagementRulesTest extends SW360ArchitectureTest {
                             if (field.getModifiers().contains(JavaModifier.STATIC)
                                     && !field.getModifiers().contains(JavaModifier.FINAL)
                                     && !field.getName().equals("log")
-                                    && !field.getName().equals("logger")) {
+                                    && !field.getName().equals("logger")
+                                    && !field.getName().startsWith("$SWITCH_TABLE$")) {
                                 events.add(SimpleConditionEvent.violated(
                                         javaClass,
                                         String.format("%s has mutable static field '%s' — " +

@@ -20,7 +20,15 @@ import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.SW360ExceptionConverter;
 import org.eclipse.sw360.common.utils.converter.cvesearch.UpdateTypeConverter;
 import org.eclipse.sw360.common.utils.converter.cvesearch.VulnerabilityUpdateStatusConverter;
+import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
@@ -121,5 +129,44 @@ public final class ThriftConverter {
     public static org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus toThriftVulnerabilityUpdateStatus(
             VulnerabilityUpdateStatus pojo) {
         return VulnerabilityUpdateStatusConverter.toThrift(pojo);
+    }
+
+    // ---- SPDX ----
+
+    public static SPDXDocument fromThriftSPDXDocument(
+            org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument thrift) {
+        return SPDXDocumentConverter.fromThrift(thrift);
+    }
+
+    public static org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument toThriftSPDXDocument(SPDXDocument pojo) {
+        return SPDXDocumentConverter.toThrift(pojo);
+    }
+
+    public static DocumentCreationInformation fromThriftDocumentCreationInformation(
+            org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation thrift) {
+        return DocumentCreationInformationConverter.fromThrift(thrift);
+    }
+
+    public static org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation toThriftDocumentCreationInformation(
+            DocumentCreationInformation pojo) {
+        return DocumentCreationInformationConverter.toThrift(pojo);
+    }
+
+    public static PackageInformation fromThriftPackageInformation(
+            org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation thrift) {
+        return PackageInformationConverter.fromThrift(thrift);
+    }
+
+    public static org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation toThriftPackageInformation(
+            PackageInformation pojo) {
+        return PackageInformationConverter.toThrift(pojo);
+    }
+
+    public static RequestSummary fromThriftRequestSummary(org.eclipse.sw360.datahandler.thrift.RequestSummary thrift) {
+        return RequestSummaryConverter.fromThrift(thrift);
+    }
+
+    public static org.eclipse.sw360.datahandler.thrift.RequestSummary toThriftRequestSummary(RequestSummary pojo) {
+        return RequestSummaryConverter.toThrift(pojo);
     }
 }

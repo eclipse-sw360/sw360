@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
+import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,6 +54,9 @@ public class Sw360AttachmentServiceTest {
 
     @Mock
     private RestControllerHelper<?> restControllerHelper;
+
+    @Mock
+    private Sw360SpdxServices spdxServices;
 
     @Mock
     private AttachmentService.Iface thriftService;

@@ -16,5 +16,6 @@ public enum RequestedAction {
     USERS,
     CLEARING,
     ATTACHMENTS,
-    WRITE_ECC
+    WRITE_ECC,
+    WRITE_VULNERABILITY
 }

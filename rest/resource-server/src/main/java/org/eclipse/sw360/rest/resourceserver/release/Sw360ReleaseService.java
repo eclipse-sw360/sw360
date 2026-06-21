@@ -46,10 +46,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelement
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
@@ -62,6 +60,8 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
+import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
@@ -110,6 +110,12 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     @NonNull
     private final Sw360ProjectService projectService;
+
+    @NonNull
+    private final Sw360SpdxServices spdxServices;
+
+    @NonNull
+    private final SpdxTypeBridge spdxTypeBridge;
 
     private static FossologyService.Iface fossologyClient;
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
@@ -261,19 +267,16 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return rch.convertToEmbeddedRelease(sw360Object).setExternalIds(sw360Object.getExternalIds());
     }
 
-    public SPDXDocument getSPDXDocumentById(String id, User user) throws TException {
-        SPDXDocumentService.Iface spdxDocumentService = getThriftSPDXDocumentClient();
-        return spdxDocumentService.getSPDXDocumentById(id, user);
+    public SPDXDocument getSPDXDocumentById(String id, User user) {
+        return spdxTypeBridge.toThrift(spdxServices.getSPDXDocumentById(id, user));
     }
 
-    public DocumentCreationInformation getDocumentCreationInformationById(String id, User user) throws TException {
-        DocumentCreationInformationService.Iface documentCreationInformationService = getThriftDocumentCreationInformation();
-        return documentCreationInformationService.getDocumentCreationInformationById(id, user);
+    public DocumentCreationInformation getDocumentCreationInformationById(String id, User user) {
+        return spdxTypeBridge.toThrift(spdxServices.getDocumentCreationInformationById(id, user));
     }
 
-    public PackageInformation getPackageInformationById(String id, User user) throws TException {
-        PackageInformationService.Iface packageInformation = getThriftIPackageInformation();
-        return packageInformation.getPackageInformationById(id, user);
+    public PackageInformation getPackageInformationById(String id, User user) {
+        return spdxTypeBridge.toThrift(spdxServices.getPackageInformationById(id, user));
     }
 
     public Release createRelease(Release release, User sw360User) throws TException {
@@ -349,16 +352,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return requestStatus;
     }
 
-    public RequestStatus updateSPDXDocument(SPDXDocument spdxDocumentRequest, String releaseId, User user) throws TException {
-        SPDXDocumentService.Iface spdxClient = ThriftClients.makeSPDXClient();
+    public RequestStatus updateSPDXDocument(SPDXDocument spdxDocumentRequest, String releaseId, User user) {
         if (null == spdxDocumentRequest) {
             return null;
         }
         if (isNullOrEmpty(spdxDocumentRequest.getReleaseId()) && !isNullOrEmpty(releaseId)) {
             spdxDocumentRequest.setReleaseId(releaseId);
         }
-        SPDXDocument spdxDocumentUpdate = prepareUpdateSPDXDocument(getSPDXDocumentById(spdxDocumentRequest.getId(), user),spdxDocumentRequest);
-        return spdxClient.updateSPDXDocument(spdxDocumentUpdate, user);
+        SPDXDocument spdxDocumentUpdate = prepareUpdateSPDXDocument(
+                getSPDXDocumentById(spdxDocumentRequest.getId(), user), spdxDocumentRequest);
+        return spdxTypeBridge.toThriftRequestStatus(
+                spdxServices.updateSPDXDocument(spdxTypeBridge.toPojo(spdxDocumentUpdate), user));
     }
 
     public SPDXDocument prepareUpdateSPDXDocument(SPDXDocument spdxDocumentActual, SPDXDocument spdxDocumentRequest) {
@@ -610,14 +614,18 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
     }
 
-    public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInformationRequest, String spdxId, User user) throws TException {
-        DocumentCreationInformationService.Iface documentClient = ThriftClients.makeSPDXDocumentInfoClient();
+    public RequestStatus updateDocumentCreationInformation(
+            DocumentCreationInformation documentCreationInformationRequest, String spdxId, User user) {
         if (isNullOrEmpty(documentCreationInformationRequest.getSpdxDocumentId())) {
             documentCreationInformationRequest.setSpdxDocumentId(spdxId);
         }
 
-        DocumentCreationInformation documentCreationInformationUpdate = prepareUpdateDocumentCreationInformation(getDocumentCreationInformationById(documentCreationInformationRequest.getId(), user), documentCreationInformationRequest);
-        return documentClient.updateDocumentCreationInformation(documentCreationInformationUpdate, user);
+        DocumentCreationInformation documentCreationInformationUpdate = prepareUpdateDocumentCreationInformation(
+                getDocumentCreationInformationById(documentCreationInformationRequest.getId(), user),
+                documentCreationInformationRequest);
+        return spdxTypeBridge.toThriftRequestStatus(
+                spdxServices.updateDocumentCreationInformation(
+                        spdxTypeBridge.toPojo(documentCreationInformationUpdate), user));
     }
 
     public DocumentCreationInformation prepareUpdateDocumentCreationInformation(DocumentCreationInformation documentCreationInformationUpdate, DocumentCreationInformation documentCreationInformationRequest) {
@@ -729,13 +737,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return externalDocumentReferencesActual;
     }
 
-    public RequestStatus updatePackageInformation(PackageInformation packageInformationRequest, String spdxId, User user) throws TException {
-        PackageInformationService.Iface packageClient = ThriftClients.makeSPDXPackageInfoClient();
+    public RequestStatus updatePackageInformation(PackageInformation packageInformationRequest, String spdxId, User user) {
         if (isNullOrEmpty(packageInformationRequest.getSpdxDocumentId())) {
             packageInformationRequest.setSpdxDocumentId(spdxId);
         }
-        PackageInformation packageInformationUpdate = prepareUpdatePackageInformation(getPackageInformationById(packageInformationRequest.getId(), user), packageInformationRequest);
-        return packageClient.updatePackageInformation(packageInformationUpdate, user);
+        PackageInformation packageInformationUpdate = prepareUpdatePackageInformation(
+                getPackageInformationById(packageInformationRequest.getId(), user), packageInformationRequest);
+        return spdxTypeBridge.toThriftRequestStatus(
+                spdxServices.updatePackageInformation(spdxTypeBridge.toPojo(packageInformationUpdate), user));
     }
 
     public PackageInformation prepareUpdatePackageInformation(PackageInformation packageInformationUpdate, PackageInformation packageInformationRequest) {
@@ -1303,18 +1312,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
         ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
         return componentClient;
-    }
-
-    private SPDXDocumentService.Iface getThriftSPDXDocumentClient() {
-        return ThriftClients.makeSPDXClient();
-    }
-
-    private DocumentCreationInformationService.Iface getThriftDocumentCreationInformation() {
-        return ThriftClients.makeSPDXDocumentInfoClient();
-    }
-
-    private PackageInformationService.Iface getThriftIPackageInformation() {
-        return ThriftClients.makeSPDXPackageInfoClient();
     }
 
     private FossologyService.Iface getThriftFossologyClient() {

@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentCreationInfoModerator;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -108,6 +109,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
 
     public AddDocumentRequestSummary addDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary= new AddDocumentRequestSummary();
+        ensureDocumentCreationDefaults(documentCreationInfo);
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
@@ -148,6 +150,16 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         SPDXDocumentCreationInfoRepository.update(documentCreationInfo);
         dbHandlerUtil.addChangeLogs(documentCreationInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
+    }
+
+    private static void ensureDocumentCreationDefaults(DocumentCreationInformation documentCreationInfo) {
+        if (isNullOrEmptyCollection(documentCreationInfo.getCreator())) {
+            documentCreationInfo.setCreator(new HashSet<>(Collections.singletonList(
+                    new Creator().setIndex(0).setType("Tool").setValue("SW360"))));
+        }
+        if (isNullEmptyOrWhitespace(documentCreationInfo.getCreated())) {
+            documentCreationInfo.setCreated(SW360Utils.getCreatedOnTime());
+        }
     }
 
     public void updateIndex(DocumentCreationInformation documentCreationInformation) {
