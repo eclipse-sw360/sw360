@@ -36,7 +36,6 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
@@ -59,6 +58,7 @@ import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.fossology.SW360FossologyService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
@@ -120,7 +120,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     @NonNull
     private final SW360PackageService packageService;
 
-    private static FossologyService.Iface fossologyClient;
+    @NonNull
+    private final SW360FossologyService fossologyService;
+
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String RESPONSE_STATUS_VALUE_FAILED = "Failed";
     private static final String RELEASE_ATTACHMENT_ERRORMSG = "There has to be exactly one source attachment, but there are %s at this release. Please come back once you corrected that.";
@@ -908,10 +910,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public ExternalToolProcess fossologyProcess(String releaseId, User sw360User, String uploadDescription) throws TException {
-        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
         ExternalToolProcess fossologyProcess = null;
         try {
-            fossologyProcess = sw360FossologyClient.process(releaseId, sw360User, uploadDescription);
+            fossologyProcess = fossologyService.process(releaseId, sw360User, uploadDescription);
         } catch (TException exp) {
             throw new ResourceNotFoundException("Could not determine FOSSology state for this release!");
         }
@@ -919,8 +920,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     private void markFossologyProcessOutdated(String releaseId, User sw360User) throws TException {
-        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
-        RequestStatus markFossologyProcessOutdatedStatus = sw360FossologyClient.markFossologyProcessOutdated(releaseId,
+        RequestStatus markFossologyProcessOutdatedStatus = fossologyService.markFossologyProcessOutdated(releaseId,
                 sw360User);
         if (markFossologyProcessOutdatedStatus == RequestStatus.FAILURE) {
             throw new RuntimeException("Unable to mark Fossology Process Outdated. Release Id: " + releaseId);
@@ -928,10 +928,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public void checkFossologyConnection() throws TException {
-        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
         RequestStatus checkConnection = null;
         try {
-            checkConnection = sw360FossologyClient.checkConnection();
+            checkConnection = fossologyService.checkConnection();
         } catch (TException exp) {
             throw new RuntimeException("Connection to Fossology server Failed.");
         }
@@ -1224,11 +1223,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             String releaseId) throws TException {
         int unpackStatusCheckCount = 0, maxRetries = 15;
         ScheduledFuture<RequestStatus> future = null;
-        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
 
         Callable<RequestStatus> unpackStatusRunnable = new Callable<RequestStatus>() {
             public RequestStatus call() throws Exception {
-                return checkUnpackCompletedSuccessfully(sw360FossologyClient, uploadId, releaseId);
+                return checkUnpackCompletedSuccessfully(uploadId, releaseId);
             }
         };
 
@@ -1247,11 +1245,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             String releaseId) throws TException {
         int scanStatusCheckCount = 0, maxRetries = 15;
         ScheduledFuture<Object[]> future = null;
-        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
 
         Callable<Object[]> scanStatusRunnable = new Callable<Object[]>() {
             public Object[] call() throws Exception {
-                return checkScanCompletedSuccessfully(sw360FossologyClient, scanJobId, releaseId);
+                return checkScanCompletedSuccessfully(scanJobId, releaseId);
             }
         };
 
@@ -1280,10 +1277,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
     }
 
-    private RequestStatus checkUnpackCompletedSuccessfully(FossologyService.Iface sw360FossologyClient, String uploadId,
-            String releaseId) throws TException {
+    private RequestStatus checkUnpackCompletedSuccessfully(String uploadId, String releaseId) throws TException {
         log.info("Release : " + releaseId + " .Checking unpack status. uploadId = " + uploadId);
-        Map<String, String> checkUnpackStatus = sw360FossologyClient.checkUnpackStatus(Integer.parseInt(uploadId));
+        Map<String, String> checkUnpackStatus = fossologyService.checkUnpackStatus(Integer.parseInt(uploadId));
         String status = checkUnpackStatus.get("status");
         if (status == null || status.equalsIgnoreCase(RESPONSE_STATUS_VALUE_FAILED)) {
             return RequestStatus.FAILURE;
@@ -1294,10 +1290,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return RequestStatus.PROCESSING;
     }
 
-    private Object[] checkScanCompletedSuccessfully(FossologyService.Iface sw360FossologyClient, String scanJobId,
-            String releaseId) throws TException {
+    private Object[] checkScanCompletedSuccessfully(String scanJobId, String releaseId) throws TException {
         log.info("Release : " + releaseId + " .Checking scan status.scanJobId =" + scanJobId);
-        Map<String, String> checkUnpackStatus = sw360FossologyClient.checkScanStatus(Integer.parseInt(scanJobId));
+        Map<String, String> checkUnpackStatus = fossologyService.checkScanStatus(Integer.parseInt(scanJobId));
         String status = checkUnpackStatus.get("status");
         String eta = checkUnpackStatus.get("eta");
         log.info(String.format("Release : %s .status: %s, eta from response= %s ",
@@ -1317,14 +1312,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return componentClient;
     }
 
-    private FossologyService.Iface getThriftFossologyClient() {
-        if (fossologyClient == null) {
-            fossologyClient = ThriftClients.makeFossologyClient();
-        }
-
-        return fossologyClient;
-    }
-
     /**
      * Re-generate Fossology report for release
      * @param releaseId                Id of Release need to re-generate report
@@ -1333,8 +1320,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      * @throws TException
      */
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
-        FossologyService.Iface fossologyClient = getThriftFossologyClient();
-        return fossologyClient.triggerReportGenerationFossology(releaseId, user);
+        return fossologyService.triggerReportGenerationFossology(releaseId, user);
     }
 
     /**

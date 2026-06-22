@@ -339,6 +339,10 @@ public class ThriftClients {
         return new ComponentService.Client(makeProtocol(COMPONENT_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /fossology/api/fossology} instead.
+     */
+    @Deprecated
     public static FossologyService.Iface makeFossologyClient() {
         return new FossologyService.Client(makeProtocol(FOSSOLOGY_SERVICE_URL));
     }

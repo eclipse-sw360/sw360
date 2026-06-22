@@ -16,15 +16,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.fossology.SW360FossologyService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -36,8 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class Sw360FossologyAdminServices {
 
-    private static FossologyService.Iface fossologyClient;
     public static Sw360FossologyAdminServices instance;
+
+    private final SW360FossologyService fossologyService;
 
     String key;
 
@@ -45,8 +44,7 @@ public class Sw360FossologyAdminServices {
             User sw360User, String url, String folderId, String token,
             String downloadTimeout, String downloadTimeoutUnit
     ) throws TException {
-        FossologyService.Iface client = getThriftFossologyClient();
-        ConfigContainer fossologyConfig = client.getFossologyConfig();
+        ConfigContainer fossologyConfig = fossologyService.getFossologyConfig();
 
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             Map<String, Set<String>> configKeyToValues = new HashMap<>();
@@ -61,8 +59,8 @@ public class Sw360FossologyAdminServices {
                 setConfigValues(configKeyToValues, "fossology.downloadTimeoutUnit", downloadTimeoutUnit);
             }
             fossologyConfig.setConfigKeyToValues(configKeyToValues);
-            if (client != null && fossologyConfig != null) {
-                client.setFossologyConfig(fossologyConfig);
+            if (fossologyConfig != null) {
+                fossologyService.setFossologyConfig(fossologyConfig);
             } else {
                 throw new BadRequestClientException("fossologyConfig value is null.");
             }
@@ -71,14 +69,6 @@ public class Sw360FossologyAdminServices {
         } else {
             throw new BadRequestClientException("Unable to save the details. User is not admin");
         }
-    }
-
-    public FossologyService.Iface getThriftFossologyClient() throws TTransportException {
-        if (fossologyClient == null) {
-            fossologyClient = ThriftClients.makeFossologyClient();
-        }
-
-        return fossologyClient;
     }
 
     private static void setConfigValues(Map<String, Set<String>> configKeyToValues, String key, String value) {
@@ -103,8 +93,7 @@ public class Sw360FossologyAdminServices {
     private void serveCheckConnection() {
         RequestStatus checkConnection;
         try {
-            FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
-            checkConnection = sw360FossologyClient.checkConnection();
+            checkConnection = fossologyService.checkConnection();
         } catch (TException exp) {
             throw new RuntimeException("Connection to Fossology server Failed.");
         }
@@ -118,12 +107,10 @@ public class Sw360FossologyAdminServices {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new AccessDeniedException("Don't have permission to perform the action. User is not an admin");
         }
-        FossologyService.Iface client = getThriftFossologyClient();
-        ConfigContainer fossologyConfig = client.getFossologyConfig();
+        ConfigContainer fossologyConfig = fossologyService.getFossologyConfig();
         Map<String, Set<String>> configKeyToValues = fossologyConfig.getConfigKeyToValues();
         Map<String, Object> filteredMap = new HashMap<>();
 
-        // Add url and id if present
         if (configKeyToValues.containsKey("url")) {
             filteredMap.put("url", configKeyToValues.get("url").iterator().next());
         }
@@ -132,7 +119,6 @@ public class Sw360FossologyAdminServices {
             filteredMap.put("folderId", configKeyToValues.get("folderId").iterator().next());
         }
 
-        // Handle token presence without exposing value
         Set<String> tokenValues = configKeyToValues.get("token");
         boolean isTokenSet = tokenValues != null && !tokenValues.isEmpty() &&
                 tokenValues.iterator().next() != null &&
