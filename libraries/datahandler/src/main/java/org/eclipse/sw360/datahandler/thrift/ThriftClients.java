@@ -331,6 +331,10 @@ public class ThriftClients {
         return poolStats;
     }
 
+    /**
+     * @deprecated Use the attachments Spring Boot REST API at {@code /attachments/api/attachments} instead.
+     */
+    @Deprecated
     public static AttachmentService.Iface makeAttachmentClient() {
         return new AttachmentService.Client(makeProtocol(ATTACHMENT_SERVICE_URL));
     }

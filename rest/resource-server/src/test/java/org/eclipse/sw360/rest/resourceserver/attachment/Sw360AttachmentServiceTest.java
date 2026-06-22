@@ -11,22 +11,18 @@
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
@@ -41,7 +37,6 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -50,7 +45,10 @@ import static org.mockito.Mockito.when;
 public class Sw360AttachmentServiceTest {
 
     @Mock
-    private ThriftServiceProvider<AttachmentService.Iface> serviceProvider;
+    private SW360AttachmentBackendService attachmentBackendService;
+
+    @Mock
+    private RestAttachmentMetadataOperations attachmentMetadataOperations;
 
     @Mock
     private RestControllerHelper<?> restControllerHelper;
@@ -58,19 +56,10 @@ public class Sw360AttachmentServiceTest {
     @Mock
     private Sw360SpdxServices spdxServices;
 
-    @Mock
-    private AttachmentService.Iface thriftService;
-
-    @Spy
     @InjectMocks
     private Sw360AttachmentService attachmentService;
 
     private int sourceIdCounter;
-
-    @Before
-    public void setUp() throws TTransportException {
-        doReturn(thriftService).when(attachmentService).getThriftAttachmentClient();
-    }
 
     private static String attachmentId(int idx) {
         return "at" + idx;
@@ -109,7 +98,7 @@ public class Sw360AttachmentServiceTest {
         Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(Source.releaseId("r"),
                 new HashSet<>(attachmentSet), Arrays.asList(attachmentId(10), attachmentId(11)));
         assertThat(filtered).isEmpty();
-        verifyNoMoreInteractions(thriftService);
+        verifyNoMoreInteractions(attachmentBackendService);
     }
 
     @Test
@@ -119,9 +108,9 @@ public class Sw360AttachmentServiceTest {
         AttachmentUsage usage1 = createAttachmentUsage(2);
         AttachmentUsage usage2 = createAttachmentUsage(2);
         AttachmentUsage usage3 = createAttachmentUsage(3);
-        when(thriftService.getAttachmentUsages(owner, attachmentId(2), null))
+        when(attachmentBackendService.getAttachmentUsages(owner, attachmentId(2), null))
                 .thenReturn(Arrays.asList(usage1, usage2));
-        when(thriftService.getAttachmentUsages(owner, attachmentId(3), null))
+        when(attachmentBackendService.getAttachmentUsages(owner, attachmentId(3), null))
                 .thenReturn(Collections.singletonList(usage3));
 
         Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(owner, allAttachments,
@@ -136,9 +125,9 @@ public class Sw360AttachmentServiceTest {
                 createAttachmentUsage(1, Source::projectId));
         List<AttachmentUsage> usages2 = Arrays.asList(createAttachmentUsage(2), createAttachmentUsage(2));
         Set<Attachment> allAttachments = createAttachmentSet(2);
-        when(thriftService.getAttachmentUsages(owner, attachmentId(1), null))
+        when(attachmentBackendService.getAttachmentUsages(owner, attachmentId(1), null))
                 .thenReturn(usages1);
-        when(thriftService.getAttachmentUsages(owner, attachmentId(2), null))
+        when(attachmentBackendService.getAttachmentUsages(owner, attachmentId(2), null))
                 .thenReturn(usages2);
 
         Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(owner, allAttachments,
@@ -153,7 +142,7 @@ public class Sw360AttachmentServiceTest {
         Attachment attachment2 = createAttachment(2);
         attachment2.setCheckStatus(CheckStatus.ACCEPTED);
         Set<Attachment> attachments = new HashSet<>(Arrays.asList(attachment1, attachment2));
-        when(thriftService.getAttachmentUsages(any(), anyString(), any()))
+        when(attachmentBackendService.getAttachmentUsages(any(), anyString(), any()))
                 .thenReturn(Collections.emptyList());
 
         Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(owner, attachments,
@@ -164,16 +153,16 @@ public class Sw360AttachmentServiceTest {
     @Test
     public void testFilterAttachmentsToRemoveHandlesExceptions() throws TException {
         Source owner = createSource();
-        when(thriftService.getAttachmentUsages(owner, attachmentId(1), null))
-                .thenThrow(new TException("Thrift failure"));
-        when(thriftService.getAttachmentUsages(owner, attachmentId(2), null))
+        when(attachmentBackendService.getAttachmentUsages(owner, attachmentId(1), null))
+                .thenThrow(new TException("REST failure"));
+        when(attachmentBackendService.getAttachmentUsages(owner, attachmentId(2), null))
                 .thenReturn(Collections.emptyList());
         Set<Attachment> allAttachments = createAttachmentSet(3);
 
         Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(owner, allAttachments,
                 Arrays.asList(attachmentId(1), attachmentId(2)));
         assertThat(filtered).containsOnly(createAttachment(2));
-        verify(thriftService).getAttachmentUsages(owner, attachmentId(2), null);
+        verify(attachmentBackendService).getAttachmentUsages(owner, attachmentId(2), null);
     }
 
     @Test

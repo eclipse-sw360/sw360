@@ -522,9 +522,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             buildProjectPaths(project, null, projectPaths, new HashSet<>());
             projectPaths.remove(projectId);
             if (!projectPaths.isEmpty()) {
-                AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths, projectId, attachmentClient);
-                attachmentClient.makeAttachmentUsages(newAttachmentUsages);
+                List<AttachmentUsage> newAttachmentUsages = parseAttachmentUsages(projectPaths, projectId, attachmentDatabaseHandler);
+                attachmentDatabaseHandler.makeAttachmentUsages(newAttachmentUsages);
             }
         } catch (TException | RuntimeException e) {
             log.error("Saving attachment usages for project " + projectId + " failed", e);
@@ -548,13 +547,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private List<AttachmentUsage> parseAttachmentUsages(List<String> projectPaths, String projectId,
-            AttachmentService.Iface attachmentClient) throws TException {
+            AttachmentDatabaseHandler attachmentDatabaseHandler) throws TException {
         List<AttachmentUsage> result = new ArrayList<>();
         for (String projectPath : projectPaths) {
             String[] pathArray = projectPath.split(":");
             String subProjectId = pathArray[pathArray.length - 1];
             List<AttachmentUsage> subProjectAttachmentUsages =
-                    attachmentClient.getUsedAttachments(Source.projectId(subProjectId), null);
+                    attachmentDatabaseHandler.getUsedAttachments(Source.projectId(subProjectId), null);
 
             for (AttachmentUsage usage : subProjectAttachmentUsages) {
                 if (!usage.getOwner().isSetReleaseId()) {
@@ -2191,7 +2190,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector
                     .unsafeGetAttachmentStream(attachmentContent)) {
                 final CycloneDxBOMImporter cycloneDxBOMImporter = new CycloneDxBOMImporter(this,
-                        componentDatabaseHandler, packageDatabaseHandler, attachmentConnector, user);
+                        componentDatabaseHandler, packageDatabaseHandler, attachmentConnector, attachmentDatabaseHandler, user);
                 return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user, doNotReplacePackageAndRelease);
             }
         } catch (IOException e) {

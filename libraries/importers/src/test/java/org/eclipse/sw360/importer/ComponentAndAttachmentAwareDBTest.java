@@ -45,6 +45,7 @@ public class ComponentAndAttachmentAwareDBTest {
     protected ComponentService.Iface componentClient;
     protected VendorService.Iface vendorClient;
     protected AttachmentService.Iface attachmentClient;
+    protected AttachmentImportOperations attachmentImportOperations;
     protected AttachmentContentRepository attachmentContentRepository;
     protected User user;
 
@@ -105,6 +106,7 @@ public class ComponentAndAttachmentAwareDBTest {
         componentClient = thriftClients.makeComponentClient();
         vendorClient = thriftClients.makeVendorClient();
         attachmentClient = thriftClients.makeAttachmentClient();
+        attachmentImportOperations = new ThriftAttachmentImportOperations(attachmentClient);
         attachmentContentRepository = getAttachmentContentRepository();
         user = getAdminUser(getClass());
 

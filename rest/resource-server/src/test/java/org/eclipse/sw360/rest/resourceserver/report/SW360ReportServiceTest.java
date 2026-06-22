@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -65,6 +66,9 @@ public class SW360ReportServiceTest {
 
     @Mock
     private Sw360AttachmentService attachmentService;
+
+    @Mock
+    private SW360AttachmentBackendService attachmentBackendService;
 
     @Mock
     private Sw360LicenseInfoService licenseInfoService;

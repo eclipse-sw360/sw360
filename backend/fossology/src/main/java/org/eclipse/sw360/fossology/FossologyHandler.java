@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
 import org.eclipse.sw360.fossology.rest.model.FossologyV2Models.CombinedUploadJobResponse;
@@ -58,6 +59,7 @@ public class FossologyHandler {
     private final FossologyRestConfig fossologyRestConfig;
     private final FossologyRestClient fossologyRestClient;
     private final AttachmentConnector attachmentConnector;
+    private final Sw360AttachmentsRestClient attachmentsRestClient;
 
     // v2 API status constants
     private static final String V2_STATUS_SUCCESS = "success";
@@ -71,10 +73,13 @@ public class FossologyHandler {
     @Autowired
     public FossologyHandler(
             FossologyRestConfig fossologyRestConfig,
-            FossologyRestClient fossologyRestClient, AttachmentConnector attachmentConnector) {
+            FossologyRestClient fossologyRestClient,
+            AttachmentConnector attachmentConnector,
+            Sw360AttachmentsRestClient attachmentsRestClient) {
         this.fossologyRestConfig = fossologyRestConfig;
         this.fossologyRestClient = fossologyRestClient;
         this.attachmentConnector = attachmentConnector;
+        this.attachmentsRestClient = attachmentsRestClient;
     }
 
     public RequestStatus setFossologyConfig(ConfigContainer newConfig) throws TException {
@@ -626,12 +631,10 @@ public class FossologyHandler {
 
     private String attachReportToRelease(ComponentService.Iface componentClient, Release release, User user, InputStream reportStream)
             throws TException {
-        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-
         // first create the content metadata object and save it to get an id from couch
         AttachmentContent attachmentContent = new AttachmentContent(createReportAttachmentName(release));
         attachmentContent.setContentType("text");
-        attachmentContent = attachmentClient.makeAttachmentContent(attachmentContent);
+        attachmentContent = attachmentsRestClient.makeAttachmentContent(attachmentContent);
 
         // then upload the real attachment content as _attachment to the metadata object
         attachmentConnector.uploadAttachment(attachmentContent, reportStream);

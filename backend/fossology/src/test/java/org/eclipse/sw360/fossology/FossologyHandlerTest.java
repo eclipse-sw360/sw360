@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
 
@@ -43,6 +44,7 @@ public class FossologyHandlerTest {
 
     private FossologyRestClient fossologyRestClient;
     private AttachmentConnector attachmentConnector;
+    private Sw360AttachmentsRestClient attachmentsRestClient;
     private ComponentService.Iface componentClient;
     private User user;
 
@@ -50,11 +52,12 @@ public class FossologyHandlerTest {
     public void setUp() {
         fossologyRestClient = mock(FossologyRestClient.class);
         attachmentConnector = mock(AttachmentConnector.class);
+        attachmentsRestClient = mock(Sw360AttachmentsRestClient.class);
         componentClient = mock(ComponentService.Iface.class);
         user = TestUtils.getAdminUser(getClass());
 
         uut = spy(new FossologyHandler(mock(FossologyRestConfig.class), fossologyRestClient,
-                attachmentConnector));
+                attachmentConnector, attachmentsRestClient));
 
         when(uut.getComponentClient()).thenReturn(componentClient);
     }

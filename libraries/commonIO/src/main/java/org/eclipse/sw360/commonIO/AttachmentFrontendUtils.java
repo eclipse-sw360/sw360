@@ -17,10 +17,8 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.io.IOException;
@@ -38,11 +36,10 @@ public class AttachmentFrontendUtils {
     private AttachmentStreamConnector connector;
     // TODO add Config class and DI
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
+    private final AttachmentMetadataOperations metadataOperations;
 
-    protected final ThreadLocal<AttachmentService.Iface> attchmntClient = ThreadLocal.<AttachmentService.Iface>withInitial(
-            ThriftClients::makeAttachmentClient);
-
-    public AttachmentFrontendUtils() {
+    public AttachmentFrontendUtils(AttachmentMetadataOperations metadataOperations) {
+        this.metadataOperations = metadataOperations;
     }
 
     public InputStream getStreamToServeAFile(Collection<AttachmentContent> attachments, User user, Object context)
@@ -85,11 +82,11 @@ public class AttachmentFrontendUtils {
     }
 
     public AttachmentContent getAttachmentContent(String id) throws TException {
-        return attchmntClient.get().getAttachmentContent(id);
+        return metadataOperations.getAttachmentContent(id);
     }
 
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
-        return attchmntClient.get().makeAttachmentContent(attachmentContent);
+        return metadataOperations.makeAttachmentContent(attachmentContent);
     }
 
     public Attachment getAttachmentForDisplay(User user, String attachmentContentId) {
@@ -105,7 +102,7 @@ public class AttachmentFrontendUtils {
     public void deleteAttachments(Set<String> attachmentContentIds){
         try {
             for(String id: attachmentContentIds) {
-                attchmntClient.get().deleteAttachmentContent(id);
+                metadataOperations.deleteAttachmentContent(id);
             }
         } catch (TException e){
             log.error("Could not delete attachments from database.",e);
