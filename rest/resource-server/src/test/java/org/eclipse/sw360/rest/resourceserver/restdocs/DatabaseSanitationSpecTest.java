@@ -10,11 +10,21 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.ibm.cloud.cloudant.v1.model.Attachment;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,25 +32,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.databasesanitation.Sw360DatabaseSanitationService;
-import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.hateoas.MediaTypes;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import com.ibm.cloud.cloudant.v1.model.Attachment;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
@@ -48,9 +44,6 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockitoBean
-    private Sw360DatabaseSanitationService sanitationService;
 
     private Component component,component1;
     private Release release,release1;

@@ -10,6 +10,22 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import com.google.common.collect.ImmutableMap;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -18,25 +34,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.google.common.collect.ImmutableMap;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.department.Sw360DepartmentService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.hateoas.MediaTypes;
-import org.springframework.http.MediaType;
-
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 public class DepartmentSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
     private String testUserId;
@@ -44,8 +41,6 @@ public class DepartmentSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private Sw360DepartmentService departmentServiceMock;
     private RequestSummary requestSummary = new RequestSummary();
     RequestStatus mockRequestStatus = RequestStatus.SUCCESS;
 

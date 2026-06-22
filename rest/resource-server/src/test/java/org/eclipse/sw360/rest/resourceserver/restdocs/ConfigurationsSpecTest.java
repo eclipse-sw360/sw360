@@ -15,16 +15,16 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -39,9 +39,6 @@ public class ConfigurationsSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockitoBean
-    private SW360ConfigurationsService sw360ConfigurationsService;
 
     @BeforeEach
     public void before() throws TException, IOException {
