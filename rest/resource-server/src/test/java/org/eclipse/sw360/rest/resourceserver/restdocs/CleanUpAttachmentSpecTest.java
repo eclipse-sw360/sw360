@@ -10,18 +10,6 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -29,12 +17,22 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.admin.attachment.Sw360AttachmentCleanUpService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
 
@@ -44,13 +42,9 @@ public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private Sw360AttachmentCleanUpService cleanUpService;
     private RequestSummary requestSummary = new RequestSummary();
 
     ComponentService.Iface componentClient;
-    @MockitoBean
-    AttachmentService.Iface attachmentClient;
 
     @BeforeEach
     public void before() throws TException, IOException {

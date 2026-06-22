@@ -10,23 +10,21 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.IOException;
-
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.io.IOException;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class ImportExportSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
@@ -34,9 +32,6 @@ public class ImportExportSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockitoBean
-    private Sw360ImportExportService importExportService;
 
     @BeforeEach
     public void before() throws TException, IOException {

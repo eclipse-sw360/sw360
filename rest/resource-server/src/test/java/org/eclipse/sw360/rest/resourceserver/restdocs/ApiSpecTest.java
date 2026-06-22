@@ -11,10 +11,8 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
@@ -28,9 +26,7 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.responseH
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,9 +37,6 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
 
     @Test
     public void should_document_headers() throws Exception {

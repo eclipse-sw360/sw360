@@ -11,6 +11,22 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -19,25 +35,6 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.admin.fossology.Sw360FossologyAdminServices;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.hateoas.MediaTypes;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 public class FossologySpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -45,15 +42,6 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockitoBean
-    Sw360FossologyAdminServices fossologyAdminServices;
-
-    @MockitoBean
-    FossologyService.Iface fossologyClient;
-
-    @MockitoBean
-    private ConfigContainer fossologyConfig;
 
     @BeforeEach
     public void before() throws TException, IOException,TTransportException {

@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -25,9 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class HealthSpecTest extends TestRestDocsSpecBase{
-
-    @MockitoBean
-    private SW360RestHealthIndicator restHealthIndicatorMock;
 
     @Test
     public void should_document_get_health() throws Exception {
