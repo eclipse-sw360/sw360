@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.licenses.db;
 
+import com.ibm.cloud.cloudant.v1.model.Document;
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.thrift.TException;
@@ -32,9 +33,15 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.licenses.tools.LicenseDBConnector;
+import org.eclipse.sw360.licenses.tools.LicenseDBDataMapper;
+import org.eclipse.sw360.licenses.tools.LicenseDBLicenseDTO;
+import org.eclipse.sw360.licenses.tools.LicenseDBObligationDTO;
+import org.eclipse.sw360.licenses.tools.LicenseDBTokenManager;
+import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
 import org.eclipse.sw360.exporter.LicenseExporter;
-import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -101,6 +108,7 @@ public class LicenseDatabaseHandler {
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
     private static final long TIME_OUT = 1800000; // 30 minutes: 30 * 60 * 1000;
+    private static final String LICENSEDB_SYNC_STATE_DOC_ID = "licensedb-sync-state";
     private String obligationText;
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
@@ -1144,6 +1152,311 @@ public class LicenseDatabaseHandler {
         });
 
         return overallProcessingFlux.block();
+    }
+
+    public RequestSummary importAllLicenseDBLicenses(User user) {
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
+        Timestamp ts = Timestamp.from(Instant.now());
+        long currentTime = ts.getTime();
+        if (IMPORT_STATUS && ((IMPORT_TIME + TIME_OUT) > currentTime)) {
+            return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
+        }
+
+        IMPORT_STATUS = true;
+        IMPORT_TIME = currentTime;
+
+        try {
+            String enabled = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_ENABLED);
+            if (!"true".equals(enabled)) {
+                log.info("LicenseDB integration is disabled. Skipping sync.");
+                return requestSummary.setRequestStatus(RequestStatus.FAILURE)
+                        .setMessage("LicenseDB integration is disabled.");
+            }
+            String baseUrl = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_BASE_URL);
+            String username = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_USERNAME);
+            String password = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_PASSWORD);
+
+            if (isNullOrEmpty(baseUrl) || isNullOrEmpty(username) || isNullOrEmpty(password)) {
+                log.error("LicenseDB configuration is incomplete (missing baseUrl, username, or password).");
+                return requestSummary.setRequestStatus(RequestStatus.FAILURE)
+                        .setMessage("LicenseDB configuration is incomplete.");
+            }
+
+            LicenseDBConnector connector = createLicenseDBConnector(baseUrl, username, password);
+
+            // Fetch obligations first because license records reference them by UUID
+            List<LicenseDBObligationDTO> obligationDTOs;
+            List<LicenseDBLicenseDTO> licenseDTOs;
+            try {
+                obligationDTOs = connector.fetchAllObligations();
+                licenseDTOs = connector.fetchAllLicenses();
+            } catch (IOException e) {
+                String msg = "LicenseDB sync failed (connection error): " + e.getMessage();
+                log.error(msg, e);
+                return requestSummary.setRequestStatus(RequestStatus.FAILURE).setMessage(msg);
+            }
+            log.info("LicenseDB sync: fetched {} active obligations and {} active licenses",
+                    obligationDTOs.size(), licenseDTOs.size());
+
+            return processLicenseDBSync(obligationDTOs, licenseDTOs, requestSummary);
+
+        } catch (SW360Exception e) {
+            String msg = "LicenseDB sync failed: " + e.getMessage();
+            log.error(msg, e);
+            return requestSummary.setRequestStatus(RequestStatus.FAILURE).setMessage(msg);
+        } finally {
+            IMPORT_STATUS = false;
+        }
+    }
+
+    private LicenseDBConnector createLicenseDBConnector(String baseUrl, String username, String password) {
+        LicenseDBTokenManager tokenManager = new LicenseDBTokenManager(baseUrl, username, password);
+        return new LicenseDBConnector(baseUrl, tokenManager);
+    }
+
+    private RequestSummary processLicenseDBSync(List<LicenseDBObligationDTO> obligationDTOs,
+            List<LicenseDBLicenseDTO> licenseDTOs, RequestSummary requestSummary) throws SW360Exception {
+        final List<Obligation> allSw360Obligations = obligRepository.getAll();
+        final List<License> allSw360Licenses = licenseRepository.getAll();
+
+        Map<String, Obligation> obligationsByLicenseDbId = new HashMap<>();
+        Set<String> allLicenseDbTrackedSw360ObIds = new HashSet<>();
+        for (Obligation oblig : allSw360Obligations) {
+            if (oblig.getExternalIds() != null
+                    && oblig.getExternalIds().containsKey(LicenseDBDataMapper.EXTERNAL_ID_LICENSEDB_OB)) {
+                String licenseDbObId = oblig.getExternalIds().get(LicenseDBDataMapper.EXTERNAL_ID_LICENSEDB_OB);
+                obligationsByLicenseDbId.put(licenseDbObId, oblig);
+                allLicenseDbTrackedSw360ObIds.add(oblig.getId());
+            }
+        }
+
+        Map<String, License> licensesByLicenseDbId = new HashMap<>();
+        Map<String, License> licensesByShortname = new HashMap<>();
+        for (License license : allSw360Licenses) {
+            if (license.getExternalIds() != null
+                    && license.getExternalIds().containsKey(LicenseDBDataMapper.EXTERNAL_ID_LICENSEDB)) {
+                licensesByLicenseDbId.put(
+                        license.getExternalIds().get(LicenseDBDataMapper.EXTERNAL_ID_LICENSEDB), license);
+            }
+            if (license.getId() != null) {
+                licensesByShortname.put(license.getId(), license);
+            }
+        }
+
+        Map<String, String> licenseDbObIdToSw360ObId = new HashMap<>();
+        int obligationsCreated = 0;
+        int obligationsUpdated = 0;
+
+        for (LicenseDBObligationDTO dto : obligationDTOs) {
+            if (isNullOrEmpty(dto.getId())) {
+                log.warn("Skipping LicenseDB obligation with missing LicenseDB ID");
+                continue;
+            }
+            if (isNullOrEmpty(dto.getText())) {
+                log.warn("Skipping LicenseDB obligation '{}' with empty text", dto.getId());
+                continue;
+            }
+            if (isNullOrEmpty(dto.getTopic())) {
+                log.warn("Skipping LicenseDB obligation '{}' with null topic", dto.getId());
+                continue;
+            }
+
+            String licenseDbObId = dto.getId();
+            Obligation existing = obligationsByLicenseDbId.get(licenseDbObId);
+
+            if (existing != null) {
+                existing.setText(dto.getText());
+                existing.setTitle(dto.getTopic());
+                existing.setComments(dto.getComment());
+                existing.setObligationType(LicenseDBDataMapper.mapObligationType(dto.getType()));
+                try {
+                    prepareTodo(existing);
+                } catch (SW360Exception e) {
+                    log.warn("Skipping update for LicenseDB obligation '{}': {}", dto.getId(), e.getMessage());
+                    continue;
+                }
+                obligRepository.update(existing);
+                licenseDbObIdToSw360ObId.put(licenseDbObId, existing.getId());
+                allLicenseDbTrackedSw360ObIds.add(existing.getId());
+                obligationsUpdated++;
+            } else {
+                Obligation newObligation = LicenseDBDataMapper.toObligation(dto);
+                try {
+                    prepareTodo(newObligation);
+                } catch (SW360Exception e) {
+                    log.warn("Skipping LicenseDB obligation '{}': {}", dto.getId(), e.getMessage());
+                    continue;
+                }
+                obligRepository.add(newObligation);
+                licenseDbObIdToSw360ObId.put(licenseDbObId, newObligation.getId());
+                obligationsByLicenseDbId.put(licenseDbObId, newObligation);
+                allLicenseDbTrackedSw360ObIds.add(newObligation.getId());
+                obligationsCreated++;
+            }
+        }
+
+        int licensesCreated = 0;
+        int licensesUpdated = 0;
+
+        for (LicenseDBLicenseDTO dto : licenseDTOs) {
+            if (isNullOrEmpty(dto.getId())) {
+                log.warn("Skipping LicenseDB license '{}' with missing LicenseDB ID", dto.getShortname());
+                continue;
+            }
+            if (isNullOrEmpty(dto.getShortname())) {
+                log.warn("Skipping LicenseDB license '{}' with empty shortname", dto.getId());
+                continue;
+            }
+
+            Set<String> newLicenseDbObSw360Ids = new HashSet<>();
+            for (String obUuid : dto.getObligationIds()) {
+                String sw360ObId = licenseDbObIdToSw360ObId.get(obUuid);
+                if (sw360ObId != null) {
+                    newLicenseDbObSw360Ids.add(sw360ObId);
+                }
+            }
+
+            License existing = licensesByLicenseDbId.get(dto.getId());
+            if (existing == null) {
+                // Try matching by shortname for licenses that have not been linked to LicenseDB before
+                existing = licensesByShortname.get(dto.getShortname());
+            }
+
+            if (existing != null) {
+                Set<String> oldObligationIds = existing.getObligationDatabaseIds() != null
+                        ? new HashSet<>(existing.getObligationDatabaseIds())
+                        : new HashSet<>();
+                applyLicenseDBUpdate(existing, dto, newLicenseDbObSw360Ids, allLicenseDbTrackedSw360ObIds);
+                try {
+                    prepareLicense(existing);
+                } catch (SW360Exception e) {
+                    log.warn("Skipping update for license '{}': {}", dto.getShortname(), e.getMessage());
+                    continue;
+                }
+                syncLicenseObligationList(existing, oldObligationIds);
+                licenseRepository.update(existing);
+                licensesByLicenseDbId.put(dto.getId(), existing);
+                licensesUpdated++;
+            } else {
+                License newLicense = LicenseDBDataMapper.toLicense(dto);
+                newLicense.setObligationDatabaseIds(new HashSet<>(newLicenseDbObSw360Ids));
+                try {
+                    prepareLicense(newLicense);
+                } catch (SW360Exception e) {
+                    log.warn("Skipping new license '{}': {}", dto.getShortname(), e.getMessage());
+                    continue;
+                }
+                syncLicenseObligationList(newLicense, Collections.emptySet());
+                licenseRepository.add(newLicense);
+                licensesByLicenseDbId.put(dto.getId(), newLicense);
+                licensesByShortname.put(newLicense.getId(), newLicense);
+                licensesCreated++;
+            }
+        }
+
+        int total = licenseDTOs.size();
+        int affected = licensesCreated + licensesUpdated;
+        String message = String.format(
+                "{\"licensesCreated\":%d,\"licensesUpdated\":%d,\"obligationsCreated\":%d,\"obligationsUpdated\":%d}",
+                licensesCreated, licensesUpdated, obligationsCreated, obligationsUpdated);
+        log.info("LicenseDB sync complete: {}", message);
+        updateLastSyncTimestamp();
+        return requestSummary.setTotalElements(total).setTotalAffectedElements(affected)
+                .setMessage(message).setRequestStatus(RequestStatus.SUCCESS);
+    }
+
+    private void applyLicenseDBUpdate(License existing, LicenseDBLicenseDTO dto,
+            Set<String> newLicenseDbObSw360Ids, Set<String> allLicenseDbTrackedSw360ObIds) {
+        Map<String, String> externalIds = existing.getExternalIds() != null
+                ? new HashMap<>(existing.getExternalIds())
+                : new HashMap<>();
+        externalIds.put(LicenseDBDataMapper.EXTERNAL_ID_LICENSEDB, dto.getId());
+        if (!isNullOrEmpty(dto.getSpdxId())) {
+            externalIds.put("SPDX-License-Identifier", dto.getSpdxId());
+        }
+        existing.setExternalIds(externalIds);
+
+        if (!isNullOrEmpty(dto.getFullname())) {
+            existing.setFullname(dto.getFullname());
+        }
+        existing.setText(dto.getText());
+        existing.setExternalLicenseLink(dto.getUrl());
+        existing.setNote(dto.getNotes());
+        existing.setOSIApproved(dto.isOsiApproved() ? Quadratic.YES : Quadratic.NA);
+        // Do not overwrite checked, FSFLibre or whitelist as these fields are managed only in SW360
+
+        // Keep obligations added directly in SW360 and only replace the ones that came from LicenseDB
+        Set<String> existingObIds = existing.getObligationDatabaseIds() != null
+                ? existing.getObligationDatabaseIds()
+                : Collections.emptySet();
+        Set<String> sw360NativeObIds = existingObIds.stream()
+                .filter(id -> !allLicenseDbTrackedSw360ObIds.contains(id))
+                .collect(Collectors.toSet());
+        Set<String> mergedObligations = new HashSet<>(sw360NativeObIds);
+        mergedObligations.addAll(newLicenseDbObSw360Ids);
+        existing.setObligationDatabaseIds(mergedObligations);
+    }
+
+    private void syncLicenseObligationList(License license, Set<String> oldObligationIds) {
+        Set<String> newObligationIds = license.getObligationDatabaseIds() != null
+                ? license.getObligationDatabaseIds()
+                : Collections.emptySet();
+        if (newObligationIds.equals(oldObligationIds)) {
+            return;
+        }
+        LicenseObligationList obligationList = new LicenseObligationList();
+        Map<String, Obligation> obligations = new HashMap<>();
+        getObligationsByIds(newObligationIds).forEach(o -> obligations.put(o.getTitle(), o));
+        obligationList.setLinkedObligations(obligations);
+        obligationList.setLicenseId(license.getId());
+        if (!isNullOrEmpty(license.getObligationListId())) {
+            try {
+                LicenseObligationList base = obligationListRepository.get(license.getObligationListId());
+                obligationList.setId(base.getId());
+                obligationList.setRevision(base.getRevision());
+                obligationListRepository.update(obligationList);
+            } catch (Exception e) {
+                log.warn("Could not update obligation list for license '{}': {}", license.getId(), e.getMessage());
+            }
+        } else if (!newObligationIds.isEmpty()) {
+            try {
+                obligationListRepository.add(obligationList);
+                license.setObligationListId(obligationList.getId());
+            } catch (SW360Exception e) {
+                log.warn("Could not create obligation list for license '{}': {}", license.getId(), e.getMessage());
+            }
+        }
+    }
+
+    private void updateLastSyncTimestamp() {
+        try {
+            String now = Instant.now().toString();
+            Document existing = null;
+            try {
+                existing = db.getDocument(LICENSEDB_SYNC_STATE_DOC_ID);
+            } catch (SW360Exception e) {
+                // The sync state document does not exist yet so create a new one
+            }
+            if (existing != null) {
+                Map<String, Object> props = existing.getProperties() != null
+                        ? new HashMap<>(existing.getProperties())
+                        : new HashMap<>();
+                props.put("lastSyncTimestamp", now);
+                existing.setProperties(props);
+                db.update(existing);
+            } else {
+                Document doc = new Document();
+                doc.setId(LICENSEDB_SYNC_STATE_DOC_ID);
+                Map<String, Object> props = new HashMap<>();
+                props.put("type", "licensedb-sync-state");
+                props.put("lastSyncTimestamp", now);
+                doc.setProperties(props);
+                db.add(doc);
+            }
+            log.info("LicenseDB sync state updated: lastSyncTimestamp={}", now);
+        } catch (Exception e) {
+            log.warn("Failed to update LicenseDB sync state: {}", e.getMessage());
+        }
     }
 
     private Mono<Void> processAndPersistObligationReactive(User user, License sw360License, OSADLObligationConnector osadlConnector, Obligation oblig, String licenseId, ConcurrentHashMap<String, String> licensesMissing, ConcurrentHashMap<String, String> licensesSuccess, Map<String, Obligation> sw360ObligationsMap) {

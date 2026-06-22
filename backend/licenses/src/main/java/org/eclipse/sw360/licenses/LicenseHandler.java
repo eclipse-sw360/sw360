@@ -343,6 +343,14 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
+    public RequestSummary importAllLicenseDBLicenses(User user) throws TException {
+        if (user != null && !PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
+            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
+        }
+        return handler.importAllLicenseDBLicenses(user);
+    }
+
+    @Override
     public RequestStatus deleteObligations(String id, User user) throws TException {
         assertId(id);
         assertUser(user);

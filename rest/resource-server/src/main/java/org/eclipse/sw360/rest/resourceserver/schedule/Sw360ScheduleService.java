@@ -206,7 +206,8 @@ public class Sw360ScheduleService {
                 ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE,
                 ThriftClients.SVM_LIST_UPDATE_SERVICE,
                 ThriftClients.SRC_UPLOAD_SERVICE,
-                ThriftClients.IMPORT_DEPARTMENT_SERVICE
+                ThriftClients.IMPORT_DEPARTMENT_SERVICE,
+                ThriftClients.LICENSEDB_SYNC_SERVICE
         );
 
         Map<String, Map<String, Object>> result = new java.util.LinkedHashMap<>();

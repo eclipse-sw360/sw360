@@ -588,6 +588,24 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Trigger LicenseDB sync.",
+            description = "Synchronise licenses and obligations from LicenseDB into SW360.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "LicenseDB sync completed successfully."),
+            @ApiResponse(responseCode = "500", description = "LicenseDB sync failed.")
+    })
+    @PostMapping(value = LICENSES_URL + "/import/LicenseDB")
+    public ResponseEntity<RequestSummary> importLicenseDB() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = licenseService.importLicenseDBInformation(sw360User);
+        HttpStatus status = requestSummary.getRequestStatus() == RequestStatus.SUCCESS ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @Operation(
             summary = "Create license type.",
             description = "Create license type.",
             tags = {"Licenses"}
