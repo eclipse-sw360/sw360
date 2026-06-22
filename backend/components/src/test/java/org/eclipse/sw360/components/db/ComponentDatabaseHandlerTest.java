@@ -167,9 +167,14 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
+        Project project = new Project().setId("P1").setName("Project").setCreatedBy(email1);
+        project.putToExternalIds(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged");
+        projectHandler.addProject(project, user1);
+
         when(svmConnector.fetchComponentMappings())
                 .thenReturn(ImmutableMap.of("R1A", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 123),
-                        "R2B", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 456)));
+                        "R2B", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 456),
+                        project.getId(), ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 789)));
         RequestStatus requestStatus = handler.updateReleasesWithSvmTrackingFeedback();
 
         assertEquals(RequestStatus.SUCCESS, requestStatus);
@@ -177,6 +182,8 @@ public class ComponentDatabaseHandlerTest {
         assertEquals("123", r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
         Release r2B = handler.getRelease("R2B", user1);
         assertEquals("456", r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
+        Project p1 = projectHandler.getProjectById(project.getId(), user1);
+        assertEquals(project.getExternalIds(), p1.getExternalIds());
     }
 
     @Test

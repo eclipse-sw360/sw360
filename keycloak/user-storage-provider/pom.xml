@@ -97,7 +97,6 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
-            <version>${jakarta.ws.rs-api.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
