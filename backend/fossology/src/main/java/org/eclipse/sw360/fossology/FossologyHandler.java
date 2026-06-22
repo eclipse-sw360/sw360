@@ -16,12 +16,11 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -32,7 +31,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import java.io.InputStream;
@@ -47,11 +46,10 @@ import java.util.Set;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD;
 
 /**
- * Implementation of the Thrift service with v2 API support.
- * Optimized for FOSSology v2 API endpoints with enhanced functionality.
+ * FOSSology integration handler with v2 API support.
  */
-@Component
-public class FossologyHandler implements FossologyService.Iface {
+@Service
+public class FossologyHandler {
 
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmm");
 
@@ -79,7 +77,6 @@ public class FossologyHandler implements FossologyService.Iface {
         this.attachmentConnector = attachmentConnector;
     }
 
-    @Override
     public RequestStatus setFossologyConfig(ConfigContainer newConfig) throws TException {
         try {
             return fossologyRestConfig.update(newConfig).getConfigKeyToValues().equals(newConfig.getConfigKeyToValues())
@@ -90,17 +87,14 @@ public class FossologyHandler implements FossologyService.Iface {
         }
     }
 
-    @Override
     public ConfigContainer getFossologyConfig() throws TException {
         return fossologyRestConfig.get();
     }
 
-    @Override
     public RequestStatus checkConnection() throws TException {
         return fossologyRestClient.checkConnection() ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
     }
 
-    @Override
     public RequestStatus markFossologyProcessOutdated(String releaseId, User user) throws TException {
         ExternalToolProcess fossologyProcess;
 
@@ -137,7 +131,6 @@ public class FossologyHandler implements FossologyService.Iface {
         return ThriftClients.makeComponentClient();
     }
 
-    @Override
     public ExternalToolProcess process(String releaseId, User user, String uploadDescription) throws TException {
         ExternalToolProcess fossologyProcess;
 
@@ -664,7 +657,6 @@ public class FossologyHandler implements FossologyService.Iface {
         return release.getName() + "-" + release.getVersion() + "-" + dateTimeFormatter.format(now) + "-SPDX.rdf";
     }
 
-    @Override
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
         ComponentService.Iface componentClient = getComponentClient();
         Release release = componentClient.getReleaseById(releaseId, user);
@@ -695,12 +687,10 @@ public class FossologyHandler implements FossologyService.Iface {
         return RequestStatus.SUCCESS;
     }
 
-    @Override
     public Map<String, String> checkUnpackStatus(int uploadId) throws TException {
         return fossologyRestClient.checkUnpackStatus(uploadId);
     }
 
-    @Override
     public Map<String, String> checkScanStatus(int scanJobId) throws TException {
         return fossologyRestClient.checkScanStatus(scanJobId);
     }

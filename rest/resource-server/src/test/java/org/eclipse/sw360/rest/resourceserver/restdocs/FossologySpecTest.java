@@ -13,8 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,16 +23,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.admin.fossology.Sw360FossologyAdminServices;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
@@ -52,25 +47,12 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
     @MockitoBean
     Sw360FossologyAdminServices fossologyAdminServices;
 
-    @MockitoBean
-    FossologyService.Iface fossologyClient;
-
-    @MockitoBean
-    private ConfigContainer fossologyConfig;
-
     @Before
-    public void before() throws TException, IOException,TTransportException {
-        fossologyClient = mock(FossologyService.Iface.class);
-        User sw360User = new User();
-        sw360User.setId("123456789");
-        sw360User.setEmail("admin@sw360.org");
-        sw360User.setFullname("John Doe");
+    public void before() throws TException, IOException {
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
-        when(fossologyAdminServices.getThriftFossologyClient()).thenReturn(fossologyClient);
-        when(fossologyClient.getFossologyConfig()).thenReturn(fossologyConfig);
-        Mockito.doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any(), any(), any());
-        Mockito.doNothing().when(fossologyAdminServices).serverConnection(any());
+        doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any(), any(), any());
+        doNothing().when(fossologyAdminServices).serverConnection(any());
     }
 
     @Test
