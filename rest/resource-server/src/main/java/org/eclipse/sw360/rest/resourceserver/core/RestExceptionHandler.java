@@ -131,14 +131,17 @@ public class RestExceptionHandler {
     @ExceptionHandler({SW360Exception.class})
     public ResponseEntity<ErrorMessage> handleSw360Exception(SW360Exception e) {
         HttpStatus httpStatus = resolveHttpStatus(e);
-        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy()), httpStatus), httpStatus);
+        return new ResponseEntity<>(new ErrorMessage(e, httpStatus), httpStatus);
     }
 
     private static HttpStatus resolveHttpStatus(SW360Exception e) {
         if (e.isSetErrorCode()) {
-            HttpStatus resolved = HttpStatus.resolve(e.getErrorCode());
-            if (resolved != null) {
-                return resolved;
+            int errorCode = e.getErrorCode();
+            if (errorCode >= 400 && errorCode <= 599) {
+                HttpStatus resolved = HttpStatus.resolve(errorCode);
+                if (resolved != null) {
+                    return resolved;
+                }
             }
         }
         return HttpStatus.INTERNAL_SERVER_ERROR;
