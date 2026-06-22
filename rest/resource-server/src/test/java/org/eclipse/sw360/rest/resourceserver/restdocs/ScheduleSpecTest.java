@@ -65,6 +65,8 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
                         "cvesearchService", Map.of("isScheduled", true, "firstOffsetSeconds", 0,
                                 "intervalSeconds", 86400, "nextSynchronization", "2026-05-13T00:00:00"),
                         "svmsyncService", Map.of("isScheduled", false, "firstOffsetSeconds", 3600,
+                                "intervalSeconds", 86400, "nextSynchronization", "N/A"),
+                        "licensedbsyncService", Map.of("isScheduled", false, "firstOffsetSeconds", 3600,
                                 "intervalSeconds", 86400, "nextSynchronization", "N/A")
                 ));
 
@@ -128,8 +130,10 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cvesearchService").exists())
                 .andExpect(jsonPath("$.svmsyncService").exists())
+                .andExpect(jsonPath("$.licensedbsyncService").exists())
                 .andExpect(jsonPath("$.cvesearchService.isScheduled").value(true))
-                .andExpect(jsonPath("$.svmsyncService.isScheduled").value(false));
+                .andExpect(jsonPath("$.svmsyncService.isScheduled").value(false))
+                .andExpect(jsonPath("$.licensedbsyncService.isScheduled").value(false));
     }
 
     @Test

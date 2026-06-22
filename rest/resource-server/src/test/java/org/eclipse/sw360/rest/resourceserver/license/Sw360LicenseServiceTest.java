@@ -12,9 +12,11 @@ package org.eclipse.sw360.rest.resourceserver.license;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,5 +64,25 @@ public class Sw360LicenseServiceTest {
         RequestStatus result = licenseService.updateLicense(new License(), new User());
 
         assertThat(result).isEqualTo(RequestStatus.SUCCESS);
+    }
+
+    @Test
+    public void importLicenseDBInformation_returnsRequestSummary_whenUserIsAdmin() throws TException {
+        User adminUser = new User("admin@sw360.org", "sw360").setUserGroup(UserGroup.ADMIN);
+        RequestSummary expected = new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
+        when(licenseClient.importAllLicenseDBLicenses(any())).thenReturn(expected);
+
+        RequestSummary result = licenseService.importLicenseDBInformation(adminUser);
+
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    public void importLicenseDBInformation_throwsBadRequestClientException_whenUserIsNotAdmin() {
+        User nonAdminUser = new User("user@sw360.org", "sw360").setUserGroup(UserGroup.USER);
+
+        assertThatThrownBy(() -> licenseService.importLicenseDBInformation(nonAdminUser))
+                .isInstanceOf(BadRequestClientException.class)
+                .hasMessageContaining("not admin");
     }
 }

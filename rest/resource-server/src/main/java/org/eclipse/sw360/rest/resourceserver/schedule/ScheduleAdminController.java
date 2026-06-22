@@ -61,6 +61,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
             - `svmListUpdateService` – SVM monitoring list update
             - `srcAttachmentUploadService` – Source attachment upload
             - `importDepartmentService` – Import department schedule
+            - `licensedbsyncService` – LicenseDB license and obligation sync
             """;
 
     @NonNull
@@ -182,7 +183,8 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                     schema = @Schema(type = "string", allowableValues = {
                             "cvesearchService", "svmsyncService", "svmmatchService",
                             "deleteattachmentService", "svmTrackingFeedbackService",
-                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService",
+                            "licensedbsyncService"
                     }), required = true)
             @RequestParam(value = "serviceName") String serviceName
     ) throws TException {
@@ -225,7 +227,8 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                     schema = @Schema(type = "string", allowableValues = {
                             "cvesearchService", "svmsyncService", "svmmatchService",
                             "deleteattachmentService", "svmTrackingFeedbackService",
-                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService",
+                            "licensedbsyncService"
                     }), required = true)
             @RequestParam(value = "serviceName") String serviceName
     ) throws TException {
@@ -267,7 +270,8 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                     schema = @Schema(type = "string", allowableValues = {
                             "cvesearchService", "svmsyncService", "svmmatchService",
                             "deleteattachmentService", "svmTrackingFeedbackService",
-                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService",
+                            "licensedbsyncService"
                     }), required = true)
             @RequestParam(value = "serviceName") String serviceName
     ) throws TException {
@@ -321,7 +325,8 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                     schema = @Schema(type = "string", allowableValues = {
                             "cvesearchService", "svmsyncService", "svmmatchService",
                             "deleteattachmentService", "svmTrackingFeedbackService",
-                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService"
+                            "svmListUpdateService", "srcAttachmentUploadService", "importDepartmentService",
+                            "licensedbsyncService"
                     }))
             @RequestParam(value = "serviceName", required = false) String serviceName
     ) throws TException {

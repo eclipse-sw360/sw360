@@ -87,6 +87,9 @@ public class ScheduleHandler implements ScheduleService.Iface {
             case ThriftClients.SRC_UPLOAD_SERVICE:
                 successSync = wrapSupplierException(() -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases(), serviceName);
                 break;
+            case ThriftClients.LICENSEDB_SYNC_SERVICE:
+                successSync = wrapSupplierException(() -> ThriftClients.makeLicenseClient().importAllLicenseDBLicenses(null).getRequestStatus(), serviceName);
+                break;
             default:
                 log.error("Could not schedule service: " + serviceName + ". Reason: service is not registered in ThriftClients.");
         }
@@ -131,6 +134,8 @@ public class ScheduleHandler implements ScheduleService.Iface {
                         ThriftClients.makeUserClient().importDepartmentSchedule();
                 case ThriftClients.SRC_UPLOAD_SERVICE ->
                         ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases();
+                case ThriftClients.LICENSEDB_SYNC_SERVICE ->
+                        ThriftClients.makeLicenseClient().importAllLicenseDBLicenses(user).getRequestStatus();
                 default -> {
                     log.error("Could not trigger service: {}. Reason: service is not registered.", serviceName);
                     yield RequestStatus.FAILURE;

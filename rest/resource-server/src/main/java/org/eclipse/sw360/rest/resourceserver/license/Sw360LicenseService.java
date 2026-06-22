@@ -322,6 +322,15 @@ public class Sw360LicenseService {
         }
     }
 
+    public RequestSummary importLicenseDBInformation(User sw360User) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            return sw360LicenseClient.importAllLicenseDBLicenses(sw360User);
+        } else {
+            throw new BadRequestClientException("Unable to import LicenseDB licenses. User is not admin");
+        }
+    }
+
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (StringUtils.isNotEmpty(licenseType)) {

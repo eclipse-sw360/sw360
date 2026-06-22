@@ -151,6 +151,7 @@ public class ThriftClients {
     public static final String DELETE_ATTACHMENT_SERVICE = "deleteattachmentService";
     public static final String IMPORT_DEPARTMENT_SERVICE = "importdepartmentService";
     public static final String SRC_UPLOAD_SERVICE = "srcAttachmentUploadService";
+    public static final String LICENSEDB_SYNC_SERVICE = "licensedbsyncService";
 
 
     static {

@@ -314,6 +314,9 @@ service LicenseService {
     RequestSummary importAllSpdxLicenses(1: User user);
 
     RequestSummary importAllOSADLLicenses(1: User user);
+
+    RequestSummary importAllLicenseDBLicenses(1: User user);
+
     /**
      * delete obligation from database if user has permissions
      **/

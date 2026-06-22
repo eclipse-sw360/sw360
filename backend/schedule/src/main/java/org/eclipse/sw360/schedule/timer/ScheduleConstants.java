@@ -64,6 +64,10 @@ public class ScheduleConstants {
     public static final String DEPARTMENT_OFFSET_DEFAULT  = "0" ; // default 00:00 am, in seconds
     public static final String DEPARTMENT_INTERVAL_PROPERTY_NAME = "schedule.department.interval.seconds";
     public static final String DEPARTMENT_INTERVAL_DEFAULT  = (24*60*60) + "" ; // default 24h, in seconds
+    public static final String LICENSEDB_SYNC_OFFSET_PROPERTY_NAME = "schedule.licensedbsync.firstOffset.seconds";
+    public static final String LICENSEDB_SYNC_INTERVAL_PROPERTY_NAME = "schedule.licensedbsync.interval.seconds";
+    public static final String LICENSEDB_SYNC_OFFSET_DEFAULT = (1*60*60) + "" ; // default 01:00 am, in seconds
+    public static final String LICENSEDB_SYNC_INTERVAL_DEFAULT = (24*60*60) + "" ; // default 24h, in seconds
 
     // scheduler properties
     public static final ConcurrentHashMap<String, Integer> SYNC_FIRST_RUN_OFFSET_SEC = new ConcurrentHashMap<>();
@@ -82,6 +86,7 @@ public class ScheduleConstants {
         loadScheduledServiceProperties(props, ThriftClients.SRC_UPLOAD_SERVICE, SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME, SRC_UPLOAD_SERVICE_OFFSET_DEFAULT, SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME, SRC_UPLOAD_SERVICE_INTERVAL_DEFAULT);
         loadScheduledServiceProperties(props, ThriftClients.DELETE_ATTACHMENT_SERVICE, DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME, DELETE_ATTACHMENT_OFFSET_DEFAULT, DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME, DELETE_ATTACHMENT_INTERVAL_DEFAULT);
         loadScheduledServiceProperties(props, ThriftClients.IMPORT_DEPARTMENT_SERVICE, DEPARTMENT_OFFSET_PROPERTY_NAME, DEPARTMENT_OFFSET_DEFAULT, DEPARTMENT_INTERVAL_PROPERTY_NAME, DEPARTMENT_INTERVAL_DEFAULT);
+        loadScheduledServiceProperties(props, ThriftClients.LICENSEDB_SYNC_SERVICE, LICENSEDB_SYNC_OFFSET_PROPERTY_NAME, LICENSEDB_SYNC_OFFSET_DEFAULT, LICENSEDB_SYNC_INTERVAL_PROPERTY_NAME, LICENSEDB_SYNC_INTERVAL_DEFAULT);
 
         String autostartServicesString = props.getProperty(AUTOSTART_PROPERTY_NAME, "").trim();
         autostartServices = java.util.Arrays.stream(autostartServicesString.split(","))
