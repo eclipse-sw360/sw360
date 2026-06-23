@@ -21,6 +21,7 @@ import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
@@ -335,6 +336,10 @@ public class RestControllerHelper<T> {
         Sort.Order order = firstOrderFromPageable(pageable);
         if(order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
+        }
+        // When sorting by score (relevance), skip client-side re-sorting to preserve Nouveau's score order
+        if ("score".equals(order.getProperty())) {
+            return null;
         }
         Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
         if(order.isDescending()) {
@@ -887,7 +892,7 @@ public class RestControllerHelper<T> {
         }
     }
 
-    private void createMissingLicense(String licenseId) throws Exception {
+    public void createMissingLicense(String licenseId) throws Exception {
         License newLicense = new License();
         newLicense.setId(licenseId);
         newLicense.setShortname(licenseId);
@@ -1751,6 +1756,10 @@ public class RestControllerHelper<T> {
         return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);
     }
 
+    public boolean isSecurityAdminWriteActionAllowedForVulRating(Object object, User user) {
+        return makePermission(object, user).isActionAllowed(RequestedAction.WRITE_VULNERABILITY);
+    }
+
     public void throwIfSecurityUser(User user) {
         if (PermissionUtils.isSecurityUser(user)) {
             throw new AccessDeniedException("User is not allowed to access this resource.");
@@ -1769,7 +1778,8 @@ public class RestControllerHelper<T> {
      */
     public static Map<String, Set<String>> getFilterMapForProject(
             String tag, String projectType, String group, String version, String projectResponsible,
-            ProjectState projectState, ProjectClearingState projectClearingState, String additionalData
+            ProjectState projectState, ProjectClearingState projectClearingState, String additionalData,
+            String attachmentAuthor
     ) {
         Map<String, Set<String>> filterMap = new HashMap<>();
         if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
@@ -1795,6 +1805,9 @@ public class RestControllerHelper<T> {
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(additionalData)) {
             filterMap.put(Project._Fields.ADDITIONAL_DATA.getFieldName(), CommonUtils.splitToSet(additionalData));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentAuthor)) {
+            filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, Collections.singleton(attachmentAuthor));
         }
         return filterMap;
     }

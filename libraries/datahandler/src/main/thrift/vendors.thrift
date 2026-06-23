@@ -32,6 +32,7 @@ struct Vendor {
 }
 
 enum VendorSortColumn {
+    BY_SCORE = -2,
     BY_FULLNAME = 0,
     BY_SHORTNAME = 1,
 }

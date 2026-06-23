@@ -10,8 +10,12 @@ package org.eclipse.sw360.datahandler.common;
 
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import com.ibm.cloud.sdk.core.security.Authenticator;
+import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
+import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,11 +47,14 @@ public class DatabaseSettings {
     public static final boolean COUCH_DB_CACHE;
 
     public static final int LUCENE_SEARCH_LIMIT;
-    public static final boolean LUCENE_LEADING_WILDCARD;
 
     public static final boolean CLOUDANT_ENABLE_RETRIES;
     public static final int CLOUDANT_MAX_RETRIES;
     public static final int CLOUDANT_MAX_RETRY_INTERVAL;
+    public static final int CLOUDANT_POOL_MAX_IDLE_CONNECTIONS;
+    public static final int CLOUDANT_POOL_KEEPALIVE_SECONDS;
+    public static final int CLOUDANT_MAX_REQUESTS;
+    public static final int CLOUDANT_MAX_REQUESTS_PER_HOST;
 
     private static final Optional<String> COUCH_DB_USERNAME;
     private static final Optional<String> COUCH_DB_PASSWORD;
@@ -75,12 +82,18 @@ public class DatabaseSettings {
         COUCH_DB_CACHE = Boolean.parseBoolean(props.getProperty("couchdb.cache", "true"));
 
         LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
-        LUCENE_LEADING_WILDCARD =
-                Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
 
         CLOUDANT_ENABLE_RETRIES = Boolean.parseBoolean(props.getProperty("cloudant.enable.retries", "true"));
         CLOUDANT_MAX_RETRIES = Integer.parseInt(props.getProperty("cloudant.max.retries", "2"));
         CLOUDANT_MAX_RETRY_INTERVAL = Integer.parseInt(props.getProperty("cloudant.max.retry.interval", "5"));
+
+        // Optional Cloudant OkHttp tuning. Disabled by default unless explicitly set (> 0).
+        CLOUDANT_POOL_MAX_IDLE_CONNECTIONS = Integer.parseInt(props.getProperty(
+                "cloudant.pool.max.idle.connections", "-1"));
+        CLOUDANT_POOL_KEEPALIVE_SECONDS = Integer.parseInt(props.getProperty(
+                "cloudant.pool.keepalive.seconds", "-1"));
+        CLOUDANT_MAX_REQUESTS = Integer.parseInt(props.getProperty("cloudant.max.requests", "-1"));
+        CLOUDANT_MAX_REQUESTS_PER_HOST = Integer.parseInt(props.getProperty("cloudant.max.requests.per.host", "-1"));
     }
 
     private static final Cloudant CLIENT = createConfiguredClient();
@@ -125,7 +138,50 @@ public class DatabaseSettings {
         if (CLOUDANT_ENABLE_RETRIES) {
             client.enableRetries(CLOUDANT_MAX_RETRIES, CLOUDANT_MAX_RETRY_INTERVAL);
         }
+        tuneCloudantHttpClient(client);
         return client;
+    }
+
+    private static void tuneCloudantHttpClient(@NotNull Cloudant client) {
+        final boolean poolTuningEnabled = CLOUDANT_POOL_MAX_IDLE_CONNECTIONS > 0
+                || CLOUDANT_POOL_KEEPALIVE_SECONDS > 0;
+        final boolean dispatcherTuningEnabled = CLOUDANT_MAX_REQUESTS > 0
+                || CLOUDANT_MAX_REQUESTS_PER_HOST > 0;
+
+        if (!poolTuningEnabled && !dispatcherTuningEnabled) {
+            return;
+        }
+
+        OkHttpClient currentClient = client.getClient();
+        OkHttpClient.Builder tunedBuilder = currentClient.newBuilder();
+
+        if (poolTuningEnabled) {
+            // OkHttp defaults: 5 idle connections, 5 minutes keepalive.
+            int maxIdleConnections = CLOUDANT_POOL_MAX_IDLE_CONNECTIONS > 0
+                    ? CLOUDANT_POOL_MAX_IDLE_CONNECTIONS
+                    : 5;
+            long keepAliveSeconds = CLOUDANT_POOL_KEEPALIVE_SECONDS > 0
+                    ? CLOUDANT_POOL_KEEPALIVE_SECONDS
+                    : 300;
+
+            tunedBuilder.connectionPool(new ConnectionPool(maxIdleConnections, keepAliveSeconds, TimeUnit.SECONDS));
+        }
+
+        if (dispatcherTuningEnabled) {
+            Dispatcher tunedDispatcher = new Dispatcher(currentClient.dispatcher().executorService());
+            tunedDispatcher.setMaxRequests(CLOUDANT_MAX_REQUESTS > 0
+                    ? CLOUDANT_MAX_REQUESTS
+                    : currentClient.dispatcher().getMaxRequests());
+            tunedDispatcher.setMaxRequestsPerHost(CLOUDANT_MAX_REQUESTS_PER_HOST > 0
+                    ? CLOUDANT_MAX_REQUESTS_PER_HOST
+                    : currentClient.dispatcher().getMaxRequestsPerHost());
+            tunedBuilder.dispatcher(tunedDispatcher);
+        }
+
+        client.setClient(tunedBuilder.build());
+        log.info("Applied Cloudant HTTP tuning: poolIdleMax={}, poolKeepAliveSeconds={}, maxRequests={}, maxRequestsPerHost={}",
+                CLOUDANT_POOL_MAX_IDLE_CONNECTIONS, CLOUDANT_POOL_KEEPALIVE_SECONDS,
+                CLOUDANT_MAX_REQUESTS, CLOUDANT_MAX_REQUESTS_PER_HOST);
     }
 
     private static boolean hasValue(@NotNull Optional<String> value) {

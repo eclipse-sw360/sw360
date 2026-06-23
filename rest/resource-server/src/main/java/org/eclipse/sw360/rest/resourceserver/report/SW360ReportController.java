@@ -6,15 +6,16 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.rest.resourceserver.report;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAIL_REQUEST_FOR_COMPONENT_REPORT;
-import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAIL_REQUEST_FOR_PROJECT_REPORT;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAIL_REQUEST_FOR_REPORT;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.JSON_FILE_EXTENSION;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTENSION;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
@@ -40,7 +41,8 @@ import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core
+        .BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -256,7 +258,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             String baseUrl, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            if (SW360Utils.readConfig(MAIL_REQUEST_FOR_PROJECT_REPORT, false)) {
+            if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedProjectPath(sw360User, reportBean.isWithLinkedReleases(), baseUrl, projectId);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
@@ -280,7 +282,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String baseUrl, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            if (SW360Utils.readConfig(MAIL_REQUEST_FOR_COMPONENT_REPORT, false)) {
+            if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedComponentPath(sw360User, reportBean.isWithLinkedReleases(), baseUrl);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "Component report download link will get send to the end user.");
@@ -321,7 +323,15 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+            if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
+                sw360ReportService.getUploadedLicenseInfoPath(sw360User, reportBean.isWithSubProject(),
+                        null, projectId, reportBean);
+                JsonObject responseJson = new JsonObject();
+                responseJson.addProperty("response", "The license info report link will be sent to the end user.");
+                response.getWriter().write(responseJson.toString());
+            } else {
+                downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+            }
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (AccessDeniedException e) {
@@ -401,7 +411,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (null == buff) {
                 throw new TException("No data available for the user " + user.getEmail());
             }
-            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
+            setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, buff);
         } catch (ResourceNotFoundException e) {
             throw e;
@@ -437,7 +447,38 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         FileCopyUtils.copy(buffer.array(), response.getOutputStream());
     }
 
+    private void setContentDisposition(HttpServletResponse response, String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            response.setHeader(CONTENT_DISPOSITION, "attachment");
+            return;
+        }
+        String asciiName = fileName.replaceAll("[^\\x20-\\x7E]", "_");
+        String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        response.setHeader(CONTENT_DISPOSITION,
+                "attachment; filename=\"" + asciiName + "\"; filename*=UTF-8''" + encodedName);
+    }
+
     private void setContentTypeForFormat(HttpServletResponse response, String format) {
+        setContentTypeForDownload(response, format, null);
+    }
+
+    private void setContentTypeForDownload(HttpServletResponse response, String format, String generatorClassName) {
+        if (generatorClassName != null) {
+            switch (generatorClassName) {
+                case "DocxGenerator":
+                    response.setContentType(SW360Constants.CONTENT_TYPE_DOCX);
+                    return;
+                case "XhtmlGenerator":
+                    response.setContentType(SW360Constants.CONTENT_TYPE_XHTML);
+                    return;
+                case "TextGenerator":
+                    response.setContentType(SW360Constants.CONTENT_TYPE_TEXT);
+                    return;
+                default:
+                    break;
+            }
+        }
         String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
         switch (fmt) {
             case "csv":
@@ -470,12 +511,18 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     public void downloadExcel(
             HttpServletRequest request,
             HttpServletResponse response,
-            @Parameter(description = "Module name.", schema = @Schema(allowableValues = {SW360Constants.PROJECTS, SW360Constants.COMPONENTS, SW360Constants.LICENSES}))
+            @Parameter(description = "Module name.", schema = @Schema(allowableValues = {SW360Constants.PROJECTS, SW360Constants.COMPONENTS, SW360Constants.LICENSES, LICENSE_INFO}))
             @RequestParam(value = "module", required = true) String module,
             @Parameter(description = "Token to download report.")
             @RequestParam(value = "token", required = true) String token,
             @Parameter(description = "Extended by releases.")
-            @RequestParam(value = "extendedByReleases", required = false, defaultValue = "false") boolean extendedByReleases
+            @RequestParam(value = "extendedByReleases", required = false, defaultValue = "false") boolean extendedByReleases,
+            @Parameter(description = "Output generator class name. Required for module [" + LICENSE_INFO + "]",
+                    schema = @Schema(type = "string", allowableValues = {"DocxGenerator", "XhtmlGenerator", "TextGenerator"}))
+            @RequestParam(value = "generatorClassName", required = false) String generatorClassName,
+            @Parameter(description = "Variant of the license info report. Required for module [" + LICENSE_INFO + "]",
+                    schema = @Schema(implementation = OutputFormatVariant.class))
+            @RequestParam(value = "variant", required = false) String variant
     ) throws SW360Exception {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         try {
@@ -493,14 +540,25 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     buffer = sw360ReportService.getLicenseReportStreamFromURl(token);
                     fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
                     break;
+                case LICENSE_INFO:
+                    buffer = sw360ReportService.getLicenseInfoReportStreamFromUrl(token);
+                    String projectId = request.getParameter("projectId");
+                    if (projectId != null) {
+                        fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId,
+                                generatorClassName, variant);
+                    }
+                    setContentTypeForDownload(response, null, generatorClassName);
+                    break;
                 default:
                     break;
             }
             if (null == buffer) {
                 throw new TException("No data available for the user " + user.getEmail());
             }
-            response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
-            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
+            if (!LICENSE_INFO.equals(module)) {
+                response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
+            }
+            setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, buffer);
         } catch (ResourceNotFoundException e) {
             throw e;
@@ -531,7 +589,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (SW360Constants.XML_FILE_EXTENSION.equalsIgnoreCase(reportBean.getBomType())) {
                 response.setContentType(SW360Constants.CONTENT_TYPE_XML);
             }
-            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
+            setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, ByteBuffer.wrap(buff.getBytes()));
         }
         catch (AccessDeniedException e) {

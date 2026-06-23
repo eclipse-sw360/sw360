@@ -8,4 +8,4 @@ REM
 REM SPDX-License-Identifier: EPL-2.0
 REM
 
-keytool -list -rfc --keystore jwt.jks | openssl x509 -inform pem -pubkey
+keytool -list -rfc --keystore jwt-keystore.jks --storepass sw360SecretKey --alias jwt | openssl x509 -inform pem -pubkey

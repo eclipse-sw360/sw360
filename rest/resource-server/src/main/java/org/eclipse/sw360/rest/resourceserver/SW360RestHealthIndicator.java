@@ -11,7 +11,6 @@
 package org.eclipse.sw360.rest.resourceserver;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -31,9 +30,11 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         List<Exception> exceptions = new ArrayList<>();
         RestState restState = check(exceptions);
         final String rest_state_detail = "Rest State";
+        final String thrift_pool_detail = "Thrift Connection Pool";
         if (!restState.isUp()) {
             Health.Builder builderWithDetails = Health.down()
-                    .withDetail(rest_state_detail, restState);
+                    .withDetail(rest_state_detail, restState)
+                    .withDetail(thrift_pool_detail, ThriftClients.getThriftConnectionPoolStats());
             for (Exception exception : exceptions) {
                 builderWithDetails = builderWithDetails.withException(exception);
             }
@@ -42,6 +43,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         }
         return Health.up()
                 .withDetail(rest_state_detail, restState)
+                .withDetail(thrift_pool_detail, ThriftClients.getThriftConnectionPoolStats())
                 .build();
     }
 
@@ -74,14 +76,14 @@ public class SW360RestHealthIndicator implements HealthIndicator {
                                 new Throwable(health.getDetails().toString())));
                 return false;
             }
-        } catch (TException e) {
+        } catch (Exception e) {
             exception.add(e);
             return false;
         }
     }
 
     protected HealthService.Iface makeHealthClient() {
-        return new ThriftClients().makeHealthClient();
+        return ThriftClients.makeHealthClient();
     }
 
     protected DatabaseInstanceCloudant makeDatabaseInstance() {

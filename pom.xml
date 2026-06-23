@@ -15,7 +15,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.eclipse.sw360</groupId>
   <artifactId>sw360</artifactId>
-  <version>20.1.0-rc-1</version>
+  <version>20.1.0-rc-2</version>
   <packaging>pom</packaging>
   <name>Eclipse SW360</name>
   <description>Eclipse SW360 compliance management application</description>
@@ -71,99 +71,88 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Plugin version properties -->
     <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
-    <checkstyle.version>13.4.2</checkstyle.version>
-    <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
-    <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
+    <checkstyle.version>13.6.0</checkstyle.version>
+    <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+    <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-    <maven-dependency-plugin.version>3.10.0</maven-dependency-plugin.version>
-    <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
-    <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+    <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
+    <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
+    <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
     <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
-    <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+    <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
     <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
-    <maven-war-plugin.version>3.5.0</maven-war-plugin.version>
-    <versions-maven-plugin.version>2.19.1</versions-maven-plugin.version>
+    <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+    <maven-war-plugin.version>3.5.1</maven-war-plugin.version>
+    <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
     <!-- JSON Libraries used in the project -->
-    <gson.version>2.13.2</gson.version>
-    <json-path.version>3.0.0</json-path.version>
-    <json-smart.version>2.6.0</json-smart.version>
+    <gson.version>2.14.0</gson.version>
     <json-simple.version>4.0.1</json-simple.version>
-    <jackson.version>2.21.3</jackson.version>
-    <jackson.annotation.version>2.21</jackson.annotation.version>
+    <jackson.version>2.22.0</jackson.version>
+    <jackson.annotation.version>2.22</jackson.annotation.version>
 
     <!-- Dependencies version properties -->
     <assertj.version>3.27.7</assertj.version>
-    <byte-buddy.version>1.17.8</byte-buddy.version>
-    <cloudantsdk.version>0.10.17</cloudantsdk.version>
-    <commons-cli.version>1.10.0</commons-cli.version>
-    <commons-codec.version>1.20.0</commons-codec.version>
-    <commons-collection4.version>4.5.0</commons-collection4.version>
-    <commons-compress.version>1.28.0</commons-compress.version>
+    <byte-buddy.version>1.18.10</byte-buddy.version>
+    <cloudantsdk.version>0.10.18</cloudantsdk.version>
+    <commons-cli.version>1.11.0</commons-cli.version>
+    <commons-codec.version>1.22.0</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
     <commons-csv.version>1.14.1</commons-csv.version>
-    <commons-io.version>2.20.0</commons-io.version>
+    <commons-io.version>2.22.0</commons-io.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <commons-text.version>1.15.0</commons-text.version>
     <sun.mail.version>2.0.2</sun.mail.version>
     <dom4j.version>2.2.0</dom4j.version>
-    <equalsverifier.version>4.3</equalsverifier.version>
-    <failureaccess.version>1.0.3</failureaccess.version>
+    <equalsverifier.version>4.5</equalsverifier.version>
     <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
-    <git-commit-id.version>9.0.2</git-commit-id.version>
-    <glassfish-jaxb.version>4.0.6</glassfish-jaxb.version>
-    <guava.version>33.5.0-jre</guava.version>
+    <git-commit-id.version>10.0.0</git-commit-id.version>
+    <glassfish-jaxb.version>4.0.8</glassfish-jaxb.version>
+    <guava.version>33.6.0-jre</guava.version>
     <hamcrest.version>1.3</hamcrest.version>
     <httpclient5.version>5.6.1</httpclient5.version>
-    <httpcore.version>4.4.16</httpcore.version>
-    <httpcore5.version>5.4.2</httpcore5.version>
-    <jakarta-xml-bind.version>4.0.4</jakarta-xml-bind.version>
+    <jakarta-xml-bind.version>4.0.5</jakarta-xml-bind.version>
     <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
     <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
-    <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
     <jakarta.mail-api.version>2.0.2</jakarta.mail-api.version>
     <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
-    <jaxen.version>2.0.0</jaxen.version>
-    <jboss-logging.version>3.6.1.Final</jboss-logging.version>
+    <jaxen.version>2.0.5</jaxen.version>
+    <jboss-logging.version>3.6.3.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.55</jcraft.version>
-    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
+    <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
     <jetty.version>10.0.15</jetty.version>
     <jgiven.version>2.0.3</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
-    <json.version>20250517</json.version>
-    <joda-time.version>2.14.0</joda-time.version>
+    <joda-time.version>2.14.2</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
-    <junit.version>6.0.3</junit.version>
-    <junit-platform-launcher.version>6.0.3</junit-platform-launcher.version>
-    <log4j2.version>2.25.4</log4j2.version>
-    <logback.version>1.5.18</logback.version>
+    <junit.version>6.1.0</junit.version>
+    <log4j2.version>2.26.0</log4j2.version>
+    <logback.version>1.5.33</logback.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
-    <mockito.version>5.21.0</mockito.version>
+    <mockito.version>5.23.0</mockito.version>
     <okhttp.version>5.3.2</okhttp.version>
-    <org.ow2.asm.version>9.9.1</org.ow2.asm.version>
-    <org.spdx.java.spdx.library.version>2.0.2</org.spdx.java.spdx.library.version>
+    <org.ow2.asm.version>9.10.1</org.ow2.asm.version>
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
     <plexus-utils.version>4.0.3</plexus-utils.version>
     <poi.version>5.5.1</poi.version>
-    <project-lombok.version>1.18.38</project-lombok.version>
-    <slf4j.version>2.0.17</slf4j.version>
-    <spotless.version>2.29.0</spotless.version>
-    <spring-boot.version>4.0.6</spring-boot.version>
+    <project-lombok.version>1.18.46</project-lombok.version>
+    <slf4j.version>2.0.18</slf4j.version>
+    <spotless.version>3.7.0</spotless.version>
+    <spring-boot.version>4.1.0</spring-boot.version>
     <spring-restdocs.version>4.0.0</spring-restdocs.version>
-    <spring-security-oauth2-authorization-server.version>7.0.4</spring-security-oauth2-authorization-server.version>
-    <spring-security.version>7.0.5</spring-security.version>
+    <spring-security-oauth2-authorization-server.version>7.1.0</spring-security-oauth2-authorization-server.version>
+    <spring-security.version>7.1.0</spring-security.version>
     <springdoc-openapi-stater-common.version>3.0.3</springdoc-openapi-stater-common.version>
-    <springframework.version>7.0.7</springframework.version>
+    <springframework.version>7.0.8</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <archunit.version>1.4.2</archunit.version>
-    <wiremock.version>3.13.1</wiremock.version>
-    <keycloak.version>26.6.1</keycloak.version>
-    <org.owasp.encoder.version>1.3.1</org.owasp.encoder.version>
+    <wiremock.version>3.13.2</wiremock.version>
+    <keycloak.version>26.6.3</keycloak.version>
+    <org.owasp.encoder.version>1.4.0</org.owasp.encoder.version>
     <write.properties.file.version>2.0.0</write.properties.file.version>
     <!-- Deployment artifact name (Tomcat context root). Defaults to artifactId.
          Override per-module only when the desired deploy name differs from the artifactId. -->
@@ -174,20 +163,23 @@
     <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <!-- Dependency version properties (not yet in Spring BOM) -->
-    <axis.version>1.4</axis.version>
     <cyclonedx-core-java.version>12.2.0</cyclonedx-core-java.version>
     <maven-model.version>4.0.0-beta-4</maven-model.version>
     <velocity-engine-core.version>2.4.1</velocity-engine-core.version>
     <velocity-tools-generic.version>3.1</velocity-tools-generic.version>
-    <saxon-dom.version>8.7</saxon-dom.version>
+
+    <!--
+      Tip used by the spotless-maven-plugin to limit checks/auto-formatting
+      to files that differ from this git revision. Defaults to `origin/main`
+      so an unmodified working tree on the default branch reports clean.
+      Override on the command line, e.g. `-Dspotless.ratchetFrom=HEAD~1` or
+      `-Dspotless.ratchetFrom=` (empty) to disable ratcheting and check the
+      whole repo.
+    -->
+    <spotless.ratchetFrom>origin/main</spotless.ratchetFrom>
   </properties>
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.apache.axis</groupId>
-        <artifactId>axis</artifactId>
-        <version>${axis.version}</version>
-      </dependency>
       <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
@@ -217,21 +209,6 @@
         <version>${json-simple.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.json</groupId>
-        <artifactId>json</artifactId>
-        <version>${json.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>net.minidev</groupId>
-        <artifactId>json-smart</artifactId>
-        <version>${json-smart.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.jayway.jsonpath</groupId>
-        <artifactId>json-path</artifactId>
-        <version>${json-path.version}</version>
-      </dependency>
-      <dependency>
         <groupId>com.github.package-url</groupId>
         <artifactId>packageurl-java</artifactId>
         <version>${package-url.version}</version>
@@ -240,6 +217,21 @@
         <groupId>jakarta.annotation</groupId>
         <artifactId>jakarta.annotation-api</artifactId>
         <version>${jakarta.annotation-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.mail</groupId>
+        <artifactId>jakarta.mail-api</artifactId>
+        <version>${jakarta.mail-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.mail</groupId>
+        <artifactId>jakarta.mail</artifactId>
+        <version>${sun.mail.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.ws.rs</groupId>
+        <artifactId>jakarta.ws.rs-api</artifactId>
+        <version>${jakarta.ws.rs-api.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -252,11 +244,6 @@
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
         <version>${log4j2.version}</version>
@@ -264,6 +251,11 @@
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
+        <version>${log4j2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-slf4j-impl</artifactId>
         <version>${log4j2.version}</version>
       </dependency>
       <dependency>
@@ -297,11 +289,6 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
         <version>${commons-text.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>failureaccess</artifactId>
-        <version>${failureaccess.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-cli</groupId>
@@ -346,11 +333,6 @@
         <version>${commons-codec.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-collections4</artifactId>
-        <version>${commons-collection4.version}</version>
-      </dependency>
-      <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>${commons-io.version}</version>
@@ -371,29 +353,9 @@
         <version>${jackson.annotation.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpcore</artifactId>
-        <version>${httpcore.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.core5</groupId>
-        <artifactId>httpcore5</artifactId>
-        <version>${httpcore5.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.core5</groupId>
-        <artifactId>httpcore5-h2</artifactId>
-        <version>${httpcore5.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.httpcomponents.client5</groupId>
         <artifactId>httpclient5</artifactId>
         <version>${httpclient5.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>jakarta.activation</groupId>
-        <artifactId>jakarta.activation-api</artifactId>
-        <version>${jakarta.activation-api.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.gson</groupId>
@@ -409,11 +371,6 @@
         <groupId>org.spdx</groupId>
         <artifactId>tools-java</artifactId>
         <version>${org.spdx.tools.java.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.spdx</groupId>
-        <artifactId>java-spdx-library</artifactId>
-        <version>${org.spdx.java.spdx.library.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.velocity</groupId>
@@ -447,11 +404,6 @@
         <version>${jetbrains-annotations.version}</version>
       </dependency>
       <dependency>
-        <groupId>net.sf.saxon</groupId>
-        <artifactId>saxon-dom</artifactId>
-        <version>${saxon-dom.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
         <version>${assertj.version}</version>
@@ -465,7 +417,7 @@
       <dependency>
         <groupId>org.junit.platform</groupId>
         <artifactId>junit-platform-launcher</artifactId>
-        <version>${junit-platform-launcher.version}</version>
+        <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -533,11 +485,6 @@
         <artifactId>slf4j-simple</artifactId>
         <version>${slf4j.version}</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
-        <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
         <groupId>org.springframework</groupId>
@@ -617,28 +564,6 @@
         2.x (ObjectMapper) and Jackson 3.x (via JsonMapperBuilderCustomizer)
         so both converters work. These exclusions reduce classpath bloat.
       -->
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-jackson</artifactId>
-        <version>${spring-boot.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>tools.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-http-converter</artifactId>
-        <version>${spring-boot.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>tools.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-security</artifactId>
@@ -765,12 +690,6 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-model-jpa</artifactId>
-        <version>${keycloak.version}</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
         <groupId>org.jboss.logging</groupId>
         <artifactId>jboss-logging</artifactId>
         <version>${jboss-logging.version}</version>
@@ -797,9 +716,30 @@
       </dependency>
       <dependency>
         <groupId>org.springframework.restdocs</groupId>
+        <artifactId>spring-restdocs-core</artifactId>
+        <version>${spring-restdocs.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.restdocs</groupId>
         <artifactId>spring-restdocs-mockmvc</artifactId>
         <version>${spring-restdocs.version}</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.owasp.encoder</groupId>
+        <artifactId>encoder</artifactId>
+        <version>${org.owasp.encoder.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jul-to-slf4j</artifactId>
+        <version>${slf4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.springdoc</groupId>
@@ -900,7 +840,7 @@
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven-resources-plugin.version}</version>
           <configuration>
-            <overwrite>true</overwrite>
+            <changeDetection>always</changeDetection>
           </configuration>
         </plugin>
         <plugin>
@@ -1026,6 +966,10 @@
                 <requireJavaVersion>
                   <version>[21,23)</version>
                 </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[3.9.0,)</version>
+                  <message>ERROR: This project requires Maven 3.9.0 or newer.</message>
+                </requireMavenVersion>
               </rules>
               <fail>true</fail>
             </configuration>
@@ -1037,6 +981,40 @@
         <version>${maven-scm-plugin.version}</version>
         <configuration>
           <tag>${project.artifactId}-${project.version}</tag>
+        </configuration>
+      </plugin>
+      <plugin>
+        <!--
+          Spotless enforces minimal, mechanical Java formatting rules. It is
+          configured with `ratchetFrom` so that only files that changed relative
+          to `${spotless.ratchetFrom}` (default `origin/main`) are inspected,
+          which lets us adopt formatting hygiene incrementally without a
+          one-shot reformat of the entire legacy codebase.
+
+          Usage:
+            mvn spotless:check    # verify changed files (used in pre-commit/CI)
+            mvn spotless:apply    # auto-fix changed files
+
+          Disable ratcheting (e.g. for full-repo audits):
+            mvn spotless:check -Dspotless.ratchetFrom=
+        -->
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
+          <java>
+            <includes>
+              <include>src/main/java/**/*.java</include>
+              <include>src/test/java/**/*.java</include>
+            </includes>
+            <indent>
+              <spaces>true</spaces>
+              <spacesPerTab>4</spacesPerTab>
+            </indent>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </java>
         </configuration>
       </plugin>
     </plugins>

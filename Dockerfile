@@ -79,10 +79,22 @@ FROM tomcat:11-jre21-temurin-noble@sha256:59cb924b1a76508eb7769f102299293d6abcd0
 ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
 ENV CLOUDANT_ENABLE_RETRIES="true"
+ENV CLOUDANT_MAX_RETRIES="2"
+ENV CLOUDANT_MAX_RETRY_INTERVAL="5"
+ENV CLOUDANT_POOL_MAX_IDLE_CONNECTIONS="-1"
+ENV CLOUDANT_POOL_KEEPALIVE_SECONDS="-1"
+ENV CLOUDANT_MAX_REQUESTS="-1"
+ENV CLOUDANT_MAX_REQUESTS_PER_HOST="-1"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
-ENV JWKS_ISSUER_URI="http://localhost:8080/authorization"
+# Trusted JWT issuers (Spring relaxed-binding to sw360.security.jwt.issuers[N]).
+# *_ISSUER_URI is required per slot; *_JWK_SET_URI is optional and, when set,
+# skips OpenID Connect discovery and fetches JWKS directly from that URL.
+# Shared by both /resource and /authorization Bearer JWT validation paths.
+ENV SW360_SECURITY_JWT_ISSUERS_0_ISSUER_URI="http://localhost:8080/authorization"
+ENV SW360_SECURITY_JWT_ISSUERS_1_ISSUER_URI="http://localhost:8083/realms/sw360"
+#ENV SW360_SECURITY_JWT_ISSUERS_1_JWK_SET_URI="http://localhost:8083/realms/sw360/protocol/openid-connect/certs"
 #
 # Email configs
 ENV EMAIL_PROPERTIES_HOST=""
@@ -105,11 +117,18 @@ ENV SVM_SW360_CERTIFICATE_FILENAME="not-configured.pfx"
 # Security settings
 ENV SW360_SECURITY_HTTP_BASIC_ENABLED="true"
 #
+# Thrift server settings
+ENV BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL=200
+ENV BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE=100
+ENV BACKEND_THRIFT_IDLE_EVICT_SECONDS=15
+ENV BACKEND_THRIFT_CONNECTION_TTL_SECONDS=60
+#
 # Other settings
 ENV SCHEDULER_AUTOSTART_SERVICES="cvesearchService"
 ENV SW360_CORS_ALLOWED_ORIGIN="*"
 ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
 ENV SW360_BASE_URL="http://localhost:8080"
+ENV SW360_FRONTEND_URL="http://localhost:3000"
 
 # Install dependencies for entrypoint
 RUN apt-get update -qq \
@@ -129,6 +148,11 @@ WORKDIR /app/sw360
 # Copy the configuration files
 COPY ./scripts/docker-config .
 
+# Bundled JWT signing keystore (acts as a first-run fallback; the entrypoint
+# copies it to /etc/sw360/jwt-keystore.jks if no persistent keystore exists).
+# Operators can replace it with their own keystore via the 'etc' named volume.
+COPY rest/authorization-server/src/main/resources/jwt-keystore.jks ./jwt-keystore.jks
+
 # Tomcat manager for debugging portlets
 # Make entrypoint executable
 RUN mv ${CATALINA_HOME}/webapps.dist/manager ${CATALINA_HOME}/webapps/manager \
@@ -143,7 +167,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-FROM quay.io/keycloak/keycloak:26.6.1@sha256:dea26401d06341095cc4ea9d66896200b55de5ca1daa1d2fcbe58493afa6e0ad AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.6.3@sha256:5fdbf2dbb5897cc34e82de49d13e23db011f9925089dbc555fc095f2c8bc1dac AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -162,7 +186,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-FROM quay.io/keycloak/keycloak:26.6.1@sha256:dea26401d06341095cc4ea9d66896200b55de5ca1daa1d2fcbe58493afa6e0ad AS keycloak
+FROM quay.io/keycloak/keycloak:26.6.3@sha256:5fdbf2dbb5897cc34e82de49d13e23db011f9925089dbc555fc095f2c8bc1dac AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
@@ -172,6 +196,12 @@ ENV COUCHDB_URL="http://couchdb:5984"
 ENV COUCHDB_USER="admin"
 ENV COUCHDB_LUCENESEARCH_LIMIT="1000"
 ENV CLOUDANT_ENABLE_RETRIES="true"
+ENV CLOUDANT_MAX_RETRIES="2"
+ENV CLOUDANT_MAX_RETRY_INTERVAL="5"
+ENV CLOUDANT_POOL_MAX_IDLE_CONNECTIONS="-1"
+ENV CLOUDANT_POOL_KEEPALIVE_SECONDS="-1"
+ENV CLOUDANT_MAX_REQUESTS="-1"
+ENV CLOUDANT_MAX_REQUESTS_PER_HOST="-1"
 
 # Create the /etc/sw360
 USER root

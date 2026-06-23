@@ -61,12 +61,50 @@ file to tweak SW360 behaviour.
 * `COUCHDB_URL`: URL of the CouchDB instance (default: `http://couchdb:5984`).
 * `COUCHDB_LUCENESEARCH_LIMIT`: Limit for Lucene search results (default: `1000`).
 * `CLOUDANT_ENABLE_RETRIES`: Enable retries in Cloudant (default: `true`).
+* `CLOUDANT_MAX_RETRIES`: Max Cloudant retries when enabled (default: `2`).
+* `CLOUDANT_MAX_RETRY_INTERVAL`: Max retry interval in seconds (default: `5`).
+* `CLOUDANT_POOL_MAX_IDLE_CONNECTIONS`: Optional OkHttp pool idle-connection cap
+    (default: `-1`, disabled).
+* `CLOUDANT_POOL_KEEPALIVE_SECONDS`: Optional pooled connection keepalive in
+    seconds (default: `-1`, disabled).
+* `CLOUDANT_MAX_REQUESTS`: Optional OkHttp dispatcher max in-flight requests
+    (default: `-1`, disabled).
+* `CLOUDANT_MAX_REQUESTS_PER_HOST`: Optional OkHttp dispatcher max in-flight
+    requests per host (default: `-1`, disabled).
+
+**Thrift Backend Connection Pooling**
+* `BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL`: Max total pooled connections to backend (default: `200`).
+* `BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE`: Max pooled connections per backend route (default: `100`).
+* `BACKEND_THRIFT_IDLE_EVICT_SECONDS`: Validate idle pooled connections before reuse; set below
+    Tomcat's `keepAliveTimeout` (default: `15` seconds).
+* `BACKEND_THRIFT_CONNECTION_TTL_SECONDS`: Force-retire pooled connections older than this,
+    even if active (default: `60` seconds).
 
 **Spring Controllers**
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
-* `JWKS_ISSUER_URI`: URI for JWKS issuer (default:
-    `http://localhost:8080/authorization`). Use
-    `http://localhost:8083/realms/sw360` for KeyCloak based setup.
+* `SW360_SECURITY_JWT_ISSUERS_<N>_ISSUER_URI`: Public issuer URL for slot
+    `<N>` (0-based). Validated against the `iss` claim of incoming Bearer
+    tokens, so the value must exactly match the token issuer (scheme, host,
+    port, context path, trailing slash). Configure one slot per trusted
+    identity provider, e.g. the built-in SW360 Authorization Server and a
+    Keycloak realm. Defaults:
+    * `SW360_SECURITY_JWT_ISSUERS_0_ISSUER_URI=http://localhost:8080/authorization`
+    * `SW360_SECURITY_JWT_ISSUERS_1_ISSUER_URI=http://localhost:8083/realms/sw360`
+* `SW360_SECURITY_JWT_ISSUERS_<N>_JWK_SET_URI`: *(Optional)* JWKS endpoint URL
+    for slot `<N>`. When set, SW360 skips OpenID Connect
+    discovery and fetches JWKS directly from this URL. Useful when the
+    identity provider sits behind a reverse proxy with a self-signed or
+    privately-issued certificate; the resource server can reach the JWKS
+    endpoint over a loopback or internal URL while clients keep using the
+    public issuer URL. Leave unset to use discovery against `_ISSUER_URI`.
+
+    Both variables are bound directly to
+    `sw360.security.jwt.issuers[N].{issuer-uri,jwk-set-uri}` via Spring Boot's
+    relaxed environment-variable binding; nothing needs to be templated in
+    `application.yml`.
+
+    The trusted issuer list is consumed by both `/resource` and
+    `/authorization` Bearer JWT validation paths.
 
 **Email Configuration**
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to
@@ -115,6 +153,22 @@ file to tweak SW360 behaviour.
     Set this to `false` in production - clients should authenticate via
     OAuth2/JWT or API token. Set to `true` only for local development or
     integration testing where Basic auth is needed for convenience.
+* `JWT_SECRETKEY`: Password used by the Authorization Server to open
+    `/etc/sw360/jwt-keystore.jks` (default: `sw360SecretKey`).
+    **Change this in production** and keep it identical on every SW360 node
+    sharing the same JWT signing keystore.
+
+**JWT Signing Key**
+* The Authorization Server signs tokens with a JKS keystore stored at
+  `/etc/sw360/jwt-keystore.jks` (persisted by the `etc` named volume).
+* Startup seed order for `jwt-keystore.jks`:
+  1. Docker secret `JWT_KEYSTORE` (mounted at `/run/secrets/JWT_KEYSTORE`)
+  2. Existing `/etc/sw360/jwt-keystore.jks`
+  3. Bundled fallback `/app/sw360/jwt-keystore.jks`
+* To provide your own key, generate one and mount it via the `JWT_KEYSTORE`
+  compose secret or place it directly into `/etc/sw360/jwt-keystore.jks`.
+* Use `rest/authorization-server/tools/generateJwtStore.sh` to generate a
+  replacement keystore and keep `JWT_SECRETKEY` aligned with that keystore.
 
 ### Secrets
 
@@ -132,6 +186,11 @@ Sensitive information is managed via secret files located in
 * `REST_APITOKEN_HASH_SALT`: Salt for user generated API token hashing.
 * `EMAIL_PROPERTIES_USERNAME`: Username for SMTP authentication.
 * `EMAIL_PROPERTIES_PASSWORD`: Password for SMTP authentication.
+
+**JWT Keystore Secret**
+* `JWT_KEYSTORE`: Binary Docker secret containing the JWT signing keystore
+    (JKS format). In `docker-compose.yml` this defaults to the bundled
+    repository keystore and can be replaced by operators with a custom file.
 
 To update these secrets, simply edit the respective files. The
 [docker-compose.yml](docker-compose.yml) is configured to mount these secrets

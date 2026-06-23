@@ -61,6 +61,7 @@ public class SW360Constants {
     public static final String RELEASE_IDS = "releaseIds";
     public static final String PACKAGE_IDS = "packageIds";
     public static final String PROJECT_SEARCH_EMPTY_TOKEN = "__EMPTY__";
+    public static final String PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY = "attachmentCreatedBy";
 
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";
@@ -165,6 +166,9 @@ public class SW360Constants {
             AttachmentType.COMPONENT_LICENSE_INFO_COMBINED, AttachmentType.INITIAL_SCAN_REPORT);
     public static final Collection<AttachmentType> SOURCE_CODE_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.SOURCE, AttachmentType.SOURCE_SELF);
     public static final String CONTENT_TYPE_OPENXML_SPREADSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    public static final String CONTENT_TYPE_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    public static final String CONTENT_TYPE_XHTML = "application/xhtml+xml";
+    public static final String CONTENT_TYPE_TEXT = "text/plain";
     public static final String CONTENT_TYPE_XML = "application/xml";
     public static final String CONTENT_TYPE_JSON = "application/json";
     public static final String CONTENT_TYPE_CSV = "text/csv";

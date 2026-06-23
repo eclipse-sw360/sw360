@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
@@ -57,7 +57,6 @@ public class FossologyHandler implements FossologyService.Iface {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private final ThriftClients thriftClients;
     private final FossologyRestConfig fossologyRestConfig;
     private final FossologyRestClient fossologyRestClient;
     private final AttachmentConnector attachmentConnector;
@@ -72,9 +71,9 @@ public class FossologyHandler implements FossologyService.Iface {
     boolean reportStep = false;
 
     @Autowired
-    public FossologyHandler(ThriftClients thriftClients, FossologyRestConfig fossologyRestConfig,
+    public FossologyHandler(
+            FossologyRestConfig fossologyRestConfig,
             FossologyRestClient fossologyRestClient, AttachmentConnector attachmentConnector) {
-        this.thriftClients = thriftClients;
         this.fossologyRestConfig = fossologyRestConfig;
         this.fossologyRestClient = fossologyRestClient;
         this.attachmentConnector = attachmentConnector;
@@ -105,7 +104,7 @@ public class FossologyHandler implements FossologyService.Iface {
     public RequestStatus markFossologyProcessOutdated(String releaseId, User user) throws TException {
         ExternalToolProcess fossologyProcess;
 
-        Iface componentClient = thriftClients.makeComponentClient();
+        ComponentService.Iface componentClient = getComponentClient();
         Release release;
         try {
             release = componentClient.getReleaseById(releaseId, user);
@@ -134,11 +133,15 @@ public class FossologyHandler implements FossologyService.Iface {
         }
     }
 
+    ComponentService.Iface getComponentClient() {
+        return ThriftClients.makeComponentClient();
+    }
+
     @Override
     public ExternalToolProcess process(String releaseId, User user, String uploadDescription) throws TException {
         ExternalToolProcess fossologyProcess;
 
-        Iface componentClient = thriftClients.makeComponentClient();
+        ComponentService.Iface componentClient = getComponentClient();
         Release release = componentClient.getReleaseById(releaseId, user);
 
         Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
@@ -189,7 +192,7 @@ public class FossologyHandler implements FossologyService.Iface {
      * Start the upload to FOSSology and the scan jobs with it. Wait till the
      * upload is done and pass to scan started step with job id.
      */
-    private void handleUploadStepV2(Iface componentClient, Release release, User user,
+    private void handleUploadStepV2(ComponentService.Iface componentClient, Release release, User user,
             ExternalToolProcess fossologyProcess, Attachment sourceAttachment, String uploadDescription) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .getLast();
@@ -304,7 +307,7 @@ public class FossologyHandler implements FossologyService.Iface {
      * @throws TException If Release update failed
      */
     private void bailUploadFailed(
-            Iface componentClient, @Nonnull Release release, User user,
+            ComponentService.Iface componentClient, @Nonnull Release release, User user,
             @Nonnull ExternalToolProcess fossologyProcess, Exception exception,
             @Nonnull ExternalToolProcessStep furthestStep, String logMessage,
             String stepResultMessage
@@ -323,7 +326,7 @@ public class FossologyHandler implements FossologyService.Iface {
     /**
      * Handle scan step using v2 API
      */
-    private void handleScanStepV2(Iface componentClient,
+    private void handleScanStepV2(ComponentService.Iface componentClient,
                              Release release,
                              User user,
                              ExternalToolProcess fossologyProcess) throws TException {
@@ -449,7 +452,7 @@ public class FossologyHandler implements FossologyService.Iface {
     /**
      * Handle report step using v2 API - ENHANCED VERSION
      */
-    private void handleReportStepV2(Iface componentClient, Release release, User user,
+    private void handleReportStepV2(ComponentService.Iface componentClient, Release release, User user,
             ExternalToolProcess fossologyProcess) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .getLast();
@@ -505,7 +508,7 @@ public class FossologyHandler implements FossologyService.Iface {
     }
 
     private void updateFossologyProcessInRelease(ExternalToolProcess fossologyProcess, Release release, User user,
-            Iface componentClient) throws TException {
+                                                 ComponentService.Iface componentClient) throws TException {
         // because our workflow in between might have taken some time, we have to
         // refetch the release to get the current version (as another thread might have
         // written changes to the release which results in a new version so that we
@@ -628,9 +631,9 @@ public class FossologyHandler implements FossologyService.Iface {
         return etps;
     }
 
-    private String attachReportToRelease(Iface componentClient, Release release, User user, InputStream reportStream)
+    private String attachReportToRelease(ComponentService.Iface componentClient, Release release, User user, InputStream reportStream)
             throws TException {
-        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
 
         // first create the content metadata object and save it to get an id from couch
         AttachmentContent attachmentContent = new AttachmentContent(createReportAttachmentName(release));
@@ -663,7 +666,7 @@ public class FossologyHandler implements FossologyService.Iface {
 
     @Override
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
-        Iface componentClient = thriftClients.makeComponentClient();
+        ComponentService.Iface componentClient = getComponentClient();
         Release release = componentClient.getReleaseById(releaseId, user);
         Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
                 ExternalTool.FOSSOLOGY);

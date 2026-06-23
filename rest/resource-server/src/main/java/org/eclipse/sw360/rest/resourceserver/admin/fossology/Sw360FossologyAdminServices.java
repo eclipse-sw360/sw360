@@ -16,9 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
@@ -27,8 +25,6 @@ import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -39,9 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class Sw360FossologyAdminServices {
-
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
 
     private static FossologyService.Iface fossologyClient;
     public static Sw360FossologyAdminServices instance;
@@ -82,13 +75,7 @@ public class Sw360FossologyAdminServices {
 
     public FossologyService.Iface getThriftFossologyClient() throws TTransportException {
         if (fossologyClient == null) {
-            if (thriftServerUrl == null || thriftServerUrl.isEmpty()) {
-                throw new TTransportException("Invalid thriftServerUrl");
-            }
-
-            THttpClient thriftClient = new THttpClient(thriftServerUrl + "/fossology/thrift");
-            TProtocol protocol = new TCompactProtocol(thriftClient);
-            fossologyClient = new FossologyService.Client(protocol);
+            fossologyClient = ThriftClients.makeFossologyClient();
         }
 
         return fossologyClient;

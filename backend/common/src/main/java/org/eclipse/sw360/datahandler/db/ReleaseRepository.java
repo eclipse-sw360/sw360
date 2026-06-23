@@ -357,7 +357,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                 .useIndex(Collections.singletonList(indexName));
 
         List<Release> releases = getConnector().getQueryResultPaginated(
-                qb, Release.class, pageData, sortSelector);
+                qb, Release.class, pageData, sortSelector, indexName, true);
 
         return Collections.singletonMap(pageData, releases);
     }
@@ -380,6 +380,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
             case ReleaseSortColumn.BY_NAME -> "byname";
             case ReleaseSortColumn.BY_VERSION -> "releaseByVersion";
+            case ReleaseSortColumn.BY_SCORE -> "all";
             case null -> "all";
             default -> "byCreatedOn";
         };

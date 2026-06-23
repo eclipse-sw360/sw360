@@ -61,7 +61,6 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -412,10 +411,10 @@ public class SW360Utils {
         }
     }
 
-    public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+    public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                ProjectService.Iface client = thriftClients.makeProjectClient();
+                ProjectService.Iface client = ThriftClients.makeProjectClient();
                 List<ProjectLink> linkedProjects = client.getLinkedProjectsOfProject(project, deep, user);
                 return linkedProjects;
             } catch (TException e) {
@@ -425,10 +424,10 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static Collection<ProjectLink> getLinkedProjects(String id, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+    public static Collection<ProjectLink> getLinkedProjects(String id, boolean deep, Logger log, User user) {
         if (id != null) {
             try {
-                ProjectService.Iface client = thriftClients.makeProjectClient();
+                ProjectService.Iface client = ThriftClients.makeProjectClient();
                 List<ProjectLink> linkedProjects = client.getLinkedProjectsById(id, deep, user);
                 return linkedProjects;
             } catch (TException e) {
@@ -464,12 +463,12 @@ public class SW360Utils {
         return idsMap;
     }
 
-    public static Collection<ProjectLink> getLinkedProjectsAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
-        return flattenProjectLinkTree(getLinkedProjects(project, deep, thriftClients, log, user));
+    public static Collection<ProjectLink> getLinkedProjectsAsFlatList(Project project, boolean deep, Logger log, User user) {
+        return flattenProjectLinkTree(getLinkedProjects(project, deep, log, user));
     }
 
-    public static Collection<ProjectLink> getLinkedProjectsAsFlatList(String id, boolean deep, ThriftClients thriftClients, Logger log, User user) {
-        return flattenProjectLinkTree(getLinkedProjects(id, deep, thriftClients, log, user));
+    public static Collection<ProjectLink> getLinkedProjectsAsFlatList(String id, boolean deep, Logger log, User user) {
+        return flattenProjectLinkTree(getLinkedProjects(id, deep, log, user));
     }
 
     public static Collection<ProjectLink> flattenProjectLinkTree(Collection<ProjectLink> linkedProjects) {
@@ -486,9 +485,9 @@ public class SW360Utils {
     }
 
     public static Collection<ProjectLink> getLinkedProjectsAsFlatList(Project project, boolean deep,
-            ThriftClients thriftClients, Logger log, User user,
+            Logger log, User user,
             Set<ProjectRelationship> selectedProjectRelationAsList) {
-        Collection<ProjectLink> linkedProjects = getLinkedProjects(project, deep, thriftClients, log, user);
+        Collection<ProjectLink> linkedProjects = getLinkedProjects(project, deep, log, user);
         if (CommonUtils.isNotEmpty(linkedProjects)) {
             filteredListOfLinkedProject(linkedProjects.iterator().next().getSubprojects(),
                     selectedProjectRelationAsList);
@@ -507,10 +506,10 @@ public class SW360Utils {
         }
     }
 
-    public static List<ReleaseLink> getLinkedReleases(Project project, ThriftClients thriftClients, Logger log) {
+    public static List<ReleaseLink> getLinkedReleases(Project project, Logger log) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
-                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
                 return componentClient.getLinkedReleases(project.getReleaseIdToUsage());
             } catch (TException e) {
                 log.error("Could not get linked releases", e);
@@ -519,10 +518,10 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, ThriftClients thriftClients, Logger log, User user) {
+    public static List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, Logger log, User user) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
-                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
                 return componentClient.getLinkedReleasesWithAccessibility(project.getReleaseIdToUsage(), user);
             } catch (TException e) {
                 log.error("Could not get linked releases", e);
@@ -531,10 +530,10 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static List<ReleaseLink> getLinkedReleaseRelations(Release release, ThriftClients thriftClients, Logger log) {
+    public static List<ReleaseLink> getLinkedReleaseRelations(Release release, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
-                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
                 return componentClient.getLinkedReleaseRelations(release.getReleaseIdToRelationship());
             } catch (TException e) {
                 log.error("Could not get linked releases", e);
@@ -543,10 +542,10 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, ThriftClients thriftClients, Logger log, User user) {
+    public static List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, Logger log, User user) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
-                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
                 return componentClient.getLinkedReleaseRelationsWithAccessibility(release.getReleaseIdToRelationship(), user);
             } catch (TException e) {
                 log.error("Could not get linked releases", e);
@@ -572,7 +571,7 @@ public class SW360Utils {
 
     public static List<License> getLicenses(Collection<String> ids, String department) throws TException {
         if (ids != null && ids.size() > 0) {
-            LicenseService.Iface client = new ThriftClients().makeLicenseClient();
+            LicenseService.Iface client = ThriftClients.makeLicenseClient();
             return client.getByIds(new HashSet<>(ids), department);
         } else return Collections.emptyList();
     }
@@ -817,15 +816,30 @@ public class SW360Utils {
     public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
             Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations,
             ObligationLevel oblLevel, boolean addFromDB) {
+        return getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
+                EnumSet.of(oblLevel), addFromDB);
+    }
+
+    public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations, boolean addFromDB) {
+        return getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
+                EnumSet.of(ObligationLevel.PROJECT_OBLIGATION, ObligationLevel.COMPONENT_OBLIGATION,
+                        ObligationLevel.ORGANISATION_OBLIGATION),
+                addFromDB);
+    }
+
+    private static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations,
+            Set<ObligationLevel> obligationLevels, boolean addFromDB) {
         Map<String, ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap.entrySet().stream()
                 .filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
                 .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
-                .filter(e -> e.getValue().getObligationLevel().equals(oblLevel)).collect(Collectors.toMap(
+                .filter(e -> obligationLevels.contains(e.getValue().getObligationLevel())).collect(Collectors.toMap(
                         e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue));
         obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
 
         Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)
-                .filter(o -> Objects.nonNull(o.getObligationLevel()) && oblLevel.equals(o.getObligationLevel()))
+                .filter(o -> Objects.nonNull(o.getObligationLevel()) && obligationLevels.contains(o.getObligationLevel()))
                 .filter(o -> addFromDB || obligationAlreadyPresent
                         .containsKey(CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ")))
                 .collect(Collectors.toMap(
@@ -835,7 +849,7 @@ public class SW360Utils {
                                 return obligationAlreadyPresent.remove(key);
                             } else {
                                 return new ObligationStatusInfo().setComment(o.getComments())
-                                        .setObligationLevel(oblLevel).setObligationType(o.getObligationType())
+                                        .setObligationLevel(o.getObligationLevel()).setObligationType(o.getObligationType())
                                         .setReleaseIdToAcceptedCLI(new HashMap<>()).setText(o.getText());
                             }
                         }, (oldValue, newValue) -> oldValue));
@@ -846,7 +860,7 @@ public class SW360Utils {
     }
 
     public static List<Obligation> getObligations() {
-        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
+        final LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
         List<Obligation> obligations = new ArrayList<>();
 
         try {
@@ -901,7 +915,7 @@ public class SW360Utils {
     }
 
     public static void removeReleaseVulnerabilityRelation(String releaseId, User user){
-        VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
+        VulnerabilityService.Iface vulnerabilityService = ThriftClients.makeVulnerabilityClient();
         try {
             List<ReleaseVulnerabilityRelation> releaseVulnerabilityRelations = vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(releaseId, user);
             for (ReleaseVulnerabilityRelation relation : releaseVulnerabilityRelations) {
@@ -957,7 +971,7 @@ public class SW360Utils {
     }
 
     public static List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, User user) {
-        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
         Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(releaseIds);
         List<Project> projectsUsings;
         try {
@@ -985,10 +999,10 @@ public class SW360Utils {
         return filterMap;
     }
 
-    public static Collection<ProjectLink> getLinkedProjectWithoutReleases(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+    public static Collection<ProjectLink> getLinkedProjectWithoutReleases(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                ProjectService.Iface client = thriftClients.makeProjectClient();
+                ProjectService.Iface client = ThriftClients.makeProjectClient();
                 return client.getLinkedProjectsOfProjectWithoutReleases(project, deep, user);
             } catch (TException e) {
                 log.error("Could not get linked projects", e);
@@ -1018,7 +1032,7 @@ public class SW360Utils {
      */
     private static void createDefaultDependenciesNetwork(Project project, User user) throws TException {
         List<ReleaseNode> dependencyNetwork = new ArrayList<>();
-        ComponentService.Iface sw360ComponentService = new ThriftClients().makeComponentClient();
+        ComponentService.Iface sw360ComponentService = ThriftClients.makeComponentClient();
         if (project.getReleaseIdToUsage() != null) {
             Map<String, ProjectReleaseRelationship> oriReleaseIdToUsage = project.getReleaseIdToUsage();
             for (Map.Entry<String, ProjectReleaseRelationship> entry : oriReleaseIdToUsage.entrySet()) {
@@ -1062,14 +1076,14 @@ public class SW360Utils {
         project.setReleaseIdToUsage(releaseIdToUsage);
     }
 
-    public static Collection<ProjectLink> getLinkedProjectsWithAllReleasesAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
-        return flattenProjectLinkTree(getLinkedProjectsWithAllReleases(project, deep, thriftClients, log, user));
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleasesAsFlatList(Project project, boolean deep, Logger log, User user) {
+        return flattenProjectLinkTree(getLinkedProjectsWithAllReleases(project, deep, log, user));
     }
 
-    public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                ProjectService.Iface client = thriftClients.makeProjectClient();
+                ProjectService.Iface client = ThriftClients.makeProjectClient();
                 return client.getLinkedProjectsOfProjectWithAllReleases(project, deep, user);
             } catch (TException e) {
                 log.error("Could not get linked projects", e);
@@ -1146,7 +1160,7 @@ public class SW360Utils {
 
     public static String getConfigByKey(String key) throws SW360Exception {
         try {
-            SW360ConfigsService.Iface configClient = new ThriftClients().makeSW360ConfigsClient();
+            SW360ConfigsService.Iface configClient = ThriftClients.makeSW360ConfigsClient();
             return configClient.getConfigByKey(key);
         } catch (TException exception) {
             throw new SW360Exception("Unable to get configuration " + key);

@@ -40,6 +40,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -125,7 +126,29 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
      * Search with lucene using the previously declared search function
      */
     public <T> List<T> searchView(Class<T> type, String indexName, String queryString) {
-        return connector.get(type, searchIds(type, indexName, queryString));
+        NouveauResult queryNouveauResult = searchView(indexName, queryString, false);
+        if (queryNouveauResult != null && queryNouveauResult.getHits() != null) {
+            // Sort hits by relevance score descending to preserve Nouveau score order
+            queryNouveauResult.getHits().sort(new NouveauResultComparator());
+        }
+        List<String> orderedIds = getIdsFromResult(queryNouveauResult);
+        List<T> results = connector.get(type, orderedIds);
+
+        // Reorder results to match score-ordered IDs (connector.get doesn't preserve order)
+        if (!orderedIds.isEmpty()) {
+            Map<String, T> docMap = new LinkedHashMap<>();
+            for (T doc : results) {
+                String id = connector.getDocumentFromPojo(doc).getId();
+                if (id != null) {
+                    docMap.put(id, doc);
+                }
+            }
+            return orderedIds.stream()
+                    .map(docMap::get)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        }
+        return results;
     }
 
     /**
@@ -139,7 +162,25 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
                 pageData, sortColumn, sortAscending);
 
         PaginationData respPageData = idMap.keySet().iterator().next();
-        List<T> collections = connector.get(type, idMap.values().iterator().next());
+        List<String> orderedIds = idMap.values().iterator().next();
+        List<T> collections = connector.get(type, orderedIds);
+
+        // When sorting by score (sortColumn is null), preserve the order returned by Nouveau
+        // because connector.get() does not guarantee order preservation
+        if (sortColumn == null && !orderedIds.isEmpty()) {
+            Map<String, T> docMap = new LinkedHashMap<>();
+            for (T doc : collections) {
+                String id = connector.getDocumentFromPojo(doc).getId();
+                if (id != null) {
+                    docMap.put(id, doc);
+                }
+            }
+            List<T> reordered = orderedIds.stream()
+                    .map(docMap::get)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            collections = reordered;
+        }
 
         return Collections.singletonMap(respPageData, collections);
     }
@@ -163,6 +204,11 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
                 false, pageData, sortColumn, sortAscending);
         if (queryNouveauResult != null) {
             pageData.setTotalRowCount(queryNouveauResult.getTotalHits());
+            // When sorting by score (sortColumn is null), sort hits by relevance score descending
+            // because Nouveau does not guarantee score-based ordering when sort is null
+            if (sortColumn == null && queryNouveauResult.getHits() != null) {
+                queryNouveauResult.getHits().sort(new NouveauResultComparator());
+            }
         } else {
             pageData.setTotalRowCount(0);
         }
@@ -205,7 +251,30 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
                     break;
                 }
             }
-            return Double.compare(order1, order2);
+            // Sort by score descending (higher score = more relevant = first)
+            int scoreCompare = Double.compare(order2, order1);
+            if (scoreCompare != 0) {
+                return scoreCompare;
+            }
+            // Secondary sort by name ascending when scores are equal
+            String name1 = getDocField(o1, "name");
+            String name2 = getDocField(o2, "name");
+            int nameCompare = name1.compareToIgnoreCase(name2);
+            if (nameCompare != 0) {
+                return nameCompare;
+            }
+            // Tertiary sort by version ascending
+            String version1 = getDocField(o1, "version");
+            String version2 = getDocField(o2, "version");
+            return version1.compareToIgnoreCase(version2);
+        }
+
+        private String getDocField(NouveauResult.Hits hit, String field) {
+            if (hit.getDoc() != null && hit.getDoc().containsKey(field)) {
+                Object val = hit.getDoc().get(field);
+                return val != null ? val.toString() : "";
+            }
+            return "";
         }
     }
 
@@ -486,18 +555,55 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     public static @NotNull String prepareWildcardQuery(@NotNull String query) {
-        String leadingWildcardChar = DatabaseSettings.LUCENE_LEADING_WILDCARD ? "*" : "";
+        // Note: Nouveau does NOT support leading wildcards (*term), only trailing (term*)
+        //
+        // IMPORTANT - avoid bare TermQuery (plain exact-term) clauses wherever possible.
+        // Lucene 10.x's MemorySegmentIndexInput.prefetch() calls madvise(MADV_WILLNEED) on
+        // mmap'd index files when TermQuery.createWeight() resolves terms via TermStates.build()
+        // -> SegmentTermsEnum.prepareSeekExact() -> prefetchBlock().  On some Linux kernel
+        // configurations (seccomp profiles, hardened kernels) madvise() returns EPERM, causing
+        // a non-deterministic IOException that propagates as HTTP 500 from Nouveau.
+        // WildcardQuery/PrefixQuery (term*) and PhraseQuery expand differently and do NOT go
+        // through TermStates.build(), so they are safe to use here.
         if (query.startsWith("\"") && query.endsWith("\"")) {
             // Exact phrase search - strip outer quotes first, sanitize, then add quotes back
             String innerText = query.substring(1, query.length() - 1);
             String sanitized = sanitizeQueryInput(innerText);
-            // Return just the quoted text without parentheses for exact phrase search
-            return "\"" + sanitized + "\"";
+            return "(\"" + sanitized + "\")";
         } else {
-            String wildCardQuery = Arrays.stream(sanitizeQueryInput(query)
-                    .split(" ")).map(q -> leadingWildcardChar + q + "*")
-                    .collect(Collectors.joining(" "));
-            return "(\"" + wildCardQuery + "\" " + wildCardQuery + ")";
+            String sanitized = sanitizeQueryInput(query);
+            String[] words = sanitized.split(" ");
+
+            if (words.length > 1) {
+                // Multi-word query: prioritize exact phrase, then require all words as prefixes,
+                // then fall back to any word as a prefix.
+                //
+                // The former (obli AND test)^15 clause (exact TermQuery per word) is intentionally
+                // omitted: each bare TermQuery triggers TermStates.build() -> madvise(), which
+                // fails intermittently with EPERM on some Linux kernels (see note above).
+                // The phrase boost (^20) already covers the "all exact words" ranking intent.
+
+                // Highest boost: exact phrase match (PhraseQuery - does not use madvise path)
+                String exactPhrase = "\"" + sanitized.toLowerCase() + "\"^20";
+
+                // Medium boost: all words present as prefix matches (WildcardQuery AND)
+                String allWordsRequired = "(" + Arrays.stream(words)
+                        .map(w -> w.toLowerCase() + "*")
+                        .collect(Collectors.joining(" AND ")) + ")^5";
+
+                // Fallback: any word as a prefix match (WildcardQuery OR)
+                String wildCardWords = "(" + Arrays.stream(words)
+                        .map(w -> w.toLowerCase() + "*")
+                        .collect(Collectors.joining(" OR ")) + ")";
+
+                return "(" + exactPhrase + " OR " + allWordsRequired + " OR " + wildCardWords + ")";
+            } else {
+                // Single word: boosted exact term + wildcard for partial matches.
+                // One TermQuery per request has an acceptably low madvise failure rate; the boost
+                // is preserved so exact hits rank above prefix matches (e.g. "obli" > "obligation").
+                String lower = sanitized.toLowerCase();
+                return "(" + lower + "^5 OR " + lower + "*)";
+            }
         }
     }
 

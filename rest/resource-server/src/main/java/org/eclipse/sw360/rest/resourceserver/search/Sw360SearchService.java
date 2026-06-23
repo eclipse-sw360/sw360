@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Lists;
@@ -32,7 +31,7 @@ public class Sw360SearchService {
     private static final Logger log = LogManager.getLogger(Sw360SearchService.class);
 
     private SearchService.Iface getThriftSearchClient() {
-        return new ThriftClients().makeSearchClient();
+        return ThriftClients.makeSearchClient();
     }
 
     public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional) throws TException {

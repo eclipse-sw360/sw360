@@ -1,5 +1,6 @@
 /*
  * Copyright Rohit Borra, 2025. Part of the SW360 GSOC Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -21,11 +22,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.ByteArrayResource;
@@ -35,8 +33,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -51,9 +47,9 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,24 +57,17 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringRunner.class)
 public class LicenseTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
-
-    @MockitoBean
-    private Sw360LicenseService licenseServiceMock;
-
-    @MockitoBean
-    private SW360ReportService sw360ReportServiceMock;
 
     private License license1, license2, license3;
     private Obligation obligation1, obligation2;
     private RequestSummary testRequestSummary;
     private ObjectMapper objectMapper;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         // Setup test request summary
         testRequestSummary = new RequestSummary();
@@ -190,12 +179,12 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded licenses", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:licenses", responseBody.contains("sw360:licenses"));
-        assertTrue("Response should contain pagination info", responseBody.contains("page"));
-        assertTrue("Response should contain totalElements", responseBody.contains("totalElements"));
-        assertTrue("Response should contain Apache license", responseBody.contains("Apache License 2.0"));
-        assertTrue("Response should contain MIT license", responseBody.contains("The MIT License (MIT)"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded licenses");
+        assertTrue(responseBody.contains("sw360:licenses"), "Response should contain sw360:licenses");
+        assertTrue(responseBody.contains("page"), "Response should contain pagination info");
+        assertTrue(responseBody.contains("totalElements"), "Response should contain totalElements");
+        assertTrue(responseBody.contains("Apache License 2.0"), "Response should contain Apache license");
+        assertTrue(responseBody.contains("The MIT License (MIT)"), "Response should contain MIT license");
     }
 
     @Test
@@ -211,15 +200,15 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain license fullName", responseBody.contains("fullName"));
-        assertTrue("Response should contain license shortName", responseBody.contains("shortName"));
-        assertTrue("Response should contain Apache License 2.0", responseBody.contains("Apache License 2.0"));
-        assertTrue("Response should contain Apache 2.0", responseBody.contains("Apache 2.0"));
-        assertTrue("Response should contain externalIds", responseBody.contains("externalIds"));
-        assertTrue("Response should contain SPDX identifier", responseBody.contains("SPDX"));
-        assertTrue("Response should contain external license link", responseBody.contains("externalLicenseLink"));
-        assertTrue("Response should contain note", responseBody.contains("note"));
-        assertTrue("Response should contain License's Note", responseBody.contains("License's Note"));
+        assertTrue(responseBody.contains("fullName"), "Response should contain license fullName");
+        assertTrue(responseBody.contains("shortName"), "Response should contain license shortName");
+        assertTrue(responseBody.contains("Apache License 2.0"), "Response should contain Apache License 2.0");
+        assertTrue(responseBody.contains("Apache 2.0"), "Response should contain Apache 2.0");
+        assertTrue(responseBody.contains("externalIds"), "Response should contain externalIds");
+        assertTrue(responseBody.contains("SPDX"), "Response should contain SPDX identifier");
+        assertTrue(responseBody.contains("externalLicenseLink"), "Response should contain external license link");
+        assertTrue(responseBody.contains("note"), "Response should contain note");
+        assertTrue(responseBody.contains("License's Note"), "Response should contain License's Note");
     }
 
     @Test
@@ -243,14 +232,14 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain created license fullName", responseBody.contains("fullName"));
-        assertTrue("Response should contain created license shortName", responseBody.contains("shortName"));
-        assertTrue("Response should contain Apache 3.0", responseBody.contains("Apache 3.0"));
-        assertTrue("Response should contain Apache License 3.0", responseBody.contains("Apache License 3.0"));
-        assertTrue("Response should contain checked field", responseBody.contains("checked"));
-        assertTrue("Response should contain OSIApproved field", responseBody.contains("OSIApproved"));
-        assertTrue("Response should contain FSFLibre field", responseBody.contains("FSFLibre"));
-        assertTrue("Response should contain _links", responseBody.contains("_links"));
+        assertTrue(responseBody.contains("fullName"), "Response should contain created license fullName");
+        assertTrue(responseBody.contains("shortName"), "Response should contain created license shortName");
+        assertTrue(responseBody.contains("Apache 3.0"), "Response should contain Apache 3.0");
+        assertTrue(responseBody.contains("Apache License 3.0"), "Response should contain Apache License 3.0");
+        assertTrue(responseBody.contains("checked"), "Response should contain checked field");
+        assertTrue(responseBody.contains("OSIApproved"), "Response should contain OSIApproved field");
+        assertTrue(responseBody.contains("FSFLibre"), "Response should contain FSFLibre field");
+        assertTrue(responseBody.contains("_links"), "Response should contain _links");
     }
 
     @Test
@@ -272,7 +261,7 @@ public class LicenseTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain updated license data", response.getBody().contains("fullName"));
+        assertTrue(response.getBody().contains("fullName"), "Response should contain updated license data");
     }
 
     @Test
@@ -314,11 +303,11 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded license types", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:licenseTypes", responseBody.contains("sw360:licenseTypes"));
-        assertTrue("Response should contain Public domain license type", responseBody.contains("Public domain"));
-        assertTrue("Response should contain Proprietary license type", responseBody.contains("Proprietary license"));
-        assertTrue("Response should contain _links", responseBody.contains("_links"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded license types");
+        assertTrue(responseBody.contains("sw360:licenseTypes"), "Response should contain sw360:licenseTypes");
+        assertTrue(responseBody.contains("Public domain"), "Response should contain Public domain license type");
+        assertTrue(responseBody.contains("Proprietary license"), "Response should contain Proprietary license type");
+        assertTrue(responseBody.contains("_links"), "Response should contain _links");
     }
 
     @Test
@@ -334,8 +323,8 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain SUCCESS status", responseBody.contains("SUCCESS"));
-        assertTrue("Response should be a valid response", responseBody.equals("SUCCESS") || responseBody.contains("SUCCESS"));
+        assertTrue(responseBody.contains("SUCCESS"), "Response should contain SUCCESS status");
+        assertTrue("SUCCESS".equals(responseBody) || responseBody.contains("SUCCESS"), "Response should be a valid response");
     }
 
     @Test
@@ -349,7 +338,7 @@ public class LicenseTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue("Response should contain SUCCESS status", response.getBody().contains("SUCCESS"));
+        assertTrue(response.getBody().contains("SUCCESS"), "Response should contain SUCCESS status");
     }
 
     // ========== OBLIGATION TESTS ==========
@@ -367,13 +356,13 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain embedded obligations", responseBody.contains("_embedded"));
-        assertTrue("Response should contain sw360:obligations", responseBody.contains("sw360:obligations"));
-        assertTrue("Response should contain Obligation 1", responseBody.contains("Obligation 1"));
-        assertTrue("Response should contain Obligation 2", responseBody.contains("Obligation 2"));
-        assertTrue("Response should contain obligation titles", responseBody.contains("title"));
-        assertTrue("Response should contain obligation types", responseBody.contains("obligationType"));
-        assertTrue("Response should contain _links", responseBody.contains("_links"));
+        assertTrue(responseBody.contains("_embedded"), "Response should contain embedded obligations");
+        assertTrue(responseBody.contains("sw360:obligations"), "Response should contain sw360:obligations");
+        assertTrue(responseBody.contains("Obligation 1"), "Response should contain Obligation 1");
+        assertTrue(responseBody.contains("Obligation 2"), "Response should contain Obligation 2");
+        assertTrue(responseBody.contains("title"), "Response should contain obligation titles");
+        assertTrue(responseBody.contains("obligationType"), "Response should contain obligation types");
+        assertTrue(responseBody.contains("_links"), "Response should contain _links");
     }
 
     @Test
@@ -421,11 +410,11 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should contain request status", responseBody.contains("requestStatus"));
-        assertTrue("Response should contain SUCCESS status", responseBody.contains("SUCCESS"));
-        assertTrue("Response should contain OSADL import message", responseBody.contains("licensesSuccess"));
-        assertTrue("Response should contain total elements", responseBody.contains("totalElements"));
-        assertTrue("Response should contain total affected elements", responseBody.contains("totalAffectedElements"));
+        assertTrue(responseBody.contains("requestStatus"), "Response should contain request status");
+        assertTrue(responseBody.contains("SUCCESS"), "Response should contain SUCCESS status");
+        assertTrue(responseBody.contains("licensesSuccess"), "Response should contain OSADL import message");
+        assertTrue(responseBody.contains("totalElements"), "Response should contain total elements");
+        assertTrue(responseBody.contains("totalAffectedElements"), "Response should contain total affected elements");
     }
 
 
@@ -456,9 +445,8 @@ public class LicenseTest extends TestIntegrationBase {
         assertNotNull(response.getBody());
 
         String responseBody = response.getBody();
-        assertTrue("Response should indicate successful upload",
-                responseBody.contains("SUCCESS") || responseBody.contains("success") ||
-                        responseBody.contains("uploaded") || responseBody.isEmpty());
+        assertTrue(responseBody.contains("SUCCESS") || responseBody.contains("success") ||
+                responseBody.contains("uploaded") || responseBody.isEmpty(), "Response should indicate successful upload");
     }
 
     @Test

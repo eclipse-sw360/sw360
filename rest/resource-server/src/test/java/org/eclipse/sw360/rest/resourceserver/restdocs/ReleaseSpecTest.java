@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +43,7 @@ import java.util.UUID;
 
 import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -864,6 +867,37 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_release_batch_summary() throws Exception {
+        LinkedHashSet<String> requestedIds = new LinkedHashSet<>(Arrays.asList(release3.getId(), release.getId(), "missing-release"));
+        given(this.releaseServiceMock.getAccessibleReleasesByIds(eq(requestedIds), any()))
+                .willReturn(Arrays.asList(release, release3));
+
+        mockMvc.perform(post("/api/releases/batch-summary")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "ids": ["987456", "3765276512", "987456", "missing-release"]
+                        }
+                        """)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("ids").description("Array of release IDs. Duplicate IDs are deduplicated while preserving first-seen order.")
+                        ),
+                        responseFields(
+                                fieldWithPath("items").description("Ordered release summaries for all accessible requested releases."),
+                                fieldWithPath("items[].id").description("The release ID."),
+                                fieldWithPath("items[].name").description("The release name."),
+                                fieldWithPath("items[].version").description("The release version."),
+                                fieldWithPath("items[].clearingState").description("The release clearing state, possible values are " + Arrays.asList(ClearingState.values())).optional(),
+                                fieldWithPath("missingIds").description("Requested release IDs that were missing or inaccessible."),
+                                fieldWithPath("missingIds[]").description("A requested release ID that was not returned.").optional()
+                        )));
+    }
+
+    @Test
     public void should_document_get_releases_by_name() throws Exception {
         mockMvc.perform(get("/api/releases?name=" + release.getName())
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
@@ -1411,6 +1445,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_link_releases_to_release() throws Exception {
+        assumeTrue("Not running since Releases cannot be interlinked",
+                SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
 
         mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
                 .contentType(MediaTypes.HAL_JSON)
@@ -1418,6 +1454,25 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    public void should_reject_link_releases_when_nested_release_disabled() throws Exception {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(releaseIdToRelationship1))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(releaseIdToRelationship1))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isCreated());
+        }
     }
 
     @Test

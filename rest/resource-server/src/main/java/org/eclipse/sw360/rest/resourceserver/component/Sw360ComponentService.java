@@ -40,7 +40,6 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -318,7 +317,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        return new ThriftClients().makeComponentClient();
+        return ThriftClients.makeComponentClient();
     }
 
     public List<Component> getMyComponentsForUser(User sw360User) throws TException {
@@ -492,6 +491,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 case "vendorNames" -> ComponentSortColumn.BY_VENDOR;
                 case "mainLicenseIds" -> ComponentSortColumn.BY_MAINLICENSE;
                 case "type" -> ComponentSortColumn.BY_TYPE;
+                case "score" -> ComponentSortColumn.BY_SCORE;
                 default -> column; // Default to BY_CREATEDON if no match
             };
             ascending = order.isAscending();
@@ -519,7 +519,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 case "version" -> ReleaseSortColumn.BY_VERSION;
                 case "clearingState" -> ReleaseSortColumn.BY_CLEARING_STATE;
                 case "mainlineState" -> ReleaseSortColumn.BY_MAINLINE_STATE;
-                default -> column;
+                case "score" -> ReleaseSortColumn.BY_SCORE;
+                default -> column; // Default to BY_CREATEDON if no match
             };
             ascending = order.isAscending();
         }

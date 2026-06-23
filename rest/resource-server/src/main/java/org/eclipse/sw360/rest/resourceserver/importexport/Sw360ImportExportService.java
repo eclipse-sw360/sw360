@@ -57,10 +57,9 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.user.UserCSV;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
@@ -81,11 +80,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class Sw360ImportExportService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
-    ThriftClients thriftClients = new ThriftClients();
 
     public void getDownloadCsvComponentTemplate(User sw360User, HttpServletResponse response) throws IOException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
@@ -168,7 +164,7 @@ public class Sw360ImportExportService {
     }
 
     private List<Component> getComponentDetailedSummaryForExport() throws TTransportException{
-        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        final ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
 
         final List<Component> componentDetailedSummaryForExport;
         try {
@@ -281,9 +277,9 @@ public class Sw360ImportExportService {
         }
         List<CSVRecord> releaseRecords = getCSVFromRequest(request, "file");
         FluentIterable<ComponentCSVRecord> compCSVRecords = convertCSVRecordsToCompCSVRecords(releaseRecords);
-        ComponentService.Iface sw360ComponentClient = thriftClients.makeComponentClient();
-        VendorService.Iface sw360VendorClient = thriftClients.makeVendorClient();
-        AttachmentService.Iface sw360AttachmentClient = thriftClients.makeAttachmentClient();
+        ComponentService.Iface sw360ComponentClient = ThriftClients.makeComponentClient();
+        VendorService.Iface sw360VendorClient = ThriftClients.makeVendorClient();
+        AttachmentService.Iface sw360AttachmentClient = ThriftClients.makeAttachmentClient();
         RequestSummary requestSummary = writeToDatabase(compCSVRecords, sw360ComponentClient, sw360VendorClient,
                 sw360AttachmentClient, sw360User);
         return requestSummary;
@@ -314,7 +310,7 @@ public class Sw360ImportExportService {
         }
         List<CSVRecord> releaseLinkRecords = getCSVFromRequest(request, "file");
         FluentIterable<ReleaseLinkCSVRecord> csvRecords = convertCSVRecordsToReleaseLinkCSVRecords(releaseLinkRecords);
-        ComponentService.Iface sw360ComponentClient = thriftClients.makeComponentClient();
+        ComponentService.Iface sw360ComponentClient = ThriftClients.makeComponentClient();
         final RequestSummary requestSummary = writeReleaseLinksToDatabase(csvRecords, sw360ComponentClient, sw360User);
         return requestSummary;
     }
@@ -327,8 +323,8 @@ public class Sw360ImportExportService {
         List<CSVRecord> attachmentRecords = getCSVFromRequest(request, "file");
         FluentIterable<ComponentAttachmentCSVRecord> compCSVRecords = convertCSVRecordsToComponentAttachmentCSVRecords(
                 attachmentRecords);
-        ComponentService.Iface sw360ComponentClient = thriftClients.makeComponentClient();
-        AttachmentService.Iface sw360AttachmentClient = thriftClients.makeAttachmentClient();
+        ComponentService.Iface sw360ComponentClient = ThriftClients.makeComponentClient();
+        AttachmentService.Iface sw360AttachmentClient = ThriftClients.makeAttachmentClient();
         final RequestSummary requestSummary = writeAttachmentsToDatabase(compCSVRecords, sw360User,
                 sw360ComponentClient, sw360AttachmentClient);
         return requestSummary;
@@ -339,7 +335,7 @@ public class Sw360ImportExportService {
             throw new AccessDeniedException("User is not admin");
         }
 
-        UserService.Iface userClient = thriftClients.makeUserClient();
+        UserService.Iface userClient = getUserClient();
         List<User> users = userClient.getAllUsers();
 
         List<String> headers = Arrays.asList(
@@ -367,6 +363,10 @@ public class Sw360ImportExportService {
         String filename = String.format("AllUsersData_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Users; filename=\"%s\"", filename));
         FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+    }
+
+    UserService.@NonNull Iface getUserClient() {
+        return ThriftClients.makeUserClient();
     }
 
     /**
@@ -405,7 +405,7 @@ public class Sw360ImportExportService {
         }
 
         for (UserCSV user : csvRecords) {
-            if (Sw360UserService.syncUser(user, thriftClients)) {
+            if (Sw360UserService.syncUser(user)) {
                 successfulUsers++;
             }
         }

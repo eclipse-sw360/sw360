@@ -11,8 +11,14 @@
 
 server:
   port: 8091
+  compression:
+    enabled: true
+    min-response-size: 2KB
+    mime-types: application/json,application/hal+json,text/plain,text/html,text/xml,application/xml
   servlet:
     context-path: /resource/api
+  tomcat:
+    connection-timeout: 60s
 
 management:
   endpoints:
@@ -44,53 +50,37 @@ spring:
     multipart:
       max-file-size: 500MB
       max-request-size: 600MB
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          #issuer-uri: http://localhost:8083/realms/sw360
-          issuer-uri: $JWKS_ISSUER_URI
 
 #logging:
 #  level:
 #    org.springframework.web: DEBUG
 #    org.eclipse.sw360: debug
 
-security:
-  oauth2:
-    resource:
-      id: sw360-REST-API
-      jwt:
-        keyValue: |
-          -----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApz8Cr1o5yHMv/FUdF5uy
-          VptilqdWtNvw5S6Tr4IaQ4XR9QPt8nlRsjOngfG4QCcKMBWJISldFg8PlJWUBeV+
-          6TwQUidxokl2GbO6/+QA+lz1a5Ei1Y1pcnvFeRb2pdYlH3Yg6fXMxS6QwDLk27pZ
-          5xbpSDIGISDesyaIMvwaKdhAbFW/tTb/oJY7rCPvmYLT80kJzilijJ/W01jMMSHg
-          9Yi5cCt1eU/s78co+pxHzwNXO0Ul4iRpo/CXprQCsSIsdWkJTo6btal1xzd292Da
-          d+9xq499JEsNbcqLfCq8DBQ7CEz6aJjMvPkvZiCrFIGxC/Gqmw35DQ4688rbkKSJ
-          PQIDAQAB
-          -----END PUBLIC KEY-----
-
 jwt:
   auth:
     converter:
-      resource-id: sw360-rest-api
       principle-attribute: email
 
 sw360:
   thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
   base-url: ${SW360_BASE_URL:http://localhost:8080}
+  frontend-url: ${SW360_FRONTEND_URL:http://localhost:3000}
   test-user-id: admin@sw360.org
   test-user-password: 12345
   couchdb-url: $COUCHDB_URL
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
-   security:
-     # Set SW360_SECURITY_HTTP_BASIC_ENABLED=true to re-enable Basic auth (dev/testing only).
-     # Default is false; production containers should authenticate via JWT or API token.
-     http-basic:
-       enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
+  security:
+    # Set SW360_SECURITY_HTTP_BASIC_ENABLED=true to re-enable Basic auth (dev/testing only).
+    # Production containers should authenticate via JWT or API token.
+    http-basic:
+      enabled: $SW360_SECURITY_HTTP_BASIC_ENABLED
+    # Trusted JWT issuers are bound directly from environment variables using
+    # Spring Boot's relaxed binding rules; nothing needs to be templated here.
+    # For each issuer slot N, set:
+    #   SW360_SECURITY_JWT_ISSUERS_<N>_ISSUER_URI=<public issuer URL>
+    #   SW360_SECURITY_JWT_ISSUERS_<N>_JWK_SET_URI=<optional loopback JWKS URL>
+    # See README_DOCKER.md and Deploy-Configuration-Files.md for the full reference.
 
 blacklist:
   sw360:

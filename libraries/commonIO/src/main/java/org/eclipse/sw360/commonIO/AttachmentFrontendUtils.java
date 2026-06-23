@@ -40,9 +40,7 @@ public class AttachmentFrontendUtils {
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
 
     protected final ThreadLocal<AttachmentService.Iface> attchmntClient = ThreadLocal.<AttachmentService.Iface>withInitial(
-            () -> {
-                return new ThriftClients().makeAttachmentClient();
-            });
+            ThriftClients::makeAttachmentClient);
 
     public AttachmentFrontendUtils() {
     }

@@ -10,10 +10,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,14 +21,12 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class Sw360CustomUserDetailsService implements UserDetailsService {
+public class Sw360CustomUserDetailsService {
 
     private static final Logger log = LogManager.getLogger(Sw360CustomUserDetailsService.class);
 
-    @Autowired
-    Sw360UserDetailsProvider sw360UserDetailsProvider;
+    private final Sw360UserDetailsProvider sw360UserDetailsProvider;
 
-    @Override
     public @Nonnull UserDetails loadUserByUsername(@Nullable String userid) {
         log.info("Authenticating for the user with username {}", userid);
         User user = sw360UserDetailsProvider.provideUserDetails(userid, null);

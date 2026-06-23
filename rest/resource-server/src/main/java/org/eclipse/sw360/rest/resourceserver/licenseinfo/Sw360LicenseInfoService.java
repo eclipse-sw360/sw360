@@ -15,9 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -29,8 +27,6 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -38,9 +34,6 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class Sw360LicenseInfoService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
     public OutputFormatInfo getOutputFormatInfoForGeneratorClass(String generatorClassName) {
         try {
             LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
@@ -82,8 +75,6 @@ public class Sw360LicenseInfoService {
     }
 
     private LicenseInfoService.Iface getThriftLicenseInfoClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenseinfo/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new LicenseInfoService.Client(protocol);
+        return ThriftClients.makeLicenseInfoClient();
     }
 }

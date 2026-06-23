@@ -17,12 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
@@ -33,16 +29,14 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -61,56 +55,39 @@ import java.util.Set;
 public class Sw360ModerationRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ModerationRequestService.class);
 
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
-
     public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
         return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
     }
 
     private ModerationService.Iface getThriftModerationClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/moderation/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ModerationService.Client(protocol);
-    }
-    private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ComponentService.Client(protocol);
+        return ThriftClients.makeModerationClient();
     }
 
-    public ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
-        return projectClient;
+    private ComponentService.Iface getThriftComponentClient() {
+        return ThriftClients.makeComponentClient();
     }
 
-    private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new LicenseService.Client(protocol);
+    public ProjectService.Iface getThriftProjectClient() {
+        return ThriftClients.makeProjectClient();
     }
 
-    private SPDXDocumentService.Iface getThriftSPDXDocumentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxdocument/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new SPDXDocumentService.Client(protocol);
+    private LicenseService.Iface getThriftLicenseClient() {
+        return ThriftClients.makeLicenseClient();
+    }
+
+    private SPDXDocumentService.Iface getThriftSPDXDocumentClient() {
+        return ThriftClients.makeSPDXClient();
     }
 
     private DocumentCreationInformationService.Iface getThriftDocumentCreationInfo()  throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxdocumentcreationinfo/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new DocumentCreationInformationService.Client(protocol);
+        return ThriftClients.makeSPDXDocumentInfoClient();
     }
 
     private PackageInformationService.Iface getThriftPackageInfo()  throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxpackageinfo/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new PackageInformationService.Client(protocol);
+        return ThriftClients.makeSPDXPackageInfoClient();
     }
     private UserService.Iface getThriftUserClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/users/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new UserService.Client(protocol);
+        return ThriftClients.makeUserClient();
     }
 
     /**
@@ -502,5 +479,34 @@ public class Sw360ModerationRequestService {
         }
 
         return requestStatus;
+    }
+
+    /**
+     * Get clearing request by project ID.
+     *
+     * @param projectId Project ID
+     * @param user User making the request
+     * @return Clearing request if found, null otherwise
+     * @throws TException if Thrift communication fails
+     */
+    public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws TException {
+        try {
+            return getThriftModerationClient().getClearingRequestByProjectId(projectId, user);
+        } catch (TException e) {
+            log.debug("No clearing request found for project: {}", projectId, e);
+            return null;
+        }
+    }
+
+    /**
+     * Delete clearing request by ID.
+     *
+     * @param crId Clearing request ID
+     * @param user User making the request
+     * @return RequestStatus indicating success or failure
+     * @throws TException if Thrift communication fails
+     */
+    public RequestStatus deleteClearingRequest(String crId, User user) throws TException {
+        return getThriftModerationClient().deleteClearingRequest(crId, user);
     }
 }

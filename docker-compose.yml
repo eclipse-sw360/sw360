@@ -16,6 +16,7 @@ services:
     secrets:
       - COUCHDB_SECRETS
       - SW360_SECRETS
+      - JWT_KEYSTORE
     depends_on:
       - couchdb
     ports:
@@ -75,3 +76,5 @@ secrets:
     file: ./config/sw360/default_secrets
   COUCHDB_SECRETS:
     file: ./config/couchdb/default_secrets
+  JWT_KEYSTORE:
+    file: ./rest/authorization-server/src/main/resources/jwt-keystore.jks

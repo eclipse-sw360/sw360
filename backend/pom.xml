@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>sw360</artifactId>
-        <version>20.1.0-rc-1</version>
+        <version>20.1.0-rc-2</version>
     </parent>
 
     <artifactId>backend</artifactId>
@@ -66,7 +66,6 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>${jakarta.servlet-api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -130,12 +129,10 @@
         <dependency>
             <groupId>jakarta.mail</groupId>
             <artifactId>jakarta.mail-api</artifactId>
-            <version>${jakarta.mail-api.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>jakarta.mail</artifactId>
-            <version>${sun.mail.version}</version>
         </dependency>
     </dependencies>
 

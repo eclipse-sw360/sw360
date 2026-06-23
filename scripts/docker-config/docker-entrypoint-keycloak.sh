@@ -23,11 +23,16 @@ couchdb.change_logs = sw360changelogs\n\
 couchdb.config = sw360config\n\
 couchdb.vulnerability_management = sw360vm\n\
 lucenesearch.limit = %d\n\
-lucenesearch.leading.wildcard = false\n\
 cloudant.enable.retries = %s\n\
-cloudant.max.retries = 2\n\
-cloudant.max.retry.interval = 5\n" \
-"$COUCHDB_URL" "$COUCHDB_USER" "$COUCHDB_PASSWORD" "$COUCHDB_LUCENESEARCH_LIMIT" "$CLOUDANT_ENABLE_RETRIES" > /etc/sw360/couchdb.properties
+cloudant.max.retries = %s\n\
+cloudant.max.retry.interval = %s\n\
+cloudant.pool.max.idle.connections = %s\n\
+cloudant.pool.keepalive.seconds = %s\n\
+cloudant.max.requests = %s\n\
+cloudant.max.requests.per.host = %s\n" \
+"$COUCHDB_URL" "$COUCHDB_USER" "$COUCHDB_PASSWORD" "$COUCHDB_LUCENESEARCH_LIMIT" "$CLOUDANT_ENABLE_RETRIES" \
+"$CLOUDANT_MAX_RETRIES" "$CLOUDANT_MAX_RETRY_INTERVAL" "$CLOUDANT_POOL_MAX_IDLE_CONNECTIONS" "$CLOUDANT_POOL_KEEPALIVE_SECONDS" \
+"$CLOUDANT_MAX_REQUESTS" "$CLOUDANT_MAX_REQUESTS_PER_HOST" > /etc/sw360/couchdb.properties
 
 # Start KeyCloak server
 exec /opt/keycloak/bin/kc.sh "$@"

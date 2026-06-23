@@ -31,7 +31,6 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.security.access.AccessDeniedException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -85,8 +84,7 @@ public class Sw360ObligationService {
     }
 
     private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        ThriftClients thriftClients = new ThriftClients();
-        return thriftClients.makeLicenseClient();
+        return ThriftClients.makeLicenseClient();
     }
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {
@@ -147,8 +145,10 @@ public class Sw360ObligationService {
         }
         try {
             LicenseService.Iface licenseClient = getThriftLicenseClient();
+            ObligationSortColumn defaultSort = CommonUtils.isNullEmptyOrWhitespace(searchText)
+                    ? ObligationSortColumn.BY_TITLE : ObligationSortColumn.BY_SCORE;
             PaginationData pageData = pageableToPaginationData(pageable,
-                    ObligationSortColumn.BY_TITLE, true);
+                    defaultSort, true);
             return licenseClient.searchObligationTextPaginated(searchText, level, pageData);
         } catch (TException e) {
             throw new SW360Exception("Unable to fetch Obligations.");
@@ -174,6 +174,7 @@ public class Sw360ObligationService {
             column = switch (property) {
                 case "text" -> ObligationSortColumn.BY_TEXT;
                 case "level" -> ObligationSortColumn.BY_LEVEL;
+                case "score" -> ObligationSortColumn.BY_SCORE;
                 default -> column; // Default to BY_NAME if no match
             };
             ascending = order.isAscending();

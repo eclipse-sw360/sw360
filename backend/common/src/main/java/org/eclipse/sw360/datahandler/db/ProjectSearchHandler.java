@@ -93,6 +93,13 @@ public class ProjectSearchHandler {
                 "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
                 "      index('double', 'createdOn', Number(formattedDt), {'store': true});"+
                 "    }" +
+                "    if(doc.attachments && doc.attachments.length > 0) {" +
+                "      for(var i in doc.attachments) {" +
+                "        if(doc.attachments[i].createdBy) {" +
+                "          index('text', 'attachmentCreatedBy', doc.attachments[i].createdBy, {'store': true});" +
+                "        }" +
+                "      }" +
+                "    }" +
                 "}")
                     .setFieldAnalyzer(
                             Map.of("version", "keyword")
@@ -187,6 +194,8 @@ public class ProjectSearchHandler {
             case ProjectSortColumn.BY_DESCRIPTION -> "description_sort";
             case ProjectSortColumn.BY_RESPONSIBLE -> "projectResponsible_sort";
             case ProjectSortColumn.BY_STATE -> "state_sort";
+            // null signals Nouveau to skip sorting and return results ranked by relevance score
+            case ProjectSortColumn.BY_SCORE -> null;
             case null -> "name_sort";
             default -> "name_sort";
         };

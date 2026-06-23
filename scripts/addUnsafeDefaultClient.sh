@@ -21,6 +21,17 @@
 #
 # this needs the couchdb to be accessible on http://127.0.0.1:5984/ and the database sw360oauthclients has to be created.
 # Extend the script to include functionality for adding a default user to CouchDB
+#
+# Note (20.1.0+): the OAuth client document below intentionally has no
+# `owner_email` field. `trusted-sw360-client` is the bootstrap client for
+# interactive flows (authorization_code via the `sw360oauth` frontend
+# provider, the legacy password grant via `oauth-password-grant`, and
+# Postman / dev tooling). Those flows authenticate a real human, so the
+# resulting JWT carries the user's email directly and the resource server's
+# Sw360JWTAccessTokenConverter resolves the user via the email claim —
+# `oidcClientInfos` is never consulted. The `owner_email` field is only
+# required for clients minted through /client-management, which are
+# typically `client_credentials`-only service accounts.
 
 set -e
 

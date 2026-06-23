@@ -29,11 +29,9 @@ import java.util.function.Supplier;
 
 public class ScheduleHandler implements ScheduleService.Iface {
 
-    ThriftClients thriftClients;
     Logger log;
 
     public ScheduleHandler() {
-        thriftClients = new ThriftClients();
         log = LogManager.getLogger(ScheduleHandler.class);
     }
 
@@ -66,28 +64,28 @@ public class ScheduleHandler implements ScheduleService.Iface {
         boolean successSync = false;
         switch (serviceName) {
             case ThriftClients.CVESEARCH_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeCvesearchClient().update(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeCvesearchClient().update(), serviceName);
                 break;
             case ThriftClients.SVMSYNC_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeVMClient().synchronizeComponents().getRequestStatus(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus(), serviceName);
                 break;
             case ThriftClients.SVMMATCH_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeVMClient().triggerReverseMatch().getRequestStatus(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus(), serviceName);
                 break;
             case ThriftClients.SVM_LIST_UPDATE_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeProjectClient().exportForMonitoringList(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeProjectClient().exportForMonitoringList(), serviceName);
                 break;
             case ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
                 break;
             case ThriftClients.DELETE_ATTACHMENT_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
                 break;
             case ThriftClients.IMPORT_DEPARTMENT_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeUserClient().importDepartmentSchedule(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeUserClient().importDepartmentSchedule(), serviceName);
                 break;
             case ThriftClients.SRC_UPLOAD_SERVICE:
-                successSync = wrapSupplierException(() -> thriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases(), serviceName);
+                successSync = wrapSupplierException(() -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases(), serviceName);
                 break;
             default:
                 log.error("Could not schedule service: " + serviceName + ". Reason: service is not registered in ThriftClients.");
@@ -108,6 +106,40 @@ public class ScheduleHandler implements ScheduleService.Iface {
             return RequestStatus.FAILURE;
         }
         return Scheduler.cancelSyncJobOfService(serviceName);
+    }
+
+    @Override
+    public RequestStatus triggerManualService(String serviceName, User user) throws TException {
+        if (!PermissionUtils.isAdmin(user)) {
+            return RequestStatus.ACCESS_DENIED;
+        }
+        try {
+            return switch (serviceName) {
+                case ThriftClients.CVESEARCH_SERVICE ->
+                        ThriftClients.makeCvesearchClient().update();
+                case ThriftClients.SVMSYNC_SERVICE ->
+                        ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus();
+                case ThriftClients.SVMMATCH_SERVICE ->
+                        ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus();
+                case ThriftClients.DELETE_ATTACHMENT_SERVICE ->
+                        ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem();
+                case ThriftClients.SVM_LIST_UPDATE_SERVICE ->
+                        ThriftClients.makeProjectClient().exportForMonitoringList();
+                case ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE ->
+                        ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback();
+                case ThriftClients.IMPORT_DEPARTMENT_SERVICE ->
+                        ThriftClients.makeUserClient().importDepartmentSchedule();
+                case ThriftClients.SRC_UPLOAD_SERVICE ->
+                        ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases();
+                default -> {
+                    log.error("Could not trigger service: {}. Reason: service is not registered.", serviceName);
+                    yield RequestStatus.FAILURE;
+                }
+            };
+        } catch (TException e) {
+            log.error("Error while manually triggering service '{}': {}", serviceName, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override

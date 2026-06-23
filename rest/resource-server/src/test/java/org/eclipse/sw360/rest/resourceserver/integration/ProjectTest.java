@@ -46,18 +46,9 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
-import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.ByteArrayResource;
@@ -70,8 +61,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -86,44 +75,19 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
 
     @Value("${local.server.port}")
     private int port;
-
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
-
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    private Sw360AttachmentService attachmentServiceMock;
-
-    @MockitoBean
-    private Sw360LicenseInfoService licenseInfoMockService;
-
-    @MockitoBean
-    private SW360PackageService packageServiceMock;
-
-    @MockitoBean
-    private SW360ReportService sw360ReportServiceMock;
-
-    @MockitoBean
-    private Sw360VulnerabilityService vulnerabilityServiceMock;
-
-    @MockitoBean
-    private Sw360LicenseService sw360LicenseServiceMock;
 
     // Test data
     private Project project1;
@@ -136,7 +100,7 @@ public class ProjectTest extends TestIntegrationBase {
     private User testUser;
     private final Set<Project> projectList = new HashSet<>();
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         setupTestUser();
         setupTestProjects();
@@ -508,6 +472,29 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_update_project_when_clearing_state_is_null() throws IOException, TException {
+        // Simulate a legacy / partially-populated project without a clearing state.
+        project1.unsetClearingState();
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.projectServiceMock.updateProject(any(), any())).willReturn(RequestStatus.SUCCESS);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", "Updated Project Name");
+        body.put("description", "Updated project description");
+        body.put("version", "2.0.0");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId(),
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
     public void should_link_projects() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
@@ -585,7 +572,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?type=CUSTOMER",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&type=CUSTOMER",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
@@ -594,7 +581,7 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_get_projects_by_name() throws IOException, TException {
+    public void should_get_projects_by_name_without_lucene() throws IOException, TException {
         given(this.projectServiceMock.searchAccessibleProjectByExactValues(any(), any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
@@ -604,7 +591,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?name=Alpha",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&name=Alpha",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
@@ -641,7 +628,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?group=" + project1.getBusinessUnit().replace(" ", "%20"),
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&group=" + project1.getBusinessUnit().replace(" ", "%20"),
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
@@ -680,7 +667,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?tag=test-tag",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects?luceneSearch=false&tag=test-tag",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
@@ -1452,6 +1439,46 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_get_license_info_report_with_subproject_releases() throws IOException, TException {
+        // Parent project with NO direct releases but with a linked sub-project
+        Project parentProject = new Project();
+        parentProject.setId("parentProj123");
+        parentProject.setName("Parent No Direct Releases");
+        parentProject.setVersion("1.0");
+        parentProject.setProjectType(ProjectType.CUSTOMER);
+        parentProject.setVisbility(Visibility.EVERYONE);
+
+        // Sub-project that has releases with CLI attachments
+        Project subProject = new Project();
+        subProject.setId("subProj456");
+        subProject.setName("Sub Project With Releases");
+        subProject.setVersion("1.0");
+        Map<String, ProjectReleaseRelationship> subReleaseUsage = new HashMap<>();
+        subReleaseUsage.put(release1.getId(), new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        subProject.setReleaseIdToUsage(subReleaseUsage);
+
+        // Link sub-project to parent
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put(subProject.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        parentProject.setLinkedProjects(linkedProjects);
+
+        given(this.projectServiceMock.getProjectForUserById(eq("parentProj123"), any())).willReturn(parentProject);
+        given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), eq("parentProj123"), any()))
+                .willReturn(ByteBuffer.wrap(new byte[]{1, 2, 3, 4, 5}));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<byte[]> response =
+                new TestRestTemplate().exchange(
+                        "http://localhost:" + port + "/api/reports?module=licenseInfo&projectId=parentProj123&generatorClassName=DocxGenerator&variant=DISCLOSURE&withSubProject=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        byte[].class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assert response.getBody() != null;
+        assertTrue(response.getBody().length > 0, "Response body should not be empty");
+    }
+
+    @Test
     public void should_get_project_licenses() throws IOException, TException {
         // Setup project with releases
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
@@ -1486,11 +1513,87 @@ public class ProjectTest extends TestIntegrationBase {
         Set<String> licenseNames = new HashSet<>();
         for (int i = 0; i < licenses.size(); i++) {
             JsonNode license = licenses.get(i);
-            assertTrue("License should have 'fullName' field", license.has("fullName"));
-            assertTrue("License should have 'checked' field", license.has("checked"));
+            assertTrue(license.has("fullName"), "License should have 'fullName' field");
+            assertTrue(license.has("checked"), "License should have 'checked' field");
             licenseNames.add(license.get("fullName").textValue());
         }
-        assertTrue("Should contain Apache License 2.0", licenseNames.contains("Apache License 2.0"));
-        assertTrue("Should contain MIT License", licenseNames.contains("MIT License"));
+        assertTrue(licenseNames.contains("Apache License 2.0"), "Should contain Apache License 2.0");
+        assertTrue(licenseNames.contains("MIT License"), "Should contain MIT License");
+    }
+
+    // ========== SUB-PROJECT TRANSITIVE RELEASE TESTS ==========
+
+    @Test
+    public void should_get_license_clearing_with_transitive_releases_from_subproject() throws IOException, TException {
+        // Parent project with NO direct releases but a linked sub-project
+        Project parentProject = new Project();
+        parentProject.setId("parentNoReleases");
+        parentProject.setName("Parent Project");
+        parentProject.setVisbility(Visibility.EVERYONE);
+        parentProject.setReleaseIdToUsage(null); // No direct releases
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put(project1.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        parentProject.setLinkedProjects(linkedProjects);
+
+        given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases"), any())).willReturn(parentProject);
+        // Transitive fetch returns releases from sub-project
+        given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases"), any(), eq(true)))
+                .willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
+        given(this.projectServiceMock.getFilteredReleases(any(), any(), any(), any(), any()))
+                .willReturn(Arrays.asList(release1, release2));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/parentNoReleases/licenseClearing?transitive=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Verify that _embedded contains releases even though parent has no direct releaseIdToUsage
+        JsonNode responseJson = new ObjectMapper().readTree(response.getBody());
+        assertTrue(responseJson.has("_embedded"), "Response should contain _embedded field");
+        JsonNode embedded = responseJson.get("_embedded");
+        assertTrue(embedded.has("sw360:release"), "Embedded should contain sw360:release");
+        assertEquals(2, embedded.get("sw360:release").size(), "Should contain 2 releases from sub-project");
+    }
+
+    @Test
+    public void should_get_attachment_usage_with_transitive_releases_from_subproject() throws IOException, TException {
+        // Parent project with NO direct releases but a linked sub-project
+        Project parentProject = new Project();
+        parentProject.setId("parentNoReleases2");
+        parentProject.setName("Parent Project 2");
+        parentProject.setVisbility(Visibility.EVERYONE);
+        parentProject.setReleaseIdToUsage(null); // No direct releases
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put(project1.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        parentProject.setLinkedProjects(linkedProjects);
+
+        given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases2"), any())).willReturn(parentProject);
+        given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases2"), any(), eq(true)))
+                .willReturn(new HashSet<>(Arrays.asList(release1.getId())));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.releaseServiceMock.setComponentDependentFieldsInRelease(any(Release.class), any(User.class))).willReturn(release1);
+        given(this.attachmentServiceMock.getAllAttachmentUsage(eq("parentNoReleases2")))
+                .willReturn(new ArrayList<>());
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/parentNoReleases2/attachmentUsage?transitive=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Verify that _embedded contains releases even though parent has no direct releaseIdToUsage
+        JsonNode responseJson = new ObjectMapper().readTree(response.getBody());
+        assertTrue(responseJson.has("_embedded"), "Response should contain _embedded field");
+        JsonNode embedded = responseJson.get("_embedded");
+        assertTrue(embedded.has("sw360:release"), "Embedded should contain sw360:release");
     }
 }

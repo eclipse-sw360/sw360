@@ -29,7 +29,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -48,7 +47,7 @@ public class Sw360VendorService {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
             PaginationData pageData = pageableToPaginationData(pageable,
-                    VendorSortColumn.BY_FULLNAME, true);
+                    VendorSortColumn.BY_FULLNAME, true); // Non-search: sort by fullname
             return sw360VendorClient.getAllVendorListPaginated(pageData);
         } catch (TException e) {
             throw new RuntimeException(e);
@@ -59,7 +58,7 @@ public class Sw360VendorService {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
             PaginationData pageData = pageableToPaginationData(pageable,
-                    VendorSortColumn.BY_FULLNAME, true);
+                    VendorSortColumn.BY_SCORE, true);
             return sw360VendorClient.searchVendors(searchText, pageData);
         } catch (TException e) {
             throw new RuntimeException(e);
@@ -167,11 +166,11 @@ public class Sw360VendorService {
     }
 
     private VendorService.Iface getThriftVendorClient() throws TTransportException {
-        return new ThriftClients().makeVendorClient();
+        return ThriftClients.makeVendorClient();
     }
 
     public ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        return new ThriftClients().makeComponentClient();
+        return ThriftClients.makeComponentClient();
     }
 
     public ByteBuffer exportExcel() throws TException {
@@ -225,7 +224,8 @@ public class Sw360VendorService {
             column = switch (property) {
                 case "fullname" -> VendorSortColumn.BY_FULLNAME;
                 case "shortname" -> VendorSortColumn.BY_SHORTNAME;
-                default -> column; // Default to BY_NAME if no match
+                case "score" -> VendorSortColumn.BY_SCORE;
+                default -> column; // Default to BY_FULLNAME if no match
             };
             ascending = order.isAscending();
         } else {

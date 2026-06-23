@@ -13,7 +13,6 @@
 package org.eclipse.sw360.rest.resourceserver.release;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -68,6 +67,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Doc
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -86,13 +86,11 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler.ErrorMessage;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -104,7 +102,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -114,6 +111,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 
 @BasePathAwareController
@@ -123,6 +121,7 @@ import com.google.common.collect.ImmutableMap;
 @SecurityRequirement(name = "basic")
 public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
+    private static final int MAX_BATCH_SUMMARY_IDS = 200;
     private static final String SPDX_DOCUMENT = "spdxDocument";
     private static final String DOCUMENT_CREATION_INFORMATION = "documentCreationInformation";
     private static final String PACKAGE_INFORMATION = "packageInformation";
@@ -325,6 +324,75 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get release summaries in a single batch.",
+            description = "Returns lightweight release summary data for a list of release IDs.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Batch release summary.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(
+                                                    example = """
+                                                        {
+                                                          "items": [
+                                                            {
+                                                              "id": "releaseId1",
+                                                              "name": "Release A",
+                                                              "version": "1.0.0",
+                                                              "clearingState": "APPROVED"
+                                                            }
+                                                          ],
+                                                          "missingIds": ["releaseId2"]
+                                                        }
+                                                        """
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Invalid request body.")
+            }
+    )
+    @PostMapping(value = RELEASES_URL + "/batch-summary", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> getReleaseBatchSummary(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            examples = {
+                                    @ExampleObject(name = "Batch summary request", value = """
+                                            {
+                                              "ids": ["releaseId1", "releaseId2", "releaseId3"]
+                                            }
+                                            """)
+                            }
+                    )
+            )
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        LinkedHashSet<String> releaseIds = normalizeReleaseBatchSummaryIds(extractReleaseBatchSummaryIds(reqBodyMap));
+        List<Release> releases = releaseService.getAccessibleReleasesByIds(releaseIds, sw360User);
+        Map<String, Release> releasesById = releases.stream()
+                .collect(Collectors.toMap(Release::getId, release -> release, (existing, ignored) -> existing));
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        List<String> missingIds = new ArrayList<>();
+        for (String releaseId : releaseIds) {
+            Release release = releasesById.get(releaseId);
+            if (release == null) {
+                missingIds.add(releaseId);
+                continue;
+            }
+            items.add(createReleaseBatchSummaryItem(release));
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("items", items);
+        response.put("missingIds", missingIds);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(
             summary = "Get recently created releases.",
             description = "Get 5 of the service's most recently created releases.",
             tags = {"Releases"}
@@ -493,7 +561,24 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         attachmentService.preserveImmutableAttachmentFields(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
-        updateRelease.setClearingState(sw360Release.getClearingState());
+
+        // Apply the same clearing state edit rules as the frontend:
+        // Only clearing admin/expert can change clearing state, and only to
+        // UNDER_CLEARING from NEW_CLEARING or REPORT_AVAILABLE.
+        // If conditions are not met, silently preserve existing state and proceed with other field updates.
+        if (updateRelease.isSetClearingState()
+                && updateRelease.getClearingState() == ClearingState.UNDER_CLEARING
+                && PermissionUtils.isUserAtLeastClearingAdminOrExpert(user)) {
+            ClearingState currentState = sw360Release.getClearingState();
+            if (currentState == ClearingState.NEW_CLEARING || currentState == ClearingState.REPORT_AVAILABLE) {
+                updateRelease.setClearingState(ClearingState.UNDER_CLEARING);
+            } else {
+                updateRelease.setClearingState(sw360Release.getClearingState());
+            }
+        } else {
+            updateRelease.setClearingState(sw360Release.getClearingState());
+        }
+
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
@@ -1154,6 +1239,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             )
             @RequestBody Map<String, ReleaseRelationship> releaseIdToRelationship
     ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            throw new SW360Exception(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
+        }
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         if (releaseIdToRelationship.isEmpty()) {
@@ -1805,6 +1893,50 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
         return resource;
+    }
+
+    private List<String> extractReleaseBatchSummaryIds(Map<String, Object> reqBodyMap) {
+        if (reqBodyMap == null || !reqBodyMap.containsKey("ids")) {
+            throw new BadRequestClientException("The request body must contain an 'ids' array.");
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            mapper.registerModule(sw360Module);
+            return mapper.convertValue(reqBodyMap.get("ids"), new TypeReference<List<String>>() {});
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestClientException("The 'ids' field must be an array of release IDs.");
+        }
+    }
+
+    private LinkedHashSet<String> normalizeReleaseBatchSummaryIds(List<String> releaseIds) {
+        if (releaseIds == null) {
+            throw new BadRequestClientException("The 'ids' field must be an array of release IDs.");
+        }
+
+        LinkedHashSet<String> normalizedIds = new LinkedHashSet<>();
+        for (String releaseId : releaseIds) {
+            if (StringUtils.isBlank(releaseId)) {
+                throw new BadRequestClientException("The 'ids' field must not contain blank values.");
+            }
+            normalizedIds.add(releaseId);
+        }
+
+        if (normalizedIds.size() > MAX_BATCH_SUMMARY_IDS) {
+            throw new BadRequestClientException("A maximum of " + MAX_BATCH_SUMMARY_IDS + " unique release IDs is allowed.");
+        }
+
+        return normalizedIds;
+    }
+
+    private Map<String, Object> createReleaseBatchSummaryItem(Release release) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("id", release.getId());
+        item.put("name", release.getName());
+        item.put("version", release.getVersion());
+        item.put("clearingState", release.getClearingState() == null ? null : release.getClearingState().name());
+        return item;
     }
 
     private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {

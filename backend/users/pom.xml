@@ -16,7 +16,7 @@
     <parent>
         <artifactId>backend</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.1.0-rc-1</version>
+        <version>20.1.0-rc-2</version>
     </parent>
 
     <artifactId>backend-users</artifactId>
@@ -36,7 +36,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
-            <version>${spring-security.version}</version>
         </dependency>
     </dependencies>
 </project>

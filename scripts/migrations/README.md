@@ -119,6 +119,19 @@ To migrate it is recommended to do this in the following order:
 
 - `062_update_packagIds_to_map.py`
 
+### 20.0.0 -> 20.1.0
+
+- `063_migrate_oauth_client_owner_email.py` - backfills the new
+  `owner_email` field on existing OAuth client documents in
+  `sw360oauthclients`. Required so that `client_credentials` tokens minted
+  for clients that pre-date 20.1.0 can be resolved back to a SW360 user by
+  the resource server (via the `client_id` JWT claim and `User.oidcClientInfos`).
+  Bootstrap / interactive clients that hold `authorization_code` in
+  `authorized_grant_types` (e.g. `trusted-sw360-client` consumed by the
+  `sw360oauth` and `oauth-password-grant` frontend providers) are skipped on
+  purpose - those flows authenticate a real human and carry the user's
+  email directly in the JWT, so no `oidcClientInfos` mirror is needed.
+
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
 - `010_repair_missing_vendorId_links_in_releases.py`
