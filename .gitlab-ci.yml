@@ -231,6 +231,8 @@ sw360-image-merge:
     TEMPLATE: $CI_REGISTRY_IMAGE/sw360-new:$CI_COMMIT_SHORT_SHA-ARCH
   needs:
     - sw360-image
+  rules:
+    - if: $CI_COMMIT_BRANCH == "mainct"
 
 keycloak-image-merge:
   extends: .awesome-ci/merge-multi-arch-image
@@ -241,3 +243,5 @@ keycloak-image-merge:
     TEMPLATE: $CI_REGISTRY_IMAGE/keycloak:$CI_COMMIT_SHORT_SHA-ARCH
   needs:
     - keycloak-image
+  rules:
+    - if: $CI_COMMIT_BRANCH == "mainct"
