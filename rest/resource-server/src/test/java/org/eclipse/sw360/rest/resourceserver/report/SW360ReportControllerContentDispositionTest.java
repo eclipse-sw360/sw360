@@ -12,13 +12,13 @@ package org.eclipse.sw360.rest.resourceserver.report;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Method;
 
@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class SW360ReportControllerContentDispositionTest {
 
     @SuppressWarnings("rawtypes")
@@ -44,7 +44,7 @@ public class SW360ReportControllerContentDispositionTest {
 
     private Method setContentDispositionMethod;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         setContentDispositionMethod = SW360ReportController.class
                 .getDeclaredMethod("setContentDisposition", HttpServletResponse.class, String.class);
