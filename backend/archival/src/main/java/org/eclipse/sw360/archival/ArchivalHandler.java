@@ -52,7 +52,7 @@ public class ArchivalHandler {
     public ArchiveResult archive(ArchiveRequest req, String userEmail, OutputStream sink)
             throws SW360Exception, IOException {
         return archive(req, userEmail, sink,
-                new Sw360EntityProvider(req.isIncludeAttachments(), req.isIncludeChangelogs()));
+                new Sw360EntityProvider(req.isIncludeAttachments(), req.isIncludeChangelogs(), userEmail));
     }
 
     public ArchiveResult archive(ArchiveRequest req,
