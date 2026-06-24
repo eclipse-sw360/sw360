@@ -10,12 +10,12 @@
 package org.eclipse.sw360.rest.authserver.client.service;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -29,14 +29,14 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.when;
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Sw360ClientDetailsServiceTest {
     @Mock
     private OAuthClientRepository clientRepo;
     @InjectMocks
     private Sw360ClientDetailsService service;
     private OAuthClientEntity entity;
-    @Before
+    @BeforeEach
     public void setUp() {
         // @Value-injected fallbacks are not populated by @InjectMocks; supply
         // sane defaults via reflection so the TokenSettings builder doesn't

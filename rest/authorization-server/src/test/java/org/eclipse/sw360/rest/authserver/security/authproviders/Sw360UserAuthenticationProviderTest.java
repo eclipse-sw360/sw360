@@ -10,7 +10,7 @@
 package org.eclipse.sw360.rest.authserver.security.authproviders;
 
 import org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.FactorGrantedAuthority;
