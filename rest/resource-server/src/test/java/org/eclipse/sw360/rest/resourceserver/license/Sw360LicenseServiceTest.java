@@ -1,5 +1,6 @@
 /*
  * Copyright Aman Kumar, 2026. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -15,11 +16,11 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Sw360LicenseServiceTest {
 
     @Mock
@@ -36,7 +37,7 @@ public class Sw360LicenseServiceTest {
 
     private Sw360LicenseService licenseService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws TException {
         // Constructing with new() leaves @Value fields (e.g. thriftServerUrl) null.
         // Safe here because getThriftLicenseClient() is stubbed before any field read.

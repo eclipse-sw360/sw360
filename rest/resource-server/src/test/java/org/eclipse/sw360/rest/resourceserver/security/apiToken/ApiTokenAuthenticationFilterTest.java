@@ -12,8 +12,8 @@ package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -36,7 +36,7 @@ public class ApiTokenAuthenticationFilterTest {
     private AuthenticationEntryPoint authenticationEntryPoint;
     private FilterChain filterChain;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         SecurityContextHolder.clearContext();
         authenticationManager = mock(AuthenticationManager.class);
