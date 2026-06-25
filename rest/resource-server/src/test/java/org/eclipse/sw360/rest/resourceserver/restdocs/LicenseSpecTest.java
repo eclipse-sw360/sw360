@@ -454,7 +454,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_return_400_when_license_update_fails() throws Exception {
-        // Overrides the @Before stub (SUCCESS) for this test only — Mockito applies the last stub wins rule.
+        // Overrides the @BeforeEach stub (SUCCESS) for this test only — Mockito applies the last stub wins rule.
         String expectedMessage = "License update failed with status: " + RequestStatus.FAILURE;
         given(this.licenseServiceMock.updateLicense(any(), any()))
                 .willThrow(new BadRequestClientException(expectedMessage));
