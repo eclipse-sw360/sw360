@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
+import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.NotNull;

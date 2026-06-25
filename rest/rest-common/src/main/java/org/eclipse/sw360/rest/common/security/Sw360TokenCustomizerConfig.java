@@ -2,9 +2,9 @@
 SPDX-FileCopyrightText: © 2024 Siemens AG
 SPDX-License-Identifier: EPL-2.0
 */
-package org.eclipse.sw360.rest.authserver.security;
+package org.eclipse.sw360.rest.common.security;
 
-import org.eclipse.sw360.rest.authserver.client.service.Sw360OidcUserInfoService;
+import org.eclipse.sw360.rest.common.client.service.Sw360OidcUserInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

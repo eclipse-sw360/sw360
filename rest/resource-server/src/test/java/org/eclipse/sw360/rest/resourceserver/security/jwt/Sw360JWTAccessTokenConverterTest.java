@@ -12,7 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.security.jwt;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
+import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +40,7 @@ public class Sw360JWTAccessTokenConverterTest {
     private Sw360UserService userService;
 
     private Sw360JWTAccessTokenConverter converter;
+
 
     @BeforeEach
     public void setUp() {

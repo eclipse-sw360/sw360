@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.rest.resourceserver.security;
+package org.eclipse.sw360.rest.common.security;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.springframework.security.core.GrantedAuthority;

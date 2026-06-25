@@ -18,89 +18,90 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities.*;
 
 public class TokenCapabilityAuthoritiesTest {
 
     @Test
     public void shouldReturnReadOnlyCapabilitiesForReadScope() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromJwtScopeClaim("READ profile email");
+        Set<GrantedAuthority> authorities = fromJwtScopeClaim("READ profile email");
 
         assertThat(authorities)
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TOKEN_READ))
+                .doesNotContain(new SimpleGrantedAuthority(TOKEN_WRITE));
     }
 
     @Test
     public void shouldReturnReadWriteCapabilitiesForWriteScope() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromJwtScopeClaim("READ WRITE profile");
+        Set<GrantedAuthority> authorities = fromJwtScopeClaim("READ WRITE profile");
 
         assertThat(authorities)
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TOKEN_READ))
+                .contains(new SimpleGrantedAuthority(TOKEN_WRITE));
     }
 
     @Test
     public void shouldTreatUnknownJwtScopesAsReadWriteIdentityToken() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromJwtScopeClaim(List.of("profile", "email"));
+        Set<GrantedAuthority> authorities = fromJwtScopeClaim(List.of("profile", "email"));
 
         assertThat(authorities)
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TOKEN_READ))
+                .contains(new SimpleGrantedAuthority(TOKEN_WRITE));
     }
 
     @Test
     public void shouldTreatMissingJwtScopeAsReadWriteIdentityToken() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromJwtScopeClaim(null);
+        Set<GrantedAuthority> authorities = fromJwtScopeClaim(null);
 
         assertThat(authorities)
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TOKEN_READ))
+                .contains(new SimpleGrantedAuthority(TOKEN_WRITE));
     }
 
     @Test
     public void shouldTreatUnknownApiTokenAuthoritiesAsReadOnly() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.fromAuthorityNames(List.of("profile", "email"));
+        Set<GrantedAuthority> authorities = fromAuthorityNames(List.of("profile", "email"));
 
         assertThat(authorities)
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TOKEN_READ))
+                .doesNotContain(new SimpleGrantedAuthority(TOKEN_WRITE));
     }
 
     @Test
     public void shouldMergeGroupAndCapabilityAuthorities() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.merge(
+        Set<GrantedAuthority> authorities = merge(
                 Set.of(new SimpleGrantedAuthority("ADMIN")),
-                Set.of(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ)));
+                Set.of(new SimpleGrantedAuthority(TOKEN_READ)));
 
         assertThat(authorities)
                 .contains(new SimpleGrantedAuthority("ADMIN"))
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ));
+                .contains(new SimpleGrantedAuthority(TOKEN_READ));
     }
 
     @Test
     public void shouldKeepUserAuthoritiesForReadOnlyTokenCapabilities() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.mergeForTokenAuthentication(
+        Set<GrantedAuthority> authorities = mergeForTokenAuthentication(
                 Set.of(new SimpleGrantedAuthority("ADMIN"), new SimpleGrantedAuthority("WRITE")),
-                Set.of(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ)));
+                Set.of(new SimpleGrantedAuthority(TOKEN_READ)));
 
         assertThat(authorities)
                 .contains(new SimpleGrantedAuthority("ADMIN"))
                 .contains(new SimpleGrantedAuthority("WRITE"))
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ))
-                .doesNotContain(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TOKEN_READ))
+                .doesNotContain(new SimpleGrantedAuthority(TOKEN_WRITE));
     }
 
     @Test
     public void shouldKeepWriteAuthorityForWriteTokenCapabilities() {
-        Set<GrantedAuthority> authorities = TokenCapabilityAuthorities.mergeForTokenAuthentication(
+        Set<GrantedAuthority> authorities = mergeForTokenAuthentication(
                 Set.of(new SimpleGrantedAuthority("ADMIN"), new SimpleGrantedAuthority("WRITE")),
-                Set.of(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_READ),
-                        new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE)));
+                Set.of(new SimpleGrantedAuthority(TOKEN_READ),
+                        new SimpleGrantedAuthority(TOKEN_WRITE)));
 
         assertThat(authorities)
                 .contains(new SimpleGrantedAuthority("ADMIN"))
                 .contains(new SimpleGrantedAuthority("WRITE"))
-                .contains(new SimpleGrantedAuthority(TokenCapabilityAuthorities.TOKEN_WRITE));
+                .contains(new SimpleGrantedAuthority(TOKEN_WRITE));
     }
 
 }

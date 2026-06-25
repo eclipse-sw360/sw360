@@ -167,7 +167,7 @@ file to tweak SW360 behaviour.
   3. Bundled fallback `/app/sw360/jwt-keystore.jks`
 * To provide your own key, generate one and mount it via the `JWT_KEYSTORE`
   compose secret or place it directly into `/etc/sw360/jwt-keystore.jks`.
-* Use `rest/authorization-server/tools/generateJwtStore.sh` to generate a
+* Use `rest/rest-common/tools/generateJwtStore.sh` to generate a
   replacement keystore and keep `JWT_SECRETKEY` aligned with that keystore.
 
 ### Secrets

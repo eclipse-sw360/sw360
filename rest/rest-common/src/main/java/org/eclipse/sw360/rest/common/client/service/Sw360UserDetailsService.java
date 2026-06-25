@@ -2,13 +2,15 @@
 SPDX-FileCopyrightText: © 2024 Siemens AG
 SPDX-License-Identifier: EPL-2.0
 */
-package org.eclipse.sw360.rest.authserver.client.service;
+package org.eclipse.sw360.rest.common.client.service;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
-import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
+import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -32,7 +34,8 @@ public class Sw360UserDetailsService implements UserDetailsService {
      * @throws UsernameNotFoundException
      */
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    @Nonnull
+    public UserDetails loadUserByUsername(@Nullable String username) throws UsernameNotFoundException {
         User user = userProvider.provideUserDetails(username, null);
         if (user == null) {
             throw new UsernameNotFoundException("User not found in the database with email: " + username);
