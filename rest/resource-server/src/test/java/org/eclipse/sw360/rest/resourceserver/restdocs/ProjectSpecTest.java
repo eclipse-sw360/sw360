@@ -1898,6 +1898,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                fieldWithPath("vendorId").description("The id of the vendor"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
@@ -1958,6 +1959,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
                                 fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
+                                fieldWithPath("vendorId").description("The id of the vendor"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
