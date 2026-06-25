@@ -16,7 +16,7 @@ import org.springframework.http.HttpStatus;
 import java.io.IOException;
 import java.text.ParseException;
 
-import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.BASIC;
+import static org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority.BASIC;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

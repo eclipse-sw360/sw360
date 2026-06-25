@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -21,11 +22,13 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 public class Sw360JwtAuthenticationConverterTest {
 
+    private final Sw360UserDetailsProvider userDetailsProvider = mock(Sw360UserDetailsProvider.class);
     private final Sw360JwtAuthenticationConverter converter =
-            new Sw360JwtAuthenticationConverter(new Sw360GrantedAuthoritiesCalculator());
+            new Sw360JwtAuthenticationConverter(userDetailsProvider);
 
     @Test
     public void shouldKeepScopeAuthorities_forSw360IssuedTokens() {

@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.rest.authserver.security.authproviders;
 
-import org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService;
+import org.eclipse.sw360.rest.common.client.service.Sw360UserDetailsService;
+import org.eclipse.sw360.rest.common.security.authproviders.Sw360UserAuthenticationProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
