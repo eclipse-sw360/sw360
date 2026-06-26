@@ -143,7 +143,7 @@
     <slf4j.version>2.0.18</slf4j.version>
     <spotless.version>3.7.0</spotless.version>
     <spring-boot.version>4.1.0</spring-boot.version>
-    <spring-restdocs.version>4.0.0</spring-restdocs.version>
+    <spring-restdocs.version>4.0.1</spring-restdocs.version>
     <spring-security-oauth2-authorization-server.version>7.1.0</spring-security-oauth2-authorization-server.version>
     <spring-security.version>7.1.0</spring-security.version>
     <springdoc-openapi-stater-common.version>3.0.3</springdoc-openapi-stater-common.version>
