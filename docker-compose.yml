@@ -77,4 +77,4 @@ secrets:
   COUCHDB_SECRETS:
     file: ./config/couchdb/default_secrets
   JWT_KEYSTORE:
-    file: ./rest/authorization-server/src/main/resources/jwt-keystore.jks
+    file: ./rest/rest-common/src/main/resources/jwt-keystore.jks
