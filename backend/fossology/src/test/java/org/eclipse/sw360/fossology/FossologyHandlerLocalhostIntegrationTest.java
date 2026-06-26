@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
+import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
 
 import org.apache.thrift.TException;
@@ -73,6 +74,8 @@ public class FossologyHandlerLocalhostIntegrationTest {
 
     private AttachmentConnector attachmentConnector;
 
+    private Sw360AttachmentsRestClient attachmentsRestClient;
+
     @BeforeClass
     public static void setupClass() {
         // we need to keep the release consistent to be able to move forward with the
@@ -102,8 +105,9 @@ public class FossologyHandlerLocalhostIntegrationTest {
         thriftClients = mock(ThriftClients.class);
 
         attachmentConnector = mock(AttachmentConnector.class);
+        attachmentsRestClient = mock(Sw360AttachmentsRestClient.class);
 
-        uut = spy(new FossologyHandler(restConfig, fossologyRestClient, attachmentConnector));
+        uut = spy(new FossologyHandler(restConfig, fossologyRestClient, attachmentConnector, attachmentsRestClient));
     }
 
     @Test
@@ -309,13 +313,11 @@ public class FossologyHandlerLocalhostIntegrationTest {
         User user = TestUtils.getAdminUser(getClass());
         prepareValidPreconditions(user);
 
-        AttachmentService.Iface attachmentClient = mock(AttachmentService.Iface.class);
-        when(attachmentClient.makeAttachmentContent(any(AttachmentContent.class))).thenAnswer(invocation -> {
+        when(attachmentsRestClient.makeAttachmentContent(any(AttachmentContent.class))).thenAnswer(invocation -> {
             AttachmentContent attachmentContent = (AttachmentContent) invocation.getArguments()[0];
             attachmentContent.setId(attachmentContentId);
             return attachmentContent;
         });
-        when(thriftClients.makeAttachmentClient()).thenReturn(attachmentClient);
 
         // when:
         ExternalToolProcess actual = sharedRelease.getExternalToolProcesses().iterator().next();

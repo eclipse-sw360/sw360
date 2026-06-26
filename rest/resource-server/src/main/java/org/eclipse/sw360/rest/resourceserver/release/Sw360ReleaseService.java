@@ -52,9 +52,10 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -122,6 +123,12 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     @NonNull
     private final SW360FossologyService fossologyService;
+
+    @NonNull
+    private final SW360AttachmentBackendService attachmentBackendService;
+
+    @NonNull
+    private final Sw360VulnerabilityService vulnerabilityService;
 
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String RESPONSE_STATUS_VALUE_FAILED = "Failed";
@@ -885,7 +892,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);
         }
         if (deleteStatus.equals(RequestStatus.SUCCESS)) {
-            SW360Utils.removeReleaseVulnerabilityRelation(releaseId, sw360User);
+            vulnerabilityService.removeReleaseVulnerabilityRelationsForRelease(releaseId, sw360User);
         }
         return deleteStatus;
     }
@@ -1620,18 +1627,18 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projects", projects.size());
 
-        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-        List<AttachmentUsage> attachmentUsages = attachmentClient.getAttachmentUsagesByReleaseId(releaseSourceId);
+        List<AttachmentUsage> attachmentUsages = attachmentBackendService.getAttachmentUsagesByReleaseId(releaseSourceId);
         usageInformation.put("attachmentUsages", attachmentUsages.size());
 
         ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
         List<Release> releases = componentClient.getReferencingReleases(releaseSourceId);
         usageInformation.put("releases", releases.size());
 
-        VulnerabilityService.Iface vulnerabilityClient = ThriftClients.makeVulnerabilityClient();
-        List<ReleaseVulnerabilityRelation> releaseVulnerabilities = vulnerabilityClient.getReleaseVulnerabilityRelationsByReleaseId(releaseSourceId, sessionUser);
+        List<ReleaseVulnerabilityRelation> releaseVulnerabilities =
+                vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("releaseVulnerabilities", releaseVulnerabilities.size());
-        List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
+        List<ProjectVulnerabilityRating> projectRatings =
+                vulnerabilityService.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
 
         usageInformation.put("packages", packageService.getLinkedPackagesForRelease(releaseSourceId).size());

@@ -38,7 +38,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.EntityModel;
@@ -72,7 +71,10 @@ public class Sw360AttachmentService {
     private static final Logger log = LogManager.getLogger(Sw360AttachmentService.class);
 
     @NonNull
-    private final ThriftServiceProvider<AttachmentService.Iface> thriftAttachmentServiceProvider;
+    private final SW360AttachmentBackendService attachmentBackendService;
+
+    @NonNull
+    private final RestAttachmentMetadataOperations attachmentMetadataOperations;
 
     @NonNull
     private final Sw360SpdxServices spdxServices;
@@ -81,29 +83,25 @@ public class Sw360AttachmentService {
     private AttachmentConnector attachmentConnector;
 
     public List<AttachmentUsage> getAttachmentUsages(String projectId) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        return attachmentClient.getUsedAttachments(Source.projectId(projectId),
+        return attachmentBackendService.getUsedAttachments(Source.projectId(projectId),
                 UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
     }
 
     public AttachmentInfo getAttachmentById(String id) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
+        List<Attachment> attachments = attachmentBackendService.getAttachmentsByIds(Collections.singleton(id));
         if (attachments.isEmpty()) {
             throw new ResourceNotFoundException("Attachment not found.");
         }
-        return createAttachmentInfo(attachmentClient, attachments.getFirst());
+        return createAttachmentInfo(attachments.getFirst());
     }
 
     public List<AttachmentUsage> getAttachmentUseById(String id) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        return attachmentClient.getUsedAttachmentsById(id);
+        return attachmentBackendService.getUsedAttachmentsById(id);
     }
 
     public List<AttachmentInfo> getAttachmentsBySha1(String sha1) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(Collections.singleton(sha1));
-        return createAttachmentInfos(attachmentClient, attachments);
+        List<Attachment> attachments = attachmentBackendService.getAttachmentsBySha1s(Collections.singleton(sha1));
+        return createAttachmentInfos(attachments);
     }
 
     /**
@@ -124,17 +122,15 @@ public class Sw360AttachmentService {
                                                      Collection<String> idsToDelete) throws TException {
         Map<String, Attachment> knownAttachmentIds = allAttachments.stream()
                 .collect(Collectors.toMap(Attachment::getAttachmentContentId, v -> v));
-        AttachmentService.Iface attachmentService = getThriftAttachmentClient();
 
         return idsToDelete.stream()
                 .map(knownAttachmentIds::get)
                 .filter(Objects::nonNull)
-                .filter(attachment -> canDeleteAttachment(attachmentService, owner, attachment))
+                .filter(attachment -> canDeleteAttachment(owner, attachment))
                 .collect(Collectors.toSet());
     }
 
-    private static boolean canDeleteAttachment(AttachmentService.Iface attachmentService, Source owner,
-                                               Attachment attachment) {
+    private boolean canDeleteAttachment(Source owner, Attachment attachment) {
         String id = attachment.getAttachmentContentId();
         if (attachment.getCheckStatus() == CheckStatus.ACCEPTED) {
             log.warn("Attachment " + id + " must not be deleted as it is in status checked.");
@@ -142,7 +138,7 @@ public class Sw360AttachmentService {
         }
 
         try {
-            List<AttachmentUsage> usages = attachmentService.getAttachmentUsages(owner, id, null);
+            List<AttachmentUsage> usages = attachmentBackendService.getAttachmentUsages(owner, id, null);
             if (usages.stream().anyMatch(usage -> usage.usedBy.isSetProjectId())) {
                 log.warn("Attachment " + id + " must not be deleted as it is used by a project.");
                 return false;
@@ -154,21 +150,23 @@ public class Sw360AttachmentService {
         }
     }
 
-    private AttachmentInfo createAttachmentInfo(AttachmentService.Iface attachmentClient, Attachment attachment)
-            throws TException {
+    private AttachmentInfo createAttachmentInfo(Attachment attachment) throws TException {
         AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
-        attachmentInfo.setOwner(attachmentClient
+        attachmentInfo.setOwner(attachmentBackendService
                 .getAttachmentOwnersByIds(Collections.singleton(attachment.getAttachmentContentId())).getFirst());
         return attachmentInfo;
     }
 
-    private List<AttachmentInfo> createAttachmentInfos(AttachmentService.Iface attachmentClient,
-            List<Attachment> attachments) throws TException {
+    private List<AttachmentInfo> createAttachmentInfos(List<Attachment> attachments) throws TException {
         List<AttachmentInfo> attachmentInfos = new ArrayList<>();
         for (Attachment attachment : attachments) {
-            attachmentInfos.add(createAttachmentInfo(attachmentClient, attachment));
+            attachmentInfos.add(createAttachmentInfo(attachment));
         }
         return attachmentInfos;
+    }
+
+    private AttachmentFrontendUtils attachmentFrontendUtils() {
+        return new AttachmentFrontendUtils(attachmentMetadataOperations);
     }
 
     public void downloadAttachmentWithContext(Object context, String attachmentId, HttpServletResponse response, User sw360User) {
@@ -233,7 +231,7 @@ public class Sw360AttachmentService {
     }
 
     public <T> InputStream getStreamToAttachments(Set<AttachmentContent> attachments, User sw360User, T context) throws IOException, TException {
-        return new AttachmentFrontendUtils().getStreamToServeAFile(attachments, sw360User, context);
+        return attachmentFrontendUtils().getStreamToServeAFile(attachments, sw360User, context);
     }
 
     public Attachment uploadAttachment(MultipartFile file, Attachment newAttachment, User sw360User) throws IOException, TException {
@@ -248,7 +246,7 @@ public class Sw360AttachmentService {
         final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
 
         final AttachmentConnector attachmentConnector = getConnector();
-        Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
+        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         AttachmentType attachmentType = newAttachment.getAttachmentType();
@@ -287,7 +285,7 @@ public class Sw360AttachmentService {
         String contentType = file.getContentType();
         final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
         final AttachmentConnector attachmentConnector = getConnector();
-        Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
+        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         return attachment;
@@ -303,7 +301,7 @@ public class Sw360AttachmentService {
 
     private AttachmentContent makeAttachmentContent(AttachmentContent content) {
         try {
-            return new AttachmentFrontendUtils().makeAttachmentContent(content);
+            return attachmentFrontendUtils().makeAttachmentContent(content);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -311,7 +309,7 @@ public class Sw360AttachmentService {
 
     public AttachmentContent getAttachmentContent(String id) {
         try {
-            return new AttachmentFrontendUtils().getAttachmentContent(id);
+            return attachmentFrontendUtils().getAttachmentContent(id);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -343,8 +341,7 @@ public class Sw360AttachmentService {
     }
 
     public List<AttachmentUsage> getAllAttachmentUsage(String projectId) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        return attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
+        return attachmentBackendService.getUsedAttachments(Source.projectId(projectId), null);
     }
 
     public Attachment updateAttachment(Set<Attachment> attachments, Attachment newData, String attachmentId, User user) {
@@ -374,10 +371,6 @@ public class Sw360AttachmentService {
                 throw new SW360Exception(e.getMessage());
             }
         }
-    }
-
-    AttachmentService.Iface getThriftAttachmentClient() {
-        return ThriftClients.makeAttachmentClient();
     }
 
     private void updateAttachment(Attachment attachmentToUpdate, Attachment reqBodyAttachment, User user) {
@@ -462,11 +455,10 @@ public class Sw360AttachmentService {
     }
 
     private Map<String, Long> getRestrictedProjectsCountsByContentId(Set<String> attachmentContentIds, User user, Source owner) throws TTransportException {
-        AttachmentService.Iface client = getThriftAttachmentClient();
         Map<String, Long> restrictedProjectsCountsByContentId = new HashMap<>();
         try {
             Map<String, List<AttachmentUsage>> attachmentUsagesByContentId =
-                    client.getAttachmentsUsages(owner, attachmentContentIds, null)
+                    attachmentBackendService.getAttachmentsUsages(owner, attachmentContentIds, null)
                             .stream()
                             .collect(Collectors.groupingBy(AttachmentUsage::getAttachmentContentId));
 
@@ -533,8 +525,7 @@ public class Sw360AttachmentService {
     }
 
     private AttachmentContent getAttachmentContentForId(String id) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        return attachmentClient.getAttachmentContentById(id);
+        return attachmentBackendService.getAttachmentContentById(id);
     }
 
     public boolean isAttachmentContentExist(String id) {

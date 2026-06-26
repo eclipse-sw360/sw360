@@ -55,7 +55,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
+import org.eclipse.sw360.vulnerabilities.db.VulnerabilityDatabaseHandler;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -131,6 +131,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final UserRepository userRepository;
     private final PackageRepository packageRepository;
     private PackageDatabaseHandler packageDatabaseHandler;
+    private VulnerabilityDatabaseHandler vulnerabilityDatabaseHandler;
+    private ProjectDatabaseHandler projectDatabaseHandlerForVuln;
     private DatabaseHandlerUtil dbHandlerUtil;
     private BulkDeleteUtil bulkDeleteUtil;
 
@@ -1993,9 +1995,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInAttachmentUsages(String mergeTargetId, String mergeSourceId) throws TException {
-        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-
-        List<AttachmentUsage> usages = attachmentClient.getAttachmentUsagesByReleaseId(mergeSourceId);
+        List<AttachmentUsage> usages = attachmentDatabaseHandler.getAttachmentUsagesByReleaseId(mergeSourceId);
         for(AttachmentUsage usage : usages) {
             if(usage.getOwner().isSetReleaseId() && usage.getOwner().getReleaseId().equals(mergeSourceId)) {
                 usage.getOwner().setReleaseId(mergeTargetId);
@@ -2003,7 +2003,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if(usage.getUsedBy().isSetReleaseId() && usage.getUsedBy().getReleaseId().equals(mergeSourceId)) {
                 usage.getUsedBy().setReleaseId(mergeTargetId);
             }
-            attachmentClient.updateAttachmentUsage(usage);
+            attachmentDatabaseHandler.updateAttachmentUsage(usage);
         }
     }
 
@@ -2023,14 +2023,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInVulnerabilities(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        VulnerabilityService.Iface vulnerabilityService = ThriftClients.makeVulnerabilityClient();
+        VulnerabilityDatabaseHandler vulnerabilityHandler = getVulnerabilityDatabaseHandler();
 
-        List<ReleaseVulnerabilityRelation> relations = vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(mergeSourceId, sessionUser);
+        List<ReleaseVulnerabilityRelation> relations = vulnerabilityHandler.getReleaseVulnerabilityRelationsByReleaseId(mergeSourceId);
         for(ReleaseVulnerabilityRelation relation : relations) {
             if(relation.isSetReleaseId() && relation.getReleaseId().equals(mergeSourceId)) {
                 ReleaseVulnerabilityRelation relationBefore = relation.deepCopy();
                 relation.setReleaseId(mergeTargetId);
-                vulnerabilityService.updateReleaseVulnerabilityRelation(relation, sessionUser);
+                vulnerabilityHandler.update(relation);
                 dbHandlerUtil.addChangeLogs(relation, relationBefore, sessionUser.getEmail(), Operation.UPDATE,
                         attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
             }
@@ -2038,9 +2038,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInProjectRatings(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        VulnerabilityService.Iface vulnerabilityService = ThriftClients.makeVulnerabilityClient();
+        ProjectDatabaseHandler projectHandler = getProjectDatabaseHandlerForVuln();
 
-        List<ProjectVulnerabilityRating> ratings = vulnerabilityService.getProjectVulnerabilityRatingsByReleaseId(mergeSourceId, sessionUser);
+        List<ProjectVulnerabilityRating> ratings = projectHandler.getProjectVulnerabilityRatingsByReleaseId(mergeSourceId);
         for(ProjectVulnerabilityRating rating : ratings) {
             ProjectVulnerabilityRating ratingBefore = rating.deepCopy();
             for(Map<String, List<VulnerabilityCheckStatus>> map : rating.getVulnerabilityIdToReleaseIdToStatus().values()) {
@@ -2050,9 +2050,34 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     map.put(mergeTargetId, list);
                 }
             }
-            vulnerabilityService.updateProjectVulnerabilityRating(rating, sessionUser);
+            projectHandler.updateProjectVulnerabilityRating(rating);
             dbHandlerUtil.addChangeLogs(rating, ratingBefore, sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
+        }
+    }
+
+    private VulnerabilityDatabaseHandler getVulnerabilityDatabaseHandler() {
+        try {
+            if (vulnerabilityDatabaseHandler == null) {
+                vulnerabilityDatabaseHandler = new VulnerabilityDatabaseHandler();
+            }
+            return vulnerabilityDatabaseHandler;
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ProjectDatabaseHandler getProjectDatabaseHandlerForVuln() {
+        try {
+            if (projectDatabaseHandlerForVuln == null) {
+                projectDatabaseHandlerForVuln = new ProjectDatabaseHandler(
+                        DatabaseSettings.getConfiguredClient(),
+                        DatabaseSettings.COUCH_DB_DATABASE,
+                        DatabaseSettings.COUCH_DB_ATTACHMENTS);
+            }
+            return projectDatabaseHandlerForVuln;
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -3453,7 +3478,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
         Attachment attachment;
         try (FileInputStream inputStream = new FileInputStream(file)) {
-            attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, inputStream, null);
+            AttachmentFrontendUtils frontendUtils = new AttachmentFrontendUtils(
+                    new AttachmentDatabaseHandlerMetadataOperations(attachmentDatabaseHandler));
+            attachment = frontendUtils.uploadAttachmentContent(attachmentContent, inputStream, null);
         }
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
         attachment.setAttachmentType(AttachmentType.SOURCE);
@@ -3473,7 +3500,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private AttachmentContent makeAttachmentContent(AttachmentContent content) {
         try {
-            return new AttachmentFrontendUtils().makeAttachmentContent(content);
+            return new AttachmentFrontendUtils(
+                    new AttachmentDatabaseHandlerMetadataOperations(attachmentDatabaseHandler))
+                    .makeAttachmentContent(content);
         } catch (TException e) {
             throw new RuntimeException(e);
         }

@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -56,6 +57,7 @@ public class Sw360ModerationRequestService {
 
     private final Sw360SpdxServices spdxServices;
     private final SpdxTypeBridge spdxTypeBridge;
+    private final Sw360VulnerabilityService vulnerabilityService;
 
     public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
         return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
@@ -273,7 +275,8 @@ public class Sw360ModerationRequestService {
                     if (request.isRequestDocumentDelete()) {
                         actionStatus = sw360ComponentClient.deleteRelease(request.getDocumentId(), reviewer);
                         if (actionStatus.equals(RequestStatus.SUCCESS)) {
-                            SW360Utils.removeReleaseVulnerabilityRelation(request.getDocumentId(), userFromRequest);
+                            vulnerabilityService.removeReleaseVulnerabilityRelationsForRelease(
+                                    request.getDocumentId(), userFromRequest);
                         }
                     } else {
                         actionStatus = sw360ComponentClient.updateReleaseFromModerationRequest(

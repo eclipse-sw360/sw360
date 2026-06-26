@@ -64,6 +64,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -137,6 +138,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     @NonNull
     private RestControllerHelper rch;
+
+    @NonNull
+    private final SW360AttachmentBackendService attachmentBackendService;
 
     /**
      * This enum is used to indicate the status of the CLI update process.
@@ -379,18 +383,15 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public void deleteAttachmentUsages(List<AttachmentUsage> usagesToDelete) throws TException {
-        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-        attachmentClient.deleteAttachmentUsages(usagesToDelete);
+        attachmentBackendService.deleteAttachmentUsages(usagesToDelete);
 	}
 
 	public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		attachmentClient.makeAttachmentUsages(usagesToCreate);
+		attachmentBackendService.makeAttachmentUsages(usagesToCreate);
 	}
 
 	public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
+		List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentBackendService.getUsedAttachments(usedBy, null);
 		return allUsagesByProjectAfterCleanUp;
 	}
 
@@ -462,10 +463,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public Map<String, AttachmentUsage> getLicenseInfoAttachmentUsage(String projectId) {
         Map<String, AttachmentUsage> licenseInfoUsages = new HashMap<>();
         try {
-            AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-
             List<AttachmentUsage> attachmentUsages = wrapTException(
-                    () -> attachmentClient.getUsedAttachments(Source.projectId(projectId), null));
+                    () -> attachmentBackendService.getUsedAttachments(Source.projectId(projectId), null));
             Collector<AttachmentUsage, ?, Map<String, AttachmentUsage>> attachmentUsageMapCollector = Collectors.toMap(
                     AttachmentUsage::getAttachmentContentId, Function.identity(),
                     Sw360ProjectService::mergeAttachmentUsages);
@@ -1117,9 +1116,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, Integer> storeAttachmentUsageCount(List<ProjectLink> mappedProjectLinks, UsageData filter) throws TException {
         try {
-            AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
             Map<Source, Set<String>> containedAttachments = extractContainedAttachments(mappedProjectLinks);
-            Map<Map<Source, String>, Integer> attachmentUsages = attachmentClient.getAttachmentUsageCount(containedAttachments,
+            Map<Map<Source, String>, Integer> attachmentUsages = attachmentBackendService.getAttachmentUsageCount(containedAttachments,
                     filter);
             Map<String, Integer> countMap = attachmentUsages.entrySet().stream().collect(Collectors.toMap(entry -> {
                 Entry<Source, String> key = entry.getKey().entrySet().iterator().next();
@@ -1670,11 +1668,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         Map<String, String> filenameToAttachmentId = attachments.stream()
                 .collect(Collectors.toMap(Attachment::getAttachmentContentId, Attachment::getFilename));
 
-        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-
         for (String attachmentContentId : filenameToAttachmentId.keySet()) {
             try {
-                attachmentClient.getAttachmentContent(attachmentContentId);
+                attachmentBackendService.getAttachmentContent(attachmentContentId);
             } catch (SW360Exception sw360Exp) {
                 if (sw360Exp.getErrorCode() == 404) {
                     missingAttachmentFilenames.add(filenameToAttachmentId.get(attachmentContentId));
