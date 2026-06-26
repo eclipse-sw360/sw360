@@ -32,6 +32,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>backend-vulnerabilities-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.spdx</groupId>
             <artifactId>tools-java</artifactId>
         </dependency>
