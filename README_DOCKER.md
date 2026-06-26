@@ -104,7 +104,9 @@ file to tweak SW360 behaviour.
     `application.yml`.
 
     The trusted issuer list is consumed by both `/resource` and
-    `/authorization` Bearer JWT validation paths.
+    `/authorization` Bearer JWT validation paths, so the authorization server
+    and resource server can validate both local SW360 tokens and external
+    Keycloak tokens against the same issuer/JWKS configuration.
 
 **Email Configuration**
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to

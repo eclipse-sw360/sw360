@@ -9,11 +9,13 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class Sw360JwtAuthenticationConverterTest {
 
@@ -32,6 +36,9 @@ public class Sw360JwtAuthenticationConverterTest {
 
     @Test
     public void shouldKeepScopeAuthorities_forSw360IssuedTokens() {
+        User user = adminUser("admin@sw360.org");
+        when(userDetailsProvider.provideUserDetails("admin@sw360.org", null)).thenReturn(user);
+
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
                 .claim("user_name", "admin@sw360.org")
@@ -47,6 +54,9 @@ public class Sw360JwtAuthenticationConverterTest {
 
     @Test
     public void shouldMapKeycloakUserGroupClaim_toAdminAuthorities() {
+        User user = adminUser("admin@sw360.org");
+        when(userDetailsProvider.provideUserDetails("admin@sw360.org", null)).thenReturn(user);
+
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
                 .claim("preferred_username", "admin@sw360.org")
@@ -62,7 +72,10 @@ public class Sw360JwtAuthenticationConverterTest {
     }
 
     @Test
-    public void shouldMapRealmRoles_andIgnoreUnknownGroupNames() {
+    public void shouldMapResolvedUserAuthorities_andIgnoreRealmRoles() {
+        User user = adminUser("user@example.com");
+        when(userDetailsProvider.provideUserDetails("user@example.com", null)).thenReturn(user);
+
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
                 .claim("email", "user@example.com")
@@ -73,6 +86,30 @@ public class Sw360JwtAuthenticationConverterTest {
         assertNotNull(authentication);
 
         assertThat(authorityNames(authentication)).contains("READ", "WRITE", "ADMIN");
+    }
+
+    @Test
+    public void shouldResolveUserByClientId_whenEmailMissing() {
+        User user = adminUser("client-user@sw360.org");
+        when(userDetailsProvider.getUserFromClientId("trusted-client")).thenReturn(user);
+
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "RS256")
+                .claim("client_id", "trusted-client")
+                .claim("scope", List.of("READ"))
+                .build();
+
+        JwtAuthenticationToken authentication = (JwtAuthenticationToken) converter.convert(jwt);
+        assertNotNull(authentication);
+
+        assertThat(authorityNames(authentication)).contains("READ", "WRITE", "ADMIN");
+        verify(userDetailsProvider).getUserFromClientId("trusted-client");
+    }
+
+    private static User adminUser(String email) {
+        User user = new User(email, "admin");
+        user.setUserGroup(UserGroup.ADMIN);
+        return user;
     }
 
     private static Set<String> authorityNames(JwtAuthenticationToken authentication) {

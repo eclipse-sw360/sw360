@@ -52,7 +52,7 @@ import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.schedule.Sw360ScheduleService;
 import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
-import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
