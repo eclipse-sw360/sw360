@@ -9,6 +9,7 @@ import jakarta.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
