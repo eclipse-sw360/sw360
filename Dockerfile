@@ -16,7 +16,7 @@
 # is triggered by buildkit images
 
 # Where code compiles
-FROM maven:3-eclipse-temurin-21-noble@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
+FROM maven:3-eclipse-temurin-21-noble@sha256:d7e7f57407437c014571f1ad5a9955f03fc3edcb1d964067ef351fa38e798665 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -70,7 +70,7 @@ COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 #--------------------------------------------------------------------------------------------------
 # Runtime SW360 image
 
-FROM tomcat:11-jre21-temurin-noble@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
+FROM tomcat:11-jre21-temurin-noble@sha256:c2f18f28400c7de3703741fb6ceda2c10357961bea6169e882f5e638492766e3 AS sw360
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
