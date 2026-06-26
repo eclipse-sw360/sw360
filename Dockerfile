@@ -48,6 +48,7 @@ WORKDIR /build/sw360
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,target=/root/.m2 \
     mvn clean package \
+    --no-transfer-progress \
     -P deploy \
     -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
