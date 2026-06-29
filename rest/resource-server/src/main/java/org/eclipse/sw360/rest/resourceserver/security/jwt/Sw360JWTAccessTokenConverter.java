@@ -56,7 +56,6 @@ public class Sw360JWTAccessTokenConverter extends AbstractSw360JwtAuthentication
         try {
             return userService.getUserByEmail(email);
         } catch (RuntimeException e) {
-            log.debug("Could not resolve SW360 user by email claim {}", email, e);
             return null;
         }
     }
@@ -69,7 +68,6 @@ public class Sw360JWTAccessTokenConverter extends AbstractSw360JwtAuthentication
         try {
             return userService.getUserFromClientId(clientId);
         } catch (RuntimeException e) {
-            log.debug("Could not resolve SW360 user by client_id claim {}", clientId, e);
             return null;
         }
     }
