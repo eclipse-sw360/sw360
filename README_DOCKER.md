@@ -185,7 +185,11 @@ Sensitive information is managed via secret files located in
 * `SVM_SW360_CERTIFICATE_PASSPHRASE`: Passphrase for SVM certificate located by
     `SVM_SW360_CERTIFICATE_FILENAME`.
 * `SVM_SW360_JKS_PASSWORD`: Password for ca-cert keystore.
-* `REST_APITOKEN_HASH_SALT`: Salt for user generated API token hashing.
+* `REST_APITOKEN_HASH_SALT`: BCrypt salt for user generated API token hashing.
+    Must be in OpenBSD bcrypt format (`$2a$<cost>$<22-char-salt>`), for example:
+    `'$2a$04$Software360RestApiSalt'`.
+    Keep this value stable after deployment; changing it invalidates existing API
+    tokens.
 * `EMAIL_PROPERTIES_USERNAME`: Username for SMTP authentication.
 * `EMAIL_PROPERTIES_PASSWORD`: Password for SMTP authentication.
 
@@ -197,6 +201,13 @@ Sensitive information is managed via secret files located in
 To update these secrets, simply edit the respective files. The
 [docker-compose.yml](docker-compose.yml) is configured to mount these secrets
 into the containers.
+
+To generate a new value in valid format:
+
+```sh
+REST_APITOKEN_HASH_SALT='$2a$04$'$(openssl rand -hex 16 | head -c 22)
+printf "REST_APITOKEN_HASH_SALT='%s'\n" "$REST_APITOKEN_HASH_SALT"
+```
 
 ## Running the Image
 
