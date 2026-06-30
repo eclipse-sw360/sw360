@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017,2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017,2019,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -22,16 +22,42 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.admin.attachment.Sw360AttachmentCleanUpService;
+import org.eclipse.sw360.rest.resourceserver.admin.fossology.Sw360FossologyAdminServices;
+import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.changelog.Sw360ChangeLogService;
+import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
+import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
+import org.eclipse.sw360.rest.resourceserver.databasesanitation.Sw360DatabaseSanitationService;
+import org.eclipse.sw360.rest.resourceserver.department.Sw360DepartmentService;
+import org.eclipse.sw360.rest.resourceserver.importexport.Sw360ImportExportService;
+import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
+import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
+import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
+import org.eclipse.sw360.rest.resourceserver.schedule.Sw360ScheduleService;
+import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
-import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.junit.After;
-import org.junit.Before;
+import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,7 +78,6 @@ import org.springframework.web.context.WebApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
-@ContextConfiguration
 public abstract class TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -88,7 +113,97 @@ public abstract class TestRestDocsSpecBase {
     @MockitoBean
     protected SW360ConfigurationsService sw360ConfigurationsServiceMock;
 
-    @Before
+    @MockitoBean
+    protected Sw360ProjectService projectServiceMock;
+
+    @MockitoBean
+    protected Sw360AttachmentService attachmentServiceMock;
+
+    @MockitoBean
+    protected Sw360ReleaseService releaseServiceMock;
+
+    @MockitoBean
+    protected Sw360ChangeLogService changeLogServiceMock;
+
+    @MockitoBean
+    protected Sw360AttachmentCleanUpService cleanUpService;
+
+    @MockitoBean
+    AttachmentService.Iface attachmentClient;
+
+    @MockitoBean
+    protected Sw360ClearingRequestService clearingRequestServiceMock;
+
+    @MockitoBean
+    protected Sw360ComponentService componentServiceMock;
+
+    @MockitoBean
+    protected Sw360VulnerabilityService vulnerabilityServiceMock;
+
+    @MockitoBean
+    protected Sw360VendorService vendorServiceMock;
+
+    @MockitoBean
+    protected SW360ReportService sw360ReportServiceMock;
+
+    @MockitoBean
+    protected SW360ConfigurationsService sw360ConfigurationsService;
+
+    @MockitoBean
+    protected Sw360DatabaseSanitationService sanitationService;
+
+    @MockitoBean
+    protected Sw360DepartmentService departmentServiceMock;
+
+    @MockitoBean
+    protected Sw360ReleaseService releaseService;
+
+    @MockitoBean
+    Sw360FossologyAdminServices fossologyAdminServices;
+
+    @MockitoBean
+    FossologyService.Iface fossologyClient;
+
+    @MockitoBean
+    protected ConfigContainer fossologyConfig;
+
+    @MockitoBean
+    protected SW360RestHealthIndicator restHealthIndicatorMock;
+
+    @MockitoBean
+    protected Sw360ImportExportService importExportService;
+
+    @MockitoBean
+    protected Sw360LicenseService licenseServiceMock;
+
+    @MockitoBean
+    protected Sw360ModerationRequestService moderationRequestServiceMock;
+
+    @MockitoBean
+    protected Project project;
+
+    @MockitoBean
+    protected Sw360ObligationService obligationServiceMock;
+
+    @MockitoBean
+    protected SW360PackageService packageServiceMock;
+
+    @MockitoBean
+    protected Sw360LicenseInfoService licenseInfoMockService;
+
+    @MockitoBean
+    protected Sw360VulnerabilityService vulnerabilityMockService;
+
+    @MockitoBean
+    protected Sw360VendorService sw360VendorService;
+
+    @MockitoBean
+    protected Sw360ScheduleService scheduleServiceMock;
+
+    @MockitoBean
+    protected Sw360SearchService searchServiceMock;
+
+    @BeforeEach
     public void setupRestDocs() {
         this.restDocumentation.beforeTest(getClass(), "setupRestDocs");
 
@@ -118,7 +233,7 @@ public abstract class TestRestDocsSpecBase {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDownRestDocs() {
         this.restDocumentation.afterTest();
     }

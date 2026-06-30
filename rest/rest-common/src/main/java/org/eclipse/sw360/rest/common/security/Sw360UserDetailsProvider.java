@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.rest.authserver.security;
+package org.eclipse.sw360.rest.common.security;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +43,16 @@ public class Sw360UserDetailsProvider {
         }
 
         return result;
+    }
+
+    public User getUserFromClientId(String clientId) {
+        UserService.Iface client = getUserClient();
+        try {
+            return client.getByOidcClientId(clientId);
+        } catch (TException e) {
+            // do nothing
+        }
+        return null;
     }
 
     private User getUserByEmailOrExternalId(String email, String externalId) {

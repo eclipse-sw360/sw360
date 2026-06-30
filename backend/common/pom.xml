@@ -51,7 +51,6 @@
         <dependency>
             <groupId>com.ibm.cloud</groupId>
             <artifactId>cloudant</artifactId>
-            <version>${cloudantsdk.version}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>

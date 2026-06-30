@@ -45,6 +45,7 @@ public class SW360Constants {
     public static final String LICENSE_TYPE_OTHERS = "Others";
     public static final String NA = "n/a";
     public static final String LICENSE_NAME_UNKNOWN = "License name unknown";
+    public static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
     public static final String OBLIGATION_TOPIC_UNKNOWN = "Obligation topic unknown";
     public static final String NO_ASSERTION = "noassertion";
     public static final String STATUS = "status";

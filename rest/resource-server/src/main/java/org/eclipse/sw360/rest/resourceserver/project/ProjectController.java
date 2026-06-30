@@ -2975,6 +2975,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Vendor vendor = sw360Project.getVendor();
             Vendor vendorHalResource = restControllerHelper.convertToEmbeddedVendor(vendor);
             halProject.addEmbeddedResource("sw360:vendors", vendorHalResource);
+            // Restore vendorId so it remains a direct field in the response.
+            if (vendor.getId() != null) {
+                sw360Project.setVendorId(vendor.getId());
+            }
             sw360Project.setVendor(null);
         }
 
@@ -4363,6 +4367,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Vendor vendor = sw360Project.getVendor();
             HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor.getFullname());
             halProject.addEmbeddedResource("sw360:vendors", vendorHalResource);
+            // Restore vendorId so it remains a direct field in the response.
+            if (vendor.getId() != null) {
+                projectDTO.setVendorId(vendor.getId());
+            }
             projectDTO.setVendor(null);
         }
 

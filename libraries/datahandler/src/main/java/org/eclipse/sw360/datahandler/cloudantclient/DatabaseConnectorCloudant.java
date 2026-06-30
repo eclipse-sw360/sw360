@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -34,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -63,8 +64,8 @@ import static org.eclipse.sw360.datahandler.common.DatabaseSettings.LUCENE_SEARC
 public class DatabaseConnectorCloudant {
 
     private final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
-    private static final ImmutableList<String> entitiesWithNonMatchingStructType = ImmutableList
-            .of("moderation", "attachment", "usedReleaseRelation");
+    private static final Set<String> entitiesWithNonMatchingStructType = Set
+            .of("moderation", "attachment", "usedreleaserelation");
 
     private final String dbName;
     private final DatabaseInstanceCloudant instance;
@@ -200,28 +201,50 @@ public class DatabaseConnectorCloudant {
             Document doc = getDocument(id);
             T obj = this.getPojoFromDocument(doc, type);
 
-            String extractedType = null;
-            Field[] f = obj.getClass().getDeclaredFields();
-            for (Field fi : f) {
-                if (fi.getName().equalsIgnoreCase("type")) {
-                    extractedType = (String) fi.get(obj);
-                    break;
-                }
-            }
-            if (extractedType != null) {
-                final String entityType = extractedType.toLowerCase();
-                if (entitiesWithNonMatchingStructType.stream().map(String::toLowerCase)
-                        .noneMatch(tye -> tye.equals(entityType))
-                        && !type.getSimpleName().equalsIgnoreCase(extractedType)) {
-                    return null;
-                }
-            }
+            if (!isOfExcpectedType(obj, type)) return null;
             return obj;
-        } catch (IllegalAccessException | SW360Exception e) {
+        } catch (SW360Exception e) {
             log.error("Error fetching document of type {} with id {} : {}",
                     type.getSimpleName(), id, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Check if the given Object is of desired type based on Object's
+     * {@code type} field. The function ignores the type of entities governed by
+     * {@code entitiesWithNonMatchingStructType} static const.
+     * @param obj  Document object to check.
+     * @param type Class type to match.
+     * @return True if the document is of expected type, or when the type cannot
+     *         be determined. False when the document type does not match.
+     * @param <T> Type of the class the Document should be.
+     */
+    @Contract(pure = true)
+    private static <T> boolean isOfExcpectedType(@NonNull T obj, Class<T> type) {
+        String extractedType = null;
+
+        Field[] f = obj.getClass().getDeclaredFields();
+        for (Field fi : f) {
+            if (fi.getName().equalsIgnoreCase("type")) {
+                fi.setAccessible(true);
+                try {
+                    extractedType = (String) fi.get(obj);
+                } catch (IllegalAccessException e) {
+                    return false;
+                }
+                break;
+            }
+        }
+        if (CommonUtils.isNullEmptyOrWhitespace(extractedType)) {
+            return true;
+        }
+
+        final String entityType = extractedType.toLowerCase(Locale.ROOT);
+        if (entitiesWithNonMatchingStructType.contains(entityType)) {
+            return true;
+        }
+        return type.getSimpleName().equalsIgnoreCase(extractedType);
     }
 
     /**
@@ -396,7 +419,11 @@ public class DatabaseConnectorCloudant {
                 if (r.getError() != null && r.getDoc() == null) {
                     return null;
                 }
-                return this.getPojoFromDocument(r.getDoc(), type);
+                T doc = this.getPojoFromDocument(r.getDoc(), type);
+                if (doc == null || !isOfExcpectedType(doc, type)) {
+                    return null;
+                }
+                return doc;
             }).filter(Objects::nonNull).collect(Collectors.toList());
         } catch (ServiceResponseException e) {
             log.error("Error fetching documents", e);
