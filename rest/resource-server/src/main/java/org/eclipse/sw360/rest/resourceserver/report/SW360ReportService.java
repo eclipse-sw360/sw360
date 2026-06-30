@@ -33,7 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
@@ -94,6 +94,9 @@ public class SW360ReportService {
     @NonNull
     private final Sw360LicenseInfoService licenseInfoService;
 
+    @NonNull
+    private final SW360AttachmentBackendService attachmentBackendService;
+
     @org.springframework.beans.factory.annotation.Value("${sw360.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
@@ -103,7 +106,6 @@ public class SW360ReportService {
     ProjectService.Iface projectclient = ThriftClients.makeProjectClient();
     ComponentService.Iface componentclient = ThriftClients.makeComponentClient();
     LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
-    AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
         return getProjectBuffer(user, extendedByReleases, projectId, format, null);
@@ -533,7 +535,7 @@ public class SW360ReportService {
         Project project = projectclient.getProjectById(projectId, sw360User);
         List<AttachmentContent> attachments = new ArrayList<>();
         for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject)) {
-            attachments.add(attachmentClient.getAttachmentContent(id));
+            attachments.add(attachmentBackendService.getAttachmentContent(id));
         }
         return serveAttachmentBundle(attachments, project, sw360User);
     }
@@ -575,7 +577,7 @@ public class SW360ReportService {
         }
         for (Project project : projects) {
             try {
-                List<AttachmentUsage> attachmentSourceUsages = attachmentClient.getUsedAttachments(Source.projectId(project.getId()),
+                List<AttachmentUsage> attachmentSourceUsages = attachmentBackendService.getUsedAttachments(Source.projectId(project.getId()),
                         UsageData.sourcePackage(new SourcePackageUsage()));
                 List<String> currentProjAttachments = attachmentSourceUsages.stream().map(AttachmentUsage::getAttachmentContentId).toList();
                 if (! currentProjAttachments.isEmpty()) {
