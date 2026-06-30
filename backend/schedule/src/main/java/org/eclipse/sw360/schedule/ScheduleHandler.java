@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.schedule.client.AttachmentsRestClient;
 import org.eclipse.sw360.schedule.client.CveSearchRestClient;
 import org.eclipse.sw360.schedule.client.VMComponentsRestClient;
 import org.eclipse.sw360.schedule.timer.ScheduleConstants;
@@ -38,10 +39,13 @@ public class ScheduleHandler {
 
     private final CveSearchRestClient cveSearchRestClient;
     private final VMComponentsRestClient vmComponentsRestClient;
+    private final AttachmentsRestClient attachmentsRestClient;
 
-    public ScheduleHandler(CveSearchRestClient cveSearchRestClient, VMComponentsRestClient vmComponentsRestClient) {
+    public ScheduleHandler(CveSearchRestClient cveSearchRestClient, VMComponentsRestClient vmComponentsRestClient,
+            AttachmentsRestClient attachmentsRestClient) {
         this.cveSearchRestClient = cveSearchRestClient;
         this.vmComponentsRestClient = vmComponentsRestClient;
+        this.attachmentsRestClient = attachmentsRestClient;
     }
 
     @PostConstruct
@@ -113,7 +117,7 @@ public class ScheduleHandler {
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
                     wrapForScheduler(() -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
+                    wrapForScheduler(attachmentsRestClient::deleteOldAttachmentFromFileSystem, serviceName);
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
                     wrapForScheduler(() -> ThriftClients.makeUserClient().importDepartmentSchedule(), serviceName);
             case ServiceNames.SRC_UPLOAD_SERVICE ->
@@ -152,7 +156,7 @@ public class ScheduleHandler {
             case ServiceNames.SVMMATCH_SERVICE ->
                     vmComponentsRestClient.triggerReverseMatch();
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem());
+                    attachmentsRestClient.deleteOldAttachmentFromFileSystem();
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
                     callDownstreamService(() -> ThriftClients.makeProjectClient().exportForMonitoringList());
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->

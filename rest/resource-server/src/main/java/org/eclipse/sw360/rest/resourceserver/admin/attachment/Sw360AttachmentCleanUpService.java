@@ -15,9 +15,9 @@ import java.util.Set;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.stereotype.Service;
 
@@ -33,21 +33,16 @@ public class Sw360AttachmentCleanUpService {
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
-    ComponentService.Iface componentClient;
-    AttachmentService.Iface attachmentClient;
+    @NonNull
+    private final SW360AttachmentBackendService attachmentBackendService;
 
     private ComponentService.Iface getThriftComponentClient() {
         return ThriftClients.makeComponentClient();
     }
 
-    private AttachmentService.Iface getThriftAttachmentClient() {
-        return ThriftClients.makeAttachmentClient();
-    }
-
     public RequestSummary cleanUpAttachments(User sw360User) throws TException {
-        componentClient = getThriftComponentClient();
-        attachmentClient = getThriftAttachmentClient();
+        ComponentService.Iface componentClient = getThriftComponentClient();
         final Set<String> usedAttachmentIds = componentClient.getUsedAttachmentContentIds();
-        return attachmentClient.vacuumAttachmentDB(sw360User, usedAttachmentIds);
+        return attachmentBackendService.vacuumAttachmentDB(sw360User, usedAttachmentIds);
     }
 }

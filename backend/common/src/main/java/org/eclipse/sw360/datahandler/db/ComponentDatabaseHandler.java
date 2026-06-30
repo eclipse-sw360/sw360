@@ -1993,9 +1993,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInAttachmentUsages(String mergeTargetId, String mergeSourceId) throws TException {
-        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-
-        List<AttachmentUsage> usages = attachmentClient.getAttachmentUsagesByReleaseId(mergeSourceId);
+        List<AttachmentUsage> usages = attachmentDatabaseHandler.getAttachmentUsagesByReleaseId(mergeSourceId);
         for(AttachmentUsage usage : usages) {
             if(usage.getOwner().isSetReleaseId() && usage.getOwner().getReleaseId().equals(mergeSourceId)) {
                 usage.getOwner().setReleaseId(mergeTargetId);
@@ -2003,7 +2001,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if(usage.getUsedBy().isSetReleaseId() && usage.getUsedBy().getReleaseId().equals(mergeSourceId)) {
                 usage.getUsedBy().setReleaseId(mergeTargetId);
             }
-            attachmentClient.updateAttachmentUsage(usage);
+            attachmentDatabaseHandler.updateAttachmentUsage(usage);
         }
     }
 
@@ -3453,7 +3451,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
         Attachment attachment;
         try (FileInputStream inputStream = new FileInputStream(file)) {
-            attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, inputStream, null);
+            AttachmentFrontendUtils frontendUtils = new AttachmentFrontendUtils(
+                    new AttachmentDatabaseHandlerMetadataOperations(attachmentDatabaseHandler));
+            attachment = frontendUtils.uploadAttachmentContent(attachmentContent, inputStream, null);
         }
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
         attachment.setAttachmentType(AttachmentType.SOURCE);
@@ -3473,7 +3473,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private AttachmentContent makeAttachmentContent(AttachmentContent content) {
         try {
-            return new AttachmentFrontendUtils().makeAttachmentContent(content);
+            return new AttachmentFrontendUtils(
+                    new AttachmentDatabaseHandlerMetadataOperations(attachmentDatabaseHandler))
+                    .makeAttachmentContent(content);
         } catch (TException e) {
             throw new RuntimeException(e);
         }

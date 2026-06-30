@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.springframework.stereotype.Service;
 
 import java.net.MalformedURLException;
 import java.util.Collections;
@@ -37,7 +38,8 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
-public class AttachmentHandler implements AttachmentService.Iface {
+@Service
+public class AttachmentHandler {
 
     private final AttachmentDatabaseHandler handler;
 
@@ -49,14 +51,12 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler = new AttachmentDatabaseHandler(client, dbName, attachmentDbName);
     }
 
-    @Override
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
         validateAttachment(attachmentContent);
         assertIdUnset(attachmentContent.getId());
         return handler.add(attachmentContent);
     }
 
-    @Override
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
         for (AttachmentContent attachmentContent : attachmentContents) {
             validateAttachment(attachmentContent);
@@ -65,37 +65,31 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.makeAttachmentContents(attachmentContents);
     }
 
-    @Override
     public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
         assertNotEmpty(id);
         return handler.getAttachmentContent(id);
     }
 
-    @Override
     public RequestSummary bulkDelete(List<String> ids) throws TException {
         assertNotNull(ids);
         return handler.bulkDelete(ids);
     }
 
-    @Override
     public RequestStatus deleteAttachmentContent(String attachmentId) throws TException {
         return handler.deleteAttachmentContent(attachmentId);
     }
 
-    @Override
     public RequestSummary vacuumAttachmentDB(User user, Set<String> usedIds) throws TException {
         assertUser(user);
         return handler.vacuumAttachmentDB(user, usedIds);
     }
 
-    @Override
     public String getSha1FromAttachmentContentId(String attachmentContentId) throws TException {
         assertNotNull(attachmentContentId);
         assertNotEmpty(attachmentContentId);
         return handler.getSha1FromAttachmentContentId(attachmentContentId);
     }
 
-    @Override
     public AttachmentUsage makeAttachmentUsage(AttachmentUsage attachmentUsage) throws TException {
         assertNotNull(attachmentUsage);
         assertIdUnset(attachmentUsage.getId());
@@ -103,7 +97,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.makeAttachmentUsage(attachmentUsage);
     }
 
-    @Override
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
@@ -112,7 +105,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler.makeAttachmentUsages(attachmentUsages);
     }
 
-    @Override
     public AttachmentUsage getAttachmentUsage(String id) throws TException {
         assertNotNull(id);
         assertNotEmpty(id);
@@ -120,7 +112,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.getAttachmentUsage(id);
     }
 
-    @Override
     public AttachmentUsage updateAttachmentUsage(AttachmentUsage attachmentUsage) throws TException {
         assertNotNull(attachmentUsage);
         assertId(attachmentUsage.getId());
@@ -128,7 +119,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.updateAttachmentUsage(attachmentUsage);
     }
 
-    @Override
     public void updateAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
@@ -137,7 +127,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler.updateAttachmentUsages(attachmentUsages);
     }
 
-    @Override
     public void deleteAttachmentUsage(AttachmentUsage attachmentUsage) throws TException {
         assertNotNull(attachmentUsage);
         assertId(attachmentUsage.getId());
@@ -145,7 +134,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler.deleteAttachmentUsage(attachmentUsage);
     }
 
-    @Override
     public void deleteAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
@@ -154,7 +142,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler.deleteAttachmentUsages(attachmentUsages);
     }
 
-    @Override
     public void deleteAttachmentUsagesByUsageDataType(Source usedBy, UsageData usageData) throws TException {
         assertNotNull(usedBy);
         assertTrue(usedBy.isSet());
@@ -162,12 +149,10 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler.deleteAttachmentUsagesByUsageDataTypes(usedBy, usageDataTypes, usageData == null);
     }
 
-    @Override
     public List<AttachmentUsage> getAttachmentUsages(Source owner, String attachmentContentId, UsageData filter) throws TException {
         return getAttachmentsUsages(owner, Collections.singleton(attachmentContentId), filter);
     }
 
-    @Override
     public List<AttachmentUsage> getAttachmentsUsages(Source owner, Set<String> attachmentContentIds, UsageData filter) throws TException {
         assertNotNull(owner);
         assertTrue(owner.isSet());
@@ -178,7 +163,6 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.getAttachmentUsages(owner, attachmentContentIds, filter);
     }
 
-    @Override
     public List<AttachmentUsage> getUsedAttachments(Source usedBy, UsageData filter) throws TException {
         assertNotNull(usedBy);
         assertTrue(usedBy.isSet());
@@ -186,13 +170,11 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.getUsedAttachments(usedBy, filter);
     }
 
-    @Override
     public List<AttachmentUsage> getUsedAttachmentsById(String attachmentId) throws TException {
         assertNotNull(attachmentId);
         return handler.getUsedAttachmentsById(attachmentId);
     }
 
-    @Override
     public void replaceAttachmentUsages(Source usedBy, List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(usedBy);
         assertTrue(usedBy.isSet());
@@ -213,41 +195,34 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler.makeAttachmentUsages(attachmentUsages);
     }
 
-    @Override
     public Map<Map<Source, String>, Integer> getAttachmentUsageCount(Map<Source, Set<String>> attachments, UsageData filter)
             throws TException {
         assertNotNull(attachments);
         return handler.getAttachmentUsageCount(attachments, filter);
     }
 
-    @Override
     public List<Attachment> getAttachmentsByIds(Set<String> ids) throws TException {
         assertNotEmpty(ids);
         return handler.getAttachmentsByIds(ids);
     }
-    @Override
     public List<Attachment> getAttachmentsBySha1s(Set<String> sha1s) throws TException {
         assertNotEmpty(sha1s);
         return handler.getAttachmentsBySha1s(sha1s);
     }
-    @Override
     public List<Source> getAttachmentOwnersByIds(Set<String> ids) throws TException {
         assertNotEmpty(ids);
         return handler.getAttachmentOwnersByIds(ids);
     }
 
-    @Override
     public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) throws TException {
         assertNotNull(releaseId);
         return handler.getAttachmentUsagesByReleaseId(releaseId);
     }
 
-    @Override
     public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
         return handler.deleteOldAttachmentFromFileSystem();
     }
 
-    @Override
     public AttachmentContent getAttachmentContentById(String attachmentContentId) throws TException {
         assertNotEmpty(attachmentContentId);
         assertNotNull(attachmentContentId);

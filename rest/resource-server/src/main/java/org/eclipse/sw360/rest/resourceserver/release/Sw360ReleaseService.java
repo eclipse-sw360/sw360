@@ -55,6 +55,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -122,6 +123,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     @NonNull
     private final SW360FossologyService fossologyService;
+
+    @NonNull
+    private final SW360AttachmentBackendService attachmentBackendService;
 
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String RESPONSE_STATUS_VALUE_FAILED = "Failed";
@@ -1620,8 +1624,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projects", projects.size());
 
-        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-        List<AttachmentUsage> attachmentUsages = attachmentClient.getAttachmentUsagesByReleaseId(releaseSourceId);
+        List<AttachmentUsage> attachmentUsages = attachmentBackendService.getAttachmentUsagesByReleaseId(releaseSourceId);
         usageInformation.put("attachmentUsages", attachmentUsages.size());
 
         ComponentService.Iface componentClient = ThriftClients.makeComponentClient();

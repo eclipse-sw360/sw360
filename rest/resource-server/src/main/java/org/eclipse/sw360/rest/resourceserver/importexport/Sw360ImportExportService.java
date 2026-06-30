@@ -39,7 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import org.eclipse.sw360.importer.AttachmentImportOperations;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -62,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.eclipse.sw360.rest.resourceserver.attachment.RestAttachmentImportOperations;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -82,6 +83,9 @@ import lombok.RequiredArgsConstructor;
 public class Sw360ImportExportService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
+
+    @NonNull
+    private final RestAttachmentImportOperations attachmentImportOperations;
 
     public void getDownloadCsvComponentTemplate(User sw360User, HttpServletResponse response) throws IOException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
@@ -279,7 +283,7 @@ public class Sw360ImportExportService {
         FluentIterable<ComponentCSVRecord> compCSVRecords = convertCSVRecordsToCompCSVRecords(releaseRecords);
         ComponentService.Iface sw360ComponentClient = ThriftClients.makeComponentClient();
         VendorService.Iface sw360VendorClient = ThriftClients.makeVendorClient();
-        AttachmentService.Iface sw360AttachmentClient = ThriftClients.makeAttachmentClient();
+        AttachmentImportOperations sw360AttachmentClient = attachmentImportOperations;
         RequestSummary requestSummary = writeToDatabase(compCSVRecords, sw360ComponentClient, sw360VendorClient,
                 sw360AttachmentClient, sw360User);
         return requestSummary;
@@ -324,7 +328,7 @@ public class Sw360ImportExportService {
         FluentIterable<ComponentAttachmentCSVRecord> compCSVRecords = convertCSVRecordsToComponentAttachmentCSVRecords(
                 attachmentRecords);
         ComponentService.Iface sw360ComponentClient = ThriftClients.makeComponentClient();
-        AttachmentService.Iface sw360AttachmentClient = ThriftClients.makeAttachmentClient();
+        AttachmentImportOperations sw360AttachmentClient = attachmentImportOperations;
         final RequestSummary requestSummary = writeAttachmentsToDatabase(compCSVRecords, sw360User,
                 sw360ComponentClient, sw360AttachmentClient);
         return requestSummary;

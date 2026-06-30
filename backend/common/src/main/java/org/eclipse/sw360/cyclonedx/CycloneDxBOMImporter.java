@@ -36,6 +36,8 @@ import org.eclipse.sw360.common.utils.RepositoryURL;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandlerMetadataOperations;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -118,14 +120,17 @@ public class CycloneDxBOMImporter {
     private final PackageDatabaseHandler packageDatabaseHandler;
     private final User user;
     private final AttachmentConnector attachmentConnector;
+    private final AttachmentDatabaseHandler attachmentDatabaseHandler;
     private final RepositoryURL repositoryURL;
 
     public CycloneDxBOMImporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
-            PackageDatabaseHandler packageDatabaseHandler, AttachmentConnector attachmentConnector, User user) {
+            PackageDatabaseHandler packageDatabaseHandler, AttachmentConnector attachmentConnector,
+            AttachmentDatabaseHandler attachmentDatabaseHandler, User user) {
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
         this.packageDatabaseHandler = packageDatabaseHandler;
         this.attachmentConnector = attachmentConnector;
+        this.attachmentDatabaseHandler = attachmentDatabaseHandler;
         this.user = user;
         this.repositoryURL = new RepositoryURL();
     }
@@ -344,7 +349,9 @@ public class CycloneDxBOMImporter {
                             .append("_ImportStatus_").append(SW360Utils.getCreatedOnTime().replaceAll(COLON_REGEX, HYPHEN)).append(DOT).append(SW360Constants.JSON_FILE_EXTENSION);
                     final InputStream inStream = IOUtils.toInputStream(convertCollectionToJSONString(messageMap), Charset.defaultCharset());
                     final AttachmentContent importResultAttachmentContent = makeAttachmentContent(fileName.toString(), MediaType.JSON_UTF_8.toString());
-                    Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(importResultAttachmentContent, inStream, user);
+                    Attachment attachment = new AttachmentFrontendUtils(
+                            new AttachmentDatabaseHandlerMetadataOperations(attachmentDatabaseHandler))
+                            .uploadAttachmentContent(importResultAttachmentContent, inStream, user);
                     attachment.setAttachmentType(AttachmentType.OTHER);
                     StringBuilder comment = new StringBuilder("Auto Generated: CycloneDX SBOM import result for: '").append(attachmentContent.getFilename()).append("'");
                     attachment.setCreatedComment(comment.toString());
@@ -931,7 +938,9 @@ public class CycloneDxBOMImporter {
 
     private AttachmentContent makeAttachmentContent(AttachmentContent content) {
         try {
-            return new AttachmentFrontendUtils().makeAttachmentContent(content);
+            return new AttachmentFrontendUtils(
+                    new AttachmentDatabaseHandlerMetadataOperations(attachmentDatabaseHandler))
+                    .makeAttachmentContent(content);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
