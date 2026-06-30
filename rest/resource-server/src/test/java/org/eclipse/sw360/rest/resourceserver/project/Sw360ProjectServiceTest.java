@@ -1,6 +1,5 @@
 /*
- * Copyright Siemens AG, 2026.
- * Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -13,16 +12,16 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -33,7 +32,7 @@ public class Sw360ProjectServiceTest {
 
     private Sw360ProjectService projectService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         projectService = spy(new Sw360ProjectService(mock(RestControllerHelper.class)));
     }
@@ -45,7 +44,7 @@ public class Sw360ProjectServiceTest {
 
         int result = projectService.countProjectsByReleaseIds(emptyReleaseIds);
 
-        assertEquals("Expected 0 for empty release-id set", 0, result);
+        assertEquals(0, result, "Expected 0 for empty release-id set");
         verify(projectService, never()).getThriftProjectClient();
     }
 
@@ -56,22 +55,22 @@ public class Sw360ProjectServiceTest {
 
         int result = projectService.countProjectsByReleaseIds(nullReleaseIds);
 
-        assertEquals("Expected 0 for null release-id set", 0, result);
+        assertEquals(0, result, "Expected 0 for null release-id set");
         verify(projectService, never()).getThriftProjectClient();
     }
 
     @Test
     public void should_verify_CommonUtils_identifies_null_and_empty_collections() {
-        assertTrue("Empty set should be identified as empty",
-                CommonUtils.isNullOrEmptyCollection(Collections.emptySet()));
+        assertTrue(CommonUtils.isNullOrEmptyCollection(Collections.emptySet()),
+                "Empty set should be identified as empty");
 
-        assertTrue("Null collection should be identified as empty",
-                CommonUtils.isNullOrEmptyCollection(null));
+        assertTrue(CommonUtils.isNullOrEmptyCollection(null),
+                "Null collection should be identified as empty");
 
         Set<String> nonEmpty = new HashSet<>();
         nonEmpty.add("item");
-        assertFalse("Non-empty set should not be identified as empty",
-                CommonUtils.isNullOrEmptyCollection(nonEmpty));
+        assertFalse(CommonUtils.isNullOrEmptyCollection(nonEmpty),
+                "Non-empty set should not be identified as empty");
     }
 
     @Test
@@ -82,7 +81,7 @@ public class Sw360ProjectServiceTest {
 
         boolean isEmptyOrNull = CommonUtils.isNullOrEmptyCollection(releaseIds);
 
-        assertFalse("Non-empty release IDs should NOT trigger guard", isEmptyOrNull);
+        assertFalse(isEmptyOrNull, "Non-empty release IDs should NOT trigger guard");
     }
 
     @Test
@@ -96,7 +95,7 @@ public class Sw360ProjectServiceTest {
 
         int result = projectService.countProjectsByReleaseIds(releaseIds);
 
-        assertEquals("Expected count from Thrift client for non-empty input", 2, result);
+        assertEquals(2, result, "Expected count from Thrift client for non-empty input");
         verify(projectService, times(1)).getThriftProjectClient();
         verify(projectClient, times(1)).getCountByReleaseIds(releaseIds);
     }
@@ -114,7 +113,7 @@ public class Sw360ProjectServiceTest {
 
         int result = projectService.countProjectsByReleaseIds(releaseIds);
 
-        assertEquals("Expected 0 when Thrift call fails", 0, result);
+        assertEquals(0, result, "Expected 0 when Thrift call fails");
         verify(projectService, times(1)).getThriftProjectClient();
         verify(projectClient, times(1)).getCountByReleaseIds(releaseIds);
     }

@@ -113,10 +113,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Set<String> DEFAULT_DOMAINS;
     public static final String REPORT_FILENAME_MAPPING;
-    public static final UserGroup CONFIG_WRITE_ACCESS_USERGROUP;
-    public static final UserGroup CONFIG_ADMIN_ACCESS_USERGROUP;
-    private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
-    private static final String DEFAULT_ADMIN_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String SERVER_PATH_URL;
     private static final int REST_CONNECTION_TIMEOUT;
     private static final int REST_READ_TIMEOUT;
@@ -136,8 +132,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         DEFAULT_DOMAINS = CommonUtils.splitToSet(
                 "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics");
         REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
-        CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
-        CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
         SERVER_PATH_URL = props.getProperty("backend.url", "http://localhost:8080");
         REST_CONNECTION_TIMEOUT = Integer.parseInt(props.getProperty("backend.timeout.connection", "5000"));
         REST_READ_TIMEOUT = Integer.parseInt(props.getProperty("backend.timeout.read", "600000"));

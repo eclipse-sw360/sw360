@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2017-2019. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2017-2019, 2026. Part of the SW360 Portal Project.
   ~ Copyright Bosch.IO GmbH 2020
   ~
   ~ This program and the accompanying materials are made
@@ -191,6 +191,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

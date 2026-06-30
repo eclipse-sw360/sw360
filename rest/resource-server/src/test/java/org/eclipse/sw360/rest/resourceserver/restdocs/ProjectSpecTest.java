@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -15,30 +15,9 @@ import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
-import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
-import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
-import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
@@ -47,49 +26,26 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
-import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
-import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.report.SW360ReportBean;
-import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.payload.JsonFieldType;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -97,41 +53,25 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
 import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -140,37 +80,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private SW360PackageService packageServiceMock;
-
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
-
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    private Sw360AttachmentService attachmentServiceMock;
-
-    @MockitoBean
-    private Sw360LicenseInfoService licenseInfoMockService;
-
-    @MockitoBean
-    private Sw360VulnerabilityService vulnerabilityMockService;
-
-    @MockitoBean
-    private SW360ReportService sw360ReportServiceMock;
-
-    @MockitoBean
-    private Sw360ModerationRequestService moderationRequestServiceMock;
-
     private Project project;
     private Project project8;
     private Set<Project> projectList = new HashSet<>();
     private Attachment attachment;
     private Release release;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
         List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
@@ -1982,6 +1898,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                fieldWithPath("vendorId").description("The id of the vendor"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
@@ -2042,6 +1959,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
                                 fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
+                                fieldWithPath("vendorId").description("The id of the vendor"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")

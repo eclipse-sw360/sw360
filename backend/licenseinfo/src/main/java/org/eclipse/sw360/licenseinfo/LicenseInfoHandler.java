@@ -641,7 +641,9 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 if (license.getObligationsAtProjectSize() < 1) {
                     continue;
                 }
-                String licenseName = license.getLicenseName();
+                String licenseIdentifier = (license.isSetLicenseSpdxId()
+                        && !SW360Constants.SPDX_IDENTIFIER_UNKNOWN.equals(license.getLicenseSpdxId()))
+                        ? license.getLicenseSpdxId() : license.getLicenseName();
                 license.getObligationsAtProject().stream().forEach(obl -> {
                     ObligationStatusInfo osInfo = filteredObligationStatusMap.get(obl.getTopic());
                     release.setAttachments(release.getAttachments().stream()
@@ -651,13 +653,13 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                         osInfo.setText(obl.getText());
                         osInfo.setId(obl.getId());
                         osInfo.setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class));
-                        osInfo.addToLicenseIds(licenseName);
+                        osInfo.addToLicenseIds(licenseIdentifier);
                         osInfo.addToReleases(release);
                         obl.setObligationStatusInfo(osInfo);
                     } else {
                         ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText()).setId(obl.getId())
                                 .setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class))
-                                .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseName));
+                                .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseIdentifier));
                         filteredObligationStatusMap.put(obl.getTopic(), osi);
                     }
                 });

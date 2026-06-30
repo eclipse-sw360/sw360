@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2021. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2021,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,24 +9,6 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
-import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.IOException;
-import java.util.*;
-
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
@@ -35,19 +17,28 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
-import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+import java.io.IOException;
+import java.util.*;
+
+import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
+import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -56,18 +47,12 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
-
-    @MockitoBean
-    private Sw360ClearingRequestService clearingRequestServiceMock;
-
     ClearingRequest clearingRequest = new ClearingRequest();
     ClearingRequest cr1 = new ClearingRequest();
     ClearingRequest cr2 = new ClearingRequest();
     List<Comment> comments = new ArrayList<Comment>();
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
 
         clearingRequest.setId("CR-101");

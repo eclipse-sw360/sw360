@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2020,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -21,22 +21,16 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class SearchSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -45,10 +39,7 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private Sw360SearchService searchServiceMock;
-
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         SearchResult sr = new SearchResult();
         sr.setId("376570");

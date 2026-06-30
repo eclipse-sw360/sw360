@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,60 +9,19 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import static org.junit.Assume.assumeTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.withSettings;
-import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
-import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
-import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
@@ -90,17 +49,8 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
-import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Value;
@@ -110,16 +60,27 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.restdocs.payload.JsonFieldType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import java.io.IOException;
+import java.util.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+import static org.junit.Assume.assumeTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
+import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -127,27 +88,6 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockitoBean
-    private SW360PackageService packageServiceMock;
-
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    private Sw360VulnerabilityService vulnerabilityServiceMock;
-
-    @MockitoBean
-    private Sw360AttachmentService attachmentServiceMock;
-
-    @MockitoBean
-    private Sw360VendorService sw360VendorService;
-
-    @MockitoBean
-    private Sw360LicenseService licenseServiceMock;
-
-    @MockitoBean
-    private Sw360LicenseInfoService licenseInfoMockService;
 
     private Release release, release3, releaseTest, release5, releaseSpdx;
     private Attachment attachment;
@@ -159,7 +99,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     private final String attachmentSha1 = "da373e491d3863477568896089ee9457bc316783";
     private final String attachmentId = "11112222";
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         Set<Attachment> attachments = new HashSet<>();
         Set<Component> usedByComponent = new HashSet<>();

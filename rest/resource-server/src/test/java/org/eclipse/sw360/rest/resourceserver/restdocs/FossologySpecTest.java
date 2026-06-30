@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2023-2024.
+ * Copyright Siemens AG, 2023-2024,2026.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -11,31 +11,28 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.admin.fossology.Sw360FossologyAdminServices;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.hateoas.MediaTypes;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class FossologySpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -44,11 +41,13 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    Sw360FossologyAdminServices fossologyAdminServices;
-
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
+        fossologyClient = mock(FossologyService.Iface.class);
+        User sw360User = new User();
+        sw360User.setId("123456789");
+        sw360User.setEmail("admin@sw360.org");
+        sw360User.setFullname("John Doe");
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
         doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any(), any(), any());

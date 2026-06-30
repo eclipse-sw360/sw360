@@ -1,6 +1,7 @@
 /*
  * Copyright Bosch.IO GmbH 2020.
  * Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -21,13 +22,13 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,12 +42,12 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Sw360AttachmentServiceTest {
 
     @Mock
@@ -67,9 +68,9 @@ public class Sw360AttachmentServiceTest {
 
     private int sourceIdCounter;
 
-    @Before
+    @BeforeEach
     public void setUp() throws TTransportException {
-        doReturn(thriftService).when(attachmentService).getThriftAttachmentClient();
+        lenient().doReturn(thriftService).when(attachmentService).getThriftAttachmentClient();
     }
 
     private static String attachmentId(int idx) {

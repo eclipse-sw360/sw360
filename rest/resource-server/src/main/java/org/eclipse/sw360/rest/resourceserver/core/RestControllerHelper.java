@@ -980,6 +980,13 @@ public class RestControllerHelper<T> {
         if (project.isSetLinkedProjects()) {
             embeddedProject.setLinkedProjects(project.getLinkedProjects());
         }
+        // fillVendor() unsets vendorId and replaces it with the full Vendor object,
+        // so derive the ID back from the vendor object when present.
+        if (project.getVendor() != null && project.getVendor().getId() != null) {
+            embeddedProject.setVendorId(project.getVendor().getId());
+        } else if (project.isSetVendorId()) {
+            embeddedProject.setVendorId(project.getVendorId());
+        }
         return embeddedProject;
     }
 

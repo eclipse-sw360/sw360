@@ -6,7 +6,7 @@ package org.eclipse.sw360.rest.resourceserver.security.basic;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
+import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;

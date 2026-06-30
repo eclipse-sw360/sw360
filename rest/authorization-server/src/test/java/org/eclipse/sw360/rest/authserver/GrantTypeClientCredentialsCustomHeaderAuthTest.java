@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2019, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.rest.authserver;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,13 +18,13 @@ import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * A POST request for an access token with grant type 'client_credentials' and
  * custom auth header should NOT be possible.
  */
-@Ignore("Keeeping this test for reference for header bases auth, but it is not needed anymore for now")
+@Disabled("Keeeping this test for reference for header bases auth, but it is not needed anymore for now")
 public class GrantTypeClientCredentialsCustomHeaderAuthTest extends IntegrationTestBase {
 
     @Test

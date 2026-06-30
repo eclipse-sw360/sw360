@@ -11,13 +11,13 @@ package org.eclipse.sw360.rest.authserver.security;
 
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,15 +28,15 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class LegacyClientSecretUpgraderTest {
     private final BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 
@@ -44,12 +44,12 @@ public class LegacyClientSecretUpgraderTest {
     private OAuthClientRepository repo;
     private LegacyClientSecretUpgrader upgrader;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         upgrader = new LegacyClientSecretUpgrader(repo, bcrypt);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         Sw360ClientSecretEncoder.UPGRADE_CTX.remove();
     }
@@ -68,10 +68,10 @@ public class LegacyClientSecretUpgraderTest {
         verify(repo).getByClientId(clientId);
         ArgumentCaptor<OAuthClientEntity> persisted = ArgumentCaptor.forClass(OAuthClientEntity.class);
         verify(repo).update(persisted.capture());
-        assertTrue("persisted secret must be BCrypt-encoded but was: " + persisted.getValue().getClientSecret(),
-                Sw360ClientSecretEncoder.looksLikeBcrypt(persisted.getValue().getClientSecret()));
-        assertTrue("BCrypt hash must verify against the original raw secret",
-                bcrypt.matches(rawSecret, persisted.getValue().getClientSecret()));
+        assertTrue(Sw360ClientSecretEncoder.looksLikeBcrypt(persisted.getValue().getClientSecret()),
+                "persisted secret must be BCrypt-encoded but was: " + persisted.getValue().getClientSecret());
+        assertTrue(bcrypt.matches(rawSecret, persisted.getValue().getClientSecret()),
+                "BCrypt hash must verify against the original raw secret");
         // Thread-local must always be cleared so the next request starts clean.
         assertNull(Sw360ClientSecretEncoder.UPGRADE_CTX.get());
     }
