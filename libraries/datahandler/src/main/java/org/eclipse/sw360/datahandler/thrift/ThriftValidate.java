@@ -56,12 +56,19 @@ public class ThriftValidate {
         assertNotNull(oblig.getTitle());
         assertNotNull(oblig.getObligationLevel());
 
+        oblig.setText(normalizeObligationText(oblig.getText()));
+
         if (oblig.whitelist == null) {
             oblig.setWhitelist(Collections.emptySet());
         }
 
         // Check type
         oblig.setType(TYPE_OBLIGATION);
+    }
+
+    private static String normalizeObligationText(String text) {
+        // Store printable indentation only to avoid persisting tab control characters in DB text fields.
+        return text.replace('\t', ' ');
     }
 
     public static void prepareLicenseType(LicenseType licenseType) throws SW360Exception {
