@@ -14,13 +14,11 @@ import org.eclipse.sw360.datahandler.services.cvesearch.VulnerabilityUpdateStatu
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.cvesearch.Sw360CveSearchService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Set;
 
@@ -30,7 +28,6 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class CveSearchSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -45,7 +42,7 @@ public class CveSearchSpecTest extends TestRestDocsSpecBase {
     private final VulnerabilityUpdateStatus updateStatus = new VulnerabilityUpdateStatus()
             .setRequestStatus(RequestStatus.SUCCESS);
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         User sw360User = new User();
         sw360User.setId("123456789");
