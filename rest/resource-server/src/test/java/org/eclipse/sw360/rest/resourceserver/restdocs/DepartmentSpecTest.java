@@ -39,6 +39,7 @@ import org.springframework.http.MediaType;
 
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class DepartmentSpecTest extends TestRestDocsSpecBase {
@@ -59,7 +60,7 @@ public class DepartmentSpecTest extends TestRestDocsSpecBase {
         sw360User.setId("123456789");
         sw360User.setEmail("admin@sw360.org");
         sw360User.setFullname("John Doe");
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(sw360User);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(sw360User));
         given(this.departmentServiceMock.importDepartmentManually(any())).willReturn(requestSummary);
         given(this.departmentServiceMock.scheduleImportDepartment(any())).willReturn(requestSummary);
         when(departmentServiceMock.isDepartmentScheduled(sw360User)).thenReturn(false);

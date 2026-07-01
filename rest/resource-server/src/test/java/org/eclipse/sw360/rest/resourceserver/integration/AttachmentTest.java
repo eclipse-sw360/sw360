@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class AttachmentTest extends TestIntegrationBase {
 
@@ -56,7 +57,7 @@ public class AttachmentTest extends TestIntegrationBase {
         user.setFullname("John Doe");
         user.setUserGroup(UserGroup.ADMIN);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.releaseId2), eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(1));

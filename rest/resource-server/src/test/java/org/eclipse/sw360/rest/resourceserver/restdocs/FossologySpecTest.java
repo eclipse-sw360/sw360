@@ -34,6 +34,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class FossologySpecTest extends TestRestDocsSpecBase {
@@ -49,8 +50,7 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
 
     @Before
     public void before() throws TException, IOException {
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
         doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any(), any(), any());
         doNothing().when(fossologyAdminServices).serverConnection(any());
     }

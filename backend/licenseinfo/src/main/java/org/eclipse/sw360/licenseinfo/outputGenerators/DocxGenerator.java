@@ -29,8 +29,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.clients.users.UsersClients;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
@@ -339,13 +340,11 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         int currentRow = 7;
 
-        UserService.Iface userClient = ThriftClients.makeUserClient();
-
         if (project.isSetProjectOwner() && !project.getProjectOwner().isEmpty()) {
             User owner = null;
             try {
-                owner = userClient.getByEmail(project.getProjectOwner());
-            } catch (TException te) {
+                owner = UserConverter.toThrift(UsersClients.defaultClient().getByEmail(project.getProjectOwner()));
+            } catch (Exception te) {
                 // a resulting null user object is handled below
             }
             if (owner != null) {
@@ -358,8 +357,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         if (project.isSetProjectResponsible() && !project.getProjectResponsible().isEmpty()) {
             User responsible = null;
             try {
-                responsible = userClient.getByEmail(project.getProjectResponsible());
-            } catch (TException te) {
+                responsible = UserConverter.toThrift(
+                        UsersClients.defaultClient().getByEmail(project.getProjectResponsible()));
+            } catch (Exception te) {
                 // a resulting null user object is handled below
             }
             if (responsible != null) {
@@ -382,8 +382,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
                     User user = null;
                     try {
-                        user = userClient.getByEmail(email);
-                    } catch (TException te) {
+                        user = UserConverter.toThrift(UsersClients.defaultClient().getByEmail(email));
+                    } catch (Exception te) {
                         // a resulting null user object is handled below by replacing with email
                     }
 

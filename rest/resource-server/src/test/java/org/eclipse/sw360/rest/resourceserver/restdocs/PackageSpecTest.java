@@ -62,6 +62,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class PackageSpecTest extends TestRestDocsSpecBase {
@@ -174,14 +175,10 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
 
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
-        given(this.userServiceMock.getUserByEmailOrExternalId("user@sw360.org")).willReturn(
-                new User("user@sw360.org", "sw360").setId("12345670089"));
-        given(this.userServiceMock.getUserByEmail("user@sw360.org")).willReturn(
-                new User("user@sw360.org", "sw360").setId("12345670089"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
+        given(this.userServiceMock.getUserByEmailOrExternalId("user@sw360.org")).willReturn(UserConverter.fromThrift(new User("user@sw360.org", "sw360").setId("12345670089")));
+        given(this.userServiceMock.getUserByEmail("user@sw360.org")).willReturn(UserConverter.fromThrift(new User("user@sw360.org", "sw360").setId("12345670089")));
     }
 
     @Test

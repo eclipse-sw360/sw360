@@ -72,7 +72,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345")
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345")
                 .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
                         String.class);
 
@@ -90,7 +90,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
-        responseEntity = template.withBasicAuth(normalTestUser.email, "12345")
+        responseEntity = template.withBasicAuth(normalTestUser.getEmail(), "12345")
                 .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
                         String.class);
 
@@ -113,7 +113,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
                 + "\"access_token_validity\":3600,\"refresh_token_validity\":3600}";
 
         // when:
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         // then:
@@ -136,7 +136,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
         String body = "{\"description\":\"bad-scope\",\"scope\":[\"ADMIN\"]}";
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.BAD_REQUEST));
@@ -153,7 +153,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         // 'scope_read' is the SCOPE_-prefixed lowercase Spring convention.
         String body = "{\"description\":\"normalize-me\",\"scope\":[\"scope_read\"]}";
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
@@ -176,7 +176,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
@@ -208,7 +208,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         String body = "{\"client_id\":\"" + existingClientId + "\",\"description\":\"updated\","
                 + "\"scope\":[\"READ\"]}";
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
@@ -232,7 +232,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         String body = "{\"description\":\"bot for ghost\",\"scope\":[\"READ\"],"
                 + "\"owner_email\":\"ghost@example.com\"}";
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.BAD_REQUEST));
@@ -248,12 +248,12 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
         String body = "{\"description\":\"bot owned by caller\",\"scope\":[\"READ\"]}";
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
         JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
-        assertThat(response.get("owner_email").asText(), is(adminTestUser.email));
+        assertThat(response.get("owner_email").asText(), is(adminTestUser.getEmail()));
     }
 
     @Test
@@ -267,14 +267,14 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         // normalTestUser is also stubbed in IntegrationTestBase; admin can
         // mint a client on their behalf.
         String body = "{\"description\":\"bot for normal user\",\"scope\":[\"READ\",\"WRITE\"],"
-                + "\"owner_email\":\"" + normalTestUser.email + "\"}";
+                + "\"owner_email\":\"" + normalTestUser.getEmail() + "\"}";
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
         JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
-        assertThat(response.get("owner_email").asText(), is(normalTestUser.email));
+        assertThat(response.get("owner_email").asText(), is(normalTestUser.getEmail()));
     }
 
     @Test
@@ -284,7 +284,7 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         OAuthClientEntity existing = new OAuthClientEntity();
         existing.setClientId(existingClientId);
         existing.setClientSecret("$2a$10$abcdefghijabcdefghij..");
-        existing.setOwnerEmail(adminTestUser.email);
+        existing.setOwnerEmail(adminTestUser.getEmail());
         when(clientRepo.getByClientId(existingClientId)).thenReturn(existing);
 
         HttpHeaders headers = new HttpHeaders();
@@ -292,15 +292,15 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
         // Try to repoint ownership; the controller must silently drop it.
         String body = "{\"client_id\":\"" + existingClientId + "\",\"description\":\"updated\","
-                + "\"scope\":[\"READ\"],\"owner_email\":\"" + normalTestUser.email + "\"}";
+                + "\"scope\":[\"READ\"],\"owner_email\":\"" + normalTestUser.getEmail() + "\"}";
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(body, headers, HttpMethod.POST, new URI("/client-management")), String.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
         JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
         assertThat("owner_email is immutable on update",
-                response.get("owner_email").asText(), is(adminTestUser.email));
+                response.get("owner_email").asText(), is(adminTestUser.getEmail()));
     }
 
     @Test
@@ -310,14 +310,14 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         OAuthClientEntity existing = new OAuthClientEntity();
         existing.setClientId(existingClientId);
         existing.setClientSecret("$2a$10$abcdefghijabcdefghij..");
-        existing.setOwnerEmail(adminTestUser.email);
+        existing.setOwnerEmail(adminTestUser.getEmail());
         when(clientRepo.getByClientId(existingClientId)).thenReturn(existing);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "12345").exchange(
+        responseEntity = template.withBasicAuth(adminTestUser.getEmail(), "12345").exchange(
                 new RequestEntity<>(headers, HttpMethod.DELETE,
                         new URI("/client-management/" + existingClientId)), String.class);
 

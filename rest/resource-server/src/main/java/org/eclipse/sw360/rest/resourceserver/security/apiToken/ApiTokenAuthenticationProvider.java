@@ -16,6 +16,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
@@ -84,7 +85,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     private User getUserFromTokenHash(String tokenHash) {
         try {
-            return userService.getUserByApiToken(tokenHash);
+            return UserConverter.toThrift(userService.getUserByApiToken(tokenHash));
         } catch (RuntimeException e) {
             log.debug("Could not find any user for the entered token, hash " + tokenHash);
             throw new AuthenticationServiceException("Your entered API token is not valid.");

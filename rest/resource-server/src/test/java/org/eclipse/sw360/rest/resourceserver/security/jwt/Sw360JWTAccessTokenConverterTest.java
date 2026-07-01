@@ -10,8 +10,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.security.jwt;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -65,7 +65,9 @@ public class Sw360JWTAccessTokenConverterTest {
         AbstractAuthenticationToken authentication = converter.convert(jwt);
 
         assertThat(authentication).isNotNull();
-        assertThat(authentication.getDetails()).isSameAs(adminUser);
+        assertThat(authentication.getDetails())
+                .isInstanceOf(org.eclipse.sw360.datahandler.thrift.users.User.class)
+                .extracting("email").isEqualTo(adminUser.getEmail());
         assertThat(authentication.getAuthorities())
                 .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))
                 .contains(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()))
@@ -135,7 +137,9 @@ public class Sw360JWTAccessTokenConverterTest {
         AbstractAuthenticationToken authentication = converter.convert(jwt);
 
         assertThat(authentication).isNotNull();
-        assertThat(authentication.getDetails()).isSameAs(clientMappedUser);
+        assertThat(authentication.getDetails())
+                .isInstanceOf(org.eclipse.sw360.datahandler.thrift.users.User.class)
+                .extracting("email").isEqualTo(clientMappedUser.getEmail());
         verify(userService).getUserFromClientId("trusted-sw360-client");
         verify(userService, never()).getUserByEmail("trusted-sw360-client");
     }
@@ -156,7 +160,9 @@ public class Sw360JWTAccessTokenConverterTest {
         AbstractAuthenticationToken authentication = converter.convert(jwt);
 
         assertThat(authentication).isNotNull();
-        assertThat(authentication.getDetails()).isSameAs(clientMappedUser);
+        assertThat(authentication.getDetails())
+                .isInstanceOf(org.eclipse.sw360.datahandler.thrift.users.User.class)
+                .extracting("email").isEqualTo(clientMappedUser.getEmail());
         verify(userService).getUserFromClientId("trusted-sw360-client");
     }
 

@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
@@ -68,8 +69,7 @@ public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
         requestSummary.setTotalAffectedElements(10);
         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         Set<String> usedAttachmentIds = new HashSet<>(Arrays.asList("123", "234"));
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
         given(this.cleanUpService.cleanUpAttachments(any())).willReturn(requestSummary);
         when(componentClient.getUsedAttachmentContentIds()).thenReturn(usedAttachmentIds);
         given(this.attachmentClient.vacuumAttachmentDB(any(),any())).willReturn(requestSummary);

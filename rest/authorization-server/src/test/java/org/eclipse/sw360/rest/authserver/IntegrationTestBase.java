@@ -28,9 +28,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
+import org.eclipse.sw360.clients.users.UsersClient;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService;
@@ -67,6 +68,9 @@ public abstract class IntegrationTestBase {
     @Value("${local.server.port}")
     protected int port;
 
+    @MockitoBean
+    protected UsersClient usersClient;
+
     @MockitoSpyBean
     protected Sw360UserDetailsProvider sw360UserDetailsProvider;
 
@@ -96,49 +100,48 @@ public abstract class IntegrationTestBase {
     @Before
     public void setup() throws TException {
         setupTestUser();
-        UserService.Client mockedUserService = mock(UserService.Client.class);
-        when(mockedUserService.getByEmailOrExternalId(eq(adminTestUser.email), anyString())).thenReturn(adminTestUser);
-        when(mockedUserService.getByEmailOrExternalId(eq(normalTestUser.email), anyString()))
+        when(usersClient.getByEmailOrExternalId(eq(adminTestUser.getEmail()), anyString())).thenReturn(adminTestUser);
+        when(usersClient.getByEmailOrExternalId(eq(normalTestUser.getEmail()), anyString()))
                 .thenReturn(normalTestUser);
-        // getByEmail is consumed by Sw360UserMirrorService when /client-management
-        // validates the owner_email field.
-        when(mockedUserService.getByEmail(eq(adminTestUser.email))).thenReturn(adminTestUser);
-        when(mockedUserService.getByEmail(eq(normalTestUser.email))).thenReturn(normalTestUser);
-        when(mockedUserService.updateUser(org.mockito.ArgumentMatchers.any(User.class)))
-                .thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
-        org.mockito.Mockito.doReturn(mockedUserService).when(sw360UserDetailsProvider).getUserClient();
-        org.mockito.Mockito.doReturn(mockedUserService).when(sw360UserMirrorService).getUserClient();
+        when(usersClient.getByEmail(eq(adminTestUser.getEmail()))).thenReturn(adminTestUser);
+        when(usersClient.getByEmail(eq(normalTestUser.getEmail()))).thenReturn(normalTestUser);
+        when(usersClient.updateUser(org.mockito.ArgumentMatchers.any(User.class)))
+                .thenReturn(RequestStatus.SUCCESS);
 
         // Default: any unknown user gets UsernameNotFoundException from the mock.
         // Use doThrow so specific stubs below can override without triggering the exception.
         org.mockito.Mockito.doThrow(new org.springframework.security.core.userdetails.UsernameNotFoundException("unknown user"))
                 .when(sw360UserDetailsService).loadUserByUsername(org.mockito.ArgumentMatchers.anyString());
         // Known test users: override the default behaviour (last stub wins in Mockito)
-        org.mockito.Mockito.doReturn(new org.springframework.security.core.userdetails.User(adminTestUser.email, encoder.encode(adminTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))))
-                .when(sw360UserDetailsService).loadUserByUsername(adminTestUser.email);
-        org.mockito.Mockito.doReturn(new org.springframework.security.core.userdetails.User(normalTestUser.email, encoder.encode(normalTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()))))
-                .when(sw360UserDetailsService).loadUserByUsername(normalTestUser.email);
+        org.mockito.Mockito.doReturn(new org.springframework.security.core.userdetails.User(adminTestUser.getEmail(), encoder.encode(adminTestUser.getPassword()), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))))
+                .when(sw360UserDetailsService).loadUserByUsername(adminTestUser.getEmail());
+        org.mockito.Mockito.doReturn(new org.springframework.security.core.userdetails.User(normalTestUser.getEmail(), encoder.encode(normalTestUser.getPassword()), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()))))
+                .when(sw360UserDetailsService).loadUserByUsername(normalTestUser.getEmail());
 
         setupTestClient();
         when(sw360ClientDetailsService.findByClientId(anyString())).thenReturn(testClient);
     }
 
     private void setupTestUser() {
-        adminTestUser = new User("mockedserviceadminuser@sw360.org", "qa-admin");
-        adminTestUser.externalid = "service-mocked-by-mockito-admin";
-        adminTestUser.fullname = "Mocked Service Admin User";
-        adminTestUser.givenname = "Mocked";
-        adminTestUser.lastname = "Service Admin User";
-        adminTestUser.password = "12345";
-        adminTestUser.userGroup = UserGroup.ADMIN;
+        adminTestUser = new User()
+                .setEmail("mockedserviceadminuser@sw360.org")
+                .setDepartment("qa-admin")
+                .setExternalid("service-mocked-by-mockito-admin")
+                .setFullname("Mocked Service Admin User")
+                .setGivenname("Mocked")
+                .setLastname("Service Admin User")
+                .setPassword("12345")
+                .setUserGroup(UserGroup.ADMIN);
 
-        normalTestUser = new User("mockedservicenormaluser@sw360.org", "qa-normal");
-        normalTestUser.externalid = "service-mocked-by-mockito-normal";
-        normalTestUser.fullname = "Mocked Service Normal User";
-        normalTestUser.givenname = "Mocked";
-        normalTestUser.lastname = "Service Normal User";
-        normalTestUser.password = "12345";
-        normalTestUser.userGroup = UserGroup.USER;
+        normalTestUser = new User()
+                .setEmail("mockedservicenormaluser@sw360.org")
+                .setDepartment("qa-normal")
+                .setExternalid("service-mocked-by-mockito-normal")
+                .setFullname("Mocked Service Normal User")
+                .setGivenname("Mocked")
+                .setLastname("Service Normal User")
+                .setPassword("12345")
+                .setUserGroup(UserGroup.USER);
     }
 
     private void setupTestClient() {

@@ -33,6 +33,11 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
+            <artifactId>users-rest-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
             <artifactId>backend-vulnerabilities-core</artifactId>
             <version>${project.version}</version>
         </dependency>

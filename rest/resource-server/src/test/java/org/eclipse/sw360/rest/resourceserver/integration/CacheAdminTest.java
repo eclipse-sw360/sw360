@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class CacheAdminTest extends TestIntegrationBase {
 
@@ -48,8 +49,8 @@ public class CacheAdminTest extends TestIntegrationBase {
     @BeforeEach
     public void before() throws TException {
         User user = TestHelper.getTestUser();
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
 
         testStats = List.of(
                 CacheStatistics.builder()

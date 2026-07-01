@@ -129,6 +129,19 @@ public class PermissionUtils {
         }
     }
 
+    /**
+     * Same role hierarchy as {@link #isUserAtLeast(UserGroup, User)} for service-api POJO users.
+     */
+    public static boolean isUserAtLeast(org.eclipse.sw360.datahandler.services.users.UserGroup group,
+            org.eclipse.sw360.datahandler.services.users.User user) {
+        if (user == null || user.getUserGroup() == null) {
+            return false;
+        }
+        User thriftUser = new User();
+        thriftUser.setUserGroup(UserGroup.valueOf(user.getUserGroup().name()));
+        return isUserAtLeast(UserGroup.valueOf(group.name()), thriftUser);
+    }
+
     public static boolean isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup role, Set<UserGroup> secondaryRoles) {
         switch (role) {
             case USER:

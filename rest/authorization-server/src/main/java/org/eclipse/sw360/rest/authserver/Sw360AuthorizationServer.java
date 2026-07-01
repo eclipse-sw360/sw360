@@ -13,18 +13,20 @@ package org.eclipse.sw360.rest.authserver;
 import java.util.Properties;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.rest.common.Sw360SecurityFilter;
 import org.eclipse.sw360.rest.common.Sw360XssFilter;
+import org.eclipse.sw360.clients.users.config.UsersClientConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
-@Import({Sw360CORSFilter.class, Sw360XssFilter.class, Sw360SecurityFilter.class})
+@Import({Sw360CORSFilter.class, Sw360XssFilter.class, Sw360SecurityFilter.class,
+        UsersClientConfiguration.class})
 public class Sw360AuthorizationServer extends SpringBootServletInitializer {
 
     private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";

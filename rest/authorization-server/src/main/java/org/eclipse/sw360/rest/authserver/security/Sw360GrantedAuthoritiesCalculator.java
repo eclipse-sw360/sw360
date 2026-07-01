@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -68,7 +68,7 @@ public class Sw360GrantedAuthoritiesCalculator {
         List<GrantedAuthority> grantedAuthorities = generateFromUser(user);
 
         if(clientDetails != null) {
-            log.debug("User " + user.email + " has authorities " + grantedAuthorities + " while used client "
+            log.debug("User " + user.getEmail() + " has authorities " + grantedAuthorities + " while used client "
                         + clientDetails.getClientId() + " has scopes " + clientDetails.getScopes()
                         + ". Setting intersection as granted authorities for access token!");
             grantedAuthorities = intersectWithClient(grantedAuthorities, clientDetails);

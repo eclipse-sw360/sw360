@@ -9,6 +9,7 @@ import lombok.NonNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
@@ -105,9 +106,9 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	private User loadSw360User(Jwt jwt) {
 		String email = extractEmailFromJWT(jwt);
 		String clientId = extractClientIdFromJWT(jwt);
-		User sw360User = getUserFromService(email, clientId);
+		org.eclipse.sw360.datahandler.services.users.User sw360User = getUserFromService(email, clientId);
 		validateUser(sw360User);
-		return sw360User;
+		return UserConverter.toThrift(sw360User);
 	}
 
 	@Nullable
@@ -134,8 +135,8 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 * @return Return user if found from one of the parameter, null otherwise.
 	 */
 	@Nullable
-	private User getUserFromService(@Nullable String email, @Nullable String clientId) {
-		User sw360User = null;
+	private org.eclipse.sw360.datahandler.services.users.User getUserFromService(@Nullable String email, @Nullable String clientId) {
+		org.eclipse.sw360.datahandler.services.users.User sw360User = null;
 		if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
 			try {
 				sw360User = userService.getUserByEmail(email);
@@ -174,8 +175,8 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 	 * @param sw360User the user object fetched from the user service
 	 * @throws BadCredentialsException if the user is deactivated or not available
 	 */
-	private static void validateUser(@Nullable User sw360User) {
-		if (sw360User == null || sw360User.isDeactivated()) {
+	private static void validateUser(@Nullable org.eclipse.sw360.datahandler.services.users.User sw360User) {
+		if (sw360User == null || Boolean.TRUE.equals(sw360User.getDeactivated())) {
 			throw new BadCredentialsException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
 		}
 	}

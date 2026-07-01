@@ -37,10 +37,13 @@ public class User {
 
     private String externalid;
 
+    @JsonProperty("fullName")
     private String fullname;
 
+    @JsonProperty("givenName")
     private String givenname;
 
+    @JsonProperty("lastName")
     private String lastname;
 
     @JsonProperty(required = true)

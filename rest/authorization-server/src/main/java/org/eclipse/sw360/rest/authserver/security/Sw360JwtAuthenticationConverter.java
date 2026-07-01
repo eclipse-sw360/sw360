@@ -67,8 +67,10 @@ public class Sw360JwtAuthenticationConverter implements Converter<Jwt, AbstractA
     ) {
         Set<GrantedAuthority> authorities = new LinkedHashSet<>();
         for (UserGroup group : extractUserGroups(jwt)) {
-            User syntheticUser = new User(principalName, "jwt");
-            syntheticUser.userGroup = group;
+            org.eclipse.sw360.datahandler.services.users.User syntheticUser = new org.eclipse.sw360.datahandler.services.users.User()
+                    .setEmail(principalName)
+                    .setDepartment("jwt")
+                    .setUserGroup(org.eclipse.sw360.datahandler.services.users.UserGroup.valueOf(group.name()));
             authorities.addAll(authoritiesCalculator.generateFromUser(syntheticUser));
         }
         return authorities;

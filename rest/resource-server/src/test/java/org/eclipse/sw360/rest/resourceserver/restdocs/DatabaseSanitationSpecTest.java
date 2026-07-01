@@ -44,6 +44,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.ibm.cloud.cloudant.v1.model.Attachment;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
@@ -114,8 +115,7 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
         sw360User.setId("123456789");
         sw360User.setEmail("admin@sw360.org");
         sw360User.setFullname("John Doe");
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
         Map<String, List<String>> componentResponse = new HashMap<>();
         componentResponse.put(component.getName(), componentList);
 

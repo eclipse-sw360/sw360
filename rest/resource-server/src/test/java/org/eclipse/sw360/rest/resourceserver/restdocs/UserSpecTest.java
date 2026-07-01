@@ -46,6 +46,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class UserSpecTest extends TestRestDocsSpecBase {
@@ -125,25 +126,22 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         userList.add(user);
 
         List<User> mockUserList = Collections.singletonList(user);
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
-        given(this.userServiceMock.getUser("4784587578e87989")).willReturn(user);
-        given(this.userServiceMock.getUser("4784587578e87989")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUser("4784587578e87989")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUser("4784587578e87989")).willReturn(UserConverter.fromThrift(user));
         when(this.userServiceMock.addUser(any())).then(
-                invocation -> new User("test@sw360.org", "DEPARTMENT").setId("1234567890").setFullname("FTest lTest")
-                        .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.USER));
-        given(this.userServiceMock.getUserByEmailOrExternalId(any())).willReturn(user);
-        when(userServiceMock.refineSearch(any(), any())).thenReturn(
-                Collections.singletonMap(
+                invocation -> UserConverter.fromThrift(new User("test@sw360.org", "DEPARTMENT").setId("1234567890")
+                        .setFullname("FTest lTest")
+                        .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.USER)));
+        given(this.userServiceMock.getUserByEmailOrExternalId(any())).willReturn(UserConverter.fromThrift(user));
+        when(userServiceMock.refineSearch(any(), any())).thenReturn(org.eclipse.sw360.rest.resourceserver.TestUserConverters.toPojoMap(Collections.singletonMap(
                         new PaginationData().setRowsPerPage(mockUserList.size()).setDisplayStart(0).setTotalRowCount(mockUserList.size()),
                         mockUserList.stream().toList()
-                )
-        );
-        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(
-                Collections.singletonMap(
+                )));
+        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(org.eclipse.sw360.rest.resourceserver.TestUserConverters.toPojoMap(Collections.singletonMap(
                         new PaginationData().setRowsPerPage(mockUserList.size()).setDisplayStart(0).setTotalRowCount(mockUserList.size()),
                         mockUserList.stream().toList()
-                )
-        );
+                )));
 
         User user2 = new User();
         user2.setEmail("jane@sw360.org");
@@ -157,7 +155,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         user.setSecondaryDepartmentsAndRoles(secondaryDepartmentsAndRoles);
         userList.add(user2);
 
-        given(this.userServiceMock.getAllUsers()).willReturn(userList);
+        given(this.userServiceMock.getAllUsers()).willReturn((userList).stream().map(UserConverter::fromThrift).toList());
 
         RestApiToken token3 = new RestApiToken();
         token3.setName("Token3");
@@ -165,7 +163,8 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         token3.setCreatedOn("2023-12-19 02:31:52");
         token3.setAuthorities(Set.of("READ", "WRITE"));
         token3.setToken("MockedToken");
-        given(this.userServiceMock.convertToRestApiToken(any(), any())).willReturn(token3);
+        given(this.userServiceMock.convertToRestApiToken(any(), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.users.RestApiTokenConverter.fromThrift(token3));
         given(this.userServiceMock.isTokenNameExisted(any(), any())).willReturn(true);
     }
 

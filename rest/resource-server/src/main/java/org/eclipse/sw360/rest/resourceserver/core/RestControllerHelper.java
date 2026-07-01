@@ -20,6 +20,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -220,7 +221,7 @@ public class RestControllerHelper<T> {
                     String clientId = jwt.getClaim(JWT_SUBJECT);
                     if (clientId == null) {
                         userId = jwt.getClaim("user_name");
-                        return userService.getUserByEmailOrExternalId(userId);
+                        return UserConverter.toThrift(userService.getUserByEmailOrExternalId(userId));
                     }
                 }
             } else if (principle instanceof Sw360UserDetails sw360UserDetails) {
@@ -238,7 +239,7 @@ public class RestControllerHelper<T> {
             if (isNullEmptyOrWhitespace(userId)) {
                 throw new AuthenticationServiceException("Could not load user from authentication.");
             }
-            return userService.getUserByEmailOrExternalId(userId);
+            return UserConverter.toThrift(userService.getUserByEmailOrExternalId(userId));
         } catch (RuntimeException e) {
             throw new AuthenticationServiceException("Could not load user from authentication.");
         }
@@ -265,6 +266,17 @@ public class RestControllerHelper<T> {
         PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
         return resourceListController.getPaginationResultFromPaginatedList(resources,
                 paginationOptions, totalCount);
+    }
+
+    public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
+                                                                 List<T> resources, int totalCount) {
+        if (!requestContainsPaging(request)) {
+            request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
+            request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
+        }
+        PaginationOptions<T> paginationOptions = new PaginationOptions<>(
+                pageable.getPageNumber(), pageable.getPageSize(), null);
+        return new PaginationResult<>(resources, totalCount, paginationOptions);
     }
 
     private boolean requestContainsPaging(HttpServletRequest request) {
@@ -379,7 +391,7 @@ public class RestControllerHelper<T> {
         }
         User sw360User;
         try {
-            sw360User = userService.getUserByEmail(emailId);
+            sw360User = UserConverter.toThrift(userService.getUserByEmail(emailId));
         } catch (RuntimeException e) {
             sw360User = new User();
             sw360User.setId(emailId).setEmail(emailId);
@@ -394,7 +406,7 @@ public class RestControllerHelper<T> {
         }
         User sw360User;
         try {
-            sw360User = userService.getUserByEmail(emailId);
+            sw360User = UserConverter.toThrift(userService.getUserByEmail(emailId));
         } catch (RuntimeException e) {
             LOGGER.debug("Could not get user object from backend with email: {}", emailId);
             return null;
@@ -1158,6 +1170,23 @@ public class RestControllerHelper<T> {
         return embeddedUser;
     }
 
+    public org.eclipse.sw360.datahandler.services.users.User convertToEmbeddedGetUsers(
+            org.eclipse.sw360.datahandler.services.users.User user) {
+        org.eclipse.sw360.datahandler.services.users.User embeddedUser =
+                new org.eclipse.sw360.datahandler.services.users.User();
+        embeddedUser.setId(user.getId());
+        embeddedUser.setFullname(user.getFullname());
+        embeddedUser.setEmail(user.getEmail());
+        embeddedUser.setGivenname(user.getGivenname());
+        embeddedUser.setLastname(user.getLastname());
+        embeddedUser.setDepartment(user.getDepartment());
+        embeddedUser.setUserGroup(user.getUserGroup());
+        embeddedUser.setSecondaryDepartmentsAndRoles(user.getSecondaryDepartmentsAndRoles());
+        embeddedUser.setDeactivated(user.getDeactivated());
+        embeddedUser.setType(null);
+        return embeddedUser;
+    }
+
     public User convertToEmbeddedGetUsers(User user) {
         User embeddedUser = new User();
         embeddedUser.setId(user.getId());
@@ -1654,7 +1683,8 @@ public class RestControllerHelper<T> {
             if (CommonUtils.isNotNullEmptyOrWhitespace(release.getCotsDetails().getCotsResponsible())) {
                 User sw360User;
                 try {
-                    sw360User = userService.getUserByEmail(release.getCotsDetails().getCotsResponsible());
+                    sw360User = UserConverter.toThrift(
+                            userService.getUserByEmail(release.getCotsDetails().getCotsResponsible()));
                 } catch (RuntimeException e) {
                     sw360User = null;
                 }

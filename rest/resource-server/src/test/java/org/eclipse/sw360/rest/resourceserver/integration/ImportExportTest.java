@@ -44,6 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ImportExportTest extends TestIntegrationBase {
 
@@ -130,7 +131,7 @@ public class ImportExportTest extends TestIntegrationBase {
 
         // Mock user service to return a proper User object
         User user = TestHelper.getTestUser();
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
     }
 
     @Test

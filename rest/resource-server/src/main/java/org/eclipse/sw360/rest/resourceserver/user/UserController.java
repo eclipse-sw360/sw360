@@ -8,7 +8,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.user;
 
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -33,10 +33,11 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.users.RestApiToken;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -105,9 +106,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @NonNull
     private final SW360ConfigurationsService sw360ConfigurationsService;
 
-    private static final ImmutableSet<User._Fields> setOfUserProfileFields =
-            ImmutableSet.<User._Fields>builder().add(User._Fields.WANTS_MAIL_NOTIFICATION)
-                    .add(User._Fields.NOTIFICATION_PREFERENCES).build();
+    private static final Set<String> USER_PROFILE_FIELDS = Set.of("wantsMailNotification", "notificationPreferences");
 
     @Operation(summary = "List all of the service's users.",
             description = "List all of the service's users.", tags = {"Users"})
@@ -136,8 +135,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "Search term to filter users by first name, last name, or email. Uses full-text Nouveau/Lucene search.")
             @RequestParam(value = "searchText", required = false) String searchText
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        restControllerHelper.throwIfSecurityUser(user);
+        org.eclipse.sw360.datahandler.thrift.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(authUser);
 
         Map<PaginationData, List<User>> paginatedUsers = null;
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
@@ -161,7 +160,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                 .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
 
         paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, allUsers, SW360Constants.TYPE_USER, totalCount);
+                request, pageable, allUsers, totalCount);
 
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : paginationResult.getResources()) {
@@ -234,8 +233,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "The user to be created.")
             @RequestBody User user
     ) {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        if (!PermissionUtils.isAdmin(sw360User)) {
+        org.eclipse.sw360.datahandler.thrift.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
+        if (!PermissionUtils.isAdmin(authUser)) {
             throw new AccessDeniedException("User is not authorized to create users");
         }
         if (CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
@@ -259,7 +258,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     })
     @GetMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> getUserProfile() {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
         HalResource<User> halUserResource = new HalResource<>(sw360User);
         return ResponseEntity.ok(halUserResource);
     }
@@ -300,11 +299,11 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     """))
             @RequestBody Map<String, Object> userProfile
     ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        sw360User = restControllerHelper.updateUserProfile(sw360User, userProfile,
-                setOfUserProfileFields);
-        userService.updateUser(sw360User);
-        HalResource<User> halUserResource = new HalResource<>(sw360User);
+        org.eclipse.sw360.datahandler.thrift.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
+        User profileUser = UserConverter.fromThrift(authUser);
+        updateUserProfile(profileUser, userProfile);
+        userService.updateUser(profileUser);
+        HalResource<User> halUserResource = new HalResource<>(profileUser);
         return ResponseEntity.ok(halUserResource);
     }
 
@@ -314,7 +313,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @GetMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
         List<RestApiToken> restApiTokens = sw360User.getRestApiTokens();
 
         if (restApiTokens == null) {
@@ -350,7 +349,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     ))
             @RequestBody Map<String, Object> requestBody
     ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
         String tokenLengthStr = sw360ConfigurationsService.getSW360Configs()
                 .get(SW360ConfigKeys.REST_API_TOKEN_LENGTH);
@@ -361,7 +360,10 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         int tokenLength = Integer.parseInt(tokenLengthStr);
         String token = RandomStringUtils.secure().nextAlphanumeric(tokenLength);
         restApiToken.setToken(BCrypt.hashpw(token, API_TOKEN_HASH_SALT));
-        sw360User.addToRestApiTokens(restApiToken);
+        if (sw360User.getRestApiTokens() == null) {
+            sw360User.setRestApiTokens(new ArrayList<>());
+        }
+        sw360User.getRestApiTokens().add(restApiToken);
         userService.updateUser(sw360User);
 
         return new ResponseEntity<>(token, HttpStatus.CREATED);
@@ -379,7 +381,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     example = "MyToken")
             @RequestParam("name") String tokenName
     ) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
 
         if (!userService.isTokenNameExisted(sw360User, tokenName)) {
             throw new ResourceNotFoundException("Token not found: " + StringEscapeUtils.escapeHtml4(tokenName));
@@ -412,7 +414,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                             """))})})
     @GetMapping(value = USERS_URL + "/groupList")
     public ResponseEntity<Map<String, List<String>>> getGroupList() {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
         List<String> primaryGrpList = new ArrayList<>();
         List<String> secondaryGrpList = new ArrayList<>();
         Map<String, List<String>> userGroupMap = new HashMap<>();
@@ -442,7 +444,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "Id of updated user") @PathVariable String id
     ) throws TException {
         if (user.getPassword() != null && user.getPassword().isEmpty()) {
-            user.unsetPassword();
+            user.setPassword(null);
         }
         if (user.getPassword() != null) {
             String encodedPassword = passwordEncoder.encode(user.getPassword());
@@ -450,7 +452,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         }
 
         User userToUpdate = userService.getUser(id);
-        userToUpdate = this.restControllerHelper.updateUser(userToUpdate, user);
+        userToUpdate = mergeUserForPatch(userToUpdate, user);
 
         userService.updateUser(userToUpdate);
         HalResource<User> halResource = createHalUser(userToUpdate);
@@ -496,7 +498,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                         .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
             }
-            filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
+            filterMap.put("givenname", values);
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
             Set<String> values = CommonUtils.splitToSet(email);
@@ -505,15 +507,15 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                         .map(NouveauLuceneAwareDatabaseConnector::prepareFuzzyQuery)
                         .collect(Collectors.toSet());
             }
-            filterMap.put(User._Fields.EMAIL.getFieldName(), values);
+            filterMap.put("email", values);
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
             Set<String> values = CommonUtils.splitToSet(department);
-            filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
+            filterMap.put("department", values);
         }
         if (usergroup != null) {
             Set<String> values = CommonUtils.splitToSet(usergroup.toString());
-            filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
+            filterMap.put("userGroup", values);
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(lastName)) {
             Set<String> values = CommonUtils.splitToSet(lastName);
@@ -522,8 +524,80 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                         .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
             }
-            filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
+            filterMap.put("lastname", values);
         }
         return filterMap;
+    }
+
+    private static void updateUserProfile(User userToUpdate, Map<String, Object> requestBodyUser) {
+        Object wantsMail = requestBodyUser.get("wantsMailNotification");
+        if (wantsMail != null) {
+            userToUpdate.setWantsMailNotification((Boolean) wantsMail);
+        }
+        Object notificationPreferences = requestBodyUser.get("notificationPreferences");
+        if (notificationPreferences != null) {
+            if (wantsMail == null) {
+                if (Boolean.TRUE.equals(userToUpdate.getWantsMailNotification())) {
+                    userToUpdate.setNotificationPreferences((Map<String, Boolean>) notificationPreferences);
+                }
+            } else if (Boolean.TRUE.equals(wantsMail)) {
+                userToUpdate.setNotificationPreferences((Map<String, Boolean>) notificationPreferences);
+            }
+        }
+    }
+
+    private static User mergeUserForPatch(User existing, User patch) {
+        if (patch.getEmail() != null) {
+            existing.setEmail(patch.getEmail());
+        }
+        if (patch.getGivenname() != null) {
+            existing.setGivenname(patch.getGivenname());
+        }
+        if (patch.getLastname() != null) {
+            existing.setLastname(patch.getLastname());
+        }
+        if (patch.getDepartment() != null) {
+            existing.setDepartment(patch.getDepartment());
+        }
+        if (patch.getUserGroup() != null) {
+            existing.setUserGroup(patch.getUserGroup());
+        }
+        if (patch.getExternalid() != null) {
+            existing.setExternalid(patch.getExternalid());
+        }
+        if (patch.getFullname() != null) {
+            existing.setFullname(patch.getFullname());
+        }
+        if (patch.getPassword() != null) {
+            existing.setPassword(patch.getPassword());
+        }
+        if (patch.getWantsMailNotification() != null) {
+            existing.setWantsMailNotification(patch.getWantsMailNotification());
+        }
+        if (patch.getNotificationPreferences() != null) {
+            existing.setNotificationPreferences(patch.getNotificationPreferences());
+        }
+        if (patch.getFormerEmailAddresses() != null) {
+            existing.setFormerEmailAddresses(patch.getFormerEmailAddresses());
+        }
+        if (patch.getRestApiTokens() != null) {
+            existing.setRestApiTokens(patch.getRestApiTokens());
+        }
+        if (patch.getMyProjectsPreferenceSelection() != null) {
+            existing.setMyProjectsPreferenceSelection(patch.getMyProjectsPreferenceSelection());
+        }
+        if (patch.getSecondaryDepartmentsAndRoles() != null) {
+            existing.setSecondaryDepartmentsAndRoles(patch.getSecondaryDepartmentsAndRoles());
+        }
+        if (patch.getPrimaryRoles() != null) {
+            existing.setPrimaryRoles(patch.getPrimaryRoles());
+        }
+        if (patch.getDeactivated() != null) {
+            existing.setDeactivated(patch.getDeactivated());
+        }
+        if (patch.getOidcClientInfos() != null) {
+            existing.setOidcClientInfos(patch.getOidcClientInfos());
+        }
+        return existing;
     }
 }

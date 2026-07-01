@@ -35,6 +35,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import jakarta.servlet.ServletException;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ImportExportSpec extends TestRestDocsSpecBase {
@@ -66,7 +67,7 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
         licensetype.setType("xyz");
 
         given(this.importExportService.uploadComponent(any(), any(), any(),any())).willReturn(requestSummary);
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(sw360User);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(sw360User));
         given(this.importExportService.uploadReleaseLink(any(), any(), any())).willReturn(requestSummary);
         given(this.importExportService.uploadComponentAttachment(any(), any(), any())).willReturn(requestSummary);
 

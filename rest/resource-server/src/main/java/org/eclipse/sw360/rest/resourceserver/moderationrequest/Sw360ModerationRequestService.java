@@ -34,8 +34,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.clients.users.UsersClient;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -58,6 +59,7 @@ public class Sw360ModerationRequestService {
     private final Sw360SpdxServices spdxServices;
     private final SpdxTypeBridge spdxTypeBridge;
     private final Sw360VulnerabilityService vulnerabilityService;
+    private final UsersClient usersClient;
 
     public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
         return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
@@ -77,10 +79,6 @@ public class Sw360ModerationRequestService {
 
     private LicenseService.Iface getThriftLicenseClient() {
         return ThriftClients.makeLicenseClient();
-    }
-
-    private UserService.Iface getThriftUserClient() throws TTransportException {
-        return ThriftClients.makeUserClient();
     }
 
     /**
@@ -348,22 +346,11 @@ public class Sw360ModerationRequestService {
     }
 
     public User getUserByEmail(String email) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmail(email);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
+        return UserConverter.toThrift(usersClient.getByEmail(email));
     }
 
-    public User getUserByEmailOrExternalId(org.eclipse.sw360.datahandler.thrift.users.UserService.Iface userClient,
-            String userIdentifier, String string) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public User getUserByEmailOrExternalId(String userIdentifier, String string) {
+        return UserConverter.toThrift(usersClient.getByEmailOrExternalId(userIdentifier, userIdentifier));
     }
 
     /**

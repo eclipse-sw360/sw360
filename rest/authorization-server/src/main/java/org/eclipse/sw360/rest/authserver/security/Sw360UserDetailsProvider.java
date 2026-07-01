@@ -10,24 +10,25 @@
 package org.eclipse.sw360.rest.authserver.security;
 
 import com.google.common.annotations.VisibleForTesting;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.clients.users.UsersClient;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 /**
- * This user details provider is able to query the sw360 user thrift service to
+ * This user details provider queries the SW360 users REST service to
  * check if a user identified by an email address or an external id exists.
  */
 @Service
+@RequiredArgsConstructor
 public class Sw360UserDetailsProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
+    private final UsersClient usersClient;
 
     public User provideUserDetails(String email, String extId) {
         User result = null;
@@ -48,19 +49,18 @@ public class Sw360UserDetailsProvider {
     private User getUserByEmailOrExternalId(String email, String externalId) {
         // client should be put into threadlocal some day after this pattern proofed
         // itself
-        UserService.Iface client = getUserClient();
         try {
             if (StringUtils.isNotEmpty(email) || StringUtils.isNotEmpty(externalId)) {
-                return client.getByEmailOrExternalId(email, externalId);
+                return usersClient.getByEmailOrExternalId(email, externalId);
             }
-        } catch (TException e) {
+        } catch (Exception e) {
             // do nothing
         }
         return null;
     }
 
     @VisibleForTesting
-    public UserService.@NonNull Iface getUserClient() {
-        return ThriftClients.makeUserClient();
+    public @NonNull UsersClient getUsersClient() {
+        return usersClient;
     }
 }
