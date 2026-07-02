@@ -131,7 +131,7 @@ public class RestExceptionHandler {
     @ExceptionHandler({SW360Exception.class})
     public ResponseEntity<ErrorMessage> handleSw360Exception(SW360Exception e) {
         HttpStatus httpStatus = resolveHttpStatus(e);
-        return new ResponseEntity<>(new ErrorMessage(e, httpStatus), httpStatus);
+        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy(), e), httpStatus), httpStatus);
     }
 
     private static HttpStatus resolveHttpStatus(SW360Exception e) {
