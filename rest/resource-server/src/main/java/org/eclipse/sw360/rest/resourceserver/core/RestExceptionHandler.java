@@ -16,29 +16,29 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3InstantSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonInstantSerializer;
-import org.apache.thrift.TException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.IOException;
@@ -95,7 +95,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorMessage> handleRuntimeException(RuntimeException e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -130,7 +130,21 @@ public class RestExceptionHandler {
 
     @ExceptionHandler({SW360Exception.class})
     public ResponseEntity<ErrorMessage> handleSw360Exception(SW360Exception e) {
-        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy()), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
+        HttpStatus httpStatus = resolveHttpStatus(e);
+        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy(), e), httpStatus), httpStatus);
+    }
+
+    private static HttpStatus resolveHttpStatus(SW360Exception e) {
+        if (e.isSetErrorCode()) {
+            int errorCode = e.getErrorCode();
+            if (errorCode >= 400 && errorCode <= 599) {
+                HttpStatus resolved = HttpStatus.resolve(errorCode);
+                if (resolved != null) {
+                    return resolved;
+                }
+            }
+        }
+        return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
     static boolean isClientAbortException(Throwable throwable) {

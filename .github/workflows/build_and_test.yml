@@ -72,6 +72,19 @@ jobs:
           sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
           sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
+      - name: Initialize CouchDB system databases
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf -X PUT "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984/_users" > /dev/null 2>&1; then
+              curl -sf -X PUT "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984/_replicator" > /dev/null 2>&1
+              curl -sf -X PUT "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984/_global_changes" > /dev/null 2>&1
+              curl -sf -X PUT "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984/_node/nonode@nohost/_config/cluster/n" -d '"1"' > /dev/null 2>&1 || true
+              echo "CouchDB system databases initialized"
+              break
+            fi
+            sleep 2
+          done
+
       - name: Copy test configuration files
         run: |
           sudo cp ./build-configuration/resources/orgmapping.properties /etc/sw360/
