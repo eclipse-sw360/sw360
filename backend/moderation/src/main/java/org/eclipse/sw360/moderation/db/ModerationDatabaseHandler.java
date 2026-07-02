@@ -138,6 +138,11 @@ public class ModerationDatabaseHandler {
         return repository.getRequestsByModeratorAndRequestingUserWithPaginationNoFilter(moderator, pageData);
     }
 
+    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
+        return repository.searchModerationRequestsByExactValues(subQueryRestrictions, pageData);
+    }
+
+
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
         return repository.getRequestsByModerator(moderator, pageData, open);
     }
