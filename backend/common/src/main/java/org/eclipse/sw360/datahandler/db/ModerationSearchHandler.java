@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
+
 import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
@@ -73,8 +75,14 @@ public class ModerationSearchHandler {
         connector.addDesignDoc(searchView);
     }
 
-    public List<ModerationRequest> search(String text, final Map<String, Set<String>> subQueryRestrictions ) {
+    public List<ModerationRequest> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
         return connector.searchViewWithRestrictionsWithAnd(ModerationRequest.class, luceneSearchView.getIndexName(),
                 text, subQueryRestrictions);
+    }
+
+    public Map<PaginationData, List<ModerationRequest>> search(String text,
+            final Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
+        return connector.searchViewWithRestrictionsWithAnd(ModerationRequest.class, luceneSearchView.getIndexName(),
+                text, subQueryRestrictions, pageData, "timestamp", pageData.isAscending());
     }
 }

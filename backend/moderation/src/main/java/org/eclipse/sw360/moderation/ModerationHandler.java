@@ -264,6 +264,11 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
+    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
+        return handler.searchModerationRequestsByExactValues(subQueryRestrictions, pageData);
+    }
+
+    @Override
     public List<ModerationRequest> getRequestsByRequestingUser(User user) throws TException {
         assertUser(user);
 
@@ -369,9 +374,11 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public List<ModerationRequest> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions)
-            throws TException {
-        return modSearchHandler.search(text, subQueryRestrictions);
+    public List<ModerationRequest> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData) throws TException {
+        Map<PaginationData, List<ModerationRequest>> result = modSearchHandler.search(text, subQueryRestrictions,
+                pageData);
+        return result.values().iterator().next();
     }
 
     @Override

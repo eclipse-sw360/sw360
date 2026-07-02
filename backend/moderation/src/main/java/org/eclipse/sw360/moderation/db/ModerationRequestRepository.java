@@ -38,8 +38,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.all;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eqIgnoreCase;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.exists;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 
@@ -161,6 +163,47 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                 .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
                 .build();
         return getConnector().getQueryResult(qb, ModerationRequest.class);
+    }
+
+    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final boolean ascending = pageData.isAscending();
+        final int skip = pageData.getDisplayStart();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
+
+        PostFindOptions qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .limit(rowsPerPage)
+                .skip(skip)
+                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
+                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
+                .build();
+        return getConnector().getQueryResult(qb, ModerationRequest.class);
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                final String fieldName = entry.getKey();
+                final List<String> values = entry.getValue().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(value -> !value.isEmpty())
+                        .toList();
+
+                if (values.isEmpty()) {
+                    continue;
+                }
+
+                andConditions.add(values.size() == 1
+                        ? eq(fieldName, values.get(0))
+                        : or(values.stream().map(value -> eq(fieldName, value)).toList()));
+            }
+        }
+        return and(andConditions);
     }
 
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
@@ -371,7 +414,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         }
         return countByModerationState;
     }
-    
+
     public Map<String, Long> getCountByModerationStateAndRequestingUser(String moderator, String requestingUser) {
         Map<String, Long> countByState = Maps.newHashMap();
         List<String[]> keys = prepareKeys(moderator, requestingUser, true);
