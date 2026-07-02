@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.google.common.base.Joiner;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -22,6 +23,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 
 import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
@@ -73,8 +76,51 @@ public class ModerationSearchHandler {
         connector.addDesignDoc(searchView);
     }
 
-    public List<ModerationRequest> search(String text, final Map<String, Set<String>> subQueryRestrictions ) {
+    public List<ModerationRequest> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
         return connector.searchViewWithRestrictionsWithAnd(ModerationRequest.class, luceneSearchView.getIndexName(),
                 text, subQueryRestrictions);
+    }
+
+    public Map<PaginationData, List<ModerationRequest>> search(String text,
+            final Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
+        Map<String, Map<String, Set<String>>> restrictions = new java.util.HashMap<>();
+        Map<String, Set<String>> orRestrictions = new java.util.HashMap<>();
+        Map<String, Set<String>> andRestrictions = new java.util.HashMap<>();
+
+        if (subQueryRestrictions != null) {
+            for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+                if (entry.getValue() == null || entry.getValue().isEmpty()) {
+                    continue;
+                }
+
+                String fieldName = entry.getKey();
+                Set<String> values = entry.getValue();
+
+                if (isModeratorOrRequestingUserField(fieldName)) {
+                    orRestrictions.put(fieldName, values);
+                } else {
+                    andRestrictions.put(fieldName, values);
+                }
+            }
+        }
+
+        if (!orRestrictions.isEmpty()) {
+            restrictions.put("OR", orRestrictions);
+        }
+        if (!andRestrictions.isEmpty()) {
+            restrictions.put("AND", andRestrictions);
+        }
+
+        List<String> queryFilters = NouveauLuceneAwareDatabaseConnector.createComplexQuery(
+                ModerationRequest.class, text, restrictions);
+        String finalQuery = Joiner.on(" AND ").join(queryFilters);
+
+        return connector.searchView(ModerationRequest.class, luceneSearchView.getIndexName(), finalQuery,
+                pageData, "timestamp", pageData.isAscending());
+    }
+
+    private static boolean isModeratorOrRequestingUserField(String fieldName) {
+        return ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)
+                || ModerationRequest._Fields.REQUESTING_USER.getFieldName().equals(fieldName);
     }
 }

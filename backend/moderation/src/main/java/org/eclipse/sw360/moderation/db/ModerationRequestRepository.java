@@ -163,6 +163,68 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return getConnector().getQueryResult(qb, ModerationRequest.class);
     }
 
+    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final boolean ascending = pageData.isAscending();
+        final int skip = pageData.getDisplayStart();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
+
+        PostFindOptions qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .limit(rowsPerPage)
+                .skip(skip)
+                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
+                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
+                .build();
+        return getConnector().getQueryResult(qb, ModerationRequest.class);
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+        List<Map<String, Object>> moderatorOrRequestingUserConditions = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                final String fieldName = entry.getKey();
+                final List<String> values = entry.getValue().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(value -> !value.isEmpty())
+                        .toList();
+
+                if (values.isEmpty()) {
+                    continue;
+                }
+
+                final Map<String, Object> condition;
+                if (ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)) {
+                    condition = values.size() == 1
+                            ? elemMatch(fieldName, values.get(0))
+                            : or(values.stream().map(value -> elemMatch(fieldName, value)).toList());
+                } else {
+                    condition = values.size() == 1
+                            ? eq(fieldName, values.get(0))
+                            : or(values.stream().map(value -> eq(fieldName, value)).toList());
+                }
+
+                if (ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)
+                        || ModerationRequest._Fields.REQUESTING_USER.getFieldName().equals(fieldName)) {
+                    moderatorOrRequestingUserConditions.add(condition);
+                } else {
+                    andConditions.add(condition);
+                }
+            }
+        }
+
+        if (!moderatorOrRequestingUserConditions.isEmpty()) {
+            andConditions.add(moderatorOrRequestingUserConditions.size() == 1
+                    ? moderatorOrRequestingUserConditions.get(0)
+                    : or(moderatorOrRequestingUserConditions));
+        }
+        return and(andConditions);
+    }
+
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
         Map<PaginationData, List<ModerationRequest>> paginatedModerations = queryViewWithPagination(moderator, pageData, open);
         List<ModerationRequest> moderationList = paginatedModerations.values().iterator().next();
@@ -371,7 +433,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         }
         return countByModerationState;
     }
-    
+
     public Map<String, Long> getCountByModerationStateAndRequestingUser(String moderator, String requestingUser) {
         Map<String, Long> countByState = Maps.newHashMap();
         List<String[]> keys = prepareKeys(moderator, requestingUser, true);
