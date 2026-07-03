@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class CveSearchSpecTest extends TestRestDocsSpecBase {
 
@@ -48,7 +49,7 @@ public class CveSearchSpecTest extends TestRestDocsSpecBase {
         sw360User.setId("123456789");
         sw360User.setEmail("admin@sw360.org");
         sw360User.setFullname("John Doe");
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(sw360User);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(sw360User));
 
         given(this.cveSearchServiceMock.updateForRelease(anyString())).willReturn(updateStatus);
         given(this.cveSearchServiceMock.updateForComponent(anyString())).willReturn(updateStatus);

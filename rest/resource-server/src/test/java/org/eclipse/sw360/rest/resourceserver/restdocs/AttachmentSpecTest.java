@@ -40,6 +40,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class AttachmentSpecTest extends TestRestDocsSpecBase {
 
@@ -110,7 +111,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
         given(this.attachmentServiceMock.addAttachment(any(),any())).willReturn(attachment1);
     }
 

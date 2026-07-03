@@ -7,11 +7,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-
 package org.eclipse.sw360.rest.resourceserver.user;
 
 import lombok.RequiredArgsConstructor;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
@@ -28,11 +27,32 @@ class UserResourceProcessor implements RepresentationModelProcessor<EntityModel<
     public EntityModel<User> process(EntityModel<User> resource) {
         try {
             User user = resource.getContent();
+            applyJsonDefaults(user);
             Link selfLink = linkTo(UserController.class).slash("api/users/byid/" + user.getId()).withSelfRel();
             resource.add(selfLink);
             return resource;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Default nullable booleans to {@code false} on the way out so that the
+     * REST/HAL response always includes {@code wantsMailNotification} and
+     * {@code deactivated}, matching the wire format that the legacy Thrift
+     * {@code User} (primitive booleans) used to produce. The converter stays
+     * lossless so that round-tripping through {@code UserConverter} does not
+     * pollute the underlying Thrift struct with synthetic field flags.
+     */
+    static void applyJsonDefaults(User user) {
+        if (user == null) {
+            return;
+        }
+        if (user.getWantsMailNotification() == null) {
+            user.setWantsMailNotification(Boolean.FALSE);
+        }
+        if (user.getDeactivated() == null) {
+            user.setDeactivated(Boolean.FALSE);
         }
     }
 }

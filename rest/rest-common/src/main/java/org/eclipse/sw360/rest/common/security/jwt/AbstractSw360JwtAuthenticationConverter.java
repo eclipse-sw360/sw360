@@ -12,8 +12,8 @@ package org.eclipse.sw360.rest.common.security.jwt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesUtils;
 import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
 import org.jspecify.annotations.NonNull;
@@ -157,7 +157,7 @@ public abstract class AbstractSw360JwtAuthenticationConverter
      * Validate the resolved user. If user is {@code null} or deactivated, the request is rejected.
      */
     protected void validateUser(@Nullable User sw360User) {
-        if (sw360User == null || sw360User.isDeactivated()) {
+        if (sw360User == null || Boolean.TRUE.equals(sw360User.getDeactivated())) {
             throw new BadCredentialsException(USER_IS_DEACTIVATED_OR_NOT_AVAILABLE);
         }
     }

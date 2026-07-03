@@ -11,7 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.cache;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,7 +47,7 @@ public class CacheVariantResolver {
         String email = auth.getName();
         try {
             User user = userService.getUserByEmail(email);
-            if (user != null && user.isSetUserGroup()) {
+            if (user != null && user.getUserGroup() != null) {
                 log.debug("Resolved UserGroup '{}' for email '{}'", user.getUserGroup(), email);
                 return user.getUserGroup().name();
             }

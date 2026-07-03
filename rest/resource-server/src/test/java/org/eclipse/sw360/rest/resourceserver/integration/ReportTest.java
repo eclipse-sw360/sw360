@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ReportTest extends TestIntegrationBase {
 
@@ -39,7 +40,7 @@ public class ReportTest extends TestIntegrationBase {
     @BeforeEach
     public void before() throws Exception {
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org"))
-                .willReturn(TestHelper.getTestUser());
+                .willReturn(UserConverter.fromThrift(TestHelper.getTestUser()));
 
         ByteBuffer dummyBuffer = ByteBuffer.wrap("dummy content".getBytes());
 

@@ -71,6 +71,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ProjectSpecTest extends TestRestDocsSpecBase {
 
@@ -711,14 +712,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release7.getId()), any())).willReturn(release7);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
-        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
-                new User("jane@sw360.org", "sw360").setId("209582812"));
-        given(this.userServiceMock.getUserByEmail("clearingTeam@sw360.org")).willReturn(
-                new User("clearingTeam@sw360.org", "sw360").setId("2012312"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(UserConverter.fromThrift(new User("jane@sw360.org", "sw360").setId("209582812")));
+        given(this.userServiceMock.getUserByEmail("clearingTeam@sw360.org")).willReturn(UserConverter.fromThrift(new User("clearingTeam@sw360.org", "sw360").setId("2012312")));
         OutputFormatInfo outputFormatInfo = new OutputFormatInfo();
         outputFormatInfo.setFileExtension("html");
         given(this.licenseInfoMockService.getOutputFormatInfoForGeneratorClass(any()))

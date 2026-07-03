@@ -9,9 +9,8 @@
  */
 package org.eclipse.sw360.rest.common.security;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.clients.users.UsersClient;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,22 +19,13 @@ import static org.mockito.Mockito.when;
 
 class Sw360UserDetailsProviderTest {
 
-    private static Sw360UserDetailsProvider providerWithClient(UserService.Iface thriftClient) {
-        return new Sw360UserDetailsProvider() {
-            @Override
-            public UserService.Iface getUserClient() {
-                return thriftClient;
-            }
-        };
-    }
-
     @Test
-    void shouldReturnUserFromClientId_whenThriftLookupSucceeds() throws Exception {
-        UserService.Iface thriftClient = mock(UserService.Iface.class);
-        User expected = new User("oidc-user@sw360.org", "oidc");
-        when(thriftClient.getByOidcClientId("trusted-client")).thenReturn(expected);
+    void shouldReturnUserFromClientId_whenRestLookupSucceeds() {
+        UsersClient usersClient = mock(UsersClient.class);
+        User expected = new User().setEmail("oidc-user@sw360.org").setDepartment("oidc");
+        when(usersClient.getByOidcClientId("trusted-client")).thenReturn(expected);
 
-        Sw360UserDetailsProvider provider = providerWithClient(thriftClient);
+        Sw360UserDetailsProvider provider = new Sw360UserDetailsProvider(usersClient);
 
         User actual = provider.getUserFromClientId("trusted-client");
 
@@ -43,11 +33,11 @@ class Sw360UserDetailsProviderTest {
     }
 
     @Test
-    void shouldReturnNullFromClientId_whenThriftLookupThrows() throws Exception {
-        UserService.Iface thriftClient = mock(UserService.Iface.class);
-        when(thriftClient.getByOidcClientId("trusted-client")).thenThrow(new TException("boom"));
+    void shouldReturnNullFromClientId_whenRestLookupThrows() {
+        UsersClient usersClient = mock(UsersClient.class);
+        when(usersClient.getByOidcClientId("trusted-client")).thenThrow(new RuntimeException("boom"));
 
-        Sw360UserDetailsProvider provider = providerWithClient(thriftClient);
+        Sw360UserDetailsProvider provider = new Sw360UserDetailsProvider(usersClient);
 
         User actual = provider.getUserFromClientId("trusted-client");
 

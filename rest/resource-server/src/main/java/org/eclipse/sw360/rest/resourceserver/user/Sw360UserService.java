@@ -13,40 +13,39 @@ package org.eclipse.sw360.rest.resourceserver.user;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.users.RestApiToken;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.UserSortColumn;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.clients.users.UsersClient;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
-import java.util.Collections;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -59,121 +58,78 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRIT
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_TOKEN_GENERATOR_ENABLED;
 
 @Service
+@RequiredArgsConstructor
 public class Sw360UserService {
     private static final Logger log = LogManager.getLogger(Sw360UserService.class);
     public static final String AUTHORITIES_READ = "READ";
     public static final String AUTHORITIES_WRITE = "WRITE";
     public static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
 
+    private final UsersClient usersClient;
+
     public List<User> getAllUsers() {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getAllUsers();
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
+        return usersClient.getAllUsers();
     }
 
     public User getUserByEmail(String email) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmail(email);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
+        return usersClient.getByEmail(email);
     }
 
     public User getUserByEmailOrExternalId(String userIdentifier) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return usersClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
     }
 
-    public User getUser(String id) throws TException {
-        UserService.Iface sw360UserClient = getThriftUserClient();
+    public User getUser(String id) {
         try {
-            return sw360UserClient.getUser(id);
-        } catch (SW360Exception sw360Exp) {
-            if (sw360Exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException("Requested User Not Found");
-            } else {
-                throw sw360Exp;
-            }
+            return usersClient.getUser(id);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new ResourceNotFoundException("Requested User Not Found");
         }
     }
 
     public User getUserByApiToken(String token) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByApiToken(token);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
+        return usersClient.getByApiToken(token);
     }
 
     public User getUserFromClientId(String clientId) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByOidcClientId(clientId);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
+        return usersClient.getByOidcClientId(clientId);
     }
 
     public User addUser(User user) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            user.setUserGroup(UserGroup.USER);
-            AddDocumentRequestSummary documentRequestSummary = sw360UserClient.addUser(user);
-            if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
-                user.setId(documentRequestSummary.getId());
-                return user;
-            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
-                throw new DataIntegrityViolationException("sw360 user with name '" + user.getEmail()
-                        + "' already exists, having database identifier " + documentRequestSummary.getId());
-            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-                throw new BadRequestClientException(documentRequestSummary.getMessage());
-            }
-        } catch (TException e) {
-            throw new BadRequestClientException(e.getMessage());
+        user.setUserGroup(UserGroup.USER);
+        AddDocumentRequestSummary documentRequestSummary = usersClient.addUser(user);
+        if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
+            user.setId(documentRequestSummary.getId());
+            return user;
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
+            throw new DataIntegrityViolationException("sw360 user with name '" + user.getEmail()
+                    + "' already exists, having database identifier " + documentRequestSummary.getId());
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
+            throw new BadRequestClientException(documentRequestSummary.getMessage());
         }
-        return null;
+        throw new BadRequestClientException("Failed to add user");
     }
 
-    private UserService.Iface getThriftUserClient() throws TTransportException {
-        return getUserClient();
+    public void updateUser(User user) {
+        usersClient.updateUser(user);
     }
 
-    public void updateUser(User sw360User) throws TException {
-        UserService.Iface sw360UserClient = getThriftUserClient();
-        sw360UserClient.updateUser(sw360User);
+    public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) {
+        return toPaginatedMap(usersClient.refineSearch(null, filterMap, pageableToPaginationData(pageable)));
     }
 
-    public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
-        UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360UserClient.refineSearch(null, filterMap, pageData);
+    public Map<PaginationData, List<User>> getUsersWithPagination(Pageable pageable) {
+        return toPaginatedMap(usersClient.getUsersWithPagination(pageableToPaginationData(pageable)));
     }
 
-    public Map<PaginationData, List<User>> getUsersWithPagination(Pageable pageable) throws TException {
-        UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360UserClient.getUsersWithPagination(null, pageData);
+    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String, Set<String>> filterMap,
+            Pageable pageable) {
+        return toPaginatedMap(usersClient.searchUsersByExactValues(filterMap, pageableToPaginationData(pageable)));
     }
 
-    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
-        UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360UserClient.searchUsersByExactValues(filterMap, pageData);
-    }
-
-    public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) throws TException {
-        UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360UserClient.refineSearch(searchTerm, Collections.emptyMap(), pageData);
+    public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) {
+        return toPaginatedMap(usersClient.refineSearch(searchTerm, Collections.emptyMap(),
+                pageableToPaginationData(pageable)));
     }
 
     public RestApiToken convertToRestApiToken(Map<String, Object> requestBody, User sw360User) {
@@ -189,7 +145,7 @@ public class Sw360UserService {
         }
 
         RestApiToken restApiToken = mapper.convertValue(requestBody, RestApiToken.class);
-        if (!API_WRITE_TOKEN_GENERATOR_ENABLED && restApiToken.authorities.contains(AUTHORITIES_WRITE)) {
+        if (!API_WRITE_TOKEN_GENERATOR_ENABLED && restApiToken.getAuthorities().contains(AUTHORITIES_WRITE)) {
             throw new AccessDeniedException("Token requested with '" +
                     AUTHORITIES_WRITE + "' authority, but not allowed.");
         }
@@ -202,7 +158,6 @@ public class Sw360UserService {
         validateRestApiToken(restApiToken, sw360User);
         restApiToken.setCreatedOn(SW360Utils.getCreatedOnTime());
 
-
         return restApiToken;
     }
 
@@ -212,7 +167,8 @@ public class Sw360UserService {
     }
 
     public boolean isTokenNameExisted(User user, String tokenName) {
-        return CommonUtils.nullToEmptyList(user.getRestApiTokens()).stream().anyMatch(t -> t.getName().equals(tokenName));
+        return CommonUtils.nullToEmptyList(user.getRestApiTokens()).stream()
+                .anyMatch(t -> t.getName().equals(tokenName));
     }
 
     private boolean isValidExpireDays(RestApiToken restApiToken) {
@@ -240,11 +196,11 @@ public class Sw360UserService {
             throw new IllegalArgumentException("READ permission is required.");
         }
 
-
         if (restApiToken.getAuthorities().contains(AUTHORITIES_WRITE)) {
             // User needs at least the role which is defined in sw360.properties (default admin)
-            if (!PermissionUtils.isUserAtLeast(API_WRITE_ACCESS_USERGROUP, sw360User))
+            if (!PermissionUtils.isUserAtLeast(API_WRITE_ACCESS_USERGROUP, UserConverter.toThrift(sw360User))) {
                 throw new IllegalArgumentException("User permission [WRITE] is not allowed for user");
+            }
             if (!isValidExpireDays(restApiToken)) {
                 throw new IllegalArgumentException("Token expiration days is not valid for user");
             }
@@ -268,9 +224,8 @@ public class Sw360UserService {
 
     public Set<String> getExistingPrimaryDepartments() {
         try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getUserDepartments();
-        } catch (TException e) {
+            return usersClient.getUserDepartments();
+        } catch (Exception e) {
             log.error(e.getMessage());
             return Collections.emptySet();
         }
@@ -278,9 +233,8 @@ public class Sw360UserService {
 
     public Set<String> getExistingSecondaryDepartments() {
         try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getUserSecondaryDepartments();
-        } catch (TException e) {
+            return usersClient.getUserSecondaryDepartments();
+        } catch (Exception e) {
             log.error(e.getMessage());
             return Collections.emptySet();
         }
@@ -306,7 +260,7 @@ public class Sw360UserService {
                 case "department" -> UserSortColumn.BY_DEPARTMENT;
                 case "primaryRoles" -> UserSortColumn.BY_ROLE;
                 case "score" -> UserSortColumn.BY_SCORE;
-                default -> column; // Default to BY_GIVENNAME if no match
+                default -> column;
             };
             ascending = order.isAscending();
         }
@@ -315,101 +269,96 @@ public class Sw360UserService {
     }
 
     /**
-     * Sync a single UserCSV with Thrift Database
+     * Sync a single UserCSV with the users database.
      *
      * @param userRec UserCSV record to sync
-     * @return True if the user was synced successfully, false otherwise.
+     * @return true if the user was synced successfully, false otherwise
      */
-    public static boolean syncUser(UserCSV userRec) {
-        User thriftUser = null;
+    public boolean syncUser(UserCSV userRec) {
+        User user;
         try {
-            thriftUser = synchronizeUserWithDatabase(userRec, userRec::getEmail, userRec::getGid, Sw360UserService::fillThriftUserFromUserCSV);
+            user = synchronizeUserWithDatabase(userRec, userRec::getEmail, userRec::getGid,
+                    Sw360UserService::fillUserFromUserCSV);
         } catch (Exception e) {
             log.error("Error creating a new user", e);
             return false;
         }
-
-        return thriftUser != null;
+        return user != null;
     }
 
     /**
-     * Sync a UserCSV with thrift client by first checking if the user already exists by matching email or external id,
-     * if found the user is updated. Otherwise, the user is inserted in the database.
+     * Sync a user record by first checking if the user already exists by matching email or external id.
+     * If found, the user is updated; otherwise, the user is inserted in the database.
      *
-     * @param source        User record to be synced.
-     * @param emailSupplier Function to get user's email.
-     * @param extIdSupplier Function to get user's external id.
-     * @param synchronizer  Function to transfer properties from source to thrift object.
-     * @param <T>           Usually UserCSV
-     * @return Object of newly created or updated user on success or null on failure.
+     * @param source        user record to be synced
+     * @param emailSupplier function to get the user's email
+     * @param extIdSupplier function to get the user's external id
+     * @param synchronizer  function to transfer properties from source to user object
+     * @param <T>           usually UserCSV
+     * @return newly created or updated user on success, or null on failure
      */
-    public static <T> User synchronizeUserWithDatabase(
+    public <T> User synchronizeUserWithDatabase(
             T source, Supplier<String> emailSupplier,
             Supplier<String> extIdSupplier, BiConsumer<User, T> synchronizer) {
-        UserService.Iface client = getUserClient();
-
-        User existingThriftUser = null;
+        User existingUser = null;
 
         String email = emailSupplier.get();
         try {
-            existingThriftUser = client.getByEmailOrExternalId(email, extIdSupplier.get());
-        } catch (TException e) {
-            //This occurs for every new user, so there is not necessarily something wrong
+            existingUser = usersClient.getByEmailOrExternalId(email, extIdSupplier.get());
+        } catch (Exception e) {
+            // This occurs for every new user, so there is not necessarily something wrong
             log.trace("User not found by email or external ID");
         }
 
         User resultUser = null;
         try {
-            if (existingThriftUser == null) {
+            if (existingUser == null) {
                 log.info("Creating new user.");
                 resultUser = new User();
                 synchronizer.accept(resultUser, source);
-                client.addUser(resultUser);
+                usersClient.addUser(resultUser);
             } else {
-                resultUser = existingThriftUser;
-                if (!existingThriftUser.getEmail().equals(email)) { // email has changed
-                    resultUser.setFormerEmailAddresses(prepareFormerEmailAddresses(existingThriftUser, email));
+                resultUser = existingUser;
+                if (!existingUser.getEmail().equals(email)) { // email has changed
+                    resultUser.setFormerEmailAddresses(prepareFormerEmailAddresses(existingUser, email));
                 }
                 synchronizer.accept(resultUser, source);
-                client.updateUser(resultUser);
+                usersClient.updateUser(resultUser);
             }
-        } catch (TException e) {
-            log.error("Thrift exception when saving the user", e);
+        } catch (Exception e) {
+            log.error("Exception when saving the user", e);
         }
         return resultUser;
     }
 
-    static UserService.@NonNull Iface getUserClient() {
-        return ThriftClients.makeUserClient();
+    public static void fillUserFromUserCSV(final @NotNull User user, final @NotNull UserCSV userCsv) {
+        user.setEmail(userCsv.getEmail());
+        user.setType(TYPE_USER);
+        user.setUserGroup(UserGroup.valueOf(userCsv.getGroup()));
+        user.setExternalid(userCsv.getGid());
+        user.setFullname(userCsv.getGivenname() + " " + userCsv.getLastname());
+        user.setGivenname(userCsv.getGivenname());
+        user.setLastname(userCsv.getLastname());
+        user.setDepartment(userCsv.getDepartment());
+        user.setWantsMailNotification(userCsv.isWantsMailNotification());
     }
 
     /**
-     * Set the fields from CSV to the thrift user object
-     *
-     * @param thriftUser Thrift user object to be updated
-     * @param userCsv    CSV user to read the properties from
-     */
-    public static void fillThriftUserFromUserCSV(final @NotNull User thriftUser, final @NotNull UserCSV userCsv) {
-        thriftUser.setEmail(userCsv.getEmail());
-        thriftUser.setType(TYPE_USER);
-        thriftUser.setUserGroup(UserGroup.valueOf(userCsv.getGroup()));
-        thriftUser.setExternalid(userCsv.getGid());
-        thriftUser.setFullname(userCsv.getGivenname() + " " + userCsv.getLastname());
-        thriftUser.setGivenname(userCsv.getGivenname());
-        thriftUser.setLastname(userCsv.getLastname());
-        thriftUser.setDepartment(userCsv.getDepartment());
-        thriftUser.setWantsMailNotification(userCsv.isWantsMailNotification());
-    }
-
-    /**
-     * Get the list of former email addresses of the user (if they change)
+     * Get the list of former email addresses of the user (if they change).
      */
     @NotNull
-    public static Set<String> prepareFormerEmailAddresses(@NotNull User thriftUser, String email) {
-        Set<String> formerEmailAddresses = nullToEmptySet(thriftUser.getFormerEmailAddresses()).stream()
+    public static Set<String> prepareFormerEmailAddresses(@NotNull User user, String email) {
+        Set<String> formerEmailAddresses = nullToEmptySet(user.getFormerEmailAddresses()).stream()
                 .filter(e -> !e.equals(email)) // make sure the current email is not in the former addresses
                 .collect(Collectors.toCollection(HashSet::new));
-        formerEmailAddresses.add(thriftUser.getEmail());
+        formerEmailAddresses.add(user.getEmail());
         return formerEmailAddresses;
+    }
+
+    private static Map<PaginationData, List<User>> toPaginatedMap(PaginatedResult<User> result) {
+        if (result == null) {
+            return Map.of();
+        }
+        return Map.of(result.getPaginationData(), result.getData());
     }
 }

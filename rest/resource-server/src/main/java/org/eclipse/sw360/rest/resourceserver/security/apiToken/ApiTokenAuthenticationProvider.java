@@ -16,8 +16,8 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RestApiToken;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
 import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -63,7 +63,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         }
         String tokenHash = BCrypt.hashpw(tokenFromAuthentication, API_TOKEN_HASH_SALT);
         User sw360User = getUserFromTokenHash(tokenHash);
-        if (sw360User == null || sw360User.isDeactivated()) {
+        if (sw360User == null || Boolean.TRUE.equals(sw360User.getDeactivated())) {
             throw new DisabledException("User is deactivated");
         }
         Optional<RestApiToken> restApiToken = getApiTokenFromUser(tokenHash, sw360User);
@@ -101,7 +101,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
     private boolean isApiTokenExpired(RestApiToken restApiToken) {
         String configExpireDays = restApiToken.getAuthorities().contains("WRITE") ?
                 API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
-        Date createdOn = SW360Utils.getDateFromTimeString(restApiToken.createdOn);
+        Date createdOn = SW360Utils.getDateFromTimeString(restApiToken.getCreatedOn());
         if (createdOn == null) {
             throw new AuthenticationServiceException("API Token created incorrectly.");
         }

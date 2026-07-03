@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,8 +104,8 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
         sw360User.setId("123456789");
         sw360User.setEmail("admin@sw360.org");
         sw360User.setFullname("John Doe");
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(
+                new User("admin@sw360.org", "sw360").setId("123456789")));
         Map<String, List<String>> componentResponse = new HashMap<>();
         componentResponse.put(component.getName(), componentList);
 

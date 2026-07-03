@@ -16,16 +16,16 @@ import java.util.Set;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.users.ClientMetadata;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.users.ClientMetadata;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserAccess;
+import org.eclipse.sw360.clients.users.UsersClient;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Maintains the {@code User.oidcClientInfos} map on a SW360 user document so
@@ -42,9 +42,12 @@ import org.springframework.stereotype.Service;
  * path.</p>
  */
 @Service
+@RequiredArgsConstructor
 public class Sw360UserMirrorService {
 
     private static final Logger log = LogManager.getLogger(Sw360UserMirrorService.class);
+
+    private final UsersClient usersClient;
 
     /**
      * Look up the SW360 user record by email, returning {@code null} when no
@@ -55,22 +58,22 @@ public class Sw360UserMirrorService {
             return null;
         }
         try {
-            User user = getUserClient().getByEmail(email);
-            // Thrift may return an empty User stub instead of null on miss
-            // depending on backend version; treat missing email as "not found".
+            User user = usersClient.getByEmail(email);
+            // Backend may return an empty User stub instead of null on miss;
+            // treat missing email as "not found".
             if (user == null || CommonUtils.isNullEmptyOrWhitespace(user.getEmail())) {
                 return null;
             }
             return user;
-        } catch (TException e) {
+        } catch (Exception e) {
             log.warn("Failed to look up user by email <{}>", email, e);
             return null;
         }
     }
 
     @VisibleForTesting
-    public UserService.@NonNull Iface getUserClient() {
-        return ThriftClients.makeUserClient();
+    public @NonNull UsersClient getUsersClient() {
+        return usersClient;
     }
 
     /**
@@ -137,14 +140,13 @@ public class Sw360UserMirrorService {
 
     private boolean updateUser(User user) {
         try {
-            UserService.Iface client = getUserClient();
-            RequestStatus status = client.updateUser(user);
+            RequestStatus status = usersClient.updateUser(user);
             if (status != RequestStatus.SUCCESS) {
                 log.warn("updateUser returned non-SUCCESS status {} for user <{}>", status, user.getEmail());
                 return false;
             }
             return true;
-        } catch (TException e) {
+        } catch (Exception e) {
             log.warn("Failed to update user <{}> for OAuth client mirror", user.getEmail(), e);
             return false;
         }

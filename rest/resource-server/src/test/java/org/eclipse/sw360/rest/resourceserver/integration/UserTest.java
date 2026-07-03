@@ -43,6 +43,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class UserTest extends TestIntegrationBase {
 
@@ -88,32 +89,29 @@ public class UserTest extends TestIntegrationBase {
         user2.setSecondaryDepartmentsAndRoles(getSecondaryDepartmentsAndRoles());
         userList.add(user2);
 
-        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(
-                Collections.singletonMap(
+        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(org.eclipse.sw360.rest.resourceserver.TestUserConverters.toPojoMap(Collections.singletonMap(
                         new PaginationData().setRowsPerPage(userList.size()).setDisplayStart(0).setTotalRowCount(userList.size()),
                         userList.stream().toList()
-                )
-        );
+                )));
 
-        given(this.userServiceMock.getUser(user.getId())).willReturn(user);
-        given(this.userServiceMock.getUser("frwey45786rwe")).willReturn(user2);
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
-        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(user2);
-        given(this.userServiceMock.getAllUsers()).willReturn(userList);
+        given(this.userServiceMock.getUser(user.getId())).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUser("frwey45786rwe")).willReturn(UserConverter.fromThrift(user2));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(UserConverter.fromThrift(user2));
+        given(this.userServiceMock.getAllUsers()).willReturn((userList).stream().map(UserConverter::fromThrift).toList());
 
         // For user creation
-        given(this.userServiceMock.addUser(any())).willReturn(
-                new User("test@sw360.org", "DEPARTMENT").setId("1234567890").setFullname("FTest lTest")
-                        .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.USER)
-        );
+        given(this.userServiceMock.addUser(any())).willReturn(UserConverter.fromThrift(new User("test@sw360.org", "DEPARTMENT").setId("1234567890").setFullname("FTest lTest")
+                        .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.USER)));
 
         // For update
         doNothing().when(this.userServiceMock).updateUser(any());
 
 
         // For tokens
-        given(this.userServiceMock.convertToRestApiToken(any(), any())).willReturn(getRestApiTokens().getFirst());
+        given(this.userServiceMock.convertToRestApiToken(any(), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.users.RestApiTokenConverter.fromThrift(getRestApiTokens().getFirst()));
         given(this.userServiceMock.isTokenNameExisted(any(), any())).willReturn(true);
 
         // For departments - use the correct method names

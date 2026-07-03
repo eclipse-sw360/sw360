@@ -367,6 +367,10 @@ public class ThriftClients {
         return new SearchService.Client(makeProtocol(SEARCH_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /users/api/users} instead.
+     */
+    @Deprecated
     public static UserService.Iface makeUserClient() {
         return new UserService.Client(makeProtocol(USER_SERVICE_URL));
     }

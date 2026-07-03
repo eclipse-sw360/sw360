@@ -15,8 +15,8 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +26,8 @@ import org.springframework.stereotype.Component;
  * <p>The actual mapping of SW360 user groups onto REST authorities
  * ({@code READ}/{@code WRITE}/{@code ADMIN}) is not implemented here; it is delegated to the
  * shared {@link Sw360GrantedAuthoritiesUtils} so the authorization server and resource server
- * stay in sync. This class only adapts that shared mapping to the authorization server's
- * configured user groups and adds the client-scope intersection logic on top.</p>
+ * stay in sync. This class only adapts that shared mapping to the configured write/admin
+ * user groups from {@code sw360.properties}.</p>
  */
 @Component
 public class Sw360GrantedAuthoritiesCalculator {

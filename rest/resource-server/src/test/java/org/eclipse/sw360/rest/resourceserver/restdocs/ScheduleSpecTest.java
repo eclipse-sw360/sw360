@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 
 import java.util.Map;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ScheduleSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-id}")
@@ -47,7 +48,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
         sw360User.setId("123456789");
         sw360User.setEmail("admin@sw360.org");
         sw360User.setFullname("John Doe");
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(sw360User);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(sw360User));
         given(this.scheduleServiceMock.cancelAllServices(any())).willReturn(RequestStatus.SUCCESS);
 
         // New unified endpoints

@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,8 +60,8 @@ public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
         requestSummary.setTotalAffectedElements(10);
         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         Set<String> usedAttachmentIds = new HashSet<>(Arrays.asList("123", "234"));
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(
+                new User("admin@sw360.org", "sw360").setId("123456789")));
         given(this.cleanUpService.cleanUpAttachments(any())).willReturn(requestSummary);
         when(componentClient.getUsedAttachmentContentIds()).thenReturn(usedAttachmentIds);
         given(this.attachmentClient.vacuumAttachmentDB(any(),any())).willReturn(requestSummary);

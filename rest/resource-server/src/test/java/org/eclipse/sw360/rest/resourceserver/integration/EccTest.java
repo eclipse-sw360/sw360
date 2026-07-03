@@ -42,6 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class EccTest extends TestIntegrationBase {
 
@@ -85,7 +86,7 @@ public class EccTest extends TestIntegrationBase {
 
         // Mock user service with TestHelper
         User user = TestHelper.getTestUser();
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
 
         // Mock release service
         given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(releaseList);

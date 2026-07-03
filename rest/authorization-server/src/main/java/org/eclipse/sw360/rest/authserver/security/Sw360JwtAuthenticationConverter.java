@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
 import org.eclipse.sw360.rest.common.security.jwt.AbstractSw360JwtAuthenticationConverter;
