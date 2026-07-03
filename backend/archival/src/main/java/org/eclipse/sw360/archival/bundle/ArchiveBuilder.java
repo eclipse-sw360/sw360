@@ -32,7 +32,6 @@ import java.util.List;
 
 /**
  * Builds the TAR.GZ archive for a set of CollectedEntity instances.
- * Layout is defined in backend/archival/docs/ARCHIVE_FORMAT.md.
  */
 public final class ArchiveBuilder {
 
