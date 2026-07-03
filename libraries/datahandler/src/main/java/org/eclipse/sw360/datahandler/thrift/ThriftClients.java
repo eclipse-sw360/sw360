@@ -379,6 +379,10 @@ public class ThriftClients {
         return new ProjectImportService.Client(makeProtocol(PROJECTIMPORT_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Use REST API at {@code /vulnerabilities/api/vulnerabilities} instead.
+     */
+    @Deprecated
     public static VulnerabilityService.Iface makeVulnerabilityClient() {
         return new VulnerabilityService.Client(makeProtocol(VULNERABILITY_SERVICE_URL));
     }

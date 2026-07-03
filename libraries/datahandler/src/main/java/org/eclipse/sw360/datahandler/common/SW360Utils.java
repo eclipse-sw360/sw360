@@ -914,10 +914,16 @@ public class SW360Utils {
         }
     }
 
-    public static void removeReleaseVulnerabilityRelation(String releaseId, User user){
+    /**
+     * @deprecated Use {@link org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService#removeReleaseVulnerabilityRelationsForRelease} instead.
+     */
+    @Deprecated
+    public static void removeReleaseVulnerabilityRelation(String releaseId, User user) {
+        log.warn("removeReleaseVulnerabilityRelation is deprecated; callers should use Sw360VulnerabilityService instead");
         VulnerabilityService.Iface vulnerabilityService = ThriftClients.makeVulnerabilityClient();
         try {
-            List<ReleaseVulnerabilityRelation> releaseVulnerabilityRelations = vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(releaseId, user);
+            List<ReleaseVulnerabilityRelation> releaseVulnerabilityRelations =
+                    vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(releaseId, user);
             for (ReleaseVulnerabilityRelation relation : releaseVulnerabilityRelations) {
                 vulnerabilityService.deleteReleaseVulnerabilityRelation(relation, user);
             }
