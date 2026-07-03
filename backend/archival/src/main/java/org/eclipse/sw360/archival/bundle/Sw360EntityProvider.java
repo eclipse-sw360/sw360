@@ -13,12 +13,15 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalEntityType;
 import org.eclipse.sw360.datahandler.services.archival.AttachmentMetadata;
@@ -52,6 +55,7 @@ public class Sw360EntityProvider implements EntityProvider {
     private final String userEmail;
 
     private ComponentDatabaseHandler componentHandler;
+    private ProjectDatabaseHandler projectHandler;
     private AttachmentConnector attachmentConnector;
     private UserRepository userRepository;
 
@@ -70,13 +74,66 @@ public class Sw360EntityProvider implements EntityProvider {
     @Override
     public CollectedEntity collect(ArchivalEntityType type, String entityId) throws Exception {
         return switch (type) {
-            case RELEASE -> collectRelease(entityId);
-            case PROJECT, COMPONENT, PACKAGE -> throw new UnsupportedOperationException(
-                    type + " collection is not wired yet (only RELEASE is supported in this iteration)");
+            case RELEASE -> collectRelease(entityId, false);
+            case PROJECT -> collectProject(entityId);
+            case COMPONENT, PACKAGE -> throw new UnsupportedOperationException(
+                    type + " collection is not wired yet");
         };
     }
 
-    private CollectedEntity collectRelease(String releaseId) throws Exception {
+    /**
+     * Returns the full bundle for a Project archive: the Project document itself,
+     * followed by one CollectedEntity per linked Release. Each Release is flagged
+     * keepAlive=true when other live Projects still reference it.
+     */
+    public List<CollectedEntity> collectProjectBundle(String projectId) throws Exception {
+        Project project = projectHandler().getProjectByIdIgnoringVisibility(projectId);
+        if (project == null) {
+            throw new SW360Exception("Project " + projectId + " not found");
+        }
+
+        List<CollectedEntity> bundle = new ArrayList<>();
+        bundle.add(collectedFromProject(project));
+
+        if (project.getReleaseIdToUsage() != null) {
+            for (String releaseId : project.getReleaseIdToUsage().keySet()) {
+                bundle.add(collectRelease(releaseId, isReleaseSharedWithOtherProjects(releaseId, projectId)));
+            }
+        }
+        return bundle;
+    }
+
+    private CollectedEntity collectProject(String projectId) throws Exception {
+        Project project = projectHandler().getProjectByIdIgnoringVisibility(projectId);
+        if (project == null) {
+            throw new SW360Exception("Project " + projectId + " not found");
+        }
+        return collectedFromProject(project);
+    }
+
+    private CollectedEntity collectedFromProject(Project project) throws IOException, SW360Exception {
+        Map<String, byte[]> documents = new LinkedHashMap<>();
+        documents.put("project.json", ThriftJson.toJsonBytes(project));
+
+        List<AttachmentSource> attachments = new ArrayList<>();
+        if (includeAttachments && project.getAttachments() != null) {
+            for (Attachment att : project.getAttachments()) {
+                AttachmentSource source = buildAttachmentSource(att);
+                if (source != null) attachments.add(source);
+            }
+        }
+
+        return new CollectedEntity(
+                project.getId(),
+                project.getName(),
+                project.getVersion(),
+                ArchivalEntityType.PROJECT,
+                documents,
+                attachments,
+                false);
+    }
+
+    private CollectedEntity collectRelease(String releaseId, boolean keepAlive) throws Exception {
         User user = resolveUser();
         Release release = componentHandler().getRelease(releaseId, user);
         if (release == null) {
@@ -100,7 +157,27 @@ public class Sw360EntityProvider implements EntityProvider {
                 release.getVersion(),
                 ArchivalEntityType.RELEASE,
                 documents,
-                attachments);
+                attachments,
+                keepAlive);
+    }
+
+    /**
+     * True if this release is referenced by any Project other than the one being archived.
+     * Backed by ProjectRepository's existing searchByReleaseId view.
+     */
+    private boolean isReleaseSharedWithOtherProjects(String releaseId, String archivedProjectId) throws Exception {
+        User user = resolveUser();
+        return projectHandler().searchByReleaseId(releaseId, user).stream()
+                .anyMatch(p -> p.getId() != null && !p.getId().equals(archivedProjectId));
+    }
+
+    /**
+     * Removes the Project from the live database using SW360's existing
+     * deleteProject pipeline. Linked Releases are deliberately untouched —
+     * SW360's Project delete does not cascade to Releases.
+     */
+    public RequestStatus deleteProject(String projectId) throws Exception {
+        return projectHandler().deleteProject(projectId, resolveUser(), true);
     }
 
     private AttachmentSource buildAttachmentSource(Attachment att) throws SW360Exception, IOException {
@@ -146,6 +223,17 @@ public class Sw360EntityProvider implements EntityProvider {
                     DatabaseSettings.COUCH_DB_ATTACHMENTS);
         }
         return componentHandler;
+    }
+
+    private synchronized ProjectDatabaseHandler projectHandler() throws MalformedURLException {
+        if (projectHandler == null) {
+            projectHandler = new ProjectDatabaseHandler(
+                    DatabaseSettings.getConfiguredClient(),
+                    DatabaseSettings.COUCH_DB_DATABASE,
+                    DatabaseSettings.COUCH_DB_CHANGE_LOGS,
+                    DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        }
+        return projectHandler;
     }
 
     private synchronized AttachmentConnector attachmentConnector() throws MalformedURLException {

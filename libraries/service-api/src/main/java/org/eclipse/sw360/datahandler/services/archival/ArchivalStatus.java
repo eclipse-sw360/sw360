@@ -13,6 +13,7 @@ public enum ArchivalStatus {
     PENDING,
     IN_PROGRESS,
     ARCHIVED,
+    KEPT_ALIVE,
     PARTIALLY_ARCHIVED,
     RESTORED,
     FAILED

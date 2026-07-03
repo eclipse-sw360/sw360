@@ -112,6 +112,7 @@ public final class ArchiveBuilder {
         entry.setAttachmentCount(entity.attachments() == null ? 0 : entity.attachments().size());
         entry.setAttachmentTotalBytes(totalAttachmentBytes);
         entry.setChecksum("sha256:" + HexFormat.of().formatHex(entityHash.digest()));
+        entry.setKeepAlive(entity.keepAlive());
         return entry;
     }
 

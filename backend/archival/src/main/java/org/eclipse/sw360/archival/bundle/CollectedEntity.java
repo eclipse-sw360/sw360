@@ -27,6 +27,7 @@ public final class CollectedEntity {
     private final ArchivalEntityType entityType;
     private final Map<String, byte[]> documents;
     private final List<AttachmentSource> attachments;
+    private final boolean keepAlive;
 
     public CollectedEntity(String entityId,
                            String entityName,
@@ -34,12 +35,23 @@ public final class CollectedEntity {
                            ArchivalEntityType entityType,
                            Map<String, byte[]> documents,
                            List<AttachmentSource> attachments) {
+        this(entityId, entityName, entityVersion, entityType, documents, attachments, false);
+    }
+
+    public CollectedEntity(String entityId,
+                           String entityName,
+                           String entityVersion,
+                           ArchivalEntityType entityType,
+                           Map<String, byte[]> documents,
+                           List<AttachmentSource> attachments,
+                           boolean keepAlive) {
         this.entityId = entityId;
         this.entityName = entityName;
         this.entityVersion = entityVersion;
         this.entityType = entityType;
         this.documents = documents;
         this.attachments = attachments;
+        this.keepAlive = keepAlive;
     }
 
     public String entityId() { return entityId; }
@@ -48,4 +60,5 @@ public final class CollectedEntity {
     public ArchivalEntityType entityType() { return entityType; }
     public Map<String, byte[]> documents() { return documents; }
     public List<AttachmentSource> attachments() { return attachments; }
+    public boolean keepAlive() { return keepAlive; }
 }

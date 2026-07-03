@@ -39,6 +39,9 @@ public class ManifestEntry {
     @JsonProperty("checksum")
     private String checksum;
 
+    @JsonProperty("keepAlive")
+    private boolean keepAlive;
+
     public String getEntityId() { return entityId; }
     public void setEntityId(String entityId) { this.entityId = entityId; }
 
@@ -62,4 +65,7 @@ public class ManifestEntry {
 
     public String getChecksum() { return checksum; }
     public void setChecksum(String checksum) { this.checksum = checksum; }
+
+    public boolean isKeepAlive() { return keepAlive; }
+    public void setKeepAlive(boolean keepAlive) { this.keepAlive = keepAlive; }
 }
