@@ -53,6 +53,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @Import(ApiRootAuthorizationRegressionTest.ApiRootAuthorizationTestConfig.class)
 public class ApiRootAuthorizationRegressionTest extends TestIntegrationBase {
@@ -69,8 +70,8 @@ public class ApiRootAuthorizationRegressionTest extends TestIntegrationBase {
         readOnlyUser.setEmail(READ_ONLY_EMAIL);
         readOnlyUser.setUserGroup(UserGroup.USER);
 
-        given(userServiceMock.getUserByEmailOrExternalId(READ_ONLY_EMAIL)).willReturn(readOnlyUser);
-        given(userServiceMock.getUserByEmail(READ_ONLY_EMAIL)).willReturn(readOnlyUser);
+        given(userServiceMock.getUserByEmailOrExternalId(READ_ONLY_EMAIL)).willReturn(UserConverter.fromThrift(readOnlyUser));
+        given(userServiceMock.getUserByEmail(READ_ONLY_EMAIL)).willReturn(UserConverter.fromThrift(readOnlyUser));
         given(sw360CustomUserDetailsService.loadUserByUsername(READ_ONLY_EMAIL))
                 .willReturn(new org.springframework.security.core.userdetails.User(
                         READ_ONLY_EMAIL,

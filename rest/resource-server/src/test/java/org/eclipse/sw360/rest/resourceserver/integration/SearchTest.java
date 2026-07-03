@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class SearchTest extends TestIntegrationBase {
 
@@ -63,7 +64,7 @@ public class SearchTest extends TestIntegrationBase {
         searchResults.addAll(Arrays.asList(result1, result2, result3));
 
         // Mock user service with TestHelper
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(TestHelper.getTestUser());
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(TestHelper.getTestUser()));
 
         // Mock search service with default behavior
         given(this.searchServiceMock.search(any(), any(), any())).willReturn(searchResults);

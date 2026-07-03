@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class DatabaseSanitationTest extends TestIntegrationBase {
 
@@ -49,8 +50,8 @@ public class DatabaseSanitationTest extends TestIntegrationBase {
         adminUser = new User();
         adminUser.setEmail("admin@sw360.org");
         adminUser.setUserGroup(UserGroup.ADMIN);
-        given(userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(adminUser);
-        given(userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(adminUser);
+        given(userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(adminUser));
+        given(userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(adminUser));
     }
 
     @Test

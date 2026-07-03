@@ -160,6 +160,8 @@ public class JacksonCustomizations {
         registrar.accept(MultiStatus.class, Sw360Module.MultiStatusMixin.class);
         registrar.accept(Project.class, Sw360Module.ProjectMixin.class);
         registrar.accept(User.class, Sw360Module.UserMixin.class);
+        registrar.accept(org.eclipse.sw360.datahandler.services.users.User.class,
+                Sw360Module.ServiceUserMixin.class);
         registrar.accept(Component.class, Sw360Module.ComponentMixin.class);
         registrar.accept(ComponentDTO.class, Sw360Module.ComponentDTOMixin.class);
         registrar.accept(ComponentMergeSelector.class, Sw360Module.ComponentMergeSelectorMixin.class);
@@ -527,6 +529,33 @@ public class JacksonCustomizations {
             abstract public String getLastname();
 
             @Override
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract public String getPassword();
+        }
+
+        /**
+         * Mixin for the service-api POJO {@code User} (returned by the
+         * users REST service). Mirrors the field-hiding contract that the
+         * Thrift {@link UserMixin} used to provide so that HAL responses
+         * keep their original wire format (no top-level {@code id} /
+         * {@code revision} / {@code type}, no {@code restApiTokens} embedded
+         * in user payloads, etc.). Field renames ({@code fullname} ->
+         * {@code fullName}) are already handled by {@code @JsonProperty}
+         * annotations on the POJO itself.
+         */
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "type",
+                "restApiTokens",
+                "primaryRoles",
+                "myProjectsPreferenceSelection",
+                "commentMadeDuringModerationRequest",
+                "oidcClientInfos"
+        })
+        static abstract class ServiceUserMixin {
+            // Hide password from JSON responses but allow it on inbound
+            // (POST /api/users). Mirrors the Thrift {@link UserMixin}.
             @JsonProperty(access = Access.WRITE_ONLY)
             abstract public String getPassword();
         }

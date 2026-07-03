@@ -43,8 +43,9 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.clients.users.UsersClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -2132,11 +2133,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Map<String, String> getGidsByEmail() throws TException {
-        UserService.Iface userClient = ThriftClients.makeUserClient();
         Map<String, String> gidByEmail = new HashMap<>();
-        userClient
-                .getAllUsers()
-                .stream()
+        UsersClients.defaultClient().getAllUsers().stream()
+                .map(UserConverter::toThrift)
                 .filter(User::isSetExternalid)
                 .forEach(user -> {
                     gidByEmail.put(user.getEmail(), user.getExternalid());

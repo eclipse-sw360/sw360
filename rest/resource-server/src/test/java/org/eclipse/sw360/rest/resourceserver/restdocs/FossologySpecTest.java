@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,8 +49,8 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
         sw360User.setId("123456789");
         sw360User.setEmail("admin@sw360.org");
         sw360User.setFullname("John Doe");
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(
+                new User("admin@sw360.org", "sw360").setId("123456789")));
         doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any(), any(), any());
         doNothing().when(fossologyAdminServices).serverConnection(any());
     }

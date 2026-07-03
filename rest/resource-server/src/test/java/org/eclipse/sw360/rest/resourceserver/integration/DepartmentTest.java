@@ -42,6 +42,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class DepartmentTest extends TestIntegrationBase {
 
@@ -55,8 +56,8 @@ public class DepartmentTest extends TestIntegrationBase {
         adminUser = new User();
         adminUser.setEmail("admin@sw360.org");
         adminUser.setUserGroup(UserGroup.ADMIN);
-        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(adminUser);
-        given(userServiceMock.getUserByEmail(anyString())).willReturn(adminUser);
+        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(UserConverter.fromThrift(adminUser));
+        given(userServiceMock.getUserByEmail(anyString())).willReturn(UserConverter.fromThrift(adminUser));
     }
 
     @Test

@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.clients.users.UsersClients;
 import org.eclipse.sw360.schedule.client.AttachmentsRestClient;
 import org.eclipse.sw360.schedule.client.CveSearchRestClient;
 import org.eclipse.sw360.schedule.client.VMComponentsRestClient;
@@ -119,7 +120,7 @@ public class ScheduleHandler {
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
                     wrapForScheduler(attachmentsRestClient::deleteOldAttachmentFromFileSystem, serviceName);
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeUserClient().importDepartmentSchedule(), serviceName);
+                    wrapForScheduler(UsersClients.defaultClient()::importDepartmentSchedule, serviceName);
             case ServiceNames.SRC_UPLOAD_SERVICE ->
                     wrapForScheduler(() -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases(), serviceName);
             default -> {
@@ -162,7 +163,7 @@ public class ScheduleHandler {
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
                     callDownstreamService(() -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback());
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeUserClient().importDepartmentSchedule());
+                    UsersClients.defaultClient().importDepartmentSchedule();
             case ServiceNames.SRC_UPLOAD_SERVICE ->
                     callDownstreamService(() -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases());
             default -> {

@@ -85,6 +85,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ReleaseTest extends TestIntegrationBase {
 
@@ -195,8 +196,7 @@ public class ReleaseTest extends TestIntegrationBase {
                 new Release("Test Release", "1.0", "17653524")
                         .setId("1234567890"));
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
         given(this.releaseServiceMock.searchReleaseByNamePaginated(any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(TestHelper.getDummyReleaseListForTest().size()).setDisplayStart(0).setTotalRowCount(TestHelper.getDummyReleaseListForTest().size()),

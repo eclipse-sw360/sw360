@@ -10,10 +10,21 @@
 package org.eclipse.sw360.datahandler.services.users;
 
 public enum UserSortColumn {
-    BY_GIVENNAME,
-    BY_LASTNAME,
-    BY_EMAIL,
-    BY_STATUS,
-    BY_DEPARTMENT,
-    BY_ROLE
+    BY_SCORE(-2),
+    BY_GIVENNAME(-1),
+    BY_LASTNAME(0),
+    BY_EMAIL(1),
+    BY_STATUS(2),
+    BY_DEPARTMENT(3),
+    BY_ROLE(4);
+
+    private final int value;
+
+    UserSortColumn(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
+    }
 }

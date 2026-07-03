@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
@@ -107,9 +107,10 @@ public class Sw360JwtAuthenticationConverterTest {
     }
 
     private static User adminUser(String email) {
-        User user = new User(email, "admin");
-        user.setUserGroup(UserGroup.ADMIN);
-        return user;
+        return new User()
+                .setEmail(email)
+                .setDepartment("admin")
+                .setUserGroup(UserGroup.ADMIN);
     }
 
     private static Set<String> authorityNames(JwtAuthenticationToken authentication) {

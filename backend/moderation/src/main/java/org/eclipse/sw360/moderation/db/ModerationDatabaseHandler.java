@@ -37,7 +37,8 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.clients.users.UsersClients;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -53,7 +54,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -587,7 +587,7 @@ public class ModerationDatabaseHandler {
         try{
             String department =  getDepartmentByUserEmail(release.getCreatedBy());
             CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ECC_ADMIN, department, false, true));
-        } catch (TException e){
+        } catch (Exception e){
             log.error("Could not get users from database. ECC admins not added as moderators, since department is missing.");
         }
         CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ADMIN));
@@ -849,9 +849,8 @@ public class ModerationDatabaseHandler {
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
-    private String getDepartmentByUserEmail(String userEmail) throws TException {
-        UserService.Iface client = ThriftClients.makeUserClient();
-        return client.getDepartmentByEmail(userEmail);
+    private String getDepartmentByUserEmail(String userEmail) {
+        return UsersClients.defaultClient().getDepartmentByEmail(userEmail);
     }
 
     private Set<String> getLicenseModerators(String department) {
@@ -954,14 +953,14 @@ public class ModerationDatabaseHandler {
     }
 
     private List<User> getAllSW360Users() {
-        List<User> sw360users = Collections.emptyList();
         try {
-            UserService.Iface client = ThriftClients.makeUserClient();
-            sw360users = CommonUtils.nullToEmptyList(client.getAllUsers());
-        } catch (TException e) {
+            return UsersClients.defaultClient().getAllUsers().stream()
+                    .map(UserConverter::toThrift)
+                    .toList();
+        } catch (Exception e) {
             log.error("Problem with user client", e);
+            return Collections.emptyList();
         }
-        return sw360users;
     }
 
     public void addOrUpdate(ModerationRequest request, User user) throws SW360Exception {

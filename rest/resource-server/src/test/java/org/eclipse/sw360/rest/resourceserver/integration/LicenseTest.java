@@ -56,6 +56,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class LicenseTest extends TestIntegrationBase {
 
@@ -81,7 +82,7 @@ public class LicenseTest extends TestIntegrationBase {
 
         // Setup user mock
         User user = TestHelper.getTestUser();
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
 
         // Setup test licenses
         license1 = new License();

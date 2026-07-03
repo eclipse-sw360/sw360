@@ -58,6 +58,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ComponentSpecTest extends TestRestDocsSpecBase {
 
@@ -321,12 +322,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         );
         given(this.componentServiceMock.countProjectsByComponentId(eq("17653524"), any())).willReturn(2);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
-        given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(
-                new User("john@sw360.org", "sw360").setId("74427996"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
+        given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(UserConverter.fromThrift(new User("john@sw360.org", "sw360").setId("74427996")));
 
         given(this.vendorServiceMock.getThriftVendorById("vendorId")).willReturn(vendor);
 

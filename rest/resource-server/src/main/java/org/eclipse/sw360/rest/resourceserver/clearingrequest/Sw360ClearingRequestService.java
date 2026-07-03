@@ -21,7 +21,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.clients.users.UsersClient;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +46,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Sw360ClearingRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ClearingRequestService.class);
+
+    private final UsersClient usersClient;
 
     public ClearingRequest getClearingRequestByProjectId(String projectId, User sw360User) throws TException {
         try {
@@ -135,18 +138,9 @@ public class Sw360ClearingRequestService {
         }
     }
 
-    public String getUserNameByEmail(String userEmail) throws TException {
-        try {
-            UserService.Iface userClient = getUserClient();
-            User sw360User = userClient.getByEmail(userEmail);
-            return sw360User.getFullname();
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    UserService.@NonNull Iface getUserClient() {
-        return ThriftClients.makeUserClient();
+    public String getUserNameByEmail(String userEmail) {
+        org.eclipse.sw360.datahandler.services.users.User sw360User = usersClient.getByEmail(userEmail);
+        return sw360User.getFullname();
     }
 
     public static String convertTimestampToDateTime(long timestamp) {

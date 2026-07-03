@@ -11,6 +11,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,8 +79,8 @@ public class EccSpecTest extends TestRestDocsSpecBase {
         given(this.releaseService.getReleasesForUser(any())).willReturn(releaseList);
         given(this.releaseService.getReleaseForUserById(eq("rel001"), any())).willReturn(rel1);
         given(this.releaseService.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(
+                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
     }
 
     @Test

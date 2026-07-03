@@ -18,9 +18,9 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.clients.users.UsersClients;
 
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
@@ -165,14 +165,15 @@ public class MailUtil extends BackendUtils {
     private boolean isMailWantedBy(String userEmail, String notificationPreferenceKey){
         User user;
         try {
-            user = ThriftClients.makeUserClient().getByEmail(userEmail);
-        } catch (TException e){
+            user = UsersClients.defaultClient().getByEmail(userEmail);
+        } catch (Exception e){
             log.info("Problem fetching user:" + e);
             return false;
         }
         if(user != null) {
             SW360Utils.initializeMailNotificationsPreferences(user);
-            return user.isWantsMailNotification() && user.getNotificationPreferences().getOrDefault(notificationPreferenceKey, Boolean.FALSE) ;
+            return Boolean.TRUE.equals(user.getWantsMailNotification())
+                    && user.getNotificationPreferences().getOrDefault(notificationPreferenceKey, Boolean.FALSE);
         }
         return false;
     }

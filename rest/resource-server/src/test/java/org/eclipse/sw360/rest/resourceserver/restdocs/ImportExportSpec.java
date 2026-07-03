@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ public class ImportExportSpec extends TestRestDocsSpecBase {
         licensetype.setType("xyz");
 
         given(this.importExportService.uploadComponent(any(), any(), any(),any())).willReturn(requestSummary);
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(sw360User);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(sw360User));
         given(this.importExportService.uploadReleaseLink(any(), any(), any())).willReturn(requestSummary);
         given(this.importExportService.uploadComponentAttachment(any(), any(), any())).willReturn(requestSummary);
 

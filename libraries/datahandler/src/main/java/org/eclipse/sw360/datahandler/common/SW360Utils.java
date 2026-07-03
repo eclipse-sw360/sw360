@@ -645,6 +645,16 @@ public class SW360Utils {
         }
     }
 
+    public static void initializeMailNotificationsPreferences(
+            org.eclipse.sw360.datahandler.services.users.User user) {
+        if (user.getWantsMailNotification() == null) {
+            user.setWantsMailNotification(true);
+        }
+        if (user.getNotificationPreferences() == null) {
+            user.setNotificationPreferences(Maps.newHashMap(SW360Constants.DEFAULT_NOTIFICATION_PREFERENCES));
+        }
+    }
+
     public static String notificationPreferenceKey(String notificationClass, String roleName){
         return notificationClass + roleName;
     }

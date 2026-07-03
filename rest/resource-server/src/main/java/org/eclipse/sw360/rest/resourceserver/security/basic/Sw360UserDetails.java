@@ -11,7 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver.security.basic;
 
 import lombok.Getter;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.io.Serial;

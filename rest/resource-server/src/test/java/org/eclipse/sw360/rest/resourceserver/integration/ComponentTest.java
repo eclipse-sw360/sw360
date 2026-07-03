@@ -71,6 +71,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 
 public class ComponentTest extends TestIntegrationBase {
@@ -110,8 +111,8 @@ public class ComponentTest extends TestIntegrationBase {
 
         User user = TestHelper.getTestUser();
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
 
         Mockito.doReturn(RequestStatus.SUCCESS).when(componentServiceMock)
                 .splitComponents(any(), any(), any());
