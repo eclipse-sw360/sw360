@@ -100,6 +100,7 @@
     <commons-cli.version>1.11.0</commons-cli.version>
     <commons-codec.version>1.22.0</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
+    <commons-compress.version>1.28.0</commons-compress.version>
     <commons-csv.version>1.14.1</commons-csv.version>
     <commons-io.version>2.22.0</commons-io.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
@@ -284,6 +285,11 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-csv</artifactId>
         <version>${commons-csv.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
