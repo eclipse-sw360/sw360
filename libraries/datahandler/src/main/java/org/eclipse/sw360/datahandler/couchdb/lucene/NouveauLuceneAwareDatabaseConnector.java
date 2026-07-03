@@ -513,8 +513,10 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         }
 
         if (type == Package.class && subQueryRestrictions.containsKey("orphanPackageCheckBox")) {
-            // get all packages with name field and then negate with releaseId field to find orphan packages
-            subQueries.add("(name:*) NOT (releaseId:*)");
+            // get all packages with name field and then negate with releaseId field to find orphan packages.
+            // Use range queries ([* TO *]) instead of "name:*"/"releaseId:*" because Nouveau/Lucene
+            // rejects leading-wildcard queries ("Leading wildcard is not allowed").
+            subQueries.add("(name:[* TO *]) NOT (releaseId:[* TO *])");
         }
         return subQueries;
     }
@@ -534,6 +536,13 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             } else if (input.startsWith("(") && input.contains("\"")) {
                 // Wildcard query with parentheses - prepend field name
                 return fieldName + ":" + input;
+            } else if (fieldName.equals("purl")) {
+                // purl prefix match (e.g., pkg:maven/net.minidev/accessors-smart*).
+                String lowerInput = input.toLowerCase();
+                return fieldName + ":\"" + lowerInput + "*\"";
+            } else if (fieldName.equals("version")) {
+                // Keep wildcard behavior for version prefix searches (e.g. 2.5 -> 2.5.x).
+                return fieldName + ":" + prepareWildcardQuery(input);
             } else if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible") || fieldName.equals("createdBy") || fieldName.equals("email")) {
                 return fieldName + ":\"" + input + "\"";
             } else if (fieldName.equals("createdOn") || fieldName.equals("timestamp")) {

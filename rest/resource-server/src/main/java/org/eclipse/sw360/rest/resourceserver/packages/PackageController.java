@@ -14,6 +14,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -85,6 +87,10 @@ import lombok.RequiredArgsConstructor;
 @SecurityRequirement(name = "basic")
 public class PackageController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String PACKAGES_URL = "/packages";
+
+    // Restriction key recognized by NouveauLuceneAwareDatabaseConnector to filter orphan packages
+    // (packages not linked to any release)
+    private static final String ORPHAN_PACKAGE_RESTRICTION_KEY = "orphanPackageCheckBox";
 
     @NonNull
     private final SW360PackageService packageService;
@@ -226,7 +232,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Get packages for user.",
-            description = "Get packages for user with filters.",
+            description = "Get packages for user with filters. For `createdOn`, clients can pass either an exact date (`YYYY-MM-DD`) or a Lucene range query like `[startDate TO endDate]`.",
             tags = {"Packages"},
             responses = {@ApiResponse(
                     responseCode = "200",
@@ -255,8 +261,8 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "licenses", required = false) String licenses,
             @Parameter(description = "Created by user to filter (email).")
             @RequestParam(value = "createdBy", required = false) String createdBy,
-            @Parameter(description = "Date package was created on (YYYY-MM-DD).",
-                    schema = @Schema(type = "string", format = "date"))
+            @Parameter(description = "Created date filter. Supported formats: exact (`=`) as `YYYY-MM-DD` (example: `2026-06-30`), less-than-or-equal (`<=`) as range `[1970-01-01 TO <enteredDate>]` (example: `[1970-01-01 TO 2026-06-30]`), greater-than-or-equal (`>=`) as range `[<enteredDate> TO 9999-01-01]` (example: `[2026-06-30 TO 9999-01-01]`), and between as range `[<startDate> TO <endDate>]` (example: `[2026-06-29 TO 2026-06-30]`).",
+                    schema = @Schema(type = "string", example = "2026-06-30"))
             @RequestParam(value = "createdOn", required = false) String createdOn,
             @Parameter(description = "Properties which should be present for each package in the result")
             @RequestParam(value = "fields", required = false) List<String> fields,
@@ -270,8 +276,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
+        String normalizedPurl = decodeEncodedQueryValue(purl);
         List<Package> sw360Packages = new ArrayList<>();
-        Map<String, Set<String>> restrictions = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
+        Map<String, Set<String>> restrictions = getFilterMap(name, version, normalizedPurl, packageManager, licenses, createdBy, createdOn);
         if (luceneSearch) {
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
@@ -279,15 +286,44 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                         .collect(Collectors.toSet());
                 restrictions.put(Package._Fields.NAME.getFieldName(), values);
             }
+            if (orphanPackage) {
+                // The Nouveau/Lucene connector detects this key and applies the
+                // "(name:*) NOT (releaseId:*)" query to return only orphan packages.
+                // An empty value set keeps it out of the field-level subquery generation.
+                restrictions.put(ORPHAN_PACKAGE_RESTRICTION_KEY, new HashSet<>());
+            }
             sw360Packages.addAll(packageService.refineSearch(restrictions, sw360User));
         } else {
             sw360Packages = packageService.getPackagesForUser();
-            if (!restrictions.isEmpty()) {
+            if (!restrictions.isEmpty() || orphanPackage) {
                 sw360Packages = new ArrayList<>(sw360Packages.stream()
                         .filter(filterPackageMap(restrictions, orphanPackage)).toList());
             }
         }
-        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
+        return getPackageResponse(version, normalizedPurl, packageManager, pageable, allDetails, luceneSearch, request, sw360User, sw360Packages);
+    }
+
+    private static String decodeEncodedQueryValue(String value) {
+        if (!CommonUtils.isNotNullEmptyOrWhitespace(value)) {
+            return value;
+        }
+        String decodedValue = value;
+        // Request params are URL-decoded once by the framework; decode once more for double-encoded clients.
+        for (int i = 0; i < 2; i++) {
+            if (!decodedValue.contains("%")) {
+                break;
+            }
+            try {
+                String candidate = URLDecoder.decode(decodedValue, StandardCharsets.UTF_8);
+                if (decodedValue.equals(candidate)) {
+                    break;
+                }
+                decodedValue = candidate;
+            } catch (IllegalArgumentException ignored) {
+                break;
+            }
+        }
+        return decodedValue;
     }
 
     /**
@@ -307,6 +343,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                 if (field == Package._Fields.NAME && !filterSet.contains(packages.name)) {
                     return false;
                 } else if (field == Package._Fields.VERSION && !filterSet.contains(packages.version)) {
+                    return false;
+                } else if (field == Package._Fields.PURL
+                        && !fieldValue.toString().equals(filterSet.iterator().next())) {
                     return false;
                 } else if ((field == Package._Fields.CREATED_BY || field == Package._Fields.CREATED_ON)
                         && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
@@ -362,7 +401,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(
             String version, String purl, String packageManager, Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages
+            boolean allDetails, boolean luceneSearch, HttpServletRequest request, User sw360User, List<Package> sw360Packages
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         Map<String, Package> mapOfPackages = new HashMap<>();
 
@@ -391,8 +430,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
         paginationResult.getResources().stream()
         .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
-        .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
-        .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
+        // Lucene mode already applies field-level query semantics; keep exact filtering only for non-lucene mode.
+        .filter(pkg -> luceneSearch || version == null || version.isEmpty() || version.equals(pkg.getVersion()))
+        .filter(pkg -> luceneSearch || purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
 
         CollectionModel<EntityModel<Package>> resources;
         if (packageResources.isEmpty()) {
