@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -31,6 +32,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -118,6 +121,13 @@ public class SW360PackageService {
         return sw360PackageClient.getAllPackages();
     }
 
+    public Map<PaginationData, List<Package>> getPackagesForUser(Pageable pageable)
+            throws TException {
+        PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360PackageClient.getPackagesWithPagination(pageData);
+    }
+
     public List<Package> searchPackage(String field, String searchQuery, boolean isExactMatch) throws TException {
         final PackageService.Iface sw360PackageClient = getThriftPackageClient();
         Set<String> values = CommonUtils.splitToSet(searchQuery);
@@ -165,5 +175,28 @@ public class SW360PackageService {
     public List<Package> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
         return sw360PackageClient.refineSearchAccessiblePackages(null, filterMap, sw360User);
+    }
+
+    private static PaginationData pageableToPaginationData(Pageable pageable) {
+        int sortColumn = -1; // default: createdOn view in backend
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            sortColumn = switch (order.getProperty()) {
+                case "name" -> 0;
+                case "licenseIds", "licenses" -> 3;
+                case "packageManager" -> 4;
+                case "createdOn" -> -1;
+                default -> -1;
+            };
+            ascending = order.isAscending();
+        }
+
+        return new PaginationData()
+                .setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize())
+                .setSortColumnNumber(sortColumn)
+                .setAscending(ascending);
     }
 }
