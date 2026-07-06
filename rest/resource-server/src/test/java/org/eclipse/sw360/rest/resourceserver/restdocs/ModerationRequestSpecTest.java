@@ -172,13 +172,14 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(moderationRequest.getDocumentId()), any())).willReturn(releaseAdditions);
         given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmailOrExternalId(testUserId)).willReturn(user);
-        given(this.moderationRequestServiceMock.getRequestsByModerator(any(), any())).willReturn(new ArrayList<>(moderationRequests));
-        given(this.moderationRequestServiceMock.getTotalCountOfRequests(any())).willReturn((long) moderationRequests.size());
+        given(this.moderationRequestServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn((long) moderationRequests.size());
         given(this.moderationRequestServiceMock.getModerationRequestById(eq(moderationRequest.getId()))).willReturn(moderationRequest);
         given(this.moderationRequestServiceMock.getRequestsByState(any(), any(), eq(false), anyBoolean())).willReturn(requestsByState);
         given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
         given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
         given(this.moderationRequestServiceMock.getRequestsByRequestingUser(any(), any())).willReturn(requestsByState);
+                given(this.moderationRequestServiceMock.searchModerationRequestsByExactValues(anyMap(), any())).willReturn(new ArrayList<>(moderationRequests));
+                given(this.moderationRequestServiceMock.refineSearch(anyMap(), any())).willReturn(new ArrayList<>(moderationRequests));
     }
 
     @Test
@@ -276,6 +277,56 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_search_moderationrequests_with_exact_filters() throws Exception {
+        mockMvc.perform(get("/api/moderationrequest")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("type", "RELEASE")
+                        .queryParam("documentName", "Release 1")
+                        .queryParam("requestingUser", "test.admin@sw360.org")
+                        .queryParam("requestingUserDepartment", "DEPT")
+                        .queryParam("moderationState", "INPROGRESS")
+                        .queryParam("requestDate", "2026-01-01")
+                        .queryParam("moderators", "admin@sw360.org")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("type").description("The type of document for filtering moderation requests."),
+                                parameterWithName("documentName").description("The document name used for exact matching."),
+                                parameterWithName("requestingUser").description("The requesting user's email used for exact matching."),
+                                parameterWithName("requestingUserDepartment").description("The requesting user's department used for exact matching."),
+                                parameterWithName("moderationState").description("The moderation state used for exact matching."),
+                                parameterWithName("requestDate").description("Date when the request was created (YYYY-MM-DD)."),
+                                parameterWithName("moderators").description("Moderators list as comma separated values."),
+                                parameterWithName("page").description("Page of moderation requests"),
+                                parameterWithName("page_entries").description("Amount of requests per page")
+                        )
+                ));
+    }
+
+    @Test
+    public void should_document_search_moderationrequests_with_lucene() throws Exception {
+        mockMvc.perform(get("/api/moderationrequest")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("documentName", "Release")
+                        .queryParam("luceneSearch", "true")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("documentName").description("The document name used as wildcard input for lucene search."),
+                                parameterWithName("luceneSearch").description("Set to `true` to use lucene-based search."),
+                                parameterWithName("page").description("Page of moderation requests"),
+                                parameterWithName("page_entries").description("Amount of requests per page")
+                        )
+                ));
     }
 
     @Test

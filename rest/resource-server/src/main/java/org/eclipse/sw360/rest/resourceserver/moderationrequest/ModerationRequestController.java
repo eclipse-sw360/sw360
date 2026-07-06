@@ -166,15 +166,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
             }
             moderationRequests = sw360ModerationRequestService.refineSearch(filterMap, pageable);
         } else {
-            if (filterMap.isEmpty()) {
-                moderationRequests = sw360ModerationRequestService.getRequestsByModerator(sw360User, pageable);
-            } else {
-                String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
-                String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
-                addFilterValue(filterMap, moderatorKey, sw360User.getEmail());
-                addFilterValue(filterMap, requestingUserKey, sw360User.getEmail());
-                moderationRequests = sw360ModerationRequestService.searchModerationRequestsByExactValues(filterMap, pageable);
-            }
+            String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
+            String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
+            addFilterValue(filterMap, moderatorKey, sw360User.getEmail());
+            addFilterValue(filterMap, requestingUserKey, sw360User.getEmail());
+            moderationRequests = sw360ModerationRequestService.searchModerationRequestsByExactValues(filterMap, pageable);
         }
 
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
