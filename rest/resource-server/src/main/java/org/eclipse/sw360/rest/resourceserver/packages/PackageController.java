@@ -39,6 +39,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -182,7 +183,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Package deleted successfully."),
             @ApiResponse(responseCode = "409", description = "Package is in use and cannot be deleted.",
-                content = @Content(mediaType = "application/json"))
+                    content = @Content(mediaType = "application/json"))
     })
     @DeleteMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<?> deletePackage(
@@ -271,6 +272,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         List<Package> sw360Packages = new ArrayList<>();
+        Integer totalCount = null;
         Map<String, Set<String>> restrictions = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
         if (luceneSearch) {
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
@@ -281,13 +283,29 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             }
             sw360Packages.addAll(packageService.refineSearch(restrictions, sw360User));
         } else {
-            sw360Packages = packageService.getPackagesForUser();
+            boolean requestContainsPaging = pageable != null && pageable.isPaged();
+            boolean useDbPagination = requestContainsPaging && restrictions.isEmpty() && !orphanPackage;
+
+            if (useDbPagination) {
+                Map<PaginationData, List<Package>> paginatedPackages = packageService.getPackagesForUser(pageable);
+                if (paginatedPackages != null && !paginatedPackages.isEmpty()) {
+                    sw360Packages.addAll(paginatedPackages.values().iterator().next());
+                    totalCount = Math.toIntExact(paginatedPackages.keySet().stream()
+                            .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+                } else {
+                    sw360Packages = packageService.getPackagesForUser();
+                }
+            } else {
+                sw360Packages = packageService.getPackagesForUser();
+            }
+
             if (!restrictions.isEmpty()) {
                 sw360Packages = new ArrayList<>(sw360Packages.stream()
                         .filter(filterPackageMap(restrictions, orphanPackage)).toList());
             }
         }
-        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
+        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User,
+                sw360Packages, totalCount);
     }
 
     /**
@@ -362,13 +380,20 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(
             String version, String purl, String packageManager, Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages
+            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages,
+            Integer totalCount
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         Map<String, Package> mapOfPackages = new HashMap<>();
 
         sw360Packages.stream().forEach(pkg -> mapOfPackages.put(pkg.getId(), pkg));
         PaginationResult<Package> paginationResult;
-        paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE);
+        if (totalCount != null) {
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE, totalCount);
+        } else {
+            paginationResult = restControllerHelper.createPaginationResult(
+                    request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE);
+        }
 
         List<EntityModel<Package>> packageResources = new ArrayList<>();
         Consumer<Package> consumer = p -> {
@@ -390,9 +415,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         };
 
         paginationResult.getResources().stream()
-        .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
-        .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
-        .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
+                .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
+                .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
+                .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
 
         CollectionModel<EntityModel<Package>> resources;
         if (packageResources.isEmpty()) {
