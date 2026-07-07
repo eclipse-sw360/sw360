@@ -139,8 +139,6 @@ RUN apt-get update -qq \
 
 # Streamlined wars
 COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${CATALINA_HOME}/webapps/
-# org.eclipse.sw360 jar artifacts
-COPY --from=binaries /sw360_tomcat_webapps/*.jar ${CATALINA_HOME}/webapps/
 # Shared streamlined jar libs
 COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${CATALINA_HOME}/lib/
 
@@ -176,6 +174,13 @@ ENV KC_METRICS_ENABLED=true
 
 # Configure a database vendor
 ENV KC_DB=postgres
+
+# Other features customized out-of-the box.
+ENV KC_FEATURE_HOSTNAME=v2
+ENV KC_LOG=console
+ENV KC_TRANSACTION_XA_ENABLED=true
+ENV QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY=true
+ENV KC_HTTP_RELATIVE_PATH=/kc
 
 WORKDIR /opt/keycloak
 
