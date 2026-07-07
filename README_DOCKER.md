@@ -1,63 +1,60 @@
-# SW360 Docker
+# SW360 Backend Docker
 
 > **WARNING**: This readme refers to main branch. [This is the Docker documentation for stable 18.x series](https://github.com/eclipse-sw360/sw360/blob/releases/18/README_DOCKER.md)
+
+This document is focused on the **SW360 backend container image**:
+build, backend runtime configuration, secrets semantics, and persistence behavior.
+
+For end-to-end container stack setup (compose file, frontend, Keycloak, Nginx,
+and startup flow), use:
+**[SW360 Frontend Docker Guide](https://github.com/eclipse-sw360/sw360-frontend/blob/main/README_DOCKER.md)**.
 
 ## Table of Contents
 
 * [Building](#building)
-* [Configuration](#configuration)
+* [Runtime Configuration Model](#runtime-configuration-model)
   * [Environment Variables](#environment-variables)
   * [Secrets](#secrets)
-* [Running the Image](#running-the-image)
+  * [Entrypoint Behavior and Config Materialization](#entrypoint-behavior-and-config-materialization)
 * [Volumes and Persistence](#volumes-and-persistence)
 * [Networking](#networking)
 * [FOSSology Integration](#fossology-integration)
+* [Compose Reference (Canonical)](#compose-reference-canonical)
 
 ## Building
 
-* Install a recent version of Docker build `buildx` support.
-* Build images using the provided script:
+* Install a recent Docker version with buildx support.
+* Build images using:
 
-    ```sh
-    ./docker_build.sh
-    ```
+  ```sh
+  ./docker_build.sh
+  ```
 
-    This script builds the Thrift image, the SW360 binaries image, and finally
-    the SW360 runtime image.
+This builds the Thrift image, SW360 binaries image, and SW360 runtime image.
 
-    If you want to specify a
-    [CVE-Search](https://github.com/cve-search/cve-search) host at build time
-    (modifies properties file before build), run as follows:
+If you need to inject a CVE-Search host at build time:
 
-    ```sh
-    ./docker_build.sh --cvesearch-host <HOST_URL>
-    ```
+```sh
+./docker_build.sh --cvesearch-host <HOST_URL>
+```
 
-    The `<HOST_URL>` should be in `http://<YOUR_SERVER_HOST>:<PORT>` format,
-    or it can be [https://cvepremium.circl.lu](https://cvepremium.circl.lu) for testing purposes only.
-* If you want to change the image root (defaults to `ghcr.io/eclipse-sw360`) run
-  the script by overriding the flag `DOCKER_IMAGE_ROOT`:
+`<HOST_URL>` format: `http://<YOUR_SERVER_HOST>:<PORT>`
+(or `https://cvepremium.circl.lu` for testing only).
 
-    ```sh
-    DOCKER_IMAGE_ROOT=myregistry.com/sw360 ./docker_build.sh
-    ```
+To change image root (default `ghcr.io/eclipse-sw360`):
 
-## Configuration
+```sh
+DOCKER_IMAGE_ROOT=myregistry.com/sw360 ./docker_build.sh
+```
 
-The SW360 Docker setup uses environment variables and secret files for
-configuration at runtime. This allows usage of same base image for various
-servers. The entrypoint script
-([docker-entrypoint.sh](scripts/docker-config/docker-entrypoint.sh))
-reads these variables and updates the configuration files in `/etc/sw360` at
-container startup.
+## Runtime Configuration Model
+
+The backend image is configured at startup by environment variables and secrets.
+`docker-entrypoint.sh` writes effective runtime config into `/etc/sw360`.
 
 ### Environment Variables
 
-General configuration variables are stored in
-[config/sw360/.env.backend](config/sw360/.env.backend). You can modify this
-file to tweak SW360 behaviour.
-
-**CouchDB Settings**
+#### CouchDB settings
 * `COUCHDB_URL`: URL of the CouchDB instance (default: `http://couchdb:5984`).
 * `COUCHDB_LUCENESEARCH_LIMIT`: Limit for Lucene search results (default: `1000`).
 * `CLOUDANT_ENABLE_RETRIES`: Enable retries in Cloudant (default: `true`).
@@ -72,7 +69,11 @@ file to tweak SW360 behaviour.
 * `CLOUDANT_MAX_REQUESTS_PER_HOST`: Optional OkHttp dispatcher max in-flight
     requests per host (default: `-1`, disabled).
 
-**Thrift Backend Connection Pooling**
+General configuration variables are stored in
+[config/sw360/.env.backend](config/sw360/.env.backend). You can modify this file
+to tweak SW360 behaviour.
+
+#### Thrift backend connection pooling
 * `BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL`: Max total pooled connections to backend (default: `200`).
 * `BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE`: Max pooled connections per backend route (default: `100`).
 * `BACKEND_THRIFT_IDLE_EVICT_SECONDS`: Validate idle pooled connections before reuse; set below
@@ -80,7 +81,7 @@ file to tweak SW360 behaviour.
 * `BACKEND_THRIFT_CONNECTION_TTL_SECONDS`: Force-retire pooled connections older than this,
     even if active (default: `60` seconds).
 
-**Spring Controllers**
+#### Spring controllers / resource server
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
 * `SW360_SECURITY_JWT_ISSUERS_<N>_ISSUER_URI`: Public issuer URL for slot
     `<N>` (0-based). Validated against the `iss` claim of incoming Bearer
@@ -108,7 +109,7 @@ file to tweak SW360 behaviour.
     and resource server can validate both local SW360 tokens and external
     Keycloak tokens against the same issuer/JWKS configuration.
 
-**Email Configuration**
+#### Email
 * `EMAIL_PROPERTIES_HOST`: SMTP host (empty by default). Let it **empty** to
     disable email service.
 * `EMAIL_PROPERTIES_PORT`: SMTP port (empty by default).
@@ -123,7 +124,9 @@ file to tweak SW360 behaviour.
 * `EMAIL_PROPERTIES_TLS_TRUST`: Trusted certificates (default: `*`).
 * `EMAIL_PROPERTIES_DEBUG`: Enable mail debug logging (default: `false`).
 
-**SVM Configs**
+Leave host/port empty to disable email service.
+
+#### SVM
 * `SVM_API_BASE_PATH`: Base path of SVM API (default:
     `https://svm.example.org`).
 * `SVM_API_ROOT_PATH`: API root path (default: `api/v1`).
@@ -136,7 +139,7 @@ file to tweak SW360 behaviour.
 
 **Note:** Make sure the API URLs are not starting or ending with `/`.
 
-**Other Settings**
+#### Other runtime settings
 * `SCHEDULER_AUTOSTART_SERVICES`: Comma-separated list (no spaces) of services
     to autostart (default: `cvesearchService`). Leave empty to not start any
     service.
@@ -149,7 +152,7 @@ file to tweak SW360 behaviour.
     `http://localhost:8080`).
 * `SW360_BASE_URL`: Base URL for SW360 server (default: `http://localhost:8080`).
 
-**Security Settings**
+#### Security settings
 * `SW360_SECURITY_HTTP_BASIC_ENABLED`: Whether HTTP Basic authentication is
     enabled on both the authorization and resource servers (default: `true`).
     Set this to `false` in production - clients should authenticate via
@@ -160,7 +163,7 @@ file to tweak SW360 behaviour.
     **Change this in production** and keep it identical on every SW360 node
     sharing the same JWT signing keystore.
 
-**JWT Signing Key**
+#### JWT Signing Key
 * The Authorization Server signs tokens with a JKS keystore stored at
   `/etc/sw360/jwt-keystore.jks` (persisted by the `etc` named volume).
 * Startup seed order for `jwt-keystore.jks`:
@@ -174,115 +177,84 @@ file to tweak SW360 behaviour.
 
 ### Secrets
 
-Sensitive information is managed via secret files located in
-`config/couchdb/` and `config/sw360/`.
+Backend runtime consumes these secret values:
 
-**CouchDB Secrets ([config/couchdb/default_secrets](config/couchdb/default_secrets))**
-* `COUCHDB_USER`: CouchDB username.
-* `COUCHDB_PASSWORD`: CouchDB password.
+* `COUCHDB_USER`
+* `COUCHDB_PASSWORD`
+* `SVM_SW360_CERTIFICATE_PASSPHRASE`
+* `SVM_SW360_JKS_PASSWORD`
+* `REST_APITOKEN_HASH_SALT`
+* `EMAIL_PROPERTIES_USERNAME`
+* `EMAIL_PROPERTIES_PASSWORD`
+* `JWT_KEYSTORE` (binary JKS payload)
 
-**SW360 App Secrets ([config/sw360/default_secrets](config/sw360/default_secrets))**
-* `SVM_SW360_CERTIFICATE_PASSPHRASE`: Passphrase for SVM certificate located by
-    `SVM_SW360_CERTIFICATE_FILENAME`.
-* `SVM_SW360_JKS_PASSWORD`: Password for ca-cert keystore.
-* `REST_APITOKEN_HASH_SALT`: BCrypt salt for user generated API token hashing.
-    Must be in OpenBSD bcrypt format (`$2a$<cost>$<22-char-salt>`), for example:
-    `'$2a$04$Software360RestApiSalt'`.
-    Keep this value stable after deployment; changing it invalidates existing API
-    tokens.
-* `EMAIL_PROPERTIES_USERNAME`: Username for SMTP authentication.
-* `EMAIL_PROPERTIES_PASSWORD`: Password for SMTP authentication.
+`REST_APITOKEN_HASH_SALT` must be OpenBSD bcrypt salt format:
+`$2a$<cost>$<22-char-salt>`.
+Keep it stable after deployment; changing it invalidates existing API tokens.
 
-**JWT Keystore Secret**
-* `JWT_KEYSTORE`: Binary Docker secret containing the JWT signing keystore
-    (JKS format). In `docker-compose.yml` this defaults to the bundled
-    repository keystore and can be replaced by operators with a custom file.
-
-To update these secrets, simply edit the respective files. The
-[docker-compose.yml](docker-compose.yml) is configured to mount these secrets
-into the containers.
-
-To generate a new value in valid format:
+Generate a value:
 
 ```sh
 REST_APITOKEN_HASH_SALT='$2a$04$'$(openssl rand -hex 16 | head -c 22)
 printf "REST_APITOKEN_HASH_SALT='%s'\n" "$REST_APITOKEN_HASH_SALT"
 ```
 
-## Running the Image
+### Entrypoint Behavior and Config Materialization
 
-* Start the services using Docker Compose:
+At container start, backend config is materialized in `/etc/sw360` by
+[`scripts/docker-config/docker-entrypoint.sh`](scripts/docker-config/docker-entrypoint.sh).
 
-    ```sh
-    docker compose up
-    ```
+JWT signing keystore seed order:
+1. Secret `JWT_KEYSTORE` (if provided)
+2. Existing persisted `/etc/sw360/jwt-keystore.jks`
+3. Bundled fallback keystore from image
 
-    Add `-d` to run in detached mode:
-
-    ```sh
-    docker compose up -d
-    ```
-
-    To view logs:
-
-    ```sh
-    docker compose logs -f sw360
-    ```
+To replace JWT signing key material:
+* generate a new JKS (helper script:
+  `rest/rest-common/tools/generateJwtStore.sh`)
+* provide it via `JWT_KEYSTORE` or persist it under `/etc/sw360`
+* keep `JWT_SECRETKEY` aligned with that keystore
 
 ## Volumes and Persistence
 
-The `docker-compose.yml` defines several volumes to persist data and
-configuration.
+Backend-relevant persistence surfaces:
 
-**SW360 Service**
-* `etc` (named volume) mounted to `/etc/sw360`: Persists generated
-    configuration files.
+* `/etc/sw360`:
+  generated backend runtime configuration and JWT keystore
+* optional additional files expected by runtime:
+  * JWT keystore: `/etc/sw360/jwt-keystore.jks`
+  * SVM certificate / trust store material (when SVM TLS integration is enabled)
 
-**CouchDB Service**
-* `couchdb` (named volume) mounted to `/opt/couchdb/data`: Persists the
-    database data.
-* `config/couchdb/sw360_setup.ini` mounted to
-    `/opt/couchdb/etc/local.d/sw360_setup.ini`: Default CouchDB secrets.
-* `config/couchdb/sw360_log.ini` mounted to
-    `/opt/couchdb/etc/local.d/sw360_log.ini`: CouchDB logging configuration.
-* `config/couchdb/nouveau.ini` mounted to
-    `/opt/couchdb/etc/local.d/nouveau.ini`: Inform CouchDB about Nouveau service.
+Persist `/etc/sw360` across restarts to retain generated config and keystore
+state.
 
 ## Networking
 
-The services run in a default network called `sw360net`. This allows services to
-communicate with each other securely without using host network. External
-containers can connect to the services attached to this network.
+The backend container must be able to reach:
+* CouchDB (`COUCHDB_URL`)
+* trusted issuer discovery/JWKS endpoints for configured JWT issuers
+* optional integrations (mail server, SVM, CVE source, FOSSology)
+
+It should also be reachable by:
+* frontend (API calls)
+* reverse proxy (if used)
 
 ## FOSSology Integration
 
-For a Docker-based approach, it is recommended to use the official
-[FOSSology Docker image](https://hub.docker.com/r/fossology/fossology/).
+For containerized deployments, the official FOSSology image is recommended:
+[fossology/fossology](https://hub.docker.com/r/fossology/fossology/).
 
-Run FOSSology connected to the SW360 network:
+Backend-side FOSSology setup is still performed in SW360 Admin UI / API:
+* configure FOSSology URL
+* folder ID
+* API token
 
-```sh
-docker run \
-    --network sw360net \
-    -p 8081:80 \
-    --name fossology \
-    -e FOSSOLOGY_DB_HOST=<your_db_host> \
-    -e FOSSOLOGY_DB_USER=<your_db_user> \
-    -e FOSSOLOGY_DB_PASSWORD=<your_db_password> \
-    -d fossology/fossology
-```
+## Compose Reference (Canonical)
 
-### Configure FOSSology
+Compose usage, full stack startup, frontend build-time variables, and Keycloak
+bootstrap are maintained in:
 
-* **On FOSSology**
-  * Login to FOSSology.
-  * Create an API token for sw360 to use from Admin > Users > Edit User Account.
-      Or check their
-      [Wiki for REST API](https://github.com/fossology/fossology/wiki/FOSSology-REST-API#token).
-  * Note desired folder's ID.
-* **On SW360**
-  * Go to Admin > Fossology or the endpoint `POST fossology/saveConfig`.
-  * Add the FOSSology host URL (e.g., `http://fossology/repo/api/v2/` if using
-      container name, or mapped host port).
-  * Add the folder ID (default is `1` for **Software Repository**).
-  * Add the API Token obtained from FOSSology as **Access Token**.
+* **Main guide**: <https://github.com/eclipse-sw360/sw360-frontend/blob/main/README_DOCKER.md>
+* **Stack setup**: <https://github.com/eclipse-sw360/sw360-frontend/blob/main/README_DOCKER.md#stack-setup>
+* **Secrets generation**: <https://github.com/eclipse-sw360/sw360-frontend/blob/main/README_DOCKER.md#secrets-and-credential-generation>
+* **Keycloak initialization**: <https://github.com/eclipse-sw360/sw360-frontend/blob/main/README_DOCKER.md#4-initialize-keycloak-one-time>

@@ -65,7 +65,10 @@ tmp/**/*
 # DS_Store
 .DS_Store
 
+# Python
 .python-version
+**/__pycache__
+*.pyc
 
 # Local logs for dev runtime
 logs
