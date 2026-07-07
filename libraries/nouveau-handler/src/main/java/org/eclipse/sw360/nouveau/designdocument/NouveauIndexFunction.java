@@ -26,6 +26,9 @@ public class NouveauIndexFunction {
     private Map<String, String> fieldAnalyzer;
     @SerializedName("index")
     private final String index;
+    // TODO: This has to be updated when we update the Lucene version in the future. For now, it is fixed to 10.
+    @SerializedName("lucene_version")
+    private final int lucene_version = 10;
 
     public NouveauIndexFunction(String index) {
         if (index == null || index.isEmpty()) {
@@ -56,6 +59,14 @@ public class NouveauIndexFunction {
         return index;
     }
 
+    public int getLuceneVersion() {
+        return lucene_version;
+    }
+
+    public NouveauIndexFunction setLuceneVersion(int lucene_version) {
+        throw new UnsupportedOperationException("Lucene version is fixed to 10 and cannot be changed.");
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -66,6 +77,6 @@ public class NouveauIndexFunction {
 
     @Override
     public int hashCode() {
-        return Objects.hash(defaultAnalyzer, fieldAnalyzer, index);
+        return Objects.hash(defaultAnalyzer, fieldAnalyzer, index, lucene_version);
     }
 }
