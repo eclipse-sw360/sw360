@@ -46,6 +46,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -312,6 +313,10 @@ public class ProjectTest extends TestIntegrationBase {
         given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any())).willReturn(new ArrayList<>());
         given(this.vulnerabilityServiceMock.getProjectVulnerabilityRatingByProjectId(eq(project1.getId()), any())).willReturn(new ArrayList<>());
         given(this.vulnerabilityServiceMock.fillVulnerabilityMetadata(any(), any())).willReturn(new HashMap<>());
+
+        // Default ECC counts mock (returns zeros)
+        given(this.projectServiceMock.getProjectEccCounts(any(), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(0, 0));
     }
 
     // ========== CORE PROJECT OPERATIONS ==========
@@ -957,6 +962,10 @@ public class ProjectTest extends TestIntegrationBase {
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
         given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
 
+        // Mock ECC counts: 2 classified (release1=OPEN, release2=APPROVED), 1 open
+        given(this.projectServiceMock.getProjectEccCounts(eq(project1.getId()), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(2, 1));
+
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
@@ -970,6 +979,8 @@ public class ProjectTest extends TestIntegrationBase {
         assertEquals(2, responseBody.get("vulnerabilityRatedCount").asInt());
         assertEquals(2, responseBody.get("obligationCount").asInt());
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+        assertEquals(2, responseBody.get("eccClassifiedCount").asInt());
+        assertEquals(1, responseBody.get("eccOpenCount").asInt());
     }
 
     @Test
@@ -988,6 +999,10 @@ public class ProjectTest extends TestIntegrationBase {
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
         given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
 
+        // Mock ECC counts: 2 classified (release1=OPEN, release2=APPROVED), 1 open
+        given(this.projectServiceMock.getProjectEccCounts(eq(project1.getId()), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(2, 1));
+
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
@@ -1001,6 +1016,8 @@ public class ProjectTest extends TestIntegrationBase {
         assertEquals(-1, responseBody.get("vulnerabilityRatedCount").asInt());
         assertEquals(2, responseBody.get("obligationCount").asInt());
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+        assertEquals(2, responseBody.get("eccClassifiedCount").asInt());
+        assertEquals(1, responseBody.get("eccOpenCount").asInt());
     }
 
     @Test

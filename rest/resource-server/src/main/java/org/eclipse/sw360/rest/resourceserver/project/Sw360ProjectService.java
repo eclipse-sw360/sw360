@@ -41,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -150,6 +151,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         public String toString() {
             return this.name();
         }
+    }
+
+    public record ProjectEccCounts(int classifiedCount, int openCount) {
     }
 
     public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
@@ -1019,6 +1023,29 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
             return project.getReleaseIdToUsage().keySet();
         }
+    }
+
+    public ProjectEccCounts getProjectEccCounts(String projectId, User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        List<ReleaseClearingStatusData> releaseClearingStatusData = sw360ProjectClient
+                .getReleaseClearingStatuses(projectId, sw360User);
+
+        int eccClassifiedCount = 0;
+        int eccOpenCount = 0;
+        for (ReleaseClearingStatusData clearingStatusData : CommonUtils.nullToEmptyList(releaseClearingStatusData)) {
+            Release release = clearingStatusData.release;
+            if (release == null || release.getEccInformation() == null
+                    || release.getEccInformation().getEccStatus() == null) {
+                continue;
+            }
+
+            eccClassifiedCount++;
+            if (ECCStatus.OPEN.equals(release.getEccInformation().getEccStatus())) {
+                eccOpenCount++;
+            }
+        }
+
+        return new ProjectEccCounts(eccClassifiedCount, eccOpenCount);
     }
 
     public void addEmbeddedLinkedProject(Project sw360Project, User sw360User, HalResource<Project> projectResource,
