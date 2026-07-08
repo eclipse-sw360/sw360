@@ -31,6 +31,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
+import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -957,6 +959,13 @@ public class ProjectTest extends TestIntegrationBase {
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
         given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
 
+        release1.setEccInformation(new EccInformation().setEccStatus(ECCStatus.OPEN));
+        release2.setEccInformation(new EccInformation().setEccStatus(ECCStatus.APPROVED));
+        given(this.projectServiceMock.getReleaseIds(eq(project1.getId()), any(), eq(true)))
+                .willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
@@ -970,6 +979,8 @@ public class ProjectTest extends TestIntegrationBase {
         assertEquals(2, responseBody.get("vulnerabilityRatedCount").asInt());
         assertEquals(2, responseBody.get("obligationCount").asInt());
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+                assertEquals(2, responseBody.get("eccClassifiedCount").asInt());
+                assertEquals(1, responseBody.get("eccOpenCount").asInt());
     }
 
     @Test
@@ -988,6 +999,13 @@ public class ProjectTest extends TestIntegrationBase {
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
         given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
 
+        release1.setEccInformation(new EccInformation().setEccStatus(ECCStatus.OPEN));
+        release2.setEccInformation(new EccInformation().setEccStatus(ECCStatus.APPROVED));
+        given(this.projectServiceMock.getReleaseIds(eq(project1.getId()), any(), eq(true)))
+                .willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
@@ -1001,6 +1019,8 @@ public class ProjectTest extends TestIntegrationBase {
         assertEquals(-1, responseBody.get("vulnerabilityRatedCount").asInt());
         assertEquals(2, responseBody.get("obligationCount").asInt());
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+                assertEquals(2, responseBody.get("eccClassifiedCount").asInt());
+                assertEquals(1, responseBody.get("eccOpenCount").asInt());
     }
 
     @Test

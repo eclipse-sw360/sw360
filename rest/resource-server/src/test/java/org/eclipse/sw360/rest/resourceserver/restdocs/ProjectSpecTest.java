@@ -2434,7 +2434,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("vulnerabilityCount").description("Count of vulnerabilities linked to the project; returns -1 when vulnerability display is disabled for the project"),
                                 fieldWithPath("vulnerabilityRatedCount").description("Count of vulnerabilities with project relevance other than NOT_CHECKED; returns -1 when vulnerability display is disabled for the project"),
                                 fieldWithPath("obligationCount").description("Count of obligations linked to the project"),
-                                fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN")
+                                fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN"),
+                                fieldWithPath("eccClassifiedCount").description("Count of releases with a classified ECC status"),
+                                fieldWithPath("eccOpenCount").description("Count of releases with ECC status OPEN")
                         )));
     }
 

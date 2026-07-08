@@ -3238,8 +3238,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
 
+                int eccClassifiedCount = 0;
+                int eccOpenCount = 0;
+                Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, true);
+                if (releaseIds != null) {
+                    for (String releaseId : releaseIds) {
+                        Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                        if (release == null || release.getEccInformation() == null || release.getEccInformation().getEccStatus() == null) {
+                            continue;
+                        }
+
+                        eccClassifiedCount++;
+                        if (ECCStatus.OPEN.equals(release.getEccInformation().getEccStatus())) {
+                            eccOpenCount++;
+                        }
+                    }
+                }
+
         return new ResponseEntity<>(new ProjectDetailTabCounts(vulnerabilityCount, vulnerabilityRatedCount,
-                obligationCount, obligationNonOpenCount), HttpStatus.OK);
+                    obligationCount, obligationNonOpenCount, eccClassifiedCount, eccOpenCount), HttpStatus.OK);
     }
 
     @Operation(
