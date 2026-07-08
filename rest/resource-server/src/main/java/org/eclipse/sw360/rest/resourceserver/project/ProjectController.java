@@ -3268,8 +3268,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
 
+        Sw360ProjectService.ProjectEccCounts eccCounts = projectService.getProjectEccCounts(id, sw360User);
+
         return new ResponseEntity<>(new ProjectDetailTabCounts(vulnerabilityCount, vulnerabilityRatedCount,
-                obligationCount, obligationNonOpenCount), HttpStatus.OK);
+                obligationCount, obligationNonOpenCount,
+                eccCounts.classifiedCount(), eccCounts.openCount()), HttpStatus.OK);
     }
 
     @Operation(
