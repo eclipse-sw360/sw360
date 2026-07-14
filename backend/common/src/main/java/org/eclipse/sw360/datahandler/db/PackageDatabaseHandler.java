@@ -195,7 +195,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             pkg.setPackageManager(PackageManager.valueOf(purl.getType().toUpperCase()));
         } catch (MalformedPackageURLException e) {
             log.error(String.format("Invalid PURL for package: '%s'", SW360Utils.printName(pkg)), e);
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge URL!");
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid pURL: " + e.getMessage());
         } catch (IllegalArgumentException e) {
             log.error(String.format("Invalid Package Manager for package: '%s'", SW360Utils.printName(pkg)), e);
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge Manager!");
@@ -288,7 +288,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updatedPkg.setPackageManager(PackageManager.valueOf(purl.getType().toUpperCase()));
         } catch (MalformedPackageURLException e) {
             log.error(String.format("Invalid PURL for package: %s", packageId), e);
-            return RequestStatus.INVALID_INPUT;
+            throw fail(400, "Invalid pURL: %s", e.getMessage());
         } catch (IllegalArgumentException e) {
             log.error(String.format("Invalid Package Manager for package: %s", packageId), e);
             return RequestStatus.INVALID_INPUT;
