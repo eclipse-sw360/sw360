@@ -65,10 +65,12 @@ public class ArchivalHandler {
             throw new SW360Exception("archive request has no entity IDs");
         }
 
-        if (req.getEntityType() == ArchivalEntityType.PROJECT) {
-            return archiveProjects(req, userEmail, sink, provider);
-        }
-        return archiveSimple(req, userEmail, sink, provider);
+        return switch (req.getEntityType()) {
+            case PROJECT -> archiveProjects(req, userEmail, sink, provider);
+            case COMPONENT -> archiveComponents(req, userEmail, sink, provider);
+            case PACKAGE -> archivePackages(req, userEmail, sink, provider);
+            case RELEASE -> archiveSimple(req, userEmail, sink, provider);
+        };
     }
 
     /**
@@ -169,6 +171,150 @@ public class ArchivalHandler {
                 }
             } catch (Exception e) {
                 markFailed(projectRow, "deleteProject failed: " + e.getMessage());
+            }
+        }
+
+        return new ArchiveResult(bundleId, manifest, records);
+    }
+
+    /**
+     * Component flow: each Component produces one Component record + N Release records.
+     * Releases still referenced by a live Project are flagged keepAlive/KEPT_ALIVE and
+     * unlinked from the Component before it is deleted, so they survive on their own.
+     * Non-shared Releases are deleted alongside the Component.
+     */
+    private ArchiveResult archiveComponents(ArchiveRequest req,
+                                            String userEmail,
+                                            OutputStream sink,
+                                            EntityProvider provider) throws SW360Exception, IOException {
+        if (!(provider instanceof Sw360EntityProvider sw360Provider)) {
+            throw new SW360Exception("Component archive requires the live Sw360EntityProvider");
+        }
+
+        String bundleId = "bundle-" + UUID.randomUUID();
+        Instant now = Instant.now();
+
+        List<ArchivalRecord> records = new ArrayList<>();
+        List<CollectedEntity> collected = new ArrayList<>();
+        Map<String, ArchivalRecord> recordByEntityId = new HashMap<>();
+        Map<String, java.util.Set<String>> sharedReleasesByComponent = new HashMap<>();
+
+        for (String componentId : req.getEntityIds()) {
+            List<CollectedEntity> componentBundle;
+            try {
+                componentBundle = sw360Provider.collectComponentBundle(componentId);
+            } catch (Exception e) {
+                throw new SW360Exception("Component collection failed for " + componentId + ": " + e.getMessage());
+            }
+
+            java.util.Set<String> shared = new java.util.HashSet<>();
+            for (CollectedEntity ce : componentBundle) {
+                if (ce.entityType() == ArchivalEntityType.RELEASE && ce.keepAlive()) {
+                    shared.add(ce.entityId());
+                }
+                ArchivalRecord r = newRecord(bundleId, ce.entityId(), ce.entityType(),
+                        ArchivalStatus.IN_PROGRESS, userEmail, now, req.getComment());
+                r.setEntityName(ce.entityName());
+                ArchivalRecord saved = db.add(r);
+                records.add(saved);
+                recordByEntityId.put(ce.entityId(), saved);
+                collected.add(ce);
+            }
+            sharedReleasesByComponent.put(componentId, shared);
+        }
+
+        ArchiveManifest manifest = bundle(bundleId, userEmail, req.getComment(), collected, sink, records);
+
+        Map<String, ManifestEntry> manifestById = new HashMap<>();
+        for (ManifestEntry e : manifest.getEntries()) manifestById.put(e.getEntityId(), e);
+
+        for (ArchivalRecord r : records) {
+            ManifestEntry m = manifestById.get(r.getEntityId());
+            if (m != null) {
+                r.setAttachmentCount(m.getAttachmentCount());
+                r.setStatus(m.isKeepAlive() ? ArchivalStatus.KEPT_ALIVE : ArchivalStatus.ARCHIVED);
+            } else {
+                r.setStatus(ArchivalStatus.ARCHIVED);
+            }
+            db.update(r);
+        }
+
+        for (String componentId : req.getEntityIds()) {
+            ArchivalRecord componentRow = recordByEntityId.get(componentId);
+            try {
+                RequestStatus status = sw360Provider.deleteComponentRespectingSharedReleases(
+                        componentId, sharedReleasesByComponent.get(componentId));
+                if (status != RequestStatus.SUCCESS) {
+                    markFailed(componentRow, "deleteComponent returned " + status);
+                }
+            } catch (Exception e) {
+                markFailed(componentRow, "deleteComponent failed: " + e.getMessage());
+            }
+        }
+
+        return new ArchiveResult(bundleId, manifest, records);
+    }
+
+    /**
+     * Package flow: refuse if the parent Release is still live. Otherwise delete
+     * via SW360's existing deletePackage.
+     */
+    private ArchiveResult archivePackages(ArchiveRequest req,
+                                          String userEmail,
+                                          OutputStream sink,
+                                          EntityProvider provider) throws SW360Exception, IOException {
+        if (!(provider instanceof Sw360EntityProvider sw360Provider)) {
+            throw new SW360Exception("Package archive requires the live Sw360EntityProvider");
+        }
+
+        String bundleId = "bundle-" + UUID.randomUUID();
+        Instant now = Instant.now();
+
+        List<ArchivalRecord> records = new ArrayList<>(req.getEntityIds().size());
+        List<CollectedEntity> collected = new ArrayList<>();
+        Map<String, ArchivalRecord> recordByEntityId = new HashMap<>();
+
+        for (String packageId : req.getEntityIds()) {
+            ArchivalRecord r = newRecord(bundleId, packageId, ArchivalEntityType.PACKAGE,
+                    ArchivalStatus.IN_PROGRESS, userEmail, now, req.getComment());
+            ArchivalRecord saved = db.add(r);
+            records.add(saved);
+            recordByEntityId.put(packageId, saved);
+
+            try {
+                if (sw360Provider.packageHasLiveParentRelease(packageId)) {
+                    markFailed(saved, "parent Release is still live; archive the Release first");
+                    continue;
+                }
+                collected.add(sw360Provider.collect(ArchivalEntityType.PACKAGE, packageId));
+            } catch (Exception e) {
+                markFailed(saved, "collection failed: " + e.getMessage());
+            }
+        }
+
+        ArchiveManifest manifest = bundle(bundleId, userEmail, req.getComment(), collected, sink, records);
+
+        java.util.Set<String> bundledIds = new java.util.HashSet<>();
+        for (ManifestEntry m : manifest.getEntries()) {
+            bundledIds.add(m.getEntityId());
+            ArchivalRecord r = recordByEntityId.get(m.getEntityId());
+            if (r != null) {
+                r.setAttachmentCount(m.getAttachmentCount());
+                r.setStatus(ArchivalStatus.ARCHIVED);
+                db.update(r);
+            }
+        }
+
+        for (String packageId : req.getEntityIds()) {
+            if (!bundledIds.contains(packageId)) continue;
+            ArchivalRecord row = recordByEntityId.get(packageId);
+            try {
+                RequestStatus status = sw360Provider.deletePackage(packageId);
+                if (status != RequestStatus.SUCCESS) {
+                    markFailed(row, "deletePackage returned " + status);
+                }
+            } catch (Exception e) {
+                markFailed(row, "deletePackage failed: " + e.getMessage());
             }
         }
 

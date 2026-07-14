@@ -13,6 +13,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -20,7 +21,9 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalEntityType;
@@ -29,10 +32,13 @@ import org.eclipse.sw360.datahandler.services.archival.AttachmentMetadata;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Production EntityProvider that reads from the live SW360 databases.
@@ -56,6 +62,7 @@ public class Sw360EntityProvider implements EntityProvider {
 
     private ComponentDatabaseHandler componentHandler;
     private ProjectDatabaseHandler projectHandler;
+    private PackageDatabaseHandler packageHandler;
     private AttachmentConnector attachmentConnector;
     private UserRepository userRepository;
 
@@ -76,8 +83,8 @@ public class Sw360EntityProvider implements EntityProvider {
         return switch (type) {
             case RELEASE -> collectRelease(entityId, false);
             case PROJECT -> collectProject(entityId);
-            case COMPONENT, PACKAGE -> throw new UnsupportedOperationException(
-                    type + " collection is not wired yet");
+            case COMPONENT -> collectComponentOnly(entityId);
+            case PACKAGE -> collectPackage(entityId);
         };
     }
 
@@ -180,6 +187,159 @@ public class Sw360EntityProvider implements EntityProvider {
         return projectHandler().deleteProject(projectId, resolveUser(), true);
     }
 
+    // ---------------- COMPONENT ----------------
+
+    /**
+     * Returns the full bundle for a Component archive: the Component document itself
+     * followed by one CollectedEntity per Release under it. Each Release is flagged
+     * keepAlive=true when a live Project still references it.
+     */
+    public List<CollectedEntity> collectComponentBundle(String componentId) throws Exception {
+        User user = resolveUser();
+        Component component = componentHandler().getComponent(componentId, user);
+        if (component == null) {
+            throw new SW360Exception("Component " + componentId + " not found");
+        }
+
+        List<CollectedEntity> bundle = new ArrayList<>();
+        bundle.add(collectedFromComponent(component));
+
+        if (component.getReleaseIds() != null) {
+            for (String releaseId : component.getReleaseIds()) {
+                bundle.add(collectRelease(releaseId, isReleaseSharedWithLiveProjects(releaseId)));
+            }
+        }
+        return bundle;
+    }
+
+    private CollectedEntity collectComponentOnly(String componentId) throws Exception {
+        User user = resolveUser();
+        Component component = componentHandler().getComponent(componentId, user);
+        if (component == null) {
+            throw new SW360Exception("Component " + componentId + " not found");
+        }
+        return collectedFromComponent(component);
+    }
+
+    private CollectedEntity collectedFromComponent(Component component) throws IOException, SW360Exception {
+        Map<String, byte[]> documents = new LinkedHashMap<>();
+        documents.put("component.json", ThriftJson.toJsonBytes(component));
+
+        List<AttachmentSource> attachments = new ArrayList<>();
+        if (includeAttachments && component.getAttachments() != null) {
+            for (Attachment att : component.getAttachments()) {
+                AttachmentSource source = buildAttachmentSource(att);
+                if (source != null) attachments.add(source);
+            }
+        }
+
+        return new CollectedEntity(
+                component.getId(),
+                component.getName(),
+                null,
+                ArchivalEntityType.COMPONENT,
+                documents,
+                attachments,
+                false);
+    }
+
+    /**
+     * True if this release is referenced by any live Project (any project — no exclusion).
+     * Used by Component archive where there is no "the project we're archiving" to exclude.
+     */
+    private boolean isReleaseSharedWithLiveProjects(String releaseId) throws Exception {
+        User user = resolveUser();
+        return !projectHandler().searchByReleaseId(releaseId, user).isEmpty();
+    }
+
+    /**
+     * Custom Component deletion that respects the keep-alive rule.
+     * For each Release under the Component:
+     *   - if shared with a live Project → unlink it from the Component's releaseIds so
+     *     the Release survives on its own.
+     *   - otherwise → deleteRelease normally.
+     * Then removes the Component itself. Uses only existing SW360 building blocks.
+     * Returns SUCCESS on happy path; if any step failed the caller inspects the
+     * remaining live Releases via the returned status list.
+     */
+    public RequestStatus deleteComponentRespectingSharedReleases(String componentId,
+                                                                 Set<String> sharedReleaseIds) throws Exception {
+        User user = resolveUser();
+        Component component = componentHandler().getComponent(componentId, user);
+        if (component == null) return RequestStatus.FAILURE;
+
+        Set<String> allReleaseIds = component.getReleaseIds() == null
+                ? Collections.emptySet()
+                : new HashSet<>(component.getReleaseIds());
+
+        // Unlink shared Releases so Component delete doesn't cascade into them.
+        if (!sharedReleaseIds.isEmpty()) {
+            Component patched = componentHandler().getComponent(componentId, user);
+            Set<String> keep = new HashSet<>(patched.getReleaseIds());
+            keep.removeAll(sharedReleaseIds);
+            patched.setReleaseIds(keep);
+            componentHandler().updateComponent(patched, user, true);
+        }
+
+        // Delete non-shared Releases individually first (belt and suspenders — the
+        // Component delete would delete them anyway, but doing it here lets us
+        // report per-release failures).
+        for (String releaseId : allReleaseIds) {
+            if (sharedReleaseIds.contains(releaseId)) continue;
+            RequestStatus rs = componentHandler().deleteRelease(releaseId, user, true);
+            if (rs != RequestStatus.SUCCESS) {
+                return rs; // surface the specific failure
+            }
+        }
+
+        // The Component now only owns Releases that were already deleted above (via
+        // its refreshed releaseIds). Delete the Component itself.
+        return componentHandler().deleteComponent(componentId, user, true);
+    }
+
+    // ---------------- PACKAGE ----------------
+
+    private CollectedEntity collectPackage(String packageId) throws Exception {
+        Package pkg = packageHandler().getPackageById(packageId);
+        if (pkg == null) {
+            throw new SW360Exception("Package " + packageId + " not found");
+        }
+
+        Map<String, byte[]> documents = new LinkedHashMap<>();
+        documents.put("package.json", ThriftJson.toJsonBytes(pkg));
+
+        return new CollectedEntity(
+                pkg.getId(),
+                pkg.getName(),
+                pkg.getVersion(),
+                ArchivalEntityType.PACKAGE,
+                documents,
+                new ArrayList<>(),
+                false);
+    }
+
+    /**
+     * True if the Package's parent Release still exists in the live DB.
+     * Used to refuse Package archival when the parent Release is still live.
+     */
+    public boolean packageHasLiveParentRelease(String packageId) throws Exception {
+        Package pkg = packageHandler().getPackageById(packageId);
+        if (pkg == null) return false;
+        String parentReleaseId = pkg.getReleaseId();
+        if (parentReleaseId == null || parentReleaseId.isBlank()) return false;
+        try {
+            User user = resolveUser();
+            Release release = componentHandler().getRelease(parentReleaseId, user);
+            return release != null;
+        } catch (SW360Exception notFound) {
+            return false;
+        }
+    }
+
+    public RequestStatus deletePackage(String packageId) throws Exception {
+        return packageHandler().deletePackage(packageId, resolveUser());
+    }
+
     private AttachmentSource buildAttachmentSource(Attachment att) throws SW360Exception, IOException {
         AttachmentContent content = attachmentConnector().getAttachmentContent(att.getAttachmentContentId());
         if (content == null || Boolean.TRUE.equals(content.isOnlyRemote())) {
@@ -234,6 +394,17 @@ public class Sw360EntityProvider implements EntityProvider {
                     DatabaseSettings.COUCH_DB_ATTACHMENTS);
         }
         return projectHandler;
+    }
+
+    private synchronized PackageDatabaseHandler packageHandler() throws MalformedURLException {
+        if (packageHandler == null) {
+            packageHandler = new PackageDatabaseHandler(
+                    DatabaseSettings.getConfiguredClient(),
+                    DatabaseSettings.COUCH_DB_DATABASE,
+                    DatabaseSettings.COUCH_DB_CHANGE_LOGS,
+                    DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        }
+        return packageHandler;
     }
 
     private synchronized AttachmentConnector attachmentConnector() throws MalformedURLException {
