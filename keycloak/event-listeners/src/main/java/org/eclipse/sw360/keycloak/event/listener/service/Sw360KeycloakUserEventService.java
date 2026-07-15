@@ -94,6 +94,10 @@ public class Sw360KeycloakUserEventService {
 		UserProvider userProvider = keycloakSession.users();
 		RealmModel realmModel = keycloakSession.realms().getRealmByName(REALM_SW360);
 		UserModel userModel = getUserFromKeycloakRealm(event, realmModel, userProvider);
+		if (userModel == null) {
+			log.warnf("UserModel not found for login event — likely LDAP federated user: %s", event.getDetails());
+			return;
+		}
 		User user = convertKcUserModelToUser(userModel);
         userService.createOrUpdateUser(user, LISTENER);
 	}
