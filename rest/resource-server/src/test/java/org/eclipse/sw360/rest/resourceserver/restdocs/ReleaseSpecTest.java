@@ -67,7 +67,7 @@ import org.springframework.util.MultiValueMap;
 import java.io.IOException;
 import java.util.*;
 
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -1385,8 +1385,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_link_releases_to_release() throws Exception {
-        assumeTrue("Not running since Releases cannot be interlinked",
-                SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP);
+        assumeTrue(SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP,
+                "Not running since Releases cannot be interlinked");
 
         mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
                 .contentType(MediaTypes.HAL_JSON)
