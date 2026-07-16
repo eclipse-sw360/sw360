@@ -18,7 +18,6 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
@@ -83,8 +82,10 @@ public class Sw360ObligationService {
         return sw360LicenseClient.deleteObligations(obligationId, sw360User);
     }
 
+    private final org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseServiceRestAdapter;
+
     private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        return ThriftClients.makeLicenseClient();
+        return licenseServiceRestAdapter;
     }
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {

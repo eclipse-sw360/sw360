@@ -97,6 +97,9 @@ public class SW360ReportService {
     @NonNull
     private final SW360AttachmentBackendService attachmentBackendService;
 
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseClient;
+
     @org.springframework.beans.factory.annotation.Value("${sw360.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
@@ -105,7 +108,6 @@ public class SW360ReportService {
     private final LicenseInfoExporter licenseInfoExporter = new LicenseInfoExporter();
     ProjectService.Iface projectclient = ThriftClients.makeProjectClient();
     ComponentService.Iface componentclient = ThriftClients.makeComponentClient();
-    LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
         return getProjectBuffer(user, extendedByReleases, projectId, format, null);

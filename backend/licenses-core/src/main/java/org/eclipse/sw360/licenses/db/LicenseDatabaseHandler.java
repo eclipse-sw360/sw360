@@ -182,30 +182,13 @@ public class LicenseDatabaseHandler {
     }
 
     private LicenseExporter getLicenseExporterObject() {
-        Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
-            LicenseService.Iface client = ThriftClients.makeLicenseClient();
-            try {
-                return client.getLicenseTypes();
-            } catch (TException e) {
-                log.error("Error getting license type list.", e);
-                return Collections.emptyList();
-            }
-        };
+        Function<Logger, List<LicenseType>> getLicenseTypes = log -> this.getLicenseTypes();
         return new LicenseExporter(getLicenseTypes);
     }
 
     public ByteBuffer downloadExcel(String token) throws SW360Exception {
         try {
-            Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
-                LicenseService.Iface client = ThriftClients.makeLicenseClient();
-                try {
-                    return client.getLicenseTypes();
-                } catch (TException e) {
-                    log.error("Error getting license type list.", e);
-                    return Collections.emptyList();
-                }
-            };
-            LicenseExporter exporter = new LicenseExporter(getLicenseTypes);
+            LicenseExporter exporter = getLicenseExporterObject();
             InputStream stream = exporter.downloadExcelSheet(token);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
         } catch (IOException e) {

@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -55,6 +54,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 public class Sw360LicenseService {
     private static final String CONTENT_TYPE = "application/zip";
     LicenseType lType = new LicenseType();
+
+    private final LicenseServiceRestAdapter licenseServiceRestAdapter;
 
     public List<License> getLicenses() throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
@@ -220,7 +221,7 @@ public class Sw360LicenseService {
 
     // visible for testing
     LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        return ThriftClients.makeLicenseClient();
+        return licenseServiceRestAdapter;
     }
 
     public RequestSummary importSpdxInformation(User sw360User) throws TException {
@@ -238,8 +239,7 @@ public class Sw360LicenseService {
             throw new BadRequestClientException("Unable to download archive license. User is not admin");
         }
         try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            Map<String, InputStream> fileNameToStreams = (new LicsExporter(sw360LicenseClient)).getFilenameToCSVStreams();
+            Map<String, InputStream> fileNameToStreams = (new LicsExporter(licenseServiceRestAdapter)).getFilenameToCSVStreams();
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
                 for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
@@ -283,8 +283,7 @@ public class Sw360LicenseService {
 
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+            final LicsImporter licsImporter = new LicsImporter(licenseServiceRestAdapter, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
         } catch (Throwable t) {
             primaryThrowable = t;

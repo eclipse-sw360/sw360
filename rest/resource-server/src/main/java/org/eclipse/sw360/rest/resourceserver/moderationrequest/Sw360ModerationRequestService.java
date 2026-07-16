@@ -60,6 +60,7 @@ public class Sw360ModerationRequestService {
     private final SpdxTypeBridge spdxTypeBridge;
     private final Sw360VulnerabilityService vulnerabilityService;
     private final UsersClient usersClient;
+    private final org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseServiceRestAdapter;
 
     public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
         return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
@@ -78,7 +79,7 @@ public class Sw360ModerationRequestService {
     }
 
     private LicenseService.Iface getThriftLicenseClient() {
-        return ThriftClients.makeLicenseClient();
+        return licenseServiceRestAdapter;
     }
 
     /**

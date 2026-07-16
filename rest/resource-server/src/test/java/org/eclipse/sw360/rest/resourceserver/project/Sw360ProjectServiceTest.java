@@ -13,6 +13,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,8 @@ public class Sw360ProjectServiceTest {
     @BeforeEach
     public void setUp() {
         projectService = spy(new Sw360ProjectService(mock(RestControllerHelper.class),
-                mock(SW360AttachmentBackendService.class)));
+                mock(SW360AttachmentBackendService.class),
+                mock(LicenseServiceRestAdapter.class)));
     }
 
     @Test

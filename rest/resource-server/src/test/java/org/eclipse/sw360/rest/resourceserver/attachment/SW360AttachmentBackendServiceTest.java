@@ -12,11 +12,11 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.RETURNS_SELF;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class SW360AttachmentBackendServiceTest {
 
     @Mock
@@ -44,7 +44,7 @@ public class SW360AttachmentBackendServiceTest {
 
     private SW360AttachmentBackendService attachmentBackendService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         attachmentBackendService = new SW360AttachmentBackendService(restClient, attachmentTypeBridge);
     }

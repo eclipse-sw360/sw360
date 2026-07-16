@@ -25,9 +25,10 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -311,7 +312,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         fillSpecialOSSRisksTable(document, project, obligationResults);
         fillDevelopmentDetailsTable(document, project, user, projectLicenseInfoResults);
         fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
-        List<Obligation> obligations = SW360Utils.getObligations();
+        List<Obligation> obligations = licenseDatabaseHandler().getObligations();
         fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
                 ObligationLevel.ORGANISATION_OBLIGATION, COMMON_RULES_TABLE_INDEX, NO_ORGANISATION_OBLIGATIONS);
         fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
@@ -965,9 +966,26 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         return obligations;
     }
 
+    private static volatile LicenseDatabaseHandler licenseDatabaseHandler;
+
+    private static LicenseDatabaseHandler licenseDatabaseHandler() throws SW360Exception {
+        if (licenseDatabaseHandler == null) {
+            synchronized (DocxGenerator.class) {
+                if (licenseDatabaseHandler == null) {
+                    try {
+                        licenseDatabaseHandler = new LicenseDatabaseHandler(
+                                DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+                    } catch (IOException e) {
+                        throw new SW360Exception("Error initializing license database handler: " + e.getMessage());
+                    }
+                }
+            }
+        }
+        return licenseDatabaseHandler;
+    }
+
     private static List<License> getLicenses() throws TException {
-        LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
-        return licenseClient.getLicenses();
+        return licenseDatabaseHandler().getLicenses();
     }
 
     private void fillLicenseList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults,

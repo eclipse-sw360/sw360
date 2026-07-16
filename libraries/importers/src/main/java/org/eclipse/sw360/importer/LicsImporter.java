@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.exporter.LicenseImportExportGateway;
 import org.eclipse.sw360.exporter.utils.ConvertRecord;
 import org.eclipse.sw360.exporter.utils.LicsArchive;
 
@@ -36,9 +37,9 @@ public class LicsImporter {
     private final boolean overwriteIfExternalIdMatches;
     private final boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch;
 
-    private final LicenseService.Iface licenseClient;
+    private final LicenseImportExportGateway licenseClient;
 
-    public LicsImporter(LicenseService.Iface licenseClient, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) {
+    public LicsImporter(LicenseImportExportGateway licenseClient, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) {
         this.licenseClient = licenseClient;
         this.overwriteIfExternalIdMatches = overwriteIfExternalIdMatches;
         this.overwriteIfIdMatchesEvenWithoutExternalIdMatch = overwriteIfIdMatchesEvenWithoutExternalIdMatch;

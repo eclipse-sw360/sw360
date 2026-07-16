@@ -142,6 +142,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     @NonNull
     private final SW360AttachmentBackendService attachmentBackendService;
 
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseServiceRestAdapter;
+
     /**
      * This enum is used to indicate the status of the CLI update process.
      */
@@ -560,7 +563,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, ObligationStatusInfo> getLicenseObligationData(
             Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
-        LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
+        LicenseService.Iface licenseClient = licenseServiceRestAdapter;
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<String, ObligationStatusInfo>();
         licensesFromAttachmentUsage.entrySet().stream().forEach(entry -> wrapTException(() -> {
             License lic = null;
@@ -766,7 +769,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
                                                                             Project project, String oblLevel) throws TException {
-        List<Obligation> obligations = SW360Utils.getObligations();
+        List<Obligation> obligations = licenseServiceRestAdapter.getObligations();
         Map<String, ObligationStatusInfo> updatedObligationStatusMap = Maps.newHashMap();
 
         if ("Project".equalsIgnoreCase(oblLevel)) {
@@ -786,7 +789,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
                                                                             Project project) throws TException {
-        List<Obligation> obligations = SW360Utils.getObligations();
+        List<Obligation> obligations = licenseServiceRestAdapter.getObligations();
         Map<String, ObligationStatusInfo> updatedObligationStatusMap = Maps.newHashMap();
         updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
                 obligationStatusMap, obligations, true);

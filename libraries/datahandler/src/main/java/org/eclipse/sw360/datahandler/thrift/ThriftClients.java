@@ -351,6 +351,13 @@ public class ThriftClients {
         return new FossologyService.Client(makeProtocol(FOSSOLOGY_SERVICE_URL));
     }
 
+    /**
+     * @deprecated The licenses service has been migrated to Spring Boot REST at
+     * {@code /licenses/api/licenses}. Use {@code LicenseServiceRestAdapter} (resource-server) or the
+     * in-process {@code LicenseDatabaseHandler} (backend services) instead. The Thrift servlet is no
+     * longer deployed.
+     */
+    @Deprecated
     public static LicenseService.Iface makeLicenseClient() {
         return new LicenseService.Client(makeProtocol(LICENSE_SERVICE_URL));
     }

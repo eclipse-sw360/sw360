@@ -90,6 +90,8 @@ public class Sw360ImportExportService {
     private final UsersClient usersClient;
     @NonNull
     private final Sw360UserService sw360UserService;
+    @NonNull
+    private final VendorServiceRestAdapter vendorServiceRestAdapter;
 
     public void getDownloadCsvComponentTemplate(User sw360User, HttpServletResponse response) throws IOException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
@@ -286,7 +288,7 @@ public class Sw360ImportExportService {
         List<CSVRecord> releaseRecords = getCSVFromRequest(request, "file");
         FluentIterable<ComponentCSVRecord> compCSVRecords = convertCSVRecordsToCompCSVRecords(releaseRecords);
         ComponentService.Iface sw360ComponentClient = ThriftClients.makeComponentClient();
-        VendorService.Iface sw360VendorClient = ThriftClients.makeVendorClient();
+        VendorService.Iface sw360VendorClient = vendorServiceRestAdapter;
         AttachmentImportOperations sw360AttachmentClient = attachmentImportOperations;
         RequestSummary requestSummary = writeToDatabase(compCSVRecords, sw360ComponentClient, sw360VendorClient,
                 sw360AttachmentClient, sw360User);

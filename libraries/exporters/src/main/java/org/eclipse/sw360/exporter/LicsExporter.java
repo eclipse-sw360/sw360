@@ -31,9 +31,9 @@ import java.util.Map;
 import static org.eclipse.sw360.exporter.utils.ConvertRecord.*;
 
 public class LicsExporter {
-    final LicenseService.Iface licenseClient;
+    final LicenseImportExportGateway licenseClient;
 
-    public LicsExporter(LicenseService.Iface licenseClient) {
+    public LicsExporter(LicenseImportExportGateway licenseClient) {
         this.licenseClient = licenseClient;
     }
 

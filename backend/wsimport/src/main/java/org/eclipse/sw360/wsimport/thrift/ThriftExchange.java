@@ -11,21 +11,24 @@
 package org.eclipse.sw360.wsimport.thrift;
 
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -43,9 +46,27 @@ public class ThriftExchange {
 
     private static final Logger LOGGER = LogManager.getLogger(ThriftExchange.class);
 
+    private static volatile LicenseDatabaseHandler licenseDatabaseHandler;
+
     //public ThriftExchange(ThriftClients thriftClients) {
     //    this.thriftClients = thriftClients;
     //}
+
+    private static LicenseDatabaseHandler licenseDatabaseHandler() throws SW360Exception {
+        if (licenseDatabaseHandler == null) {
+            synchronized (ThriftExchange.class) {
+                if (licenseDatabaseHandler == null) {
+                    try {
+                        licenseDatabaseHandler = new LicenseDatabaseHandler(
+                                DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+                    } catch (IOException e) {
+                        throw new SW360Exception("Error initializing license database handler: " + e.getMessage());
+                    }
+                }
+            }
+        }
+        return licenseDatabaseHandler;
+    }
 
     /**
      * Add the Project to DB. Required fields are: name.
@@ -121,10 +142,9 @@ public class ThriftExchange {
      * @return license-String from DB
      */
     public String addLicense(License license, User user) {
-        LicenseService.Iface  client = ThriftClients.makeLicenseClient();
         List<License> licenses = null;
         try {
-            licenses = client.addLicenses(Collections.singletonList(license), user);
+            licenses = licenseDatabaseHandler().addOrOverwriteLicenses(Collections.singletonList(license), user, false);
         } catch (TException e) {
             LOGGER.error("Could not add License for user with email=[" + user.getEmail() + "]:" + e);
         }
@@ -191,7 +211,7 @@ public class ThriftExchange {
 
     private Optional<List<License>> getFilteredLicenseList(Predicate<License> filter, String selector) {
         try {
-            return Optional.of(ThriftClients.makeLicenseClient()
+            return Optional.of(licenseDatabaseHandler()
                     .getLicenses()
                     .stream()
                     .filter(filter)
