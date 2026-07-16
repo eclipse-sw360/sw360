@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
+import org.eclipse.sw360.exporter.LicenseImportExportGateway;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.thrift.TException;
@@ -94,7 +95,7 @@ public class TypeMappings {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> List<T> getAllFromDB(LicenseService.Iface licenseClient, Class<T> clazz) throws TException {
+    public static <T> List<T> getAllFromDB(LicenseImportExportGateway licenseClient, Class<T> clazz) throws TException {
         if (clazz.equals(LicenseType.class)) {
             return (List<T>) licenseClient.getLicenseTypes();
         }
@@ -110,7 +111,7 @@ public class TypeMappings {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> List<T> addAlltoDB(LicenseService.Iface licenseClient, Class<T> clazz, List<T> candidates, User user) throws TException {
+    public static <T> List<T> addAlltoDB(LicenseImportExportGateway licenseClient, Class<T> clazz, List<T> candidates, User user) throws TException {
         if (candidates != null && !candidates.isEmpty()) {
             if (clazz.equals(LicenseType.class)) {
                 return (List<T>) licenseClient.addLicenseTypes((List<LicenseType>) candidates, user);
@@ -120,7 +121,7 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static <T, U> Map<U, T> getIdentifierToTypeMapAndWriteMissingToDatabase(LicenseService.Iface licenseClient, InputStream in, Class<T> clazz, Class<U> uClass, User user) throws TException {
+    public static <T, U> Map<U, T> getIdentifierToTypeMapAndWriteMissingToDatabase(LicenseImportExportGateway licenseClient, InputStream in, Class<T> clazz, Class<U> uClass, User user) throws TException {
         Map<U, T> typeMap;
         List<CSVRecord> records = ImportCSV.readAsCSVRecords(in);
         final List<T> recordsToAdd = simpleConvert(records, clazz);
@@ -137,7 +138,7 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Map<Integer, Obligation> getTodoMapAndWriteMissingToDatabase(LicenseService.Iface licenseClient, InputStream in, User user) throws TException {
+    public static Map<Integer, Obligation> getTodoMapAndWriteMissingToDatabase(LicenseImportExportGateway licenseClient, InputStream in, User user) throws TException {
         List<CSVRecord> obligRecords = ImportCSV.readAsCSVRecords(in);
         final List<Obligation> obligations = CommonUtils.nullToEmptyList(licenseClient.getObligations());
         Map<Integer, Obligation> obligMap = Maps.newHashMap(Maps.uniqueIndex(obligations, getTodoIdentifier()));
@@ -156,7 +157,7 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Map<Integer, Obligation> updateTodoMapWithCustomPropertiesAndWriteToDatabase(LicenseService.Iface licenseClient, Map<Integer, Obligation> obligMap, Map<Integer, ConvertRecord.PropertyWithValue> customPropertiesMap, Map<Integer, Set<Integer>> obligPropertiesMap, User user) throws TException {
+    public static Map<Integer, Obligation> updateTodoMapWithCustomPropertiesAndWriteToDatabase(LicenseImportExportGateway licenseClient, Map<Integer, Obligation> obligMap, Map<Integer, ConvertRecord.PropertyWithValue> customPropertiesMap, Map<Integer, Set<Integer>> obligPropertiesMap, User user) throws TException {
         for(Integer obligId : obligPropertiesMap.keySet()){
             Obligation oblig = obligMap.get(obligId);
             if(! oblig.isSetCustomPropertyToValue()){
@@ -178,7 +179,7 @@ public class TypeMappings {
         return obligMap;
     }
 
-    public static  Map<Integer, ConvertRecord.PropertyWithValue> getCustomPropertiesWithValuesByIdAndWriteMissingToDatabase(LicenseService.Iface licenseClient, InputStream inputStream, User user) throws TException {
+    public static  Map<Integer, ConvertRecord.PropertyWithValue> getCustomPropertiesWithValuesByIdAndWriteMissingToDatabase(LicenseImportExportGateway licenseClient, InputStream inputStream, User user) throws TException {
         List<CSVRecord> records = ImportCSV.readAsCSVRecords(inputStream);
         Optional<CustomProperties> dbCustomProperties = CommonUtils.wrapThriftOptionalReplacement(licenseClient.getCustomProperties(SW360Constants.TYPE_OBLIGATIONS));
         CustomProperties customProperties;

@@ -569,6 +569,13 @@ public class SW360Utils {
         return getLicenseNamesFromLicenses(licenseList);
     }
 
+    /**
+     * @deprecated The licenses service has been migrated to Spring Boot REST.
+     * Callers in the resource-server should use {@code Sw360LicenseService}/{@code LicenseServiceRestAdapter}
+     * against {@code /licenses/api/licenses}; backend services should use the in-process
+     * {@code LicenseDatabaseHandler}. This Thrift path is no longer served after the migration.
+     */
+    @Deprecated
     public static List<License> getLicenses(Collection<String> ids, String department) throws TException {
         if (ids != null && ids.size() > 0) {
             LicenseService.Iface client = ThriftClients.makeLicenseClient();
@@ -869,6 +876,13 @@ public class SW360Utils {
         return mapOfObligations;
     }
 
+    /**
+     * @deprecated The licenses service has been migrated to Spring Boot REST.
+     * Callers in the resource-server should use {@code Sw360LicenseService}/{@code LicenseServiceRestAdapter}
+     * against {@code /licenses/api/licenses}; backend services should use the in-process
+     * {@code LicenseDatabaseHandler}. This Thrift path is no longer served after the migration.
+     */
+    @Deprecated
     public static List<Obligation> getObligations() {
         final LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
         List<Obligation> obligations = new ArrayList<>();

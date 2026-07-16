@@ -42,7 +42,7 @@ public class Sw360LicenseServiceTest {
         // Constructing with new() leaves @Value fields (e.g. thriftServerUrl) null.
         // Safe here because getThriftLicenseClient() is stubbed before any field read.
         // Tests that exercise paths using thriftServerUrl directly will need ReflectionTestUtils.setField().
-        licenseService = spy(new Sw360LicenseService());
+        licenseService = spy(new Sw360LicenseService(null));
         doReturn(licenseClient).when(licenseService).getThriftLicenseClient();
     }
 

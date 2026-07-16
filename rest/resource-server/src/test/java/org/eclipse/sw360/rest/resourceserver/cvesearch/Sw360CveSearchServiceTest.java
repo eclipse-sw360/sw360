@@ -11,11 +11,11 @@ package org.eclipse.sw360.rest.resourceserver.cvesearch;
 
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.cvesearch.VulnerabilityUpdateStatus;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -31,7 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Sw360CveSearchServiceTest {
 
     @Mock
@@ -39,7 +39,7 @@ public class Sw360CveSearchServiceTest {
 
     private Sw360CveSearchService cveSearchService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         cveSearchService = new Sw360CveSearchService(restClient);
     }

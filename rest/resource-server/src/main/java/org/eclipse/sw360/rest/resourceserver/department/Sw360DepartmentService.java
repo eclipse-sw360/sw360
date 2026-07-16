@@ -33,7 +33,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatusWithBoolean;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.clients.users.UsersClient;
@@ -48,6 +47,7 @@ public class Sw360DepartmentService {
     private static final Logger log = LogManager.getLogger(Sw360DepartmentService.class);
 
     private final UsersClient usersClient;
+    private final ScheduleRestClient scheduleRestClient;
 
     public RequestSummary importDepartmentManually(User sw360User) throws TException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
@@ -60,8 +60,7 @@ public class Sw360DepartmentService {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
             throw new AccessDeniedException("User is not an admin");
         }
-        ScheduleService.Iface scheduleClient = ThriftClients.makeScheduleClient();
-        RequestStatusWithBoolean requestStatus = scheduleClient
+        RequestStatusWithBoolean requestStatus = scheduleRestClient
                 .isServiceScheduled(ThriftClients.IMPORT_DEPARTMENT_SERVICE, user);
         if (RequestStatus.SUCCESS.equals(requestStatus.getRequestStatus())) {
             return requestStatus.isAnswerPositive();
@@ -74,18 +73,16 @@ public class Sw360DepartmentService {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
             throw new AccessDeniedException("User is not an admin");
         }
-        ScheduleService.Iface scheduleClient = ThriftClients.makeScheduleClient();
-        RequestStatusWithBoolean requestStatus = scheduleClient
+        RequestStatusWithBoolean requestStatus = scheduleRestClient
                 .isServiceScheduled(ThriftClients.IMPORT_DEPARTMENT_SERVICE, user);
         if (RequestStatus.SUCCESS.equals(requestStatus.getRequestStatus()) && requestStatus.isAnswerPositive()) {
             throw new SW360Exception("Department import is already scheduled.");
         }
-        return scheduleClient.scheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
+        return scheduleRestClient.scheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
     }
 
     public RequestStatus unScheduleImportDepartment(User user) throws TException {
-        return ThriftClients.makeScheduleClient().unscheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE,
-                user);
+        return scheduleRestClient.unscheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE, user);
     }
 
     public void writePathFolderConfig(String pathFolder, User user) throws TException {
@@ -96,14 +93,14 @@ public class Sw360DepartmentService {
     }
 
     public Map<String, Object> getImportInformation(User user) throws TException {
-        ScheduleService.Iface scheduleClient = ThriftClients.makeScheduleClient();
-
         Map<String, Object> response = new HashMap<>();
         response.put(SW360Constants.IMPORT_DEPARTMENT_IS_SCHEDULED, isDepartmentScheduled(user));
         response.put(SW360Constants.IMPORT_DEPARTMENT_FOLDER_PATH, usersClient.getPathConfigDepartment());
         response.put(SW360Constants.IMPORT_DEPARTMENT_LAST_RUNNING_TIME, usersClient.getLastRunningTime());
-        response.put(SW360Constants.IMPORT_DEPARTMENT_INTERVAL, CommonUtils.formatTime(scheduleClient.getInterval(ThriftClients.IMPORT_DEPARTMENT_SERVICE)));
-        response.put(SW360Constants.IMPORT_DEPARTMENT_NEXT_RUNNING_TIME, scheduleClient.getNextSync(ThriftClients.IMPORT_DEPARTMENT_SERVICE));
+        response.put(SW360Constants.IMPORT_DEPARTMENT_INTERVAL, CommonUtils.formatTime(
+                scheduleRestClient.getInterval(ThriftClients.IMPORT_DEPARTMENT_SERVICE)));
+        response.put(SW360Constants.IMPORT_DEPARTMENT_NEXT_RUNNING_TIME,
+                scheduleRestClient.getNextSync(ThriftClients.IMPORT_DEPARTMENT_SERVICE));
         return response;
     }
 
