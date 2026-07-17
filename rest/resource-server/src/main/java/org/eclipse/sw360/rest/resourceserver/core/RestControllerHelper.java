@@ -21,6 +21,7 @@ import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -1776,6 +1777,13 @@ public class RestControllerHelper<T> {
     public static void throwIfNotAdmin(User sw360User) throws AccessDeniedException {
         if (!PermissionUtils.isAdmin(sw360User)) {
             throw new AccessDeniedException("User is not allowed to access this resource.");
+        }
+    }
+
+    public static void throwIfLicenseDBEnabled() {
+        if (SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, false)) {
+            throw new AccessDeniedException(
+                    "License data is managed by LicenseDB. Use POST /api/licenses/import/LicenseDB to sync.");
         }
     }
 

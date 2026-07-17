@@ -10,6 +10,8 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -20,9 +22,11 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -478,5 +482,20 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(expectedMessage));
+    }
+
+    @Test
+    public void should_return_403_when_licensedb_enabled_on_write() throws Exception {
+        try (MockedStatic<SW360Utils> mockedUtils = Mockito.mockStatic(SW360Utils.class)) {
+            mockedUtils.when(() -> SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, false))
+                    .thenReturn(true);
+
+            mockMvc.perform(post("/api/licenses")
+                    .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(this.objectMapper.writeValueAsString(license))
+                    .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isForbidden());
+        }
     }
 }
