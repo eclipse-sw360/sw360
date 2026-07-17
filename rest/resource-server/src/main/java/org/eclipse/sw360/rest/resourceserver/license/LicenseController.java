@@ -82,6 +82,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper.throwIfLicenseDBEnabled;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -227,13 +228,15 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "License deleted successfully.")
+            @ApiResponse(responseCode = "200", description = "License deleted successfully."),
+            @ApiResponse(responseCode = "403", description = "License data is managed by LicenseDB. License writes are not allowed.")
     })
     @DeleteMapping(value = LICENSES_URL + "/{id:.+}")
     public ResponseEntity deleteLicense(
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id
     ) throws TException {
+        throwIfLicenseDBEnabled();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.deleteLicenseById(id, sw360User);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -248,13 +251,15 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "License created successfully."),
             @ApiResponse(responseCode = "409", description = "License with same shortname already exists.",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "License data is managed by LicenseDB. License writes are not allowed.")
     })
     @PostMapping(value = LICENSES_URL)
     public ResponseEntity<EntityModel<License>> createLicense(
             @Parameter(description = "The license to be created.")
             @RequestBody License license
     ) throws TException {
+        throwIfLicenseDBEnabled();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<License> sw360Licenses = licenseService.getLicenses();
         if(restControllerHelper.checkDuplicateLicense(sw360Licenses, license.shortname)) {
@@ -290,7 +295,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             @ApiResponse(responseCode = "405",
                     description = "Reject license update due to: an already checked license is not allowed" +
                             " to become unchecked again"),
-            @ApiResponse(responseCode = "400", description = "License update failed (permission denied or business rule violation).")
+            @ApiResponse(responseCode = "400", description = "License update failed (permission denied or business rule violation)."),
+            @ApiResponse(responseCode = "403", description = "License data is managed by LicenseDB. License writes are not allowed.")
     })
     @PatchMapping(value = LICENSES_URL + "/{id}")
     public ResponseEntity<EntityModel<License>> updateLicense(
@@ -299,6 +305,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Updated license body.", schema = @Schema(implementation = License.class))
             @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
+        throwIfLicenseDBEnabled();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         License licenseUpdate = licenseService.getLicenseById(id);
         License licenseRequestBody = restControllerHelper.convertLicenseFromRequest(reqBodyMap, licenseUpdate);
@@ -486,10 +493,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "All licenses deleted successfully.")
+            @ApiResponse(responseCode = "200", description = "All licenses deleted successfully."),
+            @ApiResponse(responseCode = "403", description = "License data is managed by LicenseDB. License writes are not allowed.")
     })
     @DeleteMapping(value = LICENSES_URL + "/deleteAll")
     public ResponseEntity deleteAllLicense() throws TException {
+        throwIfLicenseDBEnabled();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.deleteAllLicenseInfo(sw360User);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -502,10 +511,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "SPDX license imported successfully.")
+            @ApiResponse(responseCode = "200", description = "SPDX license imported successfully."),
+            @ApiResponse(responseCode = "403", description = "License data is managed by LicenseDB. License writes are not allowed.")
     })
     @PostMapping(value = LICENSES_URL + "/import/SPDX")
     public ResponseEntity<RequestSummary> importSPDX() throws TException {
+        throwIfLicenseDBEnabled();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importSpdxInformation(sw360User);
         requestSummary.setMessage("SPDX license has imported successfully");
@@ -542,7 +553,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "License archive uploaded successfully.")
+            @ApiResponse(responseCode = "200", description = "License archive uploaded successfully."),
+            @ApiResponse(responseCode = "403", description = "License data is managed by LicenseDB. License writes are not allowed.")
     })
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = LICENSES_URL + "/upload", consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
@@ -554,6 +566,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Overwrite if id matches even without external id match.")
             @RequestParam(value = "overwriteIfIdMatchesEvenWithoutExternalIdMatch", required = false) boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch
     ) throws SW360Exception {
+        throwIfLicenseDBEnabled();
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             licenseService.uploadLicense(sw360User, file, overwriteIfExternalIdMatches,
@@ -577,10 +590,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "OSADL information imported successfully.")
+            @ApiResponse(responseCode = "200", description = "OSADL information imported successfully."),
+            @ApiResponse(responseCode = "403", description = "License data is managed by LicenseDB. License writes are not allowed.")
     })
     @PostMapping(value = LICENSES_URL + "/import/OSADL")
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
+        throwIfLicenseDBEnabled();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = licenseService.importOsadlInformation(sw360User);
         HttpStatus status = requestSummary.getRequestStatus() == RequestStatus.SUCCESS ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
