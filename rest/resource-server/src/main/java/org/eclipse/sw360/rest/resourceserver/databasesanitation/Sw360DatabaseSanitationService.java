@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -37,6 +37,9 @@ import org.apache.logging.log4j.Logger;
 @RequiredArgsConstructor
 public class Sw360DatabaseSanitationService {
     private static final Logger log = LogManager.getLogger(Sw360DatabaseSanitationService.class);
+
+    private final org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
+    private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
     public Map<String, Map<String, List<String>>> duplicateIdentifiers(User sw360User) throws TException, SW360Exception {
         try {
@@ -77,11 +80,11 @@ public class Sw360DatabaseSanitationService {
     }
 
     public ComponentService.Iface getThriftComponentClient() {
-        return ThriftClients.makeComponentClient();
+        return componentServiceRestAdapter;
     }
 
     public ProjectService.Iface getThriftProjectClient() {
-        return ThriftClients.makeProjectClient();
+        return projectServiceRestAdapter;
     }
 
 }

@@ -85,6 +85,8 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.projects.ProjectHandler;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import java.nio.ByteBuffer;
 
@@ -2452,8 +2454,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
     private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
-    	return new ProjectExporter(ThriftClients.makeComponentClient(),
-                ThriftClients.makeProjectClient(), user, documents, extendedByReleases);
+        try {
+            return new ProjectExporter(new ComponentHandler(),
+                    new ProjectHandler(), user, documents, extendedByReleases);
+        } catch (IOException e) {
+            throw new SW360Exception("Error creating handlers: " + e.getMessage());
+        }
     }
 
     public String getReportInEmail(User user,
@@ -2483,15 +2489,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
      public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
-        ProjectExporter exporter = new ProjectExporter(ThriftClients.makeComponentClient(),
-				ThriftClients.makeProjectClient(), user, extendedByReleases);
-		try {
-			InputStream stream = exporter.downloadExcelSheet(token);
-			return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-		} catch (IOException e) {
-			throw new SW360Exception(e.getMessage());
-		}
-	}
+        try {
+            ProjectExporter exporter = new ProjectExporter(new ComponentHandler(),
+                    new ProjectHandler(), user, extendedByReleases);
+            InputStream stream = exporter.downloadExcelSheet(token);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
 
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) throws TException{
         Project project = repository.get(projectId);

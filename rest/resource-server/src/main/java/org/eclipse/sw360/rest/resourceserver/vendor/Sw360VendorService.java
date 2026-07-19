@@ -12,7 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.vendor;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
@@ -22,7 +22,7 @@ import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.services.vendors.VendorSortColumn;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -50,6 +50,9 @@ public class Sw360VendorService {
     private static final String VENDORS_URI = "/vendors/api/vendors";
 
     private final RestClient restClient;
+
+    @lombok.NonNull
+    private final org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
 
     private void addUserHeaders(RestClient.RequestHeadersSpec<?> spec, User user) {
         spec.header("X-User-Email", user.getEmail())
@@ -212,8 +215,8 @@ public class Sw360VendorService {
         }
     }
 
-    public ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        return ThriftClients.makeComponentClient();
+    public ComponentService.Iface getThriftComponentClient() {
+        return componentServiceRestAdapter;
     }
 
     public ByteBuffer exportExcel() throws TException {

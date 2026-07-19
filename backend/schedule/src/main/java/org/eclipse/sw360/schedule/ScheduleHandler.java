@@ -22,6 +22,8 @@ import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.clients.users.UsersClients;
+import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.projects.ProjectHandler;
 import org.eclipse.sw360.schedule.client.AttachmentsRestClient;
 import org.eclipse.sw360.schedule.client.CveSearchRestClient;
 import org.eclipse.sw360.schedule.client.VMComponentsRestClient;
@@ -114,15 +116,15 @@ public class ScheduleHandler {
             case ServiceNames.SVMMATCH_SERVICE ->
                     wrapForScheduler(vmComponentsRestClient::triggerReverseMatch, serviceName);
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeProjectClient().exportForMonitoringList(), serviceName);
+                    wrapForScheduler(() -> new ProjectHandler().exportForMonitoringList(), serviceName);
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
+                    wrapForScheduler(() -> new ComponentHandler().updateReleasesWithSvmTrackingFeedback(), serviceName);
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
                     wrapForScheduler(attachmentsRestClient::deleteOldAttachmentFromFileSystem, serviceName);
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
                     wrapForScheduler(UsersClients.defaultClient()::importDepartmentSchedule, serviceName);
             case ServiceNames.SRC_UPLOAD_SERVICE ->
-                    wrapForScheduler(() -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases(), serviceName);
+                    wrapForScheduler(() -> new ComponentHandler().uploadSourceCodeAttachmentToReleases(), serviceName);
             default -> {
                 log.error("Could not schedule service: {}. Reason: service is not registered.", serviceName);
                 yield false;
@@ -159,13 +161,13 @@ public class ScheduleHandler {
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
                     attachmentsRestClient.deleteOldAttachmentFromFileSystem();
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeProjectClient().exportForMonitoringList());
+                    callDownstreamService(() -> new ProjectHandler().exportForMonitoringList());
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback());
+                    callDownstreamService(() -> new ComponentHandler().updateReleasesWithSvmTrackingFeedback());
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
                     UsersClients.defaultClient().importDepartmentSchedule();
             case ServiceNames.SRC_UPLOAD_SERVICE ->
-                    callDownstreamService(() -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases());
+                    callDownstreamService(() -> new ComponentHandler().uploadSourceCodeAttachmentToReleases());
             default -> {
                 log.error("Could not trigger service: {}. Reason: service is not registered.", serviceName);
                 yield RequestStatus.FAILURE;

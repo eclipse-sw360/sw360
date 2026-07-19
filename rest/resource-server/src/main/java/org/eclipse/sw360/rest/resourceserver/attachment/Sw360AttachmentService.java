@@ -31,7 +31,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -78,6 +78,9 @@ public class Sw360AttachmentService {
 
     @NonNull
     private final Sw360SpdxServices spdxServices;
+
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
@@ -505,8 +508,8 @@ public class Sw360AttachmentService {
                         .collect(Collectors.toList()));
     }
 
-    private ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        return ThriftClients.makeProjectClient();
+    private ProjectService.Iface getThriftProjectClient() {
+        return projectServiceRestAdapter;
     }
 
     private Stream<String> distinctProjectIdsFromAttachmentUsages (List<AttachmentUsage> usages){

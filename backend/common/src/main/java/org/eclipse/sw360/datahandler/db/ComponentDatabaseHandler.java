@@ -56,6 +56,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.vulnerabilities.db.VulnerabilityDatabaseHandler;
+import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -1973,13 +1974,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateReleaseReferencesInProjects(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
-        ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
+        ProjectDatabaseHandler projectDbHandler = getProjectDatabaseHandlerForVuln();
 
         final String userEmail = sessionUser.getEmail();
         Set<Project> projects = projectRepository.searchByReleaseId(mergeSourceId);
         for(Project project : projects) {
             // retrieve full document, other method only retrieves summary
-            project = projectClient.getProjectByIdIgnoringVisibility(project.getId());
+            project = projectDbHandler.getProjectByIdIgnoringVisibility(project.getId());
             Project projectBefore=project.deepCopy();
             ProjectReleaseRelationship relationship = project.getReleaseIdToUsage().remove(mergeSourceId);
             // if the target release is also linked, keep this one, do not overwrite
@@ -1987,7 +1988,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 project.putToReleaseIdToUsage(mergeTargetId, relationship);
             }
             updateModifiedFields(project, userEmail);
-            projectClient.updateProjectWithForceFlag(project, sessionUser, true);
+            projectDbHandler.updateProject(project, sessionUser, true);
 
             dbHandlerUtil.addChangeLogs(project, projectBefore, userEmail, Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
@@ -3321,12 +3322,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private ComponentExporter getComponentExporterObject(List<Component> componentList ,User user,
                                                          boolean extendedByRelease) throws SW360Exception {
-        return new ComponentExporter(ThriftClients.makeComponentClient(), componentList, user,extendedByRelease);
+        try {
+            return new ComponentExporter(new ComponentHandler(), componentList, user, extendedByRelease);
+        } catch (IOException e) {
+            throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
+        }
     }
 
     public ByteBuffer downloadExcel(User user,boolean extendedByReleases,String token) throws SW360Exception {
         try {
-            ComponentExporter exporter = new ComponentExporter(ThriftClients.makeComponentClient(), user,
+            ComponentExporter exporter = new ComponentExporter(new ComponentHandler(), user,
                     extendedByReleases);
             InputStream stream = exporter.downloadExcelSheet(token);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));

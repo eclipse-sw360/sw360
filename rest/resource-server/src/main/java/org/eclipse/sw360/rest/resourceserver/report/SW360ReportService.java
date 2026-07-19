@@ -100,14 +100,26 @@ public class SW360ReportService {
     @NonNull
     private final org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseClient;
 
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
+
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
+
     @org.springframework.beans.factory.annotation.Value("${sw360.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
     private static final Set<String> SUPPORTED_FORMATS = Set.of("xlsx", "csv", "json", "xml");
     private final LicenseInfoExporter licenseInfoExporter = new LicenseInfoExporter();
-    ProjectService.Iface projectclient = ThriftClients.makeProjectClient();
-    ComponentService.Iface componentclient = ThriftClients.makeComponentClient();
+    ProjectService.Iface projectclient;
+    ComponentService.Iface componentclient;
+
+    @jakarta.annotation.PostConstruct
+    private void initClients() {
+        projectclient = projectServiceRestAdapter;
+        componentclient = componentServiceRestAdapter;
+    }
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
         return getProjectBuffer(user, extendedByReleases, projectId, format, null);

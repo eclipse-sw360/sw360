@@ -49,7 +49,7 @@ public class FossologyHandlerTest {
     private User user;
 
     @Before
-    public void setUp() {
+    public void setUp() throws TException {
         fossologyRestClient = mock(FossologyRestClient.class);
         attachmentConnector = mock(AttachmentConnector.class);
         attachmentsRestClient = mock(Sw360AttachmentsRestClient.class);

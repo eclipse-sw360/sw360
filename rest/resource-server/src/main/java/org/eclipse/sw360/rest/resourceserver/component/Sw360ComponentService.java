@@ -16,7 +16,6 @@ import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -68,6 +67,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
+
+    @NonNull
+    private final ComponentServiceRestAdapter componentServiceRestAdapter;
 
     public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User sw360User,
                                                                                          Pageable pageable) throws TException {
@@ -316,8 +318,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 CheckStatus.ACCEPTED.equals(attachment.getCheckStatus()));
     }
 
-    private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        return ThriftClients.makeComponentClient();
+    private ComponentService.Iface getThriftComponentClient() {
+        return componentServiceRestAdapter;
     }
 
     public List<Component> getMyComponentsForUser(User sw360User) throws TException {
@@ -450,7 +452,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
      * @param componentDTO Object to get release IDs from
      * @return List of Release
      */
-    public List<Release> getReleasesFromDto(@NotNull ComponentDTO componentDTO, User user) throws TTransportException {
+    public List<Release> getReleasesFromDto(@NotNull ComponentDTO componentDTO, User user) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
 
         List<Release> releases = new ArrayList<>();

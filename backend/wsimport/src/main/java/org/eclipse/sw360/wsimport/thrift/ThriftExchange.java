@@ -11,7 +11,10 @@
 package org.eclipse.sw360.wsimport.thrift;
 
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.projects.ProjectHandler;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,10 +50,8 @@ public class ThriftExchange {
     private static final Logger LOGGER = LogManager.getLogger(ThriftExchange.class);
 
     private static volatile LicenseDatabaseHandler licenseDatabaseHandler;
-
-    //public ThriftExchange(ThriftClients thriftClients) {
-    //    this.thriftClients = thriftClients;
-    //}
+    private static volatile ComponentHandler componentHandler;
+    private static volatile ProjectHandler projectHandler;
 
     private static LicenseDatabaseHandler licenseDatabaseHandler() throws SW360Exception {
         if (licenseDatabaseHandler == null) {
@@ -68,6 +69,36 @@ public class ThriftExchange {
         return licenseDatabaseHandler;
     }
 
+    private static ComponentHandler componentHandler() throws SW360Exception {
+        if (componentHandler == null) {
+            synchronized (ThriftExchange.class) {
+                if (componentHandler == null) {
+                    try {
+                        componentHandler = new ComponentHandler();
+                    } catch (IOException e) {
+                        throw new SW360Exception("Error initializing ComponentHandler: " + e.getMessage());
+                    }
+                }
+            }
+        }
+        return componentHandler;
+    }
+
+    private static ProjectHandler projectHandler() throws SW360Exception {
+        if (projectHandler == null) {
+            synchronized (ThriftExchange.class) {
+                if (projectHandler == null) {
+                    try {
+                        projectHandler = new ProjectHandler();
+                    } catch (IOException e) {
+                        throw new SW360Exception("Error initializing ProjectHandler: " + e.getMessage());
+                    }
+                }
+            }
+        }
+        return projectHandler;
+    }
+
     /**
      * Add the Project to DB. Required fields are: name.
      *
@@ -78,7 +109,7 @@ public class ThriftExchange {
     public String addProject(Project project, User user) {
         String projectId = null;
         try {
-            AddDocumentRequestSummary summary = ThriftClients.makeProjectClient().addProject(project, user);
+            AddDocumentRequestSummary summary = projectHandler().addProject(project, user);
             if (SUCCESS.equals(summary.getRequestStatus())) {
                 projectId = summary.getId();
             } else {
@@ -100,7 +131,7 @@ public class ThriftExchange {
     public String addComponent(Component component, User user) {
         String componentId = null;
         try {
-            AddDocumentRequestSummary summary = ThriftClients.makeComponentClient().addComponent(component, user);
+            AddDocumentRequestSummary summary = componentHandler().addComponent(component, user);
             if (SUCCESS.equals(summary.getRequestStatus())) {
                 componentId = summary.getId();
             } else {
@@ -122,7 +153,7 @@ public class ThriftExchange {
     public String addRelease(Release release, User user) {
         String releaseId = null;
         try {
-            AddDocumentRequestSummary summary = ThriftClients.makeComponentClient().addRelease(release, user);
+            AddDocumentRequestSummary summary = componentHandler().addRelease(release, user);
             if (SUCCESS.equals(summary.getRequestStatus())) {
                 releaseId = summary.getId();
             } else {
@@ -158,7 +189,7 @@ public class ThriftExchange {
     public Optional<List<Release>> searchReleaseByNameAndVersion(String name, String version) {
         List<Release> releases = null;
         try {
-            releases = ThriftClients.makeComponentClient().searchReleaseByNamePrefix(name);
+            releases = componentHandler().searchReleaseByNamePrefix(name);
         } catch (TException e) {
             LOGGER.error("Could not fetch Release list for name=[" + name + "], version=[" + version + "]:" + e);
         }
@@ -174,7 +205,7 @@ public class ThriftExchange {
 
     public Optional<List<Component>> searchComponentByName(String name) {
         try {
-            return Optional.of(ThriftClients.makeComponentClient().searchComponentForExport(name, true));
+            return Optional.of(componentHandler().searchComponentForExport(name, true));
         } catch (TException e) {
             LOGGER.error("Could not fetch Component list for name=[" + name + "]:" + e);
             return Optional.empty();
@@ -225,7 +256,7 @@ public class ThriftExchange {
     private List<Project> getAccessibleProjectsSummary(User user) {
         List<Project> accessibleProjectsSummary = null;
         try {
-            accessibleProjectsSummary = ThriftClients.makeProjectClient().getAccessibleProjectsSummary(user);
+            accessibleProjectsSummary = projectHandler().getAccessibleProjectsSummary(user);
         } catch (TException e) {
             LOGGER.error("Could not fetch Project list for user with email=[" + user.getEmail() + "]:" + e);
         }

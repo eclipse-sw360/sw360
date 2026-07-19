@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -35,6 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.exporter.VendorExporter;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
@@ -213,7 +215,12 @@ public class VendorDatabaseHandler {
     }
 
     private RequestSummary updateComponents(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
-        ComponentService.Iface componentsClient = ThriftClients.makeComponentClient();
+        ComponentService.Iface componentsClient;
+        try {
+            componentsClient = new ComponentHandler();
+        } catch (IOException e) {
+            throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
+        }
 
         Set<Component> components = componentsClient.getComponentsByDefaultVendorId(mergeSource.getId());
         components.stream().forEach(component -> {
@@ -224,7 +231,12 @@ public class VendorDatabaseHandler {
     }
 
     private RequestSummary updateReleases(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
-        ComponentService.Iface componentsClient = ThriftClients.makeComponentClient();
+        ComponentService.Iface componentsClient;
+        try {
+            componentsClient = new ComponentHandler();
+        } catch (IOException e) {
+            throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
+        }
 
         Set<String> componentIds = new HashSet<>();
         Set<Release> releases = componentsClient.getReleasesByVendorId(mergeSource.getId());
