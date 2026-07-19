@@ -40,11 +40,13 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
+import org.eclipse.sw360.components.ComponentHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
@@ -974,7 +976,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     }
 
     private List<LicenseInfoParsingResult> assignComponentToLicenseInfoParsingResults(List<LicenseInfoParsingResult> parsingResults, Release release, User user) throws TException {
-        final ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
+        final ComponentService.Iface componentClient;
+        try {
+            componentClient = new ComponentHandler();
+        } catch (IOException e) {
+            throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
+        }
         final Component component = componentClient.getComponentById(release.getComponentId(), user);
 
         parsingResults.forEach(result -> {

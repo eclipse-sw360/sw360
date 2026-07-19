@@ -61,6 +61,8 @@ public class Sw360ModerationRequestService {
     private final Sw360VulnerabilityService vulnerabilityService;
     private final UsersClient usersClient;
     private final org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseServiceRestAdapter;
+    private final org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
+    private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
     public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
         return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
@@ -71,11 +73,11 @@ public class Sw360ModerationRequestService {
     }
 
     private ComponentService.Iface getThriftComponentClient() {
-        return ThriftClients.makeComponentClient();
+        return componentServiceRestAdapter;
     }
 
     public ProjectService.Iface getThriftProjectClient() {
-        return ThriftClients.makeProjectClient();
+        return projectServiceRestAdapter;
     }
 
     private LicenseService.Iface getThriftLicenseClient() {

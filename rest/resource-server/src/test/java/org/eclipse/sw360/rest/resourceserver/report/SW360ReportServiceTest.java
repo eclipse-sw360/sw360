@@ -71,6 +71,12 @@ public class SW360ReportServiceTest {
     @Mock
     private org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseClient;
 
+    @Mock
+    private org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
+
+    @Mock
+    private org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
+
     @InjectMocks
     private SW360ReportService sw360ReportService;
 

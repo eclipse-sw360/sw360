@@ -56,6 +56,9 @@ public class Sw360AttachmentServiceTest {
     @Mock
     private Sw360SpdxServices spdxServices;
 
+    @Mock
+    private org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
+
     @InjectMocks
     private Sw360AttachmentService attachmentService;
 

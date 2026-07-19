@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
@@ -35,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -132,8 +134,12 @@ public class FossologyHandler {
         }
     }
 
-    ComponentService.Iface getComponentClient() {
-        return ThriftClients.makeComponentClient();
+    ComponentService.Iface getComponentClient() throws TException {
+        try {
+            return new ComponentHandler();
+        } catch (IOException e) {
+            throw new TException("Error creating ComponentHandler: " + e.getMessage(), e);
+        }
     }
 
     public ExternalToolProcess process(String releaseId, User user, String uploadDescription) throws TException {

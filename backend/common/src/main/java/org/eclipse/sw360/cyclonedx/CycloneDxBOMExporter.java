@@ -40,6 +40,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.projects.ProjectHandler;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -91,7 +92,7 @@ public class CycloneDxBOMExporter {
             }
 
             if (includeSubProjReleases && project.getLinkedProjectsSize() > 0) {
-                ProjectService.Iface client = ThriftClients.makeProjectClient();
+                ProjectService.Iface client = new ProjectHandler();
                 Map<String, Set<String>> idsMap = SW360Utils.getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, Sets.newHashSet(), Sets.newHashSet(), Sets.newHashSet(), client, user);
                 linkedReleaseIds.addAll(idsMap.get(SW360Constants.RELEASE_IDS));
                 linkedPackageIds.addAll(idsMap.get(SW360Constants.PACKAGE_IDS));

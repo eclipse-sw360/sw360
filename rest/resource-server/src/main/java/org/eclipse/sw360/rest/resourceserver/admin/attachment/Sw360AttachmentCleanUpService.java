@@ -14,7 +14,7 @@ import java.util.Set;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
@@ -36,8 +36,11 @@ public class Sw360AttachmentCleanUpService {
     @NonNull
     private final SW360AttachmentBackendService attachmentBackendService;
 
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
+
     private ComponentService.Iface getThriftComponentClient() {
-        return ThriftClients.makeComponentClient();
+        return componentServiceRestAdapter;
     }
 
     public RequestSummary cleanUpAttachments(User sw360User) throws TException {

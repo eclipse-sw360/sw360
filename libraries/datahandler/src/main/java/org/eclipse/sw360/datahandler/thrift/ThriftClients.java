@@ -339,6 +339,12 @@ public class ThriftClients {
         return new AttachmentService.Client(makeProtocol(ATTACHMENT_SERVICE_URL));
     }
 
+    /**
+     * @deprecated The components service has been migrated to Spring Boot REST at
+     * {@code /components/api/components}. Use {@code ComponentServiceRestAdapter} (resource-server) or the
+     * in-process {@code ComponentDatabaseHandler} (backend services) instead.
+     */
+    @Deprecated
     public static ComponentService.Iface makeComponentClient() {
         return new ComponentService.Client(makeProtocol(COMPONENT_SERVICE_URL));
     }
@@ -366,6 +372,12 @@ public class ThriftClients {
         return new ModerationService.Client(makeProtocol(MODERATION_SERVICE_URL));
     }
 
+    /**
+     * @deprecated The projects service has been migrated to Spring Boot REST at
+     * {@code /projects/api/projects}. Use {@code ProjectServiceRestAdapter} (resource-server) or the
+     * in-process {@code ProjectDatabaseHandler} (backend services) instead.
+     */
+    @Deprecated
     public static ProjectService.Iface makeProjectClient() {
         return new ProjectService.Client(makeProtocol(PROJECT_SERVICE_URL));
     }

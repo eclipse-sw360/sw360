@@ -130,6 +130,12 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
 
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
+
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
+
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String RESPONSE_STATUS_VALUE_FAILED = "Failed";
     private static final String RELEASE_ATTACHMENT_ERRORMSG = "There has to be exactly one source attachment, but there are %s at this release. Please come back once you corrected that.";
@@ -1314,9 +1320,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return new Object[] { RequestStatus.PROCESSING, eta };
     }
 
-    private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
-        return componentClient;
+    private ComponentService.Iface getThriftComponentClient() {
+        return componentServiceRestAdapter;
     }
 
     /**
@@ -1623,14 +1628,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<String, Integer> getUsageInformationForReleaseMerge(String releaseSourceId, User sessionUser) throws TException {
         Map<String, Integer> usageInformation = new HashMap<>();
-        ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
+        ProjectService.Iface projectClient = projectServiceRestAdapter;
         Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projects", projects.size());
 
         List<AttachmentUsage> attachmentUsages = attachmentBackendService.getAttachmentUsagesByReleaseId(releaseSourceId);
         usageInformation.put("attachmentUsages", attachmentUsages.size());
 
-        ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
+        ComponentService.Iface componentClient = componentServiceRestAdapter;
         List<Release> releases = componentClient.getReferencingReleases(releaseSourceId);
         usageInformation.put("releases", releases.size());
 

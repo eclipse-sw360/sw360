@@ -411,6 +411,7 @@ public class SW360Utils {
         }
     }
 
+    @Deprecated
     public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
@@ -424,6 +425,7 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    @Deprecated
     public static Collection<ProjectLink> getLinkedProjects(String id, boolean deep, Logger log, User user) {
         if (id != null) {
             try {
@@ -506,6 +508,7 @@ public class SW360Utils {
         }
     }
 
+    @Deprecated
     public static List<ReleaseLink> getLinkedReleases(Project project, Logger log) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
@@ -518,6 +521,7 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    @Deprecated
     public static List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, Logger log, User user) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
@@ -530,6 +534,7 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    @Deprecated
     public static List<ReleaseLink> getLinkedReleaseRelations(Release release, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
@@ -542,6 +547,7 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    @Deprecated
     public static List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, Logger log, User user) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
@@ -1000,6 +1006,7 @@ public class SW360Utils {
         return projectReleaseRelationship;
     }
 
+    @Deprecated
     public static List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, User user) {
         ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
         Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(releaseIds);
@@ -1029,6 +1036,7 @@ public class SW360Utils {
         return filterMap;
     }
 
+    @Deprecated
     public static Collection<ProjectLink> getLinkedProjectWithoutReleases(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
@@ -1110,6 +1118,7 @@ public class SW360Utils {
         return flattenProjectLinkTree(getLinkedProjectsWithAllReleases(project, deep, log, user));
     }
 
+    @Deprecated
     public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
