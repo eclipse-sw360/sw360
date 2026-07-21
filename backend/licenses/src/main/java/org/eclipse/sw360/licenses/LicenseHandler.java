@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.db.ObligationElementSearchHandler;
 import org.apache.thrift.TException;
 import java.nio.ByteBuffer;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -348,6 +349,30 @@ public class LicenseHandler implements LicenseService.Iface {
             return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
         return handler.importAllLicenseDBLicenses(user);
+    }
+
+    @Override
+    public RequestSummary importIncrementalLicenseDBLicenses(User user) throws TException {
+        if (user != null && !PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
+            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
+        }
+        return handler.importIncrementalLicenseDBLicenses(user);
+    }
+
+    @Override
+    public Map<String, String> getLicenseDBSyncStatus(User user) throws TException {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
+            return new HashMap<>();
+        }
+        return handler.getLicenseDBSyncStatus(user);
+    }
+
+    @Override
+    public boolean pingLicenseDBHealth(User user) throws TException {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
+            return false;
+        }
+        return handler.pingLicenseDBHealth(user);
     }
 
     @Override
