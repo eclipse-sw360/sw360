@@ -1976,6 +1976,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (updateProject.getAttachments() != null && !updateProject.getAttachments().isEmpty()) {
             attachmentService.preserveImmutableAttachmentFields(
                     updateProject.getAttachments(), sw360Project.getAttachments(), user);
+            attachmentService.setCheckedAttachmentDataFromRequest(
+                    updateProject.getAttachments(), sw360Project.getAttachments(), user);
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
@@ -2885,6 +2887,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project updateProject = convertToProject(reqBodyMap);
         updateProject.unsetReleaseIdToUsage();
         sw360Project.unsetReleaseIdToUsage();
+
+        if (!CommonUtils.isNullOrEmptyCollection(updateProject.getAttachments())) {
+            attachmentService.preserveImmutableAttachmentFields(
+                    updateProject.getAttachments(), sw360Project.getAttachments(), user);
+            attachmentService.setCheckedAttachmentDataFromRequest(
+                    updateProject.getAttachments(), sw360Project.getAttachments(), user);
+        }
 
         try {
             addOrPatchDependencyNetworkToProject(updateProject, reqBodyMap, ProjectOperation.UPDATE);
