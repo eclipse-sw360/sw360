@@ -534,6 +534,9 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             } else if (input.startsWith("(") && input.contains("\"")) {
                 // Wildcard query with parentheses - prepend field name
                 return fieldName + ":" + input;
+            } else if (fieldName.equals("version")) {
+                // Keep wildcard behavior for version prefix searches (e.g. 2.5 -> 2.5.x).
+                return fieldName + ":" + prepareWildcardQuery(input);
             } else if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible")
                     || fieldName.equals("createdBy") || fieldName.equals("email")
                     || fieldName.equals("moderators") || fieldName.equals("requestingUser")) {
