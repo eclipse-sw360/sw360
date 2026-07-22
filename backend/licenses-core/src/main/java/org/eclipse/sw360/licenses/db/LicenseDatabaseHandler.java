@@ -1164,13 +1164,16 @@ public class LicenseDatabaseHandler {
 
         IMPORT_STATUS = true;
         IMPORT_TIME = currentTime;
+        String startTime = Instant.now().toString();
 
         try {
             String enabled = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_ENABLED);
             if (!"true".equals(enabled)) {
                 log.info("LicenseDB integration is disabled. Skipping sync.");
-                return requestSummary.setRequestStatus(RequestStatus.FAILURE)
+                requestSummary.setRequestStatus(RequestStatus.FAILURE)
                         .setMessage("LicenseDB integration is disabled.");
+                createSyncReport("FULL", startTime, requestSummary);
+                return requestSummary;
             }
             String baseUrl = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_BASE_URL);
             String username = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_USERNAME);
@@ -1178,32 +1181,30 @@ public class LicenseDatabaseHandler {
 
             if (isNullOrEmpty(baseUrl) || isNullOrEmpty(username) || isNullOrEmpty(password)) {
                 log.error("LicenseDB configuration is incomplete (missing baseUrl, username, or password).");
-                return requestSummary.setRequestStatus(RequestStatus.FAILURE)
+                requestSummary.setRequestStatus(RequestStatus.FAILURE)
                         .setMessage("LicenseDB configuration is incomplete.");
+                createSyncReport("FULL", startTime, requestSummary);
+                return requestSummary;
             }
 
             LicenseDBConnector connector = createLicenseDBConnector(baseUrl, username, password);
 
             // Fetch obligations first because license records reference them by UUID
-            List<LicenseDBObligationDTO> obligationDTOs;
-            List<LicenseDBLicenseDTO> licenseDTOs;
-            try {
-                obligationDTOs = connector.fetchAllObligations();
-                licenseDTOs = connector.fetchAllLicenses();
-            } catch (IOException e) {
-                String msg = "LicenseDB sync failed (connection error): " + e.getMessage();
-                log.error(msg, e);
-                return requestSummary.setRequestStatus(RequestStatus.FAILURE).setMessage(msg);
-            }
+            List<LicenseDBObligationDTO> obligationDTOs = connector.fetchAllObligations();
+            List<LicenseDBLicenseDTO> licenseDTOs = connector.fetchAllLicenses();
             log.info("LicenseDB sync: fetched {} active obligations and {} active licenses",
                     obligationDTOs.size(), licenseDTOs.size());
 
-            return processLicenseDBSync(obligationDTOs, licenseDTOs, requestSummary);
+            RequestSummary result = processLicenseDBSync(obligationDTOs, licenseDTOs, requestSummary);
+            createSyncReport("FULL", startTime, result);
+            return result;
 
         } catch (SW360Exception e) {
             String msg = "LicenseDB sync failed: " + e.getMessage();
             log.error(msg, e);
-            return requestSummary.setRequestStatus(RequestStatus.FAILURE).setMessage(msg);
+            requestSummary.setRequestStatus(RequestStatus.FAILURE).setMessage(msg);
+            createSyncReport("FULL", startTime, requestSummary);
+            return requestSummary;
         } finally {
             IMPORT_STATUS = false;
         }
@@ -1425,6 +1426,154 @@ public class LicenseDatabaseHandler {
             } catch (SW360Exception e) {
                 log.warn("Could not create obligation list for license '{}': {}", license.getId(), e.getMessage());
             }
+        }
+    }
+
+    private Instant readLastSyncTimestamp() {
+        try {
+            Document doc = null;
+            try {
+                doc = db.getDocument(LICENSEDB_SYNC_STATE_DOC_ID);
+            } catch (SW360Exception e) {
+                // sync state document does not exist yet, expected on first run
+            }
+            if (doc != null && doc.getProperties() != null) {
+                Object ts = doc.getProperties().get("lastSyncTimestamp");
+                if (ts != null) {
+                    return Instant.parse(ts.toString());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not read LicenseDB sync state: {}", e.getMessage());
+        }
+        return Instant.EPOCH;
+    }
+
+    public Map<String, String> getLicenseDBSyncStatus(User user) {
+        Map<String, String> status = new HashMap<>();
+        try {
+            status.put("enabled", "true".equals(SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_ENABLED)) ? "true" : "false");
+        } catch (SW360Exception e) {
+            status.put("enabled", "false");
+        }
+        status.put("importRunning", String.valueOf(IMPORT_STATUS));
+        Instant last = readLastSyncTimestamp();
+        status.put("lastSyncTimestamp", last.equals(Instant.EPOCH) ? "never" : last.toString());
+        return status;
+    }
+
+    public boolean pingLicenseDBHealth(User user) {
+        try {
+            String enabled = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_ENABLED);
+            if (!"true".equals(enabled)) {
+                return false;
+            }
+            String baseUrl = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_BASE_URL);
+            String username = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_USERNAME);
+            String password = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_PASSWORD);
+            if (isNullOrEmpty(baseUrl) || isNullOrEmpty(username) || isNullOrEmpty(password)) {
+                return false;
+            }
+            return createLicenseDBConnector(baseUrl, username, password).pingHealth();
+        } catch (SW360Exception e) {
+            log.warn("LicenseDB health check failed (config error): {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public RequestSummary importIncrementalLicenseDBLicenses(User user) {
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
+        Timestamp ts = Timestamp.from(Instant.now());
+        long currentTime = ts.getTime();
+        if (IMPORT_STATUS && ((IMPORT_TIME + TIME_OUT) > currentTime)) {
+            return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
+        }
+
+        IMPORT_STATUS = true;
+        IMPORT_TIME = currentTime;
+        String startTime = Instant.now().toString();
+
+        try {
+            String enabled = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_ENABLED);
+            if (!"true".equals(enabled)) {
+                log.info("LicenseDB integration is disabled. Skipping incremental sync.");
+                requestSummary.setRequestStatus(RequestStatus.FAILURE)
+                        .setMessage("LicenseDB integration is disabled.");
+                createSyncReport("INCREMENTAL", startTime, requestSummary);
+                return requestSummary;
+            }
+            String baseUrl = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_BASE_URL);
+            String username = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_USERNAME);
+            String password = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_PASSWORD);
+
+            if (isNullOrEmpty(baseUrl) || isNullOrEmpty(username) || isNullOrEmpty(password)) {
+                log.error("LicenseDB configuration is incomplete (missing baseUrl, username, or password).");
+                requestSummary.setRequestStatus(RequestStatus.FAILURE)
+                        .setMessage("LicenseDB configuration is incomplete.");
+                createSyncReport("INCREMENTAL", startTime, requestSummary);
+                return requestSummary;
+            }
+
+            Instant since = readLastSyncTimestamp();
+            log.info("LicenseDB incremental sync: fetching changes since {}", since);
+
+            LicenseDBConnector connector = createLicenseDBConnector(baseUrl, username, password);
+
+            List<LicenseDBLicenseDTO> changedLicenses = connector.fetchChangedLicensesSince(since);
+
+            if (changedLicenses.isEmpty()) {
+                log.info("LicenseDB incremental sync: no changes since {}", since);
+                updateLastSyncTimestamp();
+                requestSummary.setRequestStatus(RequestStatus.SUCCESS)
+                        .setMessage("No changes since last sync.");
+                createSyncReport("INCREMENTAL", startTime, requestSummary);
+                return requestSummary;
+            }
+
+            List<LicenseDBObligationDTO> obligationDTOs = connector.fetchAllObligations();
+
+            log.info("LicenseDB incremental sync: fetched {} obligations and {} changed licenses to process",
+                    obligationDTOs.size(), changedLicenses.size());
+
+            RequestSummary result = processLicenseDBSync(obligationDTOs, changedLicenses, requestSummary);
+            createSyncReport("INCREMENTAL", startTime, result);
+            return result;
+
+        } catch (SW360Exception e) {
+            String msg = "LicenseDB incremental sync failed: " + e.getMessage();
+            log.error(msg, e);
+            requestSummary.setRequestStatus(RequestStatus.FAILURE).setMessage(msg);
+            createSyncReport("INCREMENTAL", startTime, requestSummary);
+            return requestSummary;
+        } finally {
+            IMPORT_STATUS = false;
+        }
+    }
+
+    private void createSyncReport(String syncType, String startTime, RequestSummary result) {
+        try {
+            String endTime = Instant.now().toString();
+            long startMillis = Instant.parse(startTime).toEpochMilli();
+            long endMillis = Instant.parse(endTime).toEpochMilli();
+            int processingSeconds = (int) ((endMillis - startMillis) / 1000);
+
+            Document report = new Document();
+            Map<String, Object> props = new HashMap<>();
+            props.put("type", "licensedb-sync-report");
+            props.put("syncType", syncType);
+            props.put("startDate", startTime);
+            props.put("endDate", endTime);
+            props.put("processingSeconds", processingSeconds);
+            props.put("status", result.getRequestStatus() != null ? result.getRequestStatus().name() : "UNKNOWN");
+            props.put("message", result.getMessage());
+            props.put("totalElements", result.getTotalElements());
+            props.put("totalAffectedElements", result.getTotalAffectedElements());
+            report.setProperties(props);
+            db.add(report);
+            log.info("LicenseDB sync report created: syncType={}, status={}, duration={}s",
+                    syncType, result.getRequestStatus(), processingSeconds);
+        } catch (Exception e) {
+            log.warn("Failed to create LicenseDB sync report: {}", e.getMessage());
         }
     }
 

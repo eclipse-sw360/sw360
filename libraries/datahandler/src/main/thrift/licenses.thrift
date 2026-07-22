@@ -317,6 +317,12 @@ service LicenseService {
 
     RequestSummary importAllLicenseDBLicenses(1: User user);
 
+    RequestSummary importIncrementalLicenseDBLicenses(1: User user);
+
+    map<string, string> getLicenseDBSyncStatus(1: User user);
+
+    bool pingLicenseDBHealth(1: User user);
+
     /**
      * delete obligation from database if user has permissions
      **/

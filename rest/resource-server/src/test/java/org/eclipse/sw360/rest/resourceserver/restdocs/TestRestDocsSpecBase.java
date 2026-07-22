@@ -33,6 +33,7 @@ import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.admin.attachment.Sw360AttachmentCleanUpService;
 import org.eclipse.sw360.rest.resourceserver.admin.fossology.Sw360FossologyAdminServices;
+import org.eclipse.sw360.rest.resourceserver.admin.licensedb.Sw360LicenseDBAdminService;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.changelog.Sw360ChangeLogService;
 import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
@@ -160,6 +161,9 @@ public abstract class TestRestDocsSpecBase {
 
     @MockitoBean
     Sw360FossologyAdminServices fossologyAdminServices;
+
+    @MockitoBean
+    Sw360LicenseDBAdminService licenseDBAdminService;
 
     @MockitoBean
     FossologyService.Iface fossologyClient;

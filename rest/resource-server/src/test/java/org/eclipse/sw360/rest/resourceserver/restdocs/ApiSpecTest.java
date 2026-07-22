@@ -162,6 +162,7 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("sw360:databaseSanitation").description("The <<resources-databaseSanitation,DatabaseSanitation resource>>"),
                                 linkWithRel("sw360:moderationRequests").description("The <<resources-moderationRequest,ModerationRequest resource>>"),
                                 linkWithRel("sw360:fossology").description("The <<resources-fossology,Fossology resource>>"),
+                                linkWithRel("sw360:licenseDB").description("The <<resources-licenseDB,LicenseDB resource>>"),
                                 linkWithRel("sw360:schedule").description("The <<resources-schedule,Schedule resource>>"),
                                 linkWithRel("sw360:ecc").description("The <<resources-ecc,Ecc resource>>"),
                                 linkWithRel("sw360:attachmentCleanUp").description("The <<resources-attachmentCleanUp,attachmentCleanUp resource>>"),
