@@ -2994,7 +2994,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
-        if (patch) {
+        if (patch && project.getReleaseIdToUsage() != null) {
             releaseIdToUsage = project.getReleaseIdToUsage();
         }
 
