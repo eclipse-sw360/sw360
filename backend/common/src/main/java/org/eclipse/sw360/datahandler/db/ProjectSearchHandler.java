@@ -126,7 +126,6 @@ public class ProjectSearchHandler {
                 .searchViewWithRestrictionsWithAnd(Project.class,
                         luceneSearchView.getIndexName(), text, subQueryRestrictions,
                         pageData, sortColumn, pageData.isAscending());
-
         PaginationData respPageData = resultProjectList.keySet().iterator().next();
         List<Project> projectList = resultProjectList.values().iterator().next();
 

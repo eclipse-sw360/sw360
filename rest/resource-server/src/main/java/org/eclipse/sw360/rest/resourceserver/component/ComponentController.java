@@ -100,7 +100,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -439,9 +438,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         if (updateComponentDto.getAttachments() != null && !updateComponentDto.getAttachments().isEmpty()) {
             attachmentService.preserveImmutableAttachmentFields(
                     updateComponentDto.getAttachments(), sw360Component.getAttachments(), user);
-            updateComponentDto.getAttachments().forEach(attachment ->
-                wrapSW360Exception(() -> attachmentService.fillCheckedAttachmentData(attachment, user))
-            );
+            attachmentService.setCheckedAttachmentDataFromRequest(
+                    updateComponentDto.getAttachments(), sw360Component.getAttachments(), user);
         }
 
         sw360Component = restControllerHelper.updateComponent(sw360Component, updateComponentDto);

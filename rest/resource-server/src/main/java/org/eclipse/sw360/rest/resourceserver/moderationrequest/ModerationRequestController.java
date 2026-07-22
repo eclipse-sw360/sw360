@@ -26,6 +26,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -79,6 +80,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService.isOpenModerationRequest;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -124,12 +126,52 @@ public class ModerationRequestController implements RepresentationModelProcessor
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             HttpServletRequest request,
+            @Parameter(description = "The type of document for which the request was generated")
+            @RequestParam(value = "type", required = false) String documentType,
+            @Parameter(description = "The name of the document")
+            @RequestParam(value = "documentName", required = false) String documentName,
+            @Parameter(description = "The requesting user's email")
+            @RequestParam(value = "requestingUser", required = false) String requestingUser,
+            @Parameter(description = "The requesting user's department")
+            @RequestParam(value = "requestingUserDepartment", required = false) String requestingUserDepartment,
+            @Parameter(description = "The state of the request")
+            @RequestParam(value = "moderationState", required = false) String moderationState,
+            @Parameter(description = "Date request was created on (YYYY-MM-DD).",
+                    schema = @Schema(type = "string", format = "date"))
+            @RequestParam(value = "requestDate", required = false) String requestDate,
+            @Parameter(description = "List requests by lucene search, default false")
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "false") boolean luceneSearch,
+            @Parameter(description = "Moderators , as a comma separated list.")
+            @RequestParam(value = "moderators", required = false) String moderators,
             @Parameter(description = "Fetch all details of the moderation request")
             @RequestParam(value = "allDetails", required = false) boolean allDetails
     ) throws TException, ResourceClassNotFoundException, URISyntaxException, PaginationParameterException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<ModerationRequest> moderationRequests = sw360ModerationRequestService.getRequestsByModerator(sw360User, pageable);
+        List<ModerationRequest> moderationRequests = new ArrayList<>();
+        Map<String, Set<String>> filterMap = getFilterMap(documentType, documentName, requestingUser,
+            requestingUserDepartment, moderationState, requestDate, moderators);
+
+        if (luceneSearch) {
+            String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
+            String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
+            addFilterValue(filterMap, moderatorKey, sw360User.getEmail());
+            addFilterValue(filterMap, requestingUserKey, sw360User.getEmail());
+
+            if (filterMap.containsKey(ModerationRequest._Fields.DOCUMENT_NAME.getFieldName())) {
+                Set<String> values = filterMap.get(ModerationRequest._Fields.DOCUMENT_NAME.getFieldName()).stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(Project._Fields.NAME.getFieldName(), values);
+            }
+            moderationRequests = sw360ModerationRequestService.refineSearch(filterMap, pageable);
+        } else {
+            String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
+            String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
+            addFilterValue(filterMap, moderatorKey, sw360User.getEmail());
+            addFilterValue(filterMap, requestingUserKey, sw360User.getEmail());
+            moderationRequests = sw360ModerationRequestService.searchModerationRequestsByExactValues(filterMap, pageable);
+        }
 
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
                 new HashMap<>();
@@ -138,6 +180,46 @@ public class ModerationRequestController implements RepresentationModelProcessor
         modRequestsWithPageData.put(paginationData, moderationRequests);
 
         return getModerationResponseEntity(pageable, request, allDetails, modRequestsWithPageData);
+    }
+
+    /**
+     * Create a map of filters with the field name in the key and expected value in the value (as set).
+     * @return Filter map from the user's request.
+     */
+    private @NonNull Map<String, Set<String>> getFilterMap(
+            String documentType, String documentName, String requestingUser,
+            String requestingUserDepartment, String moderationState, String requestDate, String moderators
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(documentType)) {
+            filterMap.put(ModerationRequest._Fields.DOCUMENT_TYPE.getFieldName(), CommonUtils.splitToSet(documentType));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(documentName)) {
+            filterMap.put(ModerationRequest._Fields.DOCUMENT_NAME.getFieldName(), Collections.singleton(documentName));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(requestingUser)) {
+            filterMap.put(ModerationRequest._Fields.REQUESTING_USER.getFieldName(), CommonUtils.splitToSet(requestingUser));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(requestingUserDepartment)) {
+            filterMap.put(ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT.getFieldName(), CommonUtils.splitToSet(requestingUserDepartment));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(moderationState)) {
+            filterMap.put(ModerationRequest._Fields.MODERATION_STATE.getFieldName(), CommonUtils.splitToSet(moderationState));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(requestDate)) {
+            filterMap.put(ModerationRequest._Fields.TIMESTAMP.getFieldName(), CommonUtils.splitToSet(requestDate));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(moderators)) {
+            filterMap.put(ModerationRequest._Fields.MODERATORS.getFieldName(), CommonUtils.splitToSet(moderators));
+        }
+        return filterMap;
+    }
+
+    private void addFilterValue(Map<String, Set<String>> filterMap, String key, String value) {
+        Set<String> existingValues = filterMap.get(key);
+        Set<String> mutableValues = existingValues == null ? new HashSet<>() : new HashSet<>(existingValues);
+        mutableValues.add(value);
+        filterMap.put(key, mutableValues);
     }
 
     @Operation(

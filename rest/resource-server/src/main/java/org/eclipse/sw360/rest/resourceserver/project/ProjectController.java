@@ -1976,6 +1976,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (updateProject.getAttachments() != null && !updateProject.getAttachments().isEmpty()) {
             attachmentService.preserveImmutableAttachmentFields(
                     updateProject.getAttachments(), sw360Project.getAttachments(), user);
+            attachmentService.setCheckedAttachmentDataFromRequest(
+                    updateProject.getAttachments(), sw360Project.getAttachments(), user);
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
@@ -2886,6 +2888,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         updateProject.unsetReleaseIdToUsage();
         sw360Project.unsetReleaseIdToUsage();
 
+        if (!CommonUtils.isNullOrEmptyCollection(updateProject.getAttachments())) {
+            attachmentService.preserveImmutableAttachmentFields(
+                    updateProject.getAttachments(), sw360Project.getAttachments(), user);
+            attachmentService.setCheckedAttachmentDataFromRequest(
+                    updateProject.getAttachments(), sw360Project.getAttachments(), user);
+        }
+
         try {
             addOrPatchDependencyNetworkToProject(updateProject, reqBodyMap, ProjectOperation.UPDATE);
         } catch (JsonProcessingException e) {
@@ -2994,7 +3003,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
-        if (patch) {
+        if (patch && project.getReleaseIdToUsage() != null) {
             releaseIdToUsage = project.getReleaseIdToUsage();
         }
 
