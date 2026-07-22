@@ -338,7 +338,12 @@ service ModerationService {
     /**
      * search moderation requests in database that match subQueryRestrictions
      **/
-    list<ModerationRequest> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
+    list<ModerationRequest> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: PaginationData pageData);
+
+    /**
+     * search moderation requests in database that match subQueryRestrictions without lucene search
+     **/
+    list<ModerationRequest> searchModerationRequestsByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData);
 
     /**
      * get count of moderation requests by moderation state

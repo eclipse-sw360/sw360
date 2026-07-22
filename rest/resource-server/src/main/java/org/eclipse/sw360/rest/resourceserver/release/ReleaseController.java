@@ -561,6 +561,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         attachmentService.preserveImmutableAttachmentFields(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
+        attachmentService.setCheckedAttachmentDataFromRequest(
+                updateRelease.getAttachments(), sw360Release.getAttachments(), user);
 
         // Apply the same clearing state edit rules as the frontend:
         // Only clearing admin/expert can change clearing state, and only to

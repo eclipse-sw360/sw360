@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -132,6 +133,20 @@ public class Sw360ModerationRequestService {
     public List<ModerationRequest> getRequestsByModerator(User sw360User, Pageable pageable) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
         return getThriftModerationClient().getRequestsByModeratorWithPaginationNoFilter(sw360User, pageData);
+    }
+
+    /**
+     * Get paginated list of moderation requests based on search parameters provided by users
+     * without lucene search
+     *
+     * @param filterMap Filter parameters
+     * @param pageable  Pageable information from request
+     * @return Paginated list of moderation requests.
+     * @throws TException Exception in case of error.
+     */
+    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return getThriftModerationClient().searchModerationRequestsByExactValues(filterMap, pageData);
     }
 
     /**
@@ -499,5 +514,17 @@ public class Sw360ModerationRequestService {
      */
     public RequestStatus deleteClearingRequest(String crId, User user) throws TException {
         return getThriftModerationClient().deleteClearingRequest(crId, user);
+    }
+
+    /**
+     * Return moderation requests based on search parameters
+     *
+     * @param filterMap Filters set by the user
+     * @return List<ModerationRequest> the list of moderation requests
+     * @throws TException if Thrift communication fails
+     */
+    public List<ModerationRequest> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return getThriftModerationClient().refineSearch(null, filterMap, pageData);
     }
 }

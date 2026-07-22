@@ -566,14 +566,67 @@ public class Sw360AttachmentService {
             attachment.setCheckStatus(CheckStatus.NOTCHECKED);
         }
         if (!CheckStatus.NOTCHECKED.equals(attachment.getCheckStatus())) {
-            attachment.setCheckedBy(attachment.getCheckedBy() != null ? attachment.getCheckedBy() : user.getEmail());
-            attachment.setCheckedTeam(attachment.getCheckedTeam() != null ? attachment.getCheckedTeam() : user.getDepartment());
-            attachment.setCheckedOn(attachment.getCheckedOn() != null ? attachment.getCheckedOn() : SW360Utils.getCreatedOn());
+            // checkedBy/checkedTeam/checkedOn are backend-owned audit fields.
+            // Never trust the values sent by the client - always derive the checker
+            // identity from the authenticated user and use the server-side date.
+            attachment.setCheckedBy(user.getEmail());
+            attachment.setCheckedTeam(user.getDepartment());
+            attachment.setCheckedOn(SW360Utils.getCreatedOn());
         } else {
             attachment.unsetCheckedBy();
             attachment.unsetCheckedTeam();
             attachment.setCheckedComment("");
             attachment.unsetCheckedOn();
+        }
+    }
+    /**
+     * Authoritatively resolves the attachment check audit fields
+     * ({@code checkedBy}, {@code checkedTeam}, {@code checkedOn}) using the authenticated
+     * user, ignoring whatever the client sent for those fields. Only
+     * {@code attachmentContentId}, {@code checkStatus} and {@code checkedComment} from the
+     * request are honoured to describe the check state.
+     *
+     *   1. check status unchanged vs. the stored attachment -> the original
+     *       checker identity and date are preserved, so an unrelated update (e.g. a
+     *       full attachment-list resubmit) does not rewrite who checked it.
+     *   2. check status changed (accepted/rejected, or switched between them) or
+     *       the attachment is new -> the current user (from the token) and the server
+     *       date are stamped.
+     *
+     * @param incomingAttachments attachments coming from the request body
+     * @param storedAttachments   attachments currently persisted for the entity
+     * @param user                the authenticated user derived from the token
+     */
+    public void setCheckedAttachmentDataFromRequest(Set<Attachment> incomingAttachments,
+            Set<Attachment> storedAttachments, User user) {
+        if (CommonUtils.isNullOrEmptyCollection(incomingAttachments)) {
+            return;
+        }
+        Map<String, Attachment> storedMap = new HashMap<>();
+        if (storedAttachments != null) {
+            storedAttachments.forEach(att -> storedMap.put(att.getAttachmentContentId(), att));
+        }
+        for (Attachment incoming : incomingAttachments) {
+            if (incoming.getCheckStatus() == null) {
+                incoming.setCheckStatus(CheckStatus.NOTCHECKED);
+            }
+            Attachment stored = storedMap.get(incoming.getAttachmentContentId());
+            if (CheckStatus.NOTCHECKED.equals(incoming.getCheckStatus())) {
+                incoming.unsetCheckedBy();
+                incoming.unsetCheckedTeam();
+                incoming.unsetCheckedOn();
+                incoming.setCheckedComment("");
+            } else if (stored != null && incoming.getCheckStatus().equals(stored.getCheckStatus())) {
+                // Check status unchanged: keep the original checker, ignore client-sent values.
+                incoming.setCheckedBy(stored.getCheckedBy());
+                incoming.setCheckedTeam(stored.getCheckedTeam());
+                incoming.setCheckedOn(stored.getCheckedOn());
+            } else {
+                // New/changed check decision: stamp the authenticated user and server date.
+                incoming.setCheckedBy(user.getEmail());
+                incoming.setCheckedTeam(user.getDepartment());
+                incoming.setCheckedOn(SW360Utils.getCreatedOn());
+            }
         }
     }
 
