@@ -527,28 +527,30 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         }
 
         final Function<String, String> addType = input -> {
+            String normalizedInput = normalizeRestrictionInput(input);
+
             // Handle pre-formatted queries from prepareWildcardQuery
-            if (input.startsWith("\"") && input.endsWith("\"")) {
+            if (isValidQuotedPhrase(input)) {
                 // Exact phrase search - just prepend field name
                 return fieldName + ":" + input;
             } else if (input.startsWith("(") && input.contains("\"")) {
                 // Wildcard query with parentheses - prepend field name
-                return fieldName + ":" + input;
+                return fieldName + ":" + normalizedInput;
             } else if (fieldName.equals("version")) {
                 // Keep wildcard behavior for version prefix searches (e.g. 2.5 -> 2.5.x).
-                return fieldName + ":" + prepareWildcardQuery(input);
+                return fieldName + ":" + prepareWildcardQuery(normalizedInput);
             } else if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible")
                     || fieldName.equals("createdBy") || fieldName.equals("email")
                     || fieldName.equals("moderators") || fieldName.equals("requestingUser")) {
-                return fieldName + ":\"" + input + "\"";
+                return fieldName + ":\"" + normalizedInput + "\"";
             } else if (fieldName.equals("createdOn") || fieldName.equals("timestamp")) {
                 try {
                     return fieldName + ":" + formatDateNouveauFormat(input);
                 } catch (ParseException e) {
-                    return fieldName + ":" + input;
+                    return fieldName + ":" + normalizedInput;
                 }
             } else {
-                return fieldName + ":" + input;
+                return fieldName + ":" + normalizedInput;
             }
         };
 
@@ -557,6 +559,48 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
                 .map(addType)
                 .toList());
         return "( " + OR.join(queryParts) + " ) ";
+    }
+
+    /**
+     * Check if a string starts and ends with {@code "} and only there. Meaning
+     * it needs no sanitization.
+     * @param input Input string to check.
+     * @return True if the input is a valid phrase, false otherwise.
+     */
+    private static boolean isValidQuotedPhrase(@NotNull String input) {
+        return input.startsWith("\"") && input.endsWith("\"") && countQuotes(input) == 2;
+    }
+
+    private static int countQuotes(@NotNull String input) {
+        return (int) input.chars().filter(ch -> ch == '"').count();
+    }
+
+    /**
+     * Sanitize the search input for rogue quotes {@code "}
+     *
+     * <ol>
+     *   <li>Check if input does not contain quotes or is valid, return as is.</li>
+     *   <li>Check if input starts and ends with quotes (exact match needed), trim it.</li>
+     *   <li>Replace all {@code "} with {@code \"}.</li>
+     *   <li>If the input was trimmed, add quotes back to the start and end.</li>
+     * </ol>
+     *
+     * @param input Input to sanitize.
+     * @return Sanitized string.
+     */
+    private static @NotNull String normalizeRestrictionInput(@NotNull String input) {
+        if (!input.contains("\"") || isValidQuotedPhrase(input)) {
+            return input;
+        }
+
+        boolean hasOuterQuotes = input.length() >= 2 && input.startsWith("\"") && input.endsWith("\"");
+        String inputToEscape = hasOuterQuotes ? input.substring(1, input.length() - 1) : input;
+        String escaped = inputToEscape.replace("\"", "\\\"");
+
+        if (hasOuterQuotes) {
+            return "\"" + escaped + "\"";
+        }
+        return escaped;
     }
 
     public static @NotNull String prepareWildcardQuery(@NotNull String query) {
