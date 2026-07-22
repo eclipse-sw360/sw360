@@ -136,7 +136,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @Operation(
             summary = "List all of the service's components.",
-            description = "List all of the service's components.",
+            description = "List all of the service's components. For `createdOn`, clients can pass either an exact date (`YYYY-MM-DD`) or a Lucene range query like `[startDate TO endDate]`.",
             tags = {"Components"}
     )
     @ApiResponses(value = {
@@ -165,8 +165,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @RequestParam(value = "mainLicenses", required = false) String mainLicenses,
             @Parameter(description = "Created by user to filter (email).")
             @RequestParam(value = "createdBy", required = false) String createdBy,
-            @Parameter(description = "Date component was created on (YYYY-MM-DD).",
-                    schema = @Schema(type = "string", format = "date"))
+            @Parameter(description = "Created date filter. Supported formats: exact (`=`) as `YYYY-MM-DD` (example: `2026-06-30`), less-than-or-equal (`<=`) as range `[1970-01-01 TO <enteredDate>]` (example: `[1970-01-01 TO 2026-06-30]`), greater-than-or-equal (`>=`) as range `[<enteredDate> TO 9999-01-01]` (example: `[2026-06-30 TO 9999-01-01]`), and between as range `[<startDate> TO <endDate>]` (example: `[2026-06-29 TO 2026-06-30]`).",
+                    schema = @Schema(type = "string", example = "2026-06-30"))
             @RequestParam(value = "createdOn", required = false) String createdOn,
             @Parameter(description = "Properties which should be present for each component in the result")
             @RequestParam(value = "fields", required = false) List<String> fields,
