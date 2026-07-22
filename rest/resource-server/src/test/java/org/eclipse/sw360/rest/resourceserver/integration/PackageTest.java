@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -366,6 +367,40 @@ public class PackageTest extends TestIntegrationBase {
         assertTrue(responseBody.contains("_embedded"), "Response should contain embedded packages");
         assertTrue(responseBody.contains("sw360:packages"), "Response should contain sw360:packages");
         assertTrue(responseBody.contains("angular-sanitize"), "Response should contain angular-sanitize");
+    }
+
+    @Test
+    public void should_search_packages_by_purl_without_lucene_before_pagination() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/packages?luceneSearch=false&purl=pkg:npm/angular-sanitize@1.8.2&page=0&page_entries=1&sort=name,desc&allDetails=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        String responseBody = response.getBody();
+        assertTrue(responseBody.contains("angular-sanitize"), "Response should contain purl-matching package");
+        assertFalse(responseBody.contains("applicationinsights-web"), "Response should not contain non-matching package");
+    }
+
+    @Test
+    public void should_search_packages_by_double_encoded_purl_without_lucene() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/packages?luceneSearch=false&purl=pkg%253Anpm%252Fangular-sanitize%25401.8.2&page=0&page_entries=10&sort=score%252Casc&allDetails=true",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        String responseBody = response.getBody();
+        assertTrue(responseBody.contains("angular-sanitize"), "Response should contain purl-matching package");
+        assertFalse(responseBody.contains("applicationinsights-web"), "Response should not contain non-matching package");
     }
 
     // ========== EXCEPTION HANDLING TESTS ==========
