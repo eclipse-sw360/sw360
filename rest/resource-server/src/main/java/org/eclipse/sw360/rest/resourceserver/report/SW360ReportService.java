@@ -515,8 +515,10 @@ public class SW360ReportService {
                                                          List<LicenseInfoParsingResult> licenseInfoParsingResult) {
         Predicate<LicenseNameWithText> filteredLicense = licenseNameWithText -> excludedLicenseIds
                 .contains(licenseNameWithText.getLicenseName());
-        Function<LicenseInfo, Stream<LicenseNameWithText>> streamLicenseNameWithTexts = licenseInfo -> licenseInfo
-                .getLicenseNamesWithTexts().stream();
+        Function<LicenseInfo, Stream<LicenseNameWithText>> streamLicenseNameWithTexts = licenseInfo ->
+                (licenseInfo != null && licenseInfo.getLicenseNamesWithTexts() != null)
+                        ? licenseInfo.getLicenseNamesWithTexts().stream()
+                        : Stream.empty();
         return licenseInfoParsingResult.stream().map(LicenseInfoParsingResult::getLicenseInfo)
                 .flatMap(streamLicenseNameWithTexts).filter(filteredLicense).collect(Collectors.toSet());
     }
