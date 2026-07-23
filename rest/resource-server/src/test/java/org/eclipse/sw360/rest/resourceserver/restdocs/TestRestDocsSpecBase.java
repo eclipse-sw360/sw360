@@ -257,7 +257,6 @@ public abstract class TestRestDocsSpecBase {
     }
 
     public void testAttachmentUploadProject(String url, String id) throws Exception {
-        String attachment = "[{ \"filename\":\"spring-core-4.3.4.RELEASE.jar\", \"attachmentType\":\"SOURCE\", \"checkStatus\":\"ACCEPTED\", \"createdComment\":\"Uploading Sources.\" }]";
         /*
          * TODO Suggestion to use better library in future, instead of MockMultipartFile
          * to have better document generation feature. below logic is used to generate
@@ -275,11 +274,8 @@ public abstract class TestRestDocsSpecBase {
         attchList.add(att1);
 
         String attachmentJson = this.objectMapper.writeValueAsString(attchList);
-        MockMultipartFile jsonFile = new MockMultipartFile("attachment", "", "application/json",
-                new ByteArrayInputStream(attachment.getBytes()));
-        MockMultipartFile[] files = new MockMultipartFile[] { jsonFile };
         var builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
-                .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes()).file(files[0])
+                .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes())
                 .param("attachments", attachmentJson).contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());

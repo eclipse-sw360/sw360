@@ -2097,6 +2097,28 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         testAttachmentUploadProject("/api/projects/", project.getId());
     }
 
+    @Test
+    public void should_upload_attachment_to_project_with_deprecated_singular_attachment_param() throws Exception {
+        // Test backward compatibility with legacy singular "attachment" parameter
+        Attachment legacyAttachment = new Attachment();
+        legacyAttachment.setFilename("legacy-attachment.jar");
+        legacyAttachment.setAttachmentContentId("legacy-123");
+        legacyAttachment.setAttachmentType(AttachmentType.SOURCE);
+        legacyAttachment.setCheckStatus(CheckStatus.ACCEPTED);
+        legacyAttachment.setCreatedComment("Legacy single file upload");
+
+        String attachmentJson = this.objectMapper.writeValueAsString(legacyAttachment);
+        MockMultipartFile attachmentFile = new MockMultipartFile("attachment", "", "application/json",
+                attachmentJson.getBytes());
+
+        var builder = MockMvcRequestBuilders.multipart("/api/projects/" + project.getId() + "/attachments")
+                .file("file", "@/legacy-attachment.jar".getBytes())
+                .file(attachmentFile)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
+        this.mockMvc.perform(builder).andExpect(status().isOk());
+    }
+
 
     @Test
     public void should_document_link_releases() throws Exception {
