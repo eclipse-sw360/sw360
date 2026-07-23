@@ -142,6 +142,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -2012,8 +2013,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("projectId") String projectId,
             @Parameter(description = "Files to attach")
             @RequestParam("file") MultipartFile[] files,
-            @Parameter(description = "Attachments descriptions")
-            @RequestParam("attachments") String attachmentsJson,
+            @Parameter(description = "Attachments descriptions as JSON array")
+            @RequestParam(value = "attachments", required = false) String attachmentsJson,
+            @Parameter(description = "Single attachment description (deprecated, use 'attachments' instead)",
+                    deprecated = true)
+            @Deprecated
+            @RequestPart(value = "attachment", required = false) Attachment legacyAttachment,
             @Parameter(description = "Comment message.")
             @RequestParam(value = "comment", required = false) String comment,
             HttpServletRequest request
@@ -2023,12 +2028,33 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         ObjectMapper objectMapper = new ObjectMapper();
         List<Map<String, Object>> attachmentsList;
-        try {
-            attachmentsList = objectMapper.readValue(attachmentsJson, new TypeReference<List<Map<String, Object>>>() {
-            });
-        } catch (JsonProcessingException e) {
-            log.error("Failed to parse attachments JSON", e);
-            throw new BadRequestClientException("Failed to parse attachments JSON");
+
+        if (attachmentsJson != null) {
+            // New multi-attachment path
+            try {
+                attachmentsList = objectMapper.readValue(attachmentsJson,
+                        new TypeReference<List<Map<String, Object>>>() {
+                        });
+            } catch (JsonProcessingException e) {
+                log.error("Failed to parse attachments JSON", e);
+                throw new BadRequestClientException("Failed to parse attachments JSON");
+            }
+        } else if (legacyAttachment != null) {
+            // Backward compatibility: convert legacy single Attachment to list
+            Map<String, Object> attachmentMap = new HashMap<>();
+            attachmentMap.put("attachmentContentId", legacyAttachment.getAttachmentContentId());
+            attachmentMap.put("createdComment", legacyAttachment.getCreatedComment());
+            if (legacyAttachment.getAttachmentType() != null) {
+                attachmentMap.put("attachmentType", legacyAttachment.getAttachmentType().name());
+            }
+            if (legacyAttachment.getCheckStatus() != null) {
+                attachmentMap.put("checkStatus", legacyAttachment.getCheckStatus().name());
+            }
+            attachmentsList = new ArrayList<>();
+            attachmentsList.add(attachmentMap);
+        } else {
+            throw new BadRequestClientException(
+                    "Missing required parameter: 'attachments' (or deprecated 'attachment')");
         }
 
         Set<String> uploadedFilenames = new HashSet<>();
