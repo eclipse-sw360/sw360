@@ -1966,11 +1966,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             sw360Project.setClearingState(ProjectClearingState.OPEN);
         }
 
-        boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState(), user, reqBodyMap, sw360Project);
-        if (!editPermitted) {
-            log.error("No write permission for project");
-            throw new AccessDeniedException("No write permission for project");
-        }
         Project updateProject = convertToProject(reqBodyMap);
         updateProject.unsetReleaseRelationNetwork();
         if (updateProject.getAttachments() != null && !updateProject.getAttachments().isEmpty()) {
