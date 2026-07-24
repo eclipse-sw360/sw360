@@ -43,8 +43,9 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
+import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
@@ -1035,8 +1036,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isComponentUnderModeration(String componentSourceId) throws TException {
-        ModerationService.Iface moderationClient = ThriftClients.makeModerationClient();
-        List<ModerationRequest> sourceModerationRequests = moderationClient.getModerationRequestByDocumentId(componentSourceId);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> sourceModerationRequests =
+                ModerationClients.get().getModerationRequestByDocumentId(componentSourceId);
         return sourceModerationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }
 
@@ -1801,8 +1802,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isReleaseUnderModeration(String releaseId) throws TException {
-        ModerationService.Iface moderationClient = ThriftClients.makeModerationClient();
-        List<ModerationRequest> moderationRequests = moderationClient.getModerationRequestByDocumentId(releaseId);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequests =
+                ModerationClients.get().getModerationRequestByDocumentId(releaseId);
         return moderationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }
 
@@ -2592,7 +2593,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Component getComponentForEdit(String id, User user) throws SW360Exception {
-        List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestsForDocumentId =
+                moderator.getModerationRequestsForDocumentId(id);
 
         Component component = getComponent(id, user);
         DocumentState documentState;
@@ -2601,18 +2603,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             documentState = CommonUtils.getOriginalDocumentState();
         } else {
             final String email = user.getEmail();
-            Optional<ModerationRequest> moderationRequestOptional = CommonUtils.getFirstModerationRequestOfUser(moderationRequestsForDocumentId, email);
+            Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
+                    CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = moderationRequestOptional.get();
+                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
 
                 component = moderator.updateComponentFromModerationRequest(
                         component,
                         moderationRequest.getComponentAdditions(),
                         moderationRequest.getComponentDeletions());
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
+                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
+                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
+                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
         component.setPermissions(makePermission(component, user).getPermissionMap());
@@ -2630,7 +2634,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Release getReleaseForEdit(String id, User user) throws SW360Exception {
-        List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestsForDocumentId =
+                moderator.getModerationRequestsForDocumentId(id);
 
         Release release = getRelease(id, user);
         DocumentState documentState;
@@ -2639,18 +2644,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             documentState = CommonUtils.getOriginalDocumentState();
         } else {
             final String email = user.getEmail();
-            Optional<ModerationRequest> moderationRequestOptional = CommonUtils.getFirstModerationRequestOfUser(moderationRequestsForDocumentId, email);
+            Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
+                    CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = moderationRequestOptional.get();
+                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
 
                 release = releaseModerator.updateReleaseFromModerationRequest(
                         release,
                         moderationRequest.getReleaseAdditions(),
                         moderationRequest.getReleaseDeletions());
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
+                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
+                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
+                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
         vendorRepository.fillVendor(release);

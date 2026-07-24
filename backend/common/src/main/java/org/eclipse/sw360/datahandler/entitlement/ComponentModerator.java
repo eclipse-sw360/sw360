@@ -9,15 +9,16 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.thrift.TException;
 
 /**
  * Moderation for the component service
@@ -31,12 +32,11 @@ public class ComponentModerator extends Moderator<Component._Fields, Component> 
     private static final Logger log = LogManager.getLogger(ComponentModerator.class);
 
     public RequestStatus updateComponent(Component component, User user) {
-
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createComponentRequest(component, user);
+            ModerationClients.get().createComponentRequest(
+                    ComponentConverter.fromThrift(component), UserConverter.fromThrift(user));
             return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
+        } catch (SW360Exception e) {
             log.error("Could not moderate component " + component.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }
@@ -82,10 +82,10 @@ public class ComponentModerator extends Moderator<Component._Fields, Component> 
     }
     public RequestStatus deleteComponent(Component component, User user) {
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createComponentDeleteRequest(component, user);
+            ModerationClients.get().createComponentDeleteRequest(
+                    ComponentConverter.fromThrift(component), UserConverter.fromThrift(user));
             return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
+        } catch (SW360Exception e) {
             log.error("Could not moderate delete component " + component.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }

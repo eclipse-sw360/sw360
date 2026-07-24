@@ -10,15 +10,17 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
+import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import org.apache.logging.log4j.Logger;
@@ -28,19 +30,17 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.thrift.TException;
 
 public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fields, PackageInformation> {
 
     private static final Logger log = LogManager.getLogger(SpdxPackageInfoModerator.class);
 
     public RequestStatus updateSpdxPackageInfo(PackageInformation packageInfo, User user) {
-
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createSpdxPackageInfoRequest(packageInfo, user);
+            ModerationClients.get().createSpdxPackageInfoRequest(
+                    PackageInformationConverter.fromThrift(packageInfo), UserConverter.fromThrift(user));
             return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
+        } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Package Info " + packageInfo.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }
@@ -48,10 +48,10 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
 
     public RequestStatus deleteSpdxPackageInfo(PackageInformation packageInfo, User user) {
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createSpdxPackageInfoDeleteRequest(packageInfo, user);
+            ModerationClients.get().createSpdxPackageInfoDeleteRequest(
+                    PackageInformationConverter.fromThrift(packageInfo), UserConverter.fromThrift(user));
             return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
+        } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Package Info " + packageInfo.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }

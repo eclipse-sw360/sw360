@@ -101,6 +101,12 @@ public final class ModerationRequestConverter {
         if (thrift.isSetRevision()) {
             pojo.setRevision(thrift.getRevision());
         }
+        if (thrift.isSetSPDXDocumentAdditions()) {
+            pojo.setSpdxDocumentAdditions(org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter.fromThrift(thrift.getSPDXDocumentAdditions()));
+        }
+        if (thrift.isSetSPDXDocumentDeletions()) {
+            pojo.setSpdxDocumentDeletions(org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter.fromThrift(thrift.getSPDXDocumentDeletions()));
+        }
         if (thrift.isSetTimestamp()) {
             pojo.setTimestamp(thrift.getTimestamp());
         }
@@ -198,6 +204,12 @@ public final class ModerationRequestConverter {
         }
         if (pojo.getRevision() != null) {
             thrift.setRevision(pojo.getRevision());
+        }
+        if (pojo.getSpdxDocumentAdditions() != null) {
+            thrift.setSPDXDocumentAdditions(org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter.toThrift(pojo.getSpdxDocumentAdditions()));
+        }
+        if (pojo.getSpdxDocumentDeletions() != null) {
+            thrift.setSPDXDocumentDeletions(org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter.toThrift(pojo.getSpdxDocumentDeletions()));
         }
         if (pojo.getTimestamp() != null) {
             thrift.setTimestamp(pojo.getTimestamp());

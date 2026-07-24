@@ -403,8 +403,18 @@ public class CommonUtils {
     }
 
     public static boolean isInProgressOrPending(ModerationRequest moderationRequest) {
-        return moderationRequest.getModerationState().equals(ModerationState.INPROGRESS) ||
-                moderationRequest.getModerationState().equals(ModerationState.PENDING);
+        return moderationRequest.getModerationState() == ModerationState.INPROGRESS
+                || moderationRequest.getModerationState() == ModerationState.PENDING;
+    }
+
+    public static boolean isInProgressOrPending(
+            org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest) {
+        if (moderationRequest == null || moderationRequest.getModerationState() == null) {
+            return false;
+        }
+        org.eclipse.sw360.datahandler.services.common.ModerationState state = moderationRequest.getModerationState();
+        return state == org.eclipse.sw360.datahandler.services.common.ModerationState.INPROGRESS
+                || state == org.eclipse.sw360.datahandler.services.common.ModerationState.PENDING;
     }
 
     @NotNull
@@ -414,10 +424,20 @@ public class CommonUtils {
         return documentState;
     }
 
-    public static Optional<ModerationRequest> getFirstModerationRequestOfUser(List<ModerationRequest> moderationRequestsForDocumentId, final String email) {
+    public static Optional<ModerationRequest> getFirstModerationRequestOfUser(
+            List<ModerationRequest> moderationRequestsForDocumentId, final String email) {
         return moderationRequestsForDocumentId
                 .stream()
                 .filter(moderationRequest -> moderationRequest.getRequestingUser().equals(email))
+                .findFirst();
+    }
+
+    public static Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest>
+            getFirstModerationRequestOfUserPojo(
+                    List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> requests,
+                    final String email) {
+        return requests.stream()
+                .filter(mr -> email != null && email.equals(mr.getRequestingUser()))
                 .findFirst();
     }
 
@@ -428,8 +448,30 @@ public class CommonUtils {
         return documentState;
     }
 
+    @NotNull
+    public static DocumentState getModeratedDocumentState(
+            org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest) {
+        DocumentState documentState = new DocumentState().setIsOriginalDocument(false);
+        if (moderationRequest.getModerationState() != null) {
+            documentState.setModerationState(
+                    ModerationState.valueOf(moderationRequest.getModerationState().name()));
+        }
+        return documentState;
+    }
+
     public static boolean isStillRelevant(ModerationRequest request) {
-        return request.getModerationState().equals(ModerationState.PENDING) || request.getModerationState().equals(ModerationState.INPROGRESS);
+        return request.getModerationState() == ModerationState.PENDING
+                || request.getModerationState() == ModerationState.INPROGRESS;
+    }
+
+    public static boolean isStillRelevant(
+            org.eclipse.sw360.datahandler.services.moderation.ModerationRequest request) {
+        if (request == null || request.getModerationState() == null) {
+            return false;
+        }
+        org.eclipse.sw360.datahandler.services.common.ModerationState state = request.getModerationState();
+        return state == org.eclipse.sw360.datahandler.services.common.ModerationState.PENDING
+                || state == org.eclipse.sw360.datahandler.services.common.ModerationState.INPROGRESS;
     }
 
     public static <T, V> AfterFunction<T, V> afterFunction(Function<V, T> function) {

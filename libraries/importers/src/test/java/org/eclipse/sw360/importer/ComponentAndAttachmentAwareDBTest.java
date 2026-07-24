@@ -18,7 +18,6 @@ import org.eclipse.sw360.datahandler.common.ImportCSV;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.apache.commons.csv.CSVRecord;
@@ -34,7 +33,6 @@ import java.util.List;
 import static org.eclipse.sw360.datahandler.TestUtils.*;
 import static org.eclipse.sw360.importer.ComponentImportUtils.convertCSVRecordsToCompCSVRecords;
 import static org.eclipse.sw360.importer.ComponentImportUtils.convertCSVRecordsToComponentAttachmentCSVRecords;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -86,15 +84,8 @@ public class ComponentAndAttachmentAwareDBTest {
     protected static ThriftClients getThriftClients() throws TException, IOException {
         assertTestDbNames();
 
-        ThriftClients thriftClients = failingMock(ThriftClients.class);
-
-        ModerationService.Iface moderationService = failingMock(ModerationService.Iface.class);
-
-        doNothing().when(moderationService).deleteRequestsOnDocument(anyString());
-
-        doReturn(moderationService).when(thriftClients).makeModerationClient();
-
-        return thriftClients;
+        // Moderation uses ModerationClients.get() (REST); no thrift stub needed here.
+        return failingMock(ThriftClients.class);
     }
 
     @Before

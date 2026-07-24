@@ -368,6 +368,12 @@ public class ThriftClients {
         return new LicenseService.Client(makeProtocol(LICENSE_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Almost obsolete. The moderation Thrift servlet at {@code /moderation/thrift} is no
+     * longer deployed. Use {@link org.eclipse.sw360.datahandler.moderation.ModerationClients} and the
+     * Spring Boot REST API at {@code /moderation/api/moderation} instead.
+     */
+    @Deprecated
     public static ModerationService.Iface makeModerationClient() {
         return new ModerationService.Client(makeProtocol(MODERATION_SERVICE_URL));
     }

@@ -12,17 +12,15 @@ package org.eclipse.sw360.datahandler.common;
 import com.google.common.collect.Maps;
 
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TEnum;
-import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
 import org.apache.thrift.protocol.TType;
@@ -46,19 +44,16 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
     public void notifyModeratorOnDelete(String documentId) {
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.deleteRequestsOnDocument(documentId);
-        } catch (TException e) {
+            ModerationClients.get().deleteRequestsOnDocument(documentId);
+        } catch (SW360Exception e) {
             log.error("Could not notify moderation client, that I delete document with id " + documentId, e);
         }
     }
 
     public List<ModerationRequest> getModerationRequestsForDocumentId(String documentId) {
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            return client.getModerationRequestByDocumentId(documentId);
-
-        } catch (TException e) {
+            return ModerationClients.get().getModerationRequestByDocumentId(documentId);
+        } catch (SW360Exception e) {
             log.error("Could not get moderations for Document " + documentId, e);
         }
         return Collections.emptyList();
@@ -124,7 +119,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                                 && getAttachmentConnector().getAttachmentContent(id) != null) {
                             attachments.add(update);
                         }
-                    } catch (SW360Exception e) {
+                    } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
                         log.error("Error occurred while checking attachment exists in DB: ", e);
                     }
                 }

@@ -870,14 +870,17 @@ Location: `libraries/datahandler/.../thrift/ThriftClients.java`
 private ThriftClients thriftClients;
 
 // Get service clients
+// Thrift Clients
 ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 ProjectService.Iface projectClient = thriftClients.makeProjectClient();
 LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 UserService.Iface userClient = thriftClients.makeUserClient();
 VendorService.Iface vendorClient = thriftClients.makeVendorClient();
 VulnerabilityService.Iface vulnClient = thriftClients.makeVulnerabilityClient();
-ModerationService.Iface moderationClient = thriftClients.makeModerationClient();
 AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+// Rest Clients
+org.eclipse.sw360.datahandler.moderation.ModerationClient moderationClient =
+        org.eclipse.sw360.datahandler.moderation.ModerationClients.get();
 ```
 
 ---
