@@ -564,6 +564,33 @@
         </exclusions>
       </dependency>
       <!--
+        Backend WARs use log4j-slf4j2-impl; Boot's default starter-logging
+        (log4j-to-slf4j) cannot coexist. Keep exclusions next to other Boot
+        starters here so module POMs stay version-free.
+      -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-tomcat</artifactId>
+        <version>${spring-boot.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <!--
         Exclude Jackson 3.x (tools.jackson) transitive dependencies where
         possible. SW360 registers its 60+ Thrift mixins with both Jackson
         2.x (ObjectMapper) and Jackson 3.x (via JsonMapperBuilderCustomizer)

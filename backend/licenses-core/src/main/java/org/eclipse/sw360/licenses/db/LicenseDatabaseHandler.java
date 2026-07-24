@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
+import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -208,7 +209,8 @@ public class LicenseDatabaseHandler {
     }
 
     public License getLicenseForOrganisationWithOwnModerationRequests(String id, String organisation, User user) throws SW360Exception {
-        List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestsForDocumentId =
+                moderator.getModerationRequestsForDocumentId(id);
 
         License license = getLicenseForOrganisation(id, organisation);
         DocumentState documentState;
@@ -217,10 +219,11 @@ public class LicenseDatabaseHandler {
             documentState = CommonUtils.getOriginalDocumentState();
         } else {
             final String email = user.getEmail();
-            Optional<ModerationRequest> moderationRequestOptional = CommonUtils.getFirstModerationRequestOfUser(moderationRequestsForDocumentId, email);
+            Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
+                    CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())) {
-                ModerationRequest moderationRequest = moderationRequestOptional.get();
+                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
 
                 license = moderator.updateLicenseFromModerationRequest(
                         license,
@@ -233,9 +236,10 @@ public class LicenseDatabaseHandler {
                     oblig.setWhitelist(SW360Utils.filterBUSet(organisation, oblig.whitelist));
                 }
 
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
+                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
+                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
+                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
         license.setPermissions(makePermission(license, user).getPermissionMap());

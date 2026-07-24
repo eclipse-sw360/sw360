@@ -19,12 +19,10 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -32,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,13 +41,14 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
 
 /**
- * Implementation of the Thrift service
+ * Moderation service handler (CouchDB-backed). Invoked by {@link ModerationController}.
  *
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  * @author alex.borodin@evosoft.com
  */
-public class ModerationHandler implements ModerationService.Iface {
+@Service
+public class ModerationHandler {
 
     private final ModerationDatabaseHandler handler;
     private final ModerationSearchHandler modSearchHandler;
@@ -58,7 +58,6 @@ public class ModerationHandler implements ModerationService.Iface {
         modSearchHandler = new ModerationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    @Override
     public RequestStatus createComponentRequest(Component component, User user) throws TException {
         assertUser(user);
         assertNotNull(component);
@@ -66,7 +65,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(component, user, false);
     }
 
-    @Override
     public RequestStatus createReleaseRequest(Release release, User user) throws TException {
         assertUser(user);
         assertNotNull(release);
@@ -74,7 +72,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(release, user, false);
     }
 
-    @Override
     public RequestStatus createReleaseRequestForEcc(Release release, User user) throws TException {
         assertUser(user);
         assertNotNull(release);
@@ -82,7 +79,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(release, user, false, handler.getEccModeratorsProvider());
     }
 
-    @Override
     public RequestStatus createProjectRequest(Project project, User user) throws TException {
         assertUser(user);
         assertNotNull(project);
@@ -90,7 +86,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(project, user, false);
     }
 
-    @Override
     public RequestStatus createLicenseRequest(License license, User user) throws TException {
         assertUser(user);
         assertNotNull(license);
@@ -98,14 +93,12 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(license, user);
     }
 
-    @Override
     public void createUserRequest(User user) throws TException {
         assertUser(user);
 
         handler.createRequest(user);
     }
 
-    @Override
     public void createComponentDeleteRequest(Component component, User user) throws TException {
         assertUser(user);
         assertNotNull(component);
@@ -113,7 +106,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.createRequest(component, user, true);
     }
 
-    @Override
     public void createReleaseDeleteRequest(Release release, User user) throws TException {
         assertUser(user);
         assertNotNull(release);
@@ -121,7 +113,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.createRequest(release, user, true);
     }
 
-    @Override
     public void createProjectDeleteRequest(Project project, User user) throws TException {
         assertUser(user);
         assertNotNull(project);
@@ -129,7 +120,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.createRequest(project, user, true);
     }
 
-    @Override
     public RequestStatus createSPDXDocumentRequest(SPDXDocument spdx, User user) throws TException {
         assertUser(user);
         assertNotNull(spdx);
@@ -137,7 +127,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(spdx, user, false);
     }
 
-    @Override
     public void createSPDXDocumentDeleteRequest(SPDXDocument spdx, User user) throws TException {
         assertUser(user);
         assertNotNull(spdx);
@@ -145,7 +134,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.createRequest(spdx, user, true);
     }
 
-    @Override
     public RequestStatus createSpdxDocumentCreationInfoRequest(DocumentCreationInformation documentCreationInfo, User user) throws TException {
         assertUser(user);
         assertNotNull(documentCreationInfo);
@@ -153,7 +141,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(documentCreationInfo, user, false);
     }
 
-    @Override
     public void createSpdxDocumentCreationInfoDeleteRequest(DocumentCreationInformation documentCreationInfo, User user) throws TException {
         assertUser(user);
         assertNotNull(documentCreationInfo);
@@ -161,7 +148,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.createRequest(documentCreationInfo, user, true);
     }
 
-    @Override
     public RequestStatus createSpdxPackageInfoRequest(PackageInformation packageInfo, User user) throws TException {
         assertUser(user);
         assertNotNull(packageInfo);
@@ -169,7 +155,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createRequest(packageInfo, user, false);
     }
 
-    @Override
     public void createSpdxPackageInfoDeleteRequest(PackageInformation packageInfo, User user) throws TException {
         assertUser(user);
         assertNotNull(packageInfo);
@@ -177,36 +162,30 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.createRequest(packageInfo, user, true);
     }
 
-    @Override
     public List<ModerationRequest> getModerationRequestByDocumentId(String documentId) throws TException {
         assertId(documentId);
 
         return handler.getRequestByDocumentId(documentId);
     }
 
-    @Override
     public RequestStatus acceptRequest(ModerationRequest request, String moderationComment, String reviewer) throws TException {
         handler.acceptRequest(request, moderationComment, reviewer);
         return RequestStatus.SUCCESS;
     }
 
-    @Override
     public RequestStatus updateModerationRequest(ModerationRequest moderationRequest) throws TException {
         handler.updateModerationRequest(moderationRequest);
         return RequestStatus.SUCCESS;
     }
 
-    @Override
     public ModerationRequest getModerationRequestById(String id) throws TException {
         return handler.getRequest(id);
     }
 
-    @Override
     public void refuseRequest(String requestId, String moderationDecisionComment, String reviewer) throws TException {
         handler.refuseRequest(requestId, moderationDecisionComment, reviewer);
     }
 
-    @Override
     public RemoveModeratorRequestStatus removeUserFromAssignees(String requestId, User user) throws TException {
         ModerationRequest request = handler.getRequest(requestId);
         if(request.getModerators().size()==1){
@@ -219,7 +198,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return RemoveModeratorRequestStatus.SUCCESS;
     }
 
-    @Override
     public void cancelInProgress(String requestId) throws TException {
         ModerationRequest request = handler.getRequest(requestId);
         request.setModerationState(ModerationState.PENDING);
@@ -227,7 +205,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.updateModerationRequest(request);
     }
 
-    @Override
     public void setInProgress(String requestId, User user) throws TException {
         ModerationRequest request = handler.getRequest(requestId);
         request.setModerationState(ModerationState.INPROGRESS);
@@ -235,54 +212,46 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.updateModerationRequest(request);
     }
 
-    @Override
     public void deleteRequestsOnDocument(String documentId) throws TException {
         assertId(documentId);
 
         handler.deleteRequestsOnDocument(documentId);
     }
 
-    @Override
     public RequestStatus deleteModerationRequest(String id, User user) throws SW360Exception{
         assertUser(user);
 
         return handler.deleteModerationRequest(id,user);
     }
 
-    @Override
     public List<ModerationRequest> getRequestsByModerator(User user) throws TException {
         assertUser(user);
 
         return handler.getRequestsByModerator(user.getEmail());
     }
 
-    @Override
     public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(User user, PaginationData pageData) throws TException {
         assertUser(user);
 
         return handler.getRequestsByModeratorWithPaginationNoFilter(user.getEmail(), pageData);
     }
 
-    @Override
     public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
         return handler.searchModerationRequestsByExactValues(subQueryRestrictions, pageData);
     }
 
-    @Override
     public List<ModerationRequest> getRequestsByRequestingUser(User user) throws TException {
         assertUser(user);
 
         return handler.getRequestsByRequestingUser(user.getEmail());
     }
 
-    @Override
     public List<ModerationRequest> getRequestsByRequestingUserWithPagination(User user, PaginationData pageData) throws TException {
         assertUser(user);
 
         return handler.getRequestsByRequestingUserWithPagination(user.getEmail(), pageData);
     }
 
-    @Override
     public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws TException {
         assertId(projectId);
         assertUser(user);
@@ -290,28 +259,24 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.getClearingRequestByProjectId(projectId, user);
     }
 
-    @Override
     public Set<ClearingRequest> getMyClearingRequests(User user) throws TException {
         assertUser(user);
 
         return handler.getMyClearingRequests(user.getEmail());
     }
 
-    @Override
     public Set<ClearingRequest> getClearingRequestsByBU(String businessUnit) throws TException {
         assertNotEmpty(businessUnit);
 
         return handler.getClearingRequestsByBU(businessUnit);
     }
 
-    @Override
     public int getOpenCriticalCrCountByGroup(String group) throws TException {
         // user department is being passed here
         assertNotEmpty(group);
         return handler.getOpenCriticalCrCountByGroup(group);
     }
 
-    @Override
     public String createClearingRequest(ClearingRequest clearingRequest, User user) throws TException {
         assertNotNull(clearingRequest);
         assertEmpty(clearingRequest.getId());
@@ -320,7 +285,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.createClearingRequest(clearingRequest, user);
     }
 
-    @Override
     public ClearingRequest getClearingRequestById(String id, User user) throws TException {
         assertId(id);
         assertUser(user);
@@ -328,7 +292,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.getClearingRequestById(id, user);
     }
 
-    @Override
     public ClearingRequest getClearingRequestByIdForEdit(String id, User user) throws TException {
         assertId(id);
         assertUser(user);
@@ -336,7 +299,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.getClearingRequestByIdForEdit(id, user);
     }
 
-    @Override
     public RequestStatus updateClearingRequest(ClearingRequest clearingRequest, User user, String projectUrl) throws TException {
         assertNotNull(clearingRequest);
         assertId(clearingRequest.getId());
@@ -346,7 +308,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.updateClearingRequest(clearingRequest, user, projectUrl);
     }
 
-    @Override
     public void updateClearingRequestForProjectDeletion(Project project, User user) throws TException {
         assertNotNull(project);
         assertId(project.getClearingRequestId());
@@ -355,7 +316,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.updateClearingRequestForProjectDeletion(project, user);
     }
 
-    @Override
     public void updateClearingRequestForChangeInProjectBU(String crId, String businessUnit, User user) throws TException {
         assertId(crId);
         assertNotNull(businessUnit);
@@ -364,7 +324,6 @@ public class ModerationHandler implements ModerationService.Iface {
         handler.updateClearingRequestForChangeInProjectBU(crId, businessUnit, user);
     }
 
-    @Override
     public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) throws TException {
         assertId(id);
         assertNotNull(comment);
@@ -373,7 +332,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.addCommentToClearingRequest(id, comment, user);
     }
 
-    @Override
     public List<ModerationRequest> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions,
             PaginationData pageData) throws TException {
         Map<PaginationData, List<ModerationRequest>> result = modSearchHandler.search(text, subQueryRestrictions,
@@ -381,26 +339,22 @@ public class ModerationHandler implements ModerationService.Iface {
         return result.values().iterator().next();
     }
 
-    @Override
     public Map<String, Long> getCountByModerationState(User user) throws TException {
         assertUser(user);
         return handler.getCountByModerationState(user.getEmail());
     }
 
-    @Override
     public Map<String, Long> getCountByRequester(User user) throws TException {
         assertUser(user);
         return handler.getCountByRequester(user.getEmail());
     }
 
-    @Override
     public Map<String, Long> getCountByModerationStateAndRequestingUser(User moderator, User requestingUser) throws TException {
         assertUser(moderator);
         assertUser(requestingUser);
         return handler.getCountByModerationStateAndRequestingUser(moderator.getEmail(), requestingUser.getEmail());
     }
 
-    @Override
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModeratorWithPagination(User user,
             PaginationData pageData, boolean open) throws TException {
         assertUser(user);
@@ -408,7 +362,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.getRequestsByModerator(user.getEmail(), pageData, open);
     }
 
-    @Override
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModeratorWithPaginationAllDetails(User user,
                                                                                                        PaginationData pageData, boolean open) throws TException {
         assertUser(user);
@@ -416,12 +369,10 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.getRequestsByModeratorAllDetails(user.getEmail(), pageData, open);
     }
 
-    @Override
     public Set<String> getRequestingUserDepts() {
         return handler.getRequestingUserDepts();
     }
 
-    @Override
     public Map<PaginationData, List<ClearingRequest>> getRecentClearingRequestsWithPagination(User user, PaginationData pageData) throws TException {
         assertUser(user);
         assertNotNull(pageData);
@@ -429,7 +380,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.getRecentClearingRequestsWithPagination(user, pageData);
     }
 
-    @Override
     public Map<PaginationData, List<ClearingRequest>> searchClearingRequestsByFilters(User user, Map<String, Set<String>> filterMap, PaginationData pageData) throws TException {
         assertUser(user);
         assertNotNull(filterMap);
@@ -438,7 +388,6 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.searchClearingRequestsByFilters(user, filterMap, pageData);
     }
 
-    @Override
     public RequestStatus deleteClearingRequest(String id, User user) throws TException {
         assertId(id);
         assertUser(user);

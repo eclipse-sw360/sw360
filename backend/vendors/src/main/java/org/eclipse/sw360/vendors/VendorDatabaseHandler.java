@@ -23,14 +23,12 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -259,8 +257,8 @@ public class VendorDatabaseHandler {
     }
 
     private boolean isVendorUnderModeration(String vendorId) throws TException {
-        ModerationService.Iface moderationClient = ThriftClients.makeModerationClient();
-        List<ModerationRequest> sourceModerationRequests = moderationClient.getModerationRequestByDocumentId(vendorId);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> sourceModerationRequests =
+                ModerationClients.get().getModerationRequestByDocumentId(vendorId);
         return sourceModerationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }
 
