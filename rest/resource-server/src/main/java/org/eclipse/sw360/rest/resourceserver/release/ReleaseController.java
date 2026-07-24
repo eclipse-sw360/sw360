@@ -1880,8 +1880,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String releaseId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (user == null || user.getEmail() == null) {
+            throw new BadRequestClientException("User information is invalid.");
+        }
+
         Release releaseById = releaseService.getReleaseForUserById(releaseId, user);
         Set<String> subscribers = releaseById.getSubscribers();
+        if (subscribers == null) {
+            subscribers = new HashSet<>();
+        }
+        
         if (subscribers.contains(user.getEmail())) {
             releaseService.unsubscribeRelease(user, releaseId);
             return new ResponseEntity<>("Release has been unsubscribed", HttpStatus.OK);
