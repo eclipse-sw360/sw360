@@ -368,8 +368,15 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("id") String componentId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (user == null || user.getEmail() == null) {
+            throw new BadRequestClientException("User information is invalid.");
+        }
+
         Component componentById = componentService.getComponentForUserById(componentId, user);
         Set<String> subscribers = componentById.getSubscribers();
+        if (subscribers == null) {
+            subscribers = new HashSet<>();
+        }
 
         boolean isSubscribed = subscribers.contains(user.getEmail());
 
