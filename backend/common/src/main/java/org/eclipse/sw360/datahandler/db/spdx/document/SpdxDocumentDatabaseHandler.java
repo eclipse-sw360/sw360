@@ -38,6 +38,7 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentModerator;
+import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
@@ -120,7 +121,8 @@ public class SpdxDocumentDatabaseHandler {
     }
 
     public SPDXDocument getSPDXDocumentForEdit(String id, User user) throws SW360Exception {
-        List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestsForDocumentId =
+                moderator.getModerationRequestsForDocumentId(id);
 
         SPDXDocument spdx = getSPDXDocumentById(id, user);
         DocumentState documentState;
@@ -129,14 +131,16 @@ public class SpdxDocumentDatabaseHandler {
             documentState = CommonUtils.getOriginalDocumentState();
         } else {
             final String email = user.getEmail();
-            Optional<ModerationRequest> moderationRequestOptional = CommonUtils.getFirstModerationRequestOfUser(moderationRequestsForDocumentId, email);
+            Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
+                    CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())) {
-                ModerationRequest moderationRequest = moderationRequestOptional.get();
+                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
                 spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, moderationRequest.getSPDXDocumentAdditions(), moderationRequest.getSPDXDocumentDeletions());
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
+                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
+                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
+                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
         spdx.setPermissions(makePermission(spdx, user).getPermissionMap());

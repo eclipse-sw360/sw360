@@ -10,16 +10,17 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import com.google.common.collect.Maps;
+import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.thrift.TException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,12 +39,11 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
     private static final Logger log = LogManager.getLogger(LicenseModerator.class);
 
     public RequestStatus updateLicense(License license, User user) {
-
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createLicenseRequest(license, user);
+            ModerationClients.get().createLicenseRequest(
+                    LicenseConverter.fromThrift(license), UserConverter.fromThrift(user));
             return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
+        } catch (SW360Exception e) {
             log.error("Could not moderate license " + license.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }

@@ -39,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
@@ -1207,7 +1208,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public Project getProjectForEdit(String id, User user) throws SW360Exception {
 
-        List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
+        List<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestsForDocumentId =
+                moderator.getModerationRequestsForDocumentId(id);
 
         Project project = getProjectById(id,user);
         Visibility actualVisbility = project.getVisbility();
@@ -1216,10 +1218,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             documentState = CommonUtils.getOriginalDocumentState();
         } else {
             final String email = user.getEmail();
-            Optional<ModerationRequest> moderationRequestOptional = CommonUtils.getFirstModerationRequestOfUser(moderationRequestsForDocumentId, email);
+            Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
+                    CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = moderationRequestOptional.get();
+                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
                 project = moderator.updateProjectFromModerationRequest(project,
                         moderationRequest.getProjectAdditions(),
                         moderationRequest.getProjectDeletions());
@@ -1229,9 +1232,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                 .getProjectDeletions().getVisbility()) {
                     project.setVisbility(actualVisbility);
                 }
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
+                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
+                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
+                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
         project.setPermissions(makePermission(project, user).getPermissionMap());

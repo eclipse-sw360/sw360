@@ -10,15 +10,17 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
+import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 
@@ -27,19 +29,17 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.thrift.TException;
 
 public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXDocument> {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentModerator.class);
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) {
-
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createSPDXDocumentRequest(spdx, user);
+            ModerationClients.get().createSPDXDocumentRequest(
+                    SPDXDocumentConverter.fromThrift(spdx), UserConverter.fromThrift(user));
             return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
+        } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Document " + spdx.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }
@@ -47,10 +47,10 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
 
     public RequestStatus deleteSPDXDocument(SPDXDocument spdx, User user) {
         try {
-            ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createSPDXDocumentDeleteRequest(spdx, user);
+            ModerationClients.get().createSPDXDocumentDeleteRequest(
+                    SPDXDocumentConverter.fromThrift(spdx), UserConverter.fromThrift(user));
             return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
+        } catch (SW360Exception e) {
             log.error("Could not moderate delete SPDX document " + spdx.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }
