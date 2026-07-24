@@ -527,6 +527,10 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         }
 
         final Function<String, String> addType = input -> {
+            if (fieldName.equals("tag")) {
+                return fieldName + ":\"" + sanitizeTagQueryInput(input) + "\"";
+            }
+
             // Handle pre-formatted queries from prepareWildcardQuery
             if (input.startsWith("\"") && input.endsWith("\"")) {
                 // Exact phrase search - just prepend field name
@@ -630,6 +634,17 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         } else {
             for (String removeStr : LUCENE_SPECIAL_CHARACTERS) {
                 input = input.replaceAll(removeStr, " ");
+            }
+            return input.replaceAll("\\s+", " ").trim();
+        }
+    }
+
+    private static String sanitizeTagQueryInput(String input) {
+        if (isNullOrEmpty(input)) {
+            return nullToEmpty(input);
+        } else {
+            for (String specialCharacter : LUCENE_SPECIAL_CHARACTERS) {
+                input = input.replaceAll("(" + specialCharacter + ")", "\\\\$1");
             }
             return input.replaceAll("\\s+", " ").trim();
         }
