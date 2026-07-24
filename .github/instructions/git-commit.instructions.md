@@ -157,32 +157,29 @@ git remote add siemens https://github.com/siemens/sw360.git
 - [ ] New files have EPL-2.0 license headers
 
 ### PR Description Template
-Use the following template when creating a PR:
+The repository includes a PR template at `.github/pull_request_template.md` that
+auto-populates when you open a PR. A **PR Quality Gate** workflow validates your
+description and reports a completeness score — PRs below 60% are blocked.
 
-```markdown
-[//]: # (This program and the accompanying materials are made)
-[//]: # (available under the terms of the Eclipse Public License 2.0)
-[//]: # (which is available at https://www.eclipse.org/legal/epl-2.0/)
-[//]: # (SPDX-License-Identifier: EPL-2.0)
+The template includes:
 
-> Please provide a summary of your changes here.
-> * Which issue is this pull request belonging to and how is it solving it? (*Refer to issue here*)
-> * Did you add or update any new dependencies that are required for your change?
-
-Issue: #<issue-number>
-
-### Suggest Reviewer
-> You can suggest reviewers here with an @mention.
-
-### How To Test?
-> How should these changes be tested by the reviewer?
-> Have you implemented any additional tests?
-
-### Checklist
-Must:
-- [ ] All related issues are referenced in commit messages and in PR
-- [ ] If code is AI-generated, mention the tool and model used (e.g., GitHub Copilot, GPT-4)
-```
+- **Summary** — What changed and why
+- **Type of Change** — Select one: feat, fix, refactor, test, docs, chore, build
+- **Related Issue** — Link with `Fixes #123`, `Closes #456`, or `N/A`
+  - Required for `feat` and `fix` PRs; optional for `docs`/`chore`/`build`
+- **Type-Specific Section** — Keep the section matching your type, delete the rest:
+  - `fix` → Root Cause, Impact Analysis, failing test checkbox
+  - `feat` → Architecture explanation, Performance notes, test/OpenAPI checkboxes
+  - `refactor` → Structural rationale, no-behavior-change confirmation
+- **How To Test** — Step-by-step instructions for reviewers
+- **Checklist** — Mandatory items (Signed-off-by, license headers, formatting,
+  **manual testing**)
+- **AI Disclosure** — Required if AI tools were used. Must include:
+  - Tool & model name
+  - What AI generated vs. what you wrote
+  - Your understanding of the changes (in your own words)
+  - Edge cases you verified
+- **Breaking Changes** — Document any breaking changes
 
 ### PR Description Tips
 - Link related issues using keywords: `Fixes #123`, `Closes #456`, `Resolves #789`

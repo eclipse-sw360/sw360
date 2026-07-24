@@ -1,0 +1,260 @@
+# -----------------------------------------------------------------------------
+# Copyright Siemens AG, 2026.
+# Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# -----------------------------------------------------------------------------
+
+name: PR Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate-pr:
+    name: Validate PR Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
+        with:
+          egress-policy: audit
+
+      - name: PR quality gate
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const title = context.payload.pull_request.title || '';
+            const errors = [];   // Hard failures — block the PR
+            const warnings = []; // Soft issues — show but don't block
+
+            // ── Helper: extract text between two ## headings ──
+            function sectionContent(heading) {
+              const re = new RegExp(`## ${heading}\\s*\\n(?:<!--[\\s\\S]*?-->\\s*\\n)*(.*?)(?=\\n## |$)`, 's');
+              const m = body.match(re);
+              return m ? m[1].replace(/<!--[\s\S]*?-->/g, '').trim() : '';
+            }
+
+            // ── Helper: detect which type is checked ──
+            function checkedType() {
+              const m = body.match(/- \[x\] `(\w+)`/i);
+              return m ? m[1].toLowerCase() : null;
+            }
+
+            // ── Helper: count checked boxes ──
+            function checkedCount() {
+              return (body.match(/- \[x\]/g) || []).length;
+            }
+
+            // ── Helper: is this a trivial change type? ──
+            function isTrivialType(type) {
+              return ['docs', 'chore', 'build', 'style'].includes(type);
+            }
+
+            // ══════════════════════════════════════════════
+            // 1. STRUCTURAL CHECKS (required for all PRs)
+            // ══════════════════════════════════════════════
+
+            const type = checkedType();
+            const summary = sectionContent('Summary');
+            const issueField = (body.match(/Issue:\s*(.+)/i) || [])[1]?.trim() || '';
+            const howToTest = sectionContent('How To Test');
+
+            // 1a. Summary must not be empty
+            if (!summary) {
+              errors.push('**Summary** is empty — describe what changed and why.');
+            }
+
+            // 1b. Type of Change must be selected
+            if (!type) {
+              errors.push('**Type of Change** — check exactly one type.');
+            }
+
+            // 1c. Issue reference — required for feat/fix, optional for trivial types
+            if (!issueField) {
+              if (type && !isTrivialType(type)) {
+                errors.push('**Issue** is required for `feat` and `fix` PRs. Link the issue or write `N/A` with justification.');
+              } else {
+                warnings.push('**Issue** is empty. Consider linking a related issue for traceability.');
+              }
+            }
+
+            // 1d. How To Test — required for feat/fix/refactor
+            if (type && !isTrivialType(type) && type !== 'test') {
+              if (!howToTest || howToTest === '1.') {
+                errors.push('**How To Test** is empty — provide steps so reviewers can verify your changes.');
+              }
+            }
+
+            // 1e. Minimum checklist completion
+            const checked = checkedCount();
+            if (checked < 3) {
+              errors.push('**Checklist** — fewer than 3 items checked. Review and check all that apply.');
+            }
+
+            // ══════════════════════════════════════════════
+            // 2. TYPE-SPECIFIC QUALITY CHECKS
+            // ══════════════════════════════════════════════
+
+            if (type === 'fix') {
+              const rootCause = body.includes('**Root Cause:**');
+              const rootContent = sectionContent('Bug Fix Details');
+              if (!rootCause || !rootContent || rootContent.length < 30) {
+                warnings.push('`fix` PR: **Root Cause** is missing or too brief. Explain *why* the bug happened, not just what you changed.');
+              }
+              const hasFailingTest = body.match(/- \[x\].*failing test/i);
+              if (!hasFailingTest) {
+                warnings.push('`fix` PR: Consider adding a failing test that reproduces the bug before the fix.');
+              }
+            }
+
+            if (type === 'feat') {
+              const archContent = sectionContent('Feature Details');
+              if (!archContent || archContent.length < 40) {
+                warnings.push('`feat` PR: **Architecture** section is missing or too brief. Explain which SW360 layers this touches.');
+              }
+              const hasTests = body.match(/- \[x\].*tests? added/i);
+              if (!hasTests) {
+                warnings.push('`feat` PR: No tests checked. New features should include integration or unit tests.');
+              }
+            }
+
+            // ══════════════════════════════════════════════
+            // 3. AI DISCLOSURE ACCOUNTABILITY
+            // ══════════════════════════════════════════════
+
+            const aiChecked = body.match(/- \[x\].*AI-assisted/i);
+            const aiHints = /copilot|chatgpt|gpt-4|claude|gemini|ai.generat/i.test(body);
+
+            if (aiChecked) {
+              // AI was disclosed — check they filled in the accountability fields
+              const understanding = body.includes('**Your understanding of the changes');
+              const understandingContent = body.match(/\*\*Your understanding of the changes.*?\*\*\s*\n(?:<!--[\s\S]*?-->\s*\n)*([\s\S]*?)(?=\n\*\*|\n##|\n- \[|$)/s);
+              const hasUnderstanding = understandingContent && understandingContent[1].trim().length > 20;
+
+              const edgeCases = body.match(/\*\*Edge cases.*?\*\*[\s\S]*?1\.\s*(.+)/);
+              const hasEdgeCases = edgeCases && edgeCases[1].trim().length > 5;
+
+              if (!hasUnderstanding) {
+                errors.push('**AI Disclosure**: You checked AI-assisted but didn\'t explain your understanding of the changes. This is required to prove you reviewed the generated code.');
+              }
+              if (!hasEdgeCases) {
+                warnings.push('**AI Disclosure**: List at least 2 edge cases you verified. This helps reviewers trust the AI output was validated.');
+              }
+            } else if (aiHints && !aiChecked) {
+              // Body mentions AI tools but checkbox isn't checked
+              warnings.push('Your PR mentions AI tools but the **AI Disclosure** checkbox is not checked. If AI was used, please check the box and fill in the details.');
+            }
+
+            // ══════════════════════════════════════════════
+            // 4. MANUAL TESTING ACCOUNTABILITY
+            // ══════════════════════════════════════════════
+
+            const manuallyTested = body.match(/- \[x\].*manually tested/i);
+            if (type && !isTrivialType(type) && type !== 'test' && !manuallyTested) {
+              warnings.push('**Manual testing** checkbox is not checked. For `feat`/`fix`/`refactor` PRs, please confirm you tested against a running SW360 instance.');
+            }
+
+            // ══════════════════════════════════════════════
+            // 5. COMPLETENESS SCORE (60% threshold)
+            // ══════════════════════════════════════════════
+
+            // Score sections out of max points
+            let score = 0;
+            let maxScore = 0;
+
+            // Summary (15 pts)
+            maxScore += 15;
+            if (summary) score += Math.min(15, Math.floor(summary.length / 10));
+
+            // Type selected (10 pts)
+            maxScore += 10;
+            if (type) score += 10;
+
+            // Issue reference (10 pts)
+            maxScore += 10;
+            if (issueField) score += 10;
+
+            // How to test (20 pts)
+            maxScore += 20;
+            if (howToTest && howToTest !== '1.') score += Math.min(20, Math.floor(howToTest.length / 10));
+
+            // Checklist items (20 pts)
+            maxScore += 20;
+            score += Math.min(20, checked * 3);
+
+            // Type-specific section filled (15 pts)
+            maxScore += 15;
+            if (type === 'fix' && sectionContent('Bug Fix Details').length > 30) score += 15;
+            else if (type === 'feat' && sectionContent('Feature Details').length > 30) score += 15;
+            else if (type === 'refactor' && sectionContent('Refactor Details').length > 20) score += 15;
+            else if (isTrivialType(type)) score += 15; // auto-pass for docs/chore/build
+
+            // AI disclosure complete if applicable (10 pts)
+            maxScore += 10;
+            if (!aiChecked && !aiHints) score += 10; // no AI = full marks
+            else if (aiChecked) {
+              const u = body.match(/\*\*Your understanding.*?\*\*\s*\n(?:<!--[\s\S]*?-->\s*\n)*([\s\S]*?)(?=\n\*\*|\n##|\n- \[|$)/s);
+              if (u && u[1].trim().length > 20) score += 10;
+              else score += 3; // partial credit for at least disclosing
+            }
+
+            const pct = Math.round((score / maxScore) * 100);
+
+            // ══════════════════════════════════════════════
+            // 6. BUILD RESULT
+            // ══════════════════════════════════════════════
+
+            const lines = [];
+            lines.push('### 📋 PR Quality Gate');
+            lines.push('');
+
+            // Score bar
+            const bar = pct >= 80 ? '🟢' : pct >= 60 ? '🟡' : '🔴';
+            lines.push(`**Completeness: ${bar} ${pct}%** (threshold: 60%)`);
+            lines.push('');
+
+            if (errors.length > 0) {
+              lines.push('#### ❌ Required fixes');
+              errors.forEach(e => lines.push(`- ${e}`));
+              lines.push('');
+            }
+
+            if (warnings.length > 0) {
+              lines.push('#### ⚠️ Suggestions');
+              warnings.forEach(w => lines.push(`- ${w}`));
+              lines.push('');
+            }
+
+            if (errors.length === 0 && warnings.length === 0) {
+              lines.push('✅ PR description looks great! Ready for review.');
+            } else {
+              lines.push('> Edit your PR description and the check will re-run automatically.');
+            }
+
+            const output = lines.join('\n');
+            core.summary.addRaw(output);
+            await core.summary.write();
+
+            // FAIL the check only if completeness < 60% or there are hard errors
+            if (pct < 60 || errors.length > 0) {
+              core.setFailed(`PR quality gate: ${pct}% complete with ${errors.length} error(s). See job summary for details.`);
+            } else if (warnings.length > 0) {
+              core.warning(`PR quality gate: ${pct}% complete with ${warnings.length} suggestion(s). See job summary.`);
+            }
