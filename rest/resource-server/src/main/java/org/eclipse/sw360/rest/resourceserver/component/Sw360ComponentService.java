@@ -135,7 +135,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
-        return sw360ComponentClient.getUsingComponentsForComponent(releaseIds);
+        return sw360ComponentClient.getUsingComponentsForComponent(releaseIds)
+                .stream().filter(comp -> !comp.getId().equals(componentId)).collect(Collectors.toSet());
     }
 
     @Override
