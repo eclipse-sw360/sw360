@@ -9,6 +9,11 @@
  */
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentContentConverter;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentUsageConverter;
+import org.eclipse.sw360.common.utils.converter.attachments.UsageDataConverter;
+import org.eclipse.sw360.common.utils.converter.common.SourceConverter;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.springframework.stereotype.Component;
@@ -18,8 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 
 /**
- * Maps between Thrift types (still used in HAL / controller layer) and service-api POJOs
- * without pulling in {@code backend-common}.
+ * Maps between Thrift types (still used in HAL / controller layer) and service-api POJOs.
+ * Thrift unions ({@code Source}, {@code UsageData}) must use check-and-copy converters —
+ * Jackson {@code convertValue} reads every getter and throws on unset union arms.
  */
 @Component
 public class AttachmentTypeBridge {
@@ -36,142 +42,52 @@ public class AttachmentTypeBridge {
 
     public org.eclipse.sw360.datahandler.services.attachments.AttachmentContent toPojo(
             org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent thrift) {
-        if (thrift == null) {
-            return null;
-        }
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentContent pojo =
-                new org.eclipse.sw360.datahandler.services.attachments.AttachmentContent();
-        if (thrift.isSetContentType()) {
-            pojo.setContentType(thrift.getContentType());
-        }
-        if (thrift.isSetFilename()) {
-            pojo.setFilename(thrift.getFilename());
-        }
-        if (thrift.isSetId()) {
-            pojo.setId(thrift.getId());
-        }
-        if (thrift.isSetOnlyRemote()) {
-            pojo.setOnlyRemote(thrift.isOnlyRemote());
-        }
-        if (thrift.isSetPartsCount()) {
-            pojo.setPartsCount(thrift.getPartsCount());
-        }
-        if (thrift.isSetRemoteUrl()) {
-            pojo.setRemoteUrl(thrift.getRemoteUrl());
-        }
-        if (thrift.isSetRevision()) {
-            pojo.setRevision(thrift.getRevision());
-        }
-        if (thrift.isSetType()) {
-            pojo.setType(thrift.getType());
-        }
-        return pojo;
+        return AttachmentContentConverter.fromThrift(thrift);
     }
 
     public org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent toThrift(
             org.eclipse.sw360.datahandler.services.attachments.AttachmentContent pojo) {
-        if (pojo == null) {
-            return null;
-        }
-        org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent thrift =
-                new org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent();
-        if (pojo.getContentType() != null) {
-            thrift.setContentType(pojo.getContentType());
-        }
-        if (pojo.getFilename() != null) {
-            thrift.setFilename(pojo.getFilename());
-        }
-        if (pojo.getId() != null) {
-            thrift.setId(pojo.getId());
-        }
-        if (pojo.getOnlyRemote() != null) {
-            thrift.setOnlyRemote(pojo.getOnlyRemote());
-        }
-        if (pojo.getPartsCount() != null) {
-            thrift.setPartsCount(pojo.getPartsCount());
-        }
-        if (pojo.getRemoteUrl() != null) {
-            thrift.setRemoteUrl(pojo.getRemoteUrl());
-        }
-        if (pojo.getRevision() != null) {
-            thrift.setRevision(pojo.getRevision());
-        }
-        if (pojo.getType() != null) {
-            thrift.setType(pojo.getType());
-        }
-        return thrift;
+        return AttachmentContentConverter.toThrift(pojo);
     }
 
     public org.eclipse.sw360.datahandler.services.attachments.Attachment toPojoAttachment(
             org.eclipse.sw360.datahandler.thrift.attachments.Attachment thrift) {
-        return thrift == null ? null
-                : mapper.convertValue(thrift, org.eclipse.sw360.datahandler.services.attachments.Attachment.class);
+        return AttachmentConverter.fromThrift(thrift);
     }
 
     public org.eclipse.sw360.datahandler.thrift.attachments.Attachment toThriftAttachment(
             org.eclipse.sw360.datahandler.services.attachments.Attachment pojo) {
-        return pojo == null ? null
-                : mapper.convertValue(pojo, org.eclipse.sw360.datahandler.thrift.attachments.Attachment.class);
+        return AttachmentConverter.toThrift(pojo);
     }
 
     public org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage toPojo(
             org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage thrift) {
-        return thrift == null ? null
-                : mapper.convertValue(thrift, org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage.class);
+        return AttachmentUsageConverter.fromThrift(thrift);
     }
 
     public org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage toThrift(
             org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage pojo) {
-        return pojo == null ? null
-                : mapper.convertValue(pojo, org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage.class);
+        return AttachmentUsageConverter.toThrift(pojo);
     }
 
     public org.eclipse.sw360.datahandler.services.attachments.UsageData toPojo(
             org.eclipse.sw360.datahandler.thrift.attachments.UsageData thrift) {
-        return thrift == null ? null
-                : mapper.convertValue(thrift, org.eclipse.sw360.datahandler.services.attachments.UsageData.class);
+        return UsageDataConverter.fromThrift(thrift);
     }
 
     public org.eclipse.sw360.datahandler.thrift.attachments.UsageData toThrift(
             org.eclipse.sw360.datahandler.services.attachments.UsageData pojo) {
-        return pojo == null ? null
-                : mapper.convertValue(pojo, org.eclipse.sw360.datahandler.thrift.attachments.UsageData.class);
+        return UsageDataConverter.toThrift(pojo);
     }
 
     public org.eclipse.sw360.datahandler.services.common.Source toPojoSource(
             org.eclipse.sw360.datahandler.thrift.Source thrift) {
-        if (thrift == null) {
-            return null;
-        }
-        org.eclipse.sw360.datahandler.services.common.Source pojo =
-                new org.eclipse.sw360.datahandler.services.common.Source();
-        if (thrift.isSetProjectId()) {
-            pojo.setProjectId(thrift.getProjectId());
-        }
-        if (thrift.isSetComponentId()) {
-            pojo.setComponentId(thrift.getComponentId());
-        }
-        if (thrift.isSetReleaseId()) {
-            pojo.setReleaseId(thrift.getReleaseId());
-        }
-        return pojo;
+        return SourceConverter.fromThrift(thrift);
     }
 
     public org.eclipse.sw360.datahandler.thrift.Source toThriftSource(
             org.eclipse.sw360.datahandler.services.common.Source pojo) {
-        if (pojo == null) {
-            return null;
-        }
-        if (pojo.getProjectId() != null) {
-            return org.eclipse.sw360.datahandler.thrift.Source.projectId(pojo.getProjectId());
-        }
-        if (pojo.getComponentId() != null) {
-            return org.eclipse.sw360.datahandler.thrift.Source.componentId(pojo.getComponentId());
-        }
-        if (pojo.getReleaseId() != null) {
-            return org.eclipse.sw360.datahandler.thrift.Source.releaseId(pojo.getReleaseId());
-        }
-        return new org.eclipse.sw360.datahandler.thrift.Source();
+        return SourceConverter.toThrift(pojo);
     }
 
     public org.eclipse.sw360.datahandler.thrift.RequestStatus toThriftRequestStatus(RequestStatus pojo) {
