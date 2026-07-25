@@ -881,6 +881,8 @@ AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 // Rest Clients
 org.eclipse.sw360.datahandler.moderation.ModerationClient moderationClient =
         org.eclipse.sw360.datahandler.moderation.ModerationClients.get();
+org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClient licenseInfoClient =
+        org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClients.get();
 ```
 
 ---

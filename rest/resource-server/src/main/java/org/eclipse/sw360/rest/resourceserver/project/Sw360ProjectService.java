@@ -36,7 +36,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -46,12 +45,12 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseObligationsStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.LicenseInfoThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -414,7 +413,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, Set<Release>> getLicensesFromAttachmentUsage(
             Map<String, AttachmentUsage> licenseInfoAttachmentUsage, User user) {
-        LicenseInfoService.Iface licenseInfoClient = ThriftClients.makeLicenseInfoClient();
         ComponentService.Iface componentClient = componentServiceRestAdapter;
         Map<String, Release> attachmentIdToReleaseMap = new HashMap<String, Release>();
         Map<String, Set<Release>> licenseIdToReleasesMap = new HashMap<>();
@@ -445,7 +443,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         attachmentIdToReleaseMap.entrySet().stream().filter(entry -> entry.getKey() != null && entry.getValue() != null)
                 .forEach(entry -> wrapTException(() -> {
-                    List<LicenseInfoParsingResult> licenseInfoForAttachment = licenseInfoClient
+                    List<LicenseInfoParsingResult> licenseInfoForAttachment = LicenseInfoThriftBridge
                             .getLicenseInfoForAttachment(entry.getValue(), entry.getKey(), false, user);
                     Set<String> licenseIds = licenseInfoForAttachment.stream().filter(Objects::nonNull)
                             .filter(lia -> lia.getLicenseInfo() != null)
@@ -809,7 +807,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             List<Release> releases, User user) {
 
         final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
-        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
 
         for (Release release : releases) {
             List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
@@ -828,18 +825,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
 
                 try {
-                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release,
-                            attachmentContentId, false, user);
+                    List<LicenseInfoParsingResult> licenseResults = LicenseInfoThriftBridge.getLicenseInfoForAttachment(
+                            release, attachmentContentId, false, user);
 
-                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release,
-                            attachmentContentId, user);
+                    List<ObligationParsingResult> obligationResults = LicenseInfoThriftBridge.getObligationsForAttachment(
+                            release, attachmentContentId, user);
 
                     if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults)
                             && obligationResults.get(0).getObligationsAtProjectSize() > 0) {
-                        licenseInfoWithObligations.add(licenseClient
+                        licenseInfoWithObligations.add(LicenseInfoThriftBridge
                                 .createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
                     }
-                } catch (TException exception) {
+                } catch (RuntimeException exception) {
                     log.error(String.format("Error fetchinig Sw360ProjectService.javalicense Information for attachment: %s in release: %s",
                             filteredAttachment.getFilename(), releaseId), exception);
                 }
@@ -847,7 +844,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         try {
-            LicenseObligationsStatusInfo licenseObligation = licenseClient.getProjectObligationStatus(
+            LicenseObligationsStatusInfo licenseObligation = LicenseInfoThriftBridge.getProjectObligationStatus(
                     obligationStatusMap, licenseInfoWithObligations, releaseIdToAcceptedCLI);
             Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
             obligationStatusMap = licenseObligation.getObligationStatusMap();
@@ -868,7 +865,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
                 details.unsetReleases();
             }
-        } catch (TException e) {
+        } catch (RuntimeException e) {
             log.error("Failed to set obligation status for project!", e);
         }
         return obligationStatusMap;
@@ -1440,9 +1437,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
     }
 
-    public String getLicenseInfoHeaderText() throws TException {
-        final LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
-        return licenseClient.getDefaultLicenseInfoHeaderText(null);
+    public String getLicenseInfoHeaderText() {
+        return LicenseInfoThriftBridge.getDefaultLicenseInfoHeaderText(null);
     }
 
     /**
@@ -1730,7 +1726,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public List<LicenseInfoParsingResult> processLicenseInfoWithObligations(
             List<LicenseInfoParsingResult> licenseInfoWithObligations, Map<String, String> releaseIdToAcceptedCLI,
             List<Release> releases, User user) throws TException {
-        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
 
         for (Release release : releases) {
             List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
@@ -1750,17 +1745,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
 
                 try {
-                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release,
-                            attachmentContentId, false, user);
-                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release,
-                            attachmentContentId, user);
+                    List<LicenseInfoParsingResult> licenseResults = LicenseInfoThriftBridge.getLicenseInfoForAttachment(
+                            release, attachmentContentId, false, user);
+                    List<ObligationParsingResult> obligationResults = LicenseInfoThriftBridge.getObligationsForAttachment(
+                            release, attachmentContentId, user);
 
                     if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults)
                             && obligationResults.get(0).getObligationsAtProjectSize() > 0) {
-                        licenseInfoWithObligations.add(licenseClient
+                        licenseInfoWithObligations.add(LicenseInfoThriftBridge
                                 .createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
                     }
-                } catch (TException exception) {
+                } catch (RuntimeException exception) {
                     log.error(String.format("Error fetching license Information for attachment: %s in release: %s",
                             filteredAttachment.getFilename(), releaseId), exception);
                 }
@@ -1842,7 +1837,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         ProjectService.Iface projectClient = getThriftProjectClient();
-        LicenseInfoService.Iface licenseInfoClient = ThriftClients.makeLicenseInfoClient();
         ComponentService.Iface componentClient = componentServiceRestAdapter;
 
         Project project;
@@ -1865,8 +1859,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         List<Callable<Void>> processingTasks = releaseIds.stream()
                 .map(releaseId -> (Callable<Void>) () -> {
-                    processReleaseForLicenseUpdate(releaseId, sw360User, componentClient,
-                            licenseInfoClient, updateStatus);
+                    processReleaseForLicenseUpdate(releaseId, sw360User, componentClient, updateStatus);
                     return null;
                 })
                 .collect(Collectors.toList());
@@ -1896,7 +1889,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     private void processReleaseForLicenseUpdate(
             String releaseId, User sw360User, ComponentService.Iface componentClient,
-            LicenseInfoService.Iface licenseInfoClient, Map<ReleaseCLIInfo, List<Release>> updateStatus) {
+            Map<ReleaseCLIInfo, List<Release>> updateStatus) {
         Release release;
         try {
             release = componentClient.getReleaseById(releaseId, sw360User);
@@ -1932,7 +1925,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return;
         }
 
-        if (processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User)) {
+        if (processSingleAttachment(approvedCliAttachments.getFirst(), release, sw360User)) {
             updateStatus.get(ReleaseCLIInfo.UPDATED).add(release);
         } else {
             updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
@@ -1945,12 +1938,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      *
      * @param attachment        Attachment to process
      * @param release           Release in question
-     * @param licenseInfoClient thrift client
      * @param sw360User         User
      * @return true if the release was updated, false otherwise
      */
     private boolean processSingleAttachment(
-            Attachment attachment, Release release, LicenseInfoService.Iface licenseInfoClient,
+            Attachment attachment, Release release,
             User sw360User
     ) {
 
@@ -1960,9 +1952,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         List<LicenseInfoParsingResult> licenseInfoResults;
         try {
-            licenseInfoResults = licenseInfoClient.getLicenseInfoForAttachment(release,
+            licenseInfoResults = LicenseInfoThriftBridge.getLicenseInfoForAttachment(release,
                     attachment.getAttachmentContentId(), true, sw360User);
-        } catch (TException e) {
+        } catch (RuntimeException e) {
             log.error("Error fetching license information for attachment: {}", attachmentName, e);
             return false;
         }
