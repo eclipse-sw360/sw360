@@ -424,6 +424,12 @@ public class ThriftClients {
         return new VMComponentService.Client(makeProtocol(VM_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Almost obsolete. The licenseinfo Thrift servlet at {@code /licenseinfo/thrift} is no
+     * longer deployed. Use {@link org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClients} and the
+     * Spring Boot REST API at {@code /licenseinfo/api/licenseinfo} instead.
+     */
+    @Deprecated
     public static LicenseInfoService.Client makeLicenseInfoClient() {
         return new LicenseInfoService.Client(makeProtocol(LICENSEINFO_SERVICE_URL));
     }

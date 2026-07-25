@@ -27,7 +27,6 @@ import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -45,6 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -61,9 +61,10 @@ import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVaria
 import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant.REPORT;
 
 /**
- * Implementation of the Thrift service
+ * License info service handler (parsers + report generators). Invoked by {@link LicenseInfoController}.
  */
-public class LicenseInfoHandler implements LicenseInfoService.Iface {
+@Service
+public class LicenseInfoHandler {
     private static final Logger LOGGER = LogManager.getLogger(LicenseInfoHandler.class);
     private static final int CACHE_TIMEOUT_MINUTES = 15;
     private static final int CACHE_MAX_ITEMS = 100;
@@ -124,7 +125,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         // @formatter:on
     }
 
-    @Override
     public LicenseInfoFile getLicenseInfoFile(Project project, User user, String outputGenerator,
             Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds,
             Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds, String fileName)
@@ -133,7 +133,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachment, externalIds, fileName, false);
     }
 
-    @Override
     public LicenseInfoFile getLicenseInfoFileWithoutReleaseVersion(Project project, User user, String outputGenerator,
             Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds,
             Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds, String fileName,
@@ -194,7 +193,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return licenseInfoFile;
     }
 
-    @Override
     public Map<String, Map<String, String>> evaluateAttachments(String releaseId, User user) throws TException {
         Release release = componentDatabaseHandler.getRelease(releaseId, user);
         Map<Attachment, LicenseInfoParsingResult> parsedResults = new HashMap<Attachment, LicenseInfoParsingResult>();
@@ -559,18 +557,15 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
     }
 
-    @Override
     public List<OutputFormatInfo> getPossibleOutputFormats() {
         return outputGenerators.stream().map(OutputGenerator::getOutputFormatInfo).collect(Collectors.toList());
     }
 
-    @Override
     public OutputFormatInfo getOutputFormatInfoForGeneratorClass(String generatorClassName) throws TException {
         OutputGenerator<?> generator = getOutputGeneratorByClassname(generatorClassName);
         return generator.getOutputFormatInfo();
     }
 
-    @Override
     public List<LicenseInfoParsingResult> getLicenseInfoForAttachment(Release release, String attachmentContentId, boolean includeConcludedLicense, User user)
             throws TException {
         if (release == null) {
@@ -628,7 +623,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
     }
 
-    @Override
     public LicenseObligationsStatusInfo getProjectObligationStatus(Map<String, ObligationStatusInfo> obligationStatusMap, List<LicenseInfoParsingResult> licenseResults,
             Map<String, String> excludedReleaseIdToAcceptedCLI) {
 
@@ -691,7 +685,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return obligationStatusMap;
     }
 
-    @Override
     public LicenseInfoParsingResult createLicenseToObligationMapping(LicenseInfoParsingResult licenseResult, ObligationParsingResult obligationResult) {
 
         LicenseInfoParsingResult cachedResults = licenseObligationMappingCache.getIfPresent(licenseResult.getAttachmentContentId());
@@ -794,7 +787,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return getProjectObligationStatus(obligationStatusMap, licenseParsingResults, releaseIdToAcceptedCLI).getObligationStatusMap();
     }
 
-    @Override
     public List<ObligationParsingResult> getObligationsForAttachment(Release release, String attachmentContentId, User user)
             throws TException {
         if (release == null) {
@@ -851,7 +843,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return licenseInfoParsingResult;
     }
 
-    @Override
     public String getDefaultLicenseInfoHeaderText(String fileName) {
         if (CommonUtils.isNotNullEmptyOrWhitespace(fileName)) {
             return SW360Utils.dropCommentedLine(LicenseInfoHandler.class, fileName);
@@ -859,7 +850,6 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return DEFAULT_LICENSE_INFO_TEXT;
     }
 
-    @Override
     public String getDefaultObligationsText() {
         return DEFAULT_OBLIGATIONS_TEXT;
     }

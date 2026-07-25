@@ -22,7 +22,10 @@ public final class LicenseInfoFileConverter {
         }
         LicenseInfoFile pojo = new LicenseInfoFile();
         if (thrift.isSetOutputFormatInfo()) {
-            pojo.setOutputFormatInfo(org.eclipse.sw360.common.utils.converter.licenseinfo.OutputFormatInfoConverter.fromThrift(thrift.getOutputFormatInfo()));
+            pojo.setOutputFormatInfo(OutputFormatInfoConverter.fromThrift(thrift.getOutputFormatInfo()));
+        }
+        if (thrift.isSetGeneratedOutput()) {
+            pojo.setGeneratedOutput(thrift.getGeneratedOutput());
         }
         return pojo;
     }
@@ -31,9 +34,13 @@ public final class LicenseInfoFileConverter {
         if (pojo == null) {
             return null;
         }
-        org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile thrift = new org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile();
+        org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile thrift =
+                new org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile();
         if (pojo.getOutputFormatInfo() != null) {
-            thrift.setOutputFormatInfo(org.eclipse.sw360.common.utils.converter.licenseinfo.OutputFormatInfoConverter.toThrift(pojo.getOutputFormatInfo()));
+            thrift.setOutputFormatInfo(OutputFormatInfoConverter.toThrift(pojo.getOutputFormatInfo()));
+        }
+        if (pojo.getGeneratedOutput() != null) {
+            thrift.setGeneratedOutput(pojo.getGeneratedOutput());
         }
         return thrift;
     }

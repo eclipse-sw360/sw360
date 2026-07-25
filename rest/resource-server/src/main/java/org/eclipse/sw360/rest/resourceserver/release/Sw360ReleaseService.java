@@ -32,7 +32,6 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -73,7 +72,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.LicenseInfoThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 
@@ -1413,8 +1412,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public List<Map<String,String>> getReleaseLicenseInfo(Release rel, User sw360User, String attachContentId) throws TException{
-        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
-        List<LicenseInfoParsingResult> licenseInfos = licenseClient.getLicenseInfoForAttachment(rel, attachContentId, false, sw360User);
+        List<LicenseInfoParsingResult> licenseInfos = LicenseInfoThriftBridge.getLicenseInfoForAttachment(rel, attachContentId, false, sw360User);
         List<Map<String, String>> licenses = Lists.newArrayList();
         licenseInfos.forEach(licenseInfoResult ->
                 addLicenseInfoResultToJsonSerializableLicensesList(licenseInfoResult, licenses));
@@ -1456,7 +1454,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User, String attachmentId) throws TException{
-        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
         final Predicate<Attachment> isSupportedAttachment = attachment ->
                 AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
                 || AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(attachment.getAttachmentType())
@@ -1486,7 +1483,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             final Attachment filteredAttachment = filteredAttachments.get(0);
             final String attachmentContentId = filteredAttachment.getAttachmentContentId();
             try {
-                List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(rel, attachmentContentId, false, sw360User);
+                List<LicenseInfoParsingResult> licenseResults = LicenseInfoThriftBridge.getLicenseInfoForAttachment(rel, attachmentContentId, false, sw360User);
                 if (CommonUtils.isNotEmpty(licenseResults) && LicenseInfoRequestStatus.SUCCESS.equals(licenseResults.get(0).getStatus())) {
                     licenseNameWithTexts = licenseResults.get(0).getLicenseInfo().getLicenseNamesWithTexts();
                     if (CommonUtils.isNotEmpty(licenseNameWithTexts)) {
@@ -1511,7 +1508,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                         throw new BadRequestClientException("source file information not found in attachment");
                     }
                 }
-            } catch (TException exception) {
+            } catch (RuntimeException exception) {
                 log.error(String.format("Error fetching license Information for attachment: %s in release: %s",
                         filteredAttachment.getFilename(), rel.getId()), exception);
                 throw new SW360Exception("An error occurred while processing the request.");
