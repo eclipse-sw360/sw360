@@ -60,8 +60,52 @@ public class SearchUtils {
             "      }" +
             "    }" +
             "    if (result.trim().length > 0) {" +
-            "      index('text', indexName, result.trim(), {'store': true});" +
+            "      index('text', indexName, result.trim());" +
             "      index('string', indexName + '_sort', result.trim());" +
             "    }" +
             "  }";
+
+    /**
+     * This function helps generate edge n_grams for a field. Example:
+     * {@code ["aw", "awe", "awes", "aweso", "awesom", "awesome"]}. The
+     * parameters:
+     * <ul>
+     *     <li><b>fieldName</b>: The index field name to store n-grams as.</li>
+     *     <li><b>text</b>: The text to be processed into n-grams.</li>
+     *     <li><b>minGram</b>: The minimum length of the n-grams.</li>
+     *     <li><b>maxGram</b>: The maximum length of the n-grams.</li>
+     * </ul>
+     */
+    public static final String EMIT_EDGE_N_GRAM_INDEX = """
+              function emitEdgeNGrams(fieldName, text, minGram, maxGram) {
+                if (!text) return;
+                var words = text.toLowerCase().split(/\\\\s+/);
+                for (var i = 0; i < words.length; i++) {
+                  var word = words[i];
+                  var limit = Math.min(word.length, maxGram);
+                  for (var len = minGram; len <= limit; len++) {
+                    index('text', fieldName, word.substring(0, len));
+                  }
+                }
+              }
+            """;
+
+    /**
+     * This function helps indexing dates as yyyymmdd long number. For example,
+     * 2026-01-23 will be indexed as {@code double(20260123)} so it can be
+     * compared and sorted.
+     */
+    public static final String INDEX_DATE_AS_DOUBLE = """
+            function indexDateAsDouble(fieldName, createdOn) {
+              if (createdOn) {
+                var dt = new Date(createdOn);
+                if (!isNaN(dt.getTime())) {
+                  var yyyy = dt.getFullYear().toString();
+                  var mm = (dt.getMonth() + 1).toString().padStart(2, '0');
+                  var dd = dt.getDate().toString().padStart(2, '0');
+                  index('double', fieldName, Number(yyyy + mm + dd));
+                }
+              }
+            }
+            """;
 }

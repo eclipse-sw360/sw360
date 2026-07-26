@@ -30,7 +30,7 @@ public class NouveauQuery {
     @SerializedName("q")
     private String query;
     private List<Range> ranges;
-    private String sort;
+    private List<String> sort;
     private Boolean update;
 
     public static class Range {
@@ -109,8 +109,21 @@ public class NouveauQuery {
      * Sort the results by given sort order. Example: "fieldname<type>" or "-fieldname<type>".
      * @param sort Sort order
      */
-    public void setSort(String sort) {
+    public void setSort(List<String> sort) {
         this.sort = sort;
+    }
+
+    /**
+     * @param sort Sort order
+     * @deprecated Use {@link #setSort(List)} instead.
+     */
+    @Deprecated
+    public void setSort(String sort) {
+        if (sort == null) {
+            this.sort = null;
+        } else {
+            this.sort = List.of(sort);
+        }
     }
 
     /**
