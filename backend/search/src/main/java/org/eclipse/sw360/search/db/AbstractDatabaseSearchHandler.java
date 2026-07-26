@@ -16,6 +16,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.FluentIterable;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
@@ -24,7 +25,7 @@ import org.eclipse.sw360.nouveau.NouveauResult;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import java.util.Map;
 
 import static org.eclipse.sw360.common.utils.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_TO_DEFAULT_INDEX;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.convertToFreeSearch;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.sanitizeLuceneString;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
@@ -56,7 +58,7 @@ public abstract class AbstractDatabaseSearchHandler {
             "    index('text', 'default', objString);" +
             "  }" +
             "  if (doc.type && typeof(doc.type) == 'string' && doc.type.length > 0) {" +
-            "    index('text', 'type', doc.type);" +
+            "    index('string', 'type', doc.type);" +
             "  }" +
             "}")
             .setFieldAnalyzer(
@@ -78,7 +80,7 @@ public abstract class AbstractDatabaseSearchHandler {
             "    index('text', 'default', objString);" +
             "  }" +
             "  if (doc.type && typeof(doc.type) == 'string' && doc.type.length > 0) {" +
-            "    index('text', 'type', doc.type);" +
+            "    index('string', 'type', doc.type);" +
             "  }" +
             "  if (doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
             "    index('text', 'name_exact', doc.name);" +
@@ -141,7 +143,7 @@ public abstract class AbstractDatabaseSearchHandler {
      * Search the database for a given string
      */
     public List<SearchResult> search(String text, User user) {
-        String queryString = sanitizeLuceneString(text);
+        String queryString = convertToFreeSearch(text);
         return getSearchResults(queryString, user);
     }
 
@@ -175,7 +177,7 @@ public abstract class AbstractDatabaseSearchHandler {
             typeMask.removeLast();
             final Function<String, String> addType = input -> "type:" + input;
             query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
-                    + sanitizeLuceneString(text);
+                    + "( " + convertToFreeSearch(text) + " )";
             return getSearchResults(query, user);
         }
         return restrictedSearch(text, typeMask, user);
@@ -183,14 +185,14 @@ public abstract class AbstractDatabaseSearchHandler {
 
     public List<SearchResult> restrictedSearch(String text, List<String> typeMask, User user) {
         String query;
-        if (typeMask == null || typeMask.isEmpty()) {
+        if (CommonUtils.isNullOrEmptyCollection(typeMask)) {
             Map<String, String> subQueryRestrictions = Map.of(
                     "name", text,
                     "fullname", text,
                     "title", text
             );
             // Type check is only on Package. Thus considered irrelevant here.
-            query = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, subQueryRestrictions);
+            query = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, subQueryRestrictions, false);
         } else {
             Map<String, String> subQueryRestrictions = new HashMap<>();
             if (typeMask.contains("project") || typeMask.contains("component") || typeMask.contains("release") || typeMask.contains("package")) {
@@ -202,28 +204,28 @@ public abstract class AbstractDatabaseSearchHandler {
             if (typeMask.contains("obligations")) {
                 subQueryRestrictions.put("title", text);
             }
-            String valueQuery = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, subQueryRestrictions);
+            String valueQuery = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, subQueryRestrictions, false);
             Map<String, String> typeRestrictions = new HashMap<>();
             for (String typeM : typeMask) {
                 typeRestrictions.put("type", typeM);
             }
-            String typeQuery = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, typeRestrictions);
+            String typeQuery = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, typeRestrictions, false);
             query = "( " + valueQuery + " ) AND ( " + typeQuery + " )";
         }
         return getFilteredSearchResults(query, user);
     }
 
-    private @NotNull List<SearchResult> getSearchResults(String queryString, User user) {
+    private @NonNull List<SearchResult> getSearchResults(String queryString, User user) {
         NouveauResult queryLucene = connector.searchView(luceneSearchView.getIndexName(), queryString);
         return convertLuceneResultAndFilterForVisibility(queryLucene, user);
     }
 
-    private @NotNull List<SearchResult> getFilteredSearchResults(String queryString, User user) {
+    private @NonNull List<SearchResult> getFilteredSearchResults(String queryString, User user) {
         NouveauResult queryLucene = connector.searchView(luceneFilteredSearchView.getIndexName(), queryString);
         return convertLuceneResultAndFilterForVisibility(queryLucene, user);
     }
 
-    private @NotNull List<SearchResult> convertLuceneResultAndFilterForVisibility(NouveauResult queryLucene, User user) {
+    private @NonNull List<SearchResult> convertLuceneResultAndFilterForVisibility(NouveauResult queryLucene, User user) {
         List<SearchResult> results = new ArrayList<>();
         if (queryLucene != null) {
             for (NouveauResult.Hits hit : queryLucene.getHits()) {
@@ -241,7 +243,7 @@ public abstract class AbstractDatabaseSearchHandler {
     /**
      * Transforms a LuceneResult row into a Thrift SearchResult object
      */
-    private static @NotNull SearchResult makeSearchResult(@NotNull NouveauResult.Hits hit) {
+    private static @NonNull SearchResult makeSearchResult(NouveauResult.@NonNull Hits hit) {
         SearchResult result = new SearchResult();
 
         // Set row properties
