@@ -391,7 +391,7 @@ service ProjectService {
      * returns a list of projects which match `text` and the
      * `subQueryRestrictions` and are visible to the `user`. The request is pageable
      */
-    map<PaginationData, list<Project>> refineSearchPageable(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user, 4: PaginationData pageData);
+    map<PaginationData, list<Project>> refineSearchPageable(1: map<string,set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
 
     /**
      * list of projects which are visible to the `user` and match the `name`
