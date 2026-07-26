@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -177,6 +178,10 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Projects", description = "Operations related to Projects on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`createdOn`, `name`, `vendor`, `license`, `type`, `description`, " +
+        "`projectResponsible` or `state`].")
 public class ProjectController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final String CREATED_BY = "createdBy";
     private static final String ATTACHMENT_TYPE = "attachmentType";
@@ -299,19 +304,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (luceneSearch && !filterMap.isEmpty()) {
-            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
-                Set<String> values = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Project._Fields.NAME.getFieldName(), values);
-            }
-            if (filterMap.containsKey(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY)) {
-                Set<String> values = filterMap.get(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, values);
-            }
-
             paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (filterMap.isEmpty()) {

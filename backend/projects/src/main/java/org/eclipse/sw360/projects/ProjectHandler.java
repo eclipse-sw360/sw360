@@ -97,9 +97,11 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public Map<PaginationData, List<Project>> refineSearchPageable(String text,
-            Map<String, Set<String>> subQueryRestrictions, User user, PaginationData paginationData) throws TException {
-        return searchHandler.search(text, subQueryRestrictions, user, paginationData);
+    public Map<PaginationData, List<Project>> refineSearchPageable(
+            Map<String, Set<String>> subQueryRestrictions, User user,
+            PaginationData paginationData
+    ) throws TException {
+        return searchHandler.search(subQueryRestrictions, user, paginationData);
     }
 
     @Override
