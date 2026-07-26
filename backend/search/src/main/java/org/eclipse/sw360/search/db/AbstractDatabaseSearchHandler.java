@@ -28,10 +28,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static org.eclipse.sw360.common.utils.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_TO_DEFAULT_INDEX;
-import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.sanitizeLuceneString;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 /**
@@ -50,35 +53,61 @@ public abstract class AbstractDatabaseSearchHandler {
             OBJ_TO_DEFAULT_INDEX +
             "  var objString = getObjAsString(doc);" +
             "  if (objString && objString.length > 0) {" +
-            "    index('text', 'default', objString, {'store': true});" +
+            "    index('text', 'default', objString);" +
             "  }" +
             "  if (doc.type && typeof(doc.type) == 'string' && doc.type.length > 0) {" +
-            "    index('text', 'type', doc.type, {'store': true});" +
+            "    index('text', 'type', doc.type);" +
             "  }" +
-            "}"));
+            "}")
+            .setFieldAnalyzer(
+                    Map.ofEntries(
+                            Map.entry("type", "keyword")
+                    )
+            )
+            .setDefaultAnalyzer("standard")
+    );
 
     private static final NouveauIndexDesignDocument luceneFilteredSearchView
         = new NouveauIndexDesignDocument("restrictedSearch", new NouveauIndexFunction(
             "function(doc) {" +
             "  if(!doc.type) return;" +
             OBJ_TO_DEFAULT_INDEX +
+            EMIT_EDGE_N_GRAM_INDEX +
             "  var objString = getObjAsString(doc);" +
             "  if (objString && objString.length > 0) {" +
-            "    index('text', 'default', objString, {'store': true});" +
+            "    index('text', 'default', objString);" +
             "  }" +
             "  if (doc.type && typeof(doc.type) == 'string' && doc.type.length > 0) {" +
-            "    index('text', 'type', doc.type, {'store': true});" +
+            "    index('text', 'type', doc.type);" +
             "  }" +
             "  if (doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
-            "    index('text', 'name', doc.name, {'store': true});" +
+            "    index('text', 'name_exact', doc.name);" +
+            "    emitEdgeNGrams('name_ngram', doc.name, 2, 25);" +
+            "    index('string', 'name_sort', doc.name.toLowerCase());" +
             "  }" +
             "  if (doc.fullname && typeof(doc.fullname) == 'string' && doc.fullname.length > 0) {" +
-            "    index('text', 'fullname', doc.fullname, {'store': true});" +
+            "    index('text', 'fullname_exact', doc.fullname);" +
+            "    emitEdgeNGrams('fullname_ngram', doc.fullname, 2, 35);" +
+            "    index('string', 'fullname_sort', doc.fullname.toLowerCase());" +
             "  }" +
             "  if (doc.title && typeof(doc.title) == 'string' && doc.title.length > 0) {" +
-            "    index('text', 'title', doc.title, {'store': true});" +
+            "    index('text', 'title_exact', doc.title);" +
+            "    emitEdgeNGrams('title_ngram', doc.title, 2, 25);" +
+            "    index('string', 'title_sort', doc.title.toLowerCase());" +
             "  }" +
-            "}"));
+            "}")
+            .setFieldAnalyzer(
+                    Map.ofEntries(
+                            Map.entry("type", "keyword"),
+                            Map.entry("name_ngram", "whitespace"),
+                            Map.entry("fullname_ngram", "whitespace"),
+                            Map.entry("title_ngram", "whitespace"),
+                            Map.entry("name_sort", "keyword"),
+                            Map.entry("fullname_sort", "keyword")
+                    )
+            )
+            .setDefaultAnalyzer("standard")
+    );
     private final NouveauLuceneAwareDatabaseConnector connector;
 
     public AbstractDatabaseSearchHandler(String dbName) throws IOException {
@@ -112,7 +141,7 @@ public abstract class AbstractDatabaseSearchHandler {
      * Search the database for a given string
      */
     public List<SearchResult> search(String text, User user) {
-        String queryString = prepareWildcardQuery(text);
+        String queryString = sanitizeLuceneString(text);
         return getSearchResults(queryString, user);
     }
 
@@ -128,7 +157,7 @@ public abstract class AbstractDatabaseSearchHandler {
             typeMask.removeLast();
             final Function<String, String> addType = input -> "type:" + input;
             query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
-                    + prepareWildcardQuery(text);
+                    + sanitizeLuceneString(text);
             return getSearchResults(query, user);
         }
         return restrictedSearch(text, typeMask, user);
@@ -146,34 +175,40 @@ public abstract class AbstractDatabaseSearchHandler {
             typeMask.removeLast();
             final Function<String, String> addType = input -> "type:" + input;
             query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
-                    + prepareWildcardQuery(text);
+                    + sanitizeLuceneString(text);
             return getSearchResults(query, user);
         }
         return restrictedSearch(text, typeMask, user);
     }
 
     public List<SearchResult> restrictedSearch(String text, List<String> typeMask, User user) {
-        String query = text;
-        final Function<String, String> addType = input -> "type:" + input;
-        final Function<String, String> addField = input -> input + ": (" + prepareWildcardQuery(text) + " )";
-        List<String> typeField = new ArrayList<String>();
+        String query;
         if (typeMask == null || typeMask.isEmpty()) {
-            typeField.add("name");
-            typeField.add("fullname");
-            typeField.add("title");
-            query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeField).transform(addField)) + " ) ";
+            Map<String, String> subQueryRestrictions = Map.of(
+                    "name", text,
+                    "fullname", text,
+                    "title", text
+            );
+            // Type check is only on Package. Thus considered irrelevant here.
+            query = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, subQueryRestrictions);
         } else {
+            Map<String, String> subQueryRestrictions = new HashMap<>();
             if (typeMask.contains("project") || typeMask.contains("component") || typeMask.contains("release") || typeMask.contains("package")) {
-                typeField.add("name");
+                subQueryRestrictions.put("name", text);
             }
             if (typeMask.contains("license") || typeMask.contains("user") || typeMask.contains("vendor")) {
-                typeField.add("fullname");
+                subQueryRestrictions.put("fullname", text);
             }
             if (typeMask.contains("obligations")) {
-                typeField.add("title");
+                subQueryRestrictions.put("title", text);
             }
-            query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + "( "
-                    + Joiner.on(" OR ").join(FluentIterable.from(typeField).transform(addField)) + " ) ";
+            String valueQuery = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, subQueryRestrictions);
+            Map<String, String> typeRestrictions = new HashMap<>();
+            for (String typeM : typeMask) {
+                typeRestrictions.put("type", typeM);
+            }
+            String typeQuery = NouveauLuceneAwareDatabaseConnector.convertToRestrictiveQueryWithOr(User.class, typeRestrictions);
+            query = "( " + valueQuery + " ) AND ( " + typeQuery + " )";
         }
         return getFilteredSearchResults(query, user);
     }
