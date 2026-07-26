@@ -58,7 +58,7 @@ public class SearchHandler implements SearchService.Iface {
     }
 
     @Override
-    public List<SearchResult> searchFiltered(String text, User user, List<String> typeMask) throws TException {
+    public List<SearchResult> searchFiltered(String text, User user, List<String> typeMasks) throws TException {
         if(text == null) {
             throw new TException("Search text was null.");
         }
@@ -66,20 +66,28 @@ public class SearchHandler implements SearchService.Iface {
             return Collections.emptyList();
         }
 
-        // Query user and other database
         Set<SearchResult> results = Sets.newLinkedHashSet();
-        if (typeMask.isEmpty() || typeMask.contains(SW360Constants.TYPE_USER)) {
+        if (typeMasks.isEmpty()) {
+            typeMasks = new ArrayList<>(List.of("project", "component",
+                    "license", "release", "obligation", "user", "vendor",
+                    "document"));
+        }
+        // Query user and other database
+        if (typeMasks.contains(SW360Constants.TYPE_USER)) {
             if (text.contains("pkg:")) {
                 dealWithSpecialCharacters(text, user, results, dbSw360users, List.of(SW360Constants.TYPE_USER));
             } else {
                 results.addAll(dbSw360users.search(text, List.of(SW360Constants.TYPE_USER), user));
             }
         }
-        if(typeMask.isEmpty() || !typeMask.getFirst().equals(SW360Constants.TYPE_USER) || typeMask.size() > 1) {
+        if (
+                (typeMasks.size() == 1 && !typeMasks.contains(SW360Constants.TYPE_USER))
+                || (typeMasks.size() > 1)
+        ) {
             if (text.contains("pkg:")) {
-                dealWithSpecialCharacters(text, user, results, dbSw360db, typeMask);
+                dealWithSpecialCharacters(text, user, results, dbSw360db, typeMasks);
             } else {
-                results.addAll(dbSw360db.search(text, typeMask, user));
+                results.addAll(dbSw360db.search(text, typeMasks, user));
             }
         }
 
