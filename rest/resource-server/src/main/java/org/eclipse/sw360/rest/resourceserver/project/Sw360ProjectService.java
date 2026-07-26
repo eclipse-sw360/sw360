@@ -1301,8 +1301,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable,
                 // Can be sorted on name and createdOn, but using different default value for score sorting
-                ProjectSortColumn.BY_TYPE, true);
-        return sw360ProjectClient.refineSearchPageable(null, filterMap, sw360User, pageData);
+                ProjectSortColumn.BY_SCORE, true);
+        return sw360ProjectClient.refineSearchPageable(filterMap, sw360User, pageData);
     }
 
     /**
