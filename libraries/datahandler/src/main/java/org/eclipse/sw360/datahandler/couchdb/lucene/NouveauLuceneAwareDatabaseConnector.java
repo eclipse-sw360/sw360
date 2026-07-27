@@ -726,7 +726,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
      *   )
      * </pre>
      */
-    private static @NonNull String buildFieldQuery(
+    public static @NonNull String buildFieldQuery(
             @NonNull String fieldExact, @NonNull String fieldNgram, String rawInput,
             boolean isExactSearch
     ) {
@@ -800,9 +800,13 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         if (CommonUtils.isNullEmptyOrWhitespace(input)) {
             return "";
         }
-        String sanitized = input;
+        boolean hasOuterQuotes = input.length() >= 2 && input.startsWith("\"") && input.endsWith("\"");
+        String sanitized = hasOuterQuotes ? input.substring(1, input.length() - 1) : input;
         for (var replacementPair : LUCENE_ESCAPE_LIST) {
             sanitized = sanitized.replaceAll(replacementPair.getLeft(), replacementPair.getRight());
+        }
+        if (hasOuterQuotes) {
+            sanitized = "\"" + sanitized.trim() + "\"";
         }
         return normalizeRestrictionInput(sanitized.trim());
     }
@@ -813,7 +817,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
      * @param input Input string to check.
      * @return True if the input is a valid phrase, false otherwise.
      */
-    private static boolean isValidQuotedPhrase(@NotNull String input) {
+    public static boolean isValidQuotedPhrase(@NotNull String input) {
         return input.startsWith("\"") && input.endsWith("\"") && countQuotes(input) == 2;
     }
 
@@ -1058,7 +1062,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         }
     }
 
-    private static @NotNull String formatDateNouveauFormat(@NotNull String date) throws ParseException {
+    public static @NotNull String formatDateNouveauFormat(@NotNull String date) throws ParseException {
         if (date.startsWith("[") && date.toUpperCase().contains(RANGE_TO)) {
             return formatDateRangesNouveauFormat(date);
         }

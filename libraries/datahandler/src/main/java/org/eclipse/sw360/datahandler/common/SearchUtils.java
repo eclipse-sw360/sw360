@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.common.utils;
+package org.eclipse.sw360.datahandler.common;
 
 public class SearchUtils {
     /*
