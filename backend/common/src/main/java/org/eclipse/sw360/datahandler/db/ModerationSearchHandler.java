@@ -26,7 +26,7 @@ import java.util.Set;
 
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 
-import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 public class ModerationSearchHandler {
