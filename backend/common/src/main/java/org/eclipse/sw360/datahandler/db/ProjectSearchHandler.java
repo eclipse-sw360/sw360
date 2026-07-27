@@ -19,8 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -31,9 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.common.utils.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
-import static org.eclipse.sw360.common.utils.SearchUtils.INDEX_DATE_AS_DOUBLE;
-import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
@@ -42,98 +37,91 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
 
     private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("projects",
-            new NouveauIndexFunction(
-                "function(doc) {" +
-                EMIT_EDGE_N_GRAM_INDEX +
-                OBJ_ARRAY_TO_STRING_INDEX +
-                INDEX_DATE_AS_DOUBLE +
-                "    if(!doc.type || doc.type != 'project') return;" +
-                "    var businessUnit = '" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "';" +
-                "    if(doc.businessUnit !== undefined && doc.businessUnit != null && doc.businessUnit.length > 0) {" +
-                "      businessUnit = doc.businessUnit;" +
-                "    }" +
-                "    index('text', 'businessUnit_exact', businessUnit);" +
-                "    emitEdgeNGrams('businessUnit_ngram', businessUnit, 2, 10);" +
-                "    if(doc.projectType !== undefined && doc.projectType != null && doc.projectType.length >0) {" +
-                "      index('text', 'projectType', doc.projectType);" +
-                "      index('string', 'projectType_sort', doc.projectType);" +
-                "    }" +
-                "    if(doc.projectResponsible !== undefined && doc.projectResponsible != null && doc.projectResponsible.length >0) {" +
-                "      index('text', 'projectResponsible', doc.projectResponsible);" +
-                "      index('string', 'projectResponsible_sort', doc.projectResponsible);" +
-                "    }" +
-                "    if(doc.name !== undefined && doc.name != null && doc.name.length >0) {" +
-                "      index('text', 'name_exact', doc.name);" +
-                "      emitEdgeNGrams('name_ngram', doc.name, 2, 25);" +
-                "      index('string', 'name_sort', doc.name.toLowerCase());" +
-                "    }" +
-                "    if(doc.description !== undefined && doc.description != null && doc.description.length >0) {" +
-                "      index('text', 'description', doc.description);" +
-                "      index('string', 'description_sort', doc.description);" +
-                "    }" +
-                "    if(doc.version !== undefined && doc.version != null && doc.version.length >0) {" +
-                "      index('text', 'version_exact', doc.version);" +
-                "      emitEdgeNGrams('version_ngram', doc.version, 2, 25);" +
-                "      index('string', 'version_sort', doc.version.toLowerCase());" +
-                "    }" +
-                "    if(doc.state !== undefined && doc.state != null && doc.state.length >0) {" +
-                "      index('text', 'state', doc.state);" +
-                "      index('string', 'state_sort', doc.state);" +
-                "    }" +
-                "    if(doc.clearingState) {" +
-                "      index('text', 'clearingState', doc.clearingState);" +
-                "    }" +
-                "    var tag = '" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "';" +
-                "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length > 0) {" +
-                "      tag = doc.tag;" +
-                "    }" +
-                "    index('text', 'tag_exact', tag);" +
-                "    emitEdgeNGrams('tag_ngram', tag, 2, 25);" +
-                "    index('string', 'tag_sort', tag.toLowerCase());" +
-                "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
-                "    if (doc.createdOn) {" +
-                "      indexDateAsDouble('createdOn', doc.createdOn);" +
-                "    }" +
-                "    if(doc.attachments && doc.attachments.length > 0) {" +
-                "      for(var i in doc.attachments) {" +
-                "        if(doc.attachments[i].createdBy) {" +
-                "          index('text', 'attachmentCreatedBy', doc.attachments[i].createdBy);" +
-                "        }" +
-                "      }" +
-                "    }" +
-                "}")
-                    .setFieldAnalyzer(
-                            Map.ofEntries(
-                                    Map.entry("businessUnit_ngram", "whitespace"),
-                                    Map.entry("businessUnit_sort", "keyword"),
-                                    Map.entry("version", "keyword"),
-                                    Map.entry("projectResponsible", "email"),
-                                    Map.entry("name_ngram", "whitespace"),
-                                    Map.entry("name_sort", "keyword"),
-                                    Map.entry("description_sort", "keyword"),
-                                    Map.entry("version_ngram", "whitespace"),
-                                    Map.entry("version_sort", "keyword"),
-                                    Map.entry("state", "keyword"),
-                                    Map.entry("clearingState", "keyword"),
-                                    Map.entry("tag_ngram", "whitespace"),
-                                    Map.entry("tag_sort", "keyword"),
-                                    Map.entry("attachmentCreatedBy", "email")
-                            )
-                    )
-                    .setDefaultAnalyzer("standard")
+    // -------------------------------------------------------------------------
+    //  Field spec declarations
+    // -------------------------------------------------------------------------
+
+    /**
+     * Fields common to all projects, grouped by index category.
+     *
+     * <ul>
+     *   <li><b>emptyAware</b>: {@code businessUnit} (ngram 2–10), {@code tag} (ngram 2–10) -
+     *       documents with no value are indexed under
+     *       {@link SW360Constants#PROJECT_SEARCH_EMPTY_TOKEN} so "no value" filter queries work.</li>
+     *   <li><b>standard</b>: {@code name}, {@code version} - full prefix-search support.</li>
+     *   <li><b>simple</b>: {@code projectType}, {@code projectResponsible} (email analyzer),
+     *       {@code description}, {@code state} (keyword), {@code clearingState} (keyword).</li>
+     *   <li><b>date</b>: {@code createdOn} - stored as sortable yyyyMMdd double.</li>
+     * </ul>
+     */
+    private static final List<IndexField> PROJECT_FIELDS = List.of(
+            IndexField.emptyAware("businessUnit", 2, 10),
+            IndexField.emptyAware("tag", 2, 10),
+            IndexField.standard("name"),
+            IndexField.standard("version"),
+            IndexField.simple("description"),
+            IndexField.simple("projectType"),
+            IndexField.simple("projectResponsible", "email"),
+            IndexField.simple("state", "keyword"),
+            IndexField.simple("clearingState", "keyword"),
+            IndexField.date("createdOn")
     );
 
+    /**
+     * Handler-specific JS: index {@code additionalData} as a concatenated text blob and
+     * index the creator email of every attachment.
+     */
+    private static final String PROJECT_CUSTOM_JS =
+            "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
+            "    if(doc.attachments && doc.attachments.length > 0) {" +
+            "      for(var i in doc.attachments) {" +
+            "        if(doc.attachments[i].createdBy) {" +
+            "          index('text', 'attachmentCreatedBy', doc.attachments[i].createdBy);" +
+            "        }" +
+            "      }" +
+            "    }";
+
+    /**
+     * Analyzer overrides that are not auto-generated from {@link #PROJECT_FIELDS}.
+     * <ul>
+     *   <li>{@code attachmentCreatedBy} -> {@code email} (custom JS field)</li>
+     *   <li>{@code additionalData_sort} -> {@code keyword} (created by {@code arrayToStringIndex})</li>
+     * </ul>
+     */
+    private static final Map<String, String> PROJECT_CUSTOM_ANALYZERS = Map.of(
+            "attachmentCreatedBy", "email",
+            "additionalData_sort", "keyword"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Design document
+    // -------------------------------------------------------------------------
+
+    private static final BuiltIndexDefinition PROJECT_INDEX_DEFINITION = buildIndexFunction(
+            "project",
+            SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN,
+            PROJECT_FIELDS,
+            PROJECT_CUSTOM_JS,
+            PROJECT_CUSTOM_ANALYZERS,
+            "standard"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Constructor
+    // -------------------------------------------------------------------------
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
     public ProjectSearchHandler(Cloudant client, String dbName) throws IOException {
-        super(Project.class, luceneSearchView);
+        super(Project.class, "projects", PROJECT_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         setup(connector, db);
     }
+
+    // -------------------------------------------------------------------------
+    //  Public search API
+    // -------------------------------------------------------------------------
 
     public Map<PaginationData, List<Project>> search(final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
         Map<PaginationData, List<Project>> resultProjectList = baseSearch(connector, subQueryRestrictions, pageData);
@@ -146,17 +134,17 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
     }
 
     public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user) {
-        return connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView.getIndexName(), text,
+        return connector.searchProjectViewWithRestrictionsAndFilter(getIndexName(), text,
                 subQueryRestrictions, user);
     }
 
     public List<Project> search(String searchText) {
-        return connector.searchView(Project.class, luceneSearchView.getIndexName(),
+        return connector.searchView(Project.class, getIndexName(),
                 prepareWildcardQuery(searchText));
     }
 
     public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
+        return connector.searchViewWithRestrictionsWithAnd(Project.class, getIndexName(),
                 text, subQueryRestrictions);
     }
 
@@ -168,10 +156,10 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
         Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(ids);
         List<Project> projectsByReleaseIds;
         if (user != null) {
-            projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView.getIndexName(),
+            projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(getIndexName(),
                     null, filterMap, user);
         } else {
-            projectsByReleaseIds = connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
+            projectsByReleaseIds = connector.searchViewWithRestrictionsWithAnd(Project.class, getIndexName(),
                     null, filterMap);
         }
         return new HashSet<>(projectsByReleaseIds);
@@ -188,6 +176,10 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
         filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
         return filterMap;
     }
+
+    // -------------------------------------------------------------------------
+    //  Sort column mapping
+    // -------------------------------------------------------------------------
 
     @Override
     protected List<String> mapSortColumn(int sortColumnNumber) {
