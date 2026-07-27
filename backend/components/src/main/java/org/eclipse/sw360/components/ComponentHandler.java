@@ -123,8 +123,8 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(String text, Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
-        return componentSearchHandler.searchAccessibleComponents(text, subQueryRestrictions, user, pageData);
+    public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        return componentSearchHandler.searchAccessibleComponents(subQueryRestrictions, user, pageData);
     }
 
     @Override

@@ -414,8 +414,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public Map<PaginationData, List<Component>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.refineSearchAccessibleComponents(null, filterMap, sw360User, pageData);
+        PaginationData pageData = pageableToPaginationData(pageable, ComponentSortColumn.BY_SCORE, true);
+        return sw360ComponentClient.refineSearchAccessibleComponents(filterMap, sw360User, pageData);
     }
 
     public Map<PaginationData, List<Component>> searchComponentByExactValues(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
@@ -480,6 +480,12 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
      * @return a PaginationData object representing the pagination information
      */
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+        return pageableToPaginationData(pageable, ComponentSortColumn.BY_CREATEDON, false);
+    }
+
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
+                                                            ComponentSortColumn defaultColumn,
+                                                            Boolean defaultAscending) {
         ComponentSortColumn column = ComponentSortColumn.BY_CREATEDON;
         boolean ascending = false;
 
@@ -496,6 +502,13 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                 default -> column; // Default to BY_CREATEDON if no match
             };
             ascending = order.isAscending();
+        } else {
+            if (defaultColumn != null) {
+                column = defaultColumn;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
         }
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
