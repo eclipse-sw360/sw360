@@ -11,6 +11,7 @@
 package org.eclipse.sw360.datahandler.common;
 
 public class SearchUtils {
+
     /*
      * This function returns the entire document as a string which can then be
      * indexed as a text field for 'default' index in Nouveau.

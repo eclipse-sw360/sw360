@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_TO_DEFAULT_INDEX;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.convertToFreeSearch;
@@ -84,17 +85,17 @@ public abstract class AbstractDatabaseSearchHandler {
             "  }" +
             "  if (doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
             "    index('text', 'name_exact', doc.name);" +
-            "    emitEdgeNGrams('name_ngram', doc.name, 2, 25);" +
+            "    emitEdgeNGrams('name_ngram', doc.name, 2, " + EDGE_NGRAM_MAX_LENGTH + ");" +
             "    index('string', 'name_sort', doc.name.toLowerCase());" +
             "  }" +
             "  if (doc.fullname && typeof(doc.fullname) == 'string' && doc.fullname.length > 0) {" +
             "    index('text', 'fullname_exact', doc.fullname);" +
-            "    emitEdgeNGrams('fullname_ngram', doc.fullname, 2, 35);" +
+            "    emitEdgeNGrams('fullname_ngram', doc.fullname, 2, " + EDGE_NGRAM_MAX_LENGTH + ");" +
             "    index('string', 'fullname_sort', doc.fullname.toLowerCase());" +
             "  }" +
             "  if (doc.title && typeof(doc.title) == 'string' && doc.title.length > 0) {" +
             "    index('text', 'title_exact', doc.title);" +
-            "    emitEdgeNGrams('title_ngram', doc.title, 2, 25);" +
+            "    emitEdgeNGrams('title_ngram', doc.title, 2, " + EDGE_NGRAM_MAX_LENGTH + ");" +
             "    index('string', 'title_sort', doc.title.toLowerCase());" +
             "  }" +
             "}")

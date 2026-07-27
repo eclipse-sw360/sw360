@@ -577,8 +577,9 @@ service ComponentService {
     /**
      * search components in database that match subQueryRestrictions
      * They are only the components which are visible to user.
+     * Search text should be included in the subQueryRestrictions map under the "name" key.
      **/
-    map<PaginationData, list<Component>> refineSearchAccessibleComponents(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user, 4: PaginationData pageData);
+    map<PaginationData, list<Component>> refineSearchAccessibleComponents(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
 
     /**
      * search components with the accessibility in database that match subQueryRestrictions
