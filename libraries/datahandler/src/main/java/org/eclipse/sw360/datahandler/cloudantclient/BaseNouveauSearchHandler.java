@@ -69,11 +69,24 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTIN
  *       <td>Nothing special</td></tr>
  *   <tr><td>{@link IndexField#string}</td><td>nothing</td>
  *       <td>keyword</td></tr>
- *   <tr><td>{@link IndexField#default}</td><td>nothing</td>
+ *   <tr><td>{@link IndexField#defaultIndex}</td><td>nothing</td>
  *       <td>standard</td></tr>
  * </table>
  */
 public abstract class BaseNouveauSearchHandler<T> {
+
+    /**
+     * Default maximum edge n-gram length for search indexing. Controls prefix
+     * matching coverage: higher values allow longer prefix matches at the cost
+     * of slightly larger indexes. Used for fields like name, version, tag.
+     */
+    public static final int EDGE_NGRAM_MAX_LENGTH = 50;
+
+    /**
+     * Short n-gram max for constrained fields (e.g., businessUnit) where values
+     * are short and index bloat should be minimized.
+     */
+    public static final int EDGE_NGRAM_SHORT_MAX_LENGTH = 10;
 
     /**
      * Built index definition that bundles the generated index function with derived
@@ -185,11 +198,11 @@ public abstract class BaseNouveauSearchHandler<T> {
         // --- Factory methods -------------------------------------------------
 
         /**
-         * Standard text field with prefix search (n-gram min=2, max=50).
+         * Standard text field with prefix search (n-gram min=2, max={@link #EDGE_NGRAM_MAX_LENGTH}).
          * Generates {@code _exact}, {@code _ngram} and {@code _sort} index entries.
          */
         public static @NonNull IndexField standard(String fieldName) {
-            return new IndexField(fieldName, Category.STANDARD, null, 2, 50);
+            return new IndexField(fieldName, Category.STANDARD, null, 2, EDGE_NGRAM_MAX_LENGTH);
         }
 
         /** Standard text field with a custom n-gram range. */

@@ -26,7 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -188,12 +187,6 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             filterMap.put(Component._Fields.NAME.getFieldName(), values);
         }
         if (luceneSearch) {
-            if (filterMap.containsKey(Component._Fields.NAME.getFieldName())) {
-                Set<String> values = filterMap.get(Component._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Component._Fields.NAME.getFieldName(), values);
-            }
             paginatedComponents = componentService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (filterMap.isEmpty()) {
