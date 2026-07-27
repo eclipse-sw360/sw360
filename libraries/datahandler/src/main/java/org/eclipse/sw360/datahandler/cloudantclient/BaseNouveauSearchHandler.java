@@ -37,6 +37,7 @@ import java.util.Set;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_DATE_AS_DOUBLE;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.convertToFreeSearch;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.sanitizeLuceneString;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
@@ -64,6 +65,12 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTIN
  *       <td>_ngram->whitespace, _sort->keyword</td></tr>
  *   <tr><td>{@link IndexField#date}</td><td>createdOn</td>
  *       <td>double (yyyyMMdd via {@code indexDateAsDouble})</td><td>–</td></tr>
+ *   <tr><td>{@link IndexField#doubleField}</td><td>nothing</td>
+ *       <td>Nothing special</td></tr>
+ *   <tr><td>{@link IndexField#string}</td><td>nothing</td>
+ *       <td>keyword</td></tr>
+ *   <tr><td>{@link IndexField#default}</td><td>nothing</td>
+ *       <td>standard</td></tr>
  * </table>
  */
 public abstract class BaseNouveauSearchHandler<T> {
@@ -77,20 +84,20 @@ public abstract class BaseNouveauSearchHandler<T> {
         private final Set<String> tieredFields;
         private final Set<String> emptyAwareFields;
         private final Set<String> dateFields;
-        private final Set<String> doubleFields;
+        private final Set<String> defaultFields;
 
         private BuiltIndexDefinition(
                 NouveauIndexFunction indexFunction,
                 Set<String> tieredFields,
                 Set<String> emptyAwareFields,
                 Set<String> dateFields,
-                Set<String> doubleFields
+                Set<String> defaultFields
         ) {
             this.indexFunction = indexFunction;
             this.tieredFields = Set.copyOf(tieredFields);
             this.emptyAwareFields = Set.copyOf(emptyAwareFields);
             this.dateFields = Set.copyOf(dateFields);
-            this.doubleFields = Set.copyOf(doubleFields);
+            this.defaultFields = Set.copyOf(defaultFields);
         }
 
         public NouveauIndexFunction getIndexFunction() {
@@ -144,7 +151,17 @@ public abstract class BaseNouveauSearchHandler<T> {
             /**
              * Create index for numbers as {@code double}.
              */
-            DOUBLE
+            DOUBLE,
+
+            /**
+             * Create simple index of type {@code string}.
+             */
+            STRING,
+
+            /**
+             * Create {@code default} index of entire object as {@code text}.
+             */
+            DEFAULT
         }
 
         private final String fieldName;
@@ -224,6 +241,16 @@ public abstract class BaseNouveauSearchHandler<T> {
             return new IndexField(fieldName, Category.DOUBLE, null, 0, 0);
         }
 
+        /** String fields index with no extra work. */
+        public static IndexField string(String fieldName) {
+            return new IndexField(fieldName, Category.STRING, null, 0, 0);
+        }
+
+        /** Text index of entire CouchDB Object for generic search. */
+        public static IndexField defaultIndex() {
+            return new IndexField("default", Category.DEFAULT, null, 0, 0);
+        }
+
         // --- Accessors -------------------------------------------------------
 
         public String getFieldName() {
@@ -277,6 +304,16 @@ public abstract class BaseNouveauSearchHandler<T> {
                     "      index('double', '%1$s', doc.%1$s);" +
                     "    }",
                     fieldName);
+                case STRING -> String.format(
+                    "    if(doc.%1$s !== undefined && doc.%1$s != null && typeof(doc.%1$s) == 'string' && doc.%1$s.length > 0) {" +
+                    "      index('string', '%1$s', doc.%1$s);" +
+                    "    }",
+                    fieldName);
+                case DEFAULT ->
+                    "    var objString = getObjAsString(doc);" +
+                    "    if (objString && objString.length > 0) {" +
+                    "      index('text', 'default', objString);" +
+                    "    }";
             };
         }
 
@@ -290,7 +327,10 @@ public abstract class BaseNouveauSearchHandler<T> {
          *       {@code _ngram->whitespace, _sort->keyword}</li>
          *   <li>{@link Category#SIMPLE}: {@code _sort->keyword};
          *       base field entry added only when a {@code baseAnalyzerOverride} was given.</li>
-         *   <li>{@link Category#DATE}, {@link Category#DOUBLE}: no entries (double fields need no text analyzer).</li>
+         *   <li>{@link Category#STRING}: {@code _sort->keyword};
+         *       base field entry added as {@code keyword}.</li>
+         *   <li>{@link Category#DATE}, {@link Category#DOUBLE}, {@link Category#DEFAULT}:
+         *       no entries (double fields need no text analyzer).</li>
          * </ul>
          */
         public void contributeAnalyzers(Map<String, String> map) {
@@ -305,7 +345,10 @@ public abstract class BaseNouveauSearchHandler<T> {
                     }
                     map.put(fieldName + "_sort", "keyword");
                 }
-                case DATE, DOUBLE -> { /* double fields need no Lucene text analyzers */ }
+                case STRING -> {
+                    map.put(fieldName, "keyword");
+                }
+                case DATE, DOUBLE, DEFAULT -> { /* double fields need no Lucene text analyzers */ }
             }
         }
     }
@@ -325,7 +368,7 @@ public abstract class BaseNouveauSearchHandler<T> {
      * {@code customAnalyzers} &gt; auto-generated from field specs.</p>
      *
      * @param docType         CouchDB {@code doc.type} value used as an early-exit guard
-     *                        (e.g. {@code "project"}).
+     *                        (e.g. {@code "project"}). Set to null to skip check.
      * @param emptyToken      Sentinel string for empty-aware fields
      *                        (use {@link SW360Constants#PROJECT_SEARCH_EMPTY_TOKEN}).
      * @param fields          Ordered list of field specs.
@@ -336,7 +379,7 @@ public abstract class BaseNouveauSearchHandler<T> {
      * @return A built definition containing the index function and derived query metadata.
      */
     protected static @NonNull BuiltIndexDefinition buildIndexFunction(
-            String docType,
+            @Nullable String docType,
             String emptyToken,
             @NonNull List<IndexField> fields,
             @Nullable String customJs,
@@ -347,7 +390,11 @@ public abstract class BaseNouveauSearchHandler<T> {
         js.append(EMIT_EDGE_N_GRAM_INDEX);
         js.append(OBJ_ARRAY_TO_STRING_INDEX);
         js.append(INDEX_DATE_AS_DOUBLE);
-        js.append("  if(!doc.type || doc.type != '").append(docType).append("') return;");
+        if (docType != null) {
+            js.append("  if(!doc.type || doc.type != '").append(docType).append("') return;");
+        } else {
+            js.append("  if(!doc.type) return;");
+        }
         for (IndexField field : fields) {
             js.append(field.toJsSnippet(emptyToken));
         }
@@ -366,7 +413,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         Set<String> tieredFields = new HashSet<>();
         Set<String> emptyAwareFields = new HashSet<>();
         Set<String> dateFields = new HashSet<>();
-        Set<String> doubleFields = new HashSet<>();
+        Set<String> defaultFields = new HashSet<>();
         for (IndexField field : fields) {
             switch (field.getCategory()) {
                 case STANDARD -> tieredFields.add(field.getFieldName());
@@ -375,8 +422,8 @@ public abstract class BaseNouveauSearchHandler<T> {
                     emptyAwareFields.add(field.getFieldName());
                 }
                 case DATE -> dateFields.add(field.getFieldName());
-                case DOUBLE -> doubleFields.add(field.getFieldName());
-                case SIMPLE -> { /* no special query routing required */ }
+                case DEFAULT -> defaultFields.add(field.getFieldName());
+                case SIMPLE, DOUBLE -> { /* no special query routing required */ }
             }
         }
 
@@ -384,14 +431,14 @@ public abstract class BaseNouveauSearchHandler<T> {
                 .setFieldAnalyzer(analyzers)
                 .setDefaultAnalyzer(defaultAnalyzer);
 
-        return new BuiltIndexDefinition(indexFunction, tieredFields, emptyAwareFields, dateFields, doubleFields);
+        return new BuiltIndexDefinition(indexFunction, tieredFields, emptyAwareFields, dateFields, defaultFields);
     }
 
     // -------------------------------------------------------------------------
     //  Instance state
     // -------------------------------------------------------------------------
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    protected static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     private final Class<T> clazz;
     private final NouveauIndexDesignDocument luceneSearchView;
@@ -402,8 +449,8 @@ public abstract class BaseNouveauSearchHandler<T> {
     private final Set<String> emptyAwareFields;
     /** Set of field names indexed as sortable double dates. */
     private final Set<String> dateFields;
-    /** Set of field names indexed as double numbers. */
-    private final Set<String> doubleFields;
+    /** Created as a default index, so no field name should be used. */
+    private final Set<String> defaultFields;
 
     // -------------------------------------------------------------------------
     //  Constructor
@@ -422,7 +469,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         this.tieredFields = builtIndex.tieredFields;
         this.emptyAwareFields = builtIndex.emptyAwareFields;
         this.dateFields = builtIndex.dateFields;
-        this.doubleFields = builtIndex.doubleFields;
+        this.defaultFields = builtIndex.defaultFields;
     }
 
     // -------------------------------------------------------------------------
@@ -567,6 +614,10 @@ public abstract class BaseNouveauSearchHandler<T> {
             } catch (ParseException e) {
                 return baseSearch;
             }
+        }
+
+        if (defaultFields.contains(fieldName)) {
+            return "+( " + convertToFreeSearch(filterValue) + " )";
         }
 
         return baseSearch;
