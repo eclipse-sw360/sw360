@@ -30,12 +30,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
-
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     // -------------------------------------------------------------------------
     //  Field spec declarations
