@@ -622,8 +622,8 @@ public abstract class BaseNouveauSearchHandler<T> {
 
         if (dateFields.contains(fieldName)) {
             try {
-                return "+(" + fieldName + ":\"" + NouveauLuceneAwareDatabaseConnector
-                        .formatDateNouveauFormat(sanitized) + "\")";
+                return "+(" + fieldName + ":" + NouveauLuceneAwareDatabaseConnector
+                        .formatDateNouveauFormat(filterValue.trim()) + ")";
             } catch (ParseException e) {
                 return baseSearch;
             }
