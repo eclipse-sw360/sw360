@@ -53,6 +53,15 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             IndexField.date("createdOn")
     );
 
+    private static final Map<String, String> COMPONENT_CUSTOM_ANALYZERS = Map.of(
+            "categories_sort", "email",
+            "languages_sort", "keyword",
+            "softwarePlatforms_sort", "keyword",
+            "operatingSystems_sort", "keyword",
+            "vendorNames_sort", "keyword",
+            "mainLicenseIds_sort", "keyword"
+    );
+
     /**
      * Component-specific JS for array-backed fields that should support text
      * and sort lookups via arrayToStringIndex helper.
@@ -70,7 +79,7 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN,
             COMPONENT_FIELDS,
             COMPONENT_CUSTOM_JS,
-            Map.of(),
+            COMPONENT_CUSTOM_ANALYZERS,
             "standard"
     );
 
