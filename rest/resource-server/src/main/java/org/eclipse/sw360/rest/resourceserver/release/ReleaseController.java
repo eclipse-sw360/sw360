@@ -555,10 +555,19 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The release object to be updated.",
                     schema = @Schema(implementation = Release.class))
             @RequestBody Map<String, Object> reqBodyMap
-    ) throws TException {
+    ) throws URISyntaxException, TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        // Normalize vendorId from a possible self-link URI to a bare ID and drop the
+        // DB-loaded vendor object so ThriftValidate.prepareRelease cannot overwrite it.
+        if (updateRelease.isSetVendorId()) {
+            URI vendorURI = new URI(updateRelease.getVendorId());
+            String path = vendorURI.getPath();
+            String vendorId = path.substring(path.lastIndexOf('/') + 1);
+            updateRelease.setVendorId(vendorId);
+            sw360Release.unsetVendor();
+        }
         attachmentService.preserveImmutableAttachmentFields(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
         attachmentService.setCheckedAttachmentDataFromRequest(
