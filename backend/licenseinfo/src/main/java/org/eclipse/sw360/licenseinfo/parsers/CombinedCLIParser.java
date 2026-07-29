@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
@@ -59,8 +60,15 @@ public class CombinedCLIParser extends AbstractCLIParser{
 
     private ComponentDatabaseHandler componentDatabaseHandler;
 
-    public CombinedCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider, ComponentDatabaseHandler componentDatabaseHandler) {
+    public CombinedCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider,
+                             ComponentDatabaseHandler componentDatabaseHandler) {
         super(attachmentConnector, attachmentContentProvider);
+        this.componentDatabaseHandler = componentDatabaseHandler;
+    }
+
+    public CombinedCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider,
+                             ComponentDatabaseHandler componentDatabaseHandler, LicenseService.Iface licenseClient) {
+        super(attachmentConnector, attachmentContentProvider, licenseClient);
         this.componentDatabaseHandler = componentDatabaseHandler;
     }
 
@@ -127,6 +135,7 @@ public class CombinedCLIParser extends AbstractCLIParser{
         LicenseInfo licenseInfo = new LicenseInfo().setFilenames(Arrays.asList(attachmentContent.getFilename()));
         licenseInfo.setCopyrights(copyrightSetsByExternalId.get(extId));
         licenseInfo.setLicenseNamesWithTexts(licenseNamesWithTextsByExternalId.get(extId));
+        enrichFromCouchDB(licenseInfo);
         LicenseInfoParsingResult parsingResult = new LicenseInfoParsingResult().setLicenseInfo(licenseInfo);
         Release release = releasesByExternalId.get(extId);
         if (release != null) {

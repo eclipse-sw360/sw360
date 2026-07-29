@@ -12,6 +12,8 @@
 package org.eclipse.sw360.licenseinfo.parsers;
 
 import org.apache.commons.io.input.ReaderInputStream;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -21,16 +23,19 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.assertLicenseInfoParsingResult;
@@ -201,7 +206,7 @@ public class CLIParserTest {
                 "</ComponentLicenseInformation>";
         Attachment cliAttachment = new Attachment("A1", "a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
-                ReaderInputStream.builder().setReader(new StringReader(noLicensesXml)).setCharset(StandardCharsets.UTF_8).get()
+                ReaderInputStream.builder().setReader(new StringReader(noLicensesXml)).get()
         );
         LicenseInfoParsingResult res = parser.getLicenseInfos(cliAttachment, new User(), new Project())
                 .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result list"));
@@ -223,7 +228,7 @@ public class CLIParserTest {
                 "</ComponentLicenseInformation>";
         Attachment cliAttachment = new Attachment("A1", "a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
-                ReaderInputStream.builder().setReader(new StringReader(specialCharsXml)).setCharset(StandardCharsets.UTF_8).get()
+                ReaderInputStream.builder().setReader(new StringReader(specialCharsXml)).get()
         );
         LicenseInfoParsingResult res = parser.getLicenseInfos(cliAttachment, new User(), new Project())
                 .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result list"));
@@ -247,10 +252,149 @@ public class CLIParserTest {
                 "</ComponentLicenseInformation>";
         Attachment cliAttachment = new Attachment("A1", "a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
-                ReaderInputStream.builder().setReader(new StringReader(noObligationsXml)).setCharset(StandardCharsets.UTF_8).get()
+                ReaderInputStream.builder().setReader(new StringReader(noObligationsXml)).get()
         );
         ObligationParsingResult oblRes = parser.getObligations(cliAttachment, new User(), new Project());
         assertThat(oblRes.getStatus(), is(ObligationInfoRequestStatus.SUCCESS));
         assertThat(oblRes.getObligationsAtProjectSize(), is(0));
+    }
+
+    @Test
+    public void testEnrichFromCouchDBReplacesTextWhenSpdxIdMatches() throws Exception {
+        String cliXml =
+                "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n" +
+                "<ComponentLicenseInformation component=\"enrichment_test\" creator=\"test\" date=\"01/01/2024\" componentID=\"-1\" >\n" +
+                "<License type=\"global\" name=\"Apache-2.0\" spdxidentifier=\"Apache-2.0\" > \n" +
+                "<Content><![CDATA[CLIXML license text that should be replaced.\n" +
+                "]]></Content>\n" +
+                "<Files><![CDATA[src/\n" +
+                "]]></Files>\n" +
+                "</License>\n" +
+                "</ComponentLicenseInformation>";
+
+        License couchDbLicense = new License()
+                .setId("Apache-2.0")
+                .setShortname("Apache-2.0")
+                .setText("Canonical Apache 2.0 text from LicenseDB");
+
+        LicenseService.Iface mockLicenseClient = Mockito.mock(LicenseService.Iface.class);
+        when(mockLicenseClient.getByID(eq("Apache-2.0"), any())).thenReturn(couchDbLicense);
+
+        CLIParser enrichedParser = new CLIParser(connector, a -> content, mockLicenseClient);
+        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
+                ReaderInputStream.builder().setReader(new StringReader(cliXml)).get()
+        );
+
+        try (MockedStatic<SW360Utils> mockedUtils = Mockito.mockStatic(SW360Utils.class)) {
+            mockedUtils.when(() -> SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, "false"))
+                    .thenReturn("true");
+
+            LicenseInfoParsingResult res = enrichedParser.getLicenseInfos(cliAttachment, new User(), new Project())
+                    .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result"));
+            assertThat(res.getStatus(), is(LicenseInfoRequestStatus.SUCCESS));
+            String licenseText = res.getLicenseInfo().getLicenseNamesWithTexts().iterator().next().getLicenseText();
+            assertThat(licenseText, is("Canonical Apache 2.0 text from LicenseDB"));
+        }
+    }
+
+    @Test
+    public void testEnrichFromCouchDBFallsBackToShortnameMatch() throws Exception {
+        String cliXml =
+                "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n" +
+                "<ComponentLicenseInformation component=\"enrichment_test\" creator=\"test\" date=\"01/01/2024\" componentID=\"-1\" >\n" +
+                "<License type=\"global\" name=\"MIT\" spdxidentifier=\"n/a\" > \n" +
+                "<Content><![CDATA[Old MIT text from CLIXML.\n" +
+                "]]></Content>\n" +
+                "<Files><![CDATA[src/\n" +
+                "]]></Files>\n" +
+                "</License>\n" +
+                "</ComponentLicenseInformation>";
+
+        License couchDbLicense = new License()
+                .setId("MIT")
+                .setShortname("MIT")
+                .setText("Canonical MIT text from LicenseDB");
+
+        LicenseService.Iface mockLicenseClient = Mockito.mock(LicenseService.Iface.class);
+        when(mockLicenseClient.getByID(eq("MIT"), any())).thenReturn(couchDbLicense);
+
+        CLIParser enrichedParser = new CLIParser(connector, a -> content, mockLicenseClient);
+        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
+                ReaderInputStream.builder().setReader(new StringReader(cliXml)).get()
+        );
+
+        try (MockedStatic<SW360Utils> mockedUtils = Mockito.mockStatic(SW360Utils.class)) {
+            mockedUtils.when(() -> SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, "false"))
+                    .thenReturn("true");
+
+            LicenseInfoParsingResult res = enrichedParser.getLicenseInfos(cliAttachment, new User(), new Project())
+                    .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result"));
+            assertThat(res.getStatus(), is(LicenseInfoRequestStatus.SUCCESS));
+            String licenseText = res.getLicenseInfo().getLicenseNamesWithTexts().iterator().next().getLicenseText();
+            assertThat(licenseText, is("Canonical MIT text from LicenseDB"));
+        }
+    }
+
+    @Test
+    public void testEnrichFromCouchDBPreservesCliXmlWhenNoMatch() throws Exception {
+        String cliXml =
+                "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n" +
+                "<ComponentLicenseInformation component=\"enrichment_test\" creator=\"test\" date=\"01/01/2024\" componentID=\"-1\" >\n" +
+                "<License type=\"global\" name=\"Custom-Internal\" spdxidentifier=\"n/a\" > \n" +
+                "<Content><![CDATA[Custom internal license text.\n" +
+                "]]></Content>\n" +
+                "<Files><![CDATA[src/\n" +
+                "]]></Files>\n" +
+                "</License>\n" +
+                "</ComponentLicenseInformation>";
+
+        LicenseService.Iface mockLicenseClient = Mockito.mock(LicenseService.Iface.class);
+
+        CLIParser enrichedParser = new CLIParser(connector, a -> content, mockLicenseClient);
+        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
+                ReaderInputStream.builder().setReader(new StringReader(cliXml)).get()
+        );
+
+        try (MockedStatic<SW360Utils> mockedUtils = Mockito.mockStatic(SW360Utils.class)) {
+            mockedUtils.when(() -> SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, "false"))
+                    .thenReturn("true");
+
+            LicenseInfoParsingResult res = enrichedParser.getLicenseInfos(cliAttachment, new User(), new Project())
+                    .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result"));
+            assertThat(res.getStatus(), is(LicenseInfoRequestStatus.SUCCESS));
+            String licenseText = res.getLicenseInfo().getLicenseNamesWithTexts().iterator().next().getLicenseText();
+            assertThat(licenseText, is("Custom internal license text."));
+        }
+    }
+
+    @Test
+    public void testEnrichFromCouchDBNoEnrichmentWhenDisabled() throws Exception {
+        String cliXml =
+                "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n" +
+                "<ComponentLicenseInformation component=\"enrichment_test\" creator=\"test\" date=\"01/01/2024\" componentID=\"-1\" >\n" +
+                "<License type=\"global\" name=\"MIT\" spdxidentifier=\"MIT\" > \n" +
+                "<Content><![CDATA[Original CLIXML text.\n" +
+                "]]></Content>\n" +
+                "<Files><![CDATA[src/\n" +
+                "]]></Files>\n" +
+                "</License>\n" +
+                "</ComponentLicenseInformation>";
+
+        LicenseService.Iface mockLicenseClient = Mockito.mock(LicenseService.Iface.class);
+
+        CLIParser enrichedParser = new CLIParser(connector, a -> content, mockLicenseClient);
+        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
+                ReaderInputStream.builder().setReader(new StringReader(cliXml)).get()
+        );
+
+        LicenseInfoParsingResult res = enrichedParser.getLicenseInfos(cliAttachment, new User(), new Project())
+                .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result"));
+        assertThat(res.getStatus(), is(LicenseInfoRequestStatus.SUCCESS));
+        String licenseText = res.getLicenseInfo().getLicenseNamesWithTexts().iterator().next().getLicenseText();
+        assertThat(licenseText, is("Original CLIXML text."));
     }
 }

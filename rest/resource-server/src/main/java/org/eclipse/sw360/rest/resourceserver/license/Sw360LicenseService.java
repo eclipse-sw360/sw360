@@ -11,6 +11,8 @@
 package org.eclipse.sw360.rest.resourceserver.license;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -53,6 +56,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Service
 @RequiredArgsConstructor
 public class Sw360LicenseService {
+    private static final Logger log = LogManager.getLogger(Sw360LicenseService.class);
     private static final String CONTENT_TYPE = "application/zip";
     LicenseType lType = new LicenseType();
 
@@ -326,6 +330,24 @@ public class Sw360LicenseService {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             return sw360LicenseClient.importAllLicenseDBLicenses(sw360User);
+        } else {
+            throw new BadRequestClientException("Unable to import LicenseDB licenses. User is not admin");
+        }
+    }
+
+    public RequestSummary importLicenseDBInformationAsync(User sw360User) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    sw360LicenseClient.importAllLicenseDBLicenses(sw360User);
+                } catch (TException e) {
+                    log.error("LicenseDB async sync failed", e);
+                }
+            });
+            return new RequestSummary()
+                    .setRequestStatus(RequestStatus.PROCESSING)
+                    .setMessage("LicenseDB sync started in background");
         } else {
             throw new BadRequestClientException("Unable to import LicenseDB licenses. User is not admin");
         }

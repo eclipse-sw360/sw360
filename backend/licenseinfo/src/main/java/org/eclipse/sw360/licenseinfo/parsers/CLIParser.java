@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -64,6 +65,11 @@ public class CLIParser extends AbstractCLIParser {
 
     public CLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
         super(attachmentConnector, attachmentContentProvider);
+    }
+
+    public CLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider,
+                     LicenseService.Iface licenseClient) {
+        super(attachmentConnector, attachmentContentProvider, licenseClient);
     }
 
     @Override
@@ -131,6 +137,7 @@ public class CLIParser extends AbstractCLIParser {
             }
 
             licenseInfo.setLicenseNamesWithTexts(getLicenseNameWithTexts(doc, includeFilesHash));
+            enrichFromCouchDB(licenseInfo);
             licenseInfo.setAssessmentSummary(getAssessmentSummary(doc));
 
             licenseInfo.setSha1Hash(getSha1Hash(doc));
@@ -246,4 +253,5 @@ public class CLIParser extends AbstractCLIParser {
         }
         return obligations;
     }
+
 }

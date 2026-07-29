@@ -112,7 +112,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
         given(this.licenseServiceMock.deleteLicenseType(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(requestSummary);
-        given(this.licenseServiceMock.importLicenseDBInformation(any())).willReturn(requestSummary);
+        given(this.licenseServiceMock.importLicenseDBInformationAsync(any())).willReturn(requestSummary);
         given(this.licenseServiceMock.addLicenseType(any(),any() , any())).willReturn(RequestStatus.SUCCESS);
         given(this.sw360ReportServiceMock.getLicenseBuffer()).willReturn(ByteBuffer.allocate(10000));
         obligation1 = new Obligation();
@@ -432,7 +432,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(post("/api/licenses/import/LicenseDB")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isAccepted());
     }
 
     @Test
