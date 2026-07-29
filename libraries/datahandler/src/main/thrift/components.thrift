@@ -592,6 +592,11 @@ service ComponentService {
     map<PaginationData, list<Release>> searchAccessibleReleases(1: string text, 2: User user, 3: PaginationData pageData);
 
     /**
+     * Paginated search for releases with multi-field filter map and access control.
+     */
+    map<PaginationData, list<Release>> refineSearchAccessibleReleases(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
+
+    /**
      *  list accessible releases with pagination for ECC page
      */
     map<PaginationData, list<Release>> getAccessibleReleasesWithPagination(1: User user, 2: PaginationData pageData);

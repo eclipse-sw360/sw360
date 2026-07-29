@@ -29,6 +29,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -141,7 +142,15 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Release>> searchAccessibleReleases(String searchText, User user, PaginationData pageData) throws TException {
-        return handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user, pageData) ;
+        Map<String, Set<String>> filterMap = Map.of(
+                Release._Fields.NAME.getFieldName(), Collections.singleton(searchText)
+        );
+        return releaseSearchHandler.searchAccessibleReleases(filterMap, user, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Release>> refineSearchAccessibleReleases(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
+        return releaseSearchHandler.searchAccessibleReleases(subQueryRestrictions, user, pageData);
     }
 
     @Override
