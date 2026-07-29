@@ -2378,12 +2378,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.searchReleaseByNamePaginated(name, pageData);
     }
 
-    public Map<PaginationData, List<Release>> searchAccessibleReleasesByText(ReleaseSearchHandler searchHandler, String searchText, User user, PaginationData pageData) {
-        Map<PaginationData, List<Release>> searchResult = searchHandler.search(searchText, pageData);
-        PaginationData respPageData = searchResult.keySet().iterator().next();
-        List<Release> releaseList = searchResult.values().iterator().next();
-        return Collections.singletonMap(respPageData, getAccessibleReleaseList(releaseList, user));
-    }
 
     public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, PaginationData pageData) {
         Map<PaginationData, List<Release>> searchResult = releaseRepository.getAccessibleNewReleasesWithSrc(pageData);
