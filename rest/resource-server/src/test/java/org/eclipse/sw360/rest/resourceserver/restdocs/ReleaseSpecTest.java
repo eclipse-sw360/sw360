@@ -381,7 +381,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         projectList.add(project);
 
         given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(releaseList);
-        given(this.releaseServiceMock.refineSearch(any(),any(),any())).willReturn(
+        given(this.releaseServiceMock.refineSearch(any(String.class),any(),any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(releaseList.size()).setDisplayStart(0).setTotalRowCount(releaseList.size()),
                         releaseList
