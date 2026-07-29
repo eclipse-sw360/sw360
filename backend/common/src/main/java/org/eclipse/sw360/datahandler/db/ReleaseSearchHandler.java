@@ -10,98 +10,136 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
-import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
- * Lucene search for the Release class
+ * Nouveau search handler for Releases with paginated access control filtering.
  *
  * @author thomas.maier@evosoft.com
  */
-public class ReleaseSearchHandler {
+public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
 
     private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("releases",
-            new NouveauIndexFunction(
-                "function(doc) {" +
-                "  if(doc.type == 'release') {" +
-                "    if (doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
-                "      index('text', 'name', doc.name, {'store': true});" +
-                "      index('string', 'name_sort', doc.name);" +
-                "    }" +
-                "    if (doc.version && typeof(doc.version) == 'string' && doc.version.length > 0) {" +
-                "      index('text', 'version', doc.version, {'store': true});" +
-                "      index('string', 'version_sort', doc.version);" +
-                "    }" +
-                "    if(doc.createdOn && doc.createdOn.length) {"+
-                "      var dt = new Date(doc.createdOn);"+
-                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
-                "      index('double', 'createdOn', Number(formattedDt), {'store': true});"+
-                "    }" +
-                "    index('text', 'id', doc._id, {'store': true});" +
-                "  }" +
-                "}"));
+    // -------------------------------------------------------------------------
+    //  Field spec declarations
+    // -------------------------------------------------------------------------
+
+    private static final List<IndexField> RELEASE_FIELDS = List.of(
+            IndexField.standard("name"),
+            IndexField.standard("version"),
+            IndexField.simple("clearingState", "keyword"),
+            IndexField.simple("mainlineState", "keyword"),
+            IndexField.simple("createdBy", "email"),
+            IndexField.simple("componentType", "keyword"),
+            IndexField.date("createdOn")
+    );
+
+    /**
+     * Release-specific JS for array-backed fields that should support text
+     * and sort lookups via arrayToStringIndex helper.
+     */
+    private static final String RELEASE_CUSTOM_JS =
+            "    arrayToStringIndex(doc.languages, 'languages');" +
+            "    arrayToStringIndex(doc.operatingSystems, 'operatingSystems');" +
+            "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
+            "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');";
+
+    /**
+     * Analyzer overrides for fields created by {@code arrayToStringIndex}.
+     * The helper generates {@code <field>_sort} string indexes that require
+     * the {@code keyword} analyzer for correct sorting behavior.
+     */
+    private static final Map<String, String> RELEASE_CUSTOM_ANALYZERS = Map.of(
+            "languages_sort", "keyword",
+            "operatingSystems_sort", "keyword",
+            "softwarePlatforms_sort", "keyword",
+            "mainLicenseIds_sort", "keyword"
+    );
+
+    private static final BuiltIndexDefinition RELEASE_INDEX_DEFINITION = buildIndexFunction(
+            "release",
+            SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN,
+            RELEASE_FIELDS,
+            RELEASE_CUSTOM_JS,
+            RELEASE_CUSTOM_ANALYZERS,
+            "standard"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Constructor
+    // -------------------------------------------------------------------------
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
     public ReleaseSearchHandler(Cloudant cClient, String dbName) throws IOException {
+        super(Release.class, "releases", RELEASE_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        connector.addDesignDoc(searchView);
+        setup(connector, db);
     }
 
-    public Map<PaginationData, List<Release>> search(String searchText, PaginationData pageData) {
-        String sortColumn = getSortColumnName(pageData);
-        Map<PaginationData, List<Release>> resultReleaseList = connector
-                .searchViewWithRestrictionsWithAnd(Release.class,
-                        luceneSearchView.getIndexName(), null,
-                        Map.of(Release._Fields.NAME.getFieldName(),
-                                Collections.singleton(prepareWildcardQuery(searchText))
-                        ),
-                        pageData, sortColumn, pageData.isAscending());
+    // -------------------------------------------------------------------------
+    //  Public search API
+    // -------------------------------------------------------------------------
+
+    /**
+     * Paginated search with permission filtering.
+     */
+    public Map<PaginationData, List<Release>> searchAccessibleReleases(
+            final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        Map<PaginationData, List<Release>> resultReleaseList = baseSearch(connector, subQueryRestrictions, pageData);
 
         PaginationData respPageData = resultReleaseList.keySet().iterator().next();
         List<Release> releaseList = resultReleaseList.values().iterator().next();
+
+        releaseList = releaseList.stream().filter(release ->
+                makePermission(release, user).isActionAllowed(RequestedAction.READ))
+                .toList();
 
         return Collections.singletonMap(respPageData, releaseList);
     }
 
     /**
-     * Convert sort column number back to sorting column name. This function makes sure to use the string column (with
-     * `_sort` suffix) for text indexes.
-     * @param pageData Pagination Data from the request.
-     * @return Sort column name. Defaults to createdOn
+     * Non-paginated search (legacy callers).
      */
-    private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case ReleaseSortColumn.BY_NAME -> "name_sort";
-            case ReleaseSortColumn.BY_VERSION -> "version_sort";
-            // null signals Nouveau to skip sorting and return results ranked by relevance score
-            case ReleaseSortColumn.BY_SCORE -> null;
-            case null -> "createdOn";
-            default -> "createdOn";
+    public List<Release> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
+        return connector.searchViewWithRestrictionsWithAnd(Release.class, getIndexName(),
+                text, subQueryRestrictions);
+    }
+
+    // -------------------------------------------------------------------------
+    //  Sort column mapping
+    // -------------------------------------------------------------------------
+
+    @Override
+    protected List<String> mapSortColumn(int sortColumnNumber) {
+        String revDir = "-";
+        return switch (ReleaseSortColumn.findByValue(sortColumnNumber)) {
+            case ReleaseSortColumn.BY_NAME -> List.of("name_sort", revDir + "version_sort", revDir + "createdOn");
+            case ReleaseSortColumn.BY_VERSION -> List.of("version_sort", "name_sort", revDir + "createdOn");
+            case ReleaseSortColumn.BY_CLEARING_STATE -> List.of("clearingState_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "createdOn");
+            case ReleaseSortColumn.BY_MAINLINE_STATE -> List.of("mainlineState_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "createdOn");
+            case ReleaseSortColumn.BY_CREATEDON -> List.of("createdOn");
+            case null, default -> List.of(SCORE_SORTING_FIELD);
         };
     }
 }

@@ -1352,8 +1352,20 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<PaginationData, List<Release>> refineSearch(String searchText, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.searchAccessibleReleases(searchText, sw360User, pageData);
+        Map<String, Set<String>> filterMap = Map.of(
+                Release._Fields.NAME.getFieldName(), Collections.singleton(searchText)
+        );
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_SCORE, true);
+        return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
+    }
+
+    /**
+     * Multi-field paginated search for releases using the nouveau search infrastructure.
+     */
+    public Map<PaginationData, List<Release>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_SCORE, true);
+        return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
     }
 
     public void addEmbeddedLinkedRelease(Release sw360Release, User sw360User, HalResource<ReleaseLink> releaseResource, Set<String> releaseIdsInBranch) {
@@ -1600,12 +1612,18 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     /**
-     * Converts a Pageable object to a PaginationData object.
+     * Converts a Pageable object to a PaginationData object for releases.
      *
      * @param pageable the Pageable object to convert
      * @return a PaginationData object representing the pagination information
      */
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+        return pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
+    }
+
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
+                                                            ReleaseSortColumn defaultColumn,
+                                                            Boolean defaultAscending) {
         ReleaseSortColumn column = ReleaseSortColumn.BY_CREATEDON;
         boolean ascending = false;
 
@@ -1616,10 +1634,19 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                 case "createdOn" -> ReleaseSortColumn.BY_CREATEDON;
                 case "name" -> ReleaseSortColumn.BY_NAME;
                 case "version" -> ReleaseSortColumn.BY_VERSION;
+                case "clearingState" -> ReleaseSortColumn.BY_CLEARING_STATE;
+                case "mainlineState" -> ReleaseSortColumn.BY_MAINLINE_STATE;
                 case "score" -> ReleaseSortColumn.BY_SCORE;
-                default -> column; // Default to BY_CREATEDON if no match
+                default -> column;
             };
             ascending = order.isAscending();
+        } else {
+            if (defaultColumn != null) {
+                column = defaultColumn;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
         }
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
