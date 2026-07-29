@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -106,10 +107,11 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         AttachmentContentProvider contentProvider = attachment -> attachmentDatabaseHandler.getAttachmentContent(attachment.getAttachmentContentId());
 
         // @formatter:off
+        LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
         parsers = Lists.newArrayList(
             new SPDXParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
-            new CLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
-            new CombinedCLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider, componentDatabaseHandler)
+            new CLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider, licenseClient),
+            new CombinedCLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider, componentDatabaseHandler, licenseClient)
         );
 
         outputGenerators = Lists.newArrayList(

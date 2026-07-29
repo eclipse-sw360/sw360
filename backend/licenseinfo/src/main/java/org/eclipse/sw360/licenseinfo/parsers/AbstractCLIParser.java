@@ -9,6 +9,9 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -16,13 +19,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -41,6 +49,8 @@ import javax.xml.xpath.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -74,8 +84,36 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String OBLIGATION_TEXT_ELEMENT_NAME = "Text";
     private static final String OBLIGATION_LICENSE_ELEMENT_NAME = "Licenses";
 
+    private static final int CACHE_TIMEOUT_MINUTES = 30;
+    private static final int CACHE_MAX_ITEMS = 1000;
+    private static final String ENRICHMENT_ORG = "sw360";
+
+    private LicenseService.Iface licenseClient;
+    private LoadingCache<String, Optional<License>> licenseCache;
+
     public AbstractCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
+        this(attachmentConnector, attachmentContentProvider, null);
+    }
+
+    public AbstractCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider,
+                             LicenseService.Iface licenseClient) {
         super(attachmentConnector, attachmentContentProvider);
+        this.licenseClient = licenseClient;
+        if (licenseClient != null) {
+            this.licenseCache = CacheBuilder.newBuilder()
+                    .expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+                    .maximumSize(CACHE_MAX_ITEMS)
+                    .build(new CacheLoader<String, Optional<License>>() {
+                        @Override
+                        public Optional<License> load(String key) {
+                            try {
+                                return Optional.ofNullable(licenseClient.getByID(key, ENRICHMENT_ORG));
+                            } catch (TException e) {
+                                return Optional.empty();
+                            }
+                        }
+                    });
+        }
     }
 
     public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context,
@@ -240,6 +278,48 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
                 .setId(findNamedAttribute(node, ID_ATTRIBUTE_NAME)
                         .map(Node::getNodeValue)
                         .orElse(EMPTY));
+    }
+
+    protected void enrichFromCouchDB(LicenseInfo licenseInfo) {
+        if (licenseCache == null || !isLicenseDBEnabled()) {
+            return;
+        }
+        if (licenseInfo == null || licenseInfo.getLicenseNamesWithTexts() == null) {
+            return;
+        }
+
+        for (LicenseNameWithText licenseNameWithText : licenseInfo.getLicenseNamesWithTexts()) {
+            License couchDbLicense = null;
+
+            String spdxId = licenseNameWithText.getLicenseSpdxId();
+            if (spdxId != null && !SPDX_IDENTIFIER_UNKNOWN.equals(spdxId)) {
+                try {
+                    couchDbLicense = licenseCache.get(spdxId).orElse(null);
+                } catch (ExecutionException e) {
+                    log.error(e);
+                }
+            }
+
+            if (couchDbLicense == null) {
+                String licenseName = licenseNameWithText.getLicenseName();
+                if (licenseName != null && !LICENSE_NAME_UNKNOWN.equals(licenseName)) {
+                    try {
+                        couchDbLicense = licenseCache.get(licenseName).orElse(null);
+                    } catch (ExecutionException e) {
+                        log.error(e);
+                    }
+                }
+            }
+
+            if (couchDbLicense != null && couchDbLicense.getText() != null) {
+                licenseNameWithText.setLicenseText(couchDbLicense.getText());
+            }
+        }
+    }
+
+    private boolean isLicenseDBEnabled() {
+        return Boolean.parseBoolean(
+                SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, "false"));
     }
 
     protected class NodeListIterator implements Iterator<Node> {
