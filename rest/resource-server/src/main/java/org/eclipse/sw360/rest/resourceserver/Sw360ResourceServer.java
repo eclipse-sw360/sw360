@@ -32,7 +32,7 @@ import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.rest.common.Sw360SecurityFilter;
 import org.eclipse.sw360.rest.common.Sw360XssFilter;
-import org.eclipse.sw360.clients.users.config.UsersClientConfiguration;
+import org.eclipse.sw360.rest.common.config.UsersClientConfiguration;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springdoc.core.customizers.OpenApiCustomizer;

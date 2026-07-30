@@ -7,13 +7,15 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.clients.users;
+package org.eclipse.sw360.datahandler.users;
 
 import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
 /**
- * Static access to a shared {@link UsersClient} for modules that are not Spring-managed.
- * Uses {@link BackendRestClients#shared()} (pooled HTTP client).
+ * Entry point for obtaining a {@link UsersClient}.
+ *
+ * Same pattern as other datahandler {@code *Clients} factories: static access for
+ * non-Spring callers, backed by {@link BackendRestClients#shared()}.
  */
 public final class UsersClients {
 
@@ -35,7 +37,7 @@ public final class UsersClients {
         if (defaultClient == null) {
             synchronized (UsersClients.class) {
                 if (defaultClient == null) {
-                    defaultClient = new UsersClient(BackendRestClients.shared());
+                    defaultClient = new UsersServiceRestClient(BackendRestClients.shared());
                 }
             }
         }

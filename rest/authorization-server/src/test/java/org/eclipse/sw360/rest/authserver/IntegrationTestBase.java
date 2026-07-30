@@ -31,7 +31,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
-import org.eclipse.sw360.clients.users.UsersClient;
+import org.eclipse.sw360.datahandler.users.UsersClient;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.common.client.service.Sw360UserDetailsService;

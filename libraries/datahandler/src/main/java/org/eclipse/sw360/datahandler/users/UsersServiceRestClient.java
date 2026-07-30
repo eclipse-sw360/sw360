@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.clients.users;
+package org.eclipse.sw360.datahandler.users;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,18 +28,19 @@ import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestClient;
 
 /**
- * Central REST client for the users backend WAR. Returns service-api POJOs at the wire boundary.
+ * HTTP implementation of {@link UsersClient} for {@code /users/api/users}.
  */
-public class UsersClient {
+public class UsersServiceRestClient implements UsersClient {
 
     public static final String USERS_URI = "/users/api/users";
 
     private final RestClient restClient;
 
-    public UsersClient(RestClient restClient) {
+    public UsersServiceRestClient(RestClient restClient) {
         this.restClient = restClient;
     }
 
+    @Override
     public User getUser(String id) {
         return restClient.get()
                 .uri(USERS_URI + "/" + id)
@@ -47,6 +48,7 @@ public class UsersClient {
                 .body(User.class);
     }
 
+    @Override
     public User getByEmail(String email) {
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder.path(USERS_URI + "/by-email")
@@ -56,6 +58,7 @@ public class UsersClient {
                 .body(User.class);
     }
 
+    @Override
     public User getByEmailOrExternalId(String email, String externalId) {
         UserEmailExternalIdRequest request = new UserEmailExternalIdRequest()
                 .setEmail(email)
@@ -67,6 +70,7 @@ public class UsersClient {
                 .body(User.class);
     }
 
+    @Override
     public User getByApiToken(String token) {
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder.path(USERS_URI + "/by-api-token")
@@ -76,6 +80,7 @@ public class UsersClient {
                 .body(User.class);
     }
 
+    @Override
     public User getByOidcClientId(String clientId) {
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder.path(USERS_URI + "/by-oidc-client-id")
@@ -85,6 +90,7 @@ public class UsersClient {
                 .body(User.class);
     }
 
+    @Override
     public List<User> getAllUsers() {
         List<User> users = restClient.get()
                 .uri(USERS_URI)
@@ -93,6 +99,7 @@ public class UsersClient {
         return users != null ? users : List.of();
     }
 
+    @Override
     public AddDocumentRequestSummary addUser(User user) {
         return restClient.post()
                 .uri(USERS_URI)
@@ -101,6 +108,7 @@ public class UsersClient {
                 .body(AddDocumentRequestSummary.class);
     }
 
+    @Override
     public RequestStatus updateUser(User user) {
         return restClient.put()
                 .uri(USERS_URI)
@@ -109,10 +117,12 @@ public class UsersClient {
                 .body(RequestStatus.class);
     }
 
+    @Override
     public PaginatedResult<User> getUsersWithPagination(PaginationData pageData) {
         return fetchPaginated("/page", pageData);
     }
 
+    @Override
     public PaginatedResult<User> refineSearch(String text, Map<String, Set<String>> filterMap,
             PaginationData pageData) {
         UserSearchFilterRequest filter = new UserSearchFilterRequest()
@@ -121,6 +131,7 @@ public class UsersClient {
         return fetchPaginatedWithBody("/refine-search", pageData, filter);
     }
 
+    @Override
     public PaginatedResult<User> searchUsersByExactValues(Map<String, Set<String>> filterMap,
             PaginationData pageData) {
         UserSearchFilterRequest filter = new UserSearchFilterRequest()
@@ -128,6 +139,7 @@ public class UsersClient {
         return fetchPaginatedWithBody("/search/exact", pageData, filter);
     }
 
+    @Override
     public Set<String> getUserDepartments() {
         Set<String> result = restClient.get()
                 .uri(USERS_URI + "/departments")
@@ -136,6 +148,7 @@ public class UsersClient {
         return result != null ? result : Collections.emptySet();
     }
 
+    @Override
     public Set<String> getUserSecondaryDepartments() {
         Set<String> result = restClient.get()
                 .uri(USERS_URI + "/secondary-departments")
@@ -144,6 +157,7 @@ public class UsersClient {
         return result != null ? result : Collections.emptySet();
     }
 
+    @Override
     public RequestSummary importFileToDB() {
         return restClient.post()
                 .uri(USERS_URI + "/import")
@@ -151,6 +165,7 @@ public class UsersClient {
                 .body(RequestSummary.class);
     }
 
+    @Override
     public RequestStatus importDepartmentSchedule() {
         return restClient.post()
                 .uri(USERS_URI + "/import/schedule")
@@ -158,6 +173,7 @@ public class UsersClient {
                 .body(RequestStatus.class);
     }
 
+    @Override
     public void writePathFolderConfig(String pathFolder) {
         restClient.put()
                 .uri(USERS_URI + "/config/path")
@@ -166,6 +182,7 @@ public class UsersClient {
                 .toBodilessEntity();
     }
 
+    @Override
     public String getPathConfigDepartment() {
         return restClient.get()
                 .uri(USERS_URI + "/config/path")
@@ -173,6 +190,7 @@ public class UsersClient {
                 .body(String.class);
     }
 
+    @Override
     public String getLastRunningTime() {
         return restClient.get()
                 .uri(USERS_URI + "/config/last-running-time")
@@ -180,6 +198,7 @@ public class UsersClient {
                 .body(String.class);
     }
 
+    @Override
     public Set<String> getListFileLog() {
         Set<String> result = restClient.get()
                 .uri(USERS_URI + "/log-files")
@@ -188,6 +207,7 @@ public class UsersClient {
         return result != null ? result : Collections.emptySet();
     }
 
+    @Override
     public List<String> getLogFileContentByName(String fileName) {
         return restClient.get()
                 .uri(USERS_URI + "/log-files/" + fileName + "/content")
@@ -195,6 +215,7 @@ public class UsersClient {
                 .body(new ParameterizedTypeReference<>() {});
     }
 
+    @Override
     public Map<String, List<String>> getSecondaryDepartmentMemberEmails() {
         Map<String, List<String>> result = restClient.get()
                 .uri(USERS_URI + "/secondary-departments/members")
@@ -203,6 +224,7 @@ public class UsersClient {
         return result != null ? result : Collections.emptyMap();
     }
 
+    @Override
     public Set<String> getMemberEmailsBySecondaryDepartmentName(String departmentName) {
         Set<String> result = restClient.get()
                 .uri(USERS_URI + "/secondary-departments/" + departmentName + "/emails")
@@ -211,6 +233,7 @@ public class UsersClient {
         return result != null ? result : Collections.emptySet();
     }
 
+    @Override
     public void updateDepartmentToListUser(List<User> users, String department) {
         restClient.put()
                 .uri(USERS_URI + "/secondary-departments/" + department + "/members")
@@ -219,6 +242,7 @@ public class UsersClient {
                 .toBodilessEntity();
     }
 
+    @Override
     public void deleteSecondaryDepartmentFromListUser(List<User> users, String department) {
         restClient.method(HttpMethod.DELETE)
                 .uri(USERS_URI + "/secondary-departments/" + department + "/members")
@@ -227,6 +251,7 @@ public class UsersClient {
                 .toBodilessEntity();
     }
 
+    @Override
     public List<User> getAllUserByEmails(List<String> emails) {
         List<User> users = restClient.post()
                 .uri(USERS_URI + "/by-emails")
@@ -236,6 +261,7 @@ public class UsersClient {
         return users != null ? users : List.of();
     }
 
+    @Override
     public String getDepartmentByEmail(String email) {
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder.path(USERS_URI + "/department-by-email")

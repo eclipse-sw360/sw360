@@ -116,13 +116,7 @@
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>rest-common</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>users-rest-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
+        </dependency>        <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>service-api</artifactId>
             <version>${project.version}</version>

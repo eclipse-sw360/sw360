@@ -33,7 +33,7 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>users-rest-client</artifactId>
+            <artifactId>datahandler</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

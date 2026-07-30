@@ -45,7 +45,7 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
-import org.eclipse.sw360.clients.users.UsersClients;
+import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;

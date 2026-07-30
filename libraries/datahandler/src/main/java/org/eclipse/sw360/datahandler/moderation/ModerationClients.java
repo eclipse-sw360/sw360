@@ -17,10 +17,10 @@ import org.eclipse.sw360.datahandler.rest.BackendRestClients;
  * Much of SW360 (for example {@code Moderator} and the entitlement moderators) is not
  * Spring-managed, so there is no injected bean. Call {@link #get()} to reuse one shared
  * HTTP client aimed at {@link ThriftClients#BACKEND_URL} (same pattern as
- * {@code UsersClients} for the users service).
- * 
+ * {@link org.eclipse.sw360.datahandler.users.UsersClients}).
+ *
  * This class lives in datahandler next to {@link ThriftClients} so those callers can use
- * moderation without depending on a separate client module.
+ * moderation without a separate client module.
  */
 public final class ModerationClients {
 

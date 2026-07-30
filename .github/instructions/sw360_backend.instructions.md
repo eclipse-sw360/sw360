@@ -879,7 +879,9 @@ AttachmentClient attachmentClient = AttachmentClients.get();
 ConfigurationsClient configsClient = ConfigurationsClients.get();
 ModerationClient moderationClient = ModerationClients.get();
 LicenseInfoClient licenseInfoClient = LicenseInfoClients.get();
+UsersClient usersClient = UsersClients.get();
 
+// All SW360 backend WAR clients live in datahandler (UsersClient included).
 // ThriftClients.make*Client() is deprecated — thrift servlets are not deployed.
 // Thin RestAdapters (ProjectServiceRestAdapter, etc.) wrap the same factories for
 // call sites that still speak thrift Iface types.
