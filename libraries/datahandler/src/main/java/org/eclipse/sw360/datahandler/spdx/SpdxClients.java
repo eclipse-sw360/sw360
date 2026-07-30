@@ -7,35 +7,31 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.clients.users;
+package org.eclipse.sw360.datahandler.spdx;
 
 import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
-/**
- * Static access to a shared {@link UsersClient} for modules that are not Spring-managed.
- * Uses {@link BackendRestClients#shared()} (pooled HTTP client).
- */
-public final class UsersClients {
+public final class SpdxClients {
 
-    private static volatile UsersClient defaultClient;
+    private static volatile SpdxClient defaultClient;
 
-    private UsersClients() {}
+    private SpdxClients() {}
 
-    public static UsersClient get() {
+    public static SpdxClient get() {
         return defaultClient();
     }
 
-    public static void set(UsersClient client) {
-        synchronized (UsersClients.class) {
+    public static void set(SpdxClient client) {
+        synchronized (SpdxClients.class) {
             defaultClient = client;
         }
     }
 
-    public static UsersClient defaultClient() {
+    public static SpdxClient defaultClient() {
         if (defaultClient == null) {
-            synchronized (UsersClients.class) {
+            synchronized (SpdxClients.class) {
                 if (defaultClient == null) {
-                    defaultClient = new UsersClient(BackendRestClients.shared());
+                    defaultClient = new SpdxServiceRestClient(BackendRestClients.shared());
                 }
             }
         }

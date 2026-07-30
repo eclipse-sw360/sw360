@@ -7,35 +7,31 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.clients.users;
+package org.eclipse.sw360.datahandler.search;
 
 import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
-/**
- * Static access to a shared {@link UsersClient} for modules that are not Spring-managed.
- * Uses {@link BackendRestClients#shared()} (pooled HTTP client).
- */
-public final class UsersClients {
+public final class SearchClients {
 
-    private static volatile UsersClient defaultClient;
+    private static volatile SearchClient defaultClient;
 
-    private UsersClients() {}
+    private SearchClients() {}
 
-    public static UsersClient get() {
+    public static SearchClient get() {
         return defaultClient();
     }
 
-    public static void set(UsersClient client) {
-        synchronized (UsersClients.class) {
+    public static void set(SearchClient client) {
+        synchronized (SearchClients.class) {
             defaultClient = client;
         }
     }
 
-    public static UsersClient defaultClient() {
+    public static SearchClient defaultClient() {
         if (defaultClient == null) {
-            synchronized (UsersClients.class) {
+            synchronized (SearchClients.class) {
                 if (defaultClient == null) {
-                    defaultClient = new UsersClient(BackendRestClients.shared());
+                    defaultClient = new SearchServiceRestClient(BackendRestClients.shared());
                 }
             }
         }
