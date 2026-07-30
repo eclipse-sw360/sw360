@@ -36,9 +36,12 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
+import org.eclipse.sw360.datahandler.components.ComponentClients;
+import org.eclipse.sw360.datahandler.configurations.ConfigurationsClients;
+import org.eclipse.sw360.datahandler.licenses.LicenseClients;
+import org.eclipse.sw360.datahandler.projects.ProjectClients;
+import org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
@@ -48,7 +51,6 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
@@ -57,7 +59,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -415,10 +416,12 @@ public class SW360Utils {
     public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                ProjectService.Iface client = ThriftClients.makeProjectClient();
-                List<ProjectLink> linkedProjects = client.getLinkedProjectsOfProject(project, deep, user);
-                return linkedProjects;
-            } catch (TException e) {
+                if (project.isSetId()) {
+                    return getLinkedProjects(project.getId(), deep, log, user);
+                }
+                return ThriftPojoBridge.toThriftProjectLinks(ProjectClients.get().getLinkedProjectsOfProject(
+                        ThriftPojoBridge.toPojoProject(project), deep, ThriftPojoBridge.toPojoUser(user)));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked projects", e);
             }
         }
@@ -429,10 +432,9 @@ public class SW360Utils {
     public static Collection<ProjectLink> getLinkedProjects(String id, boolean deep, Logger log, User user) {
         if (id != null) {
             try {
-                ProjectService.Iface client = ThriftClients.makeProjectClient();
-                List<ProjectLink> linkedProjects = client.getLinkedProjectsById(id, deep, user);
-                return linkedProjects;
-            } catch (TException e) {
+                return ThriftPojoBridge.toThriftProjectLinks(ProjectClients.get().getLinkedProjectsById(id, deep,
+                        ThriftPojoBridge.toPojoUser(user)));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked projects", e);
             }
         }
@@ -512,9 +514,9 @@ public class SW360Utils {
     public static List<ReleaseLink> getLinkedReleases(Project project, Logger log) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
-                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
-                return componentClient.getLinkedReleases(project.getReleaseIdToUsage());
-            } catch (TException e) {
+                return ThriftPojoBridge.toThriftReleaseLinks(ComponentClients.get().getLinkedReleases(
+                        ThriftPojoBridge.toPojoProjectReleaseRelationshipMap(project.getReleaseIdToUsage())));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked releases", e);
             }
         }
@@ -525,9 +527,11 @@ public class SW360Utils {
     public static List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, Logger log, User user) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
-                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
-                return componentClient.getLinkedReleasesWithAccessibility(project.getReleaseIdToUsage(), user);
-            } catch (TException e) {
+                return ThriftPojoBridge.toThriftReleaseLinks(
+                        ComponentClients.get().getLinkedReleasesWithAccessibility(
+                                ThriftPojoBridge.toPojoProjectReleaseRelationshipMap(project.getReleaseIdToUsage()),
+                                ThriftPojoBridge.toPojoUser(user)));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked releases", e);
             }
         }
@@ -538,9 +542,10 @@ public class SW360Utils {
     public static List<ReleaseLink> getLinkedReleaseRelations(Release release, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
-                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
-                return componentClient.getLinkedReleaseRelations(release.getReleaseIdToRelationship());
-            } catch (TException e) {
+                return ThriftPojoBridge.toThriftReleaseLinks(
+                        ComponentClients.get().getLinkedReleaseRelations(
+                                ThriftPojoBridge.toPojoReleaseRelationshipMap(release.getReleaseIdToRelationship())));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked releases", e);
             }
         }
@@ -551,9 +556,11 @@ public class SW360Utils {
     public static List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, Logger log, User user) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
-                ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
-                return componentClient.getLinkedReleaseRelationsWithAccessibility(release.getReleaseIdToRelationship(), user);
-            } catch (TException e) {
+                return ThriftPojoBridge.toThriftReleaseLinks(
+                        ComponentClients.get().getLinkedReleaseRelationsWithAccessibility(
+                                ThriftPojoBridge.toPojoReleaseRelationshipMap(release.getReleaseIdToRelationship()),
+                                ThriftPojoBridge.toPojoUser(user)));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked releases", e);
             }
         }
@@ -579,14 +586,24 @@ public class SW360Utils {
      * @deprecated The licenses service has been migrated to Spring Boot REST.
      * Callers in the resource-server should use {@code Sw360LicenseService}/{@code LicenseServiceRestAdapter}
      * against {@code /licenses/api/licenses}; backend services should use the in-process
-     * {@code LicenseDatabaseHandler}. This Thrift path is no longer served after the migration.
+     * {@code LicenseDatabaseHandler}. Prefer {@link LicenseClients} for non-Spring callers.
      */
     @Deprecated
     public static List<License> getLicenses(Collection<String> ids, String department) throws TException {
         if (ids != null && ids.size() > 0) {
-            LicenseService.Iface client = ThriftClients.makeLicenseClient();
-            return client.getByIds(new HashSet<>(ids), department);
-        } else return Collections.emptyList();
+            try {
+                return ThriftPojoBridge.toThriftLicenses(
+                        LicenseClients.get().getByIds(new HashSet<>(ids), department));
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
+                SW360Exception thriftEx = new SW360Exception(e.getMessage());
+                if (e.getErrorCode() != null) {
+                    thriftEx.setErrorCode(e.getErrorCode());
+                }
+                throw thriftEx;
+            }
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     @NotNull
@@ -886,19 +903,16 @@ public class SW360Utils {
      * @deprecated The licenses service has been migrated to Spring Boot REST.
      * Callers in the resource-server should use {@code Sw360LicenseService}/{@code LicenseServiceRestAdapter}
      * against {@code /licenses/api/licenses}; backend services should use the in-process
-     * {@code LicenseDatabaseHandler}. This Thrift path is no longer served after the migration.
+     * {@code LicenseDatabaseHandler}. Prefer {@link LicenseClients} for non-Spring callers.
      */
     @Deprecated
     public static List<Obligation> getObligations() {
-        final LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
-        List<Obligation> obligations = new ArrayList<>();
-
         try {
-            obligations = licenseClient.getObligations();
-        } catch (TException e) {
+            return ThriftPojoBridge.toThriftObligations(LicenseClients.get().getObligations());
+        } catch (RuntimeException e) {
             log.error("Could not get Obligations from Admin Section!", e);
         }
-        return obligations;
+        return new ArrayList<>();
     }
 
     public static Map<String, ObligationStatusInfo> sortMapOfObligationOnType(
@@ -945,21 +959,13 @@ public class SW360Utils {
     }
 
     /**
-     * @deprecated Use {@link org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService#removeReleaseVulnerabilityRelationsForRelease} instead.
+     * @deprecated Callers should use {@code Sw360VulnerabilityService} in the resource-server.
+     * The vulnerabilities thrift HTTP endpoint is no longer served.
      */
     @Deprecated
     public static void removeReleaseVulnerabilityRelation(String releaseId, User user) {
-        log.warn("removeReleaseVulnerabilityRelation is deprecated; callers should use Sw360VulnerabilityService instead");
-        VulnerabilityService.Iface vulnerabilityService = ThriftClients.makeVulnerabilityClient();
-        try {
-            List<ReleaseVulnerabilityRelation> releaseVulnerabilityRelations =
-                    vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(releaseId, user);
-            for (ReleaseVulnerabilityRelation relation : releaseVulnerabilityRelations) {
-                vulnerabilityService.deleteReleaseVulnerabilityRelation(relation, user);
-            }
-        } catch (TException e) {
-            log.error(e.getMessage());
-        }
+        log.warn("removeReleaseVulnerabilityRelation is deprecated and no longer calls the thrift backend; "
+                + "use Sw360VulnerabilityService instead (releaseId={})", releaseId);
     }
 
     public static Set<String> getReleaseIdsLinkedWithProject(Project project) {
@@ -1008,20 +1014,18 @@ public class SW360Utils {
 
     @Deprecated
     public static List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, User user) {
-        ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
         Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(releaseIds);
-        List<Project> projectsUsings;
         try {
             if (user == null) {
-                projectsUsings = projectClient.refineSearchWithoutUser(null, filterMap);
-            } else {
-                projectsUsings = projectClient.refineSearch(null, filterMap, user);
+                return ThriftPojoBridge.toThriftProjects(
+                        ProjectClients.get().refineSearchWithoutUser(null, filterMap));
             }
-        } catch (TException e) {
+            return ThriftPojoBridge.toThriftProjects(
+                    ProjectClients.get().refineSearch(null, filterMap, ThriftPojoBridge.toPojoUser(user)));
+        } catch (RuntimeException e) {
             log.error("Could not fetch projects");
-            projectsUsings = Collections.emptyList();
+            return Collections.emptyList();
         }
-        return projectsUsings;
     }
 
     private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
@@ -1040,9 +1044,10 @@ public class SW360Utils {
     public static Collection<ProjectLink> getLinkedProjectWithoutReleases(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                ProjectService.Iface client = ThriftClients.makeProjectClient();
-                return client.getLinkedProjectsOfProjectWithoutReleases(project, deep, user);
-            } catch (TException e) {
+                return ThriftPojoBridge.toThriftProjectLinks(
+                        ProjectClients.get().getLinkedProjectsOfProjectWithoutReleases(
+                                ThriftPojoBridge.toPojoProject(project), deep, ThriftPojoBridge.toPojoUser(user)));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked projects", e);
             }
         }
@@ -1070,12 +1075,16 @@ public class SW360Utils {
      */
     private static void createDefaultDependenciesNetwork(Project project, User user) throws TException {
         List<ReleaseNode> dependencyNetwork = new ArrayList<>();
-        ComponentService.Iface sw360ComponentService = ThriftClients.makeComponentClient();
         if (project.getReleaseIdToUsage() != null) {
             Map<String, ProjectReleaseRelationship> oriReleaseIdToUsage = project.getReleaseIdToUsage();
             for (Map.Entry<String, ProjectReleaseRelationship> entry : oriReleaseIdToUsage.entrySet()) {
-                Release release = sw360ComponentService.getAccessibleReleaseById(entry.getKey(), user);
-                ReleaseNode node = sw360ComponentService.getReleaseRelationNetworkOfRelease(release, user).get(0);
+                org.eclipse.sw360.datahandler.services.components.Release release =
+                        ComponentClients.get().getAccessibleReleaseById(entry.getKey(),
+                                ThriftPojoBridge.toPojoUser(user));
+                List<ReleaseNode> nodes = ThriftPojoBridge.toThriftReleaseNodes(
+                        ComponentClients.get().getReleaseRelationNetworkOfRelease(
+                                release, ThriftPojoBridge.toPojoUser(user)));
+                ReleaseNode node = nodes.get(0);
                 node.setMainlineState(entry.getValue().getMainlineState().toString());
                 node.setReleaseRelationship(entry.getValue().getReleaseRelation().toString());
                 node.setComment(entry.getValue().getComment());
@@ -1122,9 +1131,10 @@ public class SW360Utils {
     public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                ProjectService.Iface client = ThriftClients.makeProjectClient();
-                return client.getLinkedProjectsOfProjectWithAllReleases(project, deep, user);
-            } catch (TException e) {
+                return ThriftPojoBridge.toThriftProjectLinks(
+                        ProjectClients.get().getLinkedProjectsOfProjectWithAllReleases(
+                                ThriftPojoBridge.toPojoProject(project), deep, ThriftPojoBridge.toPojoUser(user)));
+            } catch (RuntimeException e) {
                 log.error("Could not get linked projects", e);
             }
         }
@@ -1199,9 +1209,8 @@ public class SW360Utils {
 
     public static String getConfigByKey(String key) throws SW360Exception {
         try {
-            SW360ConfigsService.Iface configClient = ThriftClients.makeSW360ConfigsClient();
-            return configClient.getConfigByKey(key);
-        } catch (TException exception) {
+            return ConfigurationsClients.get().getConfigByKey(key);
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception exception) {
             throw new SW360Exception("Unable to get configuration " + key);
         }
     }

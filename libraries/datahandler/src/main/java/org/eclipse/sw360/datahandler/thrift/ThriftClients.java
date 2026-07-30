@@ -332,7 +332,9 @@ public class ThriftClients {
     }
 
     /**
-     * @deprecated Use the attachments Spring Boot REST API at {@code /attachments/api/attachments} instead.
+     * @deprecated The attachments service has been migrated to Spring Boot REST at
+     * {@code /attachments/api/attachments}. Use {@link org.eclipse.sw360.datahandler.attachments.AttachmentClients}
+     * instead. The Thrift servlet is no longer deployed.
      */
     @Deprecated
     public static AttachmentService.Iface makeAttachmentClient() {
@@ -341,8 +343,9 @@ public class ThriftClients {
 
     /**
      * @deprecated The components service has been migrated to Spring Boot REST at
-     * {@code /components/api/components}. Use {@code ComponentServiceRestAdapter} (resource-server) or the
-     * in-process {@code ComponentDatabaseHandler} (backend services) instead.
+     * {@code /components/api/components}. Use {@link org.eclipse.sw360.datahandler.components.ComponentClients}
+     * (or {@code ComponentServiceRestAdapter} in the resource-server) instead.
+     * The Thrift servlet is no longer deployed.
      */
     @Deprecated
     public static ComponentService.Iface makeComponentClient() {
@@ -359,9 +362,9 @@ public class ThriftClients {
 
     /**
      * @deprecated The licenses service has been migrated to Spring Boot REST at
-     * {@code /licenses/api/licenses}. Use {@code LicenseServiceRestAdapter} (resource-server) or the
-     * in-process {@code LicenseDatabaseHandler} (backend services) instead. The Thrift servlet is no
-     * longer deployed.
+     * {@code /licenses/api/licenses}. Use {@link org.eclipse.sw360.datahandler.licenses.LicenseClients},
+     * {@code LicenseServiceRestAdapter} (resource-server), or the in-process
+     * {@code LicenseDatabaseHandler} (backend services) instead. The Thrift servlet is no longer deployed.
      */
     @Deprecated
     public static LicenseService.Iface makeLicenseClient() {
@@ -380,14 +383,21 @@ public class ThriftClients {
 
     /**
      * @deprecated The projects service has been migrated to Spring Boot REST at
-     * {@code /projects/api/projects}. Use {@code ProjectServiceRestAdapter} (resource-server) or the
-     * in-process {@code ProjectDatabaseHandler} (backend services) instead.
+     * {@code /projects/api/projects}. Use {@link org.eclipse.sw360.datahandler.projects.ProjectClients}
+     * (or {@code ProjectServiceRestAdapter} in the resource-server) instead.
+     * The Thrift servlet is no longer deployed.
      */
     @Deprecated
     public static ProjectService.Iface makeProjectClient() {
         return new ProjectService.Client(makeProtocol(PROJECT_SERVICE_URL));
     }
 
+    /**
+     * @deprecated The search service has been migrated to Spring Boot REST.
+     * Prefer the resource-server search REST client / {@code /search/api/...} endpoints.
+     * The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static SearchService.Iface makeSearchClient() {
         return new SearchService.Client(makeProtocol(SEARCH_SERVICE_URL));
     }
@@ -400,10 +410,20 @@ public class ThriftClients {
         return new UserService.Client(makeProtocol(USER_SERVICE_URL));
     }
 
+    /**
+     * @deprecated The vendors service has been migrated to Spring Boot REST.
+     * Prefer {@code VendorServiceRestAdapter} / resource-server vendor REST clients.
+     * The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static VendorService.Iface makeVendorClient() {
         return new VendorService.Client(makeProtocol(VENDOR_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Prefer the corresponding Spring Boot REST API. The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static ProjectImportService.Iface makeProjectImportClient() {
         return new ProjectImportService.Client(makeProtocol(PROJECTIMPORT_SERVICE_URL));
     }
@@ -434,6 +454,10 @@ public class ThriftClients {
         return new LicenseInfoService.Client(makeProtocol(LICENSEINFO_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Prefer the schedule Spring Boot REST API. The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static ScheduleService.Iface makeScheduleClient() {
         return new ScheduleService.Client(makeProtocol(SCHEDULE_SERVICE_URL));
     }
@@ -447,10 +471,18 @@ public class ThriftClients {
         return new ProjectImportService.Client(makeProtocol(WSIMPORT_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Prefer the changelogs Spring Boot REST API. The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static ChangeLogsService.Iface makeChangeLogsClient() {
         return new ChangeLogsService.Client(makeProtocol(CHANGELOGS_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Prefer the health Spring Boot REST API. The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static HealthService.Iface makeHealthClient() {
         return new HealthService.Client(makeProtocol(HEALTH_SERVICE_URL));
     }
@@ -479,6 +511,10 @@ public class ThriftClients {
         return new PackageInformationService.Client(makeProtocol(SPDX_PACKAGE_INFO_SERVICE_URL));
     }
 
+    /**
+     * @deprecated Prefer the SPDX file-info Spring Boot REST API. The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static FileInformationService.Iface makeSPDXFileInfoClient() {
         return new FileInformationService.Client(makeProtocol(SPDX_FILE_INFO_SERVICE_URL));
     }
@@ -491,6 +527,13 @@ public class ThriftClients {
         return new PackageService.Client(makeProtocol(PACKAGE_SERVICE_URL));
     }
 
+    /**
+     * @deprecated The configurations service has been migrated to Spring Boot REST at
+     * {@code /configurations/api/configurations}. Use
+     * {@link org.eclipse.sw360.datahandler.configurations.ConfigurationsClients} instead.
+     * The Thrift servlet is no longer deployed.
+     */
+    @Deprecated
     public static SW360ConfigsService.Iface makeSW360ConfigsClient() {
         return new SW360ConfigsService.Client(makeProtocol(SW360_CONFIGS_SERVICE_URL));
     }
