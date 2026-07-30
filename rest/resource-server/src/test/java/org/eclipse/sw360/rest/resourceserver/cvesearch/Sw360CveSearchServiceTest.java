@@ -9,46 +9,48 @@
  */
 package org.eclipse.sw360.rest.resourceserver.cvesearch;
 
+import org.eclipse.sw360.datahandler.cvesearch.CveSearchClient;
+import org.eclipse.sw360.datahandler.cvesearch.CveSearchClients;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.cvesearch.VulnerabilityUpdateStatus;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.util.Set;
-import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class Sw360CveSearchServiceTest {
 
     @Mock
-    private RestClient restClient;
+    private CveSearchClient cveSearchClient;
 
     private Sw360CveSearchService cveSearchService;
 
     @BeforeEach
     public void setUp() {
-        cveSearchService = new Sw360CveSearchService(restClient);
+        CveSearchClients.set(cveSearchClient);
+        cveSearchService = new Sw360CveSearchService();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        CveSearchClients.set(null);
     }
 
     @Test
     public void updateForRelease_returnsResponseFromBackend() {
         VulnerabilityUpdateStatus expected = new VulnerabilityUpdateStatus()
                 .setRequestStatus(RequestStatus.SUCCESS);
-        mockPostForBody(expected, VulnerabilityUpdateStatus.class);
+        when(cveSearchClient.updateForRelease("release123")).thenReturn(expected);
 
         VulnerabilityUpdateStatus result = cveSearchService.updateForRelease("release123");
 
@@ -57,7 +59,7 @@ public class Sw360CveSearchServiceTest {
 
     @Test
     public void update_returnsRequestStatusFromBackend() {
-        mockPostForBody(RequestStatus.SUCCESS, RequestStatus.class);
+        when(cveSearchClient.update()).thenReturn(RequestStatus.SUCCESS);
 
         RequestStatus result = cveSearchService.update();
 
@@ -67,14 +69,7 @@ public class Sw360CveSearchServiceTest {
     @Test
     public void findCpes_returnsCpeSetFromBackend() {
         Set<String> expected = Set.of("cpe:2.3:a:apache:httpd:2.4.1:*:*:*:*:*:*:*");
-        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
-        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(any(Function.class))).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(expected);
+        when(cveSearchClient.findCpes("apache", "httpd", "2.4.1")).thenReturn(expected);
 
         Set<String> result = cveSearchService.findCpes("apache", "httpd", "2.4.1");
 
@@ -83,26 +78,10 @@ public class Sw360CveSearchServiceTest {
 
     @Test
     public void postForBody_rethrowsRestClientException() {
-        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
-        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
-
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenThrow(new RestClientException("Connection refused"));
+        when(cveSearchClient.fullUpdate()).thenThrow(new SW360Exception("Connection refused", 503));
 
         assertThatThrownBy(() -> cveSearchService.fullUpdate())
-                .isInstanceOf(RestClientException.class)
+                .isInstanceOf(SW360Exception.class)
                 .hasMessageContaining("Connection refused");
-    }
-
-    private <T> void mockPostForBody(T response, Class<T> responseType) {
-        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
-        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(eq(responseType))).thenReturn(response);
     }
 }

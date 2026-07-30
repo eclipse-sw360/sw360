@@ -11,11 +11,14 @@
 package org.eclipse.sw360.rest.resourceserver;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.health.HealthClient;
+import org.eclipse.sw360.datahandler.health.HealthClients;
 import org.eclipse.sw360.datahandler.services.health.HealthResponse;
 import org.eclipse.sw360.datahandler.services.health.HealthStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -26,8 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.net.MalformedURLException;
 import java.util.Collections;
@@ -56,7 +57,7 @@ public class SW360RestHealthIndicatorTest {
     private Sw360UserService userServiceMock;
 
     @MockitoBean
-    private RestClient restClient;
+    private HealthClient healthClient;
 
     private static final String IS_DB_REACHABLE = "isDbReachable";
     private static final String IS_HEALTH_SERVICE_REACHABLE = "isHealthServiceReachable";
@@ -67,26 +68,12 @@ public class SW360RestHealthIndicatorTest {
     @BeforeEach
     public void before() throws Exception {
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
+        HealthClients.set(healthClient);
     }
 
-    private void mockRestClientResponse(HealthResponse response) {
-        RestClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
-        RestClient.RequestHeadersSpec requestHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
-        when(restClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(HealthResponse.class)).thenReturn(response);
-    }
-
-    private void mockRestClientException(Exception ex) {
-        RestClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
-        RestClient.RequestHeadersSpec requestHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
-
-        when(restClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenThrow(ex);
+    @AfterEach
+    public void after() {
+        HealthClients.set(null);
     }
 
     private ResponseEntity<Map> getMapResponseEntityForHealthEndpointRequest(String endpoint) {
@@ -107,8 +94,7 @@ public class SW360RestHealthIndicatorTest {
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(false);
 
-        HealthResponse health = new HealthResponse().setStatus(HealthStatus.UP);
-        mockRestClientResponse(health);
+        when(healthClient.getHealth()).thenReturn(new HealthResponse().setStatus(HealthStatus.UP));
 
         when(restHealthIndicatorMock.makeDatabaseInstance())
                 .thenReturn(databaseInstanceMock);
@@ -135,10 +121,9 @@ public class SW360RestHealthIndicatorTest {
         when(restHealthIndicatorMock.makeDatabaseInstance())
                 .thenReturn(databaseInstanceMock);
 
-        HealthResponse health = new HealthResponse()
+        when(healthClient.getHealth()).thenReturn(new HealthResponse()
                 .setStatus(HealthStatus.DOWN)
-                .setDetails(Collections.singletonMap("sw360attachments", "not reachable"));
-        mockRestClientResponse(health);
+                .setDetails(Collections.singletonMap("sw360attachments", "not reachable")));
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
@@ -163,7 +148,7 @@ public class SW360RestHealthIndicatorTest {
         when(restHealthIndicatorMock.makeDatabaseInstance())
                 .thenReturn(databaseInstanceMock);
 
-        mockRestClientException(new RestClientException("Connection refused"));
+        when(healthClient.getHealth()).thenThrow(new RuntimeException("Connection refused"));
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
@@ -212,8 +197,7 @@ public class SW360RestHealthIndicatorTest {
         when(restHealthIndicatorMock.makeDatabaseInstance())
                 .thenReturn(databaseInstanceMock);
 
-        HealthResponse health = new HealthResponse().setStatus(HealthStatus.UP);
-        mockRestClientResponse(health);
+        when(healthClient.getHealth()).thenReturn(new HealthResponse().setStatus(HealthStatus.UP));
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 

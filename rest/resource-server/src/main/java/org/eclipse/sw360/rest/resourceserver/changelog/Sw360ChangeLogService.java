@@ -15,53 +15,36 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.changelogs.ChangeLogsClient;
+import org.eclipse.sw360.datahandler.changelogs.ChangeLogsClients;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangelogSortColumn;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 
 @Service
 public class Sw360ChangeLogService {
     private static final Logger log = LogManager.getLogger(Sw360ChangeLogService.class);
 
-    private final RestClient restClient;
-    private final String CHANGELOGS_URI = "/changelogs/api/changelogs";
-
-    public Sw360ChangeLogService(RestClient restClient){
-        this.restClient = restClient;
+    private ChangeLogsClient client() {
+        return ChangeLogsClients.get();
     }
 
     public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) {
-        return restClient.get()
-        .uri(CHANGELOGS_URI+"/doc/"+docId)
-        .header("X-User-Email", sw360User.getEmail())
-        .header("X-User-Department", sw360User.getDepartment())
-        .retrieve()
-        .body(new ParameterizedTypeReference<List<ChangeLogs>>() {});
+        return client().getChangeLogsByDocumentId(docId, UserConverter.fromThrift(sw360User));
     }
 
     public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, User sw360User, Pageable pageable) {
         PaginationData pageData = pageableToPaginationData(pageable);
-        PaginatedResult<ChangeLogs> result = restClient.get()
-        .uri(uriBuilder -> uriBuilder
-            .path(CHANGELOGS_URI + "/doc/" + docId + "/page")
-            .queryParam("ascending", pageData.getAscending())
-            .queryParam("displayStart", pageData.getDisplayStart())
-            .queryParam("rowsPerPage", pageData.getRowsPerPage())
-            .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
-            .build())
-        .header("X-User-Email", sw360User.getEmail())
-        .header("X-User-Department", sw360User.getDepartment())
-        .retrieve()
-        .body(new ParameterizedTypeReference<PaginatedResult<ChangeLogs>>() {});
+        PaginatedResult<ChangeLogs> result = client().getChangeLogsByDocumentIdPaginated(
+                docId, UserConverter.fromThrift(sw360User), pageData);
 
         if (result == null) {
             return Collections.emptyMap();

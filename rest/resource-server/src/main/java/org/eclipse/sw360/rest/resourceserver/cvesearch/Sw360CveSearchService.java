@@ -11,69 +11,40 @@ package org.eclipse.sw360.rest.resourceserver.cvesearch;
 
 import java.util.Set;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cvesearch.CveSearchClient;
+import org.eclipse.sw360.datahandler.cvesearch.CveSearchClients;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.cvesearch.VulnerabilityUpdateStatus;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 @Service
 public class Sw360CveSearchService {
 
-    private static final Logger log = LogManager.getLogger(Sw360CveSearchService.class);
-
-    private static final String CVESEARCH_URI = "/cvesearch/api/cvesearch";
-
-    private final RestClient restClient;
-
-    public Sw360CveSearchService(RestClient restClient) {
-        this.restClient = restClient;
+    private CveSearchClient client() {
+        return CveSearchClients.get();
     }
 
     public VulnerabilityUpdateStatus updateForRelease(String releaseId) {
-        return postForBody(CVESEARCH_URI + "/releases/" + releaseId, VulnerabilityUpdateStatus.class);
+        return client().updateForRelease(releaseId);
     }
 
     public VulnerabilityUpdateStatus updateForComponent(String componentId) {
-        return postForBody(CVESEARCH_URI + "/components/" + componentId, VulnerabilityUpdateStatus.class);
+        return client().updateForComponent(componentId);
     }
 
     public VulnerabilityUpdateStatus updateForProject(String projectId) {
-        return postForBody(CVESEARCH_URI + "/projects/" + projectId, VulnerabilityUpdateStatus.class);
+        return client().updateForProject(projectId);
     }
 
     public VulnerabilityUpdateStatus fullUpdate() {
-        return postForBody(CVESEARCH_URI + "/full-update", VulnerabilityUpdateStatus.class);
+        return client().fullUpdate();
     }
 
     public RequestStatus update() {
-        return postForBody(CVESEARCH_URI + "/update", RequestStatus.class);
+        return client().update();
     }
 
     public Set<String> findCpes(String vendor, String product, String version) {
-        return restClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path(CVESEARCH_URI + "/cpes")
-                        .queryParam("vendor", vendor)
-                        .queryParam("product", product)
-                        .queryParam("version", version)
-                        .build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<Set<String>>() {});
-    }
-
-    private <T> T postForBody(String path, Class<T> responseType) {
-        try {
-            return restClient.post()
-                    .uri(path)
-                    .retrieve()
-                    .body(responseType);
-        } catch (RestClientException e) {
-            log.error("CVE search backend call failed: {}", path, e);
-            throw e;
-        }
+        return client().findCpes(vendor, product, version);
     }
 }

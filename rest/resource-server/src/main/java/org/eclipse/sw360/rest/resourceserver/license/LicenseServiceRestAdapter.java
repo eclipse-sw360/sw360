@@ -28,6 +28,10 @@ import org.eclipse.sw360.common.utils.converter.licenses.LicenseTypeConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.ObligationConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.ObligationElementConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.ObligationNodeConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.licenses.LicenseClient;
+import org.eclipse.sw360.datahandler.licenses.LicenseClients;
+import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -42,11 +46,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.LicenseImportExportGateway;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 
 /**
  * Thrift {@link LicenseService.Iface} adapter that delegates to the licenses REST backend
@@ -56,430 +56,240 @@ import org.springframework.web.client.RestClientResponseException;
 @Component
 public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseImportExportGateway {
 
-    private static final String BASE = "/licenses/api/licenses";
-
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.licenses.License>> LICENSE_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.licenses.LicenseType>> LICENSE_TYPE_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.licenses.Obligation>> OBLIGATION_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.licenses.ObligationElement>> OBLIGATION_ELEMENT_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.licenses.ObligationNode>> OBLIGATION_NODE_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.common.CustomProperties>> CUSTOM_PROP_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.licenses.Obligation>> OBLIGATION_PAGE =
-            new ParameterizedTypeReference<org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.licenses.Obligation>>() {};
-
-    private final RestClient restClient;
-
-    public LicenseServiceRestAdapter(RestClient restClient) {
-        this.restClient = restClient;
+    private LicenseClient client() {
+        return LicenseClients.get();
     }
-
-    // ---- Licenses -------------------------------------------------------------------------------
 
     @Override
     public License getByID(String id, String organisation) throws TException {
-        return call(() -> LicenseConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/{id}").queryParam("organisation", organisation).build(id))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.licenses.License.class)));
+        return call(() -> LicenseConverter.toThrift(client().getByID(id, organisation)));
     }
 
     @Override
     public License getByIDWithOwnModerationRequests(String id, String organisation, User user) throws TException {
-        return call(() -> LicenseConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/{id}/with-moderation").queryParam("organisation", organisation).build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.licenses.License.class)));
+        return call(() -> LicenseConverter.toThrift(
+                client().getByIDWithOwnModerationRequests(id, organisation, UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<License> getByIds(Set<String> ids, String organisation) throws TException {
-        return call(() -> toThriftLicenses(restClient.post()
-                .uri(b -> b.path(BASE + "/by-ids").queryParam("organisation", organisation).build())
-                .body(ids)
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(client().getByIds(ids, organisation)));
     }
 
     @Override
     public List<License> getLicenseSummary() throws TException {
-        return call(() -> toThriftLicenses(restClient.get()
-                .uri(BASE + "/summary")
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(client().getLicenseSummary()));
     }
 
     @Override
     public List<License> getLicenseSummaryForExport() throws TException {
-        return call(() -> toThriftLicenses(restClient.get()
-                .uri(BASE + "/summary/export")
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(client().getLicenseSummaryForExport()));
     }
 
     @Override
     public List<License> getDetailedLicenseSummaryForExport(String organisation) throws TException {
-        return call(() -> toThriftLicenses(restClient.get()
-                .uri(b -> b.path(BASE + "/detailed-summary/export").queryParam("organisation", organisation).build())
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(client().getDetailedLicenseSummaryForExport(organisation)));
     }
 
     @Override
     public List<License> getDetailedLicenseSummary(String organisation, List<String> identifiers) throws TException {
-        return call(() -> toThriftLicenses(restClient.post()
-                .uri(b -> b.path(BASE + "/detailed-summary").queryParam("organisation", organisation).build())
-                .body(identifiers)
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(client().getDetailedLicenseSummary(organisation, identifiers)));
     }
 
     @Override
     public List<License> getLicenses() throws TException {
-        return call(() -> toThriftLicenses(restClient.get()
-                .uri(BASE)
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(client().getLicenses()));
     }
 
     @Override
     public List<License> addLicenses(List<License> licenses, User user) throws TException {
-        return call(() -> toThriftLicenses(restClient.post()
-                .uri(BASE + "/bulk")
-                .headers(h -> addUser(h, user))
-                .body(toPojoLicenses(licenses))
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(
+                client().addLicenses(toPojoLicenses(licenses), UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<License> addOrOverwriteLicenses(List<License> licenses, User user) throws TException {
-        return call(() -> toThriftLicenses(restClient.post()
-                .uri(BASE + "/bulk/overwrite")
-                .headers(h -> addUser(h, user))
-                .body(toPojoLicenses(licenses))
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(
+                client().addOrOverwriteLicenses(toPojoLicenses(licenses), UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus updateLicense(License license, User user, User requestingUser) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(BASE)
-                .headers(h -> {
-                    addUser(h, user);
-                    addRequestingUser(h, requestingUser);
-                })
-                .body(LicenseConverter.fromThrift(license))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateLicense(LicenseConverter.fromThrift(license),
+                UserConverter.fromThrift(user), UserConverter.fromThrift(requestingUser))));
     }
 
     @Override
     public RequestStatus updateLicenseFromModerationRequest(License additions, License deletions, User user,
             User requestingUser) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("additions", LicenseConverter.fromThrift(additions));
-        body.put("deletions", LicenseConverter.fromThrift(deletions));
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(BASE + "/from-moderation")
-                .headers(h -> {
-                    addUser(h, user);
-                    addRequestingUser(h, requestingUser);
-                })
-                .body(body)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateLicenseFromModerationRequest(
+                LicenseConverter.fromThrift(additions), LicenseConverter.fromThrift(deletions),
+                UserConverter.fromThrift(user), UserConverter.fromThrift(requestingUser))));
     }
 
     @Override
     public RequestStatus updateWhitelist(String licenseId, Set<String> obligationsDatabaseIds, User user)
             throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(b -> b.path(BASE + "/{id}/whitelist").build(licenseId))
-                .headers(h -> addUser(h, user))
-                .body(obligationsDatabaseIds)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(
+                client().updateWhitelist(licenseId, obligationsDatabaseIds, UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus deleteLicense(String licenseId, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(b -> b.path(BASE + "/{id}").build(licenseId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(
+                client().deleteLicense(licenseId, UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestSummary deleteAllLicenseInformation(User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(BASE + "/all")
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestSummary.class)));
+        return call(() -> RequestSummaryConverter.toThrift(
+                client().deleteAllLicenseInformation(UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestSummary importAllSpdxLicenses(User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(restClient.post()
-                .uri(BASE + "/import-spdx")
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestSummary.class)));
+        return call(() -> RequestSummaryConverter.toThrift(
+                client().importAllSpdxLicenses(UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestSummary importAllOSADLLicenses(User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(restClient.post()
-                .uri(BASE + "/import-osadl")
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestSummary.class)));
+        return call(() -> RequestSummaryConverter.toThrift(
+                client().importAllOSADLLicenses(UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<License> searchLicense(String searchText) throws TException {
-        return call(() -> toThriftLicenses(restClient.get()
-                .uri(b -> {
-                    var ub = b.path(BASE + "/search");
-                    if (searchText != null) {
-                        ub.queryParam("searchText", searchText);
-                    }
-                    return ub.build();
-                })
-                .retrieve()
-                .body(LICENSE_LIST)));
+        return call(() -> toThriftLicenses(client().searchLicense(searchText)));
     }
 
     @Override
     public ByteBuffer downloadExcel(String token) throws TException {
-        return call(() -> toByteBuffer(restClient.get()
-                .uri(b -> b.path(BASE + "/download-excel").queryParam("token", token).build())
-                .retrieve()
-                .body(byte[].class)));
+        return call(() -> ByteBuffer.wrap(client().downloadExcel(token)));
     }
 
     @Override
     public ByteBuffer getLicenseReportDataStream() throws TException {
-        return call(() -> toByteBuffer(restClient.get()
-                .uri(BASE + "/report-stream")
-                .retrieve()
-                .body(byte[].class)));
+        return call(() -> ByteBuffer.wrap(client().getLicenseReportDataStream()));
     }
-
-    // ---- License types --------------------------------------------------------------------------
 
     @Override
     public RequestStatus addLicenseType(LicenseType licenseType, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.post()
-                .uri(BASE + "/types")
-                .headers(h -> addUser(h, user))
-                .body(LicenseTypeConverter.fromThrift(licenseType))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().addLicenseType(
+                LicenseTypeConverter.fromThrift(licenseType), UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) throws TException {
-        return call(() -> toThriftLicenseTypes(restClient.post()
-                .uri(BASE + "/types/bulk")
-                .headers(h -> addUser(h, user))
-                .body(toPojoLicenseTypes(licenseTypes))
-                .retrieve()
-                .body(LICENSE_TYPE_LIST)));
+        return call(() -> toThriftLicenseTypes(
+                client().addLicenseTypes(toPojoLicenseTypes(licenseTypes), UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<LicenseType> getLicenseTypes() throws TException {
-        return call(() -> toThriftLicenseTypes(restClient.get()
-                .uri(BASE + "/types")
-                .retrieve()
-                .body(LICENSE_TYPE_LIST)));
+        return call(() -> toThriftLicenseTypes(client().getLicenseTypes()));
     }
 
     @Override
     public List<LicenseType> getLicenseTypesByIds(List<String> ids) throws TException {
-        return call(() -> toThriftLicenseTypes(restClient.post()
-                .uri(BASE + "/types/by-ids")
-                .body(ids)
-                .retrieve()
-                .body(LICENSE_TYPE_LIST)));
+        return call(() -> toThriftLicenseTypes(client().getLicenseTypesByIds(ids)));
     }
 
     @Override
     public LicenseType getLicenseTypeById(String id) throws TException {
-        return call(() -> LicenseTypeConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/types/{id}").build(id))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.licenses.LicenseType.class)));
+        return call(() -> LicenseTypeConverter.toThrift(client().getLicenseTypeById(id)));
     }
 
     @Override
     public RequestStatus deleteLicenseType(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(b -> b.path(BASE + "/types/{id}").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(
+                client().deleteLicenseType(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public int checkLicenseTypeInUse(String id) throws TException {
-        Integer count = call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/types/{id}/in-use").build(id))
-                .retrieve()
-                .body(Integer.class));
-        return count != null ? count : 0;
+        return call(() -> client().checkLicenseTypeInUse(id));
     }
 
     @Override
     public List<LicenseType> searchByLicenseType(String licenseType) throws TException {
-        return call(() -> toThriftLicenseTypes(restClient.get()
-                .uri(b -> b.path(BASE + "/types/search").queryParam("licenseType", licenseType).build())
-                .retrieve()
-                .body(LICENSE_TYPE_LIST)));
+        return call(() -> toThriftLicenseTypes(client().searchByLicenseType(licenseType)));
     }
-
-    // ---- Obligations ----------------------------------------------------------------------------
 
     @Override
     public String addObligations(Obligation obligations, User user) throws TException {
-        return call(() -> restClient.post()
-                .uri(BASE + "/obligations")
-                .headers(h -> addUser(h, user))
-                .body(ObligationConverter.fromThrift(obligations))
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().addObligations(ObligationConverter.fromThrift(obligations),
+                UserConverter.fromThrift(user)));
     }
 
     @Override
     public String updateObligation(Obligation obligation, User user) throws TException {
-        return call(() -> restClient.put()
-                .uri(BASE + "/obligations")
-                .headers(h -> addUser(h, user))
-                .body(ObligationConverter.fromThrift(obligation))
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().updateObligation(ObligationConverter.fromThrift(obligation),
+                UserConverter.fromThrift(user)));
     }
 
     @Override
     public RequestStatus addObligationsToLicense(Set<Obligation> obligations, License license, User user)
             throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("obligations", obligations == null ? Set.of()
-                : obligations.stream().map(ObligationConverter::fromThrift).collect(Collectors.toSet()));
-        body.put("license", LicenseConverter.fromThrift(license));
-        return call(() -> RequestStatusConverter.toThrift(restClient.post()
-                .uri(BASE + "/obligations/to-license")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        Set<org.eclipse.sw360.datahandler.services.licenses.Obligation> pojoObligations = obligations == null
+                ? Set.of()
+                : obligations.stream().map(ObligationConverter::fromThrift).collect(Collectors.toSet());
+        return call(() -> RequestStatusConverter.toThrift(client().addObligationsToLicense(pojoObligations,
+                LicenseConverter.fromThrift(license), UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<Obligation> addListOfObligations(List<Obligation> obligations, User user) throws TException {
-        return call(() -> toThriftObligations(restClient.post()
-                .uri(BASE + "/obligations/bulk")
-                .headers(h -> addUser(h, user))
-                .body(toPojoObligations(obligations))
-                .retrieve()
-                .body(OBLIGATION_LIST)));
+        return call(() -> toThriftObligations(
+                client().addListOfObligations(toPojoObligations(obligations), UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<Obligation> getObligations() throws TException {
-        return call(() -> toThriftObligations(restClient.get()
-                .uri(BASE + "/obligations")
-                .retrieve()
-                .body(OBLIGATION_LIST)));
+        return call(() -> toThriftObligations(client().getObligations()));
     }
 
     @Override
     public List<Obligation> getObligationsByIds(List<String> ids) throws TException {
-        return call(() -> toThriftObligations(restClient.post()
-                .uri(BASE + "/obligations/by-ids")
-                .body(ids)
-                .retrieve()
-                .body(OBLIGATION_LIST)));
+        return call(() -> toThriftObligations(client().getObligationsByIds(ids)));
     }
 
     @Override
     public List<Obligation> getObligationsByLicenseId(String id) throws TException {
-        return call(() -> toThriftObligations(restClient.get()
-                .uri(b -> b.path(BASE + "/obligations/by-license/{id}").build(id))
-                .retrieve()
-                .body(OBLIGATION_LIST)));
+        return call(() -> toThriftObligations(client().getObligationsByLicenseId(id)));
     }
 
     @Override
     public Obligation getObligationsById(String id) throws TException {
-        return call(() -> ObligationConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/obligations/{id}").build(id))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.licenses.Obligation.class)));
+        return call(() -> ObligationConverter.toThrift(client().getObligationsById(id)));
     }
 
     @Override
     public RequestStatus deleteObligations(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(b -> b.path(BASE + "/obligations/{id}").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(
+                client().deleteObligations(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public String convertTextToNode(Obligation obligation, User user) throws TException {
-        return call(() -> restClient.post()
-                .uri(BASE + "/obligations/convert-text")
-                .headers(h -> addUser(h, user))
-                .body(ObligationConverter.fromThrift(obligation))
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().convertTextToNode(ObligationConverter.fromThrift(obligation),
+                UserConverter.fromThrift(user)));
     }
 
     @Override
     public Obligation getWithTextNodes(Obligation obligation, User user) throws TException {
-        return call(() -> ObligationConverter.toThrift(restClient.post()
-                .uri(BASE + "/obligations/with-text-nodes")
-                .headers(h -> addUser(h, user))
-                .body(ObligationConverter.fromThrift(obligation))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.licenses.Obligation.class)));
+        return call(() -> ObligationConverter.toThrift(
+                client().getWithTextNodes(ObligationConverter.fromThrift(obligation), UserConverter.fromThrift(user))));
     }
 
     @Override
     public Map<PaginationData, List<Obligation>> searchObligationTextPaginated(String searchText,
             ObligationLevel obligationLevel, PaginationData pageData) throws TException {
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.licenses.Obligation> result =
-                call(() -> restClient.get()
-                        .uri(b -> {
-                            var ub = b.path(BASE + "/obligations/search/paginated");
-                            if (searchText != null) {
-                                ub.queryParam("searchText", searchText);
-                            }
-                            if (obligationLevel != null) {
-                                ub.queryParam("obligationLevel", obligationLevel.name());
-                            }
-                            if (pageData != null) {
-                                ub.queryParam("displayStart", pageData.getDisplayStart());
-                                ub.queryParam("rowsPerPage", pageData.getRowsPerPage());
-                                ub.queryParam("ascending", pageData.isAscending());
-                                ub.queryParam("sortColumnNumber", pageData.getSortColumnNumber());
-                            }
-                            return ub.build();
-                        })
-                        .retrieve()
-                        .body(OBLIGATION_PAGE));
+        org.eclipse.sw360.datahandler.services.licenses.ObligationLevel pojoLevel = obligationLevel == null ? null
+                : org.eclipse.sw360.datahandler.services.licenses.ObligationLevel.valueOf(obligationLevel.name());
+        PaginatedResult<org.eclipse.sw360.datahandler.services.licenses.Obligation> result = call(
+                () -> client().searchObligationTextPaginated(searchText, pojoLevel,
+                        pageData == null ? null : PaginationDataConverter.fromThrift(pageData)));
         Map<PaginationData, List<Obligation>> map = new HashMap<>();
         if (result != null) {
             PaginationData thriftPage = result.getPaginationData() != null
@@ -490,153 +300,75 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
         return map;
     }
 
-    // ---- Obligation elements --------------------------------------------------------------------
-
     @Override
     public String addObligationElements(ObligationElement obligationElement, User user) throws TException {
-        return call(() -> restClient.post()
-                .uri(BASE + "/obligation-elements")
-                .headers(h -> addUser(h, user))
-                .body(ObligationElementConverter.fromThrift(obligationElement))
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().addObligationElements(ObligationElementConverter.fromThrift(obligationElement),
+                UserConverter.fromThrift(user)));
     }
 
     @Override
     public List<ObligationElement> getObligationElements() throws TException {
-        return call(() -> toThriftObligationElements(restClient.get()
-                .uri(BASE + "/obligation-elements")
-                .retrieve()
-                .body(OBLIGATION_ELEMENT_LIST)));
+        return call(() -> toThriftObligationElements(client().getObligationElements()));
     }
 
     @Override
     public ObligationElement getObligationElementById(String id) throws TException {
-        return call(() -> ObligationElementConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/obligation-elements/{id}").build(id))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.licenses.ObligationElement.class)));
+        return call(() -> ObligationElementConverter.toThrift(client().getObligationElementById(id)));
     }
 
     @Override
     public List<ObligationElement> searchObligationElement(String text) throws TException {
-        return call(() -> toThriftObligationElements(restClient.get()
-                .uri(b -> b.path(BASE + "/obligation-elements/search").queryParam("text", text).build())
-                .retrieve()
-                .body(OBLIGATION_ELEMENT_LIST)));
+        return call(() -> toThriftObligationElements(client().searchObligationElement(text)));
     }
-
-    // ---- Obligation nodes -----------------------------------------------------------------------
 
     @Override
     public String addObligationNodes(ObligationNode obligationNode, User user) throws TException {
-        return call(() -> restClient.post()
-                .uri(BASE + "/obligation-nodes")
-                .headers(h -> addUser(h, user))
-                .body(ObligationNodeConverter.fromThrift(obligationNode))
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().addObligationNodes(ObligationNodeConverter.fromThrift(obligationNode),
+                UserConverter.fromThrift(user)));
     }
 
     @Override
     public List<ObligationNode> getObligationNodes() throws TException {
-        return call(() -> toThriftObligationNodes(restClient.get()
-                .uri(BASE + "/obligation-nodes")
-                .retrieve()
-                .body(OBLIGATION_NODE_LIST)));
+        return call(() -> toThriftObligationNodes(client().getObligationNodes()));
     }
 
     @Override
     public ObligationNode getObligationNodeById(String id) throws TException {
-        return call(() -> ObligationNodeConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/obligation-nodes/{id}").build(id))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.licenses.ObligationNode.class)));
+        return call(() -> ObligationNodeConverter.toThrift(client().getObligationNodeById(id)));
     }
 
     @Override
     public String addNodes(String jsonString, User user) throws TException {
-        return call(() -> restClient.post()
-                .uri(BASE + "/obligation-nodes/add")
-                .headers(h -> addUser(h, user))
-                .body(jsonString)
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().addNodes(jsonString, UserConverter.fromThrift(user)));
     }
 
     @Override
     public String buildObligationText(String nodes, String level) throws TException {
-        return call(() -> restClient.post()
-                .uri(b -> b.path(BASE + "/obligation-nodes/build-text")
-                        .queryParam("nodes", nodes)
-                        .queryParam("level", level)
-                        .build())
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().buildObligationText(nodes, level));
     }
-
-    // ---- Custom properties ----------------------------------------------------------------------
 
     @Override
     public List<CustomProperties> getCustomProperties(String documentType) throws TException {
-        return call(() -> {
-            List<org.eclipse.sw360.datahandler.services.common.CustomProperties> pojos = restClient.get()
-                    .uri(b -> b.path(BASE + "/custom-properties").queryParam("documentType", documentType).build())
-                    .retrieve()
-                    .body(CUSTOM_PROP_LIST);
-            if (pojos == null) {
-                return new ArrayList<>();
-            }
-            return pojos.stream().map(CustomPropertiesConverter::toThrift).collect(Collectors.toList());
-        });
+        return call(() -> client().getCustomProperties(documentType).stream()
+                .map(CustomPropertiesConverter::toThrift).collect(Collectors.toList()));
     }
 
     @Override
     public RequestStatus updateCustomProperties(CustomProperties customProperties, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(BASE + "/custom-properties")
-                .headers(h -> addUser(h, user))
-                .body(CustomPropertiesConverter.fromThrift(customProperties))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateCustomProperties(
+                CustomPropertiesConverter.fromThrift(customProperties), UserConverter.fromThrift(user))));
     }
-
-    // ---- Helpers --------------------------------------------------------------------------------
 
     private static <T> T call(Supplier<T> supplier) throws TException {
         try {
             return supplier.get();
-        } catch (RestClientResponseException e) {
-            String body = e.getResponseBodyAsString();
-            throw new SW360Exception(body == null || body.isEmpty() ? e.getMessage() : body)
-                    .setErrorCode(e.getStatusCode().value());
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
+            SW360Exception thriftEx = new SW360Exception(e.getMessage());
+            if (e.getErrorCode() != null) {
+                thriftEx.setErrorCode(e.getErrorCode());
+            }
+            throw thriftEx;
         }
-    }
-
-    private static void addUser(HttpHeaders headers, User user) {
-        if (user == null) {
-            return;
-        }
-        headers.set("X-User-Email", user.getEmail());
-        if (user.getDepartment() != null) {
-            headers.set("X-User-Department", user.getDepartment());
-        }
-        headers.set("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
-    }
-
-    private static void addRequestingUser(HttpHeaders headers, User user) {
-        if (user == null) {
-            return;
-        }
-        headers.set("X-Requesting-User-Email", user.getEmail());
-        if (user.getDepartment() != null) {
-            headers.set("X-Requesting-User-Department", user.getDepartment());
-        }
-        headers.set("X-Requesting-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
-    }
-
-    private static ByteBuffer toByteBuffer(byte[] bytes) {
-        return ByteBuffer.wrap(bytes == null ? new byte[0] : bytes);
     }
 
     private static List<License> toThriftLicenses(List<org.eclipse.sw360.datahandler.services.licenses.License> pojos) {

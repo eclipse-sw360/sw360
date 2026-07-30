@@ -12,13 +12,15 @@ package org.eclipse.sw360.rest.resourceserver.fossology;
 import java.util.Map;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.fossology.FossologyClient;
+import org.eclipse.sw360.datahandler.fossology.FossologyClients;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyProcessRequest;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyReleaseRequest;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -27,92 +29,52 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SW360FossologyService {
 
-    private static final String FOSSOLOGY_URI = "/fossology/api/fossology";
-
-    @NonNull
-    private final RestClient restClient;
-
     @NonNull
     private final FossologyTypeBridge fossologyTypeBridge;
 
-    private void addUserHeaders(RestClient.RequestHeadersSpec<?> spec, User user) {
-        spec.header("X-User-Email", user.getEmail())
-            .header("X-User-Department", user.getDepartment())
-            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
+    private FossologyClient client() {
+        return FossologyClients.get();
     }
 
     public org.eclipse.sw360.datahandler.thrift.ConfigContainer getFossologyConfig() throws TException {
-        var config = restClient.get()
-                .uri(FOSSOLOGY_URI + "/config")
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.ConfigContainer.class);
-        return fossologyTypeBridge.toThrift(config);
+        return fossologyTypeBridge.toThrift(client().getFossologyConfig());
     }
 
     public RequestStatus setFossologyConfig(org.eclipse.sw360.datahandler.thrift.ConfigContainer config)
             throws TException {
-        var status = restClient.put()
-                .uri(FOSSOLOGY_URI + "/config")
-                .body(fossologyTypeBridge.toPojo(config))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class);
+        var status = client().setFossologyConfig(fossologyTypeBridge.toPojo(config));
         return fossologyTypeBridge.toThriftRequestStatus(status);
     }
 
     public RequestStatus checkConnection() throws TException {
-        var status = restClient.get()
-                .uri(FOSSOLOGY_URI + "/connection")
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class);
-        return fossologyTypeBridge.toThriftRequestStatus(status);
+        return fossologyTypeBridge.toThriftRequestStatus(client().checkConnection());
     }
 
     public ExternalToolProcess process(String releaseId, User user, String uploadDescription) throws TException {
         var request = new FossologyProcessRequest()
                 .setReleaseId(releaseId)
                 .setUploadDescription(uploadDescription);
-        var spec = restClient.post()
-                .uri(FOSSOLOGY_URI + "/process")
-                .body(request);
-        addUserHeaders(spec, user);
-        var process = spec.retrieve()
-                .body(org.eclipse.sw360.datahandler.services.components.ExternalToolProcess.class);
-        return fossologyTypeBridge.toThrift(process);
+        return fossologyTypeBridge.toThrift(
+                client().process(request, UserConverter.fromThrift(user)));
     }
 
     public RequestStatus markFossologyProcessOutdated(String releaseId, User user) throws TException {
         var request = new FossologyReleaseRequest().setReleaseId(releaseId);
-        var spec = restClient.post()
-                .uri(FOSSOLOGY_URI + "/process/outdated")
-                .body(request);
-        addUserHeaders(spec, user);
-        var status = spec.retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class);
-        return fossologyTypeBridge.toThriftRequestStatus(status);
+        return fossologyTypeBridge.toThriftRequestStatus(
+                client().markFossologyProcessOutdated(request, UserConverter.fromThrift(user)));
     }
 
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
         var request = new FossologyReleaseRequest().setReleaseId(releaseId);
-        var spec = restClient.post()
-                .uri(FOSSOLOGY_URI + "/process/report")
-                .body(request);
-        addUserHeaders(spec, user);
-        var status = spec.retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class);
-        return fossologyTypeBridge.toThriftRequestStatus(status);
+        return fossologyTypeBridge.toThriftRequestStatus(
+                client().triggerReportGenerationFossology(request, UserConverter.fromThrift(user)));
     }
 
     public Map<String, String> checkUnpackStatus(int uploadId) throws TException {
-        return restClient.get()
-                .uri(FOSSOLOGY_URI + "/unpack-status/{uploadId}", uploadId)
-                .retrieve()
-                .body(new org.springframework.core.ParameterizedTypeReference<Map<String, String>>() {});
+        return client().checkUnpackStatus(uploadId);
     }
 
     public Map<String, String> checkScanStatus(int scanJobId) throws TException {
-        return restClient.get()
-                .uri(FOSSOLOGY_URI + "/scan-status/{scanJobId}", scanJobId)
-                .retrieve()
-                .body(new org.springframework.core.ParameterizedTypeReference<Map<String, String>>() {});
+        return client().checkScanStatus(scanJobId);
     }
 }

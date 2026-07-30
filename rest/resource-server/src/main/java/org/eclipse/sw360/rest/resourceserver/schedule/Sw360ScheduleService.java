@@ -13,6 +13,9 @@ package org.eclipse.sw360.rest.resourceserver.schedule;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.schedule.ScheduleClient;
+import org.eclipse.sw360.datahandler.schedule.ScheduleClients;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestStatusWithBoolean;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
@@ -20,9 +23,6 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
-import lombok.RequiredArgsConstructor;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,70 +31,38 @@ import java.util.Map;
 import static org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper.throwIfNotAdmin;
 
 @Service
-@RequiredArgsConstructor
 public class Sw360ScheduleService {
     private static final Logger log = LogManager.getLogger(Sw360ScheduleService.class);
 
-    private static final String SCHEDULE_URI = "/schedule/api/schedule";
-
-    private final RestClient restClient;
-
-    private void addUserHeaders(RestClient.RequestHeadersSpec<?> spec, User user) {
-        spec.header("X-User-Email", user.getEmail())
-            .header("X-User-Department", user.getDepartment())
-            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
+    private ScheduleClient client() {
+        return ScheduleClients.get();
     }
 
     public RequestSummary scheduleService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        var req = restClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path(SCHEDULE_URI + "/scheduleService")
-                        .queryParam("serviceName", serviceName)
-                        .build());
-        return req.retrieve().body(RequestSummary.class);
+        return client().scheduleService(serviceName);
     }
 
     public RequestStatus unscheduleService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        var req = restClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path(SCHEDULE_URI + "/unscheduleService")
-                        .queryParam("serviceName", serviceName)
-                        .build());
-        addUserHeaders(req, sw360User);
-        return req.retrieve().body(RequestStatus.class);
+        return client().unscheduleService(serviceName, UserConverter.fromThrift(sw360User));
     }
 
     public RequestStatus triggerManualService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        var req = restClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path(SCHEDULE_URI + "/triggerManualService")
-                        .queryParam("serviceName", serviceName)
-                        .build());
-        addUserHeaders(req, sw360User);
-        return req.retrieve().body(RequestStatus.class);
+        return client().triggerManualService(serviceName, UserConverter.fromThrift(sw360User));
     }
 
     public RequestStatus cancelAllServices(User sw360User) {
         throwIfNotAdmin(sw360User);
-        var req = restClient.post()
-                .uri(SCHEDULE_URI + "/unscheduleAllServices");
-        addUserHeaders(req, sw360User);
-        return req.retrieve().body(RequestStatus.class);
+        return client().cancelAllServices(UserConverter.fromThrift(sw360User));
     }
 
     public RequestStatus isServiceScheduled(String serviceName, User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            var req = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(SCHEDULE_URI + "/isServiceScheduled")
-                            .queryParam("serviceName", serviceName)
-                            .build());
-            addUserHeaders(req, sw360User);
-            RequestStatusWithBoolean result = req.retrieve().body(RequestStatusWithBoolean.class);
+            RequestStatusWithBoolean result = client().isServiceScheduled(
+                    serviceName, UserConverter.fromThrift(sw360User));
             boolean isScheduled = result != null && Boolean.TRUE.equals(result.getAnswerPositive());
             return isScheduled ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         } catch (Exception e) {
@@ -106,10 +74,7 @@ public class Sw360ScheduleService {
     public RequestStatus isAnyServiceScheduled(User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            var req = restClient.get()
-                    .uri(SCHEDULE_URI + "/isAnyServiceScheduled");
-            addUserHeaders(req, sw360User);
-            RequestStatusWithBoolean result = req.retrieve().body(RequestStatusWithBoolean.class);
+            RequestStatusWithBoolean result = client().isAnyServiceScheduled(UserConverter.fromThrift(sw360User));
             boolean isAny = result != null && Boolean.TRUE.equals(result.getAnswerPositive());
             return isAny ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         } catch (Exception e) {
@@ -121,35 +86,13 @@ public class Sw360ScheduleService {
     public Map<String, Object> getServiceDetails(String serviceName, User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            var isScheduledReq = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(SCHEDULE_URI + "/isServiceScheduled")
-                            .queryParam("serviceName", serviceName)
-                            .build());
-            addUserHeaders(isScheduledReq, sw360User);
-            RequestStatusWithBoolean statusResult = isScheduledReq.retrieve().body(RequestStatusWithBoolean.class);
+            var pojoUser = UserConverter.fromThrift(sw360User);
+            RequestStatusWithBoolean statusResult = client().isServiceScheduled(serviceName, pojoUser);
             boolean isScheduled = statusResult != null && Boolean.TRUE.equals(statusResult.getAnswerPositive());
 
-            Integer offsetSeconds = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(SCHEDULE_URI + "/getFirstRunOffset")
-                            .queryParam("serviceName", serviceName)
-                            .build())
-                    .retrieve().body(Integer.class);
-
-            Integer intervalSeconds = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(SCHEDULE_URI + "/getInterval")
-                            .queryParam("serviceName", serviceName)
-                            .build())
-                    .retrieve().body(Integer.class);
-
-            String nextSync = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(SCHEDULE_URI + "/getNextSync")
-                            .queryParam("serviceName", serviceName)
-                            .build())
-                    .retrieve().body(String.class);
+            Integer offsetSeconds = client().getFirstRunOffset(serviceName);
+            Integer intervalSeconds = client().getInterval(serviceName);
+            String nextSync = client().getNextSync(serviceName);
 
             return Map.of(
                     "isScheduled", isScheduled,

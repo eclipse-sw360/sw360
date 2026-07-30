@@ -16,22 +16,23 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.packages.PackageClient;
+import org.eclipse.sw360.datahandler.packages.PackageClients;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.PackageSearchFilterRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClient;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -40,26 +41,20 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SW360PackageService {
 
-    private static final String PACKAGES_URI = "/packages/api/packages";
-
-    @NonNull
-    private final RestClient restClient;
-
     @NonNull
     private final PackageTypeBridge packageTypeBridge;
 
-    private void addUserHeaders(RestClient.RequestHeadersSpec<?> spec, User user) {
-        spec.header("X-User-Email", user.getEmail())
-            .header("X-User-Department", user.getDepartment())
-            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
+    private PackageClient packageClient() {
+        return PackageClients.get();
+    }
+
+    private org.eclipse.sw360.datahandler.services.users.User pojoUser(User sw360User) {
+        return UserConverter.fromThrift(sw360User);
     }
 
     public Package createPackage(Package pkg, User sw360User) throws TException {
-        var request = restClient.post().uri(PACKAGES_URI).body(packageTypeBridge.toPojo(pkg));
-        addUserHeaders(request, sw360User);
-        AddDocumentRequestSummary documentRequestSummary = request
-                .retrieve()
-                .body(AddDocumentRequestSummary.class);
+        AddDocumentRequestSummary documentRequestSummary = packageClient().createPackage(
+                packageTypeBridge.toPojo(pkg), pojoUser(sw360User));
         if (documentRequestSummary == null) {
             return null;
         }
@@ -81,11 +76,7 @@ public class SW360PackageService {
     }
 
     public org.eclipse.sw360.datahandler.thrift.RequestStatus updatePackage(Package pkg, User sw360User) throws TException {
-        var request = restClient.put().uri(PACKAGES_URI).body(packageTypeBridge.toPojo(pkg));
-        addUserHeaders(request, sw360User);
-        RequestStatus requestStatus = request
-                .retrieve()
-                .body(RequestStatus.class);
+        RequestStatus requestStatus = packageClient().updatePackage(packageTypeBridge.toPojo(pkg), pojoUser(sw360User));
 
         if (requestStatus == null) {
             throw new RuntimeException("sw360 Package with id '" + pkg.getId() + " cannot be updated.");
@@ -103,24 +94,20 @@ public class SW360PackageService {
     }
 
     public org.eclipse.sw360.datahandler.thrift.RequestStatus deletePackage(String packageId, User sw360User) throws TException {
-        var request = restClient.delete().uri(PACKAGES_URI + "/" + packageId);
-        addUserHeaders(request, sw360User);
-        RequestStatus status = request
-                .retrieve()
-                .body(RequestStatus.class);
+        RequestStatus status = packageClient().deletePackage(packageId, pojoUser(sw360User));
         return status != null ? packageTypeBridge.toThriftRequestStatus(status)
                 : org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE;
     }
 
     public Package getPackageForUserById(String id) throws TException {
         try {
-            org.eclipse.sw360.datahandler.services.packages.Package pojo = restClient.get()
-                    .uri(PACKAGES_URI + "/" + id)
-                    .retrieve()
-                    .body(org.eclipse.sw360.datahandler.services.packages.Package.class);
+            org.eclipse.sw360.datahandler.services.packages.Package pojo = packageClient().getPackageById(id);
             return packageTypeBridge.toThrift(pojo);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new ResourceNotFoundException("Package does not exist! id=" + id);
+        } catch (SW360Exception e) {
+            if (e.getErrorCode() != null && e.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Package does not exist! id=" + id);
+            }
+            throw e;
         }
     }
 
@@ -134,11 +121,7 @@ public class SW360PackageService {
     }
 
     public List<Package> getPackagesForUser() throws TException {
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.get()
-                .uri(PACKAGES_URI)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().getAllPackages());
     }
 
     public List<Package> searchPackage(String field, String searchQuery, boolean isExactMatch) throws TException {
@@ -160,80 +143,43 @@ public class SW360PackageService {
         PackageSearchFilterRequest request = new PackageSearchFilterRequest()
                 .setText(searchQuery)
                 .setSubQueryRestrictions(queryMap);
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.post()
-                .uri(PACKAGES_URI + "/search/filter")
-                .body(request)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().searchByFilter(request));
     }
 
     public List<Package> searchPackageByName(String name) throws TException {
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path(PACKAGES_URI + "/search/name").queryParam("name", name).build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().searchByName(name));
     }
 
     public List<Package> searchByPackageManager(String pkgManager) throws TException {
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path(PACKAGES_URI + "/search/manager").queryParam("pkgManager", pkgManager).build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().searchByPackageManager(pkgManager));
     }
 
     public List<Package> searchPackageByVersion(String version) throws TException {
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path(PACKAGES_URI + "/search/version").queryParam("version", version).build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().searchByVersion(version));
     }
 
     public List<Package> searchPackageByPurl(String purl) throws TException {
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path(PACKAGES_URI + "/search/purl").queryParam("purl", purl).build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().searchByPurl(purl));
     }
 
     public int getTotalPackagesCounts() throws TException {
-        Integer count = restClient.get()
-                .uri(PACKAGES_URI + "/count")
-                .retrieve()
-                .body(Integer.class);
-        return count != null ? count : 0;
+        return packageClient().getTotalPackagesCount();
     }
 
     public List<Package> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
         PackageSearchFilterRequest requestBody = new PackageSearchFilterRequest()
                 .setSubQueryRestrictions(filterMap);
-        var request = restClient.post().uri(PACKAGES_URI + "/refine-search").body(requestBody);
-        addUserHeaders(request, sw360User);
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = request
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().refineSearch(requestBody, pojoUser(sw360User)));
     }
 
     public List<Package> getLinkedPackagesForRelease(String releaseId) throws TException {
-        Set<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.get()
-                .uri(PACKAGES_URI + "/by-release/" + releaseId)
-                .retrieve()
-                .body(new ParameterizedTypeReference<Set<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
+        Set<org.eclipse.sw360.datahandler.services.packages.Package> packages =
+                packageClient().getLinkedPackagesForRelease(releaseId);
         return toThriftPackages(packages != null ? List.copyOf(packages) : List.of());
     }
 
     public List<Package> getPackageWithReleaseByPackageIds(Set<String> packageIds) throws TException {
-        List<org.eclipse.sw360.datahandler.services.packages.Package> packages = restClient.post()
-                .uri(PACKAGES_URI + "/with-release")
-                .body(packageIds)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.packages.Package>>() {});
-        return toThriftPackages(packages);
+        return toThriftPackages(packageClient().getPackagesWithReleaseByIds(packageIds));
     }
 
     private List<Package> toThriftPackages(List<org.eclipse.sw360.datahandler.services.packages.Package> packages) {

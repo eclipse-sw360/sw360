@@ -15,35 +15,24 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.search.SearchClient;
+import org.eclipse.sw360.datahandler.search.SearchClients;
 import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 
 @Service
 public class Sw360SearchService {
     private static final Logger log = LogManager.getLogger(Sw360SearchService.class);
 
-    private final RestClient restClient;
-    private final String SEARCH_URI = "/search/api/search";
-
-    public Sw360SearchService(RestClient restClient){
-        this.restClient = restClient;
+    private SearchClient client() {
+        return SearchClients.get();
     }
 
     public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional) {
         List<String> typeMasks = typeMaskOptional.orElse(Collections.emptyList());
-        return restClient.get()
-        .uri(uriBuidler -> uriBuidler
-            .path(SEARCH_URI)
-            .queryParam("text", searchText)
-            .queryParam("typeMask", typeMasks)
-            .build())
-        .header("X-User-Email", sw360User.getEmail())
-        .header("X-User-Department", sw360User.getDepartment())
-        .retrieve()
-        .body(new ParameterizedTypeReference<List<SearchResult>>() {});
-    }   
+        return client().search(searchText, UserConverter.fromThrift(sw360User), typeMasks);
+    }
 }
