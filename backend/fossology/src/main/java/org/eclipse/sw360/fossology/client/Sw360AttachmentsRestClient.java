@@ -10,20 +10,15 @@
 package org.eclipse.sw360.fossology.client;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.attachments.AttachmentClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
+/**
+ * Thin thrift↔POJO bridge to {@link AttachmentClients} for Fossology report storage.
+ */
 @Component
 public class Sw360AttachmentsRestClient {
-
-    private static final String CONTENTS_URI = "/attachments/api/attachments/contents";
-
-    private final RestClient restClient;
-
-    public Sw360AttachmentsRestClient(RestClient restClient) {
-        this.restClient = restClient;
-    }
 
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
         org.eclipse.sw360.datahandler.services.attachments.AttachmentContent pojo =
@@ -34,11 +29,8 @@ public class Sw360AttachmentsRestClient {
                         .setRemoteUrl(attachmentContent.isSetRemoteUrl() ? attachmentContent.getRemoteUrl() : null)
                         .setPartsCount(attachmentContent.isSetPartsCount() ? attachmentContent.getPartsCount() : null);
 
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentContent result = restClient.post()
-                .uri(CONTENTS_URI)
-                .body(pojo)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.attachments.AttachmentContent.class);
+        org.eclipse.sw360.datahandler.services.attachments.AttachmentContent result =
+                AttachmentClients.get().makeAttachmentContent(pojo);
 
         if (result == null || result.getId() == null) {
             throw new TException("Failed to create attachment content via REST");
