@@ -7,35 +7,31 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.clients.users;
+package org.eclipse.sw360.datahandler.schedule;
 
 import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
-/**
- * Static access to a shared {@link UsersClient} for modules that are not Spring-managed.
- * Uses {@link BackendRestClients#shared()} (pooled HTTP client).
- */
-public final class UsersClients {
+public final class ScheduleClients {
 
-    private static volatile UsersClient defaultClient;
+    private static volatile ScheduleClient defaultClient;
 
-    private UsersClients() {}
+    private ScheduleClients() {}
 
-    public static UsersClient get() {
+    public static ScheduleClient get() {
         return defaultClient();
     }
 
-    public static void set(UsersClient client) {
-        synchronized (UsersClients.class) {
+    public static void set(ScheduleClient client) {
+        synchronized (ScheduleClients.class) {
             defaultClient = client;
         }
     }
 
-    public static UsersClient defaultClient() {
+    public static ScheduleClient defaultClient() {
         if (defaultClient == null) {
-            synchronized (UsersClients.class) {
+            synchronized (ScheduleClients.class) {
                 if (defaultClient == null) {
-                    defaultClient = new UsersClient(BackendRestClients.shared());
+                    defaultClient = new ScheduleServiceRestClient(BackendRestClients.shared());
                 }
             }
         }

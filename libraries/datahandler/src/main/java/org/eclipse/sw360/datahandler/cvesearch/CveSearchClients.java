@@ -7,35 +7,31 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.clients.users;
+package org.eclipse.sw360.datahandler.cvesearch;
 
 import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
-/**
- * Static access to a shared {@link UsersClient} for modules that are not Spring-managed.
- * Uses {@link BackendRestClients#shared()} (pooled HTTP client).
- */
-public final class UsersClients {
+public final class CveSearchClients {
 
-    private static volatile UsersClient defaultClient;
+    private static volatile CveSearchClient defaultClient;
 
-    private UsersClients() {}
+    private CveSearchClients() {}
 
-    public static UsersClient get() {
+    public static CveSearchClient get() {
         return defaultClient();
     }
 
-    public static void set(UsersClient client) {
-        synchronized (UsersClients.class) {
+    public static void set(CveSearchClient client) {
+        synchronized (CveSearchClients.class) {
             defaultClient = client;
         }
     }
 
-    public static UsersClient defaultClient() {
+    public static CveSearchClient defaultClient() {
         if (defaultClient == null) {
-            synchronized (UsersClients.class) {
+            synchronized (CveSearchClients.class) {
                 if (defaultClient == null) {
-                    defaultClient = new UsersClient(BackendRestClients.shared());
+                    defaultClient = new CveSearchServiceRestClient(BackendRestClients.shared());
                 }
             }
         }

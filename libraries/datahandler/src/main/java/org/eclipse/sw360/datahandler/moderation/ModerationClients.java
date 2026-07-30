@@ -9,8 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.moderation;
 
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.springframework.web.client.RestClient;
+import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
 /**
  * Entry point for obtaining a {@link ModerationClient}.
@@ -53,8 +52,7 @@ public final class ModerationClients {
         if (defaultClient == null) {
             synchronized (ModerationClients.class) {
                 if (defaultClient == null) {
-                    RestClient restClient = RestClient.builder().baseUrl(ThriftClients.BACKEND_URL).build();
-                    defaultClient = new ModerationServiceRestClient(restClient);
+                    defaultClient = new ModerationServiceRestClient(BackendRestClients.shared());
                 }
             }
         }

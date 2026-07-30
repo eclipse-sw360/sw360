@@ -9,11 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.licenseinfo;
 
-import java.time.Duration;
-
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
+import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
 /**
  * Entry point for obtaining a {@link LicenseInfoClient}.
@@ -22,10 +18,6 @@ import org.springframework.web.client.RestClient;
  * aimed at {@link ThriftClients#BACKEND_URL}.
  */
 public final class LicenseInfoClients {
-
-    /** Read timeout for report generation (longer than default; not unbounded). */
-    private static final Duration READ_TIMEOUT = Duration.ofSeconds(120);
-
     private static volatile LicenseInfoClient defaultClient;
 
     private LicenseInfoClients() {}
@@ -44,13 +36,7 @@ public final class LicenseInfoClients {
         if (defaultClient == null) {
             synchronized (LicenseInfoClients.class) {
                 if (defaultClient == null) {
-                    JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory();
-                    requestFactory.setReadTimeout(READ_TIMEOUT);
-                    RestClient restClient = RestClient.builder()
-                            .baseUrl(ThriftClients.BACKEND_URL)
-                            .requestFactory(requestFactory)
-                            .build();
-                    defaultClient = new LicenseInfoServiceRestClient(restClient);
+                    defaultClient = new LicenseInfoServiceRestClient(BackendRestClients.shared());
                 }
             }
         }

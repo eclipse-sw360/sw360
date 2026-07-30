@@ -7,35 +7,31 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.clients.users;
+package org.eclipse.sw360.datahandler.health;
 
 import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 
-/**
- * Static access to a shared {@link UsersClient} for modules that are not Spring-managed.
- * Uses {@link BackendRestClients#shared()} (pooled HTTP client).
- */
-public final class UsersClients {
+public final class HealthClients {
 
-    private static volatile UsersClient defaultClient;
+    private static volatile HealthClient defaultClient;
 
-    private UsersClients() {}
+    private HealthClients() {}
 
-    public static UsersClient get() {
+    public static HealthClient get() {
         return defaultClient();
     }
 
-    public static void set(UsersClient client) {
-        synchronized (UsersClients.class) {
+    public static void set(HealthClient client) {
+        synchronized (HealthClients.class) {
             defaultClient = client;
         }
     }
 
-    public static UsersClient defaultClient() {
+    public static HealthClient defaultClient() {
         if (defaultClient == null) {
-            synchronized (UsersClients.class) {
+            synchronized (HealthClients.class) {
                 if (defaultClient == null) {
-                    defaultClient = new UsersClient(BackendRestClients.shared());
+                    defaultClient = new HealthServiceRestClient(BackendRestClients.shared());
                 }
             }
         }
