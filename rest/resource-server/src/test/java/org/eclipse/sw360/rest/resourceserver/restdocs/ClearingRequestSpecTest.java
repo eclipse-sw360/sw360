@@ -208,6 +208,12 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                         new ArrayList<>(clearingrequestsbystate)
                 )
         );
+        given(this.clearingRequestServiceMock.refineSearch(any(), any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(clearingrequests.size()).setDisplayStart(0).setTotalRowCount(clearingrequests.size()),
+                        new ArrayList<>(clearingrequests)
+                )
+        );
     }
 
     @Test
@@ -326,6 +332,43 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("status").description("The clearing request status to filter. Possible values are:  " + Arrays.asList(ClearingRequestState.values())),
                                 parameterWithName("page").description("The page number for pagination."),
                                 parameterWithName("page_entries").description("The number of clearing requests per page.")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]id").description("The id of the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]agreedClearingDate").description("The agreed clearing date of the request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]clearingState").description("The clearing state of request. Possible values are:  " + Arrays.asList(ClearingRequestState.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]clearingTeam").description("The clearing team email id."),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]projectBU").description("The Business Unit / Group of the Project, for which clearing request is created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]projectId").description("The id of the Project, for which clearing request is created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]requestedClearingDate").description("The requested clearing date of releases"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]requestingUser").description("The user who created the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.totalRelease").description("Total number of releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.openRelease").description("Number of open releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
+                                subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>"),
+                                fieldWithPath("page").description("Additional paging information for the clearing requests."),
+                                fieldWithPath("page.size").description("Number of Clearing requests per page."),
+                                fieldWithPath("page.totalElements").description("Total number of clearing requests available."),
+                                fieldWithPath("page.totalPages").description("Total number of pages available."),
+                                fieldWithPath("page.number").description("Current page number.")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_clearingrequests_by_lucene_search() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("luceneSearch", "true")
+                .queryParam("status", "NEW")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("luceneSearch").description("Use Lucene search to filter clearing requests."),
+                                parameterWithName("status").description("The clearing request status to filter. Possible values are:  " + Arrays.asList(ClearingRequestState.values()))
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]id").description("The id of the clearing request"),

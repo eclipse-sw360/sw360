@@ -171,6 +171,13 @@ public class Sw360ClearingRequestService {
         return sw360ModerationClient.searchClearingRequestsByFilters(sw360User, filterMap, pageData);
     }
 
+    public Map<PaginationData, List<ClearingRequest>> refineSearch(
+            Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
+        ModerationService.Iface sw360ModerationClient = ThriftClients.makeModerationClient();
+        PaginationData pageData = pageableToPaginationData(pageable, -2, true);
+        return sw360ModerationClient.refineSearchClearingRequests(filterMap, sw360User, pageData);
+    }
+
     /**
      * Converts a Pageable object to a PaginationData object for clearing requests.
      *
@@ -178,16 +185,32 @@ public class Sw360ClearingRequestService {
      * @return a PaginationData object representing the pagination information
      */
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
-        boolean ascending = false;
+        return pageableToPaginationData(pageable, -1, false);
+    }
+
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
+                                                            int defaultColumn,
+                                                            boolean defaultAscending) {
+        int column = defaultColumn;
+        boolean ascending = defaultAscending;
 
         if (pageable.getSort().isSorted()) {
             Sort.Order order = pageable.getSort().iterator().next();
+            column = switch (order.getProperty()) {
+                case "timestamp" -> -1;
+                case "clearingState" -> 0;
+                case "projectBU" -> 1;
+                case "requestingUser" -> 2;
+                case "clearingTeam" -> 3;
+                default -> defaultColumn;
+            };
             ascending = order.isAscending();
         }
 
         return new PaginationData()
                 .setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize())
+                .setSortColumnNumber(column)
                 .setAscending(ascending);
     }
 }

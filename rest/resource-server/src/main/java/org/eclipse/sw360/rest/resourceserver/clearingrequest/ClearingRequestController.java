@@ -192,6 +192,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @RequestParam(value = "createdBy", required = false) String createdBy,
             @Parameter(description = "Date clearing request was created on (timestamp).")
             @RequestParam(value = "createdOn", required = false) String createdOn,
+            @Parameter(description = "Use Lucene search to filter clearing requests.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -201,10 +203,14 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         Map<String, Set<String>> filterMap = getFilterMapForClearingRequests(projectId, status, createdBy, createdOn);
 
         try {
-            if (filterMap.isEmpty()) {
-                paginatedClearingRequests = sw360ClearingRequestService.getRecentClearingRequestsWithPagination(sw360User, pageable);
+            if (luceneSearch) {
+                paginatedClearingRequests = sw360ClearingRequestService.refineSearch(filterMap, sw360User, pageable);
             } else {
-                paginatedClearingRequests = sw360ClearingRequestService.searchClearingRequestsByFilters(sw360User, filterMap, pageable);
+                if (filterMap.isEmpty()) {
+                    paginatedClearingRequests = sw360ClearingRequestService.getRecentClearingRequestsWithPagination(sw360User, pageable);
+                } else {
+                    paginatedClearingRequests = sw360ClearingRequestService.searchClearingRequestsByFilters(sw360User, filterMap, pageable);
+                }
             }
 
             PaginationResult<ClearingRequest> paginationResult;

@@ -379,4 +379,9 @@ service ModerationService {
      * search clearing requests by filters with pagination
      **/
     map<PaginationData, list<ClearingRequest>> searchClearingRequestsByFilters(1: User user, 2: map<string, set<string>> filterMap, 3: PaginationData pageData);
+
+    /**
+     * search clearing requests using Nouveau (Lucene) with paginated results
+     **/
+    map<PaginationData, list<ClearingRequest>> refineSearchClearingRequests(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
 }

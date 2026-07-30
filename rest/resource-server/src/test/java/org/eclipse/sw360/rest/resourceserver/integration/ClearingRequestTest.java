@@ -559,4 +559,37 @@ public class ClearingRequestTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
+
+    @Test
+    public void should_get_clearing_requests_with_lucene_search() throws IOException, TException {
+        org.eclipse.sw360.datahandler.thrift.PaginationData paginationData = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        paginationData.setTotalRowCount(1);
+        paginationData.setRowsPerPage(20);
+        paginationData.setDisplayStart(0);
+        given(clearingServiceMock.refineSearch(any(), any(), any())).willReturn(
+            java.util.Collections.singletonMap(paginationData, List.of(cr))
+        );
+        org.eclipse.sw360.datahandler.thrift.projects.Project proj = new org.eclipse.sw360.datahandler.thrift.projects.Project();
+        org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary summary = new org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary();
+        summary.setNewRelease(1);
+        summary.setUnderClearing(1);
+        summary.setReportAvailable(0);
+        summary.setApproved(0);
+        proj.setReleaseClearingStateSummary(summary);
+        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(proj);
+        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.thrift.projects.Project.class), any())).willReturn(proj);
+
+        HttpHeaders headers = getHeaders(port);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/clearingrequests?luceneSearch=true&status=NEW",
+                HttpMethod.GET,
+                request,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        String body = response.getBody();
+        assertTrue(body != null && body.contains("sw360:clearingRequests"));
+    }
 }

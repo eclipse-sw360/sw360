@@ -12,6 +12,7 @@ package org.eclipse.sw360.moderation;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.db.ClearingRequestSearchHandler;
 import org.eclipse.sw360.datahandler.db.ModerationSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -52,10 +53,12 @@ public class ModerationHandler implements ModerationService.Iface {
 
     private final ModerationDatabaseHandler handler;
     private final ModerationSearchHandler modSearchHandler;
+    private final ClearingRequestSearchHandler clearingRequestSearchHandler;
 
     public ModerationHandler() throws IOException {
         handler = new ModerationDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
         modSearchHandler = new ModerationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        clearingRequestSearchHandler = new ClearingRequestSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
     @Override
@@ -379,6 +382,13 @@ public class ModerationHandler implements ModerationService.Iface {
         Map<PaginationData, List<ModerationRequest>> result = modSearchHandler.search(text, subQueryRestrictions,
                 pageData);
         return result.values().iterator().next();
+    }
+
+    @Override
+    public Map<PaginationData, List<ClearingRequest>> refineSearchClearingRequests(
+            Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
+        assertUser(user);
+        return clearingRequestSearchHandler.search(subQueryRestrictions, pageData);
     }
 
     @Override
