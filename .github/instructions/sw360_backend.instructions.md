@@ -460,6 +460,21 @@ errorCode = 400  → Bad request
 
 ## Security & Authentication
 
+### Backend WAR internal auth
+
+Backend Spring Boot WARs are not meant for direct end-user access. When
+`backend.internal.auth.enabled=true` (or env `SW360_BACKEND_INTERNAL_AUTH_ENABLED`),
+every backend HTTP request must include header `X-SW360-Internal-Token` matching
+`backend.internal.token` / env `SW360_BACKEND_INTERNAL_TOKEN`.
+
+- `BackendRestClients.shared()` attaches the header for resource-server and
+  cross-backend `*Clients` calls.
+- `BackendInternalAuthFilter` (auto-configured from `backend-common`) rejects
+  other callers with HTTP 401, including `/health`.
+- Default in shipped properties is `enabled=false` so local installs keep working;
+  enable and set a strong per-deployment token in production (`/etc/sw360/sw360.properties`
+  or Docker env/secrets). Never commit a real production token.
+
 ### Authentication Methods
 
 SW360 supports two authentication methods:

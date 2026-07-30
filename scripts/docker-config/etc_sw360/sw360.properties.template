@@ -21,6 +21,12 @@ rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
 # where the Thrift should connect
 backend.url=http://127.0.0.1:8080
 
+# Backend internal auth (header X-SW360-Internal-Token). Prefer setting
+# SW360_BACKEND_INTERNAL_TOKEN via Docker secrets / env; leave enabled=false
+# until a token is configured.
+backend.internal.auth.enabled=$SW360_BACKEND_INTERNAL_AUTH_ENABLED
+backend.internal.token=$SW360_BACKEND_INTERNAL_TOKEN
+
 org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport
 enable.sw360.change.log=false
 

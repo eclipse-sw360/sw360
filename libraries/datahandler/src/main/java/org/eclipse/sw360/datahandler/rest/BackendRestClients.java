@@ -98,10 +98,13 @@ public final class BackendRestClients {
         if (sharedRestClient == null) {
             synchronized (BackendRestClients.class) {
                 if (sharedRestClient == null) {
-                    sharedRestClient = RestClient.builder()
+                    RestClient.Builder builder = RestClient.builder()
                             .baseUrl(BACKEND_URL)
-                            .requestFactory(new HttpComponentsClientHttpRequestFactory(HTTP_CLIENT))
-                            .build();
+                            .requestFactory(new HttpComponentsClientHttpRequestFactory(HTTP_CLIENT));
+                    if (BackendInternalAuth.shouldAttachHeader()) {
+                        builder.defaultHeader(BackendInternalAuth.HEADER_NAME, BackendInternalAuth.getToken());
+                    }
+                    sharedRestClient = builder.build();
                 }
             }
         }
