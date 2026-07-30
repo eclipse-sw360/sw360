@@ -952,12 +952,11 @@ public abstract class BaseNouveauSearchHandler<T> {
      *
      * @param pageData Pagination data from the request.
      * @return Sort column names with direction ({@code -} prefix = descending).
-     * @implNote The score-sorting field must <em>not</em> be direction-prefixed; pass it as-is.
      */
     protected final @NonNull @Unmodifiable List<String> getSortColumns(@NonNull PaginationData pageData) {
         List<String> columns = mapSortColumn(pageData.getSortColumnNumber());
         return columns.stream().map(c -> {
-            if (!SCORE_SORTING_FIELD.equals(c) && !pageData.isAscending()) {
+            if (!pageData.isAscending()) {
                 if (c.startsWith("-")) {
                     return c.substring(1);
                 }
