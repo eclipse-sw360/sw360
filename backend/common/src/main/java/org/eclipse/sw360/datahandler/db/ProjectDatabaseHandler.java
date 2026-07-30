@@ -2483,7 +2483,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      }
 
      private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
-         final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true, log, user);
+         Project project = getProjectById(projectId, user);
+         final Collection<ProjectLink> projectLinks =
+                 SW360Utils.flattenProjectLinkTree(getLinkedProjects(project, true, user));
          if (projectLinks.isEmpty()) {
              throw new TException("For the projectId : " + projectId
                      + ", No data available. Please check the projectId and try again.");

@@ -23,10 +23,10 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.clients.users.UsersClients;
 import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.datahandler.attachments.AttachmentClients;
+import org.eclipse.sw360.datahandler.cvesearch.CveSearchClients;
+import org.eclipse.sw360.datahandler.vmcomponents.VMComponentsClients;
 import org.eclipse.sw360.projects.ProjectHandler;
-import org.eclipse.sw360.schedule.client.AttachmentsRestClient;
-import org.eclipse.sw360.schedule.client.CveSearchRestClient;
-import org.eclipse.sw360.schedule.client.VMComponentsRestClient;
 import org.eclipse.sw360.schedule.timer.ScheduleConstants;
 import org.eclipse.sw360.schedule.timer.Scheduler;
 import org.springframework.stereotype.Service;
@@ -40,15 +40,7 @@ import java.util.function.Supplier;
 public class ScheduleHandler {
     private static final Logger log = LogManager.getLogger(ScheduleHandler.class);
 
-    private final CveSearchRestClient cveSearchRestClient;
-    private final VMComponentsRestClient vmComponentsRestClient;
-    private final AttachmentsRestClient attachmentsRestClient;
-
-    public ScheduleHandler(CveSearchRestClient cveSearchRestClient, VMComponentsRestClient vmComponentsRestClient,
-            AttachmentsRestClient attachmentsRestClient) {
-        this.cveSearchRestClient = cveSearchRestClient;
-        this.vmComponentsRestClient = vmComponentsRestClient;
-        this.attachmentsRestClient = attachmentsRestClient;
+    public ScheduleHandler() {
     }
 
     @PostConstruct
@@ -110,17 +102,17 @@ public class ScheduleHandler {
 
         boolean successSync = switch (serviceName) {
             case ServiceNames.CVESEARCH_SERVICE ->
-                    wrapForScheduler(cveSearchRestClient::update, serviceName);
+                    wrapForScheduler(() -> CveSearchClients.get().update(), serviceName);
             case ServiceNames.SVMSYNC_SERVICE ->
-                    wrapForScheduler(vmComponentsRestClient::synchronizeComponents, serviceName);
+                    wrapForScheduler(() -> VMComponentsClients.get().synchronizeComponents(), serviceName);
             case ServiceNames.SVMMATCH_SERVICE ->
-                    wrapForScheduler(vmComponentsRestClient::triggerReverseMatch, serviceName);
+                    wrapForScheduler(() -> VMComponentsClients.get().triggerReverseMatch(), serviceName);
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
                     wrapForScheduler(() -> new ProjectHandler().exportForMonitoringList(), serviceName);
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
                     wrapForScheduler(() -> new ComponentHandler().updateReleasesWithSvmTrackingFeedback(), serviceName);
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
-                    wrapForScheduler(attachmentsRestClient::deleteOldAttachmentFromFileSystem, serviceName);
+                    wrapForScheduler(() -> AttachmentClients.get().deleteOldAttachmentFromFileSystem(), serviceName);
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
                     wrapForScheduler(UsersClients.defaultClient()::importDepartmentSchedule, serviceName);
             case ServiceNames.SRC_UPLOAD_SERVICE ->
@@ -153,13 +145,13 @@ public class ScheduleHandler {
         }
         return switch (serviceName) {
             case ServiceNames.CVESEARCH_SERVICE ->
-                    cveSearchRestClient.update();
+                    CveSearchClients.get().update();
             case ServiceNames.SVMSYNC_SERVICE ->
-                    vmComponentsRestClient.synchronizeComponents();
+                    VMComponentsClients.get().synchronizeComponents();
             case ServiceNames.SVMMATCH_SERVICE ->
-                    vmComponentsRestClient.triggerReverseMatch();
+                    VMComponentsClients.get().triggerReverseMatch();
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
-                    attachmentsRestClient.deleteOldAttachmentFromFileSystem();
+                    AttachmentClients.get().deleteOldAttachmentFromFileSystem();
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
                     callDownstreamService(() -> new ProjectHandler().exportForMonitoringList());
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->

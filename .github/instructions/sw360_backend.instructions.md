@@ -35,12 +35,12 @@ sw360/
 
 ### Layering
 ```
-UI (React) → REST Controllers → Sw360*Service → ThriftClients → Backend Handlers → Repositories → CouchDB
-                                   │
-                                   └── Uses Thrift interfaces for cross-service communication
+UI (React) → REST Controllers → Sw360*Service → *Clients factories / thin RestAdapters
+                                              → Backend Handlers → Repositories → CouchDB
 ```
 
 > **Note:** Only Repositories are allowed to communicate directly with CouchDB. Backend Handlers must use Repositories for all database operations.
+> Cross-service calls use Spring Boot REST via static `*Clients.get()` factories in `libraries/datahandler` (POJO / service-api types). Do not use `ThriftClients.make*Client()` — those thrift HTTP endpoints are no longer deployed.
 
 ### Key Classes Pattern
 | Layer | Naming Convention | Example |
@@ -418,21 +418,24 @@ public class ComponentHandler implements ComponentService.Iface {
 }
 ```
 
-### Using ThriftClients in REST Services
+### Using `*Clients` factories in REST Services
 
 ```java
 @Service
-@RequiredArgsConstructor
 public class Sw360ComponentService {
 
-    @NonNull
-    private final ThriftClients thriftClients;
+    private ComponentClient componentClient() {
+        return ComponentClients.get();
+    }
 
-    public Component getComponentById(String id, User user) throws TException {
-        ComponentService.Iface client = thriftClients.makeComponentClient();
-        return client.getComponentById(id, user);
+    public org.eclipse.sw360.datahandler.services.components.Component getComponentById(
+            String id, org.eclipse.sw360.datahandler.services.users.User user) {
+        return componentClient().getComponentById(id, user);
     }
 }
+
+// Call sites that still need thrift Iface types can use the thin RestAdapter:
+// ComponentServiceRestAdapter → ComponentClients.get() → REST
 ```
 
 ### Common Request/Response Types
@@ -861,29 +864,28 @@ restControllerHelper.addEmbeddedModerators(halResource, moderators);
 restControllerHelper.addEmbeddedReleases(halResource, releases);
 ```
 
-### ThriftClients
+### Backend service clients (`*Clients` factories)
 
-Location: `libraries/datahandler/.../thrift/ThriftClients.java`
+Location: `libraries/datahandler/src/main/java/org/eclipse/sw360/datahandler/{service}/`
+
+Prefer POJO clients + static factories aimed at `ThriftClients.BACKEND_URL` (REST base URL):
 
 ```java
-@Autowired
-private ThriftClients thriftClients;
+// Preferred for non-Spring and resource-server callers
+ProjectClient projectClient = ProjectClients.get();
+ComponentClient componentClient = ComponentClients.get();
+LicenseClient licenseClient = LicenseClients.get();
+AttachmentClient attachmentClient = AttachmentClients.get();
+ConfigurationsClient configsClient = ConfigurationsClients.get();
+ModerationClient moderationClient = ModerationClients.get();
+LicenseInfoClient licenseInfoClient = LicenseInfoClients.get();
 
-// Get service clients
-// Thrift Clients
-ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-ProjectService.Iface projectClient = thriftClients.makeProjectClient();
-LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-UserService.Iface userClient = thriftClients.makeUserClient();
-VendorService.Iface vendorClient = thriftClients.makeVendorClient();
-VulnerabilityService.Iface vulnClient = thriftClients.makeVulnerabilityClient();
-AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
-// Rest Clients
-org.eclipse.sw360.datahandler.moderation.ModerationClient moderationClient =
-        org.eclipse.sw360.datahandler.moderation.ModerationClients.get();
-org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClient licenseInfoClient =
-        org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClients.get();
+// ThriftClients.make*Client() is deprecated — thrift servlets are not deployed.
+// Thin RestAdapters (ProjectServiceRestAdapter, etc.) wrap the same factories for
+// call sites that still speak thrift Iface types.
 ```
+
+`ConfigurationsClients.getConfigByKey` uses a short (~30s) TTL cache for hot `SW360Utils.readConfig` paths.
 
 ---
 
