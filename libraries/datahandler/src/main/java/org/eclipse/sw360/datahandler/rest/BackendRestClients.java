@@ -38,7 +38,6 @@ import org.springframework.web.client.RestClient;
 /**
  * Shared Spring {@link RestClient} for all backend {@code *Clients} factories.
  *
- * <p>Mirrors the former resource-server {@code @Bean RestClient} pool settings
  * ({@code backend.rest.pool.*}, connect/read timeouts, optional proxy) so static
  * factories get the same connection management as Spring injection did.
  */

@@ -12,17 +12,18 @@
 package org.eclipse.sw360.rest.resourceserver.configuration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.configurations.ConfigurationsClient;
+import org.eclipse.sw360.datahandler.configurations.ConfigurationsClients;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.util.HashMap;
 import java.util.InvalidPropertiesFormatException;
@@ -32,11 +33,8 @@ import java.util.Map;
 @Slf4j
 public class SW360ConfigurationsService {
 
-    private final String CONFIGS_URI = "/configurations/api/configurations";
-    private final RestClient restClient;
-
-    public SW360ConfigurationsService(RestClient restClient){
-        this.restClient = restClient;
+    private ConfigurationsClient configurationsClient() {
+        return ConfigurationsClients.get();
     }
 
     public Map<String, String> getSW360Configs() {
@@ -46,7 +44,7 @@ public class SW360ConfigurationsService {
     }
 
     public Map<String, String> getSW360ConfigFromDb() {
-        return restClient.get().uri(CONFIGS_URI).retrieve().body(new ParameterizedTypeReference<Map<String,String>>(){});
+        return new HashMap<>(configurationsClient().getSW360Configs());
     }
 
     public Map<String, String> getSW360ConfigFromProperties() {
@@ -61,14 +59,7 @@ public class SW360ConfigurationsService {
 
     public RequestStatus updateSW360Configs(Map<String, String> updatedConfig, User user) throws InvalidPropertiesFormatException {
         try {
-            return restClient.put()
-            .uri(CONFIGS_URI)
-            .header("X-User-Email", user.getEmail())
-            .header("X-User-Department", user.getDepartment())
-            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "")
-            .body(updatedConfig)
-            .retrieve()
-            .body(RequestStatus.class);
+            return configurationsClient().updateSW360Configs(updatedConfig, UserConverter.fromThrift(user));
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }
@@ -81,22 +72,13 @@ public class SW360ConfigurationsService {
     }
 
     public Map<String, String> getSW360ConfigFromDb(ConfigFor configFor) {
-        return restClient.get()
-        .uri(CONFIGS_URI+"/group/" + configFor)
-        .retrieve()
-        .body(new ParameterizedTypeReference<Map<String,String>>() {});
+        return new HashMap<>(configurationsClient().getConfigForContainer(configFor));
     }
 
     public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfig, User user) throws InvalidPropertiesFormatException {
         try {
-            return restClient.put()
-            .uri(CONFIGS_URI+"/group/"+configFor)
-            .header("X-User-Email", user.getEmail())
-            .header("X-User-Department", user.getDepartment())
-            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "")
-            .body(updatedConfig)
-            .retrieve()
-            .body(RequestStatus.class);
+            return configurationsClient().updateSW360ConfigForContainer(configFor, updatedConfig,
+                    UserConverter.fromThrift(user));
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }

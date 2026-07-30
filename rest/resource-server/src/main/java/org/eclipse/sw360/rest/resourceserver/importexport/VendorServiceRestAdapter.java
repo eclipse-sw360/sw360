@@ -17,13 +17,12 @@ import java.util.Set;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
-import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
-import org.springframework.core.ParameterizedTypeReference;
+import org.eclipse.sw360.datahandler.vendors.VendorClient;
+import org.eclipse.sw360.datahandler.vendors.VendorClients;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 /**
  * Thrift {@link VendorService.Iface} adapter for component CSV import — delegates to the vendors REST backend.
@@ -31,30 +30,19 @@ import org.springframework.web.client.RestClient;
 @Component
 public class VendorServiceRestAdapter implements VendorService.Iface {
 
-    private static final String VENDORS_URI = "/vendors/api/vendors";
-
-    private final RestClient restClient;
-
-    public VendorServiceRestAdapter(RestClient restClient) {
-        this.restClient = restClient;
+    private VendorClient vendorClient() {
+        return VendorClients.get();
     }
 
     @Override
     public org.eclipse.sw360.datahandler.thrift.vendors.Vendor getByID(String id) throws TException {
-        Vendor vendor = restClient.get()
-                .uri(VENDORS_URI + "/" + id)
-                .retrieve()
-                .body(Vendor.class);
+        Vendor vendor = vendorClient().getVendorById(id);
         return VendorConverter.toThrift(vendor);
     }
 
     @Override
     public List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> getAllVendors() throws TException {
-        List<Vendor> vendors = restClient.get()
-                .uri(VENDORS_URI)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<Vendor>>() {});
-        return vendors == null ? List.of() : vendors.stream().map(VendorConverter::toThrift).toList();
+        return vendorClient().getAllVendors().stream().map(VendorConverter::toThrift).toList();
     }
 
     @Override
@@ -82,12 +70,8 @@ public class VendorServiceRestAdapter implements VendorService.Iface {
     @Override
     public org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary addVendor(
             org.eclipse.sw360.datahandler.thrift.vendors.Vendor vendor) throws TException {
-        AddDocumentRequestSummary summary = restClient.post()
-                .uri(VENDORS_URI)
-                .body(VendorConverter.fromThrift(vendor))
-                .retrieve()
-                .body(AddDocumentRequestSummary.class);
-        return AddDocumentRequestSummaryConverter.toThrift(summary);
+        return AddDocumentRequestSummaryConverter.toThrift(
+                vendorClient().addVendor(VendorConverter.fromThrift(vendor)));
     }
 
     @Override

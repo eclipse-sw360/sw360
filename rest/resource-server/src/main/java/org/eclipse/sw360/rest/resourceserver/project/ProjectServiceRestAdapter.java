@@ -34,6 +34,9 @@ import org.eclipse.sw360.common.utils.converter.projects.ProjectDataConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectLinkConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectProjectRelationshipConverter;
 import org.eclipse.sw360.common.utils.converter.projects.UsedReleaseRelationsConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.projects.ProjectClient;
+import org.eclipse.sw360.datahandler.projects.ProjectClients;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -51,919 +54,442 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.util.UriBuilder;
+import org.springframework.stereotype.Component;
 
 /**
  * Thrift {@link ProjectService.Iface} adapter that delegates to the projects REST backend
  * ({@code /projects/api/projects}). Keeps the Thrift contract intact for existing resource-server
  * callers while removing the Thrift transport.
  */
-@org.springframework.stereotype.Component
+@Component
 public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
-    private static final String BASE = "/projects/api/projects";
-
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.projects.Project>> PROJECT_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<Set<org.eclipse.sw360.datahandler.services.projects.Project>> PROJECT_SET =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.projects.ProjectLink>> PROJECT_LINK_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.components.ReleaseClearingStatusData>> RELEASE_CLEARING_STATUS_DATA_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.components.ReleaseLink>> RELEASE_LINK_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.components.ReleaseNode>> RELEASE_NODE_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.projects.UsedReleaseRelations>> USED_RELEASE_RELATIONS_LIST =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<Map<String, List<String>>> DUPLICATE_MAP =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<Set<String>> STRING_SET =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<Map<String, String>>> LIST_MAP_STRING_STRING =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project>> PROJECT_PAGE =
-            new ParameterizedTypeReference<org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project>>() {};
-
-    private final RestClient restClient;
-
-    public ProjectServiceRestAdapter(RestClient restClient) {
-        this.restClient = restClient;
+    private ProjectClient client() {
+        return ProjectClients.get();
     }
-
-    // ---- Search / Query -------------------------------------------------------------------------
 
     @Override
     public List<Project> search(String text) throws TException {
-        return call(() -> toThriftProjects(restClient.get()
-                .uri(b -> {
-                    var ub = b.path(BASE + "/search");
-                    if (text != null) {
-                        ub.queryParam("text", text);
-                    }
-                    return ub.build();
-                })
-                .retrieve()
-                .body(PROJECT_LIST)));
+        return call(() -> toThriftProjects(client().search(text)));
     }
 
     @Override
-    public List<Project> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, User user)
-            throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("text", text);
-        body.put("subQueryRestrictions", subQueryRestrictions);
-        return call(() -> toThriftProjects(restClient.post()
-                .uri(BASE + "/search/refined")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(PROJECT_LIST)));
+    public List<Project> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, User user) throws TException {
+        return call(() -> toThriftProjects(client().refineSearch(text, subQueryRestrictions, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Map<PaginationData, List<Project>> refineSearchPageable(String text,
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData paginationData) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("text", text);
-        body.put("subQueryRestrictions", subQueryRestrictions);
-        body.put("paginationData", PaginationDataConverter.fromThrift(paginationData));
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result =
-                call(() -> restClient.post()
-                        .uri(BASE + "/search/refined/paginated")
-                        .headers(h -> addUser(h, user))
-                        .body(body)
-                        .retrieve()
-                        .body(PROJECT_PAGE));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().refineSearchPageable(text, subQueryRestrictions, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(paginationData)));
         return toPaginatedMap(result, paginationData);
     }
 
     @Override
-    public List<Project> refineSearchWithoutUser(String text, Map<String, Set<String>> subQueryRestrictions)
-            throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("text", text);
-        body.put("subQueryRestrictions", subQueryRestrictions);
-        return call(() -> toThriftProjects(restClient.post()
-                .uri(BASE + "/search/refined/no-user")
-                .body(body)
-                .retrieve()
-                .body(PROJECT_LIST)));
+    public List<Project> refineSearchWithoutUser(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
+        return call(() -> toThriftProjects(client().refineSearchWithoutUser(text, subQueryRestrictions)));
     }
 
     @Override
     public List<Project> searchByName(String name, User user) throws TException {
-        return call(() -> toThriftProjects(restClient.get()
-                .uri(b -> b.path(BASE + "/by-name").queryParam("name", name).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(PROJECT_LIST)));
+        return call(() -> toThriftProjects(client().searchByName(name, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Map<PaginationData, List<Project>> searchProjectByNamePrefixPaginated(User user, String name,
             PaginationData pageData) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("name", name);
-        body.put("paginationData", PaginationDataConverter.fromThrift(pageData));
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result =
-                call(() -> restClient.post()
-                        .uri(BASE + "/search/by-name-prefix")
-                        .headers(h -> addUser(h, user))
-                        .body(body)
-                        .retrieve()
-                        .body(PROJECT_PAGE));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchProjectByNamePrefixPaginated(UserConverter.fromThrift(user), name, PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(User user, String name,
             PaginationData pageData) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("name", name);
-        body.put("paginationData", PaginationDataConverter.fromThrift(pageData));
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result =
-                call(() -> restClient.post()
-                        .uri(BASE + "/search/by-exact-name")
-                        .headers(h -> addUser(h, user))
-                        .body(body)
-                        .retrieve()
-                        .body(PROJECT_PAGE));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchProjectByExactNamePaginated(UserConverter.fromThrift(user), name, PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public Map<PaginationData, List<Project>> searchAccessibleProjectByExactValues(
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("subQueryRestrictions", subQueryRestrictions);
-        body.put("paginationData", PaginationDataConverter.fromThrift(pageData));
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result =
-                call(() -> restClient.post()
-                        .uri(BASE + "/search/by-exact-values")
-                        .headers(h -> addUser(h, user))
-                        .body(body)
-                        .retrieve()
-                        .body(PROJECT_PAGE));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchAccessibleProjectByExactValues(subQueryRestrictions, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public ProjectData searchByGroup(String group, User user) throws TException {
-        return call(() -> ProjectDataConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/by-group").queryParam("group", group).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.ProjectData.class)));
+        return call(() -> ProjectDataConverter.toThrift(client().searchByGroup(group, UserConverter.fromThrift(user))));
     }
 
     @Override
     public ProjectData searchByTag(String tag, User user) throws TException {
-        return call(() -> ProjectDataConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/by-tag").queryParam("tag", tag).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.ProjectData.class)));
+        return call(() -> ProjectDataConverter.toThrift(client().searchByTag(tag, UserConverter.fromThrift(user))));
     }
 
     @Override
     public ProjectData searchByType(String type, User user) throws TException {
-        return call(() -> ProjectDataConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/by-type").queryParam("type", type).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.ProjectData.class)));
+        return call(() -> ProjectDataConverter.toThrift(client().searchByType(type, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Set<Project> searchByReleaseId(String id, User user) throws TException {
-        return call(() -> toThriftProjectSet(restClient.get()
-                .uri(b -> b.path(BASE + "/by-release/{id}").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(PROJECT_SET)));
+        return call(() -> toThriftProjectSet(client().searchByReleaseId(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftProjectSet(restClient.post()
-                .uri(BASE + "/by-release-ids")
-                .headers(h -> addUser(h, user))
-                .body(ids)
-                .retrieve()
-                .body(PROJECT_SET)));
+        return call(() -> toThriftProjectSet(client().searchByReleaseIds(ids, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Set<Project> searchProjectByPackageId(String id, User user) throws TException {
-        return call(() -> toThriftProjectSet(restClient.get()
-                .uri(b -> b.path(BASE + "/by-package/{id}").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(PROJECT_SET)));
+        return call(() -> toThriftProjectSet(client().searchProjectByPackageId(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Set<Project> searchProjectByPackageIds(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftProjectSet(restClient.post()
-                .uri(BASE + "/by-package-ids")
-                .headers(h -> addUser(h, user))
-                .body(ids)
-                .retrieve()
-                .body(PROJECT_SET)));
+        return call(() -> toThriftProjectSet(client().searchProjectByPackageIds(ids, UserConverter.fromThrift(user))));
     }
 
     @Override
     public int getProjectCountByPackageId(String id) throws TException {
-        Integer count = call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/count/by-package/{id}").build(id))
-                .retrieve()
-                .body(Integer.class));
-        return count != null ? count : 0;
+        return call(() -> client().getProjectCountByPackageId(id));
     }
 
     @Override
     public Set<Project> searchLinkingProjects(String id, User user) throws TException {
-        return call(() -> toThriftProjectSet(restClient.get()
-                .uri(b -> b.path(BASE + "/{id}/linking").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(PROJECT_SET)));
+        return call(() -> toThriftProjectSet(client().searchLinkingProjects(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
-        return call(() -> toThriftProjectSet(restClient.post()
-                .uri(BASE + "/search-by-external-ids")
-                .headers(h -> addUser(h, user))
-                .body(externalIds)
-                .retrieve()
-                .body(PROJECT_SET)));
+        return call(() -> toThriftProjectSet(client().searchByExternalIds(externalIds, UserConverter.fromThrift(user))));
     }
-
-    // ---- Project getters ------------------------------------------------------------------------
 
     @Override
     public Project getProjectById(String id, User user) throws TException {
-        return call(() -> ProjectConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/{id}").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.Project.class)));
+        return call(() -> ProjectConverter.toThrift(client().getProjectById(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Project getProjectByIdIgnoringVisibility(String id) throws TException {
-        return call(() -> ProjectConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/{id}/ignore-visibility").build(id))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.Project.class)));
+        return call(() -> ProjectConverter.toThrift(client().getProjectByIdIgnoringVisibility(id)));
     }
 
     @Override
     public List<Project> getProjectsById(List<String> id, User user) throws TException {
-        return call(() -> toThriftProjects(restClient.post()
-                .uri(BASE + "/by-ids")
-                .headers(h -> addUser(h, user))
-                .body(id)
-                .retrieve()
-                .body(PROJECT_LIST)));
+        return call(() -> toThriftProjects(client().getProjectsById(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public Project getProjectByIdForEdit(String id, User user) throws TException {
-        return call(() -> ProjectConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/{id}/for-edit").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.Project.class)));
+        return call(() -> ProjectConverter.toThrift(client().getProjectByIdForEdit(id, UserConverter.fromThrift(user))));
     }
-
-    // ---- Summary / Accessibility ----------------------------------------------------------------
 
     @Override
     public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
-        return call(() -> toThriftProjects(restClient.post()
-                .uri(BASE + "/my")
-                .headers(h -> addUser(h, user))
-                .body(userRoles)
-                .retrieve()
-                .body(PROJECT_LIST)));
+        return call(() -> toThriftProjects(client().getMyProjects(UserConverter.fromThrift(user), userRoles)));
     }
 
     @Override
     public List<Project> getAccessibleProjectsSummary(User user) throws TException {
-        return call(() -> toThriftProjects(restClient.get()
-                .uri(BASE + "/accessible/summary")
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(PROJECT_LIST)));
+        return call(() -> toThriftProjects(client().getAccessibleProjectsSummary(UserConverter.fromThrift(user))));
     }
 
     @Override
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummaryWithPagination(User user,
             PaginationData pageData) throws TException {
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result =
-                call(() -> restClient.post()
-                        .uri(BASE + "/accessible/summary/paginated")
-                        .headers(h -> addUser(h, user))
-                        .body(PaginationDataConverter.fromThrift(pageData))
-                        .retrieve()
-                        .body(PROJECT_PAGE));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().getAccessibleProjectsSummaryWithPagination(UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public Set<Project> getAccessibleProjects(User user) throws TException {
-        return call(() -> toThriftProjectSet(restClient.get()
-                .uri(BASE + "/accessible")
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(PROJECT_SET)));
+        return call(() -> toThriftProjectSet(client().getAccessibleProjects(UserConverter.fromThrift(user))));
     }
 
     @Override
     public int getMyAccessibleProjectCounts(User user) throws TException {
-        Integer count = call(() -> restClient.get()
-                .uri(BASE + "/my-count")
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(Integer.class));
-        return count != null ? count : 0;
+        return call(() -> client().getMyAccessibleProjectCounts(UserConverter.fromThrift(user)));
     }
-
-    // ---- Counts ---------------------------------------------------------------------------------
 
     @Override
     public int getCountByReleaseIds(Set<String> ids) throws TException {
-        Integer count = call(() -> restClient.post()
-                .uri(BASE + "/count/by-release-ids")
-                .body(ids)
-                .retrieve()
-                .body(Integer.class));
-        return count != null ? count : 0;
+        return call(() -> client().getCountByReleaseIds(ids));
     }
 
     @Override
     public int getCountByProjectId(String id) throws TException {
-        Integer count = call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/count/{id}").build(id))
-                .retrieve()
-                .body(Integer.class));
-        return count != null ? count : 0;
+        return call(() -> client().getCountByProjectId(id));
     }
-
-    // ---- Add / Update / Delete ------------------------------------------------------------------
 
     @Override
     public AddDocumentRequestSummary addProject(Project project, User user) throws TException {
-        return call(() -> AddDocumentRequestSummaryConverter.toThrift(restClient.post()
-                .uri(BASE)
-                .headers(h -> addUser(h, user))
-                .body(ProjectConverter.fromThrift(project))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary.class)));
+        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().addProject(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus updateProject(Project project, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(BASE)
-                .headers(h -> addUser(h, user))
-                .body(ProjectConverter.fromThrift(project))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateProject(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus updateProjectWithForceFlag(Project project, User user, boolean forceUpdate) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(b -> b.path(BASE + "/force").queryParam("forceUpdate", forceUpdate).build())
-                .headers(h -> addUser(h, user))
-                .body(ProjectConverter.fromThrift(project))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateProjectWithForceFlag(
+                ProjectConverter.fromThrift(project), UserConverter.fromThrift(user), forceUpdate)));
     }
 
+    @Override
     public RequestStatus updateProjectFromModerationRequest(Project projectAdditions, Project projectDeletions,
             User user) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("additions", ProjectConverter.fromThrift(projectAdditions));
-        body.put("deletions", ProjectConverter.fromThrift(projectDeletions));
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(BASE + "/moderation")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateProjectFromModerationRequest(
+                ProjectConverter.fromThrift(projectAdditions), ProjectConverter.fromThrift(projectDeletions),
+                UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus deleteProject(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.method(HttpMethod.DELETE)
-                .uri(b -> b.path(BASE + "/{id}").build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteProject(id, UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus deleteProjectWithForceFlag(String id, User user, boolean forceDelete) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.method(HttpMethod.DELETE)
-                .uri(b -> b.path(BASE + "/{id}/force").queryParam("forceDelete", forceDelete).build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteProjectWithForceFlag(id, UserConverter.fromThrift(user), forceDelete)));
     }
-
-    // ---- Clearing -------------------------------------------------------------------------------
 
     @Override
     public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User user,
             String projectUrl) throws TException {
-        return call(() -> AddDocumentRequestSummaryConverter.toThrift(restClient.post()
-                .uri(b -> b.path(BASE + "/clearing-request").queryParam("projectUrl", projectUrl).build())
-                .headers(h -> addUser(h, user))
-                .body(ClearingRequestConverter.fromThrift(clearingRequest))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary.class)));
+        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().createClearingRequest(
+                ClearingRequestConverter.fromThrift(clearingRequest), UserConverter.fromThrift(user), projectUrl)));
     }
 
     @Override
     public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws TException {
-        return call(() -> toThriftReleaseClearingStatusData(restClient.get()
-                .uri(b -> b.path(BASE + "/{projectId}/clearing-status").build(projectId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(RELEASE_CLEARING_STATUS_DATA_LIST)));
+        return call(() -> toThriftReleaseClearingStatusData(client().getReleaseClearingStatuses(projectId, UserConverter.fromThrift(user))));
     }
 
+    @Override
     public List<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(String projectId, User user)
             throws TException {
-        return call(() -> toThriftReleaseClearingStatusData(restClient.get()
-                .uri(b -> b.path(BASE + "/{projectId}/clearing-status/accessible").build(projectId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(RELEASE_CLEARING_STATUS_DATA_LIST)));
+        return call(() -> toThriftReleaseClearingStatusData(
+                client().getReleaseClearingStatusesWithAccessibility(projectId, UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<Project> fillClearingStateSummary(List<Project> projects, User user) throws TException {
-        return call(() -> toThriftProjects(restClient.post()
-                .uri(BASE + "/clearing-state/fill")
-                .headers(h -> addUser(h, user))
-                .body(toPojoProjects(projects))
-                .retrieve()
-                .body(PROJECT_LIST)));
+        return call(() -> toThriftProjects(client().fillClearingStateSummary(toPojoProjects(projects), UserConverter.fromThrift(user))));
     }
 
     @Override
-    public List<Project> fillClearingStateSummaryIncludingSubprojects(List<Project> projects, User user)
-            throws TException {
-        return call(() -> toThriftProjects(restClient.post()
-                .uri(BASE + "/clearing-state/fill-with-subprojects")
-                .headers(h -> addUser(h, user))
-                .body(toPojoProjects(projects))
-                .retrieve()
-                .body(PROJECT_LIST)));
+    public List<Project> fillClearingStateSummaryIncludingSubprojects(List<Project> projects, User user) throws TException {
+        return call(() -> toThriftProjects(client().fillClearingStateSummaryIncludingSubprojects(toPojoProjects(projects), UserConverter.fromThrift(user))));
     }
 
     @Override
-    public Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(Project project, User user)
-            throws TException {
-        return call(() -> ProjectConverter.toThrift(restClient.post()
-                .uri(BASE + "/clearing-state/fill-single")
-                .headers(h -> addUser(h, user))
-                .body(ProjectConverter.fromThrift(project))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.Project.class)));
+    public Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(Project project, User user) throws TException {
+        return call(() -> ProjectConverter.toThrift(client().fillClearingStateSummaryIncludingSubprojectsForSingleProject(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user))));
     }
 
     @Override
-    public List<Map<String, String>> getClearingStateInformationForListView(String projectId, User user)
-            throws TException {
-        return call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/{projectId}/clearing-state-list").build(projectId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(LIST_MAP_STRING_STRING));
+    public List<Map<String, String>> getClearingStateInformationForListView(String projectId, User user) throws TException {
+        return call(() -> client().getClearingStateInformationForListView(projectId, UserConverter.fromThrift(user)));
     }
 
     @Override
-    public List<Map<String, String>> getAccessibleClearingStateInformationForListView(String projectId, User user)
-            throws TException {
-        return call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/{projectId}/clearing-state-list/accessible").build(projectId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(LIST_MAP_STRING_STRING));
+    public List<Map<String, String>> getAccessibleClearingStateInformationForListView(String projectId, User user) throws TException {
+        return call(() -> client().getAccessibleClearingStateInformationForListView(projectId, UserConverter.fromThrift(user)));
     }
 
     @Override
     public RequestStatus exportForMonitoringList() throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.post()
-                .uri(BASE + "/export/monitoring")
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().exportForMonitoringList()));
     }
-
-    // ---- Linked projects ------------------------------------------------------------------------
 
     @Override
     public List<ProjectLink> getLinkedProjectsOfProject(Project project, boolean deep, User user) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("project", ProjectConverter.fromThrift(project));
-        body.put("deep", deep);
-        return call(() -> toThriftProjectLinks(restClient.post()
-                .uri(BASE + "/linked")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(PROJECT_LINK_LIST)));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProject(ProjectConverter.fromThrift(project), deep, UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjectsById(String id, boolean deep, User user) throws TException {
-        return call(() -> toThriftProjectLinks(restClient.get()
-                .uri(b -> b.path(BASE + "/{id}/linked").queryParam("deep", deep).build(id))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(PROJECT_LINK_LIST)));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsById(id, deep, UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, boolean depth,
             User user) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("relations", toPojoRelationships(relations));
-        body.put("deep", depth);
-        return call(() -> toThriftProjectLinks(restClient.post()
-                .uri(BASE + "/linked/by-relations")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(PROJECT_LINK_LIST)));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjects(
+                toPojoRelationships(relations), depth, UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjectsWithoutReleases(Map<String, ProjectProjectRelationship> relations,
             boolean depth, User user) throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("relations", toPojoRelationships(relations));
-        body.put("deep", depth);
-        return call(() -> toThriftProjectLinks(restClient.post()
-                .uri(BASE + "/linked/by-relations/no-releases")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(PROJECT_LINK_LIST)));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsWithoutReleases(
+                toPojoRelationships(relations), depth, UserConverter.fromThrift(user))));
     }
 
     @Override
-    public List<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(Project project, boolean deep, User user)
-            throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("project", ProjectConverter.fromThrift(project));
-        body.put("deep", deep);
-        return call(() -> toThriftProjectLinks(restClient.post()
-                .uri(BASE + "/linked/no-releases")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(PROJECT_LINK_LIST)));
+    public List<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(Project project, boolean deep, User user) throws TException {
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProjectWithoutReleases(ProjectConverter.fromThrift(project), deep, UserConverter.fromThrift(user))));
     }
 
     @Override
-    public List<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(Project project, boolean deep, User user)
-            throws TException {
-        Map<String, Object> body = new HashMap<>();
-        body.put("project", ProjectConverter.fromThrift(project));
-        body.put("deep", deep);
-        return call(() -> toThriftProjectLinks(restClient.post()
-                .uri(BASE + "/linked/all-releases")
-                .headers(h -> addUser(h, user))
-                .body(body)
-                .retrieve()
-                .body(PROJECT_LINK_LIST)));
+    public List<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(Project project, boolean deep, User user) throws TException {
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProjectWithAllReleases(ProjectConverter.fromThrift(project), deep, UserConverter.fromThrift(user))));
     }
-
-    // ---- Obligations ----------------------------------------------------------------------------
 
     @Override
     public ObligationList getLinkedObligations(String obligationId, User user) throws TException {
-        return call(() -> ObligationListConverter.toThrift(restClient.get()
-                .uri(b -> b.path(BASE + "/obligations/{obligationId}").build(obligationId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.projects.ObligationList.class)));
+        return call(() -> ObligationListConverter.toThrift(client().getLinkedObligations(obligationId, UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.post()
-                .uri(BASE + "/obligations")
-                .headers(h -> addUser(h, user))
-                .body(ObligationListConverter.fromThrift(obligation))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().addLinkedObligations(
+                ObligationListConverter.fromThrift(obligation), UserConverter.fromThrift(user))));
     }
 
     @Override
     public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.put()
-                .uri(BASE + "/obligations")
-                .headers(h -> addUser(h, user))
-                .body(ObligationListConverter.fromThrift(obligation))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateLinkedObligations(
+                ObligationListConverter.fromThrift(obligation), UserConverter.fromThrift(user))));
     }
-
-    // ---- Release relations usage ----------------------------------------------------------------
 
     @Override
     public void addReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
-        callVoid(() -> restClient.post()
-                .uri(BASE + "/release-relations")
-                .body(UsedReleaseRelationsConverter.fromThrift(usedReleaseRelations))
-                .retrieve()
-                .toBodilessEntity());
+        call(() -> {
+            client().addReleaseRelationsUsage(UsedReleaseRelationsConverter.fromThrift(usedReleaseRelations));
+            return null;
+        });
     }
 
     @Override
     public void updateReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
-        callVoid(() -> restClient.put()
-                .uri(BASE + "/release-relations")
-                .body(UsedReleaseRelationsConverter.fromThrift(usedReleaseRelations))
-                .retrieve()
-                .toBodilessEntity());
+        call(() -> {
+            client().updateReleaseRelationsUsage(UsedReleaseRelationsConverter.fromThrift(usedReleaseRelations));
+            return null;
+        });
     }
 
+    @Override
     public void deleteReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
-        callVoid(() -> restClient.method(HttpMethod.DELETE)
-                .uri(BASE + "/release-relations")
-                .body(UsedReleaseRelationsConverter.fromThrift(usedReleaseRelations))
-                .retrieve()
-                .toBodilessEntity());
+        call(() -> {
+            client().deleteReleaseRelationsUsage(UsedReleaseRelationsConverter.fromThrift(usedReleaseRelations));
+            return null;
+        });
     }
 
     @Override
     public List<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(String projectId) throws TException {
-        return call(() -> toThriftUsedReleaseRelations(restClient.get()
-                .uri(b -> b.path(BASE + "/{projectId}/release-relations").build(projectId))
-                .retrieve()
-                .body(USED_RELEASE_RELATIONS_LIST)));
+        return call(() -> toThriftUsedReleaseRelations(client().getUsedReleaseRelationsByProjectId(projectId)));
     }
-
-    // ---- Import / Export ------------------------------------------------------------------------
 
     @Override
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(restClient.post()
-                .uri(b -> b.path(BASE + "/import-bom")
-                        .queryParam("attachmentContentId", attachmentContentId).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestSummary.class)));
+        return call(() -> RequestSummaryConverter.toThrift(client().importBomFromAttachmentContent(UserConverter.fromThrift(user), attachmentContentId)));
     }
 
     @Override
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId,
             String projectId) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(restClient.post()
-                .uri(b -> b.path(BASE + "/import-cyclonedx")
-                        .queryParam("attachmentContentId", attachmentContentId)
-                        .queryParam("projectId", projectId).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestSummary.class)));
+        return call(() -> RequestSummaryConverter.toThrift(client().importCycloneDxFromAttachmentContent(UserConverter.fromThrift(user), attachmentContentId, projectId)));
     }
 
     @Override
     public RequestSummary importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(User user,
             String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(restClient.post()
-                .uri(b -> b.path(BASE + "/import-cyclonedx/no-replace")
-                        .queryParam("attachmentContentId", attachmentContentId)
-                        .queryParam("projectId", projectId)
-                        .queryParam("doNotReplace", doNotReplacePackageAndRelease).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestSummary.class)));
+        return call(() -> RequestSummaryConverter.toThrift(client().importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(UserConverter.fromThrift(user), attachmentContentId, projectId, doNotReplacePackageAndRelease)));
     }
 
     @Override
     public RequestSummary exportCycloneDxSbom(String projectId, String bomType, boolean includeSubProjReleases,
             User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(restClient.post()
-                .uri(b -> b.path(BASE + "/export-cyclonedx")
-                        .queryParam("projectId", projectId)
-                        .queryParam("bomType", bomType)
-                        .queryParam("includeSubProjReleases", includeSubProjReleases).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestSummary.class)));
+        return call(() -> RequestSummaryConverter.toThrift(client().exportCycloneDxSbom(projectId, bomType, includeSubProjReleases, UserConverter.fromThrift(user))));
     }
 
     @Override
     public String getSbomImportInfoFromAttachmentAsString(String attachmentContentId) throws TException {
-        return call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/sbom-import-info")
-                        .queryParam("attachmentContentId", attachmentContentId).build())
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().getSbomImportInfoFromAttachmentAsString(attachmentContentId));
     }
-
-    // ---- Reports / Mail -------------------------------------------------------------------------
 
     @Override
     public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
-        callVoid(() -> restClient.post()
-                .uri(b -> b.path(BASE + "/export-mail")
-                        .queryParam("url", url)
-                        .queryParam("recepient", recepient).build())
-                .retrieve()
-                .toBodilessEntity());
+        call(() -> { client().sendExportSpreadsheetSuccessMail(url, recepient); return null; });
     }
 
     @Override
     public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws TException {
-        return call(() -> toByteBuffer(restClient.get()
-                .uri(b -> b.path(BASE + "/download-excel")
-                        .queryParam("extendedByReleases", extendedByReleases)
-                        .queryParam("token", token).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(byte[].class)));
+        return call(() -> ByteBuffer.wrap(client().downloadExcel(UserConverter.fromThrift(user), extendedByReleases, token)));
     }
 
     @Override
     public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId) throws TException {
-        return call(() -> toByteBuffer(restClient.get()
-                .uri(b -> b.path(BASE + "/report-stream")
-                        .queryParam("extendedByReleases", extendedByReleases)
-                        .queryParam("projectId", projectId).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(byte[].class)));
+        return call(() -> ByteBuffer.wrap(client().getReportDataStream(UserConverter.fromThrift(user), extendedByReleases, projectId)));
     }
 
     @Override
     public String getReportInEmail(User user, boolean extendedByReleases, String projectId) throws TException {
-        return call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/report-email")
-                        .queryParam("extendedByReleases", extendedByReleases)
-                        .queryParam("projectId", projectId).build())
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().getReportInEmail(UserConverter.fromThrift(user), extendedByReleases, projectId));
     }
 
-    // ---- Release links --------------------------------------------------------------------------
-
     @Override
-    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user)
-            throws TException {
-        return call(() -> toThriftReleaseLinks(restClient.post()
-                .uri(b -> b.path(BASE + "/{projectId}/release-links/by-trace").build(projectId))
-                .headers(h -> addUser(h, user))
-                .body(trace)
-                .retrieve()
-                .body(RELEASE_LINK_LIST)));
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
+        return call(() -> toThriftReleaseLinks(client().getReleaseLinksOfProjectNetWorkByTrace(projectId, trace, UserConverter.fromThrift(user))));
     }
 
     @Override
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(String projectId, List<String> indexPath,
             User user) throws TException {
-        return call(() -> toThriftReleaseLinks(restClient.post()
-                .uri(b -> b.path(BASE + "/{projectId}/release-links/by-index").build(projectId))
-                .headers(h -> addUser(h, user))
-                .body(indexPath)
-                .retrieve()
-                .body(RELEASE_LINK_LIST)));
+        return call(() -> toThriftReleaseLinks(client().getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, UserConverter.fromThrift(user))));
     }
 
     @Override
-    public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User)
-            throws TException {
-        return call(() -> toThriftReleaseNodes(restClient.get()
-                .uri(b -> b.path(BASE + "/{projectId}/dependency-releases").build(projectId))
-                .headers(h -> addUser(h, sw360User))
-                .retrieve()
-                .body(RELEASE_NODE_LIST)));
+    public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws TException {
+        return call(() -> toThriftReleaseNodes(client().getLinkedReleasesInDependencyNetworkOfProject(projectId, UserConverter.fromThrift(sw360User))));
     }
-
-    // ---- Dependency network ---------------------------------------------------------------------
 
     @Override
-    public List<Map<String, String>> getAccessibleDependencyNetworkForListView(String projectId, User user)
-            throws TException {
-        return call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/{projectId}/dependency-network").build(projectId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(LIST_MAP_STRING_STRING));
+    public List<Map<String, String>> getAccessibleDependencyNetworkForListView(String projectId, User user) throws TException {
+        return call(() -> client().getAccessibleDependencyNetworkForListView(projectId, UserConverter.fromThrift(user)));
     }
-
-    // ---- Misc -----------------------------------------------------------------------------------
 
     @Override
     public Map<String, List<String>> getDuplicateProjects() throws TException {
-        Map<String, List<String>> result = call(() -> restClient.get()
-                .uri(BASE + "/duplicates")
-                .retrieve()
-                .body(DUPLICATE_MAP));
-        return result != null ? result : new HashMap<>();
+        return call(() -> client().getDuplicateProjects());
     }
 
     @Override
     public boolean projectIsUsed(String projectId) throws TException {
-        Boolean result = call(() -> restClient.get()
-                .uri(b -> b.path(BASE + "/{id}/in-use").build(projectId))
-                .retrieve()
-                .body(Boolean.class));
-        return result != null && result;
+        return call(() -> client().projectIsUsed(projectId));
     }
 
     @Override
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
-        return call(() -> restClient.post()
-                .uri(BASE + "/cyclic-path")
-                .headers(h -> addUser(h, user))
-                .body(ProjectConverter.fromThrift(project))
-                .retrieve()
-                .body(String.class));
+        return call(() -> client().getCyclicLinkedProjectPath(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user)));
     }
 
     @Override
-    public RequestStatus removeAttachmentFromProject(String projectId, User user, String attachmentContentId)
-            throws TException {
-        return call(() -> RequestStatusConverter.toThrift(restClient.method(HttpMethod.DELETE)
-                .uri(b -> b.path(BASE + "/{projectId}/attachment/{attachmentContentId}")
-                        .build(projectId, attachmentContentId))
-                .headers(h -> addUser(h, user))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class)));
+    public RequestStatus removeAttachmentFromProject(String projectId, User user, String attachmentContentId) throws TException {
+        return call(() -> RequestStatusConverter.toThrift(client().removeAttachmentFromProject(projectId, UserConverter.fromThrift(user), attachmentContentId)));
     }
 
     @Override
     public Set<String> getGroups() throws TException {
-        Set<String> result = call(() -> restClient.get()
-                .uri(BASE + "/groups")
-                .retrieve()
-                .body(STRING_SET));
-        return result != null ? result : new HashSet<>();
+        return call(() -> client().getGroups());
     }
-
-    // ---- Helpers --------------------------------------------------------------------------------
 
     private static <T> T call(Supplier<T> supplier) throws TException {
         try {
             return supplier.get();
-        } catch (RestClientResponseException e) {
-            String body = e.getResponseBodyAsString();
-            throw new SW360Exception(body == null || body.isEmpty() ? e.getMessage() : body)
-                    .setErrorCode(e.getStatusCode().value());
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
+            SW360Exception thriftEx = new SW360Exception(e.getMessage());
+            if (e.getErrorCode() != null) {
+                thriftEx.setErrorCode(e.getErrorCode());
+            }
+            throw thriftEx;
         }
-    }
-
-    private static void callVoid(Runnable runnable) throws TException {
-        try {
-            runnable.run();
-        } catch (RestClientResponseException e) {
-            String body = e.getResponseBodyAsString();
-            throw new SW360Exception(body == null || body.isEmpty() ? e.getMessage() : body)
-                    .setErrorCode(e.getStatusCode().value());
-        }
-    }
-
-    private static void addUser(HttpHeaders headers, User user) {
-        if (user == null) {
-            return;
-        }
-        headers.set("X-User-Email", user.getEmail());
-        if (user.getDepartment() != null) {
-            headers.set("X-User-Department", user.getDepartment());
-        }
-        headers.set("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
-    }
-
-    private static void addPaginationParams(UriBuilder ub, PaginationData pageData) {
-        if (pageData != null) {
-            ub.queryParam("displayStart", pageData.getDisplayStart());
-            ub.queryParam("rowsPerPage", pageData.getRowsPerPage());
-            ub.queryParam("ascending", pageData.isAscending());
-            ub.queryParam("sortColumnNumber", pageData.getSortColumnNumber());
-        }
-    }
-
-    private static ByteBuffer toByteBuffer(byte[] bytes) {
-        return ByteBuffer.wrap(bytes == null ? new byte[0] : bytes);
     }
 
     private Map<PaginationData, List<Project>> toPaginatedMap(
@@ -978,8 +504,6 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
         }
         return map;
     }
-
-    // ---- Project conversion helpers -------------------------------------------------------------
 
     private static List<Project> toThriftProjects(
             List<org.eclipse.sw360.datahandler.services.projects.Project> pojos) {
@@ -1005,8 +529,6 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
         return pojos.stream().map(ProjectConverter::toThrift).collect(Collectors.toSet());
     }
 
-    // ---- ProjectLink conversion helpers ---------------------------------------------------------
-
     private static List<ProjectLink> toThriftProjectLinks(
             List<org.eclipse.sw360.datahandler.services.projects.ProjectLink> pojos) {
         if (pojos == null) {
@@ -1014,8 +536,6 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
         }
         return pojos.stream().map(ProjectLinkConverter::toThrift).collect(Collectors.toList());
     }
-
-    // ---- Release conversion helpers -------------------------------------------------------------
 
     private static List<ReleaseClearingStatusData> toThriftReleaseClearingStatusData(
             List<org.eclipse.sw360.datahandler.services.components.ReleaseClearingStatusData> pojos) {
@@ -1041,8 +561,6 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
         return pojos.stream().map(ReleaseNodeConverter::toThrift).collect(Collectors.toList());
     }
 
-    // ---- UsedReleaseRelations conversion helpers ------------------------------------------------
-
     private static List<UsedReleaseRelations> toThriftUsedReleaseRelations(
             List<org.eclipse.sw360.datahandler.services.projects.UsedReleaseRelations> pojos) {
         if (pojos == null) {
@@ -1050,8 +568,6 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
         }
         return pojos.stream().map(UsedReleaseRelationsConverter::toThrift).collect(Collectors.toList());
     }
-
-    // ---- ProjectProjectRelationship conversion helpers ------------------------------------------
 
     private static Map<String, org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship>
             toPojoRelationships(Map<String, ProjectProjectRelationship> thriftMap) {

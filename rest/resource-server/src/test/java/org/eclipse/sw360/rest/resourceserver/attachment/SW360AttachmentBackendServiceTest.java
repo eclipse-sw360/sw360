@@ -10,34 +10,27 @@
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.attachments.AttachmentClient;
+import org.eclipse.sw360.datahandler.attachments.AttachmentClients;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClient;
-
-import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.RETURNS_SELF;
 
 @ExtendWith(MockitoExtension.class)
 public class SW360AttachmentBackendServiceTest {
 
     @Mock
-    private RestClient restClient;
+    private AttachmentClient attachmentClient;
 
     @Mock
     private AttachmentTypeBridge attachmentTypeBridge;
@@ -46,12 +39,18 @@ public class SW360AttachmentBackendServiceTest {
 
     @BeforeEach
     public void setUp() {
-        attachmentBackendService = new SW360AttachmentBackendService(restClient, attachmentTypeBridge);
+        AttachmentClients.set(attachmentClient);
+        attachmentBackendService = new SW360AttachmentBackendService(attachmentTypeBridge);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        AttachmentClients.set(null);
     }
 
     @Test
     public void getSha1FromAttachmentContentId_returnsSha1FromBackend() throws TException {
-        mockGetForBody("content-id-1", "abc123sha1", String.class);
+        when(attachmentClient.getSha1FromAttachmentContentId("content-id-1")).thenReturn("abc123sha1");
 
         String result = attachmentBackendService.getSha1FromAttachmentContentId("content-id-1");
 
@@ -70,8 +69,8 @@ public class SW360AttachmentBackendServiceTest {
         AttachmentContent thriftResponse = new AttachmentContent().setId("content-1").setFilename("test.txt");
 
         when(attachmentTypeBridge.toPojo(thriftInput)).thenReturn(pojoInput);
+        when(attachmentClient.makeAttachmentContent(pojoInput)).thenReturn(pojoResponse);
         when(attachmentTypeBridge.toThrift(pojoResponse)).thenReturn(thriftResponse);
-        mockPostForBody(pojoResponse, org.eclipse.sw360.datahandler.services.attachments.AttachmentContent.class);
 
         AttachmentContent result = attachmentBackendService.makeAttachmentContent(thriftInput);
 
@@ -86,8 +85,8 @@ public class SW360AttachmentBackendServiceTest {
                 new org.eclipse.sw360.datahandler.services.attachments.AttachmentContent().setId("content-1");
         AttachmentContent thrift = new AttachmentContent().setId("content-1");
 
+        when(attachmentClient.getAttachmentContent("content-1")).thenReturn(pojo);
         when(attachmentTypeBridge.toThrift(pojo)).thenReturn(thrift);
-        mockGetForBody("content-1", pojo, org.eclipse.sw360.datahandler.services.attachments.AttachmentContent.class);
 
         AttachmentContent result = attachmentBackendService.getAttachmentContent("content-1");
 
@@ -96,44 +95,11 @@ public class SW360AttachmentBackendServiceTest {
 
     @Test
     public void getAttachmentContent_throwsSw360ExceptionWhenNotFound() {
-        RestClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
-        RestClient.RequestHeadersSpec requestHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
-        when(restClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), eq("missing-id"))).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(org.eclipse.sw360.datahandler.services.attachments.AttachmentContent.class))
-                .thenThrow(HttpClientErrorException.create(
-                        HttpStatus.NOT_FOUND,
-                        "Not Found",
-                        HttpHeaders.EMPTY,
-                        "attachment not found".getBytes(StandardCharsets.UTF_8),
-                        StandardCharsets.UTF_8));
+        when(attachmentClient.getAttachmentContent("missing-id"))
+                .thenThrow(new org.eclipse.sw360.datahandler.services.common.SW360Exception("attachment not found", 404));
 
         assertThatThrownBy(() -> attachmentBackendService.getAttachmentContent("missing-id"))
                 .isInstanceOf(SW360Exception.class)
                 .satisfies(ex -> assertThat(((SW360Exception) ex).getErrorCode()).isEqualTo(404));
-    }
-
-    private <T> void mockGetForBody(String pathVariable, T response, Class<T> responseType) {
-        RestClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
-        RestClient.RequestHeadersSpec requestHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
-        when(restClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), eq(pathVariable))).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(eq(responseType))).thenReturn(response);
-    }
-
-    private <T> void mockPostForBody(T response, Class<T> responseType) {
-        RestClient.RequestBodyUriSpec requestBodyUriSpec =
-                mock(RestClient.RequestBodyUriSpec.class, RETURNS_SELF);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(eq(responseType))).thenReturn(response);
     }
 }

@@ -13,13 +13,15 @@ package org.eclipse.sw360.rest.resourceserver;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.health.HealthClient;
+import org.eclipse.sw360.datahandler.health.HealthClients;
+import org.eclipse.sw360.datahandler.rest.BackendRestClients;
 import org.eclipse.sw360.datahandler.services.health.HealthResponse;
 import org.eclipse.sw360.datahandler.services.health.HealthStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,23 +29,22 @@ import java.util.List;
 @Component
 public class SW360RestHealthIndicator implements HealthIndicator {
 
-    private final String HEALTH_URI = "/health/api/health";
-    private final RestClient restClient;
-
-    public SW360RestHealthIndicator(RestClient restClient){
-        this.restClient = restClient;
+    private HealthClient client() {
+        return HealthClients.get();
     }
 
     @Override
     public Health health() {
         List<Exception> exceptions = new ArrayList<>();
         RestState restState = check(exceptions);
-        final String rest_state_detail = "Rest State";
-        final String thrift_pool_detail = "Thrift Connection Pool";
+        final String restStateDetail = "Rest State";
+        final String thriftPoolDetail = "Thrift Connection Pool";
+        final String restPoolDetail = "Rest Connection Pool";
         if (!restState.isUp()) {
             Health.Builder builderWithDetails = Health.down()
-                    .withDetail(rest_state_detail, restState)
-                    .withDetail(thrift_pool_detail, ThriftClients.getThriftConnectionPoolStats());
+                    .withDetail(restStateDetail, restState)
+                    .withDetail(thriftPoolDetail, ThriftClients.getThriftConnectionPoolStats())
+                    .withDetail(restPoolDetail, BackendRestClients.getConnectionPoolStats());
             for (Exception exception : exceptions) {
                 builderWithDetails = builderWithDetails.withException(exception);
             }
@@ -51,8 +52,9 @@ public class SW360RestHealthIndicator implements HealthIndicator {
                     .build();
         }
         return Health.up()
-                .withDetail(rest_state_detail, restState)
-                .withDetail(thrift_pool_detail, ThriftClients.getThriftConnectionPoolStats())
+                .withDetail(restStateDetail, restState)
+                .withDetail(thriftPoolDetail, ThriftClients.getThriftConnectionPoolStats())
+                .withDetail(restPoolDetail, BackendRestClients.getConnectionPoolStats())
                 .build();
     }
 
@@ -75,13 +77,13 @@ public class SW360RestHealthIndicator implements HealthIndicator {
 
     private boolean isHealthServiceReachable(List<Exception> exception) {
         try {
-            HealthResponse health = restClient.get().uri(HEALTH_URI).retrieve().body(HealthResponse.class);
+            HealthResponse health = client().getHealth();
             if (health == null) {
                 exception.add(new Exception("Health service is not reachable"));
                 return false;
             }
 
-            if( health.getStatus().equals(HealthStatus.UP)) {
+            if (health.getStatus().equals(HealthStatus.UP)) {
                 return true;
             } else {
                 String details = health.getDetails() != null ? health.getDetails().toString() : "No details available";

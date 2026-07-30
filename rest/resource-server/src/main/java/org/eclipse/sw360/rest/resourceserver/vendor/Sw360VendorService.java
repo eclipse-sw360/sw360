@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.vendor;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
@@ -22,20 +23,19 @@ import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.services.vendors.VendorSortColumn;
-
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.vendors.VendorClient;
+import org.eclipse.sw360.datahandler.vendors.VendorClients;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -47,55 +47,27 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class Sw360VendorService {
 
-    private static final String VENDORS_URI = "/vendors/api/vendors";
-
-    private final RestClient restClient;
-
     @lombok.NonNull
     private final org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter componentServiceRestAdapter;
 
-    private void addUserHeaders(RestClient.RequestHeadersSpec<?> spec, User user) {
-        spec.header("X-User-Email", user.getEmail())
-            .header("X-User-Department", user.getDepartment())
-            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
+    private VendorClient vendorClient() {
+        return VendorClients.get();
     }
 
     public Map<PaginationData, List<Vendor>> getVendors(Pageable pageable) {
         PaginationData pageData = pageableToPaginationData(pageable, VendorSortColumn.BY_FULLNAME, true);
-        PaginatedResult<Vendor> result = restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path(VENDORS_URI + "/page")
-                        .queryParam("ascending", pageData.getAscending())
-                        .queryParam("displayStart", pageData.getDisplayStart())
-                        .queryParam("rowsPerPage", pageData.getRowsPerPage())
-                        .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
-                        .build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<PaginatedResult<Vendor>>() {});
+        PaginatedResult<Vendor> result = vendorClient().getVendorsPage(pageData);
         return toPaginatedMap(result);
     }
 
     public Map<PaginationData, List<Vendor>> searchVendors(String searchText, Pageable pageable) {
         PaginationData pageData = pageableToPaginationData(pageable, VendorSortColumn.BY_SCORE, true);
-        PaginatedResult<Vendor> result = restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path(VENDORS_URI + "/search")
-                        .queryParam("searchText", searchText)
-                        .queryParam("ascending", pageData.getAscending())
-                        .queryParam("displayStart", pageData.getDisplayStart())
-                        .queryParam("rowsPerPage", pageData.getRowsPerPage())
-                        .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
-                        .build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<PaginatedResult<Vendor>>() {});
+        PaginatedResult<Vendor> result = vendorClient().searchVendors(searchText, pageData);
         return toPaginatedMap(result);
     }
 
     public Vendor getVendorById(String vendorId) {
-        return restClient.get()
-                .uri(VENDORS_URI + "/" + vendorId)
-                .retrieve()
-                .body(Vendor.class);
+        return vendorClient().getVendorById(vendorId);
     }
 
     public org.eclipse.sw360.datahandler.thrift.vendors.Vendor getThriftVendorById(String vendorId) {
@@ -133,11 +105,7 @@ public class Sw360VendorService {
             throw new BadRequestClientException(
                     "A Vendor cannot have null or empty 'Full Name' or 'Short Name' or 'URL'!");
         }
-        AddDocumentRequestSummary summary = restClient.post()
-                .uri(VENDORS_URI)
-                .body(vendor)
-                .retrieve()
-                .body(AddDocumentRequestSummary.class);
+        AddDocumentRequestSummary summary = vendorClient().addVendor(vendor);
         if (summary == null) {
             return null;
         }
@@ -166,11 +134,7 @@ public class Sw360VendorService {
                 existingVendor.setUrl(vendor.getUrl());
             }
         }
-        var req = restClient.put()
-                .uri(VENDORS_URI)
-                .body(existingVendor);
-        addUserHeaders(req, sw360User);
-        return req.retrieve().body(RequestStatus.class);
+        return vendorClient().updateVendor(existingVendor, UserConverter.fromThrift(sw360User));
     }
 
     public RequestStatus deleteVendorByid(String vendorId, User sw360User) throws TException {
@@ -196,9 +160,7 @@ public class Sw360VendorService {
                 }
             }
 
-            var req = restClient.delete().uri(VENDORS_URI + "/" + vendorId);
-            addUserHeaders(req, sw360User);
-            return req.retrieve().body(RequestStatus.class);
+            return vendorClient().deleteVendor(vendorId, UserConverter.fromThrift(sw360User));
         } catch (TException e) {
             throw new TException(e);
         }
@@ -221,20 +183,12 @@ public class Sw360VendorService {
 
     public ByteBuffer exportExcel() throws TException {
         List<Vendor> vendors = getAllVendorList();
-        byte[] data = restClient.post()
-                .uri(VENDORS_URI + "/report")
-                .body(vendors)
-                .retrieve()
-                .body(byte[].class);
+        byte[] data = vendorClient().exportVendorReport(vendors);
         return data != null ? ByteBuffer.wrap(data) : ByteBuffer.allocate(0);
     }
 
     private List<Vendor> getAllVendorList() {
-        List<Vendor> vendors = restClient.get()
-                .uri(VENDORS_URI)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<Vendor>>() {});
-        return vendors != null ? vendors : Collections.emptyList();
+        return vendorClient().getAllVendors();
     }
 
     public Set<Release> getAllReleaseList(String vendorId) throws TException {
@@ -245,15 +199,8 @@ public class Sw360VendorService {
     public RequestStatus mergeVendors(
             String vendorTargetId, String vendorSourceId, Vendor vendorSelection, User user)
             throws TException, ResourceClassNotFoundException {
-        var req = restClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path(VENDORS_URI + "/merge")
-                        .queryParam("mergeTargetId", vendorTargetId)
-                        .queryParam("mergeSourceId", vendorSourceId)
-                        .build())
-                .body(vendorSelection);
-        addUserHeaders(req, user);
-        RequestStatus requestStatus = req.retrieve().body(RequestStatus.class);
+        RequestStatus requestStatus = vendorClient().mergeVendors(vendorTargetId, vendorSourceId, vendorSelection,
+                UserConverter.fromThrift(user));
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Vendor used as source or target has an open MR");

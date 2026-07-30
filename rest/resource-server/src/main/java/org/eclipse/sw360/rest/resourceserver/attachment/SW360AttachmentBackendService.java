@@ -11,22 +11,17 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.services.attachments.AttachmentOwnerContentIds;
+import org.eclipse.sw360.common.utils.converter.common.SW360ExceptionConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.attachments.AttachmentClient;
+import org.eclipse.sw360.datahandler.attachments.AttachmentClients;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsageCountEntry;
-import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsageCountRequest;
-import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsagesQueryRequest;
-import org.eclipse.sw360.datahandler.services.attachments.DeleteAttachmentUsagesByTypeRequest;
-import org.eclipse.sw360.datahandler.services.attachments.ReplaceAttachmentUsagesRequest;
-import org.eclipse.sw360.datahandler.services.attachments.UsedAttachmentsRequest;
-import org.eclipse.sw360.datahandler.services.attachments.VacuumAttachmentRequest;
-import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -35,10 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClient;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -47,25 +39,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SW360AttachmentBackendService {
 
-    private static final String ATTACHMENTS_URI = "/attachments/api/attachments";
-
-    @NonNull
-    private final RestClient restClient;
-
     @NonNull
     private final AttachmentTypeBridge attachmentTypeBridge;
 
-    private void addUserHeaders(RestClient.RequestHeadersSpec<?> spec, User user) {
-        spec.header("X-User-Email", user.getEmail())
-            .header("X-User-Department", user.getDepartment())
-            .header("X-User-Group", user.getUserGroup() != null ? user.getUserGroup().name() : "");
+    private AttachmentClient attachmentClient() {
+        return AttachmentClients.get();
     }
 
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
         var pojo = attachmentTypeBridge.toPojo(attachmentContent);
-        AttachmentContent result = attachmentTypeBridge.toThrift(
-                restClient.post().uri(ATTACHMENTS_URI + "/contents").body(pojo).retrieve().body(
-                        org.eclipse.sw360.datahandler.services.attachments.AttachmentContent.class));
+        AttachmentContent result = attachmentTypeBridge.toThrift(attachmentClient().makeAttachmentContent(pojo));
         if (result == null) {
             throw new TException("Failed to create attachment content");
         }
@@ -76,269 +59,168 @@ public class SW360AttachmentBackendService {
         List<org.eclipse.sw360.datahandler.services.attachments.AttachmentContent> pojos = attachmentContents.stream()
                 .map(attachmentTypeBridge::toPojo)
                 .collect(Collectors.toList());
-        List<org.eclipse.sw360.datahandler.services.attachments.AttachmentContent> result = restClient.post()
-                .uri(ATTACHMENTS_URI + "/contents/bulk")
-                .body(pojos)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.attachments.AttachmentContent>>() {});
-        return result == null ? Collections.emptyList()
-                : result.stream().map(attachmentTypeBridge::toThrift).collect(Collectors.toList());
+        return attachmentClient().makeAttachmentContents(pojos).stream()
+                .map(attachmentTypeBridge::toThrift)
+                .collect(Collectors.toList());
     }
 
     public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
         try {
-            org.eclipse.sw360.datahandler.services.attachments.AttachmentContent pojo = restClient.get()
-                    .uri(ATTACHMENTS_URI + "/contents/{id}", id)
-                    .retrieve()
-                    .body(org.eclipse.sw360.datahandler.services.attachments.AttachmentContent.class);
-            return attachmentTypeBridge.toThrift(pojo);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new SW360Exception(e.getResponseBodyAsString()).setErrorCode(404);
+            return attachmentTypeBridge.toThrift(attachmentClient().getAttachmentContent(id));
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
+            throw SW360ExceptionConverter.toThrift(e);
         }
     }
 
     public AttachmentContent getAttachmentContentById(String attachmentContentId) throws TException {
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentContent pojo = restClient.get()
-                .uri(ATTACHMENTS_URI + "/contents/by-content-id/{id}", attachmentContentId)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.attachments.AttachmentContent.class);
-        return attachmentTypeBridge.toThrift(pojo);
+        return attachmentTypeBridge.toThrift(attachmentClient().getAttachmentContentById(attachmentContentId));
     }
 
     public String getSha1FromAttachmentContentId(String attachmentContentId) throws TException {
-        return restClient.get()
-                .uri(ATTACHMENTS_URI + "/contents/{id}/sha1", attachmentContentId)
-                .retrieve()
-                .body(String.class);
+        return attachmentClient().getSha1FromAttachmentContentId(attachmentContentId);
     }
 
     public org.eclipse.sw360.datahandler.thrift.RequestSummary bulkDelete(List<String> ids) throws TException {
-        RequestSummary pojo = restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(ATTACHMENTS_URI + "/contents/bulk")
-                .body(ids)
-                .retrieve()
-                .body(RequestSummary.class);
-        return attachmentTypeBridge.toThriftRequestSummary(pojo);
+        return attachmentTypeBridge.toThriftRequestSummary(attachmentClient().bulkDelete(ids));
     }
 
     public RequestStatus deleteAttachmentContent(String attachmentId) throws TException {
-        org.eclipse.sw360.datahandler.services.common.RequestStatus pojo = restClient.delete()
-                .uri(ATTACHMENTS_URI + "/contents/{id}", attachmentId)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class);
-        return attachmentTypeBridge.toThriftRequestStatus(pojo);
+        return attachmentTypeBridge.toThriftRequestStatus(attachmentClient().deleteAttachmentContent(attachmentId));
     }
 
     public org.eclipse.sw360.datahandler.thrift.RequestSummary vacuumAttachmentDB(User user, Set<String> usedIds)
             throws TException {
-        var request = restClient.post()
-                .uri(ATTACHMENTS_URI + "/vacuum")
-                .body(new VacuumAttachmentRequest().setUsedIds(usedIds));
-        addUserHeaders(request, user);
-        RequestSummary pojo = request.retrieve().body(RequestSummary.class);
-        return attachmentTypeBridge.toThriftRequestSummary(pojo);
+        return attachmentTypeBridge.toThriftRequestSummary(
+                attachmentClient().vacuumAttachmentDB(UserConverter.fromThrift(user), usedIds));
     }
 
     public AttachmentUsage makeAttachmentUsage(AttachmentUsage attachmentUsage) throws TException {
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage pojo = restClient.post()
-                .uri(ATTACHMENTS_URI + "/usages")
-                .body(attachmentTypeBridge.toPojo(attachmentUsage))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage.class);
-        return attachmentTypeBridge.toThrift(pojo);
+        return attachmentTypeBridge.toThrift(
+                attachmentClient().makeAttachmentUsage(attachmentTypeBridge.toPojo(attachmentUsage)));
     }
 
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = attachmentUsages.stream()
                 .map(attachmentTypeBridge::toPojo)
                 .collect(Collectors.toList());
-        restClient.post().uri(ATTACHMENTS_URI + "/usages/bulk").body(pojos).retrieve().toBodilessEntity();
+        attachmentClient().makeAttachmentUsages(pojos);
     }
 
     public AttachmentUsage getAttachmentUsage(String id) throws TException {
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage pojo = restClient.get()
-                .uri(ATTACHMENTS_URI + "/usages/{id}", id)
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage.class);
-        return attachmentTypeBridge.toThrift(pojo);
+        return attachmentTypeBridge.toThrift(attachmentClient().getAttachmentUsage(id));
     }
 
     public AttachmentUsage updateAttachmentUsage(AttachmentUsage attachmentUsage) throws TException {
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage pojo = restClient.put()
-                .uri(ATTACHMENTS_URI + "/usages/{id}", attachmentUsage.getId())
-                .body(attachmentTypeBridge.toPojo(attachmentUsage))
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage.class);
-        return attachmentTypeBridge.toThrift(pojo);
+        return attachmentTypeBridge.toThrift(
+                attachmentClient().updateAttachmentUsage(attachmentTypeBridge.toPojo(attachmentUsage)));
     }
 
     public void updateAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = attachmentUsages.stream()
                 .map(attachmentTypeBridge::toPojo)
                 .collect(Collectors.toList());
-        restClient.put().uri(ATTACHMENTS_URI + "/usages/bulk").body(pojos).retrieve().toBodilessEntity();
+        attachmentClient().updateAttachmentUsages(pojos);
     }
 
     public void replaceAttachmentUsages(Source usedBy, List<AttachmentUsage> attachmentUsages) throws TException {
-        ReplaceAttachmentUsagesRequest request = new ReplaceAttachmentUsagesRequest()
-                .setUsedBy(attachmentTypeBridge.toPojoSource(usedBy))
-                .setAttachmentUsages(attachmentUsages.stream()
-                        .map(attachmentTypeBridge::toPojo)
-                        .collect(Collectors.toList()));
-        restClient.put().uri(ATTACHMENTS_URI + "/usages/replace").body(request).retrieve().toBodilessEntity();
+        List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = attachmentUsages.stream()
+                .map(attachmentTypeBridge::toPojo)
+                .collect(Collectors.toList());
+        attachmentClient().replaceAttachmentUsages(attachmentTypeBridge.toPojoSource(usedBy), pojos);
     }
 
     public void deleteAttachmentUsage(AttachmentUsage attachmentUsage) throws TException {
-        restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(ATTACHMENTS_URI + "/usages")
-                .body(attachmentTypeBridge.toPojo(attachmentUsage))
-                .retrieve()
-                .toBodilessEntity();
+        attachmentClient().deleteAttachmentUsage(attachmentTypeBridge.toPojo(attachmentUsage));
     }
 
     public void deleteAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = attachmentUsages.stream()
                 .map(attachmentTypeBridge::toPojo)
                 .collect(Collectors.toList());
-        restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(ATTACHMENTS_URI + "/usages/bulk")
-                .body(pojos)
-                .retrieve()
-                .toBodilessEntity();
+        attachmentClient().deleteAttachmentUsages(pojos);
     }
 
     public void deleteAttachmentUsagesByUsageDataType(Source usedBy, UsageData usageData) throws TException {
-        DeleteAttachmentUsagesByTypeRequest request = new DeleteAttachmentUsagesByTypeRequest()
-                .setUsedBy(attachmentTypeBridge.toPojoSource(usedBy))
-                .setUsageData(attachmentTypeBridge.toPojo(usageData));
-        restClient.method(org.springframework.http.HttpMethod.DELETE)
-                .uri(ATTACHMENTS_URI + "/usages/by-type")
-                .body(request)
-                .retrieve()
-                .toBodilessEntity();
+        attachmentClient().deleteAttachmentUsagesByUsageDataType(
+                attachmentTypeBridge.toPojoSource(usedBy), attachmentTypeBridge.toPojo(usageData));
     }
 
     public List<AttachmentUsage> getAttachmentUsages(Source owner, String attachmentContentId, UsageData filter)
             throws TException {
-        AttachmentUsagesQueryRequest request = new AttachmentUsagesQueryRequest()
-                .setOwner(attachmentTypeBridge.toPojoSource(owner))
-                .setAttachmentContentId(attachmentContentId)
-                .setFilter(attachmentTypeBridge.toPojo(filter));
-        return queryAttachmentUsages(request);
+        return attachmentClient()
+                .getAttachmentUsages(attachmentTypeBridge.toPojoSource(owner), attachmentContentId,
+                        attachmentTypeBridge.toPojo(filter))
+                .stream()
+                .map(attachmentTypeBridge::toThrift)
+                .collect(Collectors.toList());
     }
 
     public List<AttachmentUsage> getAttachmentsUsages(Source owner, Set<String> attachmentContentIds, UsageData filter)
             throws TException {
-        AttachmentUsagesQueryRequest request = new AttachmentUsagesQueryRequest()
-                .setOwner(attachmentTypeBridge.toPojoSource(owner))
-                .setAttachmentContentIds(attachmentContentIds)
-                .setFilter(attachmentTypeBridge.toPojo(filter));
-        return queryAttachmentUsages(request);
-    }
-
-    private List<AttachmentUsage> queryAttachmentUsages(AttachmentUsagesQueryRequest request) throws TException {
-        List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = restClient.post()
-                .uri(ATTACHMENTS_URI + "/usages/query")
-                .body(request)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage>>() {});
-        return pojos == null ? Collections.emptyList()
-                : pojos.stream().map(attachmentTypeBridge::toThrift).collect(Collectors.toList());
+        return attachmentClient()
+                .getAttachmentsUsages(attachmentTypeBridge.toPojoSource(owner), attachmentContentIds,
+                        attachmentTypeBridge.toPojo(filter))
+                .stream()
+                .map(attachmentTypeBridge::toThrift)
+                .collect(Collectors.toList());
     }
 
     public Map<Map<Source, String>, Integer> getAttachmentUsageCount(
             Map<Source, Set<String>> attachments, UsageData filter) throws TException {
-        List<AttachmentOwnerContentIds> ownerContentIds = attachments.entrySet().stream()
-                .map(e -> new AttachmentOwnerContentIds()
-                        .setOwner(attachmentTypeBridge.toPojoSource(e.getKey()))
-                        .setContentIds(e.getValue()))
-                .collect(Collectors.toList());
-        AttachmentUsageCountRequest request = new AttachmentUsageCountRequest()
-                .setAttachments(ownerContentIds)
-                .setFilter(attachmentTypeBridge.toPojo(filter));
-        List<AttachmentUsageCountEntry> entries = restClient.post()
-                .uri(ATTACHMENTS_URI + "/usages/count")
-                .body(request)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<AttachmentUsageCountEntry>>() {});
+        Map<org.eclipse.sw360.datahandler.services.common.Source, Set<String>> pojoAttachments = attachments
+                .entrySet().stream()
+                .collect(Collectors.toMap(e -> attachmentTypeBridge.toPojoSource(e.getKey()), Map.Entry::getValue));
+        List<AttachmentUsageCountEntry> entries = attachmentClient().getAttachmentUsageCount(pojoAttachments,
+                attachmentTypeBridge.toPojo(filter));
 
         Map<Map<Source, String>, Integer> result = new HashMap<>();
-        if (entries != null) {
-            for (AttachmentUsageCountEntry entry : entries) {
-                Source thriftSource = attachmentTypeBridge.toThriftSource(entry.getOwner());
-                Map<Source, String> key = Collections.singletonMap(thriftSource, entry.getAttachmentContentId());
-                result.put(key, entry.getCount());
-            }
+        for (AttachmentUsageCountEntry entry : entries) {
+            Source thriftSource = attachmentTypeBridge.toThriftSource(entry.getOwner());
+            Map<Source, String> key = Collections.singletonMap(thriftSource, entry.getAttachmentContentId());
+            result.put(key, entry.getCount());
         }
         return result;
     }
 
     public List<AttachmentUsage> getUsedAttachments(Source usedBy, UsageData filter) throws TException {
-        UsedAttachmentsRequest request = new UsedAttachmentsRequest()
-                .setUsedBy(attachmentTypeBridge.toPojoSource(usedBy))
-                .setFilter(attachmentTypeBridge.toPojo(filter));
-        List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = restClient.post()
-                .uri(ATTACHMENTS_URI + "/usages/used")
-                .body(request)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage>>() {});
-        return pojos == null ? Collections.emptyList()
-                : pojos.stream().map(attachmentTypeBridge::toThrift).collect(Collectors.toList());
+        return attachmentClient()
+                .getUsedAttachments(attachmentTypeBridge.toPojoSource(usedBy), attachmentTypeBridge.toPojo(filter))
+                .stream()
+                .map(attachmentTypeBridge::toThrift)
+                .collect(Collectors.toList());
     }
 
     public List<AttachmentUsage> getUsedAttachmentsById(String attachmentId) throws TException {
-        List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = restClient.get()
-                .uri(ATTACHMENTS_URI + "/usages/used-by-content/{id}", attachmentId)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage>>() {});
-        return pojos == null ? Collections.emptyList()
-                : pojos.stream().map(attachmentTypeBridge::toThrift).collect(Collectors.toList());
+        return attachmentClient().getUsedAttachmentsById(attachmentId).stream()
+                .map(attachmentTypeBridge::toThrift)
+                .collect(Collectors.toList());
     }
 
     public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) throws TException {
-        List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage> pojos = restClient.get()
-                .uri(ATTACHMENTS_URI + "/usages/by-release/{releaseId}", releaseId)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage>>() {});
-        return pojos == null ? Collections.emptyList()
-                : pojos.stream().map(attachmentTypeBridge::toThrift).collect(Collectors.toList());
+        return attachmentClient().getAttachmentUsagesByReleaseId(releaseId).stream()
+                .map(attachmentTypeBridge::toThrift)
+                .collect(Collectors.toList());
     }
 
     public List<Attachment> getAttachmentsByIds(Set<String> ids) throws TException {
-        List<org.eclipse.sw360.datahandler.services.attachments.Attachment> pojos = restClient.post()
-                .uri(ATTACHMENTS_URI + "/by-ids")
-                .body(ids)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.attachments.Attachment>>() {});
-        return pojos == null ? Collections.emptyList()
-                : pojos.stream().map(attachmentTypeBridge::toThriftAttachment).collect(Collectors.toList());
+        return attachmentClient().getAttachmentsByIds(ids).stream()
+                .map(attachmentTypeBridge::toThriftAttachment)
+                .collect(Collectors.toList());
     }
 
     public List<Attachment> getAttachmentsBySha1s(Set<String> sha1s) throws TException {
-        List<org.eclipse.sw360.datahandler.services.attachments.Attachment> pojos = restClient.post()
-                .uri(ATTACHMENTS_URI + "/by-sha1s")
-                .body(sha1s)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.attachments.Attachment>>() {});
-        return pojos == null ? Collections.emptyList()
-                : pojos.stream().map(attachmentTypeBridge::toThriftAttachment).collect(Collectors.toList());
+        return attachmentClient().getAttachmentsBySha1s(sha1s).stream()
+                .map(attachmentTypeBridge::toThriftAttachment)
+                .collect(Collectors.toList());
     }
 
     public List<Source> getAttachmentOwnersByIds(Set<String> ids) throws TException {
-        List<org.eclipse.sw360.datahandler.services.common.Source> pojos = restClient.post()
-                .uri(ATTACHMENTS_URI + "/owners/by-ids")
-                .body(ids)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<org.eclipse.sw360.datahandler.services.common.Source>>() {});
-        return pojos == null ? Collections.emptyList()
-                : pojos.stream().map(attachmentTypeBridge::toThriftSource).collect(Collectors.toList());
+        return attachmentClient().getAttachmentOwnersByIds(ids).stream()
+                .map(attachmentTypeBridge::toThriftSource)
+                .collect(Collectors.toList());
     }
 
     public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
-        org.eclipse.sw360.datahandler.services.common.RequestStatus pojo = restClient.post()
-                .uri(ATTACHMENTS_URI + "/cleanup/filesystem")
-                .retrieve()
-                .body(org.eclipse.sw360.datahandler.services.common.RequestStatus.class);
-        return attachmentTypeBridge.toThriftRequestStatus(pojo);
+        return attachmentTypeBridge.toThriftRequestStatus(attachmentClient().deleteOldAttachmentFromFileSystem());
     }
 }
