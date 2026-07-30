@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.common.security;
 
-import org.eclipse.sw360.clients.users.UsersClient;
+import org.eclipse.sw360.datahandler.users.UsersClient;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.jupiter.api.Test;
 

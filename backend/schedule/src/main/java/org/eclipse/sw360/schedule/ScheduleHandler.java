@@ -21,7 +21,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.clients.users.UsersClients;
+import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.datahandler.attachments.AttachmentClients;
 import org.eclipse.sw360.datahandler.cvesearch.CveSearchClients;

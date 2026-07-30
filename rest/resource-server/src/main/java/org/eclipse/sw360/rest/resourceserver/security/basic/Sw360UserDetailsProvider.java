@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.services.users.User;
-import org.eclipse.sw360.clients.users.UsersClient;
+import org.eclipse.sw360.datahandler.users.UsersClient;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Repository;
 

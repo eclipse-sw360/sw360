@@ -54,7 +54,7 @@ import org.eclipse.sw360.importer.ReleaseLinkCSVRecord;
 import org.eclipse.sw360.importer.ReleaseLinkCSVRecordBuilder;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.eclipse.sw360.clients.users.UsersClient;
+import org.eclipse.sw360.datahandler.users.UsersClient;
 import org.eclipse.sw360.rest.resourceserver.user.UserCSV;
 import org.jetbrains.annotations.NotNull;
 import lombok.NonNull;

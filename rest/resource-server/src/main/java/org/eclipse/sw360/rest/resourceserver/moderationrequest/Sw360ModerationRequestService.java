@@ -22,7 +22,7 @@ import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
-import org.eclipse.sw360.clients.users.UsersClient;
+import org.eclipse.sw360.datahandler.users.UsersClient;
 import org.eclipse.sw360.datahandler.moderation.ModerationClient;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;

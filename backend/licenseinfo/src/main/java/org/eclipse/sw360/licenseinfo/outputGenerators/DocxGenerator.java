@@ -34,7 +34,7 @@ import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.clients.users.UsersClients;
+import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
