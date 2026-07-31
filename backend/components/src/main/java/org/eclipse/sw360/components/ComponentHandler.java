@@ -162,6 +162,14 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<Release>> searchFilteredReleases(String searchText, User user, PaginationData pageData) throws TException {
+        if (searchText == null) {
+            searchText = "";
+        }
+        return releaseSearchHandler.searchFilteredReleases(searchText, user, pageData);
+    }
+
+    @Override
     public List<Release> searchReleaseByNamePrefix(String name) throws TException {
         return handler.searchReleaseByNamePrefix(name);
     }
