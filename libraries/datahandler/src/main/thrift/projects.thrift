@@ -388,6 +388,12 @@ service ProjectService {
     list<Project> refineSearch(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user);
 
     /**
+     * search projects in database that match searchText in
+     * name, description, tag or projectResponsible fields.
+     **/
+    map<PaginationData, list<Project>> searchFilteredProjects(1: string searchText, 2: User user, 3: PaginationData pageData) throws (1: SW360Exception exp);
+
+    /**
      * returns a list of projects which match `text` and the
      * `subQueryRestrictions` and are visible to the `user`. The request is pageable
      */

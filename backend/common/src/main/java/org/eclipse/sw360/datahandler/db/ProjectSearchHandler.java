@@ -109,6 +109,13 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
+    private static final List<Project._Fields> QUICK_FILTER_FIELDS = List.of(
+            Project._Fields.NAME,
+            Project._Fields.DESCRIPTION,
+            Project._Fields.TAG,
+            Project._Fields.PROJECT_RESPONSIBLE
+    );
+
     public ProjectSearchHandler(Cloudant client, String dbName) throws IOException {
         super(Project.class, "projects", PROJECT_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
@@ -122,6 +129,20 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
 
     public Map<PaginationData, List<Project>> search(final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
         Map<PaginationData, List<Project>> resultProjectList = baseSearch(connector, subQueryRestrictions, pageData);
+        PaginationData respPageData = resultProjectList.keySet().iterator().next();
+        List<Project> projectList = resultProjectList.values().iterator().next();
+
+        projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+
+        return Collections.singletonMap(respPageData, projectList);
+    }
+
+    public Map<PaginationData, List<Project>> searchFilteredProjects(final String searchText, User user, PaginationData pageData) {
+        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
+        for (Project._Fields field : QUICK_FILTER_FIELDS) {
+            subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
+        }
+        Map<PaginationData, List<Project>> resultProjectList = baseSearchWithOr(connector, subQueryRestrictions, pageData);
         PaginationData respPageData = resultProjectList.keySet().iterator().next();
         List<Project> projectList = resultProjectList.values().iterator().next();
 
