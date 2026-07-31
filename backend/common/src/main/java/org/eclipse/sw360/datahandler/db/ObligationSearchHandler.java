@@ -10,22 +10,16 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.google.common.base.Joiner;
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationSortColumn;
-import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,50 +29,48 @@ import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
-public class ObligationSearchHandler {
+public class ObligationSearchHandler extends BaseNouveauSearchHandler<Obligation> {
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    // -------------------------------------------------------------------------
+    //  Field spec declarations
+    // -------------------------------------------------------------------------
+    /**
+     * Fields common to all obligations, grouped by index category.
+     *
+     * <ul>
+     *   <li><b>standard</b>: {@code title} - full prefix-search support.</li>
+     *   <li><b>simple</b>: {@code obligationLevel}, {@code text}</li>
+     * </ul>
+     */
+    private static final List<IndexField> OBLIGATION_FIELDS = List.of(
+            IndexField.standard("title"),
+            IndexField.simple("text"),
+            IndexField.simple("obligationLevel")
+    );
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("obligations",
-            new NouveauIndexFunction(
-                """
-                function(doc) {
-                    if(!doc.type || doc.type != 'obligation') return;
-                    if(doc.title !== undefined && doc.title != null && doc.title.length >0) {
-                      index('text', 'title', doc.title, {'store': true});
-                      index('string', 'title_sort', doc.title);
-                    }
-                    if(doc.text !== undefined && doc.text != null && doc.text.length >0) {
-                      index('text', 'text', doc.text, {'store': true});
-                      index('string', 'text_sort', doc.text);
-                    }
-                    if(doc.obligationLevel !== undefined && doc.obligationLevel != null && doc.obligationLevel.length >0) {
-                      index('text', 'obligationLevel', doc.obligationLevel, {'store': true});
-                      index('string', 'obligationLevel_sort', doc.obligationLevel);
-                    }
-                }
-                """
-                ));
+    // -------------------------------------------------------------------------
+    //  Design document
+    // -------------------------------------------------------------------------
+
+    private static final BuiltIndexDefinition OBLIGATION_INDEX_DEFINITION = buildIndexFunction(
+            "obligation",
+            "",
+            OBLIGATION_FIELDS,
+            null,
+            Collections.emptyMap(),
+            "standard"
+    );
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
     public ObligationSearchHandler(Cloudant cClient, String dbName) throws IOException {
+        super(Obligation.class, "obligations", OBLIGATION_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Creates the database connector and adds the lucene search view
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        connector.addDesignDoc(searchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-    }
-
-    public List<Obligation> search(String searchText) {
-        return connector.searchView(Obligation.class, luceneSearchView.getIndexName(),
-                prepareWildcardQuery(searchText));
+        setup(connector, db);
     }
 
     /**
@@ -92,65 +84,24 @@ public class ObligationSearchHandler {
     public Map<PaginationData, List<Obligation>> searchWithPagination(
             String searchText, ObligationLevel obligationLevel, PaginationData pageData
     ) {
-        String sortColumn = getSortColumnName(pageData);
-
-        Map<String, Map<String, Set<String>>> restrictions = new HashMap<>();
-
+        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
-            Map<String, Set<String>> textFilter = new HashMap<>();
-
-            String queryString = prepareWildcardQuery(searchText);
-            textFilter.put(
-                    Obligation._Fields.TITLE.getFieldName(),
-                    Collections.singleton(queryString));
-            textFilter.put(
-                    Obligation._Fields.TEXT.getFieldName(),
-                    Collections.singleton(queryString));
-
-            restrictions.put("OR", textFilter);
+            subQueryRestrictions.put(Obligation._Fields.TITLE.getFieldName(), Collections.singleton(searchText));
+            subQueryRestrictions.put(Obligation._Fields.TEXT.getFieldName(), Collections.singleton(searchText));
         }
-
         if (obligationLevel != null) {
-            Map<String, Set<String>> levelFilter = new HashMap<>();
-            levelFilter.put(
-                    Obligation._Fields.OBLIGATION_LEVEL.getFieldName(),
-                    Collections.singleton(obligationLevel.toString())
-            );
-
-            restrictions.put("AND", levelFilter);
+            subQueryRestrictions.put(Obligation._Fields.OBLIGATION_LEVEL.getFieldName(), Collections.singleton(obligationLevel.toString()));
         }
-
-        List<String> queryFilters = NouveauLuceneAwareDatabaseConnector.createComplexQuery(
-                Obligation.class, null, restrictions
-        );
-
-        final Joiner AND = Joiner.on(" AND ");
-
-        String finalQuery = AND.join(queryFilters);
-
-        Map<PaginationData, List<Obligation>> resultObligationList = connector
-                .searchView(Obligation.class,
-                        luceneSearchView.getIndexName(), finalQuery,
-                        pageData, sortColumn, pageData.isAscending());
-
-        PaginationData respPageData = resultObligationList.keySet().iterator().next();
-        List<Obligation> obligationList = resultObligationList.values().iterator().next();
-
-        return Collections.singletonMap(respPageData, obligationList);
+        return baseSearchWithOr(connector, subQueryRestrictions, pageData);
     }
 
-    /**
-     * Convert sort column number back to sorting column name. This function makes sure to use the string column (with
-     * `_sort` suffix) for text indexes.
-     * @param pageData Pagination Data from the request.
-     * @return Sort column name. Defaults to title
-     */
-    private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (ObligationSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case ObligationSortColumn.BY_TEXT -> "text_sort";
-            case ObligationSortColumn.BY_LEVEL -> "obligationLevel_sort";
-            case ObligationSortColumn.BY_SCORE -> null;
-            case null, default -> "title_sort";
+    @Override
+    protected List<String> mapSortColumn(int sortColumnNumber) {
+        return switch (ObligationSortColumn.findByValue(sortColumnNumber)) {
+            case ObligationSortColumn.BY_TITLE -> List.of("title_sort", SCORE_SORTING_FIELD, "text_sort");
+            case ObligationSortColumn.BY_TEXT -> List.of("text_sort", SCORE_SORTING_FIELD, "title_sort");
+            case ObligationSortColumn.BY_LEVEL -> List.of("obligationLevel_sort");
+            case null, default -> List.of(SCORE_SORTING_FIELD, "title_sort", "text_sort");
         };
     }
 }
