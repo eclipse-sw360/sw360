@@ -173,6 +173,14 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.searchAccessibleProjectByExactValues(filterMap, sw360User, pageData);
     }
 
+    public Map<PaginationData, List<Project>> searchFilteredProjects(
+            String searchText, User sw360User, Pageable pageable
+    ) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        PaginationData pageData = pageableToPaginationData(pageable, ProjectSortColumn.BY_SCORE, true);
+        return sw360ProjectClient.searchFilteredProjects(searchText, sw360User, pageData);
+    }
+
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         try {
