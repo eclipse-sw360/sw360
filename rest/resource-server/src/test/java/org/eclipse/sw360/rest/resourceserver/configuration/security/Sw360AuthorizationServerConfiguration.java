@@ -49,7 +49,6 @@ public class Sw360AuthorizationServerConfiguration {
 		return httpSecurity.build();
 	}
 
-	@Autowired
 	public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder,
 			PasswordEncoder passwordEncoder, Sw360CustomUserDetailsService userDetailsService) {
 		authenticationManagerBuilder.authenticationProvider(

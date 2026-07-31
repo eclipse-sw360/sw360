@@ -39,13 +39,15 @@ public class Sw360JWTAccessTokenConverter extends AbstractSw360JwtAuthentication
     @Value("${jwt.auth.converter.principle-attribute:email}")
     private String principleAttribute;
 
-    @Autowired
-    private Sw360UserService userService;
 
-    public Sw360JWTAccessTokenConverter() {
+    private final Sw360UserService userService;
+
+    public Sw360JWTAccessTokenConverter(Sw360UserService sw360UserService) {
         super(new JwtGrantedAuthoritiesConverter(),
                 Sw360GrantedAuthoritiesCalculator.CONFIG_WRITE_ACCESS_USERGROUP,
                 Sw360GrantedAuthoritiesCalculator.CONFIG_ADMIN_ACCESS_USERGROUP);
+
+        this.userService = sw360UserService;
     }
 
     @Override

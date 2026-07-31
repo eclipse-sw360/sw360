@@ -23,11 +23,14 @@ import java.util.List;
 @Service
 public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
 
-    @Autowired
-    private Sw360UserDetailsService userDetailsService;
+    private final Sw360UserDetailsService userDetailsService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+
+    Sw360UserAuthenticationProvider(PasswordEncoder passwordEncoder, Sw360UserDetailsService sw360UserDetailsService) {
+        this.passwordEncoder = passwordEncoder;
+        this.userDetailsService = sw360UserDetailsService;
+    }
 
     /**
      * @param authentication the authentication request object.
