@@ -412,4 +412,15 @@ public class Sw360UserService {
         formerEmailAddresses.add(thriftUser.getEmail());
         return formerEmailAddresses;
     }
+
+    /**
+     * Refine search with Lucene/Nouveau using filters and user context.
+     * This method is for pageable Lucene searches with access control.
+     */
+    public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, User user, Pageable pageable) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        PaginationData pageData = pageableToPaginationData(pageable);
+        return sw360UserClient.refineSearchAccessibleUsers(filterMap, user, pageData);
+    }
 }
+

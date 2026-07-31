@@ -545,6 +545,45 @@ public abstract class BaseNouveauSearchHandler<T> {
     }
 
     /**
+     * Same as {@link #baseSearch} but joins each field clause with OR instead of AND.
+     * Use this for "search across multiple fields" queries where any field matching is sufficient
+     * (e.g. find a user by givenname OR lastname OR email).
+     *
+     * <p>Each per-field clause is built using the full tiered metadata
+     * (STANDARD fields get {@code _exact}/{@code _ngram} routing).</p>
+     */
+    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> baseSearchOr(
+            NouveauLuceneAwareDatabaseConnector connector,
+            final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData
+    ) {
+        List<String> sortColumns = getSortColumns(pageData);
+        Map<String, String> simplified = new HashMap<>();
+        for (var restriction : subQueryRestrictions.entrySet()) {
+            simplified.put(restriction.getKey(), String.join(" ", restriction.getValue()));
+        }
+
+        List<String> clauses = new ArrayList<>();
+        for (var entry : simplified.entrySet()) {
+            if (!CommonUtils.isNullEmptyOrWhitespace(entry.getValue())) {
+                String clause = createFieldQueryRestriction(entry.getKey(), entry.getValue());
+                // Strip the "+()" MUST wrapper so OR semantics are preserved.
+                if (clause.startsWith("+(") && clause.endsWith(")")) {
+                    clause = clause.substring(2, clause.length() - 1);
+                }
+                clauses.add(clause);
+            }
+        }
+        String query = clauses.isEmpty() ? "*:*" : String.join(" OR ", clauses);
+
+        Map<PaginationData, List<T>> result = connector.searchView(
+                clazz, luceneSearchView.getIndexName(), query, pageData, sortColumns);
+        PaginationData respPageData = result.keySet().iterator().next();
+        List<T> items = result.values().iterator().next();
+        return Collections.singletonMap(respPageData, items);
+    }
+
+    /**
      * Simple text search (no pagination) - sanitises the input before forwarding to the connector.
      */
     public final List<T> search(

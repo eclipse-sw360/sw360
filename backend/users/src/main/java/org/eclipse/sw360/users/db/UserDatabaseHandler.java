@@ -449,4 +449,8 @@ public class UserDatabaseHandler {
     public Set<String> getUserSecondaryDepartments() {
         return repository.getUserSecondaryDepartments();
     }
+
+    public Map<PaginationData, List<User>> refineSearchAccessibleUsers(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) {
+        return userSearchHandler.search(subQueryRestrictions, pageData);
+    }
 }

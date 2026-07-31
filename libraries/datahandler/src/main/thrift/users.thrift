@@ -186,6 +186,13 @@ service UserService {
 
     /**
      * search users in database that match subQueryRestrictions
+     * Gets the users with Lucene/Nouveau search.
+     * Search text should be included in the subQueryRestrictions map.
+     **/
+    map<PaginationData, list<User>> refineSearchAccessibleUsers(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
+
+    /**
+     * search users in database that match subQueryRestrictions
      * Gets the users with mango query and pagination.
      **/
     map<PaginationData, list<User>> searchUsersByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData) throws (1: SW360Exception exp);

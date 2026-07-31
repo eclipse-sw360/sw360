@@ -141,20 +141,26 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
         Map<PaginationData, List<User>> paginatedUsers = null;
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
-            paginatedUsers = userService.searchUsersByNameOrEmail(searchText.trim(), pageable);
-        } else {
-            Map<String, Set<String>> filterMap = getFilterMap(givenname, lastname, email, department,
-                    usergroup, luceneSearch);
-            if (luceneSearch) {
-                paginatedUsers = userService.refineSearch(filterMap, pageable);
-            } else {
-                if (filterMap.isEmpty()) {
-                    paginatedUsers = userService.getUsersWithPagination(pageable);
+                        String trimmedSearchText = searchText.trim();
+                        boolean luceneParamPresent = request.getParameterMap().containsKey("luceneSearch");
+                        if (luceneParamPresent && !luceneSearch) {
+                                paginatedUsers = userService.searchUsersByNameOrEmail("\"" + trimmedSearchText + "\"", pageable);
+                        } else {
+                                paginatedUsers = userService.searchUsersByNameOrEmail(trimmedSearchText, pageable);
+                        }
                 } else {
-                    paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
+                        Map<String, Set<String>> filterMap = RestControllerHelper.getFilterMapForUser(givenname, lastname, email, department,
+                                        usergroup, luceneSearch);
+                        if (luceneSearch) {
+                                paginatedUsers = userService.refineSearch(filterMap, user, pageable);
+                        } else {
+                                if (filterMap.isEmpty()) {
+                                        paginatedUsers = userService.getUsersWithPagination(pageable);
+                                } else {
+                                        paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
+                                }
+                        }
                 }
-            }
-        }
         PaginationResult<User> paginationResult = null;
         List<User> allUsers = new ArrayList<>(paginatedUsers.values().iterator().next());
         int totalCount = Math.toIntExact(paginatedUsers.keySet().stream()
@@ -478,52 +484,5 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             case "secondary" -> new ResponseEntity<>(userService.getExistingSecondaryDepartments(), HttpStatus.OK);
             default -> new ResponseEntity<>("Type must be: primary or secondary", HttpStatus.BAD_REQUEST);
         };
-    }
-
-    /**
-     * Create a map of filters with the field name in the key and expected value in the value (as set).
-     * @return Filter map from the user's request.
-     */
-    private @NonNull Map<String, Set<String>> getFilterMap(
-            String givenName, String lastName, String email, String department,
-            UserGroup usergroup, boolean luceneSearch
-    ) {
-        Map<String, Set<String>> filterMap = new HashMap<>();
-        if (CommonUtils.isNotNullEmptyOrWhitespace(givenName)) {
-            Set<String> values = CommonUtils.splitToSet(givenName);
-            if (luceneSearch) {
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-            }
-            filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
-        }
-        if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
-            Set<String> values = CommonUtils.splitToSet(email);
-            if (luceneSearch) {
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareFuzzyQuery)
-                        .collect(Collectors.toSet());
-            }
-            filterMap.put(User._Fields.EMAIL.getFieldName(), values);
-        }
-        if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
-            Set<String> values = CommonUtils.splitToSet(department);
-            filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
-        }
-        if (usergroup != null) {
-            Set<String> values = CommonUtils.splitToSet(usergroup.toString());
-            filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
-        }
-        if (CommonUtils.isNotNullEmptyOrWhitespace(lastName)) {
-            Set<String> values = CommonUtils.splitToSet(lastName);
-            if (luceneSearch) {
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-            }
-            filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
-        }
-        return filterMap;
     }
 }
