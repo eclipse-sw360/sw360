@@ -172,7 +172,7 @@ public class Sw360UserService {
 
     public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_SCORE, true);
         return sw360UserClient.refineSearch(searchTerm, Collections.emptyMap(), pageData);
     }
 
@@ -293,6 +293,11 @@ public class Sw360UserService {
      * @return a PaginationData object representing the pagination information
      */
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+        return pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
+    }
+
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
+            UserSortColumn defaultColumn, Boolean defaultAscending) {
         UserSortColumn column = UserSortColumn.BY_GIVENNAME;
         boolean ascending = true;
 
@@ -306,9 +311,16 @@ public class Sw360UserService {
                 case "department" -> UserSortColumn.BY_DEPARTMENT;
                 case "primaryRoles" -> UserSortColumn.BY_ROLE;
                 case "score" -> UserSortColumn.BY_SCORE;
-                default -> column; // Default to BY_GIVENNAME if no match
+                default -> column;
             };
             ascending = order.isAscending();
+        } else {
+            if (defaultColumn != null) {
+                column = defaultColumn;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
         }
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
@@ -412,4 +424,15 @@ public class Sw360UserService {
         formerEmailAddresses.add(thriftUser.getEmail());
         return formerEmailAddresses;
     }
+
+    /**
+     * Refine search with Lucene/Nouveau using filters and user context.
+     * This method is for pageable Lucene searches with access control.
+     */
+    public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, User user, Pageable pageable) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_SCORE, true);
+        return sw360UserClient.refineSearchAccessibleUsers(filterMap, user, pageData);
+    }
 }
+
