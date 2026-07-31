@@ -609,20 +609,20 @@ public abstract class BaseNouveauSearchHandler<T> {
 
         String sanitized = sanitizeLuceneString(filterValue);
         boolean quoted = NouveauLuceneAwareDatabaseConnector.isValidQuotedPhrase(filterValue);
-        String baseSearch = "+(" + fieldName + (quoted ? ":" : ":\"") + sanitized + (quoted ? "" : "\"") + ")";
+        String baseSearch = "(" + fieldName + (quoted ? ":" : ":\"") + sanitized + (quoted ? "" : "\"") + ")";
 
         if (tieredFields.contains(fieldName)) {
             if (!quoted) {
-                return "+(" + NouveauLuceneAwareDatabaseConnector.buildFieldQuery(
+                return "(" + NouveauLuceneAwareDatabaseConnector.buildFieldQuery(
                         fieldName + "_exact", fieldName + "_ngram", filterValue, true) + ")";
             }
             // Quoted input -> exact sort-field look-up (keyword field stores lowercased value)
-            return "+(" + fieldName + "_sort:" + sanitized.toLowerCase(Locale.ROOT) + ")";
+            return "(" + fieldName + "_sort:" + sanitized.toLowerCase(Locale.ROOT) + ")";
         }
 
         if (dateFields.contains(fieldName)) {
             try {
-                return "+(" + fieldName + ":" + NouveauLuceneAwareDatabaseConnector
+                return "(" + fieldName + ":" + NouveauLuceneAwareDatabaseConnector
                         .formatDateNouveauFormat(filterValue.trim()) + ")";
             } catch (ParseException e) {
                 return baseSearch;
@@ -630,7 +630,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         }
 
         if (defaultFields.contains(fieldName)) {
-            return "+( " + convertToFreeSearch(filterValue) + " )";
+            return "( " + convertToFreeSearch(filterValue) + " )";
         }
 
         return baseSearch;
