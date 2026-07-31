@@ -56,7 +56,9 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
@@ -1815,6 +1817,31 @@ public class RestControllerHelper<T> {
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentAuthor)) {
             filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, Collections.singleton(attachmentAuthor));
+        }
+        return filterMap;
+    }
+
+    public static Map<String, Set<String>> getFilterMapForUser(
+            String givenName, String lastName, String email, String department,
+            UserGroup usergroup
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(givenName)) {
+            filterMap.put(User._Fields.GIVENNAME.getFieldName(), CommonUtils.splitToSet(givenName));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(lastName)) {
+            filterMap.put(User._Fields.LASTNAME.getFieldName(), CommonUtils.splitToSet(lastName));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
+            filterMap.put(User._Fields.EMAIL.getFieldName(), CommonUtils.splitToSet(email));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
+            Set<String> values = CommonUtils.splitToSet(department);
+            filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
+        }
+        if (usergroup != null) {
+            Set<String> values = CommonUtils.splitToSet(usergroup.toString());
+            filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
         }
         return filterMap;
     }

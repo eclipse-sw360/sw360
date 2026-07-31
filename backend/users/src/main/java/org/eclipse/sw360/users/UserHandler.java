@@ -345,4 +345,10 @@ public class UserHandler implements UserService.Iface {
     public Set<String> getUserSecondaryDepartments() throws TException {
         return db.getUserSecondaryDepartments();
     }
+
+    @Override
+    public Map<PaginationData, List<User>> refineSearchAccessibleUsers(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData)
+            throws TException {
+        return db.refineSearchAccessibleUsers(subQueryRestrictions, pageData);
+    }
 }
