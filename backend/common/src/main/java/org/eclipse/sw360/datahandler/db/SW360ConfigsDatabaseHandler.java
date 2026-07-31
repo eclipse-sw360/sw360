@@ -106,6 +106,7 @@ public class SW360ConfigsDatabaseHandler {
                 .put(UI_CUSTOM_WELCOME_PAGE_GUIDELINE, getOrDefault(configContainer, UI_CUSTOM_WELCOME_PAGE_GUIDELINE, "false"))
                 .put(UI_DOMAINS, getOrDefault(configContainer, UI_DOMAINS, "[\"Application Software\",\"Documentation\",\"Embedded Software\",\"Hardware\",\"Test and Diagnostics\"]"))
                 .put(UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, getOrDefault(configContainer, UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, "true"))
+                .put(UI_ENABLE_ADS_INFORMATION_DISPLAY, getOrDefault(configContainer, UI_ENABLE_ADS_INFORMATION_DISPLAY, "false"))
                 .put(UI_ENABLE_SECURITY_VULNERABILITY_MONITORING, getOrDefault(configContainer, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING, "false"))
                 .put(UI_OPERATING_SYSTEMS, getOrDefault(configContainer, UI_OPERATING_SYSTEMS, "[\"Android\",\"BSD\",\"iOS\",\"Linux\",\"Mac OS X\",\"QNX\",\"Microsoft Windows\",\"Windows Phone\",\"IBM z/OS\"]"))
                 .put(UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP, getOrDefault(configContainer, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP, "[\"DEPT1\",\"DEPT2\",\"DEPT3\"]"))
@@ -186,73 +187,77 @@ public class SW360ConfigsDatabaseHandler {
     }
 
     private boolean isConfigValid(String configKey, String configValue) {
-        return switch (configKey) {
+        switch (configKey) {
             // Validate boolean value
-            case SPDX_DOCUMENT_ENABLED,
-                 IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED,
-                 USE_LICENSE_INFO_FROM_FILES,
-                 MAINLINE_STATE_ENABLED_FOR_USER,
-                 IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
-                 AUTO_SET_ECC_STATUS,
-                 MAIL_REQUEST_FOR_REPORT,
-                 IS_FORCE_UPDATE_ENABLED,
-                 DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
-                 IS_BULK_RELEASE_DELETING_ENABLED,
-                 IS_PACKAGE_PORTLET_ENABLED,
-                 INHERIT_ATTACHMENT_USAGES,
-                 IS_ADMIN_PRIVATE_ACCESS_ENABLED,
-                 UI_ENABLE_LINKED_PROJECTS_DISPLAY,
-                 UI_CLEARING_TEAM_UNKNOWN_ENABLED,
-                 UI_CUSTOM_WELCOME_PAGE_GUIDELINE,
-                 UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON,
-                 UI_ENABLE_SECURITY_VULNERABILITY_MONITORING
-                    -> isBooleanValue(configValue);
+            case SPDX_DOCUMENT_ENABLED:
+            case IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED:
+            case USE_LICENSE_INFO_FROM_FILES:
+            case MAINLINE_STATE_ENABLED_FOR_USER:
+            case IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED:
+            case AUTO_SET_ECC_STATUS:
+            case MAIL_REQUEST_FOR_REPORT:
+            case IS_FORCE_UPDATE_ENABLED:
+            case DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD:
+            case IS_BULK_RELEASE_DELETING_ENABLED:
+            case IS_PACKAGE_PORTLET_ENABLED:
+            case INHERIT_ATTACHMENT_USAGES:
+            case IS_ADMIN_PRIVATE_ACCESS_ENABLED:
+            case UI_ENABLE_LINKED_PROJECTS_DISPLAY:
+            case UI_CLEARING_TEAM_UNKNOWN_ENABLED:
+            case UI_CUSTOM_WELCOME_PAGE_GUIDELINE:
+            case UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON:
+            case UI_ENABLE_ADS_INFORMATION_DISPLAY:
+            case UI_REST_APITOKEN_GENERATOR_ENABLE:
+            case UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED:
+            case UI_ENABLE_SECURITY_VULNERABILITY_MONITORING:
+                return isBooleanValue(configValue);
 
             // Validate string value
-            case ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
-                 TOOL_NAME,
-                 TOOL_VENDOR,
-                 SKIP_DOMAINS_FOR_VALID_SOURCE_CODE,
-                 RELEASE_FRIENDLY_URL,
-                 COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
-                 NON_PKG_MANAGED_COMPS_PROP
-                    -> configValue != null;
+            case ATTACHMENT_STORE_FILE_SYSTEM_LOCATION:
+            case TOOL_NAME:
+            case TOOL_VENDOR:
+            case SKIP_DOMAINS_FOR_VALID_SOURCE_CODE:
+            case RELEASE_FRIENDLY_URL:
+            case COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY:
+            case NON_PKG_MANAGED_COMPS_PROP:
+                return configValue != null;
 
             // validate int value
-            case ATTACHMENT_DELETE_NO_OF_DAYS
-                    -> isIntegerValue(configValue);
+            case ATTACHMENT_DELETE_NO_OF_DAYS:
+                return isIntegerValue(configValue);
 
             // validate API token length (minimum 20 characters for security)
-            case REST_API_TOKEN_LENGTH
-                    -> isValidApiTokenLength(configValue);
+            case REST_API_TOKEN_LENGTH:
+                return isValidApiTokenLength(configValue);
 
             // validate string in enum
-            case SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
-                 PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE
-                    -> isValidEnumValue(configValue, UserGroup.class);
+            case SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE:
+            case PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE:
+                return isValidEnumValue(configValue, UserGroup.class);
 
             // validate set of strings
-            case UI_CLEARING_TEAMS,
-                 UI_COMPONENT_CATEGORIES,
-                 UI_COMPONENT_EXTERNALKEYS,
-                 UI_CUSTOMMAP_COMPONENT_ROLES,
-                 UI_CUSTOMMAP_PROJECT_ROLES,
-                 UI_CUSTOMMAP_RELEASE_ROLES,
-                 UI_DOMAINS,
-                 UI_OPERATING_SYSTEMS,
-                 UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
-                 UI_PROGRAMMING_LANGUAGES,
-                 UI_PROJECT_EXTERNALKEYS,
-                 UI_PROJECT_EXTERNALURLS,
-                 UI_PROJECT_TAG,
-                 UI_PROJECT_TYPE,
-                 UI_RELEASE_EXTERNALKEYS,
-                 UI_SOFTWARE_PLATFORMS,
-                 UI_STATE,
-                 VCS_HOSTS
-                    -> isValidSet(configValue);
-            default -> false;
-        };
+            case UI_CLEARING_TEAMS:
+            case UI_COMPONENT_CATEGORIES:
+            case UI_COMPONENT_EXTERNALKEYS:
+            case UI_CUSTOMMAP_COMPONENT_ROLES:
+            case UI_CUSTOMMAP_PROJECT_ROLES:
+            case UI_CUSTOMMAP_RELEASE_ROLES:
+            case UI_DOMAINS:
+            case UI_OPERATING_SYSTEMS:
+            case UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP:
+            case UI_PROGRAMMING_LANGUAGES:
+            case UI_PROJECT_EXTERNALKEYS:
+            case UI_PROJECT_EXTERNALURLS:
+            case UI_PROJECT_TAG:
+            case UI_PROJECT_TYPE:
+            case UI_RELEASE_EXTERNALKEYS:
+            case UI_SOFTWARE_PLATFORMS:
+            case UI_STATE:
+            case VCS_HOSTS:
+                return isValidSet(configValue);
+            default:
+                return false;
+        }
     }
 
     private void updateExistingConfigs(Map<String, Set<String>> existingConfigs, Map<String, String> updatedConfigs) throws SW360Exception {

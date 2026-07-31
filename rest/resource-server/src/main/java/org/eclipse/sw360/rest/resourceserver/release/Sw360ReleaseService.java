@@ -71,6 +71,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.AdsClearingAssessment;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.AdsInformation;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.AdsReleaseReference;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
@@ -1305,6 +1308,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return componentClient;
     }
 
+    protected LicenseInfoService.Iface getThriftLicenseInfoClient() {
+        return ThriftClients.makeLicenseInfoClient();
+    }
+
     private SPDXDocumentService.Iface getThriftSPDXDocumentClient() {
         return ThriftClients.makeSPDXClient();
     }
@@ -1415,12 +1422,99 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public List<Map<String,String>> getReleaseLicenseInfo(Release rel, User sw360User, String attachContentId) throws TException{
-        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
+        LicenseInfoService.Iface licenseClient = getThriftLicenseInfoClient();
         List<LicenseInfoParsingResult> licenseInfos = licenseClient.getLicenseInfoForAttachment(rel, attachContentId, false, sw360User);
         List<Map<String, String>> licenses = Lists.newArrayList();
         licenseInfos.forEach(licenseInfoResult ->
                 addLicenseInfoResultToJsonSerializableLicensesList(licenseInfoResult, licenses));
         return licenses;
+    }
+
+    public ReleaseAdsInformation getAdsInformationForRelease(Release release, String attachmentId, User sw360User,
+                                                             Sw360AttachmentService attachmentService) throws TException {
+        LicenseInfoService.Iface licenseClient = getThriftLicenseInfoClient();
+        AdsInformation adsInformation;
+        try {
+            adsInformation = licenseClient.getAdsInformationForAttachment(release, attachmentId, sw360User);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException(sw360Exp.getMessage(), sw360Exp);
+            } else if (sw360Exp.getErrorCode() == 400) {
+                throw new BadRequestClientException(sw360Exp.getMessage());
+            }
+            throw sw360Exp;
+        }
+        return mapAdsInformationToReleaseAdsInformation(adsInformation);
+    }
+
+    private ReleaseAdsInformation mapAdsInformationToReleaseAdsInformation(AdsInformation adsInformation) {
+        ReleaseAdsInformation.ReleaseReference candidateRelease = mapAdsReleaseReference(adsInformation.getCandidateRelease());
+        ReleaseAdsInformation.ReleaseReference baseRelease = mapAdsReleaseReference(adsInformation.getBaseRelease());
+        Map<String, Object> clearingAssessment = mapAdsClearingAssessment(adsInformation.getClearingAssessment());
+
+        return ReleaseAdsInformation.builder()
+                .attachmentContentId(adsInformation.getAttachmentContentId())
+                .attachmentFilename(adsInformation.getAttachmentFilename())
+                .candidateRelease(candidateRelease)
+                .baseRelease(baseRelease)
+                .clearingAssessment(clearingAssessment)
+                .licenseChanges(mapAdsEntries(adsInformation.getLicenseChanges()))
+                .copyrightChanges(mapAdsEntries(adsInformation.getCopyrightChanges()))
+                .deletedFiles(mapAdsEntries(adsInformation.getDeletedFiles()))
+                .renamedFiles(mapAdsEntries(adsInformation.getRenamedFiles()))
+                .build();
+    }
+
+    private ReleaseAdsInformation.ReleaseReference mapAdsReleaseReference(AdsReleaseReference releaseReference) {
+        if (releaseReference == null) {
+            return null;
+        }
+        return ReleaseAdsInformation.ReleaseReference.builder()
+                .releaseId(releaseReference.getReleaseId())
+                .releaseName(releaseReference.getReleaseName())
+                .version(releaseReference.getVersion())
+                .changedFilesCount(releaseReference.isSetChangedFilesCount() ? releaseReference.getChangedFilesCount() : null)
+                .build();
+    }
+
+    private Map<String, Object> mapAdsClearingAssessment(AdsClearingAssessment clearingAssessment) {
+        if (clearingAssessment == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, Object> mappedAssessment = new LinkedHashMap<>();
+        if (clearingAssessment.isSetClearingRequired()) {
+            mappedAssessment.put("clearingRequired", clearingAssessment.isClearingRequired());
+        }
+        if (clearingAssessment.isSetClxAutoUpdateRequired()) {
+            mappedAssessment.put("clxAutoUpdateRequired", clearingAssessment.isClxAutoUpdateRequired());
+        }
+        if (clearingAssessment.isSetLicenseChangesCount()) {
+            mappedAssessment.put("licenseChangesCount", clearingAssessment.getLicenseChangesCount());
+        }
+        if (clearingAssessment.isSetCopyrightChangesCount()) {
+            mappedAssessment.put("copyrightChangesCount", clearingAssessment.getCopyrightChangesCount());
+        }
+        if (clearingAssessment.isSetDeletedFilesCount()) {
+            mappedAssessment.put("deletedFilesCount", clearingAssessment.getDeletedFilesCount());
+        }
+        if (clearingAssessment.isSetRenamedFilesCount()) {
+            mappedAssessment.put("renamedFilesCount", clearingAssessment.getRenamedFilesCount());
+        }
+        return mappedAssessment;
+    }
+
+    private List<Map<String, Object>> mapAdsEntries(List<Map<String, String>> entries) {
+        if (entries == null) {
+            return Collections.emptyList();
+        }
+        List<Map<String, Object>> mappedEntries = new ArrayList<>();
+        for (Map<String, String> entry : entries) {
+            if (entry == null) {
+                continue;
+            }
+            mappedEntries.add(new LinkedHashMap<>(entry));
+        }
+        return mappedEntries;
     }
 
     private void addLicenseInfoResultToJsonSerializableLicensesList(LicenseInfoParsingResult licenseInfoResult,
@@ -1458,7 +1552,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public Map<String, Object> getReleaseLicenseFileListInfo(Release rel, User sw360User, String attachmentId) throws TException{
-        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
+        LicenseInfoService.Iface licenseClient = getThriftLicenseInfoClient();
         final Predicate<Attachment> isSupportedAttachment = attachment ->
                 AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
                 || AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(attachment.getAttachmentType())
