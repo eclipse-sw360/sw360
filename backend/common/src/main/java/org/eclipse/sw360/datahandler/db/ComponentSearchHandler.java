@@ -22,10 +22,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
@@ -59,7 +61,9 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             "softwarePlatforms_sort", "keyword",
             "operatingSystems_sort", "keyword",
             "vendorNames_sort", "keyword",
-            "mainLicenseIds_sort", "keyword"
+            "mainLicenseIds_sort", "keyword",
+            "externalIds_sort", "keyword",
+            "id", "keyword"
     );
 
     /**
@@ -72,7 +76,9 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
             "    arrayToStringIndex(doc.operatingSystems, 'operatingSystems');" +
             "    arrayToStringIndex(doc.vendorNames, 'vendorNames');" +
-            "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');";
+            "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
+            "    arrayToStringIndex(doc.externalIds, 'externalIds');" +
+            INDEX_ID_FIELD;
 
     private static final BuiltIndexDefinition COMPONENT_INDEX_DEFINITION = buildIndexFunction(
             "component",
@@ -88,6 +94,13 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
     // -------------------------------------------------------------------------
 
     private final NouveauLuceneAwareDatabaseConnector connector;
+
+    private static final List<Component._Fields> QUICK_FILTER_FIELDS = List.of(
+            Component._Fields.ID,
+            Component._Fields.NAME,
+            Component._Fields.DESCRIPTION,
+            Component._Fields.EXTERNAL_IDS
+    );
 
     public ComponentSearchHandler(Cloudant cClient, String dbName) throws IOException {
         super(Component.class, "components", COMPONENT_INDEX_DEFINITION);
@@ -112,6 +125,27 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
 
         componentList = componentList.stream().filter(component ->
                 makePermission(component, user).isActionAllowed(RequestedAction.READ))
+                .toList();
+
+        return Collections.singletonMap(respPageData, componentList);
+    }
+
+    /**
+     * Search Components with id, name, description or externalIds fields.
+     */
+    public Map<PaginationData, List<Component>> searchFilteredComponents(
+            String searchText, User user, PaginationData pageData
+    ) {
+        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
+        for (Component._Fields field : QUICK_FILTER_FIELDS) {
+            subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
+        }
+        Map<PaginationData, List<Component>> resultComponentList = baseSearchWithOr(connector, subQueryRestrictions, pageData);
+        PaginationData respPageData = resultComponentList.keySet().iterator().next();
+        List<Component> componentList = resultComponentList.values().iterator().next();
+
+        componentList = componentList.stream().filter(component ->
+                        makePermission(component, user).isActionAllowed(RequestedAction.READ))
                 .toList();
 
         return Collections.singletonMap(respPageData, componentList);

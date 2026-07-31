@@ -129,6 +129,14 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<Component>> searchFilteredComponents(String searchText, User user, PaginationData pageData) {
+        if (searchText == null) {
+            searchText = "";
+        }
+        return componentSearchHandler.searchFilteredComponents(searchText, user, pageData);
+    }
+
+    @Override
     public List<Component> refineSearchWithAccessibility(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
         return componentSearchHandler.searchWithAccessibility(text, subQueryRestrictions, user);
     }
