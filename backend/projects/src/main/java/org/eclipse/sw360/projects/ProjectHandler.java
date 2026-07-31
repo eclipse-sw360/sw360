@@ -105,6 +105,19 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<Project>> searchFilteredProjects(
+            String searchText, User user, PaginationData pageData
+    ) throws TException {
+        assertUser(user);
+
+        if (searchText == null) {
+            searchText = "";
+        }
+
+        return searchHandler.searchFilteredProjects(searchText, user, pageData);
+    }
+
+    @Override
     public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
         assertNotNull(user);
         assertNotEmpty(user.getEmail());
