@@ -22,10 +22,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
@@ -44,6 +46,7 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
     // -------------------------------------------------------------------------
 
     private static final List<IndexField> RELEASE_FIELDS = List.of(
+            IndexField.string("id"),
             IndexField.standard("name"),
             IndexField.standard("version"),
             IndexField.simple("clearingState", "keyword"),
@@ -61,7 +64,9 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
             "    arrayToStringIndex(doc.languages, 'languages');" +
             "    arrayToStringIndex(doc.operatingSystems, 'operatingSystems');" +
             "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
-            "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');";
+            "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
+            "    arrayToStringIndex(doc.externalIds, 'externalIds');" +
+            INDEX_ID_FIELD;
 
     /**
      * Analyzer overrides for fields created by {@code arrayToStringIndex}.
@@ -72,7 +77,9 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
             "languages_sort", "keyword",
             "operatingSystems_sort", "keyword",
             "softwarePlatforms_sort", "keyword",
-            "mainLicenseIds_sort", "keyword"
+            "mainLicenseIds_sort", "keyword",
+            "externalIds_sort", "keyword",
+            "id", "keyword"
     );
 
     private static final BuiltIndexDefinition RELEASE_INDEX_DEFINITION = buildIndexFunction(
@@ -89,6 +96,13 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
     // -------------------------------------------------------------------------
 
     private final NouveauLuceneAwareDatabaseConnector connector;
+
+    private static final List<Release._Fields> QUICK_FILTER_FIELDS = List.of(
+            Release._Fields.ID,
+            Release._Fields.NAME,
+            Release._Fields.VERSION,
+            Release._Fields.EXTERNAL_IDS
+    );
 
     public ReleaseSearchHandler(Cloudant cClient, String dbName) throws IOException {
         super(Release.class, "releases", RELEASE_INDEX_DEFINITION);
@@ -107,6 +121,28 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
     public Map<PaginationData, List<Release>> searchAccessibleReleases(
             final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
         Map<PaginationData, List<Release>> resultReleaseList = baseSearch(connector, subQueryRestrictions, pageData);
+
+        PaginationData respPageData = resultReleaseList.keySet().iterator().next();
+        List<Release> releaseList = resultReleaseList.values().iterator().next();
+
+        releaseList = releaseList.stream().filter(release ->
+                makePermission(release, user).isActionAllowed(RequestedAction.READ))
+                .toList();
+
+        return Collections.singletonMap(respPageData, releaseList);
+    }
+
+    /**
+     * Search Releases with id, name, description or externalIds fields.
+     */
+    public Map<PaginationData, List<Release>> searchFilteredReleases(
+            final String searchText, User user, PaginationData pageData
+    ) {
+        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
+        for (Release._Fields field : QUICK_FILTER_FIELDS) {
+            subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
+        }
+        Map<PaginationData, List<Release>> resultReleaseList = baseSearchWithOr(connector, subQueryRestrictions, pageData);
 
         PaginationData respPageData = resultReleaseList.keySet().iterator().next();
         List<Release> releaseList = resultReleaseList.values().iterator().next();

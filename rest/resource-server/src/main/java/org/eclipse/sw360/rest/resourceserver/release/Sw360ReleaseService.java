@@ -1359,6 +1359,15 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
     }
 
+    /*
+     * Use lucene search for searching releases based on name, version or externalIds
+     */
+    public Map<PaginationData, List<Release>> searchFilteredReleases(String searchText, User sw360User, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_SCORE, true);
+        return sw360ComponentClient.searchFilteredReleases(searchText, sw360User, pageData);
+    }
+
     /**
      * Multi-field paginated search for releases using the nouveau search infrastructure.
      */
