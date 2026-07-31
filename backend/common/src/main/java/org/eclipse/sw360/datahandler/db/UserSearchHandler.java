@@ -46,6 +46,7 @@ public class UserSearchHandler extends BaseNouveauSearchHandler<User> {
     private static final List<IndexField> USER_FIELDS = List.of(
             IndexField.standard("givenname"),
             IndexField.standard("lastname"),
+            IndexField.standard("fullname"),
             IndexField.simple("email", "email"),
             IndexField.simple("department", "keyword"),
             IndexField.simple("userGroup", "keyword"),
@@ -113,6 +114,7 @@ public class UserSearchHandler extends BaseNouveauSearchHandler<User> {
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             subQueryRestrictions.put(User._Fields.GIVENNAME.getFieldName(), Collections.singleton(searchText));
             subQueryRestrictions.put(User._Fields.LASTNAME.getFieldName(), Collections.singleton(searchText));
+            subQueryRestrictions.put(User._Fields.FULLNAME.getFieldName(), Collections.singleton(searchText));
             subQueryRestrictions.put(User._Fields.EMAIL.getFieldName(), Collections.singleton(searchText));
         }
         return baseSearchWithOr(connector, subQueryRestrictions, pageData);
