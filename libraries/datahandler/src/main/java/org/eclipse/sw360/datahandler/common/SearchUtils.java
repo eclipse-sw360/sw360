@@ -109,4 +109,13 @@ public class SearchUtils {
               }
             }
             """;
+
+    /**
+     * This function indexes {@code doc._id} as a string field with name {@code id}.
+     */
+    public static final String INDEX_ID_FIELD = """
+            if(doc._id && typeof(doc._id) == 'string' && doc._id.length > 0) {
+              index('string', 'id', doc._id);
+            }
+            """;
 }

@@ -261,7 +261,7 @@ public abstract class BaseNouveauSearchHandler<T> {
 
         /** String fields index with no extra work. */
         public static IndexField string(String fieldName) {
-            return new IndexField(fieldName, Category.STRING, null, 0, 0);
+            return new IndexField(fieldName, Category.STRING, "keyword", 0, 0);
         }
 
         /** Text index of entire CouchDB Object for generic search. */
