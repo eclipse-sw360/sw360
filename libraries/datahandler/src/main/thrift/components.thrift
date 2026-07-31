@@ -582,6 +582,12 @@ service ComponentService {
     map<PaginationData, list<Component>> refineSearchAccessibleComponents(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
 
     /**
+     * search Components in database that match searchText in
+     * name, description or externalIds fields.
+     **/
+    map<PaginationData, list<Component>> searchFilteredComponents(1: string searchText, 2: User user, 3: PaginationData pageData) throws (1: SW360Exception exp);
+
+    /**
      * search components with the accessibility in database that match subQueryRestrictions
      **/
     list<Component> refineSearchWithAccessibility(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
