@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -106,6 +107,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Components", description = "Operations related to Components on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`createdOn`, `name`, `vendorNames`, `mainLicenseIds` or `type`].")
 public class ComponentController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String COMPONENTS_URL = "/components";
@@ -171,6 +175,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @RequestParam(value = "fields", required = false) List<String> fields,
             @Parameter(description = "Flag to get components with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "A generic filter which searches [id, name, description and externalIds]." +
+                    " Note that is field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "Use lucenesearch to filter the components.")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
@@ -186,7 +193,14 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             Set<String> values = Collections.singleton(name);
             filterMap.put(Component._Fields.NAME.getFieldName(), values);
         }
-        if (luceneSearch) {
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !filterMap.isEmpty()) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedComponents = componentService.searchFilteredComponents(searchText, sw360User, pageable);
+        } else if (luceneSearch) {
             paginatedComponents = componentService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (filterMap.isEmpty()) {
