@@ -288,6 +288,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "Filter by attachment author email (createdBy field of attachments)")
             @RequestParam(value = "attachmentAuthor", required = false) String attachmentAuthor,
+            @Parameter(description = "A generic filter which searches [name, description, tag and projectResponsible]." +
+                    " Note that is field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "List project by lucene search, default true")
             @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
@@ -303,7 +306,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             filterMap.put(Project._Fields.NAME.getFieldName(), values);
         }
 
-        if (luceneSearch && !filterMap.isEmpty()) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !filterMap.isEmpty()) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedProjects = projectService.searchFilteredProjects(searchText, sw360User, pageable);
+        } else if (luceneSearch && !filterMap.isEmpty()) {
             paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (filterMap.isEmpty()) {
