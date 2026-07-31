@@ -98,7 +98,7 @@
     <byte-buddy.version>1.18.11</byte-buddy.version>
     <cloudantsdk.version>0.10.20</cloudantsdk.version>
     <commons-cli.version>1.11.0</commons-cli.version>
-    <commons-codec.version>1.22.0</commons-codec.version>
+    <commons-codec.version>1.22.1</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
     <commons-csv.version>1.14.1</commons-csv.version>
     <commons-io.version>2.22.0</commons-io.version>
