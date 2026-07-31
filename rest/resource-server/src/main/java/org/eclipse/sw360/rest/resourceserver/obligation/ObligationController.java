@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +68,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Obligations", description = "Operations related to Obligations on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`title`, `text` or `obligationLevel`].")
 public class ObligationController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final Logger log = LogManager.getLogger(ObligationController.class);
 
