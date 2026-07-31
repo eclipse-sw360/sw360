@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
@@ -76,7 +77,8 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             "          index('text', 'attachmentCreatedBy', doc.attachments[i].createdBy);" +
             "        }" +
             "      }" +
-            "    }";
+            "    }" +
+            INDEX_ID_FIELD;
 
     /**
      * Analyzer overrides that are not auto-generated from {@link #PROJECT_FIELDS}.
@@ -87,7 +89,8 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      */
     private static final Map<String, String> PROJECT_CUSTOM_ANALYZERS = Map.of(
             "attachmentCreatedBy", "email",
-            "additionalData_sort", "keyword"
+            "additionalData_sort", "keyword",
+            "id", "keyword"
     );
 
     // -------------------------------------------------------------------------
@@ -110,6 +113,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
     private final NouveauLuceneAwareDatabaseConnector connector;
 
     private static final List<Project._Fields> QUICK_FILTER_FIELDS = List.of(
+            Project._Fields.ID,
             Project._Fields.NAME,
             Project._Fields.DESCRIPTION,
             Project._Fields.TAG,
