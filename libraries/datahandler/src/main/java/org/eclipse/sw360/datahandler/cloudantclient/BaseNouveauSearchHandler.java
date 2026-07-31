@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.cloudantclient;
 
+import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_DATE_AS_DOUBLE;
@@ -87,6 +89,9 @@ public abstract class BaseNouveauSearchHandler<T> {
      * are short and index bloat should be minimized.
      */
     public static final int EDGE_NGRAM_SHORT_MAX_LENGTH = 10;
+
+    private static final Joiner AND = Joiner.on(" AND ");
+    private static final Joiner OR = Joiner.on(" OR ");
 
     /**
      * Built index definition that bundles the generated index function with derived
@@ -522,12 +527,14 @@ public abstract class BaseNouveauSearchHandler<T> {
      *
      * @param connector            Nouveau Aware DB Connector to use.
      * @param subQueryRestrictions Map of field names to their accepted values.
+     * @param queryGenerator The query generator function to use for joining the query
      * @param pageData             Pagination information.
      * @return Paginated search results.
      */
-    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> baseSearch(
+    private final @NonNull @Unmodifiable Map<PaginationData, List<T>> genericBaseSearch(
             NouveauLuceneAwareDatabaseConnector connector,
             final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            Function<Map<String, String>, String> queryGenerator,
             PaginationData pageData
     ) {
         List<String> sortColumns = getSortColumns(pageData);
@@ -536,12 +543,50 @@ public abstract class BaseNouveauSearchHandler<T> {
             simplified.put(restriction.getKey(), String.join(" ", restriction.getValue()));
         }
 
-        String query = buildQueryFromRestrictions(simplified);
+        String query = queryGenerator.apply(simplified);
         Map<PaginationData, List<T>> result = connector.searchView(
                 clazz, luceneSearchView.getIndexName(), query, pageData, sortColumns);
         PaginationData respPageData = result.keySet().iterator().next();
         List<T> items = result.values().iterator().next();
         return Collections.singletonMap(respPageData, items);
+    }
+
+    /**
+     * Perform a AND'd base search for a given type with the provided field restrictions and pagination.
+     *
+     * <p>Query routing is metadata-driven from the {@link BuiltIndexDefinition} passed to
+     * the constructor.</p>
+     *
+     * @param connector            Nouveau Aware DB Connector to use.
+     * @param subQueryRestrictions Map of field names to their accepted values.
+     * @param pageData             Pagination information.
+     * @return Paginated search results.
+     */
+    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> baseSearch(
+            NouveauLuceneAwareDatabaseConnector connector,
+            final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData
+    ) {
+        return genericBaseSearch(connector, subQueryRestrictions, this::buildQueryFromRestrictionsWithAnd, pageData);
+    }
+
+    /**
+     * Perform a OR'd base search for a given type with the provided field restrictions and pagination.
+     *
+     * <p>Query routing is metadata-driven from the {@link BuiltIndexDefinition} passed to
+     * the constructor.</p>
+     *
+     * @param connector            Nouveau Aware DB Connector to use.
+     * @param subQueryRestrictions Map of field names to their accepted values.
+     * @param pageData             Pagination information.
+     * @return Paginated search results.
+     */
+    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> baseSearchWithOr(
+            NouveauLuceneAwareDatabaseConnector connector,
+            final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData
+    ) {
+        return genericBaseSearch(connector, subQueryRestrictions, this::buildQueryFromRestrictionsWithOr, pageData);
     }
 
     /**
@@ -563,15 +608,16 @@ public abstract class BaseNouveauSearchHandler<T> {
     // -------------------------------------------------------------------------
 
     /**
-     * Build a Lucene query string from a simplified restriction map, using registered
-     * field metadata for per-field routing.
+     * Build a Lucene query parts which can be joined based on condition
+     * to from the final query.
      *
      * @param restrictions Map of {@code fieldName -> filterValue} (multi-value sets should
      *                     already be joined into a single string by the caller).
-     * @return A Lucene query string that can be passed directly to
+     * @return A list of Lucene query parts which needs to be joined before
+     *         they can be passed directly to
      *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
      */
-    private @NonNull String buildQueryFromRestrictions(
+    private @NonNull List<String> buildQueryFromRestrictions(
             @NonNull Map<String, String> restrictions
     ) {
         List<String> parts = new ArrayList<>();
@@ -583,7 +629,37 @@ public abstract class BaseNouveauSearchHandler<T> {
             }
             parts.add(createFieldQueryRestriction(fieldName, filterValue));
         }
-        return String.join(" AND ", parts);
+        return parts;
+    }
+
+    /**
+     * Build a Lucene query using AND joiner from a simplified restriction map, using registered
+     * field metadata for per-field routing.
+     *
+     * @param restrictions Map of {@code fieldName -> filterValue} (multi-value sets should
+     *                     already be joined into a single string by the caller).
+     * @return A Lucene query string that can be passed directly to
+     *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
+     */
+    private @NonNull String buildQueryFromRestrictionsWithAnd(
+            @NonNull Map<String, String> restrictions
+    ) {
+        return AND.join(buildQueryFromRestrictions(restrictions));
+    }
+
+    /**
+     * Build a Lucene query string from a simplified restriction map OR'd, using registered
+     * field metadata for per-field routing.
+     *
+     * @param restrictions Map of {@code fieldName -> filterValue} (multi-value sets should
+     *                     already be joined into a single string by the caller).
+     * @return A Lucene query string that can be passed directly to
+     *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
+     */
+    private @NonNull String buildQueryFromRestrictionsWithOr(
+            @NonNull Map<String, String> restrictions
+    ) {
+        return OR.join(buildQueryFromRestrictions(restrictions));
     }
 
     /**
