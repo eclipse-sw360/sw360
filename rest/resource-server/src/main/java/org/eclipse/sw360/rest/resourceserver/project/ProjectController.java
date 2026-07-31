@@ -288,7 +288,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "Filter by attachment author email (createdBy field of attachments)")
             @RequestParam(value = "attachmentAuthor", required = false) String attachmentAuthor,
-            @Parameter(description = "A generic filter which searches [name, description, tag and projectResponsible]." +
+            @Parameter(description = "A generic filter which searches [id, name, description, tag and projectResponsible]." +
                     " Note that is field should be used exclusive of other filters.")
             @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "List project by lucene search, default true")
