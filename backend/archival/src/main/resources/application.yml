@@ -1,0 +1,31 @@
+# Copyright Taanvi Khevaria, 2026. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+
+spring:
+  application:
+    name: sw360-archival
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  servlet:
+    context-path: /archival
+
+sw360:
+  archival:
+    cors:
+      # Browser origins allowed to call the archival API cross-origin. Empty by
+      # default because in a same-host deployment the frontend and archival share
+      # an origin. Set this when running archival standalone against a separately
+      # hosted frontend, e.g.
+      #   SW360_ARCHIVAL_CORS_ALLOWED_ORIGINS=http://localhost:3000
+      allowed-origins: ''
+
+logging:
+  level:
+    org.eclipse.sw360.archival: INFO
