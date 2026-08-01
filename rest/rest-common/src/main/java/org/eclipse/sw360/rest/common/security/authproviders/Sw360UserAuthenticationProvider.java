@@ -5,7 +5,6 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.rest.common.security.authproviders;
 
 import org.eclipse.sw360.rest.common.client.service.Sw360UserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
