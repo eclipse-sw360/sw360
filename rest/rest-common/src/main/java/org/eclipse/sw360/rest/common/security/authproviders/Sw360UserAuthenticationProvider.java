@@ -27,7 +27,7 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
 
     private final PasswordEncoder passwordEncoder;
 
-    Sw360UserAuthenticationProvider(PasswordEncoder passwordEncoder, Sw360UserDetailsService sw360UserDetailsService) {
+    public Sw360UserAuthenticationProvider(PasswordEncoder passwordEncoder, Sw360UserDetailsService sw360UserDetailsService) {
         this.passwordEncoder = passwordEncoder;
         this.userDetailsService = sw360UserDetailsService;
     }

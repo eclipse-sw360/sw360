@@ -33,10 +33,11 @@ public class Sw360UserAuthenticationProviderTest {
 
     @Test
     public void shouldAddPasswordFactorAuthority_onSuccessfulAuthentication() {
-        Sw360UserAuthenticationProvider provider = new Sw360UserAuthenticationProvider();
 
         Sw360UserDetailsService userDetailsService = mock(Sw360UserDetailsService.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+
+        Sw360UserAuthenticationProvider provider = new Sw360UserAuthenticationProvider(passwordEncoder, userDetailsService);
 
         ReflectionTestUtils.setField(provider, "userDetailsService", userDetailsService);
         ReflectionTestUtils.setField(provider, "passwordEncoder", passwordEncoder);
