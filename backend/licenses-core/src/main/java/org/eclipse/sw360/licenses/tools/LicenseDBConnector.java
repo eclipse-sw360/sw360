@@ -22,10 +22,12 @@ import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.util.Timeout;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -53,8 +55,9 @@ public class LicenseDBConnector {
     private final LicenseDBTokenManager tokenManager;
 
     public LicenseDBConnector(String baseUrl, LicenseDBTokenManager tokenManager) {
-        this.baseUrl = Objects.requireNonNull(baseUrl, "baseUrl must not be null").replaceAll("/+$", "");
-        this.tokenManager = Objects.requireNonNull(tokenManager, "tokenManager must not be null");
+        Objects.requireNonNull(tokenManager, "tokenManager must not be null");
+        this.baseUrl = CommonUtils.validateHttpUrl(baseUrl);
+        this.tokenManager = tokenManager;
     }
 
     public List<LicenseDBLicenseDTO> fetchAllLicenses() throws SW360Exception {

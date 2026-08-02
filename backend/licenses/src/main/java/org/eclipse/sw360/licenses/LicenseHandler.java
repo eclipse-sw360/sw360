@@ -376,6 +376,12 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
+    public Map<String, String> getLicenseDBDiff(User user) throws TException {
+        assertUser(user);
+        return handler.getLicenseDBDiff(user);
+    }
+
+    @Override
     public RequestStatus deleteObligations(String id, User user) throws TException {
         assertId(id);
         assertUser(user);

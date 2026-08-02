@@ -620,6 +620,25 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "LicenseDB diff status",
+            description = "Compare licenses in SW360 and LicenseDB and get status of licenses mapped and missing.",
+            tags = {"Licenses"}
+    )
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Diff computed successfully."),
+            @ApiResponse(responseCode = "403", description = "User is not an admin."),
+            @ApiResponse(responseCode = "500", description = "Diff computation failed.")
+    })
+    @GetMapping(value = LICENSES_URL + "/import/LicenseDB/diff")
+    public ResponseEntity<Map<String, String>> getLicenseDBDiff() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, String> diff = licenseService.getLicenseDBDiff(sw360User);
+        HttpStatus status = diff.containsKey("error") ? HttpStatus.INTERNAL_SERVER_ERROR : HttpStatus.OK;
+        return new ResponseEntity<>(diff, status);
+    }
+
+    @Operation(
             summary = "Create license type.",
             description = "Create license type.",
             tags = {"Licenses"}

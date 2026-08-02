@@ -113,6 +113,13 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.deleteLicenseType(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(requestSummary);
         given(this.licenseServiceMock.importLicenseDBInformationAsync(any())).willReturn(requestSummary);
+        Map<String, String> diffResult = new LinkedHashMap<>();
+        diffResult.put("totalSw360", "100");
+        diffResult.put("totalLicenseDb", "120");
+        diffResult.put("synced", "80");
+        diffResult.put("sw360OnlyCount", "20");
+        diffResult.put("licenseDbOnlyCount", "40");
+        given(this.licenseServiceMock.getLicenseDBDiff(any())).willReturn(diffResult);
         given(this.licenseServiceMock.addLicenseType(any(),any() , any())).willReturn(RequestStatus.SUCCESS);
         given(this.sw360ReportServiceMock.getLicenseBuffer()).willReturn(ByteBuffer.allocate(10000));
         obligation1 = new Obligation();
@@ -433,6 +440,26 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isAccepted());
+    }
+
+    @Test
+    public void should_document_get_licensedb_diff() throws Exception {
+        mockMvc.perform(get("/api/licenses/import/LicenseDB/diff")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_return_500_when_licensedb_diff_has_error() throws Exception {
+        Map<String, String> errorResult = new LinkedHashMap<>();
+        errorResult.put("error", "LicenseDB integration is disabled.");
+        given(this.licenseServiceMock.getLicenseDBDiff(any())).willReturn(errorResult);
+
+        mockMvc.perform(get("/api/licenses/import/LicenseDB/diff")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test

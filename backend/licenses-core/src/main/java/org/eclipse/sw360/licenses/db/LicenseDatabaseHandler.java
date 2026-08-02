@@ -1211,6 +1211,86 @@ public class LicenseDatabaseHandler {
         }
     }
 
+    public Map<String, String> getLicenseDBDiff(User user) {
+        Map<String, String> result = new HashMap<>();
+
+        String enabled;
+        try {
+            enabled = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_ENABLED);
+        } catch (SW360Exception e) {
+            result.put("error", "Failed to read LicenseDB config.");
+            return result;
+        }
+        if (!"true".equals(enabled)) {
+            result.put("error", "LicenseDB integration is disabled.");
+            return result;
+        }
+
+        String baseUrl;
+        String username;
+        String password;
+        try {
+            baseUrl = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_BASE_URL);
+            username = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_USERNAME);
+            password = SW360Utils.getConfigByKey(SW360ConfigKeys.LICENSEDB_PASSWORD);
+        } catch (SW360Exception e) {
+            result.put("error", "Failed to read LicenseDB credentials.");
+            return result;
+        }
+        if (isNullOrEmpty(baseUrl) || isNullOrEmpty(username) || isNullOrEmpty(password)) {
+            result.put("error", "LicenseDB configuration is incomplete.");
+            return result;
+        }
+
+        List<LicenseDBLicenseDTO> licenseDbLicenses;
+        try {
+            LicenseDBConnector connector = createLicenseDBConnector(baseUrl, username, password);
+            licenseDbLicenses = connector.fetchAllLicenses();
+        } catch (SW360Exception e) {
+            log.error("Failed to fetch licenses from LicenseDB", e);
+            result.put("error", "Failed to connect to LicenseDB: " + e.getMessage());
+            return result;
+        }
+
+        List<License> sw360Licenses = licenseRepository.getAll();
+
+        Set<String> licenseDbShortnames = new HashSet<>();
+        for (LicenseDBLicenseDTO dto : licenseDbLicenses) {
+            if (dto.getShortname() != null) {
+                licenseDbShortnames.add(dto.getShortname());
+            }
+        }
+
+        Set<String> sw360Shortnames = new HashSet<>();
+        int syncedCount = 0;
+        for (License license : sw360Licenses) {
+            if (license.getShortname() != null) {
+                sw360Shortnames.add(license.getShortname());
+            } else if (license.getId() != null) {
+                sw360Shortnames.add(license.getId());
+            }
+            if (license.getExternalIds() != null
+                    && license.getExternalIds().containsKey(LicenseDBDataMapper.EXTERNAL_ID_LICENSEDB)) {
+                syncedCount++;
+            }
+        }
+
+        Set<String> sw360Only = new HashSet<>(sw360Shortnames);
+        sw360Only.removeAll(licenseDbShortnames);
+
+        Set<String> licenseDbOnly = new HashSet<>(licenseDbShortnames);
+        licenseDbOnly.removeAll(sw360Shortnames);
+
+        result.put("totalSw360", String.valueOf(sw360Licenses.size()));
+        result.put("totalLicenseDb", String.valueOf(licenseDbLicenses.size()));
+        result.put("synced", String.valueOf(syncedCount));
+        result.put("sw360OnlyCount", String.valueOf(sw360Only.size()));
+        result.put("licenseDbOnlyCount", String.valueOf(licenseDbOnly.size()));
+        result.put("sw360Only", String.join(",", sw360Only));
+        result.put("licenseDbOnly", String.join(",", licenseDbOnly));
+        return result;
+    }
+
     private LicenseDBConnector createLicenseDBConnector(String baseUrl, String username, String password) {
         LicenseDBTokenManager tokenManager = new LicenseDBTokenManager(baseUrl, username, password);
         return new LicenseDBConnector(baseUrl, tokenManager);
