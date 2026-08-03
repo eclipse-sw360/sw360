@@ -58,7 +58,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: webiny/action-conventional-commits@7f91b1595ca1951cdb671ddc9f07a49081ec5b69 # v1.4.2
 
       - name: Verify license headers
@@ -172,12 +172,55 @@ jobs:
         run: |
           mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=. jacoco:report
 
+      - name: Extract coverage metrics
+        id: coverage-metrics
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob
+          import os
+          import xml.etree.ElementTree as ET
+
+          files = glob.glob("**/target/site/jacoco/jacoco.xml", recursive=True)
+          counter_types = ("LINE", "INSTRUCTION", "BRANCH")
+          totals = {kind: {"missed": 0, "covered": 0} for kind in counter_types}
+
+          for xml_file in files:
+            tree = ET.parse(xml_file)
+            root = tree.getroot()
+            for counter in root.findall("counter"):
+              ctype = counter.get("type")
+              if ctype in totals:
+                totals[ctype]["missed"] += int(counter.get("missed", "0"))
+                totals[ctype]["covered"] += int(counter.get("covered", "0"))
+
+          def ratio(covered, missed):
+            total = covered + missed
+            if total == 0:
+              return "N/A"
+            return f"{(covered * 100.0 / total):.2f}%"
+
+          github_output = os.environ["GITHUB_OUTPUT"]
+          with open(github_output, "a", encoding="utf-8") as out:
+            out.write(f"coverage_report_files={len(files)}\n")
+            for kind in counter_types:
+              covered = totals[kind]["covered"]
+              missed = totals[kind]["missed"]
+              out.write(f"{kind.lower()}_covered={covered}\n")
+              out.write(f"{kind.lower()}_missed={missed}\n")
+              out.write(f"{kind.lower()}_coverage={ratio(covered, missed)}\n")
+          PY
+
       - name: Publish Test Results Summary
         if: always()
         run: |
           TOTAL="${{ steps.unit-tests.outputs.unit_tests_total }}"
           FAILED="${{ steps.unit-tests.outputs.unit_tests_failed }}"
           SKIPPED="${{ steps.unit-tests.outputs.unit_tests_skipped }}"
+          COVERAGE_FILES="${{ steps.coverage-metrics.outputs.coverage_report_files }}"
+          LINE_COVERAGE="${{ steps.coverage-metrics.outputs.line_coverage }}"
+          INSTRUCTION_COVERAGE="${{ steps.coverage-metrics.outputs.instruction_coverage }}"
+          BRANCH_COVERAGE="${{ steps.coverage-metrics.outputs.branch_coverage }}"
 
           echo "## ✅ Unit and Integration Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -186,6 +229,15 @@ jobs:
           echo "| Total Tests Run | ${TOTAL:-N/A} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests Failed | ${FAILED:-N/A} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests Skipped | ${SKIPPED:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Coverage Summary (JaCoCo)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| JaCoCo XML Reports Found | ${COVERAGE_FILES:-0} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Line Coverage | ${LINE_COVERAGE:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Instruction Coverage | ${INSTRUCTION_COVERAGE:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch Coverage | ${BRANCH_COVERAGE:-N/A} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload JaCoCo Reports
         if: always()

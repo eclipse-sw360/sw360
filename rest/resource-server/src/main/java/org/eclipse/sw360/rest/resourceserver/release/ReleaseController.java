@@ -555,10 +555,19 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The release object to be updated.",
                     schema = @Schema(implementation = Release.class))
             @RequestBody Map<String, Object> reqBodyMap
-    ) throws TException {
+    ) throws URISyntaxException, TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        // Normalize vendorId from a possible self-link URI to a bare ID and drop the
+        // DB-loaded vendor object so ThriftValidate.prepareRelease cannot overwrite it.
+        if (updateRelease.isSetVendorId()) {
+            URI vendorURI = new URI(updateRelease.getVendorId());
+            String path = vendorURI.getPath();
+            String vendorId = path.substring(path.lastIndexOf('/') + 1);
+            updateRelease.setVendorId(vendorId);
+            sw360Release.unsetVendor();
+        }
         attachmentService.preserveImmutableAttachmentFields(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
         attachmentService.setCheckedAttachmentDataFromRequest(
@@ -1880,8 +1889,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String releaseId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (user == null || user.getEmail() == null) {
+            throw new BadRequestClientException("User information is invalid.");
+        }
+
         Release releaseById = releaseService.getReleaseForUserById(releaseId, user);
         Set<String> subscribers = releaseById.getSubscribers();
+        if (subscribers == null) {
+            subscribers = new HashSet<>();
+        }
+
         if (subscribers.contains(user.getEmail())) {
             releaseService.unsubscribeRelease(user, releaseId);
             return new ResponseEntity<>("Release has been unsubscribed", HttpStatus.OK);
