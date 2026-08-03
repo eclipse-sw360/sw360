@@ -808,8 +808,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
             final String releaseId = release.getId();
 
-            if (approvedCliAttachments.size() == 1) {
-                final Attachment filteredAttachment = approvedCliAttachments.get(0);
+            if (approvedCliAttachments.size() > 1) {
+                log.warn("Release '{}' has {} accepted CLI files. Obligations from all accepted CLIs will be aggregated.",
+                        SW360Utils.printName(release), approvedCliAttachments.size());
+            }
+
+            for (Attachment filteredAttachment : approvedCliAttachments) {
                 final String attachmentContentId = filteredAttachment.getAttachmentContentId();
 
                 if (releaseIdToAcceptedCLI.containsKey(releaseId)
@@ -830,7 +834,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                                 .createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
                     }
                 } catch (TException exception) {
-                    log.error(String.format("Error fetchinig Sw360ProjectService.javalicense Information for attachment: %s in release: %s",
+                    log.error(String.format("Error fetching license Information for attachment: %s in release: %s",
                             filteredAttachment.getFilename(), releaseId), exception);
                 }
             }
@@ -862,6 +866,28 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             log.error("Failed to set obligation status for project!", e);
         }
         return obligationStatusMap;
+    }
+
+    public List<String> getReleasesWithMultipleCLIWarnings(List<Release> releases) {
+        List<String> warnings = new ArrayList<>();
+        for (Release release : releases) {
+            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            if (approvedCliAttachments.isEmpty()) {
+                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+            }
+            if (approvedCliAttachments.size() > 1) {
+                String releaseName = SW360Utils.printName(release);
+                List<String> cliFileNames = approvedCliAttachments.stream()
+                        .map(Attachment::getFilename)
+                        .collect(Collectors.toList());
+                warnings.add(String.format(
+                        "Release '%s' has %d accepted CLI files (%s). "
+                                + "Obligations from all CLI files are aggregated. "
+                                + "Please review and ensure only the correct/latest CLI is accepted.",
+                        releaseName, approvedCliAttachments.size(), String.join(", ", cliFileNames)));
+            }
+        }
+        return warnings;
     }
 
     public Set<Project> searchLinkingProjects(String projectId, User sw360User) throws TException {
