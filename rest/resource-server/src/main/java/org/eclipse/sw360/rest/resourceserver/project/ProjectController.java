@@ -3264,7 +3264,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (!releases.isEmpty()) {
                 final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
                 obligationStatusMap = CommonUtils.nullToEmptyMap(projectService.setLicenseInfoWithObligations(
-                        Maps.newHashMap(), releaseIdToAcceptedCLI, releases, sw360User));
+                        Maps.newHashMap(), releaseIdToAcceptedCLI, releases, sw360User, id, new ArrayList<>()));
             }
         }
 
@@ -3558,7 +3558,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            description = "Get license obligation data of project tab.",
+            description = "Get license obligation data of project tab. Look out for an optional **warnings** field (list of strings) in the response: it appears when a release has multiple CLI files, indicating the first CLI was selected automatically.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -3626,8 +3626,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         if (releaseView) {
             final List<LicenseInfoParsingResult> licenseInfoWithObligations = new ArrayList<>();
+            List<String> warnings = new ArrayList<>();
             List<LicenseInfoParsingResult> processedLicenses = projectService.processLicenseInfoWithObligations(
-                    licenseInfoWithObligations, releaseIdToAcceptedCLI, releases, sw360User);
+                    licenseInfoWithObligations, releaseIdToAcceptedCLI, releases, sw360User, id, warnings);
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
                 Set<Release> limitedSet = releaseService
@@ -3639,10 +3640,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("processedLicenses", processedLicenses);
             responseBody.put("obligationStatusMap", obligationStatusMap);
+            if (!warnings.isEmpty()) {
+                responseBody.put("warnings", warnings);
+            }
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         } else {
+            List<String> warnings = new ArrayList<>();
             obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap,
-                    releaseIdToAcceptedCLI, releases, sw360User);
+                    releaseIdToAcceptedCLI, releases, sw360User, id, warnings);
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
                 if(statusInfo.getStatus() == null){
@@ -3656,13 +3661,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
+            if (!warnings.isEmpty()) {
+                responseBody.put("warnings", warnings);
+            }
             HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
             return new ResponseEntity<>(halObligation, HttpStatus.OK);
         }
     }
 
     @Operation(
-            description = "Get obligation data of project tab.",
+            description = "Get obligation data of project tab. Look out for an optional **warnings** field (list of strings) in the response: it appears when a release has multiple CLI files, indicating the first CLI was selected automatically.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -3705,10 +3713,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             oblData = projectService.setObligationsFromAdminSection(sw360User, new HashMap(), sw360Project, oblLevel);
         }
 
+        List<String> warnings = new ArrayList<>();
         if (oblLevel.equalsIgnoreCase("License")) {
             filterData = filterObligationsByLevel(obligationStatusMap, null);
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(filterData));
-            oblData = projectService.setLicenseInfoWithObligations(filterData, releaseIdToAcceptedCLI, releases, sw360User);
+            oblData = projectService.setLicenseInfoWithObligations(filterData, releaseIdToAcceptedCLI, releases, sw360User, id, warnings);
 
             for (Map.Entry<String, ObligationStatusInfo> entry : oblData.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
@@ -3736,6 +3745,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
 
         Map<String, Object> responseBody = createPaginationMetadata(pageable, oblData);
+        if (oblLevel.equalsIgnoreCase("License") && !warnings.isEmpty()) {
+            responseBody.put("warnings", warnings);
+        }
         HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
         return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
@@ -3887,7 +3899,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         } else {
-            obligationStatusMapFromReport = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User);
+            obligationStatusMapFromReport = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User, id, new ArrayList<>());
         }
 
         if (licenseObligation.size() == 0) {
@@ -4033,7 +4045,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 existingObligationStatusMap,
                 releaseIdToAcceptedCLI,
                 releases,
-                sw360User
+                sw360User,
+                sw360Project.getId(),
+                new ArrayList<>()
         );
 
 
@@ -4943,4 +4957,5 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .forEach(responseGroups::add);
         return new ArrayList<>(responseGroups);
     }
+
 }
