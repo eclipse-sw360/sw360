@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
@@ -72,6 +73,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Vendor", description = "Operations related to Vendors on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`fullname` or `shortname`].")
 public class VendorController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String VENDORS_URL = "/vendors";
 
