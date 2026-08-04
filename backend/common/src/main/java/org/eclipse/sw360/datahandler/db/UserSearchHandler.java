@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -140,7 +141,7 @@ public class UserSearchHandler extends BaseNouveauSearchHandler<User> {
      * Similar to ProjectSearchHandler pattern.
      */
     @Override
-    protected List<String> mapSortColumn(int sortColumnNumber) {
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
         return switch (UserSortColumn.findByValue(sortColumnNumber)) {
             case UserSortColumn.BY_GIVENNAME -> List.of("givenname_sort", "lastname_sort", "email_sort");
             case UserSortColumn.BY_LASTNAME -> List.of("lastname_sort", "givenname_sort", "email_sort");
@@ -154,4 +155,3 @@ public class UserSearchHandler extends BaseNouveauSearchHandler<User> {
     }
 
 }
-
