@@ -874,5 +874,5 @@ public abstract class BaseNouveauSearchHandler<T> {
      * }</pre>
      * </p>
      */
-    protected abstract List<String> mapSortColumn(int sortColumnNumber);
+    protected abstract @NonNull @Unmodifiable List<String> mapSortColumn(int sortColumnNumber);
 }

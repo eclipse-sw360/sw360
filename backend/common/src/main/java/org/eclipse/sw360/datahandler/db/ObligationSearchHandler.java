@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationSortColumn;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -110,7 +111,7 @@ public class ObligationSearchHandler extends BaseNouveauSearchHandler<Obligation
     }
 
     @Override
-    protected List<String> mapSortColumn(int sortColumnNumber) {
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
         return switch (ObligationSortColumn.findByValue(sortColumnNumber)) {
             case ObligationSortColumn.BY_TITLE -> List.of("title_sort", SCORE_SORTING_FIELD, "text_sort");
             case ObligationSortColumn.BY_TEXT -> List.of("text_sort", SCORE_SORTING_FIELD, "title_sort");
