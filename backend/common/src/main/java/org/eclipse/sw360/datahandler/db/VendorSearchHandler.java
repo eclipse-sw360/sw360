@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -124,7 +125,7 @@ public class VendorSearchHandler extends BaseNouveauSearchHandler<Vendor> {
     // -------------------------------------------------------------------------
 
     @Override
-    protected List<String> mapSortColumn(int sortColumnNumber) {
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
         return switch (VendorSortColumn.findByValue(sortColumnNumber)) {
             case VendorSortColumn.BY_FULLNAME -> List.of("fullname_sort", "shortname_sort");
             case VendorSortColumn.BY_SHORTNAME -> List.of("shortname_sort", "fullname_sort");
