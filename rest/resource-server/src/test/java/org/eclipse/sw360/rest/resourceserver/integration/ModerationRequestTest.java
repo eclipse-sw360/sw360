@@ -438,7 +438,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
 
     @Test
     public void should_list_moderation_requests_empty_page() throws IOException, TException {
-        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any())).willReturn(java.util.List.of());
+        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(java.util.List.of());
         given(moderationServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn(0L);
 
         HttpHeaders headers = getHeaders(port);
@@ -458,7 +458,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         public void should_search_moderation_requests_with_exact_filters() throws IOException, TException {
         ModerationRequest mrSearch = new ModerationRequest(openMr);
         mrSearch.setId("MR-S1");
-        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any()))
+        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any()))
             .willReturn(new java.util.ArrayList<>(java.util.List.of(mrSearch)));
 
         HttpHeaders headers = getHeaders(port);
@@ -478,7 +478,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         public void should_search_moderation_requests_with_lucene() throws IOException, TException {
         ModerationRequest mrSearch = new ModerationRequest(openMr);
         mrSearch.setId("MR-L1");
-        given(moderationServiceMock.refineSearch(any(), any()))
+        given(moderationServiceMock.refineSearch(any(), any(), any()))
             .willReturn(new java.util.ArrayList<>(java.util.List.of(mrSearch)));
 
         HttpHeaders headers = getHeaders(port);
@@ -561,7 +561,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         mr2.setId("MR-3");
         java.util.List<ModerationRequest> list = new java.util.ArrayList<>(java.util.List.of(mr1, mr2));
 
-        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any())).willReturn(list);
+        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(list);
         given(moderationServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn(2L);
 
         HttpHeaders headers = getHeaders(port);
@@ -601,7 +601,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         dupMr.setDocumentCreationInfoAdditions(new org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation().setId("DC1"));
         dupMr.setDocumentCreationInfoDeletions(new org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation().setId("DC1"));
 
-        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any())).willReturn(new java.util.ArrayList<>(java.util.List.of(dupMr)));
+        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(new java.util.ArrayList<>(java.util.List.of(dupMr)));
         given(moderationServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn(1L);
 
         HttpHeaders headers = getHeaders(port);

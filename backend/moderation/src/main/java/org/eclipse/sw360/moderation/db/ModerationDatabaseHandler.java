@@ -138,8 +138,8 @@ public class ModerationDatabaseHandler {
         return repository.getRequestsByModeratorAndRequestingUserWithPaginationNoFilter(moderator, pageData);
     }
 
-    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
-        return repository.searchModerationRequestsByExactValues(subQueryRestrictions, pageData);
+    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData, User SW360User) {
+        return repository.searchModerationRequestsByExactValues(subQueryRestrictions, pageData, SW360User);
     }
 
 
