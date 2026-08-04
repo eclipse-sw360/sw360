@@ -896,6 +896,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
      * @return List of queries
      * @param <T> Class for which filtering
      */
+    @Deprecated
     public static <T> @NotNull List<String> createComplexQuery(
             Class<T> type, String text,
             @NotNull Map<String, Map<String, Set<String>>> subQueryRestrictions
@@ -985,6 +986,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         return "( " + OR.join(queryParts) + " ) ";
     }
 
+    @Deprecated
     public static @NotNull String prepareWildcardQuery(@NotNull String query) {
         // Note: Nouveau does NOT support leading wildcards (*term), only trailing (term*)
         //
