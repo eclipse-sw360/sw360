@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_DATE_AS_DOUBLE;
@@ -90,8 +90,9 @@ public abstract class BaseNouveauSearchHandler<T> {
      */
     public static final int EDGE_NGRAM_SHORT_MAX_LENGTH = 10;
 
-    private static final Joiner AND = Joiner.on(" AND ");
-    private static final Joiner OR = Joiner.on(" OR ");
+    protected static final Joiner AND = Joiner.on(" AND ");
+    protected static final Joiner OR = Joiner.on(" OR ");
+    protected static final Joiner SPACE = Joiner.on(" ");
 
     /**
      * Built index definition that bundles the generated index function with derived
@@ -538,10 +539,12 @@ public abstract class BaseNouveauSearchHandler<T> {
             PaginationData pageData
     ) {
         List<String> sortColumns = getSortColumns(pageData);
-        Map<String, String> simplified = new HashMap<>();
-        for (var restriction : subQueryRestrictions.entrySet()) {
-            simplified.put(restriction.getKey(), String.join(" ", restriction.getValue()));
-        }
+        Map<String, String> simplified = subQueryRestrictions.entrySet()
+                .parallelStream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> SPACE.join(e.getValue())
+                ));
 
         String query = queryGenerator.apply(simplified);
         Map<PaginationData, List<T>> result = connector.searchView(
@@ -590,6 +593,69 @@ public abstract class BaseNouveauSearchHandler<T> {
     }
 
     /**
+     * Perform a complex search with the provided field restrictions and
+     * pagination. The function helps generate results where query needs to
+     * contain {@code AND} or {@code OR} joiners.
+     *
+     * <p>
+     * Provide the restrictions in format
+     * <pre>
+     * {@code
+     * {
+     *   "OR": {
+     *     "field1": "val1",
+     *     "field2": "val1"
+     *   },
+     *   "AND": {
+     *     "field3": "val2",
+     *     "field4": "val3"
+     *   }
+     * }
+     * }
+     * </pre>
+     * </p>
+     *
+     * <p>
+     * If the {@code joiner} is {@code AND}, then final query sent to Nouveau
+     * will be:
+     * {@code (field1:"val1" OR field2:"val1") AND (field3:"val2" AND field4:"val3")}
+     * </p>
+     *
+     * @param connector Nouveau Aware DB Connector to use.
+     * @param complexQueryRestrictions Complex map of field names to their accepted values.
+     * @param joiner    How to join the query parts?
+     * @param pageData  Pagination information.
+     * @return Paginated search results.
+     */
+    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> complexBaseSearch(
+            @NonNull NouveauLuceneAwareDatabaseConnector connector,
+            final @NonNull Map<String, Map<String, Set<String>>> complexQueryRestrictions,
+            final @NonNull Joiner joiner,
+            PaginationData pageData
+    ) {
+        List<String> sortColumns = getSortColumns(pageData);
+        Map<String, Map<String, String>> simplified = complexQueryRestrictions
+                .entrySet()
+                .parallelStream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().entrySet().stream()
+                                .collect(Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        innerEntry -> SPACE.join(innerEntry.getValue())
+                                ))
+                ));
+
+        String query = joiner.join(createComplexQuery(simplified));
+
+        Map<PaginationData, List<T>> result = connector.searchView(
+                clazz, luceneSearchView.getIndexName(), query, pageData, sortColumns);
+        PaginationData respPageData = result.keySet().iterator().next();
+        List<T> items = result.values().iterator().next();
+        return Collections.singletonMap(respPageData, items);
+    }
+
+    /**
      * Simple text search (no pagination) - sanitises the input before forwarding to the connector.
      */
     public final List<T> search(
@@ -630,6 +696,60 @@ public abstract class BaseNouveauSearchHandler<T> {
             parts.add(createFieldQueryRestriction(fieldName, filterValue));
         }
         return parts;
+    }
+
+    /**
+     * Create query for complex scenarios based on "OR" or "AND" keys for Nouveau queries.
+     * For example input like bellow:<br />
+     * <pre>
+     * {@code
+     * {
+     *   "OR": {
+     *     "field1": "val1",
+     *     "field2": "val1"
+     *   },
+     *   "AND": {
+     *     "field3": "val2"
+     *   }
+     * }
+     * }
+     * </pre>
+     * You will get the output:
+     * <pre>
+     * {@code
+     * List<String> query = [
+     *   "(( field1:"val1" ) OR ( field2:"val1" ))",
+     *   "( field3:"val2" )"
+     * ]
+     * }
+     * </pre>
+     * This can later be joined using another joiner like and to get final query:
+     * {@code (( field1:"val1" ) OR ( field2:"val1" )) AND
+     *  ( field3:"val2" )}
+     * @param subQueryRestrictions Restrictions with joiner. See description for example.
+     * @return List of queries
+     */
+    private @NonNull @Unmodifiable List<String> createComplexQuery(
+            @NonNull Map<String, Map<String, String>> subQueryRestrictions
+    ) {
+        List<String> subQueries = new ArrayList<>();
+        for (Map.Entry<String, Map<String, String>> restriction : subQueryRestrictions.entrySet()) {
+            boolean isPlural = restriction.getValue().size() > 1;
+            String query = switch (restriction.getKey()) {
+                case "OR" -> buildQueryFromRestrictionsWithOr(restriction.getValue());
+                case "AND" -> buildQueryFromRestrictionsWithAnd(restriction.getValue());
+                default -> null;
+            };
+            if (query == null) {
+                continue;
+            }
+            if (isPlural) {
+                subQueries.add("(" + query + ")");
+            } else {
+                subQueries.add(query);
+            }
+        }
+        return subQueries;
     }
 
     /**
