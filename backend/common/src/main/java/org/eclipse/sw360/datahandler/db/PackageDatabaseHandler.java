@@ -190,13 +190,6 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge Type!");
         }
 
-        String purlError = validatePurl(pkg.getPurl());
-        if (purlError != null) {
-            log.error(String.format("Invalid PURL for package: '%s' - %s", SW360Utils.printName(pkg), purlError));
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
-                    .setMessage(purlError);
-        }
-
         try {
             PackageURL purl = new PackageURL(pkg.getPurl());
             pkg.setPackageManager(PackageManager.valueOf(purl.getType().toUpperCase()));
@@ -290,12 +283,6 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(updatedPkg.getReleaseId()), packageRepository)) {
             log.error(String.format("Invalid linked release id %s for package: %s ", updatedPkg.getReleaseId(), packageId));
             return RequestStatus.INVALID_INPUT;
-        }
-
-        String purlError = validatePurl(updatedPkg.getPurl());
-        if (purlError != null) {
-            log.error(String.format("Invalid PURL for package: %s - %s", packageId, purlError));
-            throw fail(400, "%s", purlError);
         }
 
         try {
@@ -468,76 +455,4 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
           return packageRepository.getPackagesWithPagination(pageData);
     }
 
-    /**
-     * Validates pURL structure and returns error message with position, or null if valid.
-     */
-    private String validatePurl(String purl) {
-        if (purl == null || purl.isEmpty()) {
-            return "pURL is empty or null. Expected format: pkg:type/namespace/name@version";
-        }
-        if (!purl.startsWith("pkg:")) {
-            return "pURL must start with 'pkg:' but found '" + purl.substring(0, Math.min(4, purl.length()))
-                    + "' at position 1 in '" + purl + "'";
-        }
-
-        // Strip subpath (#) and qualifiers (?)
-        String core = purl.substring(4);
-        int hashIdx = core.indexOf('#');
-        if (hashIdx >= 0) core = core.substring(0, hashIdx);
-        int qIdx = core.indexOf('?');
-        if (qIdx >= 0) core = core.substring(0, qIdx);
-
-        // Type: everything before first '/'
-        int slashIdx = core.indexOf('/');
-        if (slashIdx < 0) {
-            return "pURL is missing '/' separator after type at position " + (5 + core.length())
-                    + " in '" + purl + "'. Expected format: pkg:type/namespace/name@version";
-        }
-
-        String type = core.substring(0, slashIdx);
-        if (type.isEmpty()) {
-            return "pURL has empty type at position 5 in '" + purl + "'. Expected format: pkg:type/namespace/name@version";
-        }
-        if (Character.isDigit(type.charAt(0))) {
-            return "pURL type '" + type + "' starts with a digit '" + type.charAt(0)
-                    + "' at position 5 in '" + purl + "'. Type must start with a letter";
-        }
-        for (int i = 0; i < type.length(); i++) {
-            char c = type.charAt(i);
-            if (!Character.isLetterOrDigit(c) && c != '.' && c != '+' && c != '-') {
-                return "pURL type '" + type + "' contains invalid character '" + c
-                        + "' at position " + (5 + i) + " in '" + purl + "'";
-            }
-        }
-
-        // Name/version part: everything after type/
-        String rest = core.substring(slashIdx + 1);
-        if (rest.isEmpty()) {
-            return "pURL is missing package name after '/' at position " + (5 + slashIdx + 1)
-                    + " in '" + purl + "'. Expected format: pkg:type/namespace/name@version";
-        }
-
-        // Version: after last '@'
-        int atIdx = rest.lastIndexOf('@');
-        if (atIdx < 0) {
-            return "pURL is missing version separator '@' at position " + (5 + slashIdx + 1 + rest.length())
-                    + " in '" + purl + "'. Expected format: pkg:type/namespace/name@version";
-        }
-
-        String version = rest.substring(atIdx + 1);
-        if (version.isEmpty()) {
-            return "pURL has empty version after '@' at position " + (5 + slashIdx + 1 + atIdx + 1)
-                    + " in '" + purl + "'. Expected format: pkg:type/namespace/name@version";
-        }
-
-        String namespaceName = rest.substring(0, atIdx);
-        int lastSlash = namespaceName.lastIndexOf('/');
-        String name = lastSlash >= 0 ? namespaceName.substring(lastSlash + 1) : namespaceName;
-        if (name.isEmpty()) {
-            return "pURL has empty package name before '@' at position " + (5 + slashIdx + 1 + atIdx)
-                    + " in '" + purl + "'. Expected format: pkg:type/namespace/name@version";
-        }
-
-        return null; // valid
-    }
 }
