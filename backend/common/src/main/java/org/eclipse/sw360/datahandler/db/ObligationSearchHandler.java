@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 public class ObligationSearchHandler extends BaseNouveauSearchHandler<Obligation> {
@@ -84,15 +82,31 @@ public class ObligationSearchHandler extends BaseNouveauSearchHandler<Obligation
     public Map<PaginationData, List<Obligation>> searchWithPagination(
             String searchText, ObligationLevel obligationLevel, PaginationData pageData
     ) {
-        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
+        Map<String, Map<String, Set<String>>> restrictions = new HashMap<>();
+
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
-            subQueryRestrictions.put(Obligation._Fields.TITLE.getFieldName(), Collections.singleton(searchText));
-            subQueryRestrictions.put(Obligation._Fields.TEXT.getFieldName(), Collections.singleton(searchText));
+            Map<String, Set<String>> textFilter = new HashMap<>();
+
+            textFilter.put(
+                    Obligation._Fields.TITLE.getFieldName(),
+                    Collections.singleton(searchText));
+            textFilter.put(
+                    Obligation._Fields.TEXT.getFieldName(),
+                    Collections.singleton(searchText));
+
+            restrictions.put("OR", textFilter);
         }
         if (obligationLevel != null) {
-            subQueryRestrictions.put(Obligation._Fields.OBLIGATION_LEVEL.getFieldName(), Collections.singleton(obligationLevel.toString()));
+            Map<String, Set<String>> levelFilter = new HashMap<>();
+            levelFilter.put(
+                    Obligation._Fields.OBLIGATION_LEVEL.getFieldName(),
+                    Collections.singleton(obligationLevel.toString())
+            );
+
+            restrictions.put("AND", levelFilter);
         }
-        return baseSearchWithOr(connector, subQueryRestrictions, pageData);
+
+        return complexBaseSearch(connector, restrictions, AND, pageData);
     }
 
     @Override
