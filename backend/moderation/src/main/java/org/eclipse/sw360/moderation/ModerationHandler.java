@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -264,8 +263,9 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
-        return handler.searchModerationRequestsByExactValues(subQueryRestrictions, pageData);
+    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions,
+                                                                         PaginationData pageData, User SW360User) throws TException {
+        return handler.searchModerationRequestsByExactValues(subQueryRestrictions, pageData, SW360User);
     }
 
     @Override
@@ -375,9 +375,9 @@ public class ModerationHandler implements ModerationService.Iface {
 
     @Override
     public List<ModerationRequest> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions,
-            PaginationData pageData) throws TException {
+            PaginationData pageData, User SW360User) throws TException {
         Map<PaginationData, List<ModerationRequest>> result = modSearchHandler.search(text, subQueryRestrictions,
-                pageData);
+                pageData, SW360User);
         return result.values().iterator().next();
     }
 

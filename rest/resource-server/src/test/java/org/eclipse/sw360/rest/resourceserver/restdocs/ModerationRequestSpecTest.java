@@ -178,8 +178,8 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
         given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
         given(this.moderationRequestServiceMock.getRequestsByRequestingUser(any(), any())).willReturn(requestsByState);
-                given(this.moderationRequestServiceMock.searchModerationRequestsByExactValues(anyMap(), any())).willReturn(new ArrayList<>(moderationRequests));
-                given(this.moderationRequestServiceMock.refineSearch(anyMap(), any())).willReturn(new ArrayList<>(moderationRequests));
+                given(this.moderationRequestServiceMock.searchModerationRequestsByExactValues(anyMap(), any(), any())).willReturn(new ArrayList<>(moderationRequests));
+                given(this.moderationRequestServiceMock.refineSearch(anyMap(), any(), any())).willReturn(new ArrayList<>(moderationRequests));
     }
 
     @Test

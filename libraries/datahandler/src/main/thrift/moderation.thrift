@@ -92,6 +92,17 @@ struct ModerationRequest {
 
 }
 
+enum ModerationSortColumn {
+    BY_SCORE = 1,
+    BY_DOCUMENT_NAME = 2,
+    BY_DOCUMENT_TYPE = 3,
+    BY_COMPONENT_TYPE = 4,
+    BY_REQUESTING_USER = 5,
+    BY_MODERATION_STATE = 6,
+    BY_REQUESTING_USER_DEPT = 7,
+    BY_TIMESTAMP = 8,
+}
+
 service ModerationService {
 
     /**
@@ -338,12 +349,12 @@ service ModerationService {
     /**
      * search moderation requests in database that match subQueryRestrictions
      **/
-    list<ModerationRequest> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: PaginationData pageData);
+    list<ModerationRequest> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: PaginationData pageData, 4: User sw360User);
 
     /**
      * search moderation requests in database that match subQueryRestrictions without lucene search
      **/
-    list<ModerationRequest> searchModerationRequestsByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData);
+    list<ModerationRequest> searchModerationRequestsByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData, 3: User sw360User);
 
     /**
      * get count of moderation requests by moderation state

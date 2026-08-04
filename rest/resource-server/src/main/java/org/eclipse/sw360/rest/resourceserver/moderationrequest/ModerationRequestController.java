@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.SchemaProperty;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
@@ -90,6 +91,10 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "ModerationRequests", description = "Operations related to moderation requests on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score`, " +
+        "`documentName`, `documentType`, `componentType`, `moderationState`, `requestingUser`, " +
+        "`requestDate` or `requestingUserDepartment`].")
 public class ModerationRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     private static final String REVIEWER = "reviewer";
@@ -153,24 +158,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
             requestingUserDepartment, moderationState, requestDate, moderators);
 
         if (luceneSearch) {
-            String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
-            String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
-            addFilterValue(filterMap, moderatorKey, sw360User.getEmail());
-            addFilterValue(filterMap, requestingUserKey, sw360User.getEmail());
-
-            if (filterMap.containsKey(ModerationRequest._Fields.DOCUMENT_NAME.getFieldName())) {
-                Set<String> values = filterMap.get(ModerationRequest._Fields.DOCUMENT_NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Project._Fields.NAME.getFieldName(), values);
-            }
-            moderationRequests = sw360ModerationRequestService.refineSearch(filterMap, pageable);
+            moderationRequests = sw360ModerationRequestService.refineSearch(filterMap, pageable, sw360User);
         } else {
-            String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
-            String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
-            addFilterValue(filterMap, moderatorKey, sw360User.getEmail());
-            addFilterValue(filterMap, requestingUserKey, sw360User.getEmail());
-            moderationRequests = sw360ModerationRequestService.searchModerationRequestsByExactValues(filterMap, pageable);
+            moderationRequests = sw360ModerationRequestService.searchModerationRequestsByExactValues(filterMap, pageable, sw360User);
         }
 
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
@@ -213,13 +203,6 @@ public class ModerationRequestController implements RepresentationModelProcessor
             filterMap.put(ModerationRequest._Fields.MODERATORS.getFieldName(), CommonUtils.splitToSet(moderators));
         }
         return filterMap;
-    }
-
-    private void addFilterValue(Map<String, Set<String>> filterMap, String key, String value) {
-        Set<String> existingValues = filterMap.get(key);
-        Set<String> mutableValues = existingValues == null ? new HashSet<>() : new HashSet<>(existingValues);
-        mutableValues.add(value);
-        filterMap.put(key, mutableValues);
     }
 
     @Operation(
