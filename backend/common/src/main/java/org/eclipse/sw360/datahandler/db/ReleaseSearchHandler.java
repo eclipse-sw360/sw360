@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -167,7 +168,7 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
     // -------------------------------------------------------------------------
 
     @Override
-    protected List<String> mapSortColumn(int sortColumnNumber) {
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
         String revDir = "-";
         return switch (ReleaseSortColumn.findByValue(sortColumnNumber)) {
             case ReleaseSortColumn.BY_NAME -> List.of("name_sort", revDir + "version_sort", revDir + "createdOn");

@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -177,7 +178,7 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
     // -------------------------------------------------------------------------
 
     @Override
-    protected List<String> mapSortColumn(int sortColumnNumber) {
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
         String revDir = "-";
         return switch (ComponentSortColumn.findByValue(sortColumnNumber)) {
             case ComponentSortColumn.BY_NAME -> List.of("name_sort", revDir + "createdOn");
