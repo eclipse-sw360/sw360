@@ -119,26 +119,39 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     public boolean addDesignDoc(@NotNull NouveauDesignDocument designDocument)
             throws RuntimeException {
         NouveauDesignDocument documentFromDb = this.getNouveauDesignDocument(designDocument.getId());
-        if (documentFromDb == null) {
+        if (documentFromDb == null || (documentFromDb.getNouveau() == null && designDocument.getNouveau() != null)) {
+            // New design document or existing doc has no nouveau section yet.
+            // No merge checks required.
             return putNouveauDesignDocument(designDocument);
         }
 
-        AtomicBoolean indexMissMatched = new AtomicBoolean(false);
+        AtomicBoolean requiresUpdate = new AtomicBoolean(false);
         if (!designDocument.equals(documentFromDb)) {
             designDocument.setRev(documentFromDb.getRev());
-            if (documentFromDb.getNouveau() != null) {
+            if (designDocument.getNouveau() != null) {
+                // Adding a brand-new index key must persist the design doc.
+                designDocument.getNouveau().asMap().forEach((key, value) -> {
+                    if (!documentFromDb.getNouveau().has(key)) {
+                        requiresUpdate.set(true);
+                    }
+                });
+
                 // Add missing indexes from existing DDOC as to not overwrite them
                 // Check if any index definition exists but does not match
                 documentFromDb.getNouveau().asMap().forEach((key, value) -> {
                     if (! designDocument.getNouveau().has(key)) {
                         designDocument.getNouveau().add(key, value);
                     } else if (!designDocument.getNouveau().get(key).equals(value)) {
-                        indexMissMatched.set(true);
+                        requiresUpdate.set(true);
                     }
                 });
+            } else {
+                // Incoming design document has no nouveau section while DB has one.
+                // Do not overwrite existing indexes.
+                return true;
             }
-            if (!indexMissMatched.get()) {
-                // No miss-match found
+            if (!requiresUpdate.get()) {
+                // No changes required.
                 return true;
             }
             return putNouveauDesignDocument(designDocument);
