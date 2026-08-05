@@ -20,10 +20,12 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
@@ -37,6 +39,8 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
@@ -47,6 +51,7 @@ import java.util.*;
 import java.util.zip.ZipOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
@@ -54,11 +59,16 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @RequiredArgsConstructor
 public class Sw360LicenseService {
     private static final String CONTENT_TYPE = "application/zip";
-    LicenseType lType = new LicenseType();
 
     public List<License> getLicenses() throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         return sw360LicenseClient.getLicenseSummary();
+    }
+
+    public Map<PaginationData, List<License>> getLicensesWithPagination(Pageable pageable) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        PaginationData pageData = pageableToPaginationData(pageable, LicenseSortColumn.BY_FULLNAME, true);
+        return sw360LicenseClient.searchLicenseWithPagination("", pageData);
     }
 
     public License getLicenseById(String licenseId) throws TException {
@@ -92,7 +102,7 @@ public class Sw360LicenseService {
     public void deleteAllLicenseInfo(User user) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
-            RequestSummary deleteLicenseStatus = sw360LicenseClient.deleteAllLicenseInformation(user);
+            sw360LicenseClient.deleteAllLicenseInformation(user);
         } else {
             throw new BadRequestClientException("Unable to delete license. User is not admin");
         }
@@ -324,6 +334,7 @@ public class Sw360LicenseService {
 
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        LicenseType lType = new LicenseType();
         if (StringUtils.isNotEmpty(licenseType)) {
             lType.setLicenseType(licenseType);
         } else {
@@ -407,16 +418,40 @@ public class Sw360LicenseService {
         }
     }
 
-    /**
-     * Search licenses for given text in fullname or shortname.
-     * @param searchText String to search.
-     * @return Sorted list of licenses.
-     * @throws TException If Thrift had issues.
-     */
-    public List<License> searchLicenses(String searchText) throws TException {
+    public Map<PaginationData, List<License>> searchLicenses(String searchText, Pageable pageable) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        List<License> licenses = sw360LicenseClient.searchLicense(searchText);
-        licenses.sort(Comparator.comparing(License::getFullname, String.CASE_INSENSITIVE_ORDER));
-        return licenses;
+        PaginationData pageData = pageableToPaginationData(pageable, LicenseSortColumn.BY_SCORE, false);
+        return sw360LicenseClient.searchLicenseWithPagination(searchText, pageData);
+    }
+
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
+            LicenseSortColumn defaultColumn, Boolean defaultAscending) {
+        LicenseSortColumn column = LicenseSortColumn.BY_FULLNAME;
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "fullName" -> LicenseSortColumn.BY_FULLNAME;
+                case "shortName" -> LicenseSortColumn.BY_SHORTNAME;
+                case "score" -> LicenseSortColumn.BY_SCORE;
+                default -> column;
+            };
+            ascending = order.isAscending();
+        } else {
+            if (defaultColumn != null) {
+                column = defaultColumn;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
+        }
+
+        return new PaginationData()
+                .setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize())
+                .setSortColumnNumber(column.getValue())
+                .setAscending(ascending);
     }
 }

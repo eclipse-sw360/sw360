@@ -37,6 +37,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
@@ -82,6 +83,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -90,6 +93,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Licenses", description = "Operations related to Licenses on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default for search), " +
+        "`fullName` (default for listing), `shortName`].")
 public class LicenseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String LICENSES_URL = "/licenses";
     public static final String LICENSE_TYPES_URL = "/licenseTypes";
@@ -121,15 +127,20 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     ) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<License> sw360Licenses;
-
+        Map<PaginationData, List<License>> paginatedLicenses;
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
-            sw360Licenses = licenseService.searchLicenses(searchText);
+            paginatedLicenses = licenseService.searchLicenses(searchText.trim(), pageable);
         } else {
-            sw360Licenses = licenseService.getLicenses();
+            paginatedLicenses = licenseService.getLicensesWithPagination(pageable);
         }
 
-        PaginationResult<License> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE);
+        Map.Entry<PaginationData, List<License>> licensePage = paginatedLicenses.entrySet().iterator().next();
+        List<License> sw360Licenses = new ArrayList<>(licensePage.getValue());
+        int totalCount = Math.toIntExact(licensePage.getKey().getTotalRowCount());
+
+        PaginationResult<License> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE, totalCount);
+
         List<EntityModel<License>> licenseResources = new ArrayList<>();
         paginationResult.getResources()
                 .forEach(license -> {

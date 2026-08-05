@@ -52,7 +52,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.net.MalformedURLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -104,7 +103,7 @@ public class LicenseDatabaseHandler {
     private String obligationText;
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
-    public LicenseDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+    public LicenseDatabaseHandler(Cloudant client, String dbName) {
         // Create the connector
         db = new DatabaseConnectorCloudant(client, dbName);
         DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
@@ -147,7 +146,7 @@ public class LicenseDatabaseHandler {
 
     }
 
-    private List<License> convertToLicenseSummary(List<License> licenses) {
+    public List<License> convertToLicenseSummary(List<License> licenses) {
         final List<LicenseType> licenseTypes = licenseTypeRepository.getAll();
         putLicenseTypesInLicenses(licenses, licenseTypes);
         /*Note that risks are not set here*/
@@ -1414,18 +1413,6 @@ public class LicenseDatabaseHandler {
 
     public List<LicenseType> searchByLicenseType(String licenseType) {
         return licenseTypeRepository.searchByLicenseType(licenseType);
-    }
-
-    /**
-     * Search license by shortname or name.
-     * @param searchText String to search.
-     * @return List of licenses.
-     */
-    public List<License> searchLicense(String searchText) {
-        Set<License> results = new HashSet<>();
-        results.addAll(licenseRepository.searchByName(searchText));
-        results.addAll(licenseRepository.searchByShortName(searchText));
-        return convertToLicenseSummary(results.stream().toList());
     }
 
     /**
