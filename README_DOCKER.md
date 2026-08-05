@@ -158,6 +158,14 @@ Leave host/port empty to disable email service.
     Set this to `false` in production - clients should authenticate via
     OAuth2/JWT or API token. Set to `true` only for local development or
     integration testing where Basic auth is needed for convenience.
+* `SW360_BACKEND_INTERNAL_AUTH_ENABLED`: When `true`, every backend WAR
+    (`/users`, `/projects`, `/health`, …) requires the
+    `X-SW360-Internal-Token` header. Resource-server and backend `*Clients`
+    send it automatically via `BackendRestClients`. Direct calls without the
+    token receive `401`. Default: `false` (local/dev). Set `true` in production.
+* `SW360_BACKEND_INTERNAL_TOKEN`: Shared secret for backend WAR access.
+    **Do not commit a real value.** Prefer Docker secrets / private env.
+    Must match on all SW360 nodes. Required when internal auth is enabled.
 * `JWT_SECRETKEY`: Password used by the Authorization Server to open
     `/etc/sw360/jwt-keystore.jks` (default: `sw360SecretKey`).
     **Change this in production** and keep it identical on every SW360 node
@@ -187,6 +195,8 @@ Backend runtime consumes these secret values:
 * `EMAIL_PROPERTIES_USERNAME`
 * `EMAIL_PROPERTIES_PASSWORD`
 * `JWT_KEYSTORE` (binary JKS payload)
+* `SW360_BACKEND_INTERNAL_TOKEN` (recommended when
+  `SW360_BACKEND_INTERNAL_AUTH_ENABLED=true`)
 
 `REST_APITOKEN_HASH_SALT` must be OpenBSD bcrypt salt format:
 `$2a$<cost>$<22-char-salt>`.

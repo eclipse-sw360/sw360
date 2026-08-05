@@ -130,6 +130,10 @@ ENV SW360_CORS_ALLOWED_ORIGIN="*"
 ENV SW360_THRIFT_SERVER_URL="http://localhost:8080"
 ENV SW360_BASE_URL="http://localhost:8080"
 ENV SW360_FRONTEND_URL="http://localhost:3000"
+# Backend WAR gate: set SW360_BACKEND_INTERNAL_AUTH_ENABLED=true and a strong
+# SW360_BACKEND_INTERNAL_TOKEN (e.g. from Docker secrets) in production.
+ENV SW360_BACKEND_INTERNAL_AUTH_ENABLED="false"
+ENV SW360_BACKEND_INTERNAL_TOKEN=""
 
 # Install dependencies for entrypoint
 RUN apt-get update -qq \
