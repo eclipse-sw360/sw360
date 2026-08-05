@@ -36,4 +36,6 @@ This information will help us triage your report more quickly.
 
 Supported versions are:
 
-* Version 19.0.0
+* 19.0.0
+* 20.0.0
+* 20.1.0
