@@ -249,13 +249,6 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public List<ModerationRequest> getRequestsByModerator(User user) throws TException {
-        assertUser(user);
-
-        return handler.getRequestsByModerator(user.getEmail());
-    }
-
-    @Override
     public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(User user, PaginationData pageData) throws TException {
         assertUser(user);
 
@@ -263,7 +256,7 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions,
+    public Map<PaginationData, List<ModerationRequest>> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions,
                                                                          PaginationData pageData, User SW360User) throws TException {
         return handler.searchModerationRequestsByExactValues(subQueryRestrictions, pageData, SW360User);
     }
@@ -374,11 +367,11 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public List<ModerationRequest> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions,
-            PaginationData pageData, User SW360User) throws TException {
-        Map<PaginationData, List<ModerationRequest>> result = modSearchHandler.search(text, subQueryRestrictions,
-                pageData, SW360User);
-        return result.values().iterator().next();
+    public Map<PaginationData, List<ModerationRequest>> refineSearch(
+            Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, User SW360User
+    ) throws TException {
+        return modSearchHandler.search(subQueryRestrictions, pageData, SW360User);
     }
 
     @Override

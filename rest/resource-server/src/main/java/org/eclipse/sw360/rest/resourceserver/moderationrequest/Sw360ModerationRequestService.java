@@ -25,7 +25,6 @@ import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -33,13 +32,10 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationSortColumn;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -50,7 +46,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.security.InvalidParameterException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,15 +80,12 @@ public class Sw360ModerationRequestService {
         return ThriftClients.makeSPDXClient();
     }
 
-    private DocumentCreationInformationService.Iface getThriftDocumentCreationInfo()  throws TTransportException {
+    private DocumentCreationInformationService.Iface getThriftDocumentCreationInfo() {
         return ThriftClients.makeSPDXDocumentInfoClient();
     }
 
-    private PackageInformationService.Iface getThriftPackageInfo()  throws TTransportException {
+    private PackageInformationService.Iface getThriftPackageInfo() {
         return ThriftClients.makeSPDXPackageInfoClient();
-    }
-    private UserService.Iface getThriftUserClient() throws TTransportException {
-        return ThriftClients.makeUserClient();
     }
 
     /**
@@ -131,21 +123,6 @@ public class Sw360ModerationRequestService {
         return moderationRequest;
     }
 
-
-    /**
-     * Get paginated list of moderation requests where user is one of the
-     * moderators.
-     *
-     * @param sw360User Moderator
-     * @param pageable  Pageable information from request
-     * @return Paginated list of moderation requests.
-     * @throws TException Exception in case of error.
-     */
-    public List<ModerationRequest> getRequestsByModerator(User sw360User, Pageable pageable) throws TException {
-        PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_TIMESTAMP, false);
-        return getThriftModerationClient().getRequestsByModeratorWithPaginationNoFilter(sw360User, pageData);
-    }
-
     /**
      * Get paginated list of moderation requests based on search parameters provided by users
      * without lucene search
@@ -155,7 +132,7 @@ public class Sw360ModerationRequestService {
      * @return Paginated list of moderation requests.
      * @throws TException Exception in case of error.
      */
-    public List<ModerationRequest> searchModerationRequestsByExactValues(
+    public Map<PaginationData, List<ModerationRequest>> searchModerationRequestsByExactValues(
             Map<String, Set<String>> filterMap, Pageable pageable, User sw360User) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_TIMESTAMP, false);
         return getThriftModerationClient().searchModerationRequestsByExactValues(filterMap, pageData, sw360User);
@@ -182,37 +159,6 @@ public class Sw360ModerationRequestService {
         Map<PaginationData, List<ModerationRequest>> result = new HashMap<>();
         result.put(pageData, moderationList);
         return result;
-    }
-
-    /**
-     * Get total count of moderation requests with user as a moderator.
-     *
-     * @param sw360User Moderator
-     * @return Count of moderation requests
-     * @throws TException Throws exception in case of error
-     */
-    public long getTotalCountOfRequests(User sw360User) throws TException {
-        Map<String, Long> countInfo = getThriftModerationClient().getCountByModerationState(sw360User);
-        long totalCount = 0;
-        totalCount += countInfo.getOrDefault("OPEN", 0L);
-        totalCount += countInfo.getOrDefault("CLOSED", 0L);
-        return totalCount;
-    }
-
-    /**
-     * Get total count of moderation requests with user as a moderator and specific requesting user.
-     *
-     * @param moderator Moderator
-     * @param requestingUser Requesting user
-     * @return Count of moderation requests
-     * @throws TException Throws exception in case of error
-     */
-    public long getTotalCountByModerationStateAndRequestingUser(User moderator, User requestingUser) throws TException {
-        Map<String, Long> countInfo = getThriftModerationClient().getCountByModerationStateAndRequestingUser(moderator, requestingUser);
-        long totalCount = 0L;
-        totalCount += countInfo.getOrDefault("OPEN", 0L);
-        totalCount += countInfo.getOrDefault("CLOSED", 0L);
-        return totalCount;
     }
 
     /**
@@ -393,25 +339,6 @@ public class Sw360ModerationRequestService {
         return new User(request.getId(), request.getModerators().toString());
     }
 
-    public User getUserByEmail(String email) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmail(email);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserByEmailOrExternalId(org.eclipse.sw360.datahandler.thrift.users.UserService.Iface userClient,
-            String userIdentifier, String string) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /**
      * Set moderation state of the moderation request to REJECTED
      *
@@ -507,7 +434,7 @@ public class Sw360ModerationRequestService {
 
     public RequestStatus deleteModerationRequestInfo(@NotNull User sw360User, @NotNull String id,
 			@NotNull ModerationRequest moderationRequest)
-            throws TTransportException, TException {
+            throws TException {
         RequestStatus requestStatus = null;
         Set<String> moderators = moderationRequest.getModerators();
         String requestingUser = moderationRequest.getRequestingUser();
@@ -564,8 +491,10 @@ public class Sw360ModerationRequestService {
      * @return List<ModerationRequest> the list of moderation requests
      * @throws TException if Thrift communication fails
      */
-    public List<ModerationRequest> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable, User sw360User) throws TException {
+    public Map<PaginationData, List<ModerationRequest>> refineSearch(
+            Map<String, Set<String>> filterMap, Pageable pageable, User sw360User
+    ) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_SCORE, false);
-        return getThriftModerationClient().refineSearch(null, filterMap, pageData, sw360User);
+        return getThriftModerationClient().refineSearch(filterMap, pageData, sw360User);
     }
 }

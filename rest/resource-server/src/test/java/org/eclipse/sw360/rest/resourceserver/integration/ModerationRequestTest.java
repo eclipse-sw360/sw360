@@ -31,8 +31,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -438,8 +441,12 @@ public class ModerationRequestTest extends TestIntegrationBase {
 
     @Test
     public void should_list_moderation_requests_empty_page() throws IOException, TException {
-        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(java.util.List.of());
-        given(moderationServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn(0L);
+        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0),
+                        List.of()
+                )
+        );
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -454,17 +461,22 @@ public class ModerationRequestTest extends TestIntegrationBase {
         assertTrue(response.getBody() != null && response.getBody().contains("_embedded"));
     }
 
-        @Test
-        public void should_search_moderation_requests_with_exact_filters() throws IOException, TException {
+    @Test
+    public void should_search_moderation_requests_with_exact_filters() throws IOException, TException {
         ModerationRequest mrSearch = new ModerationRequest(openMr);
         mrSearch.setId("MR-S1");
         given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any()))
-            .willReturn(new java.util.ArrayList<>(java.util.List.of(mrSearch)));
+            .willReturn(
+                    Collections.singletonMap(
+                            new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(1),
+                            new ArrayList<>(List.of(mrSearch))
+                    )
+            );
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> request = new HttpEntity<>(headers);
         ResponseEntity<String> response = new TestRestTemplate().exchange(
-            "http://localhost:" + port + "/api/moderationrequest?type=RELEASE&documentName=Release%201&requestingUser=admin@sw360.org&requestingUserDepartment=DEPT&moderationState=INPROGRESS&requestDate=2026-01-01&moderators=admin@sw360.org&page=0&page_entries=10",
+            "http://localhost:" + port + "/api/moderationrequest?type=RELEASE&documentName=Release%201&requestingUser=admin@sw360.org&requestingUserDepartment=DEPT&moderationState=INPROGRESS&requestDate=2026-01-01&moderators=admin@sw360.org&page=0&page_entries=10&luceneSearch=false",
             HttpMethod.GET,
             request,
             String.class
@@ -472,14 +484,19 @@ public class ModerationRequestTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody() != null && response.getBody().contains("MR-S1"));
-        }
+    }
 
-        @Test
-        public void should_search_moderation_requests_with_lucene() throws IOException, TException {
+    @Test
+    public void should_search_moderation_requests_with_lucene() throws IOException, TException {
         ModerationRequest mrSearch = new ModerationRequest(openMr);
         mrSearch.setId("MR-L1");
         given(moderationServiceMock.refineSearch(any(), any(), any()))
-            .willReturn(new java.util.ArrayList<>(java.util.List.of(mrSearch)));
+            .willReturn(
+                    Collections.singletonMap(
+                            new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(1),
+                            new ArrayList<>(List.of(mrSearch))
+                    )
+            );
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -492,7 +509,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody() != null && response.getBody().contains("MR-L1"));
-        }
+    }
 
     @Test
     public void should_error_on_invalid_state() throws IOException, TException {
@@ -561,13 +578,17 @@ public class ModerationRequestTest extends TestIntegrationBase {
         mr2.setId("MR-3");
         java.util.List<ModerationRequest> list = new java.util.ArrayList<>(java.util.List.of(mr1, mr2));
 
-        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(list);
-        given(moderationServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn(2L);
+        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(20).setDisplayStart(0).setTotalRowCount(list.size()),
+                        list
+                )
+        );
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> request = new HttpEntity<>(headers);
         ResponseEntity<String> response = new TestRestTemplate().exchange(
-                "http://localhost:" + port + "/api/moderationrequest?allDetails=true&page=0&page_entries=20",
+                "http://localhost:" + port + "/api/moderationrequest?allDetails=true&page=0&page_entries=20&luceneSearch=false",
                 HttpMethod.GET,
                 request,
                 String.class
@@ -601,13 +622,17 @@ public class ModerationRequestTest extends TestIntegrationBase {
         dupMr.setDocumentCreationInfoAdditions(new org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation().setId("DC1"));
         dupMr.setDocumentCreationInfoDeletions(new org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation().setId("DC1"));
 
-        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(new java.util.ArrayList<>(java.util.List.of(dupMr)));
-        given(moderationServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn(1L);
+        given(moderationServiceMock.searchModerationRequestsByExactValues(any(), any(), any())).willReturn(
+                Collections.singletonMap(
+                        new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(1),
+                        new ArrayList<>(List.of(dupMr))
+                )
+        );
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> request = new HttpEntity<>(headers);
         ResponseEntity<String> response = new TestRestTemplate().exchange(
-                "http://localhost:" + port + "/api/moderationrequest?allDetails=true&page=0&page_entries=20",
+                "http://localhost:" + port + "/api/moderationrequest?allDetails=true&page=0&page_entries=20&luceneSearch=false",
                 HttpMethod.GET,
                 request,
                 String.class
