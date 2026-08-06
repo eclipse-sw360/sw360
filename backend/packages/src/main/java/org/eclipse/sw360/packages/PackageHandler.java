@@ -78,7 +78,7 @@ public class PackageHandler implements PackageService.Iface {
     public List<Package> searchPackages(String text, User user) throws TException {
         assertUser(user);
         assertNotEmpty(text, "package search text cannot be empty");
-        return handler.searchPackages(packageSearchHandler, text);
+        return packageSearchHandler.search(text, Map.of());
     }
 
     @Override
@@ -128,7 +128,7 @@ public class PackageHandler implements PackageService.Iface {
 
     @Override
     public List<Package> searchPackagesWithFilter(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
-        return handler.searchPackagesWithFilter(text, packageSearchHandler, subQueryRestrictions);
+        return packageSearchHandler.search(text, subQueryRestrictions);
     }
 
     @Override
@@ -165,7 +165,15 @@ public class PackageHandler implements PackageService.Iface {
     }
 
     @Override
-    public List<Package> refineSearchAccessiblePackages(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
-        return packageSearchHandler.searchAccessiblePackages(text, subQueryRestrictions, user);
+    public Map<PaginationData, List<Package>> refineSearchAccessiblePackages(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
+        return packageSearchHandler.searchAccessiblePackages(subQueryRestrictions, user, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Package>> searchFilteredPackages(String searchText, User user, PaginationData pageData) throws TException {
+        if (searchText == null) {
+            searchText = "";
+        }
+        return packageSearchHandler.searchFilteredPackages(searchText, user, pageData);
     }
 }
