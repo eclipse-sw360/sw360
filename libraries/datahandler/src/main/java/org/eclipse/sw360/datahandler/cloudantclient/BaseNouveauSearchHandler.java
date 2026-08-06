@@ -535,18 +535,12 @@ public abstract class BaseNouveauSearchHandler<T> {
     private final @NonNull @Unmodifiable Map<PaginationData, List<T>> genericBaseSearch(
             NouveauLuceneAwareDatabaseConnector connector,
             final @NonNull Map<String, Set<String>> subQueryRestrictions,
-            Function<Map<String, String>, String> queryGenerator,
+            Function<Map<String, Set<String>>, String> queryGenerator,
             PaginationData pageData
     ) {
         List<String> sortColumns = getSortColumns(pageData);
-        Map<String, String> simplified = subQueryRestrictions.entrySet()
-                .parallelStream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> SPACE.join(e.getValue())
-                ));
 
-        String query = queryGenerator.apply(simplified);
+        String query = queryGenerator.apply(subQueryRestrictions);
         Map<PaginationData, List<T>> result = connector.searchView(
                 clazz, luceneSearchView.getIndexName(), query, pageData, sortColumns);
         PaginationData respPageData = result.keySet().iterator().next();
@@ -634,19 +628,8 @@ public abstract class BaseNouveauSearchHandler<T> {
             PaginationData pageData
     ) {
         List<String> sortColumns = getSortColumns(pageData);
-        Map<String, Map<String, String>> simplified = complexQueryRestrictions
-                .entrySet()
-                .parallelStream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().entrySet().stream()
-                                .collect(Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        innerEntry -> SPACE.join(innerEntry.getValue())
-                                ))
-                ));
 
-        String query = joiner.join(createComplexQuery(simplified));
+        String query = joiner.join(createComplexQuery(complexQueryRestrictions));
 
         Map<PaginationData, List<T>> result = connector.searchView(
                 clazz, luceneSearchView.getIndexName(), query, pageData, sortColumns);
@@ -684,15 +667,12 @@ public abstract class BaseNouveauSearchHandler<T> {
      *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
      */
     private @NonNull List<String> buildQueryFromRestrictions(
-            @NonNull Map<String, String> restrictions
+            @NonNull Map<String, Set<String>> restrictions
     ) {
         List<String> parts = new ArrayList<>();
         for (var entry : restrictions.entrySet()) {
             String fieldName = entry.getKey();
-            String filterValue = entry.getValue();
-            if (CommonUtils.isNullEmptyOrWhitespace(filterValue)) {
-                continue;
-            }
+            Set<String> filterValue = entry.getValue();
             parts.add(createFieldQueryRestriction(fieldName, filterValue));
         }
         return parts;
@@ -730,10 +710,10 @@ public abstract class BaseNouveauSearchHandler<T> {
      * @return List of queries
      */
     private @NonNull @Unmodifiable List<String> createComplexQuery(
-            @NonNull Map<String, Map<String, String>> subQueryRestrictions
+            @NonNull Map<String, Map<String, Set<String>>> subQueryRestrictions
     ) {
         List<String> subQueries = new ArrayList<>();
-        for (Map.Entry<String, Map<String, String>> restriction : subQueryRestrictions.entrySet()) {
+        for (Map.Entry<String, Map<String, Set<String>>> restriction : subQueryRestrictions.entrySet()) {
             boolean isPlural = restriction.getValue().size() > 1;
             String query = switch (restriction.getKey()) {
                 case "OR" -> buildQueryFromRestrictionsWithOr(restriction.getValue());
@@ -762,7 +742,7 @@ public abstract class BaseNouveauSearchHandler<T> {
      *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
      */
     private @NonNull String buildQueryFromRestrictionsWithAnd(
-            @NonNull Map<String, String> restrictions
+            @NonNull Map<String, Set<String>> restrictions
     ) {
         return AND.join(buildQueryFromRestrictions(restrictions));
     }
@@ -777,7 +757,7 @@ public abstract class BaseNouveauSearchHandler<T> {
      *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
      */
     private @NonNull String buildQueryFromRestrictionsWithOr(
-            @NonNull Map<String, String> restrictions
+            @NonNull Map<String, Set<String>> restrictions
     ) {
         return OR.join(buildQueryFromRestrictions(restrictions));
     }
@@ -796,40 +776,58 @@ public abstract class BaseNouveauSearchHandler<T> {
      * </ol>
      * </p>
      */
-    private String createFieldQueryRestriction(String fieldName, String filterValue) {
-        // Empty-aware: must query the _exact sub-field (the base field is not indexed)
-        if (emptyAwareFields.contains(fieldName)
-                && SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(filterValue)) {
-            return fieldName + "_exact:\"" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "\"";
-        }
-
-        String sanitized = sanitizeLuceneString(filterValue);
-        boolean quoted = NouveauLuceneAwareDatabaseConnector.isValidQuotedPhrase(filterValue);
-        String baseSearch = "(" + fieldName + (quoted ? ":" : ":\"") + sanitized + (quoted ? "" : "\"") + ")";
-
-        if (tieredFields.contains(fieldName)) {
-            if (!quoted) {
-                return "(" + NouveauLuceneAwareDatabaseConnector.buildFieldQuery(
-                        fieldName + "_exact", fieldName + "_ngram", filterValue, true) + ")";
+    private String createFieldQueryRestriction(String fieldName, Set<String> filterValues) {
+        List<String> queries = new ArrayList<>();
+        for (String filterValue : filterValues) {
+            // Empty-aware: must query the _exact sub-field (the base field is not indexed)
+            if (emptyAwareFields.contains(fieldName)
+                    && SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(filterValue)) {
+                queries.add(fieldName + "_exact:\"" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "\"");
+                continue;
             }
-            // Quoted input -> exact sort-field look-up (keyword field stores lowercased value)
-            return "(" + fieldName + "_sort:" + sanitized.toLowerCase(Locale.ROOT) + ")";
-        }
 
-        if (dateFields.contains(fieldName)) {
-            try {
-                return "(" + fieldName + ":" + NouveauLuceneAwareDatabaseConnector
-                        .formatDateNouveauFormat(filterValue.trim()) + ")";
-            } catch (ParseException e) {
-                return baseSearch;
+            String sanitized = sanitizeLuceneString(filterValue);
+            boolean quoted = NouveauLuceneAwareDatabaseConnector.isValidQuotedPhrase(filterValue);
+            String baseSearch = "(" + fieldName + (quoted ? ":" : ":\"") + sanitized + (quoted ? "" : "\"") + ")";
+
+            if (tieredFields.contains(fieldName)) {
+                if (!quoted) {
+                    queries.add("(" + NouveauLuceneAwareDatabaseConnector.buildFieldQuery(
+                            fieldName + "_exact", fieldName + "_ngram", filterValue, true) + ")");
+                    continue;
+                }
+                // Quoted input -> exact sort-field look-up (keyword field stores lowercased value)
+                queries.add("(" + fieldName + "_sort:" + sanitized.toLowerCase(Locale.ROOT) + ")");
+                continue;
             }
+
+            if (dateFields.contains(fieldName)) {
+                try {
+                    queries.add("(" + fieldName + ":" + NouveauLuceneAwareDatabaseConnector
+                            .formatDateNouveauFormat(filterValue.trim()) + ")");
+                    continue;
+                } catch (ParseException e) {
+                    queries.add(baseSearch);
+                    continue;
+                }
+            }
+
+            if (defaultFields.contains(fieldName)) {
+                queries.add("( " + convertToFreeSearch(filterValue) + " )");
+                continue;
+            }
+            queries.add(baseSearch);
         }
 
-        if (defaultFields.contains(fieldName)) {
-            return "( " + convertToFreeSearch(filterValue) + " )";
+        StringBuilder query = new StringBuilder();
+        if (queries.size() > 1) {
+            query.append("(");
+            query.append(String.join(") OR (", queries));
+            query.append(")");
+        } else {
+            query.append(queries.getFirst());
         }
-
-        return baseSearch;
+        return query.toString();
     }
 
     // -------------------------------------------------------------------------
