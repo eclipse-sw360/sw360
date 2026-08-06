@@ -91,8 +91,10 @@ public class ModerationSearchHandler extends BaseNouveauSearchHandler<Moderation
         setup(connector, db);
     }
 
-    public Map<PaginationData, List<ModerationRequest>> search(String text,
-            final Map<String, Set<String>> subQueryRestrictions, PaginationData pageData, User sw360User) {
+    public Map<PaginationData, List<ModerationRequest>> search(
+            final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, User sw360User
+    ) {
         String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
         String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
         if (!subQueryRestrictions.containsKey(moderatorKey) && !subQueryRestrictions.containsKey(requestingUserKey)) {
@@ -104,20 +106,18 @@ public class ModerationSearchHandler extends BaseNouveauSearchHandler<Moderation
         Map<String, Set<String>> orRestrictions = new java.util.HashMap<>();
         Map<String, Set<String>> andRestrictions = new java.util.HashMap<>();
 
-        if (subQueryRestrictions != null) {
-            for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
-                if (entry.getValue() == null || entry.getValue().isEmpty()) {
-                    continue;
-                }
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() == null || entry.getValue().isEmpty()) {
+                continue;
+            }
 
-                String fieldName = entry.getKey();
-                Set<String> values = entry.getValue();
+            String fieldName = entry.getKey();
+            Set<String> values = entry.getValue();
 
-                if (isModeratorOrRequestingUserField(fieldName)) {
-                    orRestrictions.put(fieldName, values);
-                } else {
-                    andRestrictions.put(fieldName, values);
-                }
+            if (isModeratorOrRequestingUserField(fieldName)) {
+                orRestrictions.put(fieldName, values);
+            } else {
+                andRestrictions.put(fieldName, values);
             }
         }
 
