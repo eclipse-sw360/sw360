@@ -149,23 +149,6 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
 
-    public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(String moderator, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
-        final Map<String, Object> typeSelector = eq("type", "moderation");
-        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
-        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
-        PostFindOptions qb = getConnector().getQueryBuilder()
-                .selector(finalSelector)
-                .limit(rowsPerPage)
-                .skip(skip)
-                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
-                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
-                .build();
-        return getConnector().getQueryResult(qb, ModerationRequest.class);
-    }
-
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         final boolean ascending = pageData.isAscending();
         return switch (ModerationSortColumn.findByValue(pageData.getSortColumnNumber())) {
@@ -186,8 +169,10 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         };
     }
 
-    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions,
-                                                                         PaginationData pageData, User sw360User) {
+    public Map<PaginationData, List<ModerationRequest>> searchModerationRequestsByExactValues(
+            Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, User sw360User
+    ) {
         String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
         String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
         if (!subQueryRestrictions.containsKey(moderatorKey) && !subQueryRestrictions.containsKey(requestingUserKey)) {
@@ -205,9 +190,11 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                 .selector(finalSelector)
                 .useIndex(Collections.singletonList(MR_BY_DATE_IDX));
 
-        return getConnector().getQueryResultPaginated(
+        List<ModerationRequest> moderationRequests = getConnector().getQueryResultPaginated(
                 qb, ModerationRequest.class, pageData, sortSelector
         );
+
+        return Collections.singletonMap(pageData, moderationRequests);
     }
 
     private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
