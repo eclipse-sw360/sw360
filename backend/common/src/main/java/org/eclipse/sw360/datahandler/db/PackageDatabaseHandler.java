@@ -153,20 +153,12 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return packageRepository.getOrphanPackage();
     }
 
-    public List<Package> searchPackages(PackageSearchHandler searchHandler, String searchText) {
-        return searchHandler.searchPackages(searchText);
-    }
-
-    public List<Package> searchPackagesWithFilter(String searchText, PackageSearchHandler searchHandler, Map<String,Set<String>> subQueryRestrictions) {
-        return searchHandler.searchPackagesWithRestrictions(searchText, subQueryRestrictions);
-    }
-
     public int getTotalPackageCount() {
         return packageRepository.getDocumentCount();
     }
 
     public List<Package> searchOrphanPackages(PackageSearchHandler searchHandler, String searchText) {
-        List<Package> packages = searchPackages(searchHandler, searchText);
+        List<Package> packages = searchHandler.search(searchText, Map.of());
         Predicate<Package> orphanReleaseFilter = pkg -> CommonUtils.isNullEmptyOrWhitespace(pkg.getReleaseId());
         return packages.stream().filter(orphanReleaseFilter).collect(Collectors.toList());
     }
