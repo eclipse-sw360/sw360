@@ -255,11 +255,6 @@ service ModerationService {
     oneway void deleteRequestsOnDocument(1: string documentId);
 
     /**
-     * get list of moderation requests where user is one of the moderators
-     **/
-    list<ModerationRequest> getRequestsByModerator(1: User user);
-
-    /**
      * Get list of moderation requests where user is one of the moderator with pagination.
      **/
     list<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(1: User user, 2: PaginationData pageData);
@@ -349,12 +344,12 @@ service ModerationService {
     /**
      * search moderation requests in database that match subQueryRestrictions
      **/
-    list<ModerationRequest> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: PaginationData pageData, 4: User sw360User);
+    map<PaginationData, list<ModerationRequest>> refineSearch(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData, 3: User sw360User);
 
     /**
      * search moderation requests in database that match subQueryRestrictions without lucene search
      **/
-    list<ModerationRequest> searchModerationRequestsByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData, 3: User sw360User);
+    map<PaginationData, list<ModerationRequest>> searchModerationRequestsByExactValues(1: map<string, set<string>> subQueryRestrictions, 2: PaginationData pageData, 3: User sw360User);
 
     /**
      * get count of moderation requests by moderation state

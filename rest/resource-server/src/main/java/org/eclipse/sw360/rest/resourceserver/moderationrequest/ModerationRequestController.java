@@ -27,7 +27,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -81,7 +80,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService.isOpenModerationRequest;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -139,13 +137,17 @@ public class ModerationRequestController implements RepresentationModelProcessor
             @RequestParam(value = "requestingUser", required = false) String requestingUser,
             @Parameter(description = "The requesting user's department")
             @RequestParam(value = "requestingUserDepartment", required = false) String requestingUserDepartment,
-            @Parameter(description = "The state of the request")
-            @RequestParam(value = "moderationState", required = false) String moderationState,
-            @Parameter(description = "Date request was created on (YYYY-MM-DD).",
+            @Parameter(
+                    description = "The state of the request.",
+                    schema = @Schema(allowableValues = {"open", "closed", "all"}, defaultValue = "all")
+            )
+            @RequestParam(value = "moderationState", defaultValue = "all") String moderationState,
+            @Parameter(description = "Date request was created on (YYYY-MM-DD)." +
+                    "Supported formats: exact (`=`) as `YYYY-MM-DD` (example: `2026-06-30`) and between as range `[YYYY-MM-DD TO YYYY-MM-DD]` (example: `[2026-06-29 TO 2026-06-30]`). To get a less-than-or-equal (`<=`), use `1970-01-01` as start of range and for greater-than-or-equal (`>=`), use `9999-01-01` as end date (example: `[2026-06-30 TO 9999-01-01]`).",
                     schema = @Schema(type = "string", format = "date"))
             @RequestParam(value = "requestDate", required = false) String requestDate,
-            @Parameter(description = "List requests by lucene search, default false")
-            @RequestParam(value = "luceneSearch", required = false, defaultValue = "false") boolean luceneSearch,
+            @Parameter(description = "List requests by lucene search, default true")
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             @Parameter(description = "Moderators , as a comma separated list.")
             @RequestParam(value = "moderators", required = false) String moderators,
             @Parameter(description = "Fetch all details of the moderation request")
@@ -153,23 +155,17 @@ public class ModerationRequestController implements RepresentationModelProcessor
     ) throws TException, ResourceClassNotFoundException, URISyntaxException, PaginationParameterException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<ModerationRequest> moderationRequests = new ArrayList<>();
+        Map<PaginationData, List<ModerationRequest>> paginatedMRs = null;
         Map<String, Set<String>> filterMap = getFilterMap(documentType, documentName, requestingUser,
             requestingUserDepartment, moderationState, requestDate, moderators);
 
         if (luceneSearch) {
-            moderationRequests = sw360ModerationRequestService.refineSearch(filterMap, pageable, sw360User);
+            paginatedMRs = sw360ModerationRequestService.refineSearch(filterMap, pageable, sw360User);
         } else {
-            moderationRequests = sw360ModerationRequestService.searchModerationRequestsByExactValues(filterMap, pageable, sw360User);
+            paginatedMRs = sw360ModerationRequestService.searchModerationRequestsByExactValues(filterMap, pageable, sw360User);
         }
 
-        Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
-                new HashMap<>();
-        PaginationData paginationData = new PaginationData();
-        paginationData.setTotalRowCount(sw360ModerationRequestService.getTotalCountByModerationStateAndRequestingUser(sw360User,sw360User));
-        modRequestsWithPageData.put(paginationData, moderationRequests);
-
-        return getModerationResponseEntity(pageable, request, allDetails, modRequestsWithPageData);
+        return getModerationResponseEntity(pageable, request, allDetails, paginatedMRs);
     }
 
     /**
@@ -194,10 +190,18 @@ public class ModerationRequestController implements RepresentationModelProcessor
             filterMap.put(ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT.getFieldName(), CommonUtils.splitToSet(requestingUserDepartment));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(moderationState)) {
-            filterMap.put(ModerationRequest._Fields.MODERATION_STATE.getFieldName(), CommonUtils.splitToSet(moderationState));
+            if ("open".equalsIgnoreCase(moderationState)) {
+                filterMap.put(ModerationRequest._Fields.MODERATION_STATE.getFieldName(), Set.of(
+                        ModerationState.PENDING.name(), ModerationState.INPROGRESS.name()
+                ));
+            } else if ("closed".equalsIgnoreCase(moderationState)) {
+                filterMap.put(ModerationRequest._Fields.MODERATION_STATE.getFieldName(), Set.of(
+                        ModerationState.APPROVED.name(), ModerationState.REJECTED.name()
+                ));
+            }
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(requestDate)) {
-            filterMap.put(ModerationRequest._Fields.TIMESTAMP.getFieldName(), CommonUtils.splitToSet(requestDate));
+            filterMap.put(ModerationRequest._Fields.TIMESTAMP.getFieldName(), Collections.singleton(requestDate));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(moderators)) {
             filterMap.put(ModerationRequest._Fields.MODERATORS.getFieldName(), CommonUtils.splitToSet(moderators));
