@@ -75,8 +75,8 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
     private static final Logger log = LogManager.getLogger(ChangeLogController.class);
 
     public static final String CHANGE_LOG_URL = "/changelog";
-    @Autowired
-    private Sw360ChangeLogService sw360ChangeLogService;
+
+    private final Sw360ChangeLogService sw360ChangeLogService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;

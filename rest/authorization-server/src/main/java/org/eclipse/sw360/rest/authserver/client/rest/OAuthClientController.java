@@ -68,17 +68,22 @@ public class OAuthClientController {
      */
     public static final String UNUSED_REDIRECT_URI = "https://localhost/unused-redirect";
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${security.oauth2.resource.id}")
     private String resourceId;
 
-    @Autowired
-    private OAuthClientRepository repo;
 
-    @Autowired
-    private Sw360UserMirrorService userMirrorService;
+    private final OAuthClientRepository repo;
+
+    private final Sw360UserMirrorService userMirrorService;
+
+    OAuthClientController(PasswordEncoder passwordEncoder, OAuthClientRepository oAuthClientRepository, Sw360UserMirrorService sw360UserMirrorService) {
+        this.passwordEncoder = passwordEncoder;
+        this.repo = oAuthClientRepository;
+        this.userMirrorService = sw360UserMirrorService;
+    }
 
     /**
      * Normalize a caller-supplied {@code scope} set to the canonical

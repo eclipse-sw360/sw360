@@ -23,8 +23,12 @@ public class Sw360OidcUserInfoService {
 	public static final String USER_GROUP = "userGroup";
 	public static final String DEPARTMENT = "department";
 	public static final String PRIMARY_ROLES = "primaryRoles";
-	@Autowired
-	private Sw360UserDetailsProvider sw360UserDetailsProvider;
+
+	private final Sw360UserDetailsProvider sw360UserDetailsProvider;
+
+	Sw360OidcUserInfoService(Sw360UserDetailsProvider sw360UserDetailsProvider) {
+		this.sw360UserDetailsProvider = sw360UserDetailsProvider;
+	}
 
 	public OidcUserInfo loadUser(String username) {
 

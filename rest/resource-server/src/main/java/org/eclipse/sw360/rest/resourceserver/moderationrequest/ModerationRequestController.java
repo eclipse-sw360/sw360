@@ -96,8 +96,8 @@ public class ModerationRequestController implements RepresentationModelProcessor
     private static final String REQUESTING_USER = "requestingUser";
     public static final String MODERATION_REQUEST_URL = "/moderationrequest";
 
-    @Autowired
-    private Sw360ModerationRequestService sw360ModerationRequestService;
+
+    private final Sw360ModerationRequestService sw360ModerationRequestService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;

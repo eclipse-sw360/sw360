@@ -76,8 +76,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
 
     private static final Logger log = LogManager.getLogger(ClearingRequestController.class);
 
-    @Autowired
-    private Sw360ClearingRequestService sw360ClearingRequestService;
+
+    private final Sw360ClearingRequestService sw360ClearingRequestService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
