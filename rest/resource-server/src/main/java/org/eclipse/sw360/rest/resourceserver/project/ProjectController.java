@@ -3596,6 +3596,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("processedLicenses", processedLicenses);
             responseBody.put("obligationStatusMap", obligationStatusMap);
+            List<String> multipleCLIWarnings = projectService.getReleasesWithMultipleCLIWarnings(releases);
+            if (!multipleCLIWarnings.isEmpty()) {
+                responseBody.put("warnings", multipleCLIWarnings);
+            }
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         } else {
             obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap,
@@ -3613,6 +3617,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
+            List<String> multipleCLIWarnings = projectService.getReleasesWithMultipleCLIWarnings(releases);
+            if (!multipleCLIWarnings.isEmpty()) {
+                responseBody.put("warnings", multipleCLIWarnings);
+            }
             HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
             return new ResponseEntity<>(halObligation, HttpStatus.OK);
         }
@@ -3693,6 +3701,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
 
         Map<String, Object> responseBody = createPaginationMetadata(pageable, oblData);
+        List<String> multipleCLIWarnings = projectService.getReleasesWithMultipleCLIWarnings(releases);
+        if (!multipleCLIWarnings.isEmpty()) {
+            responseBody.put("warnings", multipleCLIWarnings);
+        }
         HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
         return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
