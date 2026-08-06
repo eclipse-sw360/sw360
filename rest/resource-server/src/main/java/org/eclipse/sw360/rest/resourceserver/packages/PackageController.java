@@ -17,7 +17,6 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,16 +29,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -83,6 +83,9 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Packages", description = "Operations related to Packages on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`createdOn`, `name`, `version` or `packageManager`].")
 public class PackageController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String PACKAGES_URL = "/packages";
 
@@ -264,6 +267,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
             @Parameter(description = "Package which are not linked with any releases.")
             @RequestParam(value = "orphanPackage", required = false) boolean orphanPackage,
+                @Parameter(description = "A generic filter which searches [id, name, version, purl and packageType]." +
+                    " Note that this field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "Use lucenesearch to filter the packages.")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
@@ -271,15 +277,27 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         List<Package> sw360Packages = new ArrayList<>();
+        PaginationResult<Package> paginationResult = null;
         Map<String, Set<String>> restrictions = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
-        if (luceneSearch) {
-            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-                Set<String> values = CommonUtils.splitToSet(name);
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                restrictions.put(Package._Fields.NAME.getFieldName(), values);
-            }
-            sw360Packages.addAll(packageService.refineSearch(restrictions, sw360User));
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !restrictions.isEmpty()) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            Map<PaginationData, List<Package>> result = packageService.searchFilteredPackages(searchText, sw360User, pageable);
+            sw360Packages.addAll(result.values().iterator().next());
+            int totalCount = Math.toIntExact(result.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE, totalCount);
+        } else if (luceneSearch) {
+            Map<PaginationData, List<Package>> result = packageService.refineSearch(restrictions, sw360User, pageable);
+            sw360Packages.addAll(result.values().iterator().next());
+            int totalCount = Math.toIntExact(result.keySet().stream()
+                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE, totalCount);
         } else {
             sw360Packages = packageService.getPackagesForUser();
             if (!restrictions.isEmpty()) {
@@ -287,7 +305,8 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                         .filter(filterPackageMap(restrictions, orphanPackage)).toList());
             }
         }
-        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
+        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request,
+            sw360User, sw360Packages, paginationResult);
     }
 
     /**
@@ -304,10 +323,16 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                 if (fieldValue == null) {
                     return false;
                 }
-                if (field == Package._Fields.NAME && !filterSet.contains(packages.name)) {
-                    return false;
-                } else if (field == Package._Fields.VERSION && !filterSet.contains(packages.version)) {
-                    return false;
+                if (field == Package._Fields.NAME) {
+                    String pkgName = packages.name.toLowerCase();
+                    boolean matched = filterSet.stream()
+                            .anyMatch(f -> pkgName.contains(f.toLowerCase()));
+                    if (!matched) return false;
+                } else if (field == Package._Fields.VERSION) {
+                    String pkgVersion = packages.version.toLowerCase();
+                    boolean matched = filterSet.stream()
+                            .anyMatch(f -> pkgVersion.contains(f.toLowerCase()));
+                    if (!matched) return false;
                 } else if ((field == Package._Fields.CREATED_BY || field == Package._Fields.CREATED_ON)
                         && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
                     return false;
@@ -362,13 +387,16 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(
             String version, String purl, String packageManager, Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages
+            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages,
+            PaginationResult<Package> paginationResult
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         Map<String, Package> mapOfPackages = new HashMap<>();
 
         sw360Packages.stream().forEach(pkg -> mapOfPackages.put(pkg.getId(), pkg));
-        PaginationResult<Package> paginationResult;
-        paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE);
+        if (paginationResult == null) {
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    sw360Packages, SW360Constants.TYPE_PACKAGE);
+        }
 
         List<EntityModel<Package>> packageResources = new ArrayList<>();
         Consumer<Package> consumer = p -> {
