@@ -713,6 +713,9 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         LicenseInfo licenseInfo = licenseResult.getLicenseInfo();
         licenseInfo.getLicenseNamesWithTexts()
                 .forEach(license -> {
+                    if (license.isSetObligationsAtProject()) {
+                        return;
+                    }
                     Set<ObligationAtProject> obligations = null;
                     if (license.isSetLicenseSpdxId()) {
                         obligations = licenseIdToObligations.get(license.getLicenseSpdxId());
@@ -720,7 +723,9 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                     if (obligations == null) {
                         obligations = licenseIdToObligations.get(license.getLicenseName());
                     }
-                    license.setObligationsAtProject(obligations);
+                    if (obligations != null) {
+                        license.setObligationsAtProject(obligations);
+                    }
                 });
         licenseInfo.setTotalObligations(obligationResult.getObligationsAtProjectSize());
         licenseObligationMappingCache.put(licenseResult.getAttachmentContentId(), licenseResult);
