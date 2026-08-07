@@ -30,7 +30,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -44,10 +43,6 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
-import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -58,7 +53,6 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -271,8 +265,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                 @Parameter(description = "A generic filter which searches [id, name, version, purl and packageType]." +
                     " Note that this field should be used exclusive of other filters.")
             @RequestParam(value = "searchText", required = false) String searchText,
-            @Parameter(description = "Use lucenesearch to filter the packages.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "Use lucenesearch to filter the packages.",
+                    schema = @Schema(implementation = Boolean.class, defaultValue = "true"))
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -321,8 +316,8 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                         .filter(filterPackageMap(restrictions, orphanPackage)).toList());
             }
         }
-        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request,
-            sw360User, sw360Packages, paginationResult);
+        return getPackageResponse(pageable, allDetails, request, sw360User,
+                sw360Packages, paginationResult);
     }
 
     /**
@@ -402,13 +397,10 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(
-            String version, String purl, String packageManager, Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages,
+            Pageable pageable, boolean allDetails, HttpServletRequest request,
+            User sw360User, List<Package> sw360Packages,
             PaginationResult<Package> paginationResult
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
-        Map<String, Package> mapOfPackages = new HashMap<>();
-
-        sw360Packages.stream().forEach(pkg -> mapOfPackages.put(pkg.getId(), pkg));
         if (paginationResult == null) {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     sw360Packages, SW360Constants.TYPE_PACKAGE);
@@ -426,17 +418,11 @@ public class PackageController implements RepresentationModelProcessor<Repositor
                 } catch (TException e) {
                     throw new RuntimeException("Unable to create package resource: "+e.getMessage());
                 }
-                if (embeddedPackageResource == null) {
-                    return;
-                }
             }
             packageResources.add(embeddedPackageResource);
         };
 
-        paginationResult.getResources().stream()
-                .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
-                .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
-                .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
+        paginationResult.getResources().forEach(consumer);
 
         CollectionModel<EntityModel<Package>> resources;
         if (packageResources.isEmpty()) {
@@ -459,13 +445,13 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     ) {
         Map<String, Set<String>> filterMap = new HashMap<>();
         if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            filterMap.put(Package._Fields.NAME.getFieldName(), CommonUtils.splitToSet(name));
+            filterMap.put(Package._Fields.NAME.getFieldName(), Collections.singleton(name));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(version)) {
             filterMap.put(Package._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(version));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(purl)) {
-            filterMap.put(Package._Fields.PURL.getFieldName(), CommonUtils.splitToSet(purl));
+            filterMap.put(Package._Fields.PURL.getFieldName(), Collections.singleton(purl));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(packageManager)) {
             filterMap.put(Package._Fields.PACKAGE_MANAGER.getFieldName(), CommonUtils.splitToSet(packageManager.toUpperCase()));
@@ -477,7 +463,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             filterMap.put(Package._Fields.CREATED_BY.getFieldName(), CommonUtils.splitToSet(createdBy));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(createdOn)) {
-            filterMap.put(Package._Fields.CREATED_ON.getFieldName(), CommonUtils.splitToSet(createdOn));
+            filterMap.put(Package._Fields.CREATED_ON.getFieldName(), Collections.singleton(createdOn));
         }
         return filterMap;
     }
