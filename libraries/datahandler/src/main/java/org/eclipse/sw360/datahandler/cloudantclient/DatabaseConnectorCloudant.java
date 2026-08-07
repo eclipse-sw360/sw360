@@ -927,7 +927,11 @@ public class DatabaseConnectorCloudant {
             TFieldIdEnum rev = tbase.fieldForId(2);
             tbase.setFieldValue(id, docId);
             tbase.setFieldValue(rev, docRev);
-        }  else if (isInstanceOfOAuthClientEntity(doc)) {
+        } else if (!tryInvokeSetter(doc, "setId", docId)) {
+            log.debug("No setId(String) on type {}", doc.getClass().getName());
+        }
+
+        if (isInstanceOfOAuthClientEntity(doc)) {
             Class<?> clazz = doc.getClass();
             try {
                 Method setIdMethod = clazz.getMethod("setId", String.class);
@@ -938,6 +942,25 @@ public class DatabaseConnectorCloudant {
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 log.error(e.getMessage());
             }
+            return;
+        }
+
+        // Generic POJO support (e.g. service-api models): prefer setRevision, fallback to setRev.
+        if (!tryInvokeSetter(doc, "setRevision", docRev)) {
+            tryInvokeSetter(doc, "setRev", docRev);
+        }
+    }
+
+    private <T> boolean tryInvokeSetter(@NotNull T target, String setterName, String value) {
+        try {
+            Method method = target.getClass().getMethod(setterName, String.class);
+            method.invoke(target, value);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            log.error("Failed to invoke {} on {}", setterName, target.getClass().getName(), e);
+            return false;
         }
     }
 

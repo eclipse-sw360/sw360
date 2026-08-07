@@ -58,6 +58,15 @@ public class PermissionUtils {
         return isInGroup(user, UserGroup.SW360_ADMIN) || isInGroup(user, UserGroup.ADMIN);
     }
 
+    public static boolean isAdmin(org.eclipse.sw360.datahandler.services.users.User user) {
+        if (user == null || user.getUserGroup() == null) {
+            return false;
+        }
+        org.eclipse.sw360.datahandler.services.users.UserGroup group = user.getUserGroup();
+        return group == org.eclipse.sw360.datahandler.services.users.UserGroup.SW360_ADMIN
+                || group == org.eclipse.sw360.datahandler.services.users.UserGroup.ADMIN;
+    }
+
     public static boolean isAdminBySecondaryRoles(Set<UserGroup> roles) {
         return roles.contains(UserGroup.SW360_ADMIN) || roles.contains(UserGroup.ADMIN);
     }
