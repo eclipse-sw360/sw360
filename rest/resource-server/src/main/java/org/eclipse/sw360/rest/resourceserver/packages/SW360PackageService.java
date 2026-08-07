@@ -9,17 +9,13 @@
  */
 package org.eclipse.sw360.rest.resourceserver.packages;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -121,24 +117,6 @@ public class SW360PackageService {
     public List<Package> getPackagesForUser() throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
         return sw360PackageClient.getAllPackages();
-    }
-
-    public List<Package> searchPackage(String field, String searchQuery, boolean isExactMatch) throws TException {
-        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
-        Set<String> values = CommonUtils.splitToSet(searchQuery);
-
-        if (field.equals("name")) {
-            if (isExactMatch) {
-                values = values.stream().map(s -> "\"" + s + "\"").map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-            }
-            else {
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-            }
-        }
-        Map<String, Set<String>> queryMap = new HashMap<>();
-
-        queryMap.put(field, values);
-        return sw360PackageClient.searchPackagesWithFilter(searchQuery, queryMap);
     }
 
     public List<Package> searchPackageByName(String name) throws TException {
