@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.packages;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -24,13 +26,18 @@ import org.eclipse.sw360.datahandler.packages.PackageClient;
 import org.eclipse.sw360.datahandler.packages.PackageClients;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.PackageSearchFilterRequest;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -124,6 +131,18 @@ public class SW360PackageService {
         return toThriftPackages(packageClient().getAllPackages());
     }
 
+    public Map<PaginationData, List<Package>> getPackagesForUser(Pageable pageable) throws TException {
+        org.eclipse.sw360.datahandler.services.common.PaginationData pageData = pageableToPaginationData(pageable);
+        PaginatedResult<org.eclipse.sw360.datahandler.services.packages.Package> result =
+                packageClient().getPackagesWithPagination(pageData);
+        if (result == null) {
+            return Collections.emptyMap();
+        }
+        return Collections.singletonMap(
+                ThriftConverter.toThriftPaginationData(result.getPaginationData()),
+                toThriftPackages(result.getData()));
+    }
+
     public List<Package> searchPackage(String field, String searchQuery, boolean isExactMatch) throws TException {
         Set<String> values = CommonUtils.splitToSet(searchQuery);
 
@@ -187,5 +206,29 @@ public class SW360PackageService {
             return List.of();
         }
         return packages.stream().map(packageTypeBridge::toThrift).collect(Collectors.toList());
+    }
+
+    private static org.eclipse.sw360.datahandler.services.common.PaginationData pageableToPaginationData(
+            @NotNull Pageable pageable) {
+        int sortColumn = -1; // default: createdOn view in backend
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            sortColumn = switch (order.getProperty()) {
+                case "name" -> 0;
+                case "licenseIds", "licenses" -> 3;
+                case "packageManager" -> 4;
+                case "createdOn" -> -1;
+                default -> -1;
+            };
+            ascending = order.isAscending();
+        }
+
+        return new org.eclipse.sw360.datahandler.services.common.PaginationData()
+                .setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize())
+                .setSortColumnNumber(sortColumn)
+                .setAscending(ascending);
     }
 }

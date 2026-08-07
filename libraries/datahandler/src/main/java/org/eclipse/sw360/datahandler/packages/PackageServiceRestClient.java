@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.Package;
@@ -38,6 +40,8 @@ public class PackageServiceRestClient implements PackageClient {
     private static final ParameterizedTypeReference<List<Package>> PACKAGE_LIST =
             new ParameterizedTypeReference<>() {};
     private static final ParameterizedTypeReference<Set<Package>> PACKAGE_SET =
+            new ParameterizedTypeReference<>() {};
+    private static final ParameterizedTypeReference<PaginatedResult<Package>> PACKAGE_PAGE =
             new ParameterizedTypeReference<>() {};
 
     private final RestClient restClient;
@@ -117,6 +121,21 @@ public class PackageServiceRestClient implements PackageClient {
                 .retrieve()
                 .body(PACKAGE_LIST));
         return packages != null ? packages : Collections.emptyList();
+    }
+
+    @Override
+    public PaginatedResult<Package> getPackagesWithPagination(PaginationData pageData) {
+        PaginatedResult<Package> result = call(() -> restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(BASE + "/page")
+                        .queryParam("ascending", pageData.getAscending())
+                        .queryParam("displayStart", pageData.getDisplayStart())
+                        .queryParam("rowsPerPage", pageData.getRowsPerPage())
+                        .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
+                        .build())
+                .retrieve()
+                .body(PACKAGE_PAGE));
+        return result != null ? result : new PaginatedResult<>(pageData, Collections.emptyList());
     }
 
     @Override
