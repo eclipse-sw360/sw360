@@ -95,12 +95,6 @@ public class PackageHandler implements PackageService.Iface {
     }
 
     @Override
-    public Set<Package> getPackagesByReleaseIds(Set<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getPackagesByReleaseIds(ids);
-    }
-
-    @Override
     public AddDocumentRequestSummary addPackage(Package pkg, User user) throws TException {
         assertNotNull(pkg);
         assertUser(user);

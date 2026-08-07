@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
@@ -34,7 +33,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_DATE_AS_DOUBLE;

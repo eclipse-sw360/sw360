@@ -138,11 +138,6 @@ service PackageService {
     list<Package> searchOrphanPackages(1: string text, 2: User user);
 
     /**
-     * Get list of all the Package by list of release id
-     */
-    set<Package> getPackagesByReleaseIds(1: set<string> releaseIds) throws (1: SW360Exception exp);
-
-    /**
      * Get list of all the Package by release id
      */
     set<Package> getPackagesByReleaseId(1: string releaseId) throws (1: SW360Exception exp);
@@ -171,22 +166,22 @@ service PackageService {
      * total number of packages in the DB
      **/
     i32 getTotalPackagesCount();
-    
+
     /**
      * list of packages which match the `name`
      */
     list<Package> searchByName(1: string name);
-    
+
     /**
      * list of packages which match the `packageManager`
      */
     list<Package> searchByPackageManager(1: string pkgManager);
-    
+
     /**
      * list of packages which match the `version`
      */
     list<Package> searchByVersion(1: string version);
-    
+
     /**
      * list of packages which match the `purl`
      */
