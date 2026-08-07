@@ -458,6 +458,24 @@ public class CommonUtils {
         }
     }
 
+    public static String validateHttpUrl(String url) {
+        if (isNullOrEmpty(url)) {
+            throw new IllegalStateException("URL must not be null or empty");
+        }
+        String normalized = url.replaceAll("/+$", "");
+        try {
+            URI uri = new URI(normalized);
+            uri.toURL();
+            String scheme = uri.getScheme();
+            if (scheme == null || (!"http".equals(scheme) && !"https".equals(scheme))) {
+                throw new IllegalStateException("URL must use http or https: " + normalized);
+            }
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
+            throw new IllegalStateException("URL is invalid: " + normalized, e);
+        }
+        return normalized;
+    }
+
     public static String getTargetNameOfUrl(String url) {
         try {
             String path = new URI(url).toURL().getPath();

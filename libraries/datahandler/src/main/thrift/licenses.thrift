@@ -323,6 +323,8 @@ service LicenseService {
 
     bool pingLicenseDBHealth(1: User user);
 
+    map<string, string> getLicenseDBDiff(1: User user);
+
     /**
      * delete obligation from database if user has permissions
      **/

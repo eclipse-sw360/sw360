@@ -35,6 +35,7 @@ import org.eclipse.sw360.exporter.LicsExporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
 import org.eclipse.sw360.importer.LicsImporter;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -351,6 +352,12 @@ public class Sw360LicenseService {
         } else {
             throw new BadRequestClientException("Unable to import LicenseDB licenses. User is not admin");
         }
+    }
+
+    public Map<String, String> getLicenseDBDiff(User sw360User) throws TException {
+        RestControllerHelper.throwIfNotAdmin(sw360User);
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        return sw360LicenseClient.getLicenseDBDiff(sw360User);
     }
 
     public RequestStatus addLicenseType(User sw360User, String licenseType, HttpServletRequest request) throws TException {
