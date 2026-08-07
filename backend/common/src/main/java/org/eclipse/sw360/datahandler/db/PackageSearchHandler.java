@@ -1,5 +1,5 @@
 /*
- * * Copyright Siemens Healthineers GmBH, 2023. Part of the SW360 Portal Project.
+ * Copyright Siemens Healthineers GmBH, 2023. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.db;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -50,7 +51,7 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
     private static final List<IndexField> PACKAGE_FIELDS = List.of(
             IndexField.standard("name"),
             IndexField.standard("version"),
-            IndexField.standard("purl"),
+            IndexField.standard("purl", 5, EDGE_NGRAM_MAX_LENGTH), // always starts with `pkg:`
             IndexField.simple("packageManager", "keyword"),
             IndexField.simple("packageType", "keyword"),
             IndexField.simple("createdBy", "email"),
@@ -116,6 +117,10 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
      */
     public Map<PaginationData, List<Package>> searchAccessiblePackages(
             final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
+            return connector.searchView(Package.class,
+                    getIndexName(), "*:*", pageData, getSortColumns(pageData));
+        }
         return baseSearch(connector, subQueryRestrictions, pageData);
     }
 
