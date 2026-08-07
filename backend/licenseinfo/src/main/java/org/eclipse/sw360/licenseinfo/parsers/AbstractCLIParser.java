@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -83,6 +84,7 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String OBLIGATION_TOPIC_ELEMENT_NAME = "Topic";
     private static final String OBLIGATION_TEXT_ELEMENT_NAME = "Text";
     private static final String OBLIGATION_LICENSE_ELEMENT_NAME = "Licenses";
+    private static final String EXTERNAL_ID_LICENSEDB_OB = "licensedb-ob-id";
 
     private static final int CACHE_TIMEOUT_MINUTES = 30;
     private static final int CACHE_MAX_ITEMS = 1000;
@@ -311,9 +313,40 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
                 }
             }
 
-            if (couchDbLicense != null && couchDbLicense.getText() != null) {
-                licenseNameWithText.setLicenseText(couchDbLicense.getText());
+            if (couchDbLicense != null) {
+                if (couchDbLicense.getText() != null) {
+                    licenseNameWithText.setLicenseText(couchDbLicense.getText());
+                }
+                enrichObligationsFromCouchDB(licenseNameWithText, couchDbLicense);
             }
+        }
+    }
+
+    private void enrichObligationsFromCouchDB(LicenseNameWithText licenseNameWithText, License couchDbLicense) {
+        try {
+            List<Obligation> obligations = licenseClient.getObligationsByLicenseId(couchDbLicense.getId());
+            if (obligations == null || obligations.isEmpty()) {
+                return;
+            }
+            Set<ObligationAtProject> enrichedObligations = new HashSet<>();
+            for (Obligation obligation : obligations) {
+                if (obligation.getExternalIds() == null
+                        || !obligation.getExternalIds().containsKey(EXTERNAL_ID_LICENSEDB_OB)) {
+                    continue;
+                }
+                ObligationAtProject oap = new ObligationAtProject()
+                        .setTopic(obligation.getTitle() != null ? obligation.getTitle() : "")
+                        .setText(obligation.getText() != null ? obligation.getText() : "")
+                        .setId(obligation.getId())
+                        .setType(obligation.getObligationType() != null ? obligation.getObligationType().name() : "")
+                        .setLicenseIDs(Collections.singletonList(couchDbLicense.getShortname()));
+                enrichedObligations.add(oap);
+            }
+            if (!enrichedObligations.isEmpty()) {
+                licenseNameWithText.setObligationsAtProject(enrichedObligations);
+            }
+        } catch (TException e) {
+            log.error("Failed to enrich obligations from CouchDB for license: " + couchDbLicense.getId(), e);
         }
     }
 

@@ -22,9 +22,12 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.Before;
@@ -36,6 +39,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.StringReader;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.assertLicenseInfoParsingResult;
@@ -396,5 +402,113 @@ public class CLIParserTest {
         assertThat(res.getStatus(), is(LicenseInfoRequestStatus.SUCCESS));
         String licenseText = res.getLicenseInfo().getLicenseNamesWithTexts().iterator().next().getLicenseText();
         assertThat(licenseText, is("Original CLIXML text."));
+    }
+
+    @Test
+    public void testEnrichFromCouchDBSetsObligationsFromLicenseDB() throws Exception {
+        String cliXml =
+                "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n" +
+                "<ComponentLicenseInformation component=\"enrichment_test\" creator=\"test\" date=\"01/01/2024\" componentID=\"-1\" >\n" +
+                "<License type=\"global\" name=\"Apache-2.0\" spdxidentifier=\"Apache-2.0\" > \n" +
+                "<Content><![CDATA[Apache license text.\n" +
+                "]]></Content>\n" +
+                "<Files><![CDATA[src/\n" +
+                "]]></Files>\n" +
+                "</License>\n" +
+                "</ComponentLicenseInformation>";
+
+        License couchDbLicense = new License()
+                .setId("Apache-2.0")
+                .setShortname("Apache-2.0")
+                .setText("Apache text from LicenseDB");
+
+        Obligation licenseDbObligation = new Obligation()
+                .setId("ob-001")
+                .setTitle("Provide notice")
+                .setText("You must include the license notice.")
+                .setObligationType(ObligationType.OBLIGATION)
+                .setExternalIds(Collections.singletonMap("licensedb-ob-id", "uuid-123"));
+
+        LicenseService.Iface mockLicenseClient = Mockito.mock(LicenseService.Iface.class);
+        when(mockLicenseClient.getByID(eq("Apache-2.0"), any())).thenReturn(couchDbLicense);
+        when(mockLicenseClient.getObligationsByLicenseId(eq("Apache-2.0")))
+                .thenReturn(List.of(licenseDbObligation));
+
+        CLIParser enrichedParser = new CLIParser(connector, a -> content, mockLicenseClient);
+        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
+                ReaderInputStream.builder().setReader(new StringReader(cliXml)).get()
+        );
+
+        try (MockedStatic<SW360Utils> mockedUtils = Mockito.mockStatic(SW360Utils.class)) {
+            mockedUtils.when(() -> SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, "false"))
+                    .thenReturn("true");
+
+            LicenseInfoParsingResult res = enrichedParser.getLicenseInfos(cliAttachment, new User(), new Project())
+                    .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result"));
+            assertThat(res.getStatus(), is(LicenseInfoRequestStatus.SUCCESS));
+            LicenseNameWithText lwt = res.getLicenseInfo().getLicenseNamesWithTexts().iterator().next();
+            assertThat(lwt.getObligationsAtProjectSize(), is(1));
+            ObligationAtProject oap = lwt.getObligationsAtProject().iterator().next();
+            assertThat(oap.getTopic(), is("Provide notice"));
+            assertThat(oap.getText(), is("You must include the license notice."));
+            assertThat(oap.getType(), is("OBLIGATION"));
+        }
+    }
+
+    @Test
+    public void testEnrichFromCouchDBFiltersNonLicenseDBObligations() throws Exception {
+        String cliXml =
+                "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n" +
+                "<ComponentLicenseInformation component=\"enrichment_test\" creator=\"test\" date=\"01/01/2024\" componentID=\"-1\" >\n" +
+                "<License type=\"global\" name=\"MIT\" spdxidentifier=\"MIT\" > \n" +
+                "<Content><![CDATA[MIT license text.\n" +
+                "]]></Content>\n" +
+                "<Files><![CDATA[src/\n" +
+                "]]></Files>\n" +
+                "</License>\n" +
+                "</ComponentLicenseInformation>";
+
+        License couchDbLicense = new License()
+                .setId("MIT")
+                .setShortname("MIT")
+                .setText("MIT text from LicenseDB");
+
+        Obligation licenseDbObligation = new Obligation()
+                .setId("ob-001")
+                .setTitle("LicenseDB obligation")
+                .setText("From LicenseDB")
+                .setObligationType(ObligationType.OBLIGATION)
+                .setExternalIds(Collections.singletonMap("licensedb-ob-id", "uuid-456"));
+
+        Obligation sw360NativeObligation = new Obligation()
+                .setId("ob-002")
+                .setTitle("SW360 native obligation")
+                .setText("Added manually in SW360")
+                .setObligationType(ObligationType.RISK);
+
+        LicenseService.Iface mockLicenseClient = Mockito.mock(LicenseService.Iface.class);
+        when(mockLicenseClient.getByID(eq("MIT"), any())).thenReturn(couchDbLicense);
+        when(mockLicenseClient.getObligationsByLicenseId(eq("MIT")))
+                .thenReturn(List.of(licenseDbObligation, sw360NativeObligation));
+
+        CLIParser enrichedParser = new CLIParser(connector, a -> content, mockLicenseClient);
+        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
+                ReaderInputStream.builder().setReader(new StringReader(cliXml)).get()
+        );
+
+        try (MockedStatic<SW360Utils> mockedUtils = Mockito.mockStatic(SW360Utils.class)) {
+            mockedUtils.when(() -> SW360Utils.readConfig(SW360ConfigKeys.LICENSEDB_ENABLED, "false"))
+                    .thenReturn("true");
+
+            LicenseInfoParsingResult res = enrichedParser.getLicenseInfos(cliAttachment, new User(), new Project())
+                    .stream().findFirst().orElseThrow(() -> new RuntimeException("empty result"));
+            assertThat(res.getStatus(), is(LicenseInfoRequestStatus.SUCCESS));
+            LicenseNameWithText lwt = res.getLicenseInfo().getLicenseNamesWithTexts().iterator().next();
+            assertThat(lwt.getObligationsAtProjectSize(), is(1));
+            ObligationAtProject oap = lwt.getObligationsAtProject().iterator().next();
+            assertThat(oap.getTopic(), is("LicenseDB obligation"));
+        }
     }
 }
