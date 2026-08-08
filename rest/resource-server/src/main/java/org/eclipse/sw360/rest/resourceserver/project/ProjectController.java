@@ -3261,7 +3261,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
             if (obligationList != null) {
                 obligationCount = obligationList.getLinkedObligationStatusSize();
-                obligationNonOpenCount = (int) obligationList.getLinkedObligationStatus().values().stream()
+                obligationNonOpenCount = (int) CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus()).values().stream()
                         .filter(statusInfo -> statusInfo != null && statusInfo.getStatus() != null
                                 && !ObligationStatus.OPEN.equals(statusInfo.getStatus()))
                         .count();
