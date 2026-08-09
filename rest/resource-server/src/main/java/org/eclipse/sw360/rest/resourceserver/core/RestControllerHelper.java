@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
 import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -58,7 +59,6 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
@@ -257,14 +257,21 @@ public class RestControllerHelper<T> {
         return paginationResult;
     }
 
-    public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
-                                                                 List<T> resources, String resourceType, int totalCount)
-            throws ResourceClassNotFoundException, PaginationParameterException {
+    public PaginationResult<T> paginationResultFromPaginatedList(
+            HttpServletRequest request, Pageable pageable, Map<PaginationData, List<T>> paginationDataListMap
+    ) throws ResourceClassNotFoundException, PaginationParameterException {
         if (!requestContainsPaging(request)) {
             request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
             request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
         }
-        PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
+        List<T> resources = paginationDataListMap.values().stream()
+                .findFirst()
+                .orElse(Collections.emptyList());
+        int totalCount = Math.toIntExact(paginationDataListMap.keySet().stream()
+                .findFirst()
+                .map(PaginationData::getTotalRowCount)
+                .orElse(0L));
+        PaginationOptions<T> paginationOptions = paginationOptionsFromPageableWithoutComparator(pageable);
         return resourceListController.getPaginationResultFromPaginatedList(resources,
                 paginationOptions, totalCount);
     }
@@ -332,6 +339,10 @@ public class RestControllerHelper<T> {
     private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
         Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
         return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
+    }
+
+    private PaginationOptions<T> paginationOptionsFromPageableWithoutComparator(Pageable pageable) {
+        return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), null);
     }
 
     private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
