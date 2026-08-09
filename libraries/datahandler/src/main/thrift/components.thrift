@@ -571,11 +571,6 @@ service ComponentService {
 
     /**
      * search components in database that match subQueryRestrictions
-     **/
-    list<Component> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
-
-    /**
-     * search components in database that match subQueryRestrictions
      * They are only the components which are visible to user.
      * Search text should be included in the subQueryRestrictions map under the "name" key.
      **/
@@ -586,11 +581,6 @@ service ComponentService {
      * name, description or externalIds fields.
      **/
     map<PaginationData, list<Component>> searchFilteredComponents(1: string searchText, 2: User user, 3: PaginationData pageData) throws (1: SW360Exception exp);
-
-    /**
-     * search components with the accessibility in database that match subQueryRestrictions
-     **/
-    list<Component> refineSearchWithAccessibility(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
 
     /**
      * global search function to list accessible releases which match the text argument

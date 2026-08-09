@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -78,7 +79,9 @@ public class PackageHandler implements PackageService.Iface {
     public List<Package> searchPackages(String text, User user) throws TException {
         assertUser(user);
         assertNotEmpty(text, "package search text cannot be empty");
-        return packageSearchHandler.search(text, Map.of());
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Package>> result = packageSearchHandler.searchFilteredPackages(text, pageData);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
     }
 
     @Override
@@ -118,11 +121,6 @@ public class PackageHandler implements PackageService.Iface {
     @Override
     public Map<PaginationData, List<Package>> getPackagesWithPagination(PaginationData pageData) throws TException {
         return handler.getPackagesWithPagination(pageData);
-    }
-
-    @Override
-    public List<Package> searchPackagesWithFilter(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
-        return packageSearchHandler.search(text, subQueryRestrictions);
     }
 
     @Override
@@ -168,6 +166,6 @@ public class PackageHandler implements PackageService.Iface {
         if (searchText == null) {
             searchText = "";
         }
-        return packageSearchHandler.searchFilteredPackages(searchText, user, pageData);
+        return packageSearchHandler.searchFilteredPackages(searchText, pageData);
     }
 }
