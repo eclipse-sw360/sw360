@@ -128,11 +128,6 @@ service PackageService {
     list<Package> searchPackages(1: string text, 2: User user);
 
     /**
-     * search packages in database that match subQueryRestrictions
-     */
-    list<Package> searchPackagesWithFilter(1: string text, 2: map<string, set<string>> subQueryRestrictions);
-
-    /**
      * global search function to list orphan packages which match the text argument
      */
     list<Package> searchOrphanPackages(1: string text, 2: User user);

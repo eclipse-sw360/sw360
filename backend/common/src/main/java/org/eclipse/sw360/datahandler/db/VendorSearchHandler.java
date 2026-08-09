@@ -25,15 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
  * Nouveau search handler for Vendors.
  *
  * <p>Vendors are globally readable (no per-user access control), therefore this
- * handler keeps the legacy text based public API ({@link #search}) while
- * delegating index construction and query routing to the shared
+ * handler keeps the legacy text based public API while delegating index
+ * construction and query routing to the shared
  * {@link BaseNouveauSearchHandler} DSL infrastructure.</p>
  *
  * @author cedric.bodet@tngtech.com
@@ -41,8 +40,6 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTIN
  * @author gerrit.grenzebach@tngtech.com
  */
 public class VendorSearchHandler extends BaseNouveauSearchHandler<Vendor> {
-
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     // -------------------------------------------------------------------------
     //  Field spec declarations
@@ -129,7 +126,6 @@ public class VendorSearchHandler extends BaseNouveauSearchHandler<Vendor> {
         return switch (VendorSortColumn.findByValue(sortColumnNumber)) {
             case VendorSortColumn.BY_FULLNAME -> List.of("fullname_sort", "shortname_sort");
             case VendorSortColumn.BY_SHORTNAME -> List.of("shortname_sort", "fullname_sort");
-            case VendorSortColumn.BY_SCORE -> List.of(SCORE_SORTING_FIELD);
             case null, default -> List.of(SCORE_SORTING_FIELD);
         };
     }

@@ -11,47 +11,60 @@
 package org.eclipse.sw360.datahandler.db.spdx.packageinfo;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
-public class SpdxPackageInfoSearchHandler {
+public class SpdxPackageInfoSearchHandler extends BaseNouveauSearchHandler<PackageInformation> {
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    private static final Map<String, String> PKG_INFO_CUSTOM_ANALYZERS = Map.of(
+            "id", "keyword"
+    );
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("packageInformation",
-            new NouveauIndexFunction(
-                "function(doc) {" +
-                "  if(doc.type == 'packageInformation') { " +
-                "      index('text', 'id', doc._id, {'store': true});" +
-                "  }" +
-                "}"));
+    private static final String PKG_INFO_CUSTOM_JS = INDEX_ID_FIELD;
+
+    private static final BuiltIndexDefinition PKG_INFO_INDEX_DEFINITION = buildIndexFunction(
+            "packageInformation",
+            "",
+            List.of(),
+            PKG_INFO_CUSTOM_JS,
+            PKG_INFO_CUSTOM_ANALYZERS,
+            "standard"
+    );
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public SpdxPackageInfoSearchHandler(Cloudant client, String dbName) throws IOException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+    public SpdxPackageInfoSearchHandler(Cloudant cClient, String dbName) throws IOException {
+        super(PackageInformation.class, "packageInformation", PKG_INFO_INDEX_DEFINITION);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        connector.addDesignDoc(searchView);
+        setup(connector, db);
     }
 
     public List<PackageInformation> search(String searchText) {
-        return connector.searchView(PackageInformation.class, luceneSearchView.getIndexName(),
-                prepareWildcardQuery(searchText));
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<String, Set<String>> subQueryRestrictions = Map.of(
+                PackageInformation._Fields.ID.getFieldName(), Collections.singleton(searchText)
+        );
+        Map<PaginationData, List<PackageInformation>> result = baseSearchWithOr(connector, subQueryRestrictions, pageData);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
+    }
+
+    @Override
+    protected @NonNull @Unmodifiable List<String> mapSortColumn(int sortColumnNumber) {
+        return List.of(SCORE_SORTING_FIELD);
     }
 }

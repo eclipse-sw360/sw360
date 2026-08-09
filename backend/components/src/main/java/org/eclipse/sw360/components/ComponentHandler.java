@@ -119,11 +119,6 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public List<Component> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
-        return componentSearchHandler.search(text, subQueryRestrictions);
-    }
-
-    @Override
     public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
         return componentSearchHandler.searchAccessibleComponents(subQueryRestrictions, user, pageData);
     }
@@ -134,11 +129,6 @@ public class ComponentHandler implements ComponentService.Iface {
             searchText = "";
         }
         return componentSearchHandler.searchFilteredComponents(searchText, user, pageData);
-    }
-
-    @Override
-    public List<Component> refineSearchWithAccessibility(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
-        return componentSearchHandler.searchWithAccessibility(text, subQueryRestrictions, user);
     }
 
     @Override

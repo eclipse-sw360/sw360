@@ -11,6 +11,7 @@ package org.eclipse.sw360.nouveau;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -106,24 +107,12 @@ public class NouveauQuery {
     }
 
     /**
-     * Sort the results by given sort order. Example: "fieldname<type>" or "-fieldname<type>".
+     * Sort the results by given sort order. Example: "fieldname", "-fieldname",
+     * {@code "<score>"} or {@code "-<score>"}.
      * @param sort Sort order
      */
-    public void setSort(List<String> sort) {
+    public void setSort(@Nullable List<String> sort) {
         this.sort = sort;
-    }
-
-    /**
-     * @param sort Sort order
-     * @deprecated Use {@link #setSort(List)} instead.
-     */
-    @Deprecated
-    public void setSort(String sort) {
-        if (sort == null) {
-            this.sort = null;
-        } else {
-            this.sort = List.of(sort);
-        }
     }
 
     /**

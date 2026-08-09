@@ -29,20 +29,17 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
  * Nouveau search handler for Packages.
  *
  * <p>Packages are access-controlled (per-user readable), therefore this
- * handler keeps the legacy text based public API ({@link #search}) while
- * delegating index construction and query routing to the shared
+ * handler keeps the legacy text based public API while delegating index
+ * construction and query routing to the shared
  * {@link BaseNouveauSearchHandler} DSL infrastructure.</p>
  */
 public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
-
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     // -------------------------------------------------------------------------
     //  Field spec declarations
@@ -128,21 +125,13 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
      * Search Packages with id, name, version, purl, packageType, createdBy or createdOn fields.
      */
     public Map<PaginationData, List<Package>> searchFilteredPackages(
-            String searchText, User user, PaginationData pageData
+            String searchText, PaginationData pageData
     ) {
         Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
         for (Package._Fields field : QUICK_FILTER_FIELDS) {
             subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
         }
         return baseSearchWithOr(connector, subQueryRestrictions, pageData);
-    }
-
-    /**
-     * Non-paginated search (legacy callers).
-     */
-    public List<Package> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictionsWithAnd(Package.class, getIndexName(),
-                text, subQueryRestrictions);
     }
 
     // -------------------------------------------------------------------------

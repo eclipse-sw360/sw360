@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -37,6 +36,7 @@ import java.util.function.Function;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_DATE_AS_DOUBLE;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_TO_DEFAULT_INDEX;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.convertToFreeSearch;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.sanitizeLuceneString;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
@@ -379,7 +379,8 @@ public abstract class BaseNouveauSearchHandler<T> {
      *
      * <p>The preamble always includes the three JS helper functions
      * ({@code emitEdgeNGrams}, {@code arrayToStringIndex}, {@code indexDateAsDouble}) so that
-     * {@code customJs} can call any of them freely.</p>
+     * {@code customJs} can call any of them freely. {@code getObjAsString} is added only when
+     * one of the {@code fields} is an {@link IndexField#defaultIndex()}.</p>
      *
      * <p>Analyzer priority (highest wins):
      * {@code customAnalyzers} &gt; auto-generated from field specs.</p>
@@ -407,6 +408,11 @@ public abstract class BaseNouveauSearchHandler<T> {
         js.append(EMIT_EDGE_N_GRAM_INDEX);
         js.append(OBJ_ARRAY_TO_STRING_INDEX);
         js.append(INDEX_DATE_AS_DOUBLE);
+        // `getObjAsString` is only pulled in when a `default` index is requested to avoid
+        // changing (and thus re-building) the index functions of handlers not using it.
+        if (fields.stream().anyMatch(f -> f.getCategory() == IndexField.Category.DEFAULT)) {
+            js.append(OBJ_TO_DEFAULT_INDEX);
+        }
         if (docType != null) {
             js.append("  if(!doc.type || doc.type != '").append(docType).append("') return;");
         } else {
@@ -509,7 +515,6 @@ public abstract class BaseNouveauSearchHandler<T> {
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);
         searchView.addNouveau(luceneSearchView, gson);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
         connector.addDesignDoc(searchView);
         return searchView;
     }
@@ -638,12 +643,17 @@ public abstract class BaseNouveauSearchHandler<T> {
 
     /**
      * Simple text search (no pagination) - sanitises the input before forwarding to the connector.
+     * Avoid using this function. Use other paginated methods where possible.
      */
+    @Deprecated
     public final List<T> search(
             @NonNull NouveauLuceneAwareDatabaseConnector connector, String searchText
     ) {
-        return connector.searchView(clazz, luceneSearchView.getIndexName(),
-                sanitizeLuceneString(searchText));
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<T>> result = connector.searchView(clazz,
+                luceneSearchView.getIndexName(),
+                sanitizeLuceneString(searchText), pageData, null);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
     }
 
     protected final String getIndexName() {
@@ -739,7 +749,7 @@ public abstract class BaseNouveauSearchHandler<T> {
      * @return A Lucene query string that can be passed directly to
      *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
      */
-    private @NonNull String buildQueryFromRestrictionsWithAnd(
+    protected final @NonNull String buildQueryFromRestrictionsWithAnd(
             @NonNull Map<String, Set<String>> restrictions
     ) {
         return AND.join(buildQueryFromRestrictions(restrictions));
@@ -754,7 +764,7 @@ public abstract class BaseNouveauSearchHandler<T> {
      * @return A Lucene query string that can be passed directly to
      *         {@link NouveauLuceneAwareDatabaseConnector#searchView}.
      */
-    private @NonNull String buildQueryFromRestrictionsWithOr(
+    protected final @NonNull String buildQueryFromRestrictionsWithOr(
             @NonNull Map<String, Set<String>> restrictions
     ) {
         return OR.join(buildQueryFromRestrictions(restrictions));

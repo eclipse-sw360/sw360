@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -30,7 +31,6 @@ import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
@@ -40,8 +40,6 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTIN
  * @author alex.borodin@evosoft.com
  */
 public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> {
-
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     // -------------------------------------------------------------------------
     //  Field spec declarations
@@ -118,15 +116,20 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
      * Paginated search with permission filtering.
      */
     public Map<PaginationData, List<Component>> searchAccessibleComponents(
-            final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+            final Map<String, Set<String>> subQueryRestrictions,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
         Map<PaginationData, List<Component>> resultComponentList = baseSearch(connector, subQueryRestrictions, pageData);
 
         PaginationData respPageData = resultComponentList.keySet().iterator().next();
         List<Component> componentList = resultComponentList.values().iterator().next();
 
-        componentList = componentList.stream().filter(component ->
-                makePermission(component, user).isActionAllowed(RequestedAction.READ))
-                .toList();
+        if (user != null) {
+            componentList = componentList.stream().filter(component ->
+                            makePermission(component, user).isActionAllowed(RequestedAction.READ))
+                    .toList();
+        }
 
         return Collections.singletonMap(respPageData, componentList);
     }
@@ -150,27 +153,6 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
                 .toList();
 
         return Collections.singletonMap(respPageData, componentList);
-    }
-
-    /**
-     * Non-paginated search (legacy callers).
-     */
-    public List<Component> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictionsWithAnd(Component.class, getIndexName(),
-                text, subQueryRestrictions);
-    }
-
-    /**
-     * Non-paginated search with accessibility information filled.
-     */
-    public List<Component> searchWithAccessibility(String text, final Map<String, Set<String>> subQueryRestrictions,
-                                                   User user) {
-        List<Component> resultComponentList = connector.searchViewWithRestrictionsWithAnd(Component.class,
-                getIndexName(), text, subQueryRestrictions);
-        for (Component component : resultComponentList) {
-            makePermission(component, user).fillPermissionsInOther(component);
-        }
-        return resultComponentList;
     }
 
     // -------------------------------------------------------------------------

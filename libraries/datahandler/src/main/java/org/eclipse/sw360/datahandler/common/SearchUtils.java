@@ -118,4 +118,40 @@ public class SearchUtils {
               index('string', 'id', doc._id);
             }
             """;
+
+    /**
+     * This function indexes every {@code releaseId} found in the stringified
+     * {@code doc.releaseRelationNetwork} ({@code list<ReleaseNode>}), including nested
+     * {@code releaseLink} nodes.
+     */
+    public static final String INDEX_PROJECT_RELEASE_RELATION_NETWORK = """
+            function indexReleaseRelationNetwork(nodes) {
+              if (typeof(nodes) === 'string' && nodes.length > 0) {
+                try {
+                  nodes = JSON.parse(nodes);
+                } catch (e) {
+                  return;
+                }
+              }
+
+              if (!nodes || !Array.isArray(nodes)) return;
+
+              for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i];
+                if (!node || typeof(node) !== 'object') continue;
+
+                if (typeof(node['releaseId']) === 'string' && node['releaseId'].length > 0) {
+                  index('string', 'releaseRelationNetwork', node['releaseId']);
+                }
+
+                if (node.releaseLink && Array.isArray(node.releaseLink) && node.releaseLink.length > 0) {
+                  indexReleaseRelationNetwork(node.releaseLink);
+                }
+              }
+            }
+
+            if (doc.releaseRelationNetwork) {
+              indexReleaseRelationNetwork(doc.releaseRelationNetwork);
+            }
+            """;
 }

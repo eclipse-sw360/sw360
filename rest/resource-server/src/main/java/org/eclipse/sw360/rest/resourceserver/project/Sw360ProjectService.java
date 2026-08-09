@@ -73,7 +73,6 @@ import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -1331,13 +1330,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         if (luceneSearch) {
-            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
-                Set<String> wildcardNames = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Project._Fields.NAME.getFieldName(), wildcardNames);
-            }
-            return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
+            return sw360ProjectClient.refineSearch(filterMap, sw360User);
         }
 
         return fetchAllPages((page) -> searchAccessibleProjectByExactValues(filterMap, sw360User,
