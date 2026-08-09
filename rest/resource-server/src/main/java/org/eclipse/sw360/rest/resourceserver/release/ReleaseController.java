@@ -257,10 +257,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
 
         PaginationResult<Release> paginationResult;
-        int totalCount = Math.toIntExact(paginatedReleases.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE, totalCount);
+                request, pageable, Map.of(paginatedReleases.keySet().iterator().next(), sw360Releases));
 
         List<EntityModel<Release>> releaseResources = new ArrayList<>();
         for (Release sw360Release : paginationResult.getResources()) {
