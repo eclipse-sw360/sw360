@@ -375,17 +375,11 @@ service ProjectService {
     set<Project> getAccessibleProjects(1: User user);
 
     // Search functions
-
-    /**
-     * global search function to list projects which match the text argument
-     */
-    list<Project> search(1: string text);
-
     /**
      * returns a list of projects which match `text` and the
      * `subQueryRestrictions` and are visible to the `user`
      */
-    list<Project> refineSearch(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user);
+    list<Project> refineSearch(1: map<string,set<string>> subQueryRestrictions, 2: User user);
 
     /**
      * search projects in database that match searchText in
@@ -734,9 +728,9 @@ service ProjectService {
 
 
     /**
-     * returns a list of projects which match `text` and the `subQueryRestrictions`
+     * returns a list of projects which match `subQueryRestrictions`
      */
-    list<Project> refineSearchWithoutUser(1: string text, 2: map<string,set<string>>  subQueryRestrictions);
+    list<Project> refineSearchWithoutUser(1: map<string,set<string>> subQueryRestrictions);
 
     /**
      * get a list of project links from keys of map `relations`

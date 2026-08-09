@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -28,10 +29,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
-import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_PROJECT_RELEASE_RELATION_NETWORK;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
@@ -79,6 +79,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             "        }" +
             "      }" +
             "    }" +
+            INDEX_PROJECT_RELEASE_RELATION_NETWORK +
             INDEX_ID_FIELD;
 
     /**
@@ -91,6 +92,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
     private static final Map<String, String> PROJECT_CUSTOM_ANALYZERS = Map.of(
             "attachmentCreatedBy", "email",
             "additionalData_sort", "keyword",
+            "releaseRelationNetwork", "keyword",
             "id", "keyword"
     );
 
@@ -132,17 +134,27 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
     //  Public search API
     // -------------------------------------------------------------------------
 
-    public Map<PaginationData, List<Project>> search(final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+    public Map<PaginationData, List<Project>> search(
+            final Map<String, Set<String>> subQueryRestrictions,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
         Map<PaginationData, List<Project>> resultProjectList = baseSearch(connector, subQueryRestrictions, pageData);
         PaginationData respPageData = resultProjectList.keySet().iterator().next();
         List<Project> projectList = resultProjectList.values().iterator().next();
 
-        projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+        if (user != null) {
+            projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+        }
 
         return Collections.singletonMap(respPageData, projectList);
     }
 
-    public Map<PaginationData, List<Project>> searchFilteredProjects(final String searchText, User user, PaginationData pageData) {
+    public Map<PaginationData, List<Project>> searchFilteredProjects(
+            final String searchText,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
         Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
         for (Project._Fields field : QUICK_FILTER_FIELDS) {
             subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
@@ -151,24 +163,11 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
         PaginationData respPageData = resultProjectList.keySet().iterator().next();
         List<Project> projectList = resultProjectList.values().iterator().next();
 
-        projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+        if (user != null) {
+            projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+        }
 
         return Collections.singletonMap(respPageData, projectList);
-    }
-
-    public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user) {
-        return connector.searchProjectViewWithRestrictionsAndFilter(getIndexName(), text,
-                subQueryRestrictions, user);
-    }
-
-    public List<Project> search(String searchText) {
-        return connector.searchView(Project.class, getIndexName(),
-                prepareWildcardQuery(searchText));
-    }
-
-    public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictionsWithAnd(Project.class, getIndexName(),
-                text, subQueryRestrictions);
     }
 
     public Set<Project> searchByReleaseId(String id, User user) {
@@ -176,28 +175,13 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
     }
 
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) {
-        Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(ids);
-        List<Project> projectsByReleaseIds;
-        if (user != null) {
-            projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(getIndexName(),
-                    null, filterMap, user);
-        } else {
-            projectsByReleaseIds = connector.searchViewWithRestrictionsWithAnd(Project.class, getIndexName(),
-                    null, filterMap);
-        }
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<String, Set<String>> filterMap = Map.of(
+                Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), ids
+        );
+        Map<PaginationData, List<Project>> result = search(filterMap, user, pageData);
+        List<Project> projectsByReleaseIds = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
         return new HashSet<>(projectsByReleaseIds);
-    }
-
-    private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
-        Map<String, Set<String>> filterMap = new HashMap<>();
-        Set<String> values = new HashSet<>();
-        for(String releaseId : releaseIds) {
-            values.add("\"releaseId\":\"" + releaseId + "\"");
-            values.add("\"releaseId\": \"" + releaseId + "\"");
-        }
-        values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
-        return filterMap;
     }
 
     // -------------------------------------------------------------------------
