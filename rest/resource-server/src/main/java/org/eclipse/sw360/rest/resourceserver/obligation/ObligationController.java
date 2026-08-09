@@ -40,7 +40,6 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -112,11 +111,8 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
 
         PaginationResult<Obligation> paginationResult;
         if (paginatedObligations != null && !paginatedObligations.isEmpty()) {
-            obligations.addAll(paginatedObligations.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedObligations.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, obligations, SW360Constants.TYPE_OBLIGATION, totalCount);
+                    request, pageable, paginatedObligations);
         } else {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     obligations, SW360Constants.TYPE_OBLIGATION);

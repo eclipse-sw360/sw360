@@ -26,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -457,16 +456,8 @@ public class ModerationRequestController implements RepresentationModelProcessor
             Pageable pageable, HttpServletRequest request, boolean allDetails,
             Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData
     ) throws ResourceClassNotFoundException, URISyntaxException, PaginationParameterException {
-        List<ModerationRequest> moderationRequests = new ArrayList<>();
-        int totalCount = 0;
-        if (!CommonUtils.isNullOrEmptyMap(modRequestsWithPageData)) {
-            PaginationData paginationData = modRequestsWithPageData.keySet().iterator().next();
-            moderationRequests = modRequestsWithPageData.get(paginationData);
-            totalCount = (int) paginationData.getTotalRowCount();
-        }
-
         PaginationResult<ModerationRequest> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, moderationRequests, SW360Constants.TYPE_MODERATION, totalCount);
+                request, pageable, modRequestsWithPageData);
 
         List<EntityModel<ModerationRequest>> moderationRequestResources = new ArrayList<>();
         paginationResult.getResources().forEach(m -> {
