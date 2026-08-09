@@ -135,11 +135,6 @@ service UserService {
     User getByEmailOrExternalId(1:string email, 2:string externalId);
 
     /**
-     * get list of all SW360-users in database with name equal to parameter name
-     **/
-    list<User> searchUsers(1:string name);
-
-    /**
      * get list of all SW360-users in database with department equal to parameter department
      **/
     list<User> searchDepartmentUsers(1:string department);

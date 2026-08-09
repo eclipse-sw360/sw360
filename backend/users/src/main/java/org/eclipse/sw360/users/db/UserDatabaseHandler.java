@@ -125,10 +125,6 @@ public class UserDatabaseHandler {
         return repository.getAll();
     }
 
-    public List<User> searchUsers(String searchText) {
-        return userSearchHandler.searchByNameAndEmail(searchText);
-    }
-
     public User getByExternalId(String externalId) {
         return repository.getByExternalId(externalId);
     }

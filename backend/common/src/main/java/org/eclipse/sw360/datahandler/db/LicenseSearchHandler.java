@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseSortColumn;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -72,7 +73,7 @@ public class LicenseSearchHandler extends BaseNouveauSearchHandler<License> {
     }
 
     @Override
-    protected List<String> mapSortColumn(int sortColumnNumber) {
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
         return switch (LicenseSortColumn.findByValue(sortColumnNumber)) {
             case LicenseSortColumn.BY_FULLNAME  -> List.of("fullname_sort", SCORE_SORTING_FIELD, "id_sort");
             case LicenseSortColumn.BY_SHORTNAME -> List.of("shortname_sort", SCORE_SORTING_FIELD, "fullname_sort");

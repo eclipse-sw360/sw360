@@ -22,6 +22,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -84,16 +85,12 @@ public class ProjectHandler implements ProjectService.Iface {
     /////////////////////
     // SUMMARY GETTERS //
     /////////////////////
-
     @Override
-    public List<Project> search(String text) throws TException {
-        return searchHandler.search(text);
-    }
-
-    @Override
-    public List<Project> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, User user)
+    public List<Project> refineSearch(Map<String, Set<String>> subQueryRestrictions, User user)
             throws TException {
-        return searchHandler.search(text, subQueryRestrictions, user);
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Project>> result = searchHandler.search(subQueryRestrictions, user, pageData);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
     }
 
     @Override
@@ -669,9 +666,10 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.getClearingStateForDependencyNetworkListView(projectId, user, true);
     }
 
-    @Override
-    public List<Project> refineSearchWithoutUser(String text, Map<String, Set<String>> subQueryRestrictions) {
-        return searchHandler.search(text, subQueryRestrictions);
+    public List<Project> refineSearchWithoutUser(Map<String, Set<String>> subQueryRestrictions) {
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Project>> result = searchHandler.search(subQueryRestrictions, null, pageData);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
     }
 
     @Override

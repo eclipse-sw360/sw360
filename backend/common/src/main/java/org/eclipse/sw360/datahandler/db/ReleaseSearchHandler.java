@@ -30,7 +30,6 @@ import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
@@ -39,8 +38,6 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTIN
  * @author thomas.maier@evosoft.com
  */
 public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
-
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     // -------------------------------------------------------------------------
     //  Field spec declarations
@@ -153,14 +150,6 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
                 .toList();
 
         return Collections.singletonMap(respPageData, releaseList);
-    }
-
-    /**
-     * Non-paginated search (legacy callers).
-     */
-    public List<Release> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictionsWithAnd(Release.class, getIndexName(),
-                text, subQueryRestrictions);
     }
 
     // -------------------------------------------------------------------------

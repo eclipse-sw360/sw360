@@ -153,11 +153,6 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public List<User> searchUsers(String searchText) {
-        return db.searchUsers(searchText);
-    }
-
-    @Override
     public List<User> getAllUsers() {
         return db.getAll();
     }

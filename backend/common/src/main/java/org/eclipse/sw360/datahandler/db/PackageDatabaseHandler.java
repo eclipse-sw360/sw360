@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -158,7 +159,9 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<Package> searchOrphanPackages(PackageSearchHandler searchHandler, String searchText) {
-        List<Package> packages = searchHandler.search(searchText, Map.of());
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Package>> result = searchHandler.searchFilteredPackages(searchText, pageData);
+        List<Package> packages = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
         Predicate<Package> orphanReleaseFilter = pkg -> CommonUtils.isNullEmptyOrWhitespace(pkg.getReleaseId());
         return packages.stream().filter(orphanReleaseFilter).collect(Collectors.toList());
     }
