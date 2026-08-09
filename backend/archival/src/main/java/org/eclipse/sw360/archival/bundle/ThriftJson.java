@@ -12,7 +12,9 @@ package org.eclipse.sw360.archival.bundle;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
@@ -34,10 +36,24 @@ public final class ThriftJson {
             .registerModule(new SimpleModule()
                     .setMixInAnnotation(Object.class, ThriftMixin.class));
 
+    private static final ObjectReader READER = MAPPER
+            .reader()
+            .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
     private ThriftJson() {}
 
     public static byte[] toJsonBytes(Object thriftObject) throws IOException {
         return MAPPER.writeValueAsBytes(thriftObject);
+    }
+
+    /**
+     * Reads bytes written by {@link #toJsonBytes} back into a Thrift struct. The
+     * same field-based mapper is used so the JSON produced on archive round-trips
+     * cleanly on restore. Unknown properties are ignored so a bundle written by an
+     * older SW360 still restores when new fields have appeared.
+     */
+    public static <T> T fromJson(byte[] json, Class<T> type) throws IOException {
+        return READER.readValue(json, type);
     }
 
     /**

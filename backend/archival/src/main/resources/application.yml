@@ -11,6 +11,12 @@ spring:
     name: sw360-archival
   jackson:
     default-property-inclusion: non_null
+  servlet:
+    multipart:
+      # Restore uploads the archived TAR.GZ bundle, which can be large because it
+      # carries attachment content. Raise the defaults well above the 1 MB cap.
+      max-file-size: 2GB
+      max-request-size: 2GB
 
 server:
   servlet:
