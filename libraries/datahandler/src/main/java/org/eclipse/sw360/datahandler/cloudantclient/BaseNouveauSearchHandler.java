@@ -14,6 +14,7 @@ import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.nouveau.NouveauResult;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
@@ -639,6 +640,28 @@ public abstract class BaseNouveauSearchHandler<T> {
         PaginationData respPageData = result.keySet().iterator().next();
         List<T> items = result.values().iterator().next();
         return Collections.singletonMap(respPageData, items);
+    }
+
+    /**
+     * Perform a search returning the raw Nouveau hits instead of deserialized documents.
+     *
+     * <p>Use this when the result set mixes document types (for example the global search) and
+     * therefore cannot be deserialized into a single Thrift type. The documents are shipped
+     * along with the hits, so no additional fetch is required.</p>
+     *
+     * @param connector Nouveau Aware DB Connector to use.
+     * @param query     Lucene query, usually built with
+     *                  {@link #buildQueryFromRestrictionsWithAnd} or
+     *                  {@link #buildQueryFromRestrictionsWithOr}.
+     * @param pageData  Pagination information, also used to determine the sort columns.
+     * @return The raw Nouveau result or {@code null} if the query was empty or failed.
+     */
+    protected final @Nullable NouveauResult baseSearchRaw(
+            @NonNull NouveauLuceneAwareDatabaseConnector connector,
+            String query, @NonNull PaginationData pageData
+    ) {
+        return connector.searchView(
+                luceneSearchView.getIndexName(), query, pageData, getSortColumns(pageData), true);
     }
 
     /**
