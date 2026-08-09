@@ -211,11 +211,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
 
         PaginationResult<Component> paginationResult;
-        List<Component> allComponents = new ArrayList<>(paginatedComponents.values().iterator().next());
-        int totalCount = Math.toIntExact(paginatedComponents.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, allComponents, SW360Constants.TYPE_COMPONENT, totalCount);
+                request, pageable, paginatedComponents);
 
         CollectionModel<EntityModel<Component>> resources = getFilteredComponentResources(fields, allDetails, sw360User, paginationResult);
         return new ResponseEntity<>(resources, HttpStatus.OK);
@@ -622,12 +619,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks =
                 componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
 
-        List<ReleaseLink> releaseLinks = new ArrayList<>(paginatedReleaseLinks.values().iterator().next());
-        int totalCount = Math.toIntExact(paginatedReleaseLinks.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
-
         PaginationResult<ReleaseLink> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, releaseLinks, SW360Constants.TYPE_RELEASELINK, totalCount);
+                request, pageable, paginatedReleaseLinks);
 
         List<EntityModel<ReleaseLink>> resources = paginationResult.getResources().stream()
                 .map(EntityModel::of)

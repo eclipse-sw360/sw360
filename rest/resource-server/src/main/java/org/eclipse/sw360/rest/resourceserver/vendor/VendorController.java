@@ -31,7 +31,6 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -115,11 +114,8 @@ public class VendorController implements RepresentationModelProcessor<Repository
 
         PaginationResult<Vendor> paginationResult;
         if (paginatedVendors != null) {
-            sw360Vendors.addAll(paginatedVendors.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedVendors.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, sw360Vendors, SW360Constants.TYPE_VENDOR, totalCount);
+                    request, pageable, paginatedVendors);
         } else {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     sw360Vendors, SW360Constants.TYPE_VENDOR);

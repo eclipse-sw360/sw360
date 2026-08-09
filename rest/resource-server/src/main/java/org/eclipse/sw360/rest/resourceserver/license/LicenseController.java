@@ -30,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -46,7 +45,6 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -134,12 +132,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             paginatedLicenses = licenseService.getLicensesWithPagination(pageable);
         }
 
-        Map.Entry<PaginationData, List<License>> licensePage = paginatedLicenses.entrySet().iterator().next();
-        List<License> sw360Licenses = new ArrayList<>(licensePage.getValue());
-        int totalCount = Math.toIntExact(licensePage.getKey().getTotalRowCount());
-
         PaginationResult<License> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE, totalCount);
+                request, pageable, paginatedLicenses);
 
         List<EntityModel<License>> licenseResources = new ArrayList<>();
         paginationResult.getResources()

@@ -47,7 +47,6 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -332,11 +331,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         PaginationResult<Project> paginationResult;
         if (!CommonUtils.isNullOrEmptyMap(paginatedProjects)) {
-            sw360Projects.addAll(paginatedProjects.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
+                    request, pageable, paginatedProjects);
         } else {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     sw360Projects, SW360Constants.TYPE_PROJECT);

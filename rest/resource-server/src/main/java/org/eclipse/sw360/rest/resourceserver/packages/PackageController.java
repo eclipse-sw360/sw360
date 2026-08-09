@@ -281,18 +281,12 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             Map<PaginationData, List<Package>> result = packageService.searchFilteredPackages(searchText, sw360User, pageable);
-            sw360Packages.addAll(result.values().iterator().next());
-            int totalCount = Math.toIntExact(result.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE, totalCount);
+                request, pageable, result);
         } else if (luceneSearch) {
             Map<PaginationData, List<Package>> result = packageService.refineSearch(restrictions, sw360User, pageable);
-            sw360Packages.addAll(result.values().iterator().next());
-            int totalCount = Math.toIntExact(result.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE, totalCount);
+                request, pageable, result);
         } else {
             sw360Packages = packageService.getPackagesForUser();
             if (!restrictions.isEmpty()) {

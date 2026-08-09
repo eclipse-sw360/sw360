@@ -28,7 +28,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
@@ -155,13 +154,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                 paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
             }
         }
-        PaginationResult<User> paginationResult = null;
-        List<User> allUsers = new ArrayList<>(paginatedUsers.values().iterator().next());
-        int totalCount = Math.toIntExact(paginatedUsers.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
-
-        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, allUsers, SW360Constants.TYPE_USER, totalCount);
+        PaginationResult<User> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, paginatedUsers);
 
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : paginationResult.getResources()) {
