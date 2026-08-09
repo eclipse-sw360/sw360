@@ -13,6 +13,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -89,6 +90,10 @@ public class UserSearchHandler extends BaseNouveauSearchHandler<User> {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
+    public UserSearchHandler() throws IOException {
+        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
+    }
+
     public UserSearchHandler(Cloudant client, String dbName) throws IOException {
         super(User.class, "users", USER_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
@@ -119,17 +124,6 @@ public class UserSearchHandler extends BaseNouveauSearchHandler<User> {
             subQueryRestrictions.put(User._Fields.EMAIL.getFieldName(), Collections.singleton(searchText));
         }
         return baseSearchWithOr(connector, subQueryRestrictions, pageData);
-    }
-
-    /**
-     * Simple free-text search (non-paginated) matching givenname, lastname, or email.
-     * Returns users sorted by relevance score.
-     */
-    public List<User> searchByNameAndEmail(String searchText) {
-        if (searchText == null || searchText.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return connector.searchAndSortByScore(User.class, getIndexName(), searchText);
     }
 
     // -------------------------------------------------------------------------
