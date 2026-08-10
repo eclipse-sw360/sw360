@@ -147,13 +147,13 @@ public class SW360PackageService {
 
     public Map<PaginationData, List<Package>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
-        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_NAME, true);
         return sw360PackageClient.refineSearchAccessiblePackages(filterMap, sw360User, pageData);
     }
 
     public Map<PaginationData, List<Package>> searchFilteredPackages(String searchText, User sw360User, Pageable pageable) throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
-        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_NAME, true);
         return sw360PackageClient.searchFilteredPackages(searchText, sw360User, pageData);
     }
 

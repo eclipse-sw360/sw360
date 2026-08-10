@@ -1355,7 +1355,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Map<String, Set<String>> filterMap = Map.of(
                 Release._Fields.NAME.getFieldName(), Collections.singleton(searchText)
         );
-        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable);
         return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
     }
 
@@ -1364,7 +1364,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<PaginationData, List<Release>> searchFilteredReleases(String searchText, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable);
         return sw360ComponentClient.searchFilteredReleases(searchText, sw360User, pageData);
     }
 
@@ -1373,7 +1373,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<PaginationData, List<Release>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable);
         return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
     }
 
@@ -1627,7 +1627,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      * @return a PaginationData object representing the pagination information
      */
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
-        return pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
+        return pageableToPaginationData(pageable, ReleaseSortColumn.BY_NAME, true);
     }
 
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,

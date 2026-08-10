@@ -172,7 +172,7 @@ public class Sw360UserService {
 
     public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable);
         return sw360UserClient.refineSearch(searchTerm, Collections.emptyMap(), pageData);
     }
 
@@ -431,8 +431,7 @@ public class Sw360UserService {
      */
     public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, User user, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable);
         return sw360UserClient.refineSearchAccessibleUsers(filterMap, user, pageData);
     }
 }
-
