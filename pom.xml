@@ -95,6 +95,7 @@
 
     <!-- Dependencies version properties -->
     <assertj.version>3.27.7</assertj.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <byte-buddy.version>1.18.11</byte-buddy.version>
     <cloudantsdk.version>0.10.20</cloudantsdk.version>
     <commons-cli.version>1.11.0</commons-cli.version>
@@ -126,11 +127,11 @@
     <jetty.version>10.0.15</jetty.version>
     <jgiven.version>2.0.3</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
-    <joda-time.version>2.14.2</joda-time.version>
+    <joda-time.version>2.14.3</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>6.1.2</junit.version>
     <log4j2.version>2.26.1</log4j2.version>
-    <logback.version>1.6.0</logback.version>
+    <logback.version>1.6.1</logback.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
     <mockito.version>5.23.0</mockito.version>
     <okhttp.version>5.4.0</okhttp.version>
@@ -146,10 +147,10 @@
     <spring-restdocs.version>4.0.1</spring-restdocs.version>
     <spring-security-oauth2-authorization-server.version>7.1.0</spring-security-oauth2-authorization-server.version>
     <spring-security.version>7.1.0</spring-security.version>
-    <springdoc-openapi-stater-common.version>3.0.3</springdoc-openapi-stater-common.version>
+    <springdoc-openapi-stater-common.version>3.1.0</springdoc-openapi-stater-common.version>
     <springframework.version>7.0.8</springframework.version>
     <thrift.version>0.20.0</thrift.version>
-    <archunit.version>1.4.2</archunit.version>
+    <archunit.version>1.5.0</archunit.version>
     <wiremock.version>3.13.2</wiremock.version>
     <keycloak.version>26.7.0</keycloak.version>
     <org.owasp.encoder.version>1.4.0</org.owasp.encoder.version>
@@ -227,6 +228,31 @@
         <groupId>com.sun.mail</groupId>
         <artifactId>jakarta.mail</artifactId>
         <version>${sun.mail.version}</version>
+      </dependency>
+      <!--
+        BouncyCastle: S/MIME (CMS/PKCS#7) signing of outgoing SW360 emails.
+        `bcjmail-jdk18on` is the Jakarta Mail flavour of `bcmail` and therefore
+        matches the `jakarta.mail` stack used by `MailUtil`.
+      -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcjmail-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcutil-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>
         <groupId>jakarta.ws.rs</groupId>

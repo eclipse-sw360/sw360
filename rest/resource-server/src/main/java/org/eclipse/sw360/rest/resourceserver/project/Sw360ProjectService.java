@@ -843,11 +843,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         try {
             LicenseObligationsStatusInfo licenseObligation = licenseClient.getProjectObligationStatus(
                     obligationStatusMap, licenseInfoWithObligations, releaseIdToAcceptedCLI);
-            Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
             obligationStatusMap = licenseObligation.getObligationStatusMap();
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo details = entry.getValue();
                 if (details.getReleaseIdToAcceptedCLI() == null && details.getReleases()!=null) {
+                    Map<String, String> releaseIdToAcceptedCli = new HashMap<>();
                     Set<Release> releaseData = details.getReleases();
                     for (Release rel : releaseData) {
                         String releaseId = rel.getId();

@@ -126,6 +126,43 @@ to tweak SW360 behaviour.
 
 Leave host/port empty to disable email service.
 
+##### S/MIME email signing
+
+SW360 can cryptographically sign every outgoing email with an X.509 identity, so
+recipients can verify that the mail really came from your SW360 instance. The
+result is a detached (clear-signed) `multipart/signed` message carrying an
+`smime.p7s` signature; clients without S/MIME support can still read the body.
+
+Signing is **off by default** and is enabled purely by configuration presence —
+there is no separate on/off switch. It becomes active once
+`EMAIL_PROPERTIES_SIGNING_KEYSTORE_PATH` **and**
+`EMAIL_PROPERTIES_SIGNING_KEYSTORE_PASSWORD` are both set and the referenced
+PKCS#12 file yields a usable signing identity.
+
+* `EMAIL_PROPERTIES_SIGNING_KEYSTORE_PATH`: Path of the PKCS#12 (`.p12`) file
+    holding the signing key and certificate chain (empty by default). Use
+    `/etc/sw360/smime-keystore.p12` together with the `SMIME_KEYSTORE` secret
+    below.
+* `EMAIL_PROPERTIES_SIGNING_KEYSTORE_PASSWORD`: Password of that PKCS#12 file.
+    No default; provide it through [Secrets](#secrets).
+* `EMAIL_PROPERTIES_SIGNING_KEY_ALIAS`: Alias of the key entry to use (empty by
+    default). Leave empty when the keystore holds exactly one key entry.
+* `EMAIL_PROPERTIES_SIGNING_KEY_PASSWORD`: Password of the key entry. No
+    default; leave unset to reuse the keystore password. Provide it through
+    [Secrets](#secrets) if it differs.
+* `EMAIL_PROPERTIES_SIGNING_DIGEST_ALGORITHM`: Digest used for the signature
+    (default: `SHA256`).
+
+The entrypoint copies the optional Docker secret `SMIME_KEYSTORE` to
+`/etc/sw360/smime-keystore.p12` (mode `600`). **Mounting the secret alone does
+not enable signing** — the path and password variables must be set as well.
+
+If signing is misconfigured (missing file, wrong password, unknown alias, ...),
+SW360 logs a `WARN` naming the exact reason and keeps sending **unsigned** mail;
+startup is never blocked and notifications are never dropped. A successful setup
+is confirmed by an `INFO` line reading
+`S/MIME e-mail signing enabled using certificate ...`.
+
 #### SVM
 * `SVM_API_BASE_PATH`: Base path of SVM API (default:
     `https://svm.example.org`).
@@ -186,7 +223,10 @@ Backend runtime consumes these secret values:
 * `REST_APITOKEN_HASH_SALT`
 * `EMAIL_PROPERTIES_USERNAME`
 * `EMAIL_PROPERTIES_PASSWORD`
+* `EMAIL_PROPERTIES_SIGNING_KEYSTORE_PASSWORD`
+* `EMAIL_PROPERTIES_SIGNING_KEY_PASSWORD`
 * `JWT_KEYSTORE` (binary JKS payload)
+* `SMIME_KEYSTORE` (binary PKCS#12 payload, optional)
 
 `REST_APITOKEN_HASH_SALT` must be OpenBSD bcrypt salt format:
 `$2a$<cost>$<22-char-salt>`.
@@ -214,6 +254,12 @@ To replace JWT signing key material:
   `rest/rest-common/tools/generateJwtStore.sh`)
 * provide it via `JWT_KEYSTORE` or persist it under `/etc/sw360`
 * keep `JWT_SECRETKEY` aligned with that keystore
+
+S/MIME email signing keystore:
+* Secret `SMIME_KEYSTORE` (if provided) is copied to
+  `/etc/sw360/smime-keystore.p12` with mode `600`.
+* Signing only activates once `EMAIL_PROPERTIES_SIGNING_KEYSTORE_PATH` and
+  `EMAIL_PROPERTIES_SIGNING_KEYSTORE_PASSWORD` are set as well.
 
 ## Volumes and Persistence
 
