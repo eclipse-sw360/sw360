@@ -494,7 +494,7 @@ public class Sw360ModerationRequestService {
     public Map<PaginationData, List<ModerationRequest>> refineSearch(
             Map<String, Set<String>> filterMap, Pageable pageable, User sw360User
     ) throws TException {
-        PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_SCORE, false);
+        PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_TIMESTAMP, false);
         return getThriftModerationClient().refineSearch(filterMap, pageData, sw360User);
     }
 }

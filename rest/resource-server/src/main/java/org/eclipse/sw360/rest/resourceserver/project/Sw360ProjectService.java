@@ -180,7 +180,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             String searchText, User sw360User, Pageable pageable
     ) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        PaginationData pageData = pageableToPaginationData(pageable, ProjectSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable, ProjectSortColumn.BY_NAME, true);
         return sw360ProjectClient.searchFilteredProjects(searchText, sw360User, pageData);
     }
 
@@ -1308,7 +1308,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable,
                 // Can be sorted on name and createdOn, but using different default value for score sorting
-                ProjectSortColumn.BY_SCORE, true);
+                ProjectSortColumn.BY_NAME, true);
         return sw360ProjectClient.refineSearchPageable(filterMap, sw360User, pageData);
     }
 
