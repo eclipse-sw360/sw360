@@ -41,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -955,8 +956,10 @@ public class ProjectTest extends TestIntegrationBase {
         Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
         ObligationStatusInfo obligationStatusInfo1 = new ObligationStatusInfo();
         obligationStatusInfo1.setStatus(ObligationStatus.OPEN);
+        obligationStatusInfo1.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         ObligationStatusInfo obligationStatusInfo2 = new ObligationStatusInfo();
         obligationStatusInfo2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        obligationStatusInfo2.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         linkedObligationStatus.put("obligation-1", obligationStatusInfo1);
         linkedObligationStatus.put("obligation-2", obligationStatusInfo2);
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
@@ -992,8 +995,10 @@ public class ProjectTest extends TestIntegrationBase {
         Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
         ObligationStatusInfo obligationStatusInfo1 = new ObligationStatusInfo();
         obligationStatusInfo1.setStatus(ObligationStatus.OPEN);
+        obligationStatusInfo1.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         ObligationStatusInfo obligationStatusInfo2 = new ObligationStatusInfo();
         obligationStatusInfo2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        obligationStatusInfo2.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         linkedObligationStatus.put("obligation-1", obligationStatusInfo1);
         linkedObligationStatus.put("obligation-2", obligationStatusInfo2);
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
@@ -1018,6 +1023,143 @@ public class ProjectTest extends TestIntegrationBase {
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
         assertEquals(2, responseBody.get("eccClassifiedCount").asInt());
         assertEquals(1, responseBody.get("eccOpenCount").asInt());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_filters_non_license_obligations() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(true);
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
+                .willReturn(Collections.emptyList());
+
+        ObligationList obligationList = new ObligationList();
+        Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
+
+        ObligationStatusInfo licenseObl1 = new ObligationStatusInfo();
+        licenseObl1.setStatus(ObligationStatus.OPEN);
+        licenseObl1.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+
+        ObligationStatusInfo licenseObl2 = new ObligationStatusInfo();
+        licenseObl2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        licenseObl2.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+
+        ObligationStatusInfo componentObl = new ObligationStatusInfo();
+        componentObl.setStatus(ObligationStatus.OPEN);
+        componentObl.setObligationLevel(ObligationLevel.COMPONENT_OBLIGATION);
+
+        ObligationStatusInfo projectObl = new ObligationStatusInfo();
+        projectObl.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        projectObl.setObligationLevel(ObligationLevel.PROJECT_OBLIGATION);
+
+        ObligationStatusInfo orgObl = new ObligationStatusInfo();
+        orgObl.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        orgObl.setObligationLevel(ObligationLevel.ORGANISATION_OBLIGATION);
+
+        linkedObligationStatus.put("license-obl-1", licenseObl1);
+        linkedObligationStatus.put("license-obl-2", licenseObl2);
+        linkedObligationStatus.put("component-obl-1", componentObl);
+        linkedObligationStatus.put("project-obl-1", projectObl);
+        linkedObligationStatus.put("org-obl-1", orgObl);
+        obligationList.setLinkedObligationStatus(linkedObligationStatus);
+        given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(2, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_for_legacy_license_obligations_without_level() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(true);
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
+                .willReturn(Collections.emptyList());
+
+        ObligationList obligationList = new ObligationList();
+        Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
+
+        // Legacy license obligation: no obligationLevel, but licenseIds present.
+        ObligationStatusInfo legacyLicenseObl = new ObligationStatusInfo();
+        legacyLicenseObl.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        legacyLicenseObl.setLicenseIds(new HashSet<>(Arrays.asList("Apache-2.0")));
+
+        // Non-license obligation: neither level nor licenseIds.
+        ObligationStatusInfo nonLicenseObl = new ObligationStatusInfo();
+        nonLicenseObl.setStatus(ObligationStatus.OPEN);
+
+        linkedObligationStatus.put("legacy-license", legacyLicenseObl);
+        linkedObligationStatus.put("non-license", nonLicenseObl);
+        obligationList.setLinkedObligationStatus(linkedObligationStatus);
+        given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(1, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_computes_obligations_when_not_linked() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(true);
+        // Simulate releases with obligations that were just linked: the obligation list
+        // has not been persisted yet, so the project has no linkedObligationId.
+        project1.setLinkedObligationId(null);
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
+        releaseIdToUsage.put(release1.getId(),
+                new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        project1.setReleaseIdToUsage(releaseIdToUsage);
+
+        // The release must carry a CLI attachment to be considered for on-demand computation.
+        release1.setAttachments(new HashSet<>(Collections.singletonList(
+                new Attachment().setAttachmentContentId("att-1").setFilename("cli.xml"))));
+
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
+                .willReturn(Collections.emptyList());
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.projectServiceMock.getProjectEccCounts(eq(project1.getId()), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(0, 0));
+
+        // Obligations computed on-demand from the CLI attachments carry licenseIds but no
+        // obligationLevel, exactly as produced by the backend license info parsing.
+        Map<String, ObligationStatusInfo> computedObligations = new HashMap<>();
+        ObligationStatusInfo computedOpen = new ObligationStatusInfo();
+        computedOpen.setStatus(ObligationStatus.OPEN);
+        computedOpen.setLicenseIds(new HashSet<>(Arrays.asList("Apache-2.0")));
+        ObligationStatusInfo computedFulfilled = new ObligationStatusInfo();
+        computedFulfilled.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        computedFulfilled.setLicenseIds(new HashSet<>(Arrays.asList("MIT")));
+        computedObligations.put("computed-1", computedOpen);
+        computedObligations.put("computed-2", computedFulfilled);
+        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any()))
+                .willReturn(computedObligations);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(2, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
     }
 
     @Test
