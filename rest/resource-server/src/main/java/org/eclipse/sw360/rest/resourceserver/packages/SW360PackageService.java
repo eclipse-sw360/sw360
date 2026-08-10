@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -88,7 +87,7 @@ public class SW360PackageService {
         return sw360PackageClient.deletePackage(packageId, sw360User);
     }
 
-    public PackageService.Iface getThriftPackageClient() throws TTransportException {
+    private PackageService.Iface getThriftPackageClient() {
         return ThriftClients.makePackageClient();
     }
 
@@ -117,6 +116,12 @@ public class SW360PackageService {
     public List<Package> getPackagesForUser() throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
         return sw360PackageClient.getAllPackages();
+    }
+
+    public Map<PaginationData, List<Package>> getPackagesWithPagination(Pageable pageable) throws TException {
+        PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_NAME, true);
+        return sw360PackageClient.getPackagesWithPagination(pageData);
     }
 
     public List<Package> searchPackageByName(String name) throws TException {
@@ -157,10 +162,11 @@ public class SW360PackageService {
         return sw360PackageClient.searchFilteredPackages(searchText, sw360User, pageData);
     }
 
-    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
-                                                            PackageSortColumn defaultColumn,
-                                                            Boolean defaultAscending) {
-        PackageSortColumn column = PackageSortColumn.BY_CREATEDON;
+    private static PaginationData pageableToPaginationData(
+            @NotNull Pageable pageable, PackageSortColumn defaultColumn,
+            Boolean defaultAscending
+    ) {
+        PackageSortColumn column = PackageSortColumn.BY_NAME;
         boolean ascending = false;
 
         if (pageable.getSort().isSorted()) {
@@ -186,29 +192,6 @@ public class SW360PackageService {
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize())
                 .setSortColumnNumber(column.getValue())
-                .setAscending(ascending);
-    }
-
-    private static PaginationData pageableToPaginationData(Pageable pageable) {
-        int sortColumn = -1; // default: createdOn view in backend
-        boolean ascending = true;
-
-        if (pageable.getSort().isSorted()) {
-            Sort.Order order = pageable.getSort().iterator().next();
-            sortColumn = switch (order.getProperty()) {
-                case "name" -> 0;
-                case "licenseIds", "licenses" -> 3;
-                case "packageManager" -> 4;
-                case "createdOn" -> -1;
-                default -> -1;
-            };
-            ascending = order.isAscending();
-        }
-
-        return new PaginationData()
-                .setDisplayStart((int) pageable.getOffset())
-                .setRowsPerPage(pageable.getPageSize())
-                .setSortColumnNumber(sortColumn)
                 .setAscending(ascending);
     }
 }
