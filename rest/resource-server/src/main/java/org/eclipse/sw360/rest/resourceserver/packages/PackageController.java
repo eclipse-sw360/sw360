@@ -293,11 +293,10 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             boolean useDbPagination = requestContainsPaging && restrictions.isEmpty() && !orphanPackage;
 
             if (useDbPagination) {
-                Map<PaginationData, List<Package>> paginatedPackages = packageService.getPackagesForUser(pageable);
+                Map<PaginationData, List<Package>> paginatedPackages = packageService.getPackagesWithPagination(pageable);
                 if (paginatedPackages != null && !paginatedPackages.isEmpty()) {
-                    sw360Packages.addAll(paginatedPackages.values().iterator().next());
-                    totalCount = Math.toIntExact(paginatedPackages.keySet().stream()
-                            .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+                    paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                            request, pageable, paginatedPackages);
                 } else {
                     sw360Packages = packageService.getPackagesForUser();
                 }
