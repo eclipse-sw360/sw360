@@ -15,6 +15,8 @@ import java.util.List;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;
+import org.eclipse.sw360.datahandler.services.archival.RestorePreview;
+import org.eclipse.sw360.datahandler.services.archival.RestoreResult;
 import org.eclipse.sw360.datahandler.services.users.User;
 
 /**
@@ -38,4 +40,10 @@ public interface ArchivalClient {
     ArchivalRecord getRecord(String id);
 
     void deleteRecord(String id);
+
+    /** Dry run: what restoring the uploaded bundle would do, without changing anything. */
+    RestorePreview restorePreview(byte[] bundle, User user);
+
+    /** Restores the uploaded bundle's entities into the live database. */
+    RestoreResult restore(byte[] bundle, User user);
 }

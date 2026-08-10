@@ -16,10 +16,16 @@ import java.util.function.Supplier;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;
+import org.eclipse.sw360.datahandler.services.archival.RestorePreview;
+import org.eclipse.sw360.datahandler.services.archival.RestoreResult;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
@@ -106,5 +112,38 @@ public class ArchivalServiceRestClient implements ArchivalClient {
                 .uri(BASE + "/records/{id}", id)
                 .retrieve()
                 .toBodilessEntity());
+    }
+
+    @Override
+    public RestorePreview restorePreview(byte[] bundle, User user) {
+        return call(() -> restClient.post()
+                .uri(BASE + "/restore/preview")
+                .headers(h -> addUser(h, user))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(bundlePart(bundle))
+                .retrieve()
+                .body(RestorePreview.class));
+    }
+
+    @Override
+    public RestoreResult restore(byte[] bundle, User user) {
+        return call(() -> restClient.post()
+                .uri(BASE + "/restore")
+                .headers(h -> addUser(h, user))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(bundlePart(bundle))
+                .retrieve()
+                .body(RestoreResult.class));
+    }
+
+    private static MultiValueMap<String, Object> bundlePart(byte[] bundle) {
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        parts.add("bundle", new ByteArrayResource(bundle) {
+            @Override
+            public String getFilename() {
+                return "bundle.tar.gz";
+            }
+        });
+        return parts;
     }
 }

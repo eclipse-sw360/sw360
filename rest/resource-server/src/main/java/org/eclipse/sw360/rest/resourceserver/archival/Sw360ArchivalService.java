@@ -18,6 +18,8 @@ import org.eclipse.sw360.datahandler.archival.ArchivalClients;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;
+import org.eclipse.sw360.datahandler.services.archival.RestorePreview;
+import org.eclipse.sw360.datahandler.services.archival.RestoreResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.stereotype.Service;
 
@@ -46,5 +48,13 @@ public class Sw360ArchivalService {
 
     public void deleteRecord(String id) {
         client().deleteRecord(id);
+    }
+
+    public RestorePreview restorePreview(byte[] bundle, User sw360User) {
+        return client().restorePreview(bundle, UserConverter.fromThrift(sw360User));
+    }
+
+    public RestoreResult restore(byte[] bundle, User sw360User) {
+        return client().restore(bundle, UserConverter.fromThrift(sw360User));
     }
 }

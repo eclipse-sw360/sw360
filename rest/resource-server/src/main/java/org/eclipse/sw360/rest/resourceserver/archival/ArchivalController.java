@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.archival;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
@@ -17,6 +18,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;
+import org.eclipse.sw360.datahandler.services.archival.RestorePreview;
+import org.eclipse.sw360.datahandler.services.archival.RestoreResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +32,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import lombok.NonNull;
@@ -70,6 +75,20 @@ public class ArchivalController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType("application/gzip"))
                 .body(body);
+    }
+
+    @PostMapping(value = ARCHIVAL_URL + "/restore/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RestorePreview> restorePreview(@RequestParam("bundle") MultipartFile bundle)
+            throws IOException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        return ResponseEntity.ok(archivalService.restorePreview(bundle.getBytes(), user));
+    }
+
+    @PostMapping(value = ARCHIVAL_URL + "/restore", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RestoreResult> restore(@RequestParam("bundle") MultipartFile bundle)
+            throws IOException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        return ResponseEntity.ok(archivalService.restore(bundle.getBytes(), user));
     }
 
     @GetMapping(ARCHIVAL_URL + "/records")
