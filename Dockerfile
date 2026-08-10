@@ -108,6 +108,11 @@ ENV EMAIL_PROPERTIES_SUPPORT_EMAIL="help@sw360.org"
 ENV EMAIL_PROPERTIES_TLS_PROTOCOL="TLSv1.2"
 ENV EMAIL_PROPERTIES_TLS_TRUST="*"
 ENV EMAIL_PROPERTIES_DEBUG="false"
+# S/MIME signing of outgoing emails.
+# The passwords supplied through /run/secrets/SW360_SECRETS.
+ENV EMAIL_PROPERTIES_SIGNING_KEYSTORE_PATH=""
+ENV EMAIL_PROPERTIES_SIGNING_KEY_ALIAS=""
+ENV EMAIL_PROPERTIES_SIGNING_DIGEST_ALGORITHM="SHA256"
 #
 # SVM Configs
 ENV SVM_API_BASE_PATH="https://svm.example.org"
@@ -166,7 +171,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-FROM quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0 AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13 AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -192,7 +197,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-FROM quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0 AS keycloak
+FROM quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13 AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

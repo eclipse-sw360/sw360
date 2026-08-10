@@ -3254,19 +3254,52 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         int obligationCount = 0;
         int obligationNonOpenCount = 0;
+        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
         if (!isNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
             ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
-            if (obligationList != null) {
-                obligationCount = obligationList.getLinkedObligationStatusSize();
-                obligationNonOpenCount = (int) obligationList.getLinkedObligationStatus().values().stream()
-                        .filter(statusInfo -> statusInfo != null && statusInfo.getStatus() != null
-                                && !ObligationStatus.OPEN.equals(statusInfo.getStatus()))
-                        .count();
+            if (obligationList != null && obligationList.getLinkedObligationStatus() != null) {
+                obligationStatusMap = obligationList.getLinkedObligationStatus();
+            }
+        } else {
+            // Compute the license obligations from the releases' CLI attachments so the count shows up.
+            List<Release> releases = getReleasesWithAttachments(sw360Project, sw360User);
+            if (!releases.isEmpty()) {
+                final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
+                obligationStatusMap = CommonUtils.nullToEmptyMap(projectService.setLicenseInfoWithObligations(
+                        Maps.newHashMap(), releaseIdToAcceptedCLI, releases, sw360User));
             }
         }
 
+        if (!CommonUtils.isNullOrEmptyMap(obligationStatusMap)) {
+            List<ObligationStatusInfo> licenseObligations = obligationStatusMap.values().stream()
+                    .filter(this::isLicenseObligation)
+                    .toList();
+            obligationCount = licenseObligations.size();
+            obligationNonOpenCount = (int) licenseObligations.stream()
+                    .filter(statusInfo -> statusInfo.getStatus() != null
+                            && !ObligationStatus.OPEN.equals(statusInfo.getStatus()))
+                    .count();
+        }
+
+        Sw360ProjectService.ProjectEccCounts eccCounts = projectService.getProjectEccCounts(id, sw360User);
+
         return new ResponseEntity<>(new ProjectDetailTabCounts(vulnerabilityCount, vulnerabilityRatedCount,
-                obligationCount, obligationNonOpenCount), HttpStatus.OK);
+                obligationCount, obligationNonOpenCount,
+                eccCounts.classifiedCount(), eccCounts.openCount()), HttpStatus.OK);
+    }
+
+    /**
+     * Returns {@code true} if the entry has {@link ObligationLevel#LICENSE_OBLIGATION},
+     * or, for legacy data without a level set, if it carries associated license ids.
+     */
+    private boolean isLicenseObligation(ObligationStatusInfo statusInfo) {
+        if (statusInfo == null) {
+            return false;
+        }
+        if (statusInfo.isSetObligationLevel()) {
+            return ObligationLevel.LICENSE_OBLIGATION.equals(statusInfo.getObligationLevel());
+        }
+        return statusInfo.isSetLicenseIds() && !statusInfo.getLicenseIds().isEmpty();
     }
 
     @Operation(

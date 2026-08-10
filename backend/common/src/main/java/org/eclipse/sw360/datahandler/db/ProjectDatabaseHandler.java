@@ -1425,8 +1425,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 for (String projectId : linkedProjects.keySet()) {
                     if (visitedProjectIds.contains(projectId)) continue;
 
-                    Project linkedProject = getProjectById(projectId, user);
-                    releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
+                    try {
+                        Project linkedProject = getProjectById(projectId, user);
+                        releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
+                    } catch (SW360Exception e) {
+                        log.warn("Could not get linked project with ID: {}", projectId, e);
+                    }
                 }
         }
     }

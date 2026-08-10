@@ -43,6 +43,16 @@ MailUtil_supportMailAddress=$EMAIL_PROPERTIES_SUPPORT_EMAIL
 MailUtil_smtpSSLProtocol=$EMAIL_PROPERTIES_TLS_PROTOCOL
 MailUtil_smtpSSLTrust=$EMAIL_PROPERTIES_TLS_TRUST
 
+# S/MIME signing of outgoing e-mails.
+# Signing is active only when both the keystore path and its password are set
+# and the referenced PKCS#12 file yields a usable signing identity. Leave the
+# path empty to send unsigned e-mails.
+MailUtil_smimeKeystorePath=$EMAIL_PROPERTIES_SIGNING_KEYSTORE_PATH
+MailUtil_smimeKeystorePassword=$EMAIL_PROPERTIES_SIGNING_KEYSTORE_PASSWORD
+MailUtil_smimeKeyAlias=$EMAIL_PROPERTIES_SIGNING_KEY_ALIAS
+MailUtil_smimeKeyPassword=$EMAIL_PROPERTIES_SIGNING_KEY_PASSWORD
+MailUtil_smimeDigestAlgorithm=$EMAIL_PROPERTIES_SIGNING_DIGEST_ALGORITHM
+
 # text patterns for mail utility
 defaultBegin= \
   *** This is an automatically generated email, please do not reply. ***\n\n\

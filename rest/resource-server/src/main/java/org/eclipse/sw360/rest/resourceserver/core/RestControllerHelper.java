@@ -717,7 +717,13 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedProject(HalResource<Project> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
         for (String projectId : projectIds) {
-            final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
+            final Project project;
+            try {
+                project = sw360ProjectService.getProjectForUserById(projectId, user);
+            } catch (ResourceNotFoundException | AccessDeniedException e) {
+                LOGGER.warn("Could not access/find project with id {}, for user {}", projectId, user.getEmail());
+                continue;
+            }
             addEmbeddedProject(halProject, project, false);
         }
     }

@@ -188,4 +188,27 @@ public class SW360PackageService {
                 .setSortColumnNumber(column.getValue())
                 .setAscending(ascending);
     }
+
+    private static PaginationData pageableToPaginationData(Pageable pageable) {
+        int sortColumn = -1; // default: createdOn view in backend
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            sortColumn = switch (order.getProperty()) {
+                case "name" -> 0;
+                case "licenseIds", "licenses" -> 3;
+                case "packageManager" -> 4;
+                case "createdOn" -> -1;
+                default -> -1;
+            };
+            ascending = order.isAscending();
+        }
+
+        return new PaginationData()
+                .setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize())
+                .setSortColumnNumber(sortColumn)
+                .setAscending(ascending);
+    }
 }

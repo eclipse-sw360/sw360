@@ -20,10 +20,10 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
-import com.ibm.cloud.cloudant.v1.model.ViewResult;
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.*;
 
 /**
  * CRUD access for the Package class
@@ -32,6 +32,8 @@ import com.google.common.collect.Maps;
  */
 
 public class PackageRepository extends DatabaseRepositoryCloudantClient<Package> {
+
+    private static final String PACKAGE_BY_ALL_IDX = "PackageByAllIdx";
 
     private static final String ALL = "function(doc) { if (doc.type == 'package') emit(null, doc._id) }";
     private static final String ORPHAN = "function(doc) { if (doc.type == 'package' && !doc.releaseId) emit(null, doc._id) }";
@@ -62,6 +64,16 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
         views.put("byPurlLowercase", createMapReduce(BY_PURL_LOWERCASE, null));
         views.put("byVersion", createMapReduce(BY_VERSION, null));
         initStandardDesignDocument(views, db);
+
+        createPartialTypeIndex(PACKAGE_BY_ALL_IDX, "pkgByAll", "package", new String[] {
+                Package._Fields.NAME.getFieldName(),
+                Package._Fields.VERSION.getFieldName(),
+                Package._Fields.PURL.getFieldName(),
+                Package._Fields.CREATED_ON.getFieldName(),
+                Package._Fields.CREATED_BY.getFieldName(),
+                Package._Fields.LICENSE_IDS.getFieldName(),
+                Package._Fields.PACKAGE_MANAGER.getFieldName(),
+        }, db);
     }
 
     public List<Package> getOrphanPackage() {
@@ -120,49 +132,37 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
     }
 
     public Map<PaginationData, List<Package>> getPackagesWithPagination(PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
         Map<PaginationData, List<Package>> result = Maps.newHashMap();
         List<Package> packages = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
-
-        PostViewOptions.Builder query;
-        switch (sortColumnNo) {
-            case -1:
-                query = getConnector().getPostViewQueryBuilder(Package.class, "byCreatedOn");
-                break;
-            case 0:
-                query = getConnector().getPostViewQueryBuilder(Package.class, "byNameLowerCase");
-                break;
-            case 3:
-                query = getConnector().getPostViewQueryBuilder(Package.class, "byLicenseIds");
-                break;
-            case 4:
-                query = getConnector().getPostViewQueryBuilder(Package.class, "byPackageManager");
-                break;
-            default:
-                query = getConnector().getPostViewQueryBuilder(Package.class, "all");
-                break;
-        }
-
-        PostViewOptions request;
-        if (rowsPerPage == -1) {
-            request = query.descending(!ascending).includeDocs(true).build();
-        } else {
-            request = query.limit(rowsPerPage).skip(offset)
-                    .descending(!ascending).includeDocs(true).build();
-        }
+        final Map<String, String> sortSelector = getSortSelector(pageData, ascending);
+        final Map<String, Object> selector = eq(Package._Fields.TYPE.getFieldName(), "package");
+        PostFindOptions.Builder queryBuilder = getConnector().getQueryBuilder()
+                .selector(selector)
+                .useIndex(Collections.singletonList(PACKAGE_BY_ALL_IDX));
 
         try {
-            ViewResult response = getConnector().getPostViewQueryResponse(request);
-            packages = getPojoFromViewResponse(response);
-            pageData.setTotalRowCount(response.getTotalRows());
+             log.debug("getPackagesWithPagination: using Mango query with index '{}', sort={}, page={}, size={}",
+                     PACKAGE_BY_ALL_IDX, sortSelector, pageData.getDisplayStart(), pageData.getRowsPerPage());
+             packages = getConnector().getQueryResultPaginated(queryBuilder, Package.class, pageData, sortSelector, PACKAGE_BY_ALL_IDX);
+             log.debug("getPackagesWithPagination: Mango query returned {} packages, totalCount={}",
+                     packages.size(), pageData.getTotalRowCount());
         } catch (Exception e) {
             log.error("Error getting packages from repository: ", e);
         }
         result.put(pageData, packages);
         return result;
+    }
+
+    private static Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
+        String direction = ascending ? "asc" : "desc";
+        return switch (pageData.getSortColumnNumber()) {
+            case -1 -> Collections.singletonMap(Package._Fields.CREATED_ON.getFieldName(), direction);
+            case 3 -> Collections.singletonMap(Package._Fields.LICENSE_IDS.getFieldName(), direction);
+            case 4 -> Collections.singletonMap(Package._Fields.PACKAGE_MANAGER.getFieldName(), direction);
+            case 0 -> Collections.singletonMap(Package._Fields.NAME.getFieldName(), direction);
+            default -> Collections.singletonMap(Package._Fields.NAME.getFieldName(), direction);
+        };
     }
     public List<Package> getPackagesByReleaseIds(Set<String> ids) {
         if (ids == null || ids.isEmpty()) {

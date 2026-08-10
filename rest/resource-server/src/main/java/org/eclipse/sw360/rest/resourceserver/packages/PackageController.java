@@ -37,6 +37,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -179,7 +180,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Package deleted successfully."),
             @ApiResponse(responseCode = "409", description = "Package is in use and cannot be deleted.",
-                content = @Content(mediaType = "application/json"))
+                    content = @Content(mediaType = "application/json"))
     })
     @DeleteMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<?> deletePackage(
@@ -288,7 +289,22 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
                 request, pageable, result);
         } else {
-            sw360Packages = packageService.getPackagesForUser();
+            boolean requestContainsPaging = pageable != null && pageable.isPaged();
+            boolean useDbPagination = requestContainsPaging && restrictions.isEmpty() && !orphanPackage;
+
+            if (useDbPagination) {
+                Map<PaginationData, List<Package>> paginatedPackages = packageService.getPackagesForUser(pageable);
+                if (paginatedPackages != null && !paginatedPackages.isEmpty()) {
+                    sw360Packages.addAll(paginatedPackages.values().iterator().next());
+                    totalCount = Math.toIntExact(paginatedPackages.keySet().stream()
+                            .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+                } else {
+                    sw360Packages = packageService.getPackagesForUser();
+                }
+            } else {
+                sw360Packages = packageService.getPackagesForUser();
+            }
+
             if (!restrictions.isEmpty()) {
                 sw360Packages = new ArrayList<>(sw360Packages.stream()
                         .filter(filterPackageMap(restrictions, orphanPackage)).toList());
