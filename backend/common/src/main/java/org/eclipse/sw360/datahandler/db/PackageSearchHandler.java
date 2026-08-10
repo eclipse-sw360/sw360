@@ -142,7 +142,7 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
     protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
         String revDir = "-";
         return switch (PackageSortColumn.findByValue(sortColumnNumber)) {
-            case PackageSortColumn.BY_NAME -> List.of("name_sort", revDir + "createdOn");
+            case PackageSortColumn.BY_NAME -> List.of("name_sort", "version_sort", revDir + "createdOn");
             case PackageSortColumn.BY_VERSION -> List.of("version_sort", "name_sort", revDir + "createdOn");
             case PackageSortColumn.BY_PACKAGE_MANAGER -> List.of("packageManager_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "createdOn");
             case PackageSortColumn.BY_CREATEDON -> List.of("createdOn");

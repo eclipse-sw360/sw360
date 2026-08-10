@@ -154,25 +154,25 @@ public class Sw360UserService {
 
     public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.refineSearch(null, filterMap, pageData);
     }
 
     public Map<PaginationData, List<User>> getUsersWithPagination(Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.getUsersWithPagination(null, pageData);
     }
 
     public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.searchUsersByExactValues(filterMap, pageData);
     }
 
     public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.refineSearch(searchTerm, Collections.emptyMap(), pageData);
     }
 
@@ -292,10 +292,6 @@ public class Sw360UserService {
      * @param pageable the Pageable object to convert
      * @return a PaginationData object representing the pagination information
      */
-    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
-        return pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
-    }
-
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
             UserSortColumn defaultColumn, Boolean defaultAscending) {
         UserSortColumn column = UserSortColumn.BY_GIVENNAME;
@@ -431,7 +427,7 @@ public class Sw360UserService {
      */
     public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, User user, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.refineSearchAccessibleUsers(filterMap, user, pageData);
     }
 }
