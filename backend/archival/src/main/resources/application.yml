@@ -16,16 +16,6 @@ server:
   servlet:
     context-path: /archival
 
-sw360:
-  archival:
-    cors:
-      # Browser origins allowed to call the archival API cross-origin. Empty by
-      # default because in a same-host deployment the frontend and archival share
-      # an origin. Set this when running archival standalone against a separately
-      # hosted frontend, e.g.
-      #   SW360_ARCHIVAL_CORS_ALLOWED_ORIGINS=http://localhost:3000
-      allowed-origins: ''
-
 logging:
   level:
     org.eclipse.sw360.archival: INFO
