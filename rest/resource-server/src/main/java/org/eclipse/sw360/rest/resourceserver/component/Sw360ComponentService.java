@@ -414,13 +414,13 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public Map<PaginationData, List<Component>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable, ComponentSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable);
         return sw360ComponentClient.refineSearchAccessibleComponents(filterMap, sw360User, pageData);
     }
 
     public Map<PaginationData, List<Component>> searchFilteredComponents(String searchText, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable, ComponentSortColumn.BY_SCORE, true);
+        PaginationData pageData = pageableToPaginationData(pageable);
         return sw360ComponentClient.searchFilteredComponents(searchText, sw360User, pageData);
     }
 
@@ -486,7 +486,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
      * @return a PaginationData object representing the pagination information
      */
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
-        return pageableToPaginationData(pageable, ComponentSortColumn.BY_CREATEDON, false);
+        return pageableToPaginationData(pageable, ComponentSortColumn.BY_NAME, true);
     }
 
     private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,

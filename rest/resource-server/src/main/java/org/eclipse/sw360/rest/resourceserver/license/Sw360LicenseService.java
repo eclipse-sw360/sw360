@@ -420,7 +420,7 @@ public class Sw360LicenseService {
 
     public Map<PaginationData, List<License>> searchLicenses(String searchText, Pageable pageable) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        PaginationData pageData = pageableToPaginationData(pageable, LicenseSortColumn.BY_SCORE, false);
+        PaginationData pageData = pageableToPaginationData(pageable, LicenseSortColumn.BY_FULLNAME, false);
         return sw360LicenseClient.searchLicenseWithPagination(searchText, pageData);
     }
 
