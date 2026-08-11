@@ -110,6 +110,7 @@ public class CycloneDxBOMImporter {
     private static final String COMPONENT_IMPORT_ERROR_COUNT_KEY = "compImportErrorCount";
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
+    private static final String COMPONENT_WITHOUT_PURL = "compWithoutPurl";
     public static final String INVALID_VCS_COMPONENT = "invalidVcsComponent";
     private static final Predicate<ExternalReference.Type> typeFilter = Type.VCS::equals;
 
@@ -225,6 +226,8 @@ public class CycloneDxBOMImporter {
                         final Set<String> duplicatePackages = new HashSet<>();
                         final Set<String> componentsWithoutVcs = new HashSet<>();
                         final Set<String> invalidPackages = new HashSet<>();
+                        final Set<String> componentsWithoutPurl = new HashSet<>();
+                        final Map<String, Integer> fallbackCounters = new HashMap<>();
 
                         Integer relReuseCount = Integer.valueOf(messageMap.get(REL_REUSE_COUNT_KEY));
                         Integer pkgReuseCount = Integer.valueOf(messageMap.get(PKG_REUSE_COUNT_KEY));
@@ -255,9 +258,15 @@ public class CycloneDxBOMImporter {
 
                                 if (pkg == null || CommonUtils.isNullEmptyOrWhitespace(pkg.getName()) || CommonUtils.isNullEmptyOrWhitespace(pkg.getVersion())
                                         || CommonUtils.isNullEmptyOrWhitespace(pkg.getPurl())) {
-                                    invalidPackages.add(fullName);
-                                    compImportErrorCount++;
-                                    log.error(String.format("Invalid package '%s' found in SBoM, missing name or version or purl! ", fullName));
+                                    log.warn("No purl present for component '%s' found in SBoM, calling the callback function to create component/release without a package", fullName);
+                                    boolean fallback = linkComponentAndReleaseWithoutPackage(comp, project, licenses, fallbackCounters);
+                                    if(fallback) {
+                                        componentsWithoutPurl.add(fullName);
+                                    } else {
+                                        invalidPackages.add(fullName);
+                                        compImportErrorCount++;
+                                        log.error(String.format("Invalid package '%s' found in SBoM, missing name or version or purl! ", fullName));
+                                    }
                                     continue;
                                 }
 
@@ -304,6 +313,7 @@ public class CycloneDxBOMImporter {
                         // all components does not have VCS, so return & show appropriate error in UI
                         messageMap.put(INVALID_COMPONENT, String.join(JOINER, componentsWithoutVcs));
                         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
+                        messageMap.put(COMPONENT_WITHOUT_PURL, String.join(JOINER, componentsWithoutPurl));
                         messageMap.put(SW360Constants.MESSAGE,
                                 String.format("VCS information is missing for <b>%s</b> / <b>%s</b> Components!",
                                         componentsCount - vcsCount, componentsCount));
@@ -311,6 +321,12 @@ public class CycloneDxBOMImporter {
                         messageMap.put(PKG_CREATION_COUNT_KEY, String.valueOf(pkgCreationCount));
                         messageMap.put(PKG_REUSE_COUNT_KEY, String.valueOf(pkgReuseCount));
                         messageMap.put(COMPONENT_IMPORT_ERROR_COUNT_KEY, String.valueOf(compImportErrorCount));
+
+                        for(String key : List.of(COMP_CREATION_COUNT_KEY, COMP_REUSE_COUNT_KEY, REL_CREATION_COUNT_KEY, REL_REUSE_COUNT_KEY)) {
+                            int existing = CommonUtils.isNotNullEmptyOrWhitespace(messageMap.get(key)) ? Integer.parseInt(messageMap.get(key)) : 0;
+                            int fallback_count = fallbackCounters.getOrDefault(key, 0);
+                            messageMap.put(key, String.valueOf(existing + fallback_count));
+                        }
                         requestSummary.setMessage(convertCollectionToJSONString(messageMap));
                     }
                 } else {
@@ -870,6 +886,61 @@ public class CycloneDxBOMImporter {
         return messageMap;
     }
 
+    private boolean linkComponentAndReleaseWithoutPackage(
+            org.cyclonedx.model.Component bomComp,
+            Project project,
+            Set<String> licenses,
+            Map<String, Integer> counters
+    ) {
+        Component component = createComponent(bomComp);
+        if(CommonUtils.isNullEmptyOrWhitespace(component.getName())) {
+            log.error("component name is not present in SBoM, cannot fallback to Component + Release import: " + project.getId());
+            return false;
+        }
+
+        try {
+            AddDocumentRequestSummary compAddSummary = componentDatabaseHandler.addComponent(component, user.getEmail());
+            if(CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
+                component.setId(compAddSummary.getId());
+                if(AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus())) {
+                    counters.merge(COMP_CREATION_COUNT_KEY, 1, Integer::sum);
+                } else {
+                    counters.merge(COMP_REUSE_COUNT_KEY, 1, Integer::sum);
+                }
+            } else {
+                log.warn("found multiple/invalid components while linking components/release without package: " + component.getName());
+                return false;
+            }
+
+            Release release = createRelease(bomComp, component, licenses);
+            if(CommonUtils.isNullEmptyOrWhitespace(release.getVersion())) {
+                log.error("release version not present in SBoM for Component: " + component.getName());
+                return false;
+            }
+
+            AddDocumentRequestSummary relAddSummary = componentDatabaseHandler.addRelease(release, user);
+            if(CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
+                release.setId(relAddSummary.getId());
+                if(AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
+                    counters.merge(REL_CREATION_COUNT_KEY, 1, Integer::sum);
+                } else {
+                    counters.merge(REL_REUSE_COUNT_KEY, 1, Integer::sum);
+                }
+            } else {
+                log.warn("found multiple/invalid release while linking component without package: " + SW360Utils.getVersionedName(release.getName(), release.getVersion()));
+                return false;
+            }
+
+            Map<String, ProjectReleaseRelationship> releaseIdtoUsage = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
+            releaseIdtoUsage.putIfAbsent(release.getId(), getDefaultRelation());
+            project.setReleaseIdToUsage(releaseIdtoUsage);
+            return true;
+
+        } catch (SW360Exception e) {
+            log.error("An error occurred while creating/adding component or release (no-purl fallback) from SBoM: " + e.getMessage());
+            return false;
+        }
+    }
     private Set<String> getLicenseFromBomComponent(org.cyclonedx.model.Component comp) {
         Set<String> licenses = new HashSet<>();
         if ((null != comp.getLicenseChoice() && CommonUtils.isNotEmpty(comp.getLicenseChoice().getLicenses()))) {
