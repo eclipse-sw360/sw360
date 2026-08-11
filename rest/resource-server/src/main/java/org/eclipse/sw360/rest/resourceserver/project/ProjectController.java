@@ -4055,8 +4055,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            summary = "Update project Obligations other than License Obligations",
-            description = "Pass a map of obligations in request body.",
+            summary = "Update project obligations",
+            description = """
+                Pass a JSON object keyed by obligation title. Each value is an `ObligationStatusInfo` patch.
+
+                Supported `obligationLevel` query values are `project`, `organization`, `component`, and `all`.
+
+                For `obligationLevel=all`, the request body may contain a mixed set of license, project,
+                organization, and component obligations in a single payload. Entries with a `null`
+                obligationLevel are ignored.
+
+                For `obligationLevel=project|organization|component`, the request body should only contain
+                obligations of the specified level. Entries with a `null` obligationLevel are not ignored.
+
+                NOTE: obligationLevel cannot have `license` as parameter value, license obligations are updated
+                in the case obligationLevel=all, otherwise they are ignored.
+                """,
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -4069,10 +4083,40 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @PatchMapping(value = PROJECTS_URL + "/{id}/updateObligation")
     public ResponseEntity<?> patchObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
-            @Parameter(description = "Map of obligation status info")
+            @Parameter(
+                description = "Map of obligation titles to obligation status updates. Example keys are obligation titles; values " +
+                    "may describe LICENSE_OBLIGATION, PROJECT_OBLIGATION, ORGANISATION_OBLIGATION, or COMPONENT_OBLIGATION entries.",
+                examples = {
+                    @ExampleObject(
+                        name = "All levels",
+                        value = """
+                            {
+                              "license-obl-1": {
+                            "obligationLevel": "LICENSE_OBLIGATION",
+                            "status": "ACKNOWLEDGED_OR_FULFILLED",
+                            "comment": "Handled in release documentation"
+                              },
+                              "project-obl-1": {
+                            "obligationLevel": "PROJECT_OBLIGATION",
+                            "status": "OPEN"
+                              },
+                              "org-obl-1": {
+                            "obligationLevel": "ORGANISATION_OBLIGATION",
+                            "status": "ACKNOWLEDGED_OR_FULFILLED"
+                              },
+                              "component-obl-1": {
+                            "obligationLevel": "COMPONENT_OBLIGATION",
+                            "status": "OPEN"
+                              }
+                            }
+                            """
+                    )
+                }
+            )
             @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,
             @Parameter(description = "Obligation Level",
-                    schema = @Schema(allowableValues = {"project", "organization", "component", "all"}))
+                schema = @Schema(allowableValues = {"project", "organization", "component", "all"}),
+                example = "all")
             @RequestParam(value = "obligationLevel", required = true) String oblLevel
     ) {
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
