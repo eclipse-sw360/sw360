@@ -9,10 +9,15 @@ of quality for contributions.
 
 ## Eclipse Contributor Agreement
 
-Before we can accept your contribution, you must
-electronically sign the Eclipse Contributor Agreement (ECA).
+In order to be able to contribute to Eclipse Foundation projects like SW360,
+you must electronically sign the Eclipse Contributor Agreement (ECA).
 
-* http://www.eclipse.org/legal/ECA.php
+* https://www.eclipse.org/legal/ECA.php
+
+The ECA provides the Eclipse Foundation with a permanent record that you agree
+that each of your contributions will comply with the commitments documented in
+the [Developer Certificate of Origin](https://www.eclipse.org/legal/DCO.php)
+(DCO).
 
 Commits that are provided by non-committers must have a Signed-off-by field in
 the footer indicating that the author is aware of the terms by which the
@@ -22,6 +27,11 @@ Contributor Agreement (ECA) on file.
 
 For more information, please see the Eclipse Committer Handbook:
 https://www.eclipse.org/projects/handbook/#resources-commit
+
+## Terms of Use
+Use of this service to contribute to Eclipse Foundation projects is
+additionally subject to the Eclipse Foundation
+[Terms of Use](https://www.eclipse.org/legal/termsofuse.php).
 
 ## Basic D-o-D
 
