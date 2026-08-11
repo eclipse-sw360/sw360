@@ -173,13 +173,30 @@ public class ModerationDatabaseHandler {
 
     public Map<PaginationData, List<ClearingRequest>> getRecentClearingRequestsWithPagination(User user, PaginationData pageData) {
         return clearingRequestRepository.getRecentClearingRequestsWithPagination(
-                user.getEmail(), user.getDepartment(), pageData);
+                user.getEmail(), getUserBusinessUnits(user), pageData);
     }
 
     public Map<PaginationData, List<ClearingRequest>> searchClearingRequestsByFilters(
             User user, Map<String, Set<String>> filterMap, PaginationData pageData) {
         return clearingRequestRepository.searchClearingRequestsByFilters(
-                user.getEmail(), user.getDepartment(), filterMap, pageData);
+                user.getEmail(), getUserBusinessUnits(user), filterMap, pageData);
+    }
+
+    /**
+     * Collects every business unit a user belongs to: the primary department plus all
+     * secondary departments. Clearing requests of any of them are visible to the user.
+     * @param user User to collect the business units for
+     * @return Business units of the user, never null
+     */
+    private static Set<String> getUserBusinessUnits(User user) {
+        Set<String> businessUnits = new HashSet<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(user.getDepartment())) {
+            businessUnits.add(user.getDepartment());
+        }
+        if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+            businessUnits.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
+        }
+        return businessUnits;
     }
 
     public Integer getOpenCriticalCrCountByGroup(String group) {
