@@ -45,12 +45,19 @@ jobs:
 
     services:
       couchdb:
-        image: couchdb:3
+        image: couchdb:3.5
         ports:
           - 5984:5984
         env:
           COUCHDB_USER: ${{ env.COUCHDB_USER }}
           COUCHDB_PASSWORD: ${{ env.COUCHDB_PASSWORD }}
+
+      couchdb-nouveau:
+        image: couchdb:3.5-nouveau
+        ports:
+          - 5987:5987
+        env:
+          JAVA_TOOL_OPTIONS: "-Ddw.rootDir=/opt/nouveau/data/nouveau"
 
     steps:
       - name: Harden Runner
@@ -65,6 +72,22 @@ jobs:
         run: |
           chmod +x .github/testForLicenseHeaders.sh
           bash .github/testForLicenseHeaders.sh
+
+      - name: Configure CouchDB Nouveau
+        run: |
+          echo "⏳ Waiting for CouchDB..."
+          timeout 60 bash -c 'until curl -fsS http://localhost:5984/_up >/dev/null 2>&1; do sleep 2; done'
+          echo "✅ CouchDB is ready"
+
+          echo "⏳ Waiting for Nouveau sidecar..."
+          timeout 60 bash -c 'until curl -sS -o /dev/null --connect-timeout 3 http://localhost:5987 2>/dev/null; do sleep 2; done'
+          echo "✅ Nouveau sidecar is ready"
+
+          echo "Enabling Nouveau in CouchDB..."
+          curl -sS -X PUT "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984/_node/_local/_config/nouveau/enable" -d '"true"'
+          curl -sS -X PUT "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984/_node/_local/_config/nouveau/url" -d '"http://couchdb-nouveau:5987"'
+          echo ""
+          echo "✅ Nouveau configured in CouchDB"
 
       - name: Update properties with DB credentials
         run: |
