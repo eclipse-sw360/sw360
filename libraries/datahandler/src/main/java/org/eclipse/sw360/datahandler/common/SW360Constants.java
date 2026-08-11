@@ -82,6 +82,38 @@ public class SW360Constants {
     public static final String TYPE_PROJECT_OBLIGATION = "obligationList";
     public static final String TYPE_MODERATION = "moderation";
     public static final String TYPE_CLEARING = "clearing";
+
+    /**
+     * Sentinel filter-map keys used by ClearingRequest date-range search (e.g. "Last 7 days").
+     * The generic filterMap mechanism (Map&lt;String, Set&lt;String&gt;&gt;) only supports
+     * equality/OR matching per field, so these dedicated keys signal the repository layer
+     * to build a $gte / $lte range selector on the ClearingRequest field named by
+     * {@link #CLEARING_REQUEST_DATE_FIELD_KEY} instead of an $eq/$or one.
+     * Shared between the REST controller (producer) and the backend repository (consumer)
+     * since those two modules don't share a direct Java dependency (they only talk via Thrift).
+     */
+    public static final String CLEARING_REQUEST_DATE_FIELD_KEY = "crDateField";
+    public static final String CLEARING_REQUEST_DATE_FROM_KEY = "crDateFrom";
+    public static final String CLEARING_REQUEST_DATE_TO_KEY = "crDateTo";
+
+    /**
+     * ClearingRequest date fields stored as epoch milliseconds (Thrift {@code i64}).
+     * Range bounds for these fields are transported as the decimal string form of the
+     * epoch millis and must be compared numerically.
+     */
+    public static final Set<String> CLEARING_REQUEST_EPOCH_DATE_FIELDS = Set.of(
+            ClearingRequest._Fields.TIMESTAMP.getFieldName(),
+            ClearingRequest._Fields.MODIFIED_ON.getFieldName(),
+            ClearingRequest._Fields.TIMESTAMP_OF_DECISION.getFieldName());
+
+    /**
+     * ClearingRequest date fields stored as ISO {@code yyyy-MM-dd} strings.
+     * Since the format is zero-padded and fixed width, lexicographic comparison is
+     * equivalent to chronological comparison.
+     */
+    public static final Set<String> CLEARING_REQUEST_ISO_DATE_FIELDS = Set.of(
+            ClearingRequest._Fields.REQUESTED_CLEARING_DATE.getFieldName(),
+            ClearingRequest._Fields.AGREED_CLEARING_DATE.getFieldName());
     public static final String TYPE_SEARCHRESULT = "searchResult";
     public static final String TYPE_CHANGELOG = "changeLog";
     public static final String TYPE_VULNERABILITYDTO = "vulDTO";
