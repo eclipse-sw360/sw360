@@ -126,15 +126,47 @@ public class MailUtil extends BackendUtils {
     }
 
     public void sendClearingMail(ClearingRequestEmailTemplate template, String subjectNameInPropertiesFile, Map<String, String> recipients, String... textParameters) {
-        MimeMessage messageWithSubjectAndText;
-        messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
+        sendClearingMail(template, subjectNameInPropertiesFile, recipients, false, textParameters);
+    }
+
+    public void sendClearingMail(ClearingRequestEmailTemplate template, String subjectNameInPropertiesFile,
+            Map<String, String> recipients, boolean forceRequestingUserMail, String... textParameters) {
+        MimeMessage messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
         if (!CommonUtils.isNullOrEmptyMap(recipients)) {
             String requestingUser = recipients.get(ClearingRequest._Fields.REQUESTING_USER.toString());
-            if (isMailWantedBy(requestingUser, SW360Utils.notificationPreferenceKey(SW360Constants.NOTIFICATION_CLASS_CLEARING_REQUEST, ClearingRequest._Fields.REQUESTING_USER.toString()))
-                && CommonUtils.isNotNullEmptyOrWhitespace(requestingUser)) {
-                sendMailWithSubjectAndText(String.join(",", recipients.values()), messageWithSubjectAndText);
-            } else {
-                sendMailWithSubjectAndText(recipients.get(ClearingRequest._Fields.CLEARING_TEAM.toString()), messageWithSubjectAndText);
+            String clearingTeam = recipients.get(ClearingRequest._Fields.CLEARING_TEAM.toString());
+
+            Set<String> resolvedRecipients = Sets.newLinkedHashSet();
+            boolean includeRequestingUser = CommonUtils.isNotNullEmptyOrWhitespace(requestingUser)
+                    && (forceRequestingUserMail
+                    || isMailWantedBy(requestingUser, SW360Utils.notificationPreferenceKey(
+                            SW360Constants.NOTIFICATION_CLASS_CLEARING_REQUEST,
+                            ClearingRequest._Fields.REQUESTING_USER.toString())));
+
+            if (includeRequestingUser) {
+                resolvedRecipients.add(requestingUser);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(clearingTeam)) {
+                resolvedRecipients.add(clearingTeam);
+            }
+            // include any extra roles (reviewer, commenter, …) unconditionally
+            for (Map.Entry<String, String> entry : recipients.entrySet()) {
+                String roleKey = entry.getKey();
+                String roleEmail = entry.getValue();
+                if (roleKey.equals(ClearingRequest._Fields.REQUESTING_USER.toString())
+                        || roleKey.equals(ClearingRequest._Fields.CLEARING_TEAM.toString())) {
+                    continue;
+                }
+                if (CommonUtils.isNotNullEmptyOrWhitespace(roleEmail)) {
+                    resolvedRecipients.add(roleEmail);
+                }
+            }
+
+            log.info("Resolved clearing mail recipients for template {}: requesterIncluded={}, recipients={}",
+                    template, includeRequestingUser, resolvedRecipients);
+
+            if (!resolvedRecipients.isEmpty()) {
+                sendMailWithSubjectAndText(String.join(",", resolvedRecipients), messageWithSubjectAndText);
             }
         }
     }

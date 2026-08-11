@@ -472,7 +472,7 @@ public class ModerationDatabaseHandler {
         request.setCommentDecisionModerator(moderationDecisionComment);
         request.setReviewer(reviewer);
         repository.update(request);
-        sendMailToUserForDeclinedRequest(request);
+        sendMailToUserForDeclinedRequest(request, reviewer);
     }
 
     public void acceptRequest(ModerationRequest request, String moderationComment, String reviewer) {
@@ -480,7 +480,7 @@ public class ModerationDatabaseHandler {
         if (dbRequest == null) {
             dbHandlerUtil.addChangeLogs(null, request, reviewer, Operation.MODERATION_ACCEPT, null,
                     Lists.newArrayList(), request.getDocumentId(), null);
-            sendMailNotificationsForAcceptedRequest(request);
+            sendMailNotificationsForAcceptedRequest(request, reviewer);
             return;
         }
         ModerationRequest requestBefore = dbRequest.deepCopy();
@@ -497,7 +497,7 @@ public class ModerationDatabaseHandler {
         }
         dbHandlerUtil.addChangeLogs(dbRequest, requestBefore, reviewer, Operation.MODERATION_ACCEPT,
                 null, Lists.newArrayList(), dbRequest.getDocumentId(),null);
-        sendMailNotificationsForAcceptedRequest(request);
+        sendMailNotificationsForAcceptedRequest(request, reviewer);
     }
 
     public RequestStatus createRequest(Component component, User user, Boolean isDeleteRequest) {
@@ -1033,59 +1033,128 @@ public class ModerationDatabaseHandler {
         Map<String, String> recipients = Maps.newHashMap();
         recipients.put(ClearingRequest._Fields.REQUESTING_USER.toString(), cr.getRequestingUser());
         recipients.put(ClearingRequest._Fields.CLEARING_TEAM.toString(), cr.getClearingTeam());
+        // also notify the person who wrote the comment
+        if (user != null && CommonUtils.isNotNullEmptyOrWhitespace(user.getEmail())
+                && !user.getEmail().equals(cr.getRequestingUser())
+                && !user.getEmail().equals(cr.getClearingTeam())) {
+            recipients.put("commenter", user.getEmail());
+        }
         String userDetails = new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString();
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW_COMMENT, MailConstants.SUBJECT_FOR_CLEARING_REQUEST_COMMENT, recipients,
             userDetails, CommonUtils.nullToEmptyString(cr.getId()), SW360Utils.printName(project), CommonUtils.nullToEmptyString(comment.getText()));
     }
 
     private void sendMailNotificationsForNewRequest(ModerationRequest request, String userEmail){
-        mailUtil.sendMail(request.getModerators(), userEmail,
+        String docType = ThriftEnumUtils.enumToString(request.getDocumentType());
+        String docName = request.getDocumentName();
+        Set<String> notified = new HashSet<>();
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(request.getRequestingUser())) {
+            mailUtil.sendMail(request.getRequestingUser(),
                 MailConstants.SUBJECT_FOR_NEW_MODERATION_REQUEST,
                 MailConstants.TEXT_FOR_NEW_MODERATION_REQUEST,
-                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST, ModerationRequest._Fields.MODERATORS.toString(),
-                ThriftEnumUtils.enumToString(request.getDocumentType()),
-                request.getDocumentName());
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
+                ModerationRequest._Fields.REQUESTING_USER.toString(),
+                false, docType, docName);
+            notified.add(request.getRequestingUser());
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(userEmail) && !notified.contains(userEmail)) {
+            mailUtil.sendMail(userEmail,
+                MailConstants.SUBJECT_FOR_NEW_MODERATION_REQUEST,
+                MailConstants.TEXT_FOR_NEW_MODERATION_REQUEST,
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
+                ModerationRequest._Fields.MODERATORS.toString(),
+                false, docType, docName);
+        }
+
+        log.info("Moderation NEW mail dispatched: requester={}, actor={}",
+            request.getRequestingUser(), userEmail);
     }
 
     private void sendMailNotificationsForUpdatedRequest(ModerationRequest request, String userEmail){
-        mailUtil.sendMail(request.getModerators(), userEmail,
+        String docType = ThriftEnumUtils.enumToString(request.getDocumentType());
+        String docName = request.getDocumentName();
+        Set<String> notified = new HashSet<>();
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(request.getRequestingUser())) {
+            mailUtil.sendMail(request.getRequestingUser(),
                 MailConstants.SUBJECT_FOR_UPDATE_MODERATION_REQUEST,
                 MailConstants.TEXT_FOR_UPDATE_MODERATION_REQUEST,
-                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST, ModerationRequest._Fields.MODERATORS.toString(),
-                ThriftEnumUtils.enumToString(request.getDocumentType()),
-                request.getDocumentName());
-    }
-
-    private void sendMailToUserForDeclinedRequest(ModerationRequest request){
-        boolean isUserRequest = request.getDocumentType() == DocumentType.USER;
-        if (isUserRequest){
-            mailUtil.sendMail(request.getRequestingUser(),
-                    MailConstants.SUBJECT_FOR_DECLINED_USER_MODERATION_REQUEST,
-                    MailConstants.TEXT_FOR_DECLINED_USER_MODERATION_REQUEST,
-                    SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
-                    ModerationRequest._Fields.REQUESTING_USER.toString(),
-                    false);
-        } else {
-            mailUtil.sendMail(request.getRequestingUser(),
-                    MailConstants.SUBJECT_FOR_DECLINED_MODERATION_REQUEST,
-                    MailConstants.TEXT_FOR_DECLINED_MODERATION_REQUEST,
-                    SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
-                    ModerationRequest._Fields.REQUESTING_USER.toString(),
-                    true,
-                    ThriftEnumUtils.enumToString(request.getDocumentType()),
-                    request.getDocumentName());
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
+                ModerationRequest._Fields.REQUESTING_USER.toString(),
+                false, docType, docName);
+            notified.add(request.getRequestingUser());
         }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(userEmail) && !notified.contains(userEmail)) {
+            mailUtil.sendMail(userEmail,
+                MailConstants.SUBJECT_FOR_UPDATE_MODERATION_REQUEST,
+                MailConstants.TEXT_FOR_UPDATE_MODERATION_REQUEST,
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
+                ModerationRequest._Fields.MODERATORS.toString(),
+                false, docType, docName);
+        }
+
+        log.info("Moderation UPDATE mail dispatched: requester={}, actor={}",
+            request.getRequestingUser(), userEmail);
     }
 
-    private void sendMailNotificationsForAcceptedRequest(ModerationRequest request) {
+    private void sendMailToUserForDeclinedRequest(ModerationRequest request, String reviewer){
         boolean isUserRequest = request.getDocumentType() == DocumentType.USER;
-        mailUtil.sendMail(request.getRequestingUser(),
+        String subjectKey = isUserRequest
+            ? MailConstants.SUBJECT_FOR_DECLINED_USER_MODERATION_REQUEST
+            : MailConstants.SUBJECT_FOR_DECLINED_MODERATION_REQUEST;
+        String textKey = isUserRequest
+            ? MailConstants.TEXT_FOR_DECLINED_USER_MODERATION_REQUEST
+            : MailConstants.TEXT_FOR_DECLINED_MODERATION_REQUEST;
+        String[] params = isUserRequest
+            ? new String[]{}
+            : new String[]{ ThriftEnumUtils.enumToString(request.getDocumentType()), request.getDocumentName() };
+
+        Set<String> notified = new HashSet<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(request.getRequestingUser())) {
+            mailUtil.sendMail(request.getRequestingUser(), subjectKey, textKey,
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
+                ModerationRequest._Fields.REQUESTING_USER.toString(), false, params);
+            notified.add(request.getRequestingUser());
+        }
+
+        if (!isUserRequest && CommonUtils.isNotNullEmptyOrWhitespace(reviewer) && !notified.contains(reviewer)) {
+            mailUtil.sendMail(reviewer, subjectKey, textKey,
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
+                ModerationRequest._Fields.MODERATORS.toString(), false, params);
+        }
+
+        log.info("Moderation DECLINED mail dispatched: requester={}, reviewer={}",
+            request.getRequestingUser(), reviewer);
+    }
+
+    private void sendMailNotificationsForAcceptedRequest(ModerationRequest request, String reviewer) {
+        String docType = ThriftEnumUtils.enumToString(request.getDocumentType());
+        String docName = request.getDocumentName();
+        Set<String> notified = new HashSet<>();
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(request.getRequestingUser())) {
+            mailUtil.sendMail(request.getRequestingUser(),
                 MailConstants.SUBJECT_FOR_ACCEPTED_MODERATION_REQUEST,
                 MailConstants.TEXT_FOR_ACCEPTED_MODERATION_REQUEST,
                 SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
                 ModerationRequest._Fields.REQUESTING_USER.toString(),
-                !isUserRequest,
-                ThriftEnumUtils.enumToString(request.getDocumentType()),
-                request.getDocumentName());
+                false, docType, docName);
+            notified.add(request.getRequestingUser());
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(reviewer) && !notified.contains(reviewer)) {
+            mailUtil.sendMail(reviewer,
+                MailConstants.SUBJECT_FOR_ACCEPTED_MODERATION_REQUEST,
+                MailConstants.TEXT_FOR_ACCEPTED_MODERATION_REQUEST,
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
+                ModerationRequest._Fields.MODERATORS.toString(),
+                false, docType, docName);
+        }
+
+        log.info("Moderation ACCEPTED mail dispatched: requester={}, reviewer={}",
+            request.getRequestingUser(), reviewer);
     }
 }
