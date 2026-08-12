@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
@@ -49,6 +50,9 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.exporter.CSVExport;
+import org.eclipse.sw360.exporter.JsonExport;
+import org.eclipse.sw360.exporter.XmlExport;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
@@ -86,6 +90,8 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
+import org.jspecify.annotations.Nullable;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -2465,41 +2471,56 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 ThriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
 
-    public String getReportInEmail(User user,
-			boolean extendedByReleases, String projectId) throws TException {
-        List<Project> projectList = null;
-        try {
-            if (!isNullOrEmpty(projectId)) {
-                projectList = getProjectDetailsBasedOnId(user, projectId);
-            }else {
-                projectList = getAccessibleProjectsSummary(user);
+    public ByteBuffer getProjectReportBuffer(
+            ProjectSearchHandler searchHandler, User user, String projectId, SW360ReportBean reportBean
+    ) throws TException {
+        List<Project> projects;
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
+            if (!isValidProject(projectId, user)) {
+                throw fail(404, "No project record found for the project Id : " + projectId);
             }
-            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
-            return exporter.makeExcelExportForProject(projectList, user);
-          }catch (IOException | TException e) {
-             throw new SW360Exception(e.getMessage());
-       }
-     }
+            // For a single specific project, delegate to backend for xlsx
+            // but use ProjectExporter for other formats
+            if (ReportFormat.EXCEL.equals(reportBean.getFormat())) {
+                return getReportDataStream(user, reportBean.isWithLinkedReleases(), projectId);
+            }
+            projects = List.of(getProjectById(projectId, user));
+        } else {
+            // No specific projectId: export projects matching the given filters.
+            projects = getFilteredProjects(user, reportBean, searchHandler);
+        }
+        try {
+            return createFormattedReport(projects, user, reportBean, reportBean.getFormat());
+        } catch (IOException e) {
+            TException exp = new SW360Exception("Failed to export projects in format " + reportBean.getFormat() + ": " + e.getMessage())
+                    .setErrorCode(500);
+            try {
+                throw exp.initCause(e);
+            } catch (Throwable ex) {
+                throw exp;
+            }
+        }
+    }
 
-     private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
-         final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true, log, user);
-         if (projectLinks.isEmpty()) {
-             throw new TException("For the projectId : " + projectId
-                     + ", No data available. Please check the projectId and try again.");
-         }
-         List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
-         return getProjectsById(linkedProjectIds, user);
-     }
+    private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
+        final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true, log, user);
+        if (projectLinks.isEmpty()) {
+            throw new TException("For the projectId : " + projectId
+                    + ", No data available. Please check the projectId and try again.");
+        }
+        List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
+        return getProjectsById(linkedProjectIds, user);
+    }
 
-     public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
+    public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
         ProjectExporter exporter = new ProjectExporter(ThriftClients.makeComponentClient(),
-				ThriftClients.makeProjectClient(), user, extendedByReleases);
-		try {
-			InputStream stream = exporter.downloadExcelSheet(token);
-			return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-		} catch (IOException e) {
-			throw new SW360Exception(e.getMessage());
-		}
+                ThriftClients.makeProjectClient(), user, extendedByReleases);
+        try {
+            InputStream stream = exporter.downloadExcelSheet(token);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
 	}
 
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) throws TException{
@@ -2924,5 +2945,115 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         .collect(Collectors.toList())
         );
         return detailReleaseNode;
+    }
+
+    private boolean isValidProject(String projectId, User user) {
+        boolean validProject = true;
+        try {
+            Project project = getProjectById(projectId, user);
+            if (project == null) {
+                return false;
+            }
+        } catch (Exception e) {
+            validProject = false;
+        }
+        return validProject;
+    }
+
+    /** Retrieves all projects matching the filters in {@code reportBean} for export. */
+    private List<Project> getFilteredProjects(
+            User user, @Nullable SW360ReportBean reportBean,
+            ProjectSearchHandler searchHandler
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (reportBean != null) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getName())) {
+                filterMap.put(Project._Fields.NAME.getFieldName(), Collections.singleton(reportBean.getName()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getTag())) {
+                filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(reportBean.getTag()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getType())) {
+                filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), CommonUtils.splitToSet(reportBean.getType()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getGroup())) {
+                filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), CommonUtils.splitToSet(reportBean.getGroup()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getVersion())) {
+                filterMap.put(Project._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(reportBean.getVersion()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getProjectResponsible())) {
+                filterMap.put(Project._Fields.PROJECT_RESPONSIBLE.getFieldName(), CommonUtils.splitToSet(reportBean.getProjectResponsible()));
+            }
+            if (reportBean.getProjectState() != null && CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getProjectState().name())) {
+                filterMap.put(Project._Fields.STATE.getFieldName(), CommonUtils.splitToSet(reportBean.getProjectState().name()));
+            }
+            if (reportBean.getProjectClearingState() != null && CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getProjectClearingState().name())) {
+                filterMap.put(Project._Fields.CLEARING_STATE.getFieldName(), CommonUtils.splitToSet(reportBean.getProjectClearingState().name()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getAdditionalData())) {
+                filterMap.put(Project._Fields.ADDITIONAL_DATA.getFieldName(), CommonUtils.splitToSet(reportBean.getAdditionalData()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getAttachmentAuthor())) {
+                filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, Collections.singleton(reportBean.getAttachmentAuthor()));
+            }
+        }
+        return getFilteredProjectsForExport(filterMap, user,
+                reportBean != null && reportBean.isLuceneSearch(), searchHandler);
+    }
+
+    /**
+     * Returns all projects matching the given filters for export.
+     *
+     * @param filterMap    field-name → accepted values
+     * @param sw360User    the authenticated user
+     * @param luceneSearch {@code true} for Lucene wildcard search, {@code false} for exact match
+     * @return flat list of all matching projects
+     */
+    private List<Project> getFilteredProjectsForExport(
+            @NotNull Map<String, Set<String>> filterMap, User sw360User,
+            boolean luceneSearch, ProjectSearchHandler searchHandler
+    ) {
+        if (filterMap.isEmpty()) {
+            return getAccessibleProjectsSummary(sw360User);
+        }
+
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        if (luceneSearch) {
+            Map<PaginationData, List<Project>> result = searchHandler.search(filterMap, sw360User, pageData);
+            return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
+        }
+
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(
+                searchAccessibleProjectByExactValues(filterMap, sw360User, pageData));
+    }
+
+    private @Nullable ByteBuffer createFormattedReport(
+            List<Project> projects, User user,
+            @NotNull SW360ReportBean reportBean, ReportFormat fmt
+    ) throws IOException, SW360Exception {
+        ProjectExporter exporter = getProjectExporterObject(projects, user, reportBean.isWithLinkedReleases());
+        if (ReportFormat.EXCEL.equals(fmt)) {
+            return exporter.toByteBuffer(projects);
+        }
+        List<Map<String, String>> records = exporter.makeRecords(projects);
+        List<String> headers = reportBean.isWithLinkedReleases() ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
+        return switch (fmt) {
+            case ReportFormat.CSV -> {
+                List<List<String>> rows = new ArrayList<>();
+                for (Map<String, String> record : records) {
+                    List<String> row = new ArrayList<>();
+                    for (String header : headers) {
+                        row.add(record.getOrDefault(header, ""));
+                    }
+                    rows.add(row);
+                }
+                Iterable<Iterable<String>> iterableRows = rows.stream().map(row -> (Iterable<String>) row).collect(Collectors.toList());
+                yield CSVExport.toByteBuffer(headers, iterableRows);
+            }
+            case ReportFormat.JSON -> JsonExport.toByteBuffer(records);
+            case ReportFormat.XML -> XmlExport.toByteBuffer(records);
+            default -> null;
+        };
     }
 }

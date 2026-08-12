@@ -32,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,8 +49,8 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
     private static final Logger log = LogManager.getLogger(ExcelExporter.class);
 
     protected final U helper;
-    private static final String SLASH = "/";
-    private static final String TMP_EXPORTEDFILES = "/tmp/";
+    public static final String SLASH = "/";
+    public static final String TMP_EXPORTEDFILES = "/tmp/";
 
     public ExcelExporter(U helper) {
         this.helper = helper;
@@ -77,10 +78,12 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         return records;
     }
 
-    public InputStream makeExcelExport(List<T> documents) throws IOException, SW360Exception {
-        final SXSSFWorkbook workbook = new SXSSFWorkbook();
-        final ByteArrayInputStream stream;
-        try {
+    /**
+     * Builds the workbook for the given documents and writes it to the provided output stream.
+     * Prefer {@link #toByteBuffer} when the result will be wrapped in a {@link java.nio.ByteBuffer}.
+     */
+    private void writeExcelExport(List<T> documents, OutputStream out) throws IOException, SW360Exception {
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook()) {
             SXSSFSheet sheet = workbook.createSheet("Data");
 
             /** Adding styles to cells */
@@ -97,14 +100,29 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
 
             // removed autosizing of spreadsheet columns for performance reasons
 
-            /** Copy the streams */
-            final ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
-            stream = new ByteArrayInputStream(out.toByteArray());
-        } finally {
-            workbook.close();
         }
-        return stream;
+    }
+
+    /**
+     * @deprecated Use {@link #toByteBuffer} instead.
+     */
+    @Deprecated
+    public InputStream makeExcelExport(List<T> documents) throws IOException, SW360Exception {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        writeExcelExport(documents, out);
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    /**
+     * Returns a {@link ByteBuffer} backed directly by the internal write buffer — no
+     * {@code Arrays.copyOf} is performed. Prefer this over {@link #makeExcelExport} when
+     * the result will be wrapped in a {@link ByteBuffer} anyway.
+     */
+    public ByteBuffer toByteBuffer(List<T> documents) throws IOException, SW360Exception {
+        ExposedByteArrayOutputStream out = new ExposedByteArrayOutputStream();
+        writeExcelExport(documents, out);
+        return out.asByteBuffer();
     }
 
     public String makeExcelExportForProject(List<T> documents, User user) throws IOException, SW360Exception {
@@ -145,7 +163,6 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
             try (OutputStream outputStream = new FileOutputStream(file.getPath())) {
                 workbook.setZip64Mode(Zip64Mode.Always);
                 workbook.write(outputStream);
-                outputStream.close();
             }
         } finally {
             workbook.close();

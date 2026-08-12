@@ -41,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -85,14 +86,6 @@ public class ProjectHandler implements ProjectService.Iface {
     /////////////////////
     // SUMMARY GETTERS //
     /////////////////////
-    @Override
-    public List<Project> refineSearch(Map<String, Set<String>> subQueryRestrictions, User user)
-            throws TException {
-        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
-        Map<PaginationData, List<Project>> result = searchHandler.search(subQueryRestrictions, user, pageData);
-        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
-    }
-
     @Override
     public Map<PaginationData, List<Project>> refineSearchPageable(
             Map<String, Set<String>> subQueryRestrictions, User user,
@@ -647,10 +640,20 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.getReportDataStream(user, extendedByReleases, projectId);
     }
 
+    /**
+     * Get buffer of report content based on report {@code format} and
+     * {@code reportBean} which is sent to the user.
+     * @param user       User for access check
+     * @param projectId  Project ID if a specific project is needed
+     * @param reportBean Report bean with filter and format information.
+     * @return Report content.
+     * @throws TException If anything goes wrong.
+     */
     @Override
-    public String getReportInEmail(User user, boolean extendedByReleases, String projectId)
-            throws TException {
-        return handler.getReportInEmail(user, extendedByReleases, projectId);
+    public ByteBuffer getProjectReportBuffer(User user, String projectId, SW360ReportBean reportBean) throws TException {
+        assertUser(user);
+        assertNotNull(reportBean);
+        return handler.getProjectReportBuffer(searchHandler, user, projectId, reportBean);
     }
 
     @Override

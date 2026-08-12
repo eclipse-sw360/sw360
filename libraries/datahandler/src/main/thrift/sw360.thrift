@@ -184,6 +184,13 @@ enum CycloneDxComponentType {
     OPERATING_SYSTEM = 7,
 }
 
+enum ReportFormat {
+    EXCEL = 0,
+    CSV = 1,
+    JSON = 2,
+    XML = 3,
+}
+
 struct ConfigContainer {
     1: optional string id,
     2: optional string revision,

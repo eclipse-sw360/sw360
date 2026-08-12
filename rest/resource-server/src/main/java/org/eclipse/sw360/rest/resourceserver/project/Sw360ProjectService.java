@@ -73,8 +73,6 @@ import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -1310,31 +1308,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 // Can be sorted on name and createdOn, but using different default value for score sorting
                 ProjectSortColumn.BY_NAME, true);
         return sw360ProjectClient.refineSearchPageable(filterMap, sw360User, pageData);
-    }
-
-    /**
-     * Returns all projects matching the given filters for export.
-     *
-     * @param filterMap    field-name → accepted values
-     * @param sw360User    the authenticated user
-     * @param luceneSearch {@code true} for Lucene wildcard search, {@code false} for exact match
-     * @return flat list of all matching projects
-     */
-    public List<Project> getFilteredProjectsForExport(
-            Map<String, Set<String>> filterMap, User sw360User, boolean luceneSearch
-    ) throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-
-        if (filterMap.isEmpty()) {
-            return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
-        }
-
-        if (luceneSearch) {
-            return sw360ProjectClient.refineSearch(filterMap, sw360User);
-        }
-
-        return fetchAllPages((page) -> searchAccessibleProjectByExactValues(filterMap, sw360User,
-                PageRequest.of(page, DatabaseSettings.LUCENE_SEARCH_LIMIT)));
     }
 
     /**

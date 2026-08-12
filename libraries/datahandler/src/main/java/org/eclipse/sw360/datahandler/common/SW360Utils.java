@@ -984,7 +984,9 @@ public class SW360Utils {
             if (user == null) {
                 projectsUsings = projectClient.refineSearchWithoutUser(filterMap);
             } else {
-                projectsUsings = projectClient.refineSearch(filterMap, user);
+                PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+                Map<PaginationData, List<Project>> result = projectClient.refineSearchPageable(filterMap, user, pageData);
+                projectsUsings = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
             }
         } catch (TException e) {
             log.error("Could not fetch projects");
