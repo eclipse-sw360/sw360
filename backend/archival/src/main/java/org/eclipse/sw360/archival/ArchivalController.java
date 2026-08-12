@@ -16,10 +16,13 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;
+import org.eclipse.sw360.datahandler.services.archival.RestorePreview;
+import org.eclipse.sw360.datahandler.services.archival.RestoreResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -41,9 +45,11 @@ import java.util.Map;
 public class ArchivalController {
 
     private final ArchivalHandler handler;
+    private final RestoreHandler restoreHandler;
 
-    public ArchivalController(ArchivalHandler handler) {
+    public ArchivalController(ArchivalHandler handler, RestoreHandler restoreHandler) {
         this.handler = handler;
+        this.restoreHandler = restoreHandler;
     }
 
     @PostMapping("/archive")
@@ -77,6 +83,34 @@ public class ArchivalController {
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = requireAdmin(email, department, userGroup);
         return ResponseEntity.ok(handler.preview(req, user));
+    }
+
+    @PostMapping(value = "/restore/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RestorePreview> restorePreview(
+            @RequestParam("bundle") MultipartFile bundle,
+            @RequestHeader("X-User-Email") String email,
+            @RequestHeader(value = "X-User-Department", required = false) String department,
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
+        User user = requireAdmin(email, department, userGroup);
+        try {
+            return ResponseEntity.ok(restoreHandler.preview(bundle.getInputStream(), user));
+        } catch (IOException e) {
+            throw new SW360Exception("could not read the uploaded bundle: " + e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/restore", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RestoreResult> restore(
+            @RequestParam("bundle") MultipartFile bundle,
+            @RequestHeader("X-User-Email") String email,
+            @RequestHeader(value = "X-User-Department", required = false) String department,
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
+        User user = requireAdmin(email, department, userGroup);
+        try {
+            return ResponseEntity.ok(restoreHandler.restore(bundle.getInputStream(), user));
+        } catch (IOException e) {
+            throw new SW360Exception("could not read the uploaded bundle: " + e.getMessage());
+        }
     }
 
     /**
