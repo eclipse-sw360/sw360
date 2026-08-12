@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.db;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -161,7 +162,7 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
         Map<String, Set<String>> andRestrictions = new HashMap<>();
         andRestrictions.put(Release._Fields.COMPONENT_ID.getFieldName(), Collections.singleton(componentId));
 
-        if (searchText == null || searchText.isBlank()) {
+        if (CommonUtils.isNullEmptyOrWhitespace(searchText)) {
             return baseSearch(connector, andRestrictions, pageData);
         }
 
