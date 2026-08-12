@@ -4227,13 +4227,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
         Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
 
+        // Check if all request body keys are present in the stored obligation map.
+        // If any key is missing, reload obligations from the admin section.
         boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
-                .stream()
-                .filter(entry -> {
-                    ObligationStatusInfo statusInfo = requestBodyObligationStatusInfo.get(entry);
-                    return statusInfo.getObligationLevel() == null;
-                })
-                .collect(Collectors.toSet())
                 .stream()
                 .allMatch(obligationStatusMap::containsKey);
 
