@@ -216,9 +216,8 @@ public class LicenseDatabaseHandler {
         try {
             List<License> licenses = getLicenseSummaryForExport();
             LicenseExporter exporter = getLicenseExporterObject();
-            InputStream stream = exporter.makeExcelExport(licenses);
-            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-        }catch (IOException e) {
+            return exporter.toByteBuffer(licenses);
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
