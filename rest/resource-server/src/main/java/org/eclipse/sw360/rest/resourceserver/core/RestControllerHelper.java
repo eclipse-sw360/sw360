@@ -1803,11 +1803,14 @@ public class RestControllerHelper<T> {
      * @return Filter Map based on parameters passed.
      */
     public static Map<String, Set<String>> getFilterMapForProject(
-            String tag, String projectType, String group, String version, String projectResponsible,
+            String name, String tag, String projectType, String group, String version, String projectResponsible,
             ProjectState projectState, ProjectClearingState projectClearingState, String additionalData,
             String attachmentAuthor
     ) {
         Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            filterMap.put(Project._Fields.NAME.getFieldName(), Collections.singleton(name));
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
             filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(tag));
         }

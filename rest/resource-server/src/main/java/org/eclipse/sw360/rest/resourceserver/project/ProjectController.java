@@ -299,11 +299,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<PaginationData, List<Project>> paginatedProjects = null;
 
         Map<String, Set<String>> filterMap = RestControllerHelper.getFilterMapForProject(
-                tag, projectType, group, version, projectResponsible, projectState, projectClearingState, additionalData, attachmentAuthor);
-        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            Set<String> values = Collections.singleton(name);
-            filterMap.put(Project._Fields.NAME.getFieldName(), values);
-        }
+                name, tag, projectType, group, version, projectResponsible,
+                projectState, projectClearingState, additionalData, attachmentAuthor
+        );
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !filterMap.isEmpty()) {
             throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
