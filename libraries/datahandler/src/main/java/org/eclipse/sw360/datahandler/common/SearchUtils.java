@@ -10,6 +10,8 @@
 
 package org.eclipse.sw360.datahandler.common;
 
+import static org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH;
+
 public class SearchUtils {
 
     /*
@@ -124,11 +126,11 @@ public class SearchUtils {
               var vParts = doc.version.toLowerCase().split(/[^a-z0-9]+/);
               for (var vi = 0; vi < vParts.length; vi++) {
                 if (vParts[vi].length >= 2) {
-                  emitEdgeNGrams('version_ngram', vParts[vi], 2, 50);
+                  emitEdgeNGrams('version_ngram', vParts[vi], 2, %d);
                 }
               }
             }
-            """;
+            """.formatted(EDGE_NGRAM_MAX_LENGTH);
 
     /**
      * This function indexes {@code doc._id} as a string field with name {@code id}.
