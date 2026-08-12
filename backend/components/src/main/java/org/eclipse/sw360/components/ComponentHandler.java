@@ -778,11 +778,6 @@ public class ComponentHandler implements ComponentService.Iface {
 		return handler.getComponentReportDataStream(user,extendedByReleases);
 	}
 
-	@Override
-	public String getComponentReportInEmail(User user, boolean extendedByReleases) throws TException {
-		return handler.getComponentReportInEmail(user,extendedByReleases);
-	}
-
     @Override
     public boolean isReleaseActionAllowed(Release release, User user, RequestedAction action) {
         return handler.isReleaseActionAllowed(release, user, action);

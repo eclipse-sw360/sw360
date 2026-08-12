@@ -23,9 +23,9 @@ import static org.eclipse.sw360.importer.ComponentImportUtils.writeAttachmentsTo
 import static org.eclipse.sw360.importer.ComponentImportUtils.writeReleaseLinksToDatabase;
 import static org.eclipse.sw360.importer.ComponentImportUtils.writeToDatabase;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -62,7 +62,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -90,10 +89,10 @@ public class Sw360ImportExportService {
         final Iterable<Iterable<String>> inputIterable = ImmutableList.of(ComponentCSVRecord.getSampleInputIterable());
         final Iterable<String> csvHeaderIterable = ComponentCSVRecord.getCSVHeaderIterable();
 
-        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(csvHeaderIterable, inputIterable);
+        ByteBuffer csvBuf = CSVExport.toByteBuffer(csvHeaderIterable, inputIterable);
         String filename = String.format("ComponentsReleasesVendorsSample_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Components; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.getOutputStream().write(csvBuf.array(), csvBuf.arrayOffset(), csvBuf.limit());
     }
 
     public void getDownloadAttachmentTemplate(User sw360User, HttpServletResponse response) throws IOException {
@@ -104,10 +103,10 @@ public class Sw360ImportExportService {
         final Iterable<Iterable<String>> inputIterable = ImmutableList
                 .of(ComponentAttachmentCSVRecord.getSampleInputIterable());
 
-        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(csvHeaderIterable, inputIterable);
+        ByteBuffer csvBuf = CSVExport.toByteBuffer(csvHeaderIterable, inputIterable);
         String filename = String.format("AttachmentInfo_Sample_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Attachment; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.getOutputStream().write(csvBuf.array(), csvBuf.arrayOffset(), csvBuf.limit());
     }
 
     public void getDownloadAttachmentInfo(User sw360User, HttpServletResponse response) throws IOException, TTransportException {
@@ -122,11 +121,10 @@ public class Sw360ImportExportService {
                 printReleasesAttachments(component, csvRows);
             }
         }
-        ByteArrayInputStream byteArrayInputStream = CSVExport
-                .createCSV(ComponentAttachmentCSVRecord.getCSVHeaderIterable(), csvRows);
+        ByteBuffer csvBuf = CSVExport.toByteBuffer(ComponentAttachmentCSVRecord.getCSVHeaderIterable(), csvRows);
         String filename = String.format("AttachmentInfo_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Attachment; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.getOutputStream().write(csvBuf.array(), csvBuf.arrayOffset(), csvBuf.limit());
     }
 
     private void printReleasesAttachments(Component component, List<Iterable<String>> csvRows) {
@@ -184,10 +182,10 @@ public class Sw360ImportExportService {
         final Iterable<String> csvHeaderIterable = ReleaseLinkCSVRecord.getCSVHeaderIterable();
         final Iterable<Iterable<String>> inputIterable = ImmutableList
                 .of(ReleaseLinkCSVRecord.getSampleInputIterable());
-        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(csvHeaderIterable, inputIterable);
+        ByteBuffer csvBuf = CSVExport.toByteBuffer(csvHeaderIterable, inputIterable);
         String filename = String.format("ReleaseLinkInfo_Sample_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Release; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.getOutputStream().write(csvBuf.array(), csvBuf.arrayOffset(), csvBuf.limit());
     }
 
     public void getDownloadReleaseLink(User sw360User, HttpServletResponse response) throws TException, IOException {
@@ -205,11 +203,10 @@ public class Sw360ImportExportService {
             }
         }
 
-        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(ReleaseLinkCSVRecord.getCSVHeaderIterable(),
-                csvRows);
+        ByteBuffer csvBuf = CSVExport.toByteBuffer(ReleaseLinkCSVRecord.getCSVHeaderIterable(), csvRows);
         String filename = String.format("ReleaseLinkInfo_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Release; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.getOutputStream().write(csvBuf.array(), csvBuf.arrayOffset(), csvBuf.limit());
     }
 
     private void dealWithReleaseLinksContainedInComponent(Map<String, Component> componentsById,
@@ -262,10 +259,10 @@ public class Sw360ImportExportService {
         final List<Component> componentDetailedSummaryForExport = getComponentDetailedSummaryForExport();
         List<Iterable<String>> csvRows = getFlattenedView(componentDetailedSummaryForExport);
 
-        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(csvHeaderIterable, csvRows);
+        ByteBuffer csvBuf = CSVExport.toByteBuffer(csvHeaderIterable, csvRows);
         String filename = String.format("ComponentsReleasesVendors_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Components; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.getOutputStream().write(csvBuf.array(), csvBuf.arrayOffset(), csvBuf.limit());
 
     }
 
@@ -358,11 +355,11 @@ public class Sw360ImportExportService {
             csvRows.add(row);
         }
 
-        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(headers, csvRows);
+        ByteBuffer csvBuf = CSVExport.toByteBuffer(headers, csvRows);
 
         String filename = String.format("AllUsersData_%s.csv", SW360Utils.getCreatedOn());
         response.setHeader(CONTENT_DISPOSITION, String.format("Users; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
+        response.getOutputStream().write(csvBuf.array(), csvBuf.arrayOffset(), csvBuf.limit());
     }
 
     UserService.@NonNull Iface getUserClient() {

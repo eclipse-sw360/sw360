@@ -3265,16 +3265,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseNames;
     }
 
-    public String getComponentReportInEmail(User user,boolean extendedByReleases) throws TException {
-        try {
-            List<Component> componentlist = getRecentComponentsSummary(-1, user);
-            ComponentExporter exporter = getComponentExporterObject(componentlist,user, extendedByReleases);
-            return exporter.makeExcelExportForProject(componentlist, user);
-        }catch (IOException e) {
-            throw new SW360Exception(e.getMessage());
-        }
-    }
-
     private ComponentExporter getComponentExporterObject(List<Component> componentList ,User user,
                                                          boolean extendedByRelease) throws SW360Exception {
         return new ComponentExporter(ThriftClients.makeComponentClient(), componentList, user,extendedByRelease);
@@ -3295,9 +3285,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             List<Component> componentlist = getRecentComponentsSummary(-1, user);
             ComponentExporter exporter = getComponentExporterObject(componentlist, user, extendedByReleases);
-            InputStream stream = exporter.makeExcelExport(componentlist);
-            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-        }catch (IOException e) {
+            return exporter.toByteBuffer(componentlist);
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
