@@ -17,7 +17,6 @@ on:
   pull_request:
     branches:
       - main
-      - feat/search/rework
     paths-ignore:
       - third-party/**
       - Dockerfile
