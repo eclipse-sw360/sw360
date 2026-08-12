@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -613,23 +614,24 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Release search text.")
-            @RequestParam(value = "name", required = false) String name,
-            @Parameter(description = "Use Nouveau/Lucene search for releases.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @RequestParam(value = "searchText", required = false) String searchText,
+            @Parameter(description = "Use lucene search for releases. Default true")
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks;
-        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             paginatedReleaseLinks =
-                    componentService.searchReleaseLinksByComponentWithLucene(id, name, sw360User, pageable);
+                    componentService.searchReleaseLinksByComponentWithLucene(id, searchText, sw360User, pageable);
         } else {
             paginatedReleaseLinks = componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
-            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-                List<ReleaseLink> filtered = paginatedReleaseLinks.values().iterator().next().stream()
-                        .filter(r -> name.equalsIgnoreCase(r.getName()))
-                        .collect(Collectors.toList());
+            if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+                List<ReleaseLink> filtered = NouveauLuceneAwareDatabaseConnector
+                        .convertPaginatorToList(paginatedReleaseLinks).stream()
+                        .filter(r -> searchText.equalsIgnoreCase(r.getName()))
+                        .toList();
                 PaginationData pageData = paginatedReleaseLinks.keySet().iterator().next();
                 pageData.setTotalRowCount(filtered.size());
                 paginatedReleaseLinks = Collections.singletonMap(pageData, filtered);
