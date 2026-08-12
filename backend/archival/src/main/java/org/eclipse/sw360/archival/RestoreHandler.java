@@ -80,6 +80,15 @@ public class RestoreHandler {
         this.db = db;
     }
 
+    /** Test seam: inject the live-entity and attachment connectors directly. */
+    RestoreHandler(ArchivalDatabaseHandler db,
+                   DatabaseConnectorCloudant entityDb,
+                   DatabaseConnectorCloudant attachmentDb) {
+        this.db = db;
+        this.entityDb = entityDb;
+        this.attachmentDb = attachmentDb;
+    }
+
     /**
      * Dry run: reports, per entity, whether it would be restored or skipped
      * (already present), without changing anything.
@@ -157,6 +166,10 @@ public class RestoreHandler {
 
     private RestoreResult.Outcome restoreOne(RestoredEntity re) throws Exception {
         ManifestEntry me = re.entry();
+        if (!re.checksumMatches()) {
+            throw new SW360Exception("bundle entry " + me.getEntityId()
+                    + " failed checksum verification (corrupt or tampered bundle)");
+        }
         byte[] document = re.primaryDocument();
         if (document == null) {
             throw new SW360Exception("bundle entry " + me.getEntityId() + " has no entity document");

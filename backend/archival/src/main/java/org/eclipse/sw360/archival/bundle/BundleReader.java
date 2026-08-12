@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +56,8 @@ public final class BundleReader {
     }
 
     public static Bundle read(InputStream rawIn) throws IOException {
-        Map<String, byte[]> files = new HashMap<>();
+        // LinkedHashMap keeps the tar order, which the per-entity checksum depends on.
+        Map<String, byte[]> files = new LinkedHashMap<>();
 
         long total = 0;
         try (GzipCompressorInputStream gz = new GzipCompressorInputStream(rawIn);
@@ -96,8 +96,8 @@ public final class BundleReader {
         String attachmentsPrefix = folder + "attachments/";
 
         Map<String, byte[]> documents = new LinkedHashMap<>();
-        Map<String, byte[]> attachmentContent = new HashMap<>();
-        Map<String, byte[]> attachmentMeta = new HashMap<>();
+        Map<String, byte[]> attachmentContent = new LinkedHashMap<>();
+        Map<String, byte[]> attachmentMeta = new LinkedHashMap<>();
 
         for (Map.Entry<String, byte[]> f : files.entrySet()) {
             String path = f.getKey();
