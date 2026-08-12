@@ -612,12 +612,29 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("id") String id,
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
+            @Parameter(description = "Release search text.")
+            @RequestParam(value = "name", required = false) String name,
+            @Parameter(description = "Use Nouveau/Lucene search for releases.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks =
-                componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
+        Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks;
+        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            paginatedReleaseLinks =
+                    componentService.searchReleaseLinksByComponentWithLucene(id, name, sw360User, pageable);
+        } else {
+            paginatedReleaseLinks = componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                List<ReleaseLink> filtered = paginatedReleaseLinks.values().iterator().next().stream()
+                        .filter(r -> name.equalsIgnoreCase(r.getName()))
+                        .collect(Collectors.toList());
+                PaginationData pageData = paginatedReleaseLinks.keySet().iterator().next();
+                pageData.setTotalRowCount(filtered.size());
+                paginatedReleaseLinks = Collections.singletonMap(pageData, filtered);
+            }
+        }
 
         PaginationResult<ReleaseLink> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
                 request, pageable, paginatedReleaseLinks);

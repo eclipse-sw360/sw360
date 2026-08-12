@@ -220,6 +220,22 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         return result;
     }
 
+    public Map<PaginationData, List<ReleaseLink>> searchReleaseLinksByComponentWithLucene(
+            String id, String searchText, User user, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationDataForReleases(pageable, ReleaseSortColumn.BY_CREATEDON, false);
+        Map<PaginationData, List<Release>> paginatedReleases =
+                sw360ComponentClient.searchAccessibleReleasesFromComponent(id, searchText, user, pageData);
+
+        PaginationData resultPageData = paginatedReleases.keySet().iterator().next();
+        List<Release> releases = paginatedReleases.values().iterator().next();
+
+        List<ReleaseLink> releaseLinks = convertReleasesToReleaseLinks(releases);
+        Map<PaginationData, List<ReleaseLink>> result = new HashMap<>();
+        result.put(resultPageData, releaseLinks);
+        return result;
+    }
+
     private List<ReleaseLink> convertReleasesToReleaseLinks(List<Release> releases) {
         List<ReleaseLink> releaseLinks = new ArrayList<>();
         releases.forEach(release -> {

@@ -886,6 +886,11 @@ service ComponentService {
     map<PaginationData, list<Release>> getReleasesFromComponentIdWithPagination(1: string id, 2: User user, 3: PaginationData pageData);
 
     /**
+     * get component-scoped releases using Nouveau search over release id/version
+     **/
+    map<PaginationData, list<Release>> searchAccessibleReleasesFromComponent(1: string componentId, 2: string searchText, 3: User user, 4: PaginationData pageData);
+
+    /**
      * get components belonging to linked releases of the release specified by releaseId
      **/
     set <Component> getUsingComponentsForRelease(1: string releaseId );

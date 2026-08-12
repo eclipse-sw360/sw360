@@ -24,11 +24,13 @@ import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_VERSION_SEGMENTS;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
@@ -44,9 +46,9 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
     // -------------------------------------------------------------------------
 
     private static final List<IndexField> RELEASE_FIELDS = List.of(
-            IndexField.string("id"),
             IndexField.standard("name"),
             IndexField.standard("version"),
+            IndexField.simple("componentId", "keyword"),
             IndexField.simple("clearingState", "keyword"),
             IndexField.simple("mainlineState", "keyword"),
             IndexField.simple("createdBy", "email"),
@@ -64,6 +66,7 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
             "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
             "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
             "    arrayToStringIndex(doc.externalIds, 'externalIds');" +
+            INDEX_VERSION_SEGMENTS +
             INDEX_ID_FIELD;
 
     /**
@@ -150,6 +153,27 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
                 .toList();
 
         return Collections.singletonMap(respPageData, releaseList);
+    }
+
+    public Map<PaginationData, List<Release>> searchAccessibleReleasesFromComponent(
+            String componentId, String searchText, User user, PaginationData pageData
+    ) {
+        Map<String, Set<String>> andRestrictions = new HashMap<>();
+        andRestrictions.put(Release._Fields.COMPONENT_ID.getFieldName(), Collections.singleton(componentId));
+
+        if (searchText == null || searchText.isBlank()) {
+            return baseSearch(connector, andRestrictions, pageData);
+        }
+
+        Map<String, Set<String>> orRestrictions = new HashMap<>();
+        orRestrictions.put(Release._Fields.ID.getFieldName(), Collections.singleton(searchText));
+        orRestrictions.put(Release._Fields.VERSION.getFieldName(), Collections.singleton(searchText));
+
+        Map<String, Map<String, Set<String>>> complexRestrictions = new LinkedHashMap<>();
+        complexRestrictions.put("OR", orRestrictions);
+        complexRestrictions.put("AND", andRestrictions);
+
+        return complexBaseSearch(connector, complexRestrictions, AND, pageData);
     }
 
     // -------------------------------------------------------------------------
