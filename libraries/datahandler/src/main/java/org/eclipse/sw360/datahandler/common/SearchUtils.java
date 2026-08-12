@@ -111,6 +111,26 @@ public class SearchUtils {
             """;
 
     /**
+     * Emits edge n-grams for each non-alphanumeric-delimited segment of {@code doc.version}.
+     * This allows partial infix searches to match version strings like {@code 2.4.1_conflict}
+     * when the user searches for {@code conf}, which the standard whitespace-splitting ngram
+     * function cannot support because the whole value has no whitespace.
+     *
+     * <p>Example: {@code 2.4.1_conflict} splits into {@code ["2","4","1","conflict"]};
+     * the segment {@code conflict} generates ngrams {@code co, con, conf, …, conflict}.</p>
+     */
+    public static final String INDEX_VERSION_SEGMENTS = """
+            if (doc.version && typeof(doc.version) == 'string') {
+              var vParts = doc.version.toLowerCase().split(/[^a-z0-9]+/);
+              for (var vi = 0; vi < vParts.length; vi++) {
+                if (vParts[vi].length >= 2) {
+                  emitEdgeNGrams('version_ngram', vParts[vi], 2, 50);
+                }
+              }
+            }
+            """;
+
+    /**
      * This function indexes {@code doc._id} as a string field with name {@code id}.
      */
     public static final String INDEX_ID_FIELD = """
