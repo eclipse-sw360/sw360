@@ -619,7 +619,7 @@ public class DatabaseHandlerUtil {
                     changelog.debug(convertObjectToJson(referenceDocLog));
                     try {
                         changeLogRepository.add(referenceDocLog);
-                    } catch (SW360Exception e) {
+                    } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                         log.error("Error occurred while adding change log", e);
                     }
                 });

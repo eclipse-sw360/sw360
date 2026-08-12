@@ -319,11 +319,7 @@ public class SW360ConfigsDatabaseHandler {
         if (configContainer.getId() != null) {
             repository.update(configContainer);
         } else {
-            try {
-                repository.add(configContainer);
-            } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
-                throw new SW360Exception(e.getWhy(), e);
-            }
+            repository.add(configContainer);
         }
 
         if (configFor == ConfigFor.SW360_CONFIGURATION) {

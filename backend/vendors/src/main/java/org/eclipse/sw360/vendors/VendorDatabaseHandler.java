@@ -88,9 +88,10 @@ public class VendorDatabaseHandler {
         }
         try {
             repository.add(vendor);
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             log.error("Error adding vendor", e);
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage(e.why);
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE)
+                    .setMessage(e.getWhy());
         }
         return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(vendor.getId());
     }

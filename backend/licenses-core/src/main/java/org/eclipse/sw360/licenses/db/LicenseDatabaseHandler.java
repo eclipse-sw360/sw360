@@ -997,7 +997,7 @@ public class LicenseDatabaseHandler {
         } else {
             try {
                 customPropertiesRepository.add(customProperties);
-            } catch (SW360Exception e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error("Unable to add or update custom license property.", e);
                 return RequestStatus.FAILURE;
             }

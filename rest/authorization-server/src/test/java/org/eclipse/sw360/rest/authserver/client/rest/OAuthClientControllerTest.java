@@ -333,16 +333,12 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
      */
     private void stubRepoAddAndLookup() {
         final OAuthClientEntity[] holder = new OAuthClientEntity[1];
-        try {
-            doAnswer((InvocationOnMock inv) -> {
-                OAuthClientEntity e = inv.getArgument(0);
-                e.setId(UUID.randomUUID().toString());
-                holder[0] = e;
-                return null;
-            }).when(clientRepo).add(any(OAuthClientEntity.class));
-        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception unreachable) {
-            throw new AssertionError(unreachable);
-        }
+        doAnswer((InvocationOnMock inv) -> {
+            OAuthClientEntity e = inv.getArgument(0);
+            e.setId(UUID.randomUUID().toString());
+            holder[0] = e;
+            return null;
+        }).when(clientRepo).add(any(OAuthClientEntity.class));
         when(clientRepo.getByClientId(any(String.class))).thenAnswer(inv -> holder[0]);
     }
 }

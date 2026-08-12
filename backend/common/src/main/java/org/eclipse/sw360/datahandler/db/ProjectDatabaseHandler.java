@@ -1294,7 +1294,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             link.setId(SW360Constants.PROJECT_VULNERABILITY_RATING_ID_PREFIX + link.getProjectId());
             try {
                 pvrRepository.add(link);
-            } catch (SW360Exception e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error("Unable to update project vulnerability rating.", e);
                 return RequestStatus.FAILURE;
             }

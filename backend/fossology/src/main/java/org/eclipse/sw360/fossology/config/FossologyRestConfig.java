@@ -197,11 +197,7 @@ public class FossologyRestConfig {
                 ConfigContainer newConfig = new ConfigContainer()
                         .setConfigFor(ConfigFor.FOSSOLOGY_REST)
                         .setConfigKeyToValues(new HashMap<>());
-                try {
-                    repository.add(newConfig);
-                } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception ex) {
-                    throw new SW360Exception(ex.getWhy(), ex);
-                }
+                repository.add(newConfig);
                 config = newConfig;
                 outdated = false;
             }
