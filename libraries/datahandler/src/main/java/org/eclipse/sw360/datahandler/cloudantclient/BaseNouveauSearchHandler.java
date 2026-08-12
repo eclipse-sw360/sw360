@@ -853,7 +853,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         StringBuilder query = new StringBuilder();
         if (queries.size() > 1) {
             query.append("(");
-            query.append(String.join(") OR (", queries));
+            query.append(String.join(" OR ", queries));
             query.append(")");
         } else {
             query.append(queries.getFirst());
