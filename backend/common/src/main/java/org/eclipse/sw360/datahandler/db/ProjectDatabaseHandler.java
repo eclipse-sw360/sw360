@@ -2455,16 +2455,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             if (!isNullOrEmpty(projectId)) {
                 projectList = getProjectDetailsBasedOnId(user, projectId);
-            }else {
+            } else {
                 projectList =  getAccessibleProjectsSummary(user);
             }
             ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
-            InputStream stream = exporter.makeExcelExport(projectList);
-            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-          }catch (IOException e) {
+            return exporter.toByteBuffer(projectList);
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
-       }
-     }
+        }
+    }
 
     private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
     	return new ProjectExporter(ThriftClients.makeComponentClient(),

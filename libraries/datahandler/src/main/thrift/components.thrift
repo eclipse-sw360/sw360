@@ -1085,10 +1085,6 @@ service ComponentService {
     * get report data stream
     */
     binary getComponentReportDataStream(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
-    /*
-    * get component report in mail
-    */
-    string getComponentReportInEmail(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
 
     /**
     * Check accessible of release

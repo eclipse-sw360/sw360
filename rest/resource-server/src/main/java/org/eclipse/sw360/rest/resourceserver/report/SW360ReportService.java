@@ -242,12 +242,13 @@ public class SW360ReportService {
         projectclient.sendExportSpreadsheetSuccessMail(emailURL, email);
     }
 
-    public void getUploadedComponentPath(User sw360User, boolean withLinkedReleases) {
+    public void getUploadedComponentPath(User sw360User, SW360ReportBean reportBean) {
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String componentPath = componentclient.getComponentReportInEmail(sw360User, withLinkedReleases);
+                ByteBuffer buff = getComponentBuffer(sw360User, reportBean.isWithLinkedReleases());
+                String componentPath = writeToTempFile(buff, sw360User);
                 String downloadUrl = frontendUrl + "/reports/download?module=components"
-                        + "&extendedByReleases=" + withLinkedReleases + "&token="
+                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&token="
                         + URLEncoder.encode(componentPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", sw360User.getEmail(), emailURL);
