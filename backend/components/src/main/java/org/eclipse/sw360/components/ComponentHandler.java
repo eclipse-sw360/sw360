@@ -147,6 +147,14 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Map<PaginationData, List<Release>> searchAccessibleReleasesFromComponent(
+            String componentId, String searchText, User user, PaginationData pageData) throws TException {
+        assertUser(user);
+        assertId(componentId);
+        return releaseSearchHandler.searchAccessibleReleasesFromComponent(componentId, searchText, user, pageData);
+    }
+
+    @Override
     public Map<PaginationData, List<Release>> refineSearchAccessibleReleases(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
         return releaseSearchHandler.searchAccessibleReleases(subQueryRestrictions, user, pageData);
     }
