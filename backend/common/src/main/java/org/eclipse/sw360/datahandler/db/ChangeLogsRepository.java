@@ -18,13 +18,12 @@ import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 
 import com.google.common.collect.ImmutableSet;
-
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 
 /**
  * CRUD access for the ChangeLogs class
@@ -145,7 +144,34 @@ public class ChangeLogsRepository extends DatabaseRepositoryCloudantClient<Chang
     }
 
     public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, PaginationData pageData) {
-        List<ChangeLogs> results = queryViewWithComplexKeysPaginated("byDocumentIdAndTimestamp", docId, pageData);
+        // Shared Cloudant pagination helpers still take thrift PaginationData.
+        org.eclipse.sw360.datahandler.thrift.PaginationData thriftPage = toThriftPagination(pageData);
+        List<ChangeLogs> results = queryViewWithComplexKeysPaginated("byDocumentIdAndTimestamp", docId, thriftPage);
+        pageData.setTotalRowCount(thriftPage.getTotalRowCount());
         return Collections.singletonMap(pageData, results);
+    }
+
+    private static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPagination(PaginationData pageData) {
+        org.eclipse.sw360.datahandler.thrift.PaginationData thrift =
+                new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        if (pageData == null) {
+            return thrift;
+        }
+        if (pageData.getRowsPerPage() != null) {
+            thrift.setRowsPerPage(pageData.getRowsPerPage());
+        }
+        if (pageData.getDisplayStart() != null) {
+            thrift.setDisplayStart(pageData.getDisplayStart());
+        }
+        if (pageData.getAscending() != null) {
+            thrift.setAscending(pageData.getAscending());
+        }
+        if (pageData.getSortColumnNumber() != null) {
+            thrift.setSortColumnNumber(pageData.getSortColumnNumber());
+        }
+        if (pageData.getTotalRowCount() != null) {
+            thrift.setTotalRowCount(pageData.getTotalRowCount());
+        }
+        return thrift;
     }
 }
