@@ -166,7 +166,8 @@ public class SW360ReportService {
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String licenseInfoPath = generateLicenseInfoReport(user, projectId, reportBean);
+                ByteBuffer buff = getLicenseInfoBuffer(user, projectId, reportBean);
+                String licenseInfoPath = writeToTempFile(buff, user);
                 String downloadUrl = frontendUrl + "/reports/download?module=licenseInfo"
                         + "&withSubProject=" + withSubProject
                         + "&projectId=" + projectId
@@ -190,12 +191,6 @@ public class SW360ReportService {
         });
         Thread asyncThread = new Thread(asyncRunnable);
         asyncThread.start();
-    }
-
-    private String generateLicenseInfoReport(User user, String projectId, SW360ReportBean reportBean)
-            throws TException, IOException {
-        ByteBuffer buffer = getLicenseInfoBuffer(user, projectId, reportBean);
-        return licenseInfoExporter.saveReportToFile(buffer, user);
     }
 
     public ByteBuffer getLicenseInfoReportStreamFromUrl(String token) throws TException {
@@ -340,16 +335,16 @@ public class SW360ReportService {
                 usedAttachmentContentIds, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments, listOfSelectedRelationshipsInString);
 
         String outputGeneratorClassNameWithVariant = reportBean.getGeneratorClassName() + "::" + reportBean.getVariant();
-        String fileName = "";
+        String templateFileName = "";
         if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getTemplate())
                 && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
             Map<String, String> orgToTemplate = Arrays.stream(REPORT_FILENAME_MAPPING.split(","))
                     .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
-            fileName = orgToTemplate.get(reportBean.getTemplate());
+            templateFileName = orgToTemplate.get(reportBean.getTemplate());
         }
         final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User,
                 outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments,
-                reportBean.getExternalIds(), fileName, reportBean.isExcludeReleaseVersion());
+                reportBean.getExternalIds(), templateFileName, reportBean.isExcludeReleaseVersion());
         return licenseInfoFile.bufferForGeneratedOutput();
     }
 

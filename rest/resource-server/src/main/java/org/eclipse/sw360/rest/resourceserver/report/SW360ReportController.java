@@ -260,7 +260,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
-                downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+                downloadExcelReport(response, sw360User, module, projectId, reportBean);
             }
         } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException | SW360Exception e) {
             throw e;
@@ -280,7 +280,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 responseJson.addProperty("response", "Component report download link will get send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
-                downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
+                downloadExcelReport(response, sw360User, module, null, reportBean);
             }
         } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
@@ -294,7 +294,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
+            downloadExcelReport(response, sw360User, module, null, reportBean);
         } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
@@ -314,7 +314,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 responseJson.addProperty("response", "The license info report link will be sent to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
-                downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+                downloadExcelReport(response, sw360User, module, projectId, reportBean);
             }
         } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
@@ -328,7 +328,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+            downloadExcelReport(response, sw360User, module, projectId, reportBean);
         } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
@@ -340,7 +340,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
+            downloadExcelReport(response, sw360User, module, projectId, reportBean);
         } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
@@ -350,8 +350,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void downloadExcelReport(
-            HttpServletResponse response, User user, String module, String projectId,
-            ByteBuffer buffer, SW360ReportBean reportBean
+            HttpServletResponse response, User user, String module,
+            String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
             ByteBuffer buff = null;
@@ -368,7 +368,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 buff = sw360ReportService.getLicenseBuffer();
                 fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
             } else if (LICENSES_RESOURCE_BUNDLE.equals(module)) {
-                buff = buffer;
+                buff = sw360ReportService.downloadSourceCodeBundle(projectId, user, reportBean.isWithSubProject());
                 response.setContentType(ZIP_CONTENT_TYPE);
                 fileName = sw360ReportService.getSourceCodeBundleName(projectId, user);
             } else if (LICENSE_INFO.equals(module) || EXPORT_CREATE_PROJ_CLEARING_REPORT.equals(module)) {
@@ -396,9 +396,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             String projectId, HttpServletResponse response, User sw360User, String module, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            ByteBuffer buffer = sw360ReportService.downloadSourceCodeBundle(projectId, sw360User, reportBean.isWithSubProject());
             downloadExcelReport(response, sw360User, module, projectId,
-                    buffer, reportBean);
+                    reportBean);
         } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {

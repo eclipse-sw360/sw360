@@ -14,7 +14,6 @@ import org.apache.commons.csv.CSVPrinter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -25,18 +24,8 @@ import java.nio.ByteBuffer;
  */
 public class CSVExport {
     /**
-     * @deprecated Use {@link #toByteBuffer} instead.
-     */
-    @Deprecated
-    @NotNull
-    public static ByteArrayInputStream createCSV(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
-        return new ByteArrayInputStream(getCSVOutputStream(csvHeaderIterable, inputIterable).toByteArray());
-    }
-
-    /**
      * Returns a {@link ByteBuffer} backed directly by the internal write buffer — no
-     * {@code Arrays.copyOf} is performed. Prefer this over {@link #createCSV} when the
-     * result will be wrapped in a {@link ByteBuffer} anyway.
+     * {@code Arrays.copyOf} is performed.
      */
     @NotNull
     public static ByteBuffer toByteBuffer(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
