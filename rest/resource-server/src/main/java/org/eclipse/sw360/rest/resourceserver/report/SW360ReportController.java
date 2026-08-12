@@ -275,7 +275,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
-                sw360ReportService.getUploadedComponentPath(sw360User, reportBean.isWithLinkedReleases());
+                sw360ReportService.getUploadedComponentPath(sw360User, reportBean);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "Component report download link will get send to the end user.");
                 response.getWriter().write(responseJson.toString());
