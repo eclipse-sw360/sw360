@@ -254,8 +254,7 @@ public class VendorDatabaseHandler {
 
     public ByteBuffer getVendorReportDataStream(List<Vendor> vendorList) throws TException{
         try {
-            InputStream stream = new VendorExporter().makeExcelExport(vendorList);
-            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+            return new VendorExporter().toByteBuffer(vendorList);
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }
