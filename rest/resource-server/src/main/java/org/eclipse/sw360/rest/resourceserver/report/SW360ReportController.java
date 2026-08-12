@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
+import org.eclipse.sw360.datahandler.thrift.ReportFormat;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 
@@ -40,11 +41,11 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
+import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.core
-        .BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jetbrains.annotations.Contract;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -52,7 +53,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.google.gson.JsonObject;
@@ -75,7 +75,6 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private static final String ZIP_CONTENT_TYPE = "application/zip";
     private static final String EXPORT_CREATE_PROJ_CLEARING_REPORT = "exportCreateProjectClearingReport";
     private static final List<String> GENERATOR_MODULES = List.of(LICENSE_INFO, EXPORT_CREATE_PROJ_CLEARING_REPORT);
-    private static final List<String> SUPPORTED_FORMATS = List.of("xlsx", "csv", "json", "xml");
     public static final String ATTACHMENT_FILENAME_S = "attachment; filename=\"%s\"";
     @NonNull
     private final RestControllerHelper restControllerHelper;
@@ -161,7 +160,6 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "Use Lucene search for filtering. Applies to module=projects export.")
             @RequestParam(value = "luceneSearch", required = false, defaultValue = "false") boolean luceneSearch,
-            HttpServletRequest request,
             HttpServletResponse response
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -169,19 +167,15 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }
-        format = format.toLowerCase(Locale.ROOT);
-        if (!SUPPORTED_FORMATS.contains(format)) {
-            throw new BadRequestClientException("Unsupported format: " + format + ". Supported formats: " + SUPPORTED_FORMATS);
-        }
+        ReportFormat fmt = convertToReportFormat(format.toLowerCase(Locale.ROOT));
         SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
-                template, externalIds, withSubProject, bomType, selectedRelRelationship, format,
+                template, externalIds, withSubProject, bomType, selectedRelRelationship, fmt,
                 name, type, group, tag, version, projectResponsible, projectState, projectClearingState,
                 additionalData, luceneSearch);
-        String baseUrl = getBaseUrl(request);
         if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
-            getProjectReports(response, sw360User, module, projectId, baseUrl, reportBean);
+            getProjectReports(response, sw360User, module, projectId, reportBean);
         } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
-            getComponentsReports(response, sw360User, module, baseUrl, reportBean);
+            getComponentsReports(response, sw360User, module, reportBean);
         } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
             getLicensesReports(response, sw360User, module, reportBean);
         } else if (LICENSE_INFO.equals(module)) {
@@ -222,13 +216,15 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
      * @param luceneSearch            use Lucene search for filtering
      * @return a SW360ReportBean object with the specified parameters
      */
-    private SW360ReportBean createReportBeanObject(boolean withLinkedReleases, boolean excludeReleaseVersion, String generatorClassName,
-                                                   String variant, String template, String externalIds, boolean withSubProject, String bomType,
-                                                   List<ReleaseRelationship> selectedRelRelationship, String format,
-                                                   String name, String type, String group, String tag, String version,
-                                                   String projectResponsible, ProjectState projectState,
-                                                   ProjectClearingState projectClearingState, String additionalData,
-                                                   boolean luceneSearch) {
+    private SW360ReportBean createReportBeanObject(
+            boolean withLinkedReleases, boolean excludeReleaseVersion, String generatorClassName,
+            String variant, String template, String externalIds, boolean withSubProject, String bomType,
+            List<ReleaseRelationship> selectedRelRelationship, ReportFormat format,
+            String name, String type, String group, String tag, String version,
+            String projectResponsible, ProjectState projectState,
+            ProjectClearingState projectClearingState, String additionalData,
+            boolean luceneSearch
+    ) {
         SW360ReportBean reportBean = new SW360ReportBean();
         reportBean.setWithLinkedReleases(withLinkedReleases);
         reportBean.setExcludeReleaseVersion(excludeReleaseVersion);
@@ -255,22 +251,18 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
     private void getProjectReports(
             HttpServletResponse response, User sw360User, String module, String projectId,
-            String baseUrl, SW360ReportBean reportBean
+            SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
-                sw360ReportService.getUploadedProjectPath(sw360User, reportBean.isWithLinkedReleases(), baseUrl, projectId);
+                sw360ReportService.getUploadedProjectPath(sw360User, reportBean, projectId);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
             }
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException | SW360Exception e) {
             throw e;
         } catch (Exception e) {
             log.error(e);
@@ -279,22 +271,18 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void getComponentsReports(
-            HttpServletResponse response, User sw360User, String module, String baseUrl, SW360ReportBean reportBean
+            HttpServletResponse response, User sw360User, String module, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
-                sw360ReportService.getUploadedComponentPath(sw360User, reportBean.isWithLinkedReleases(), baseUrl);
+                sw360ReportService.getUploadedComponentPath(sw360User, reportBean.isWithLinkedReleases());
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "Component report download link will get send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
             }
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             log.error(e);
@@ -307,11 +295,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             log.error(e);
@@ -332,11 +316,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             } else {
                 downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
             }
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             log.error(e);
@@ -349,11 +329,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
@@ -365,11 +341,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws SW360Exception {
         try {
             downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             log.error(e);
@@ -387,10 +359,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
 
             if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
-                String format = reportBean.getFormat();
-                buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId, format, reportBean);
-                fileName = sw360ReportService.getDocumentName(user, projectId, module, format);
-                setContentTypeForFormat(response, format);
+                buff = sw360ReportService.getProjectReportBuffer(user, projectId, reportBean);
+                fileName = sw360ReportService.getDocumentName(user, projectId, module, reportBean.getFormat());
+                setContentTypeForFormat(response, reportBean.getFormat());
             } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
                 buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases());
             } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
@@ -413,11 +384,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             }
             setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, buff);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             log.error(e);
@@ -432,11 +399,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             ByteBuffer buffer = sw360ReportService.downloadSourceCodeBundle(projectId, sw360User, reportBean.isWithSubProject());
             downloadExcelReport(response, sw360User, module, projectId,
                     buffer, reportBean);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
@@ -459,11 +422,11 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 "attachment; filename=\"" + asciiName + "\"; filename*=UTF-8''" + encodedName);
     }
 
-    private void setContentTypeForFormat(HttpServletResponse response, String format) {
+    private void setContentTypeForFormat(HttpServletResponse response, ReportFormat format) {
         setContentTypeForDownload(response, format, null);
     }
 
-    private void setContentTypeForDownload(HttpServletResponse response, String format, String generatorClassName) {
+    private void setContentTypeForDownload(HttpServletResponse response, ReportFormat format, String generatorClassName) {
         if (generatorClassName != null) {
             switch (generatorClassName) {
                 case "DocxGenerator":
@@ -479,15 +442,14 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     break;
             }
         }
-        String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
-        switch (fmt) {
-            case "csv":
+        switch (format) {
+            case CSV:
                 response.setContentType(SW360Constants.CONTENT_TYPE_CSV);
                 break;
-            case "json":
+            case JSON:
                 response.setContentType(SW360Constants.CONTENT_TYPE_JSON);
                 break;
-            case "xml":
+            case XML:
                 response.setContentType(SW360Constants.CONTENT_TYPE_XML);
                 break;
             default:
@@ -560,19 +522,11 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             }
             setContentDisposition(response, fileName);
             copyDataStreamToResponse(response, buffer);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (BadRequestClientException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
             throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
-    }
-
-    private String getBaseUrl(HttpServletRequest request) {
-        return restControllerHelper.getBaseUrl(request) + "/";
     }
 
     private void exportSBOM(
@@ -599,5 +553,15 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             log.error(e);
             throw new SW360Exception("Unable to generate SBOM report.");
         }
+    }
+
+    @Contract(pure = true)
+    private ReportFormat convertToReportFormat(@NonNull String format) {
+        return switch (format) {
+            case "csv" -> ReportFormat.CSV;
+            case "json" -> ReportFormat.JSON;
+            case "xml" -> ReportFormat.XML;
+            default -> ReportFormat.EXCEL;
+        };
     }
 }

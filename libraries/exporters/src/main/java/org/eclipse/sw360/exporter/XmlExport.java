@@ -14,9 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
@@ -25,9 +24,14 @@ public class XmlExport {
     private XmlExport() {
     }
 
+    /**
+     * Returns a {@link ByteBuffer} backed directly by the internal write buffer — no
+     * {@code Arrays.copyOf} is performed.
+     */
     @NotNull
-    public static ByteArrayInputStream toXml(List<Map<String, String>> records) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+    public static ByteBuffer toByteBuffer(@NotNull List<Map<String, String>> records) throws IOException {
+        ExposedByteArrayOutputStream out = new ExposedByteArrayOutputStream();
+        try {
             XMLOutputFactory factory = XMLOutputFactory.newInstance();
             XMLStreamWriter writer = factory.createXMLStreamWriter(out, "UTF-8");
 
@@ -50,7 +54,7 @@ public class XmlExport {
             writer.flush();
             writer.close();
 
-            return new ByteArrayInputStream(out.toByteArray());
+            return out.asByteBuffer();
         } catch (XMLStreamException e) {
             throw new IOException("Failed to generate XML", e);
         }
