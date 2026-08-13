@@ -12,7 +12,6 @@ package org.eclipse.sw360.components.summary;
 import com.google.common.base.Strings;
 
 import org.eclipse.sw360.datahandler.db.VendorRepository;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Release._Fields;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -53,7 +52,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
                 .filter(Objects::nonNull)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
-        Map<String, Vendor> vendorById = ThriftUtils.getIdMap(vendorRepository.get(vendorIds));
+        Map<String, Vendor> vendorById = vendorRepository.getAsThriftIdMap(vendorIds);
 
         List<Release> documents = new ArrayList<>(fullDocuments.size());
         for (Release fullDocument : fullDocuments) {
@@ -67,7 +66,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
     @Override
     protected Release summary(SummaryType type, Release document) {
-        return summary(type, document, vendorRepository::get);
+        return summary(type, document, vendorRepository::getAsThrift);
     }
 
     protected Release summary(SummaryType type, Release document, Function<String, Vendor> vendorProvider) {

@@ -9,6 +9,18 @@
  */
 package org.eclipse.sw360.vendors;
 
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertIdUnset;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -20,18 +32,9 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.springframework.stereotype.Service;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
-import org.springframework.stereotype.Service;
 
 @Service
 public class VendorHandler {
@@ -57,34 +60,20 @@ public class VendorHandler {
     public Vendor getByID(String id) {
         try {
             assertNotEmpty(id);
-            org.eclipse.sw360.datahandler.thrift.vendors.Vendor vendor = vendorDatabaseHandler.getByID(id);
+            Vendor vendor = vendorDatabaseHandler.getByID(id);
             assertNotNull(vendor);
-            return ThriftConverter.fromThriftVendor(vendor);
+            return vendor;
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
-        } catch (TException e) {
-            throw new SW360Exception(e.getMessage(), e);
         }
     }
 
     public List<Vendor> getAllVendors() {
-        try {
-            return vendorDatabaseHandler.getAllVendors().stream()
-                    .map(ThriftConverter::fromThriftVendor)
-                    .collect(Collectors.toList());
-        } catch (TException e) {
-            throw new SW360Exception(e.getMessage(), e);
-        }
+        return vendorDatabaseHandler.getAllVendors();
     }
 
     public Map<PaginationData, List<Vendor>> getAllVendorListPaginated(PaginationData pageData) {
-        try {
-            Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult =
-                    vendorDatabaseHandler.getAllVendors(pageData);
-            return convertPaginatedResult(thriftResult);
-        } catch (TException e) {
-            throw new SW360Exception(e.getMessage(), e);
-        }
+        return vendorDatabaseHandler.getAllVendors(pageData);
     }
 
     public Set<String> getAllVendorNames() {
@@ -97,9 +86,7 @@ public class VendorHandler {
     }
 
     public Map<PaginationData, List<Vendor>> searchVendors(String searchText, PaginationData pageData) {
-        Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult =
-                vendorSearchHandler.search(searchText, pageData);
-        return convertPaginatedResult(thriftResult);
+        return vendorSearchHandler.search(searchText, pageData);
     }
 
     public List<String> searchVendorIds(String searchText) {
@@ -110,8 +97,7 @@ public class VendorHandler {
         try {
             assertNotNull(vendor);
             assertIdUnset(vendor.getId());
-            return ThriftConverter.fromThriftAddDocumentRequestSummary(
-                    vendorDatabaseHandler.addVendor(ThriftConverter.toThriftVendor(vendor)));
+            return vendorDatabaseHandler.addVendor(vendor);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -121,7 +107,7 @@ public class VendorHandler {
         try {
             assertUser(user);
             assertId(id);
-            return ThriftConverter.fromThriftRequestStatus(vendorDatabaseHandler.deleteVendor(id, user));
+            return vendorDatabaseHandler.deleteVendor(id, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -132,8 +118,7 @@ public class VendorHandler {
             assertUser(user);
             assertNotNull(vendor);
             assertId(vendor.getId());
-            return ThriftConverter.fromThriftRequestStatus(
-                    vendorDatabaseHandler.updateVendor(ThriftConverter.toThriftVendor(vendor), user));
+            return vendorDatabaseHandler.updateVendor(vendor, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -144,8 +129,7 @@ public class VendorHandler {
             assertNotNull(mergeTargetId);
             assertNotNull(mergeSourceId);
             assertNotNull(mergeSelection);
-            return ThriftConverter.fromThriftRequestStatus(vendorDatabaseHandler.mergeVendors(
-                    mergeTargetId, mergeSourceId, ThriftConverter.toThriftVendor(mergeSelection), user));
+            return vendorDatabaseHandler.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -154,23 +138,6 @@ public class VendorHandler {
     }
 
     public byte[] getVendorReportDataStream(List<Vendor> vendorList) {
-        try {
-            List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> thriftVendors = vendorList.stream()
-                    .map(ThriftConverter::toThriftVendor)
-                    .collect(Collectors.toList());
-            return vendorDatabaseHandler.getVendorReportDataStream(thriftVendors).array();
-        } catch (TException e) {
-            throw new SW360Exception(e.getMessage(), e);
-        }
-    }
-
-    private static Map<PaginationData, List<Vendor>> convertPaginatedResult(
-            Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult) {
-        Map.Entry<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> entry =
-                thriftResult.entrySet().iterator().next();
-        List<Vendor> vendors = entry.getValue().stream()
-                .map(ThriftConverter::fromThriftVendor)
-                .collect(Collectors.toList());
-        return Map.of(entry.getKey(), vendors);
+        return vendorDatabaseHandler.getVendorReportDataStream(vendorList);
     }
 }

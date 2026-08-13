@@ -742,7 +742,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Vendor getVendor(String vendorId) {
-        return vendorRepository.get(vendorId);
+        return vendorRepository.getAsThrift(vendorId);
     }
 
     ///////////////////////////////
@@ -2310,7 +2310,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<Vendor> getAllVendors() {
-        return vendorRepository.getAll();
+        return vendorRepository.getAllAsThrift();
     }
 
     public Map<String, Release> getAllReleasesIdMap() {
