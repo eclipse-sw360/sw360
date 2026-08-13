@@ -58,6 +58,8 @@ public class SW360Constants {
     public static final String DUPLICATE_PACKAGE_BY_PURL = "duplicatePackagesByPurl";
     public static final String XML_FILE_EXTENSION = "xml";
     public static final String JSON_FILE_EXTENSION = "json";
+    public static final String CSV_FILE_EXTENSION = "csv";
+    public static final String EXCEL_FILE_EXTENSION = "xlsx";
     public static final String PROJECT_IDS = "projectIds";
     public static final String RELEASE_IDS = "releaseIds";
     public static final String PACKAGE_IDS = "packageIds";

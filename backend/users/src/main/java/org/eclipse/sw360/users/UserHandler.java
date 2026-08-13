@@ -153,11 +153,6 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public List<User> searchUsers(String searchText) {
-        return db.searchUsers(searchText);
-    }
-
-    @Override
     public List<User> getAllUsers() {
         return db.getAll();
     }
@@ -344,5 +339,11 @@ public class UserHandler implements UserService.Iface {
     @Override
     public Set<String> getUserSecondaryDepartments() throws TException {
         return db.getUserSecondaryDepartments();
+    }
+
+    @Override
+    public Map<PaginationData, List<User>> refineSearchAccessibleUsers(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData)
+            throws TException {
+        return db.refineSearchAccessibleUsers(subQueryRestrictions, pageData);
     }
 }

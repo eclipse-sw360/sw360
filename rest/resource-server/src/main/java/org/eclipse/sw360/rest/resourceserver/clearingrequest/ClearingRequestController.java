@@ -208,11 +208,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             }
 
             PaginationResult<ClearingRequest> paginationResult;
-            List<ClearingRequest> allClearingRequests = new ArrayList<>(paginatedClearingRequests.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedClearingRequests.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, allClearingRequests, SW360Constants.TYPE_CLEARING, totalCount);
+                    request, pageable, paginatedClearingRequests);
 
             final List<EntityModel<ClearingRequest>> clearingRequestResources = new ArrayList<>();
             for (ClearingRequest cr : paginationResult.getResources()) {
@@ -242,7 +239,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     private Map<String, Set<String>> getFilterMapForClearingRequests(
             String projectId, Set<ClearingRequestState> status, String createdBy, String createdOn) {
         Map<String, Set<String>> filterMap = new HashMap<>();
-        
+
         if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
             filterMap.put(ClearingRequest._Fields.PROJECT_ID.getFieldName(), Collections.singleton(projectId));
         }
@@ -258,7 +255,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         if (CommonUtils.isNotNullEmptyOrWhitespace(createdOn)) {
             filterMap.put(ClearingRequest._Fields.TIMESTAMP.getFieldName(), Collections.singleton(createdOn));
         }
-        
+
         return filterMap;
     }
 

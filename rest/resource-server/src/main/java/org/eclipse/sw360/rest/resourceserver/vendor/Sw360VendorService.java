@@ -58,7 +58,7 @@ public class Sw360VendorService {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
             PaginationData pageData = pageableToPaginationData(pageable,
-                    VendorSortColumn.BY_SCORE, true);
+                    VendorSortColumn.BY_FULLNAME, true);
             return sw360VendorClient.searchVendors(searchText, pageData);
         } catch (TException e) {
             throw new RuntimeException(e);

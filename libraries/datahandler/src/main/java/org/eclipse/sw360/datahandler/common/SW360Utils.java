@@ -209,6 +209,10 @@ public class SW360Utils {
         return in.stream().map(Component::getId).collect(Collectors.toSet());
     }
 
+    public static Set<String> getComponentIds(Map<PaginationData, List<Component>> in) {
+        return getComponentIds(NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(in));
+    }
+
     public static Set<String> getProjectIds(Collection<Project> in) {
         return in.stream().map(Project::getId).collect(Collectors.toSet());
     }
@@ -972,43 +976,23 @@ public class SW360Utils {
 
     public static List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, User user) {
         ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
-        Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(releaseIds);
+        Map<String, Set<String>> filterMap = Map.of(
+                Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), releaseIds
+        );
         List<Project> projectsUsings;
         try {
             if (user == null) {
-                projectsUsings = projectClient.refineSearchWithoutUser(null, filterMap);
+                projectsUsings = projectClient.refineSearchWithoutUser(filterMap);
             } else {
-                projectsUsings = projectClient.refineSearch(null, filterMap, user);
+                PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+                Map<PaginationData, List<Project>> result = projectClient.refineSearchPageable(filterMap, user, pageData);
+                projectsUsings = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
             }
         } catch (TException e) {
             log.error("Could not fetch projects");
             projectsUsings = Collections.emptyList();
         }
         return projectsUsings;
-    }
-
-    private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
-        Map<String, Set<String>> filterMap = new HashMap<>();
-        Set<String> values = new HashSet<>();
-        for(String releaseId : releaseIds) {
-            values.add("\"releaseId\":\"" + releaseId + "\"");
-            values.add("\"releaseId\": \"" + releaseId + "\"");
-        }
-        values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
-        return filterMap;
-    }
-
-    public static Collection<ProjectLink> getLinkedProjectWithoutReleases(Project project, boolean deep, Logger log, User user) {
-        if (project != null) {
-            try {
-                ProjectService.Iface client = ThriftClients.makeProjectClient();
-                return client.getLinkedProjectsOfProjectWithoutReleases(project, deep, user);
-            } catch (TException e) {
-                log.error("Could not get linked projects", e);
-            }
-        }
-        return Collections.emptyList();
     }
 
     /**
