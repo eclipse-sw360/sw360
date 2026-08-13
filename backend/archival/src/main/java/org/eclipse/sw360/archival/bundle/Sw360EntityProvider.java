@@ -22,7 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalEntityType;
@@ -426,7 +426,9 @@ public class Sw360EntityProvider implements EntityProvider {
     }
 
     public RequestStatus deletePackage(String packageId) throws Exception {
-        return packageHandler().deletePackage(packageId, resolveUser());
+        org.eclipse.sw360.datahandler.services.common.RequestStatus status =
+                packageHandler().deletePackage(packageId, resolveUser());
+        return status == null ? null : RequestStatus.valueOf(status.name());
     }
 
     private AttachmentSource buildAttachmentSource(Attachment att) throws SW360Exception, IOException {

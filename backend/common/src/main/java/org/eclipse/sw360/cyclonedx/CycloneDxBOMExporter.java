@@ -41,7 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.projects.ProjectHandler;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -284,7 +284,8 @@ public class CycloneDxBOMExporter {
                 comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
             }
             if (null != pckg.getPackageType()) {
-                comp.setType(getCdxComponentType(pckg.getPackageType()));
+                comp.setType(getCdxComponentType(org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType
+                        .valueOf(pckg.getPackageType().name())));
             }
             comp.setDescription(pckg.getDescription());
             List<ExternalReference> extRefs = Lists.newArrayList();

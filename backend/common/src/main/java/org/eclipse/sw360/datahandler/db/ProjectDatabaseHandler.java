@@ -42,7 +42,7 @@ import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
@@ -959,7 +959,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 } else {
                     return true;
                 }
-            } catch (TException e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error(String.format("Error fetching newly added linked package info of project: %s", updatedProject.getId()), e.getCause());
                 throw new SW360Exception(e.getMessage());
             }
@@ -988,7 +988,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         targetMap.remove(entry.getKey());
                     }
                 }
-            } catch (TException e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error(String.format("Error fetching removed linked package info of project: %s", updatedProject.getId()), e.getCause());
                 throw new SW360Exception(e.getMessage());
             }

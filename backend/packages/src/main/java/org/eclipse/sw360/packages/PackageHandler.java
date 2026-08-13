@@ -18,11 +18,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.ThriftConverter;
-import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageSearchHandler;
@@ -30,7 +27,6 @@ import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
-import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.stereotype.Service;
@@ -57,7 +53,7 @@ public class PackageHandler {
     public Package getPackageById(String packageId) {
         try {
             assertId(packageId);
-            return PackageConverter.fromThrift(handler.getPackageById(packageId));
+            return handler.getPackageById(packageId);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -66,9 +62,7 @@ public class PackageHandler {
     public List<Package> getPackageWithReleaseByPackageIds(Set<String> ids) {
         try {
             assertNotEmpty(ids);
-            return handler.getPackageWithReleaseByPackageIds(ids).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.getPackageWithReleaseByPackageIds(ids);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -77,33 +71,25 @@ public class PackageHandler {
     public List<Package> getPackageByIds(Set<String> ids) {
         try {
             assertNotEmpty(ids);
-            return handler.getPackageByIds(ids).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.getPackageByIds(ids);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
     }
 
     public List<Package> getAllPackages() {
-        return handler.getAllPackages().stream()
-                .map(PackageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return handler.getAllPackages();
     }
 
     public List<Package> getAllOrphanPackages() {
-        return handler.getAllOrphanPackages().stream()
-                .map(PackageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return handler.getAllOrphanPackages();
     }
 
     public List<Package> searchPackages(String text, User user) {
         try {
             assertUser(user);
             assertNotEmpty(text, "package search text cannot be empty");
-            return handler.searchPackages(packageSearchHandler, text).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.searchPackages(packageSearchHandler, text);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -113,9 +99,7 @@ public class PackageHandler {
         try {
             assertUser(user);
             assertNotEmpty(text, "orphan package search text cannot be empty");
-            return handler.searchOrphanPackages(packageSearchHandler, text).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.searchOrphanPackages(packageSearchHandler, text);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -124,9 +108,7 @@ public class PackageHandler {
     public Set<Package> getPackagesByReleaseId(String id) {
         try {
             assertNotEmpty(id);
-            return handler.getPackagesByReleaseId(id).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toSet());
+            return handler.getPackagesByReleaseId(id);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -135,9 +117,7 @@ public class PackageHandler {
     public Set<Package> getPackagesByReleaseIds(Set<String> ids) {
         try {
             assertNotEmpty(ids);
-            return handler.getPackagesByReleaseIds(ids).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toSet());
+            return handler.getPackagesByReleaseIds(ids);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -147,12 +127,9 @@ public class PackageHandler {
         try {
             assertNotNull(pkg);
             assertUser(user);
-            return ThriftConverter.fromThriftAddDocumentRequestSummary(
-                    handler.addPackage(PackageConverter.toThrift(pkg), user));
+            return handler.addPackage(pkg, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
-        } catch (TException e) {
-            throw new SW360Exception(e.getMessage(), e);
         }
     }
 
@@ -160,8 +137,7 @@ public class PackageHandler {
         try {
             assertNotNull(pkg);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(
-                    handler.updatePackage(PackageConverter.toThrift(pkg), user));
+            return handler.updatePackage(pkg, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -171,29 +147,20 @@ public class PackageHandler {
         try {
             assertId(packageId);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(handler.deletePackage(packageId, user));
+            return handler.deletePackage(packageId, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
-        } catch (TException e) {
-            throw new SW360Exception(e.getMessage(), e);
         }
     }
 
     public PaginatedResult<Package> getPackagesWithPagination(PaginationData pageData) {
-        Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.packages.Package>> thriftResult =
-                handler.getPackagesWithPagination(pageData);
-        Map.Entry<PaginationData, List<org.eclipse.sw360.datahandler.thrift.packages.Package>> entry =
-                thriftResult.entrySet().iterator().next();
-        List<Package> packages = entry.getValue().stream()
-                .map(PackageConverter::fromThrift)
-                .collect(Collectors.toList());
-        return new PaginatedResult<>(entry.getKey(), packages);
+        Map<PaginationData, List<Package>> result = handler.getPackagesWithPagination(pageData);
+        Map.Entry<PaginationData, List<Package>> entry = result.entrySet().iterator().next();
+        return new PaginatedResult<>(entry.getKey(), entry.getValue());
     }
 
     public List<Package> searchPackagesWithFilter(String text, Map<String, Set<String>> subQueryRestrictions) {
-        return handler.searchPackagesWithFilter(text, packageSearchHandler, subQueryRestrictions).stream()
-                .map(PackageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return handler.searchPackagesWithFilter(text, packageSearchHandler, subQueryRestrictions);
     }
 
     public int getTotalPackagesCount() {
@@ -203,9 +170,7 @@ public class PackageHandler {
     public List<Package> searchByName(String name) {
         try {
             assertNotEmpty(name);
-            return handler.searchByName(name).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.searchByName(name);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -214,9 +179,7 @@ public class PackageHandler {
     public List<Package> searchByPackageManager(String pkgManager) {
         try {
             assertNotEmpty(pkgManager);
-            return handler.searchByPackageManager(pkgManager).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.searchByPackageManager(pkgManager);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -225,9 +188,7 @@ public class PackageHandler {
     public List<Package> searchByVersion(String version) {
         try {
             assertNotEmpty(version);
-            return handler.searchByVersion(version).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.searchByVersion(version);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -236,17 +197,13 @@ public class PackageHandler {
     public List<Package> searchByPurl(String purl) {
         try {
             assertNotEmpty(purl);
-            return handler.getPackageByPurl(purl).stream()
-                    .map(PackageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return handler.getPackageByPurl(purl);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
     }
 
     public List<Package> refineSearchAccessiblePackages(String text, Map<String, Set<String>> subQueryRestrictions, User user) {
-        return packageSearchHandler.searchAccessiblePackages(text, subQueryRestrictions, user).stream()
-                .map(PackageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return packageSearchHandler.searchAccessiblePackages(text, subQueryRestrictions, user);
     }
 }

@@ -61,7 +61,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.components.RepositoryType;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -267,12 +267,14 @@ public class CycloneDxBOMImporter {
                                 }
 
                                 try {
-                                    AddDocumentRequestSummary pkgAddSummary = packageDatabaseHandler.addPackage(pkg, user);
+                                    org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary pkgAddSummary =
+                                            packageDatabaseHandler.addPackage(pkg, user);
                                     componentsWithoutVcs.add(fullName);
 
                                     if (CommonUtils.isNotNullEmptyOrWhitespace(pkgAddSummary.getId())) {
                                         pkg.setId(pkgAddSummary.getId());
-                                        if (AddDocumentRequestStatus.DUPLICATE.equals(pkgAddSummary.getRequestStatus())) {
+                                        if (org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus.DUPLICATE
+                                                .equals(pkgAddSummary.getRequestStatus())) {
                                             if (project.getPackageIds() != null && !CommonUtils.nullToEmptySet(project.getPackageIds().keySet()).contains(pkgAddSummary.getId())) {
                                                 pkgReuseCount++;
                                             }
@@ -294,7 +296,7 @@ public class CycloneDxBOMImporter {
                                     }
                                     linkedPackages.put(pkgAddSummary.getId(), createPackageNode(project, user, ""));
                                     project.setPackageIds(linkedPackages);
-                                } catch (SW360Exception e) {
+                                } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                                     log.error("An error occured while creating/adding package from SBOM: " + e.getMessage());
                                     compImportErrorCount++;
                                     continue;
@@ -735,10 +737,12 @@ public class CycloneDxBOMImporter {
                     }
 
                     try {
-                        AddDocumentRequestSummary pkgAddSummary = packageDatabaseHandler.addPackage(pkg, user);
+                        org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary pkgAddSummary =
+                                packageDatabaseHandler.addPackage(pkg, user);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(pkgAddSummary.getId())) {
                             pkg.setId(pkgAddSummary.getId());
-                            if (AddDocumentRequestStatus.DUPLICATE.equals(pkgAddSummary.getRequestStatus())) {
+                            if (org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus.DUPLICATE
+                                    .equals(pkgAddSummary.getRequestStatus())) {
                                 Package dupPkg = packageDatabaseHandler.getPackageById(pkg.getId());
                                 String dupPkgReleaseId = dupPkg.getReleaseId();
                                 String releaseId = release.getId();
@@ -761,7 +765,7 @@ public class CycloneDxBOMImporter {
                         }
                         linkedPackages.put(pkgAddSummary.getId(), createPackageNode(project, user, ""));
                         project.setPackageIds(linkedPackages);
-                    } catch (SW360Exception e) {
+                    } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                         log.error("An error occured while creating/adding package from SBOM: " + e.getMessage());
                         compImportErrorCount++;
                         continue;
@@ -1133,11 +1137,12 @@ public class CycloneDxBOMImporter {
         }
 
         if (null == componentFromBom.getType()) {
-            pckg.setPackageType(CycloneDxComponentType.LIBRARY);
+            pckg.setPackageType(org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType.LIBRARY);
         } else {
-            pckg.setPackageType(getCdxComponentType(componentFromBom.getType()));
+            pckg.setPackageType(org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType
+                    .valueOf(getCdxComponentType(componentFromBom.getType()).name()));
         }
-        if (release != null && release.isSetId()) {
+        if (release != null && release.getId() != null) {
             pckg.setReleaseId(release.getId());
         }
         pckg.setDescription(CommonUtils.nullToEmptyString(componentFromBom.getDescription()).trim());
@@ -1150,7 +1155,7 @@ public class CycloneDxBOMImporter {
             }
         }
 
-        if (pckg.isSetLicenseIds()) {
+        if (pckg.getLicenseIds() != null) {
             pckg.getLicenseIds().addAll(licenses);
         } else {
             pckg.setLicenseIds(licenses);

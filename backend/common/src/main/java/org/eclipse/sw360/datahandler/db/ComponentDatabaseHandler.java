@@ -47,7 +47,8 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -1682,7 +1683,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 } else {
                     return addedCount != orphanCount;
                 }
-            } catch (TException e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error(String.format("An error occurred while updating linked packages of release: %s", releaseId), e.getCause());
                 return true;
             }
@@ -1700,8 +1701,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     String relId = pkg.getReleaseId();
                     // update the package, if it contains linked release Id
                     if (CommonUtils.isNotNullEmptyOrWhitespace(relId) && releaseId.equals(relId)) {
-                        pkg.unsetReleaseId();
-                        RequestStatus status = getPackageDatabaseHandler().updatePackage(pkg, user);
+                        pkg.setReleaseId(null);
+                        org.eclipse.sw360.datahandler.services.common.RequestStatus status =
+                                getPackageDatabaseHandler().updatePackage(pkg, user);
                         log.info(String.format("Unlinked package <%s> from release <%s>, Unlinking status: <%s>", pkg.getId(), releaseId, status.name()));
                     }
                 }
@@ -1713,7 +1715,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     // update only orphan packages
                     if (CommonUtils.isNullEmptyOrWhitespace(relId)) {
                         pkg.setReleaseId(releaseId);
-                        RequestStatus status = getPackageDatabaseHandler().updatePackage(pkg, user);
+                        org.eclipse.sw360.datahandler.services.common.RequestStatus status =
+                                getPackageDatabaseHandler().updatePackage(pkg, user);
                         log.info(String.format("Linked package <%s> to release <%s>, Linking status: <%s>", pkg.getId(), releaseId, status.name()));
                     } else if (!relId.equals(releaseId)) {
                         log.warn(String.format("Linked-ReleasId <%s> in Package <%s>, and Linked-PackageId <%s> in Release <%s> association is incorrect",
@@ -1721,7 +1724,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     }
                 }
             }
-        } catch (TException e) {
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             log.error(String.format("An error occurred while updating linked packages of release: %s", releaseId), e.getCause());
             throw new SW360Exception(e.getMessage());
         }
@@ -2088,12 +2091,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Set<Package> packages = getPackageDatabaseHandler().getPackagesByReleaseId(mergeSourceId);
         Release mergeTarget = releaseRepository.get(mergeTargetId);
         for (Package pkg : packages) {
-            Package packageBefore = pkg.deepCopy();
+            org.eclipse.sw360.datahandler.thrift.packages.Package packageBefore = PackageConverter.toThrift(pkg);
             pkg.setReleaseId(mergeTargetId);
             getPackageDatabaseHandler().updatePackage(pkg, sessionUser);
             mergeTarget.addToPackageIds(pkg.getId());
-            dbHandlerUtil.addChangeLogs(pkg, packageBefore, sessionUser.getEmail(), Operation.UPDATE,
-                    attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
+            dbHandlerUtil.addChangeLogs(PackageConverter.toThrift(pkg), packageBefore, sessionUser.getEmail(),
+                    Operation.UPDATE, attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
         // Update the merge target release with the migrated package IDs
         if (!packages.isEmpty()) {
