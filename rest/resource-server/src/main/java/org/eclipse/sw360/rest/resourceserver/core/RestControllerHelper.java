@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
 import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -56,6 +57,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
@@ -255,14 +257,21 @@ public class RestControllerHelper<T> {
         return paginationResult;
     }
 
-    public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
-                                                                 List<T> resources, String resourceType, int totalCount)
-            throws ResourceClassNotFoundException, PaginationParameterException {
+    public PaginationResult<T> paginationResultFromPaginatedList(
+            HttpServletRequest request, Pageable pageable, Map<PaginationData, List<T>> paginationDataListMap
+    ) throws ResourceClassNotFoundException, PaginationParameterException {
         if (!requestContainsPaging(request)) {
             request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
             request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
         }
-        PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
+        List<T> resources = paginationDataListMap.values().stream()
+                .findFirst()
+                .orElse(Collections.emptyList());
+        int totalCount = Math.toIntExact(paginationDataListMap.keySet().stream()
+                .findFirst()
+                .map(PaginationData::getTotalRowCount)
+                .orElse(0L));
+        PaginationOptions<T> paginationOptions = paginationOptionsFromPageableWithoutComparator(pageable);
         return resourceListController.getPaginationResultFromPaginatedList(resources,
                 paginationOptions, totalCount);
     }
@@ -330,6 +339,10 @@ public class RestControllerHelper<T> {
     private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
         Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
         return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
+    }
+
+    private PaginationOptions<T> paginationOptionsFromPageableWithoutComparator(Pageable pageable) {
+        return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), null);
     }
 
     private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
@@ -1790,11 +1803,14 @@ public class RestControllerHelper<T> {
      * @return Filter Map based on parameters passed.
      */
     public static Map<String, Set<String>> getFilterMapForProject(
-            String tag, String projectType, String group, String version, String projectResponsible,
+            String name, String tag, String projectType, String group, String version, String projectResponsible,
             ProjectState projectState, ProjectClearingState projectClearingState, String additionalData,
             String attachmentAuthor
     ) {
         Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            filterMap.put(Project._Fields.NAME.getFieldName(), Collections.singleton(name));
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
             filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(tag));
         }
@@ -1821,6 +1837,31 @@ public class RestControllerHelper<T> {
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentAuthor)) {
             filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, Collections.singleton(attachmentAuthor));
+        }
+        return filterMap;
+    }
+
+    public static Map<String, Set<String>> getFilterMapForUser(
+            String givenName, String lastName, String email, String department,
+            UserGroup usergroup
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(givenName)) {
+            filterMap.put(User._Fields.GIVENNAME.getFieldName(), CommonUtils.splitToSet(givenName));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(lastName)) {
+            filterMap.put(User._Fields.LASTNAME.getFieldName(), CommonUtils.splitToSet(lastName));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
+            filterMap.put(User._Fields.EMAIL.getFieldName(), CommonUtils.splitToSet(email));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
+            Set<String> values = CommonUtils.splitToSet(department);
+            filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
+        }
+        if (usergroup != null) {
+            Set<String> values = CommonUtils.splitToSet(usergroup.toString());
+            filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
         }
         return filterMap;
     }

@@ -47,6 +47,7 @@ typedef licenses.ObligationLevel ObligationLevel
 typedef vendors.Vendor Vendor
 typedef components.ReleaseNode ReleaseNode
 typedef sw360.ProjectPackageRelationship ProjectPackageRelationship
+typedef sw360.ReportFormat ReportFormat
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -351,6 +352,32 @@ struct ProjectDTO{
     204: optional list<ReleaseNode> dependencyNetwork
 }
 
+struct SW360ReportBean {
+    1: bool withLinkedReleases;
+    2: bool excludeReleaseVersion;
+    3: string generatorClassName;
+    4: string variant;
+    5: string template;
+    6: string externalIds;
+    7: bool withSubProject;
+    8: string bomType;
+    9: list<ReleaseRelationship> selectedRelRelationship;
+    10: ReportFormat format = ReportFormat.EXCEL;
+
+    // Project search/filter parameters for filtered export
+    51: string name;
+    52: string type;
+    53: string group;
+    54: string tag;
+    55: string version;
+    56: string projectResponsible;
+    57: optional ProjectState projectState;
+    58: optional ProjectClearingState projectClearingState;
+    59: string additionalData;
+    60: string attachmentAuthor;
+    61: bool luceneSearch;
+}
+
 service ProjectService {
 
     // Summary getters
@@ -375,23 +402,17 @@ service ProjectService {
     set<Project> getAccessibleProjects(1: User user);
 
     // Search functions
-
     /**
-     * global search function to list projects which match the text argument
-     */
-    list<Project> search(1: string text);
-
-    /**
-     * returns a list of projects which match `text` and the
-     * `subQueryRestrictions` and are visible to the `user`
-     */
-    list<Project> refineSearch(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user);
+     * search projects in database that match searchText in
+     * name, description, tag or projectResponsible fields.
+     **/
+    map<PaginationData, list<Project>> searchFilteredProjects(1: string searchText, 2: User user, 3: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
      * returns a list of projects which match `text` and the
      * `subQueryRestrictions` and are visible to the `user`. The request is pageable
      */
-    map<PaginationData, list<Project>> refineSearchPageable(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user, 4: PaginationData pageData);
+    map<PaginationData, list<Project>> refineSearchPageable(1: map<string,set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
 
     /**
      * list of projects which are visible to the `user` and match the `name`
@@ -672,7 +693,7 @@ service ProjectService {
     /**
      * Get the SBOM import statistics information from attachment as String (JSON formatted)
      */
-    string getSbomImportInfoFromAttachmentAsString(string attachmentContentId) throws (1: SW360Exception exp);
+    string getSbomImportInfoFromAttachmentAsString(1: string attachmentContentId) throws (1: SW360Exception exp);
 
     /**
      * create clearing request for project
@@ -707,14 +728,16 @@ service ProjectService {
     * make excel export
     */
     binary getReportDataStream(1: User user,2: bool extendedByReleases,3: string projectId) throws (1: SW360Exception exp);
-     /*
-    * excel export - return the filepath
-    */
-    string getReportInEmail(1: User user, 2: bool extendedByReleases, string projectId) throws (1: SW360Exception exp);
     /*
     * download excel
     */
     binary downloadExcel(1:User user,2:bool extendedByReleases,3:string token) throws (1: SW360Exception exc);
+
+    /*
+     * Get report binary which can be sent over an email or directly to user
+     * for project.
+     */
+    binary getProjectReportBuffer(1: User user, 2: string projectId, 3: SW360ReportBean reportBean);
 
     /**
     * get list ReleaseLink in release network of project by project id and trace
@@ -728,9 +751,9 @@ service ProjectService {
 
 
     /**
-     * returns a list of projects which match `text` and the `subQueryRestrictions`
+     * returns a list of projects which match `subQueryRestrictions`
      */
-    list<Project> refineSearchWithoutUser(1: string text, 2: map<string,set<string>>  subQueryRestrictions);
+    list<Project> refineSearchWithoutUser(1: map<string,set<string>> subQueryRestrictions);
 
     /**
      * get a list of project links from keys of map `relations`

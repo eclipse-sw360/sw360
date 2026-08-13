@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -153,20 +154,14 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return packageRepository.getOrphanPackage();
     }
 
-    public List<Package> searchPackages(PackageSearchHandler searchHandler, String searchText) {
-        return searchHandler.searchPackages(searchText);
-    }
-
-    public List<Package> searchPackagesWithFilter(String searchText, PackageSearchHandler searchHandler, Map<String,Set<String>> subQueryRestrictions) {
-        return searchHandler.searchPackagesWithRestrictions(searchText, subQueryRestrictions);
-    }
-
     public int getTotalPackageCount() {
         return packageRepository.getDocumentCount();
     }
 
     public List<Package> searchOrphanPackages(PackageSearchHandler searchHandler, String searchText) {
-        List<Package> packages = searchPackages(searchHandler, searchText);
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Package>> result = searchHandler.searchFilteredPackages(searchText, pageData);
+        List<Package> packages = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
         Predicate<Package> orphanReleaseFilter = pkg -> CommonUtils.isNullEmptyOrWhitespace(pkg.getReleaseId());
         return packages.stream().filter(orphanReleaseFilter).collect(Collectors.toList());
     }

@@ -36,6 +36,9 @@ import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationSortColumn;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.jetbrains.annotations.NotNull;
 
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
@@ -146,39 +149,52 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
 
-    public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(String moderator, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
-        final Map<String, Object> typeSelector = eq("type", "moderation");
-        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
-        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
-        PostFindOptions qb = getConnector().getQueryBuilder()
-                .selector(finalSelector)
-                .limit(rowsPerPage)
-                .skip(skip)
-                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
-                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
-                .build();
-        return getConnector().getQueryResult(qb, ModerationRequest.class);
+        return switch (ModerationSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ModerationSortColumn.BY_DOCUMENT_NAME ->
+                    Collections.singletonMap("documentName", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_DOCUMENT_TYPE ->
+                    Collections.singletonMap("documentType", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_MODERATION_STATE ->
+                    Collections.singletonMap("moderationState", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_COMPONENT_TYPE ->
+                    Collections.singletonMap("componentType", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_REQUESTING_USER ->
+                    Collections.singletonMap("requestingUser", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_REQUESTING_USER_DEPT ->
+                    Collections.singletonMap("requestingUserDepartment", ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap("timestamp", ascending ? "asc" : "desc"); // Default sort by timestamp
+        };
     }
 
-    public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
+    public Map<PaginationData, List<ModerationRequest>> searchModerationRequestsByExactValues(
+            Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, User sw360User
+    ) {
+        String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
+        String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
+        if (!subQueryRestrictions.containsKey(moderatorKey) && !subQueryRestrictions.containsKey(requestingUserKey)) {
+            subQueryRestrictions.put(moderatorKey, Collections.singleton(sw360User.getEmail()));
+            subQueryRestrictions.put(requestingUserKey, Collections.singleton(sw360User.getEmail()));
+        }
+
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
         final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
 
-        PostFindOptions qb = getConnector().getQueryBuilder()
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+        PostFindOptions.Builder qb = getConnector()
+                .getQueryBuilder()
                 .selector(finalSelector)
-                .limit(rowsPerPage)
-                .skip(skip)
-                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
-                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
-                .build();
-        return getConnector().getQueryResult(qb, ModerationRequest.class);
+                .useIndex(Collections.singletonList(MR_BY_DATE_IDX));
+
+        List<ModerationRequest> moderationRequests = getConnector().getQueryResultPaginated(
+                qb, ModerationRequest.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, moderationRequests);
     }
 
     private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
