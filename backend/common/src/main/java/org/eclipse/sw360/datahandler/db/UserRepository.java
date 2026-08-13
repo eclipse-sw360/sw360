@@ -16,7 +16,7 @@ import org.eclipse.sw360.components.summary.UserSummary;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
@@ -243,7 +243,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
     }
 
     private Map<PaginationData, List<User>> queryViewWithPagination(PaginationData pageData) {
-        final UserSortColumn sortBy = UserSortColumn.findByValue(pageData.getSortColumnNumber());
+        final UserSortColumn sortBy = UserSortColumn.findByValue(pageData.sortColumnNumberOrZero());
         final Map<String, String> sortSelector = getSortSelector(pageData);
         List<User> users = Lists.newArrayList();
         Map<PaginationData, List<User>> result = Maps.newHashMap();
@@ -288,7 +288,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         boolean ascending = pageData.isAscending();
-        return switch (UserSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (UserSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case UserSortColumn.BY_LASTNAME ->
                     Collections.singletonMap("lastname", ascending ? "asc" : "desc");
             case UserSortColumn.BY_EMAIL ->

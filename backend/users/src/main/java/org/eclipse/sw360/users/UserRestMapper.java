@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
@@ -29,12 +28,12 @@ final class UserRestMapper {
 
     private UserRestMapper() {}
 
-    static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPagination(PaginationData pojo) {
-        return PaginationDataConverter.toThrift(pojo);
+    static PaginationData toThriftPagination(PaginationData pojo) {
+        return pojo;
     }
 
-    static PaginationData fromThriftPagination(org.eclipse.sw360.datahandler.thrift.PaginationData thrift) {
-        return PaginationDataConverter.fromThrift(thrift);
+    static PaginationData fromThriftPagination(PaginationData pageData) {
+        return pageData;
     }
 
     static User fromThriftUser(org.eclipse.sw360.datahandler.thrift.users.User thrift) {
@@ -80,11 +79,11 @@ final class UserRestMapper {
     }
 
     static Map<PaginationData, List<User>> fromThriftPaginatedUsers(
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.users.User>> thriftMap) {
+            Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.users.User>> thriftMap) {
         if (thriftMap == null || thriftMap.isEmpty()) {
             return Map.of();
         }
-        Map.Entry<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.users.User>> entry =
+        Map.Entry<org.eclipse.sw360.datahandler.services.common.PaginationData, List<org.eclipse.sw360.datahandler.thrift.users.User>> entry =
                 thriftMap.entrySet().iterator().next();
         return Map.of(fromThriftPagination(entry.getKey()), fromThriftUsers(entry.getValue()));
     }

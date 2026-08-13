@@ -22,7 +22,7 @@ import java.util.Map;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -133,7 +133,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
 
         if (searchText != null && !searchText.isBlank()
-                && VendorSortColumn.findByValue(pageData.getSortColumnNumber()) == VendorSortColumn.BY_SCORE) {
+                && VendorSortColumn.findByValue(pageData.sortColumnNumberOrZero()) == VendorSortColumn.BY_SCORE) {
             return searchVendorsByNamePrefix(searchText, pageData);
         }
 
@@ -170,11 +170,11 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
         int totalCount = vendors.size();
         pageData.setTotalRowCount(totalCount);
-        int fromIndex = pageData.getDisplayStart();
+        int fromIndex = pageData.displayStartOrZero();
         if (fromIndex >= totalCount) {
             return Collections.singletonMap(pageData, Collections.emptyList());
         }
-        int toIndex = Math.min(fromIndex + pageData.getRowsPerPage(), totalCount);
+        int toIndex = Math.min(fromIndex + pageData.rowsPerPageOrZero(), totalCount);
         return Collections.singletonMap(pageData, vendors.subList(fromIndex, toIndex));
     }
 
@@ -184,7 +184,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
 
         String viewName = getViewFromPagination(pageData);
-        log.debug("Using view: {} for pagination sort column {}", viewName , pageData.sortColumnNumber);
+        log.debug("Using view: {} for pagination sort column {}", viewName , pageData.sortColumnNumberOrZero());
         List<Vendor> vendors = queryViewPaginated(viewName, pageData, false);
 
         return Collections.singletonMap(pageData, vendors);
@@ -192,7 +192,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
 
     private static @NotNull String getViewFromPagination(PaginationData pageData) {
-        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (VendorSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case VendorSortColumn.BY_FULLNAME -> "vendorbyfullname";
             case VendorSortColumn.BY_SHORTNAME -> "vendorbyshortname";
             // BY_SCORE: Nouveau handles ranking; "all" view used only for total count fallback
@@ -202,7 +202,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
     }
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
-        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (VendorSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case VendorSortColumn.BY_FULLNAME -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
             case VendorSortColumn.BY_SHORTNAME -> Collections.singletonMap("shortname", ascending ? "asc" : "desc");
             case null, default -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");

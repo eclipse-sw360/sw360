@@ -144,34 +144,7 @@ public class ChangeLogsRepository extends DatabaseRepositoryCloudantClient<Chang
     }
 
     public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, PaginationData pageData) {
-        // Shared Cloudant pagination helpers still take thrift PaginationData.
-        org.eclipse.sw360.datahandler.thrift.PaginationData thriftPage = toThriftPagination(pageData);
-        List<ChangeLogs> results = queryViewWithComplexKeysPaginated("byDocumentIdAndTimestamp", docId, thriftPage);
-        pageData.setTotalRowCount(thriftPage.getTotalRowCount());
+        List<ChangeLogs> results = queryViewWithComplexKeysPaginated("byDocumentIdAndTimestamp", docId, pageData);
         return Collections.singletonMap(pageData, results);
-    }
-
-    private static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPagination(PaginationData pageData) {
-        org.eclipse.sw360.datahandler.thrift.PaginationData thrift =
-                new org.eclipse.sw360.datahandler.thrift.PaginationData();
-        if (pageData == null) {
-            return thrift;
-        }
-        if (pageData.getRowsPerPage() != null) {
-            thrift.setRowsPerPage(pageData.getRowsPerPage());
-        }
-        if (pageData.getDisplayStart() != null) {
-            thrift.setDisplayStart(pageData.getDisplayStart());
-        }
-        if (pageData.getAscending() != null) {
-            thrift.setAscending(pageData.getAscending());
-        }
-        if (pageData.getSortColumnNumber() != null) {
-            thrift.setSortColumnNumber(pageData.getSortColumnNumber());
-        }
-        if (pageData.getTotalRowCount() != null) {
-            thrift.setTotalRowCount(pageData.getTotalRowCount());
-        }
-        return thrift;
     }
 }

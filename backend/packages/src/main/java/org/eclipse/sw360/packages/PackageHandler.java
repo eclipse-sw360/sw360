@@ -180,15 +180,14 @@ public class PackageHandler {
     }
 
     public PaginatedResult<Package> getPackagesWithPagination(PaginationData pageData) {
-        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.packages.Package>> thriftResult =
-                handler.getPackagesWithPagination(ThriftConverter.toThriftPaginationData(pageData));
-        Map.Entry<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.packages.Package>> entry =
+        Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.packages.Package>> thriftResult =
+                handler.getPackagesWithPagination(pageData);
+        Map.Entry<PaginationData, List<org.eclipse.sw360.datahandler.thrift.packages.Package>> entry =
                 thriftResult.entrySet().iterator().next();
-        PaginationData paginationData = ThriftConverter.fromThriftPaginationData(entry.getKey());
         List<Package> packages = entry.getValue().stream()
                 .map(PackageConverter::fromThrift)
                 .collect(Collectors.toList());
-        return new PaginatedResult<>(paginationData, packages);
+        return new PaginatedResult<>(entry.getKey(), packages);
     }
 
     public List<Package> searchPackagesWithFilter(String text, Map<String, Set<String>> subQueryRestrictions) {

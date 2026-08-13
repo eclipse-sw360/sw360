@@ -114,7 +114,7 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public Map<PaginationData, List<Release>> getAccessibleReleasesWithPagination(User user, PaginationData pageData) throws TException {
         assertUser(user);
-        return handler.getAccessibleReleasesWithPagination(user, pageData);
+        return withPojoPagination(pageData, p -> handler.getAccessibleReleasesWithPagination(user, p));
     }
 
     @Override
@@ -124,7 +124,7 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(String text, Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
-        return componentSearchHandler.searchAccessibleComponents(text, subQueryRestrictions, user, pageData);
+        return withPojoPagination(pageData, p -> componentSearchHandler.searchAccessibleComponents(text, subQueryRestrictions, user, p));
     }
 
     @Override
@@ -141,7 +141,7 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Release>> searchAccessibleReleases(String searchText, User user, PaginationData pageData) throws TException {
-        return handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user, pageData) ;
+        return withPojoPagination(pageData, p -> handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user, p));
     }
 
     @Override
@@ -151,30 +151,30 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Release>> searchReleaseByNamePaginated(String name, PaginationData pageData) throws TException {
-        return handler.searchReleaseByNamePaginated(name, pageData);
+        return withPojoPagination(pageData, p -> handler.searchReleaseByNamePaginated(name, p));
     }
 
     @Override
     public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, PaginationData pageData) throws TException {
         assertUser(user);
-        return handler.getAccessibleNewReleasesWithSrc(user, pageData);
+        return withPojoPagination(pageData, p -> handler.getAccessibleNewReleasesWithSrc(user, p));
     }
 
     @Override
     public Map<PaginationData, List<Component>> searchComponentByNamePrefixPaginated(User user, String name, PaginationData pageData) {
-        return handler.searchComponentByNamePrefixPaginated(user, name, pageData);
+        return withPojoPagination(pageData, p -> handler.searchComponentByNamePrefixPaginated(user, name, p));
     }
 
     @Override
     public Map<PaginationData, List<Component>> searchComponentByExactNamePaginated(User user, String name, PaginationData pageData) {
-        return handler.searchComponentByExactNamePaginated(user, name, pageData);
+        return withPojoPagination(pageData, p -> handler.searchComponentByExactNamePaginated(user, name, p));
     }
 
     @Override
     public Map<PaginationData, List<Component>> searchComponentByExactValues(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
         assertUser(user);
 
-        return handler.searchComponentByExactValues(subQueryRestrictions, user, pageData);
+        return withPojoPagination(pageData, p -> handler.searchComponentByExactValues(subQueryRestrictions, user, p));
     }
 
     @Override
@@ -525,7 +525,7 @@ public class ComponentHandler implements ComponentService.Iface {
         assertUser(user);
         assertId(id);
 
-        return handler.getReleasesFromComponentIdWithPagination(id, user, pageData);
+        return withPojoPagination(pageData, p -> handler.getReleasesFromComponentIdWithPagination(id, user, p));
     }
 
     @Override
@@ -745,7 +745,7 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
             PaginationData pageData) throws TException {
-        return handler.getRecentComponentsSummaryWithPagination(user, pageData);
+        return withPojoPagination(pageData, p -> handler.getRecentComponentsSummaryWithPagination(user, p));
     }
 
     @Override
@@ -783,5 +783,29 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public List<ReleaseNode> getReleaseRelationNetworkOfRelease(Release release, User user) {
         return handler.getReleaseRelationNetworkOfRelease(release, user);
+    }
+
+    @FunctionalInterface
+    private interface PojoPaginationCall<T> {
+        Map<org.eclipse.sw360.datahandler.services.common.PaginationData, List<T>> call(
+                org.eclipse.sw360.datahandler.services.common.PaginationData pageData) throws TException;
+    }
+
+    private static <T> Map<PaginationData, List<T>> withPojoPagination(
+            PaginationData thriftPage, PojoPaginationCall<T> call) {
+        try {
+            org.eclipse.sw360.datahandler.services.common.PaginationData pojo =
+                    org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter.fromThrift(thriftPage);
+            Map<org.eclipse.sw360.datahandler.services.common.PaginationData, List<T>> result = call.call(pojo);
+            if (result == null || result.isEmpty()) {
+                return java.util.Collections.singletonMap(thriftPage, java.util.List.of());
+            }
+            Map.Entry<org.eclipse.sw360.datahandler.services.common.PaginationData, List<T>> entry =
+                    result.entrySet().iterator().next();
+            org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter.copyTotalsToThrift(entry.getKey(), thriftPage);
+            return java.util.Collections.singletonMap(thriftPage, entry.getValue());
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

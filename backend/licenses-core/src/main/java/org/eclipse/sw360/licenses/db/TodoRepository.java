@@ -16,7 +16,7 @@ import java.util.Map;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
@@ -73,7 +73,7 @@ public class TodoRepository extends DatabaseRepositoryCloudantClient<Obligation>
     }
 
     private static @NotNull String getViewFromPagination(PaginationData pageData) {
-        return switch (ObligationSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ObligationSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ObligationSortColumn.BY_TEXT -> "obligationbytext";
             case ObligationSortColumn.BY_LEVEL -> "obligationbylevel";
             case null, default -> "obligationbytitle";

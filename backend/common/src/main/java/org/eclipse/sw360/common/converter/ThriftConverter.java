@@ -43,26 +43,12 @@ public final class ThriftConverter {
 
     // ---- Shared: PaginationData ----
 
-    public static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPaginationData(PaginationData pojo){
-        if(pojo == null) return null;
-        org.eclipse.sw360.datahandler.thrift.PaginationData thrift = new org.eclipse.sw360.datahandler.thrift.PaginationData();
-        if(pojo.getAscending() != null)thrift.setAscending(pojo.getAscending());
-        if(pojo.getDisplayStart() != null) thrift.setDisplayStart(pojo.getDisplayStart());
-        if(pojo.getTotalRowCount() != null) thrift.setTotalRowCount(pojo.getTotalRowCount());
-        if(pojo.getSortColumnNumber() != null) thrift.setSortColumnNumber(pojo.getSortColumnNumber());
-        if(pojo.getRowsPerPage() != null) thrift.setRowsPerPage(pojo.getRowsPerPage());
-        return thrift;
+    public static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPaginationData(PaginationData pojo) {
+        return org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter.toThrift(pojo);
     }
 
     public static PaginationData fromThriftPaginationData(org.eclipse.sw360.datahandler.thrift.PaginationData thrift) {
-        if(thrift == null) return null;
-        PaginationData pojo = new PaginationData();
-        if(thrift.isSetAscending())pojo.setAscending(thrift.isAscending());
-        if(thrift.isSetDisplayStart()) pojo.setDisplayStart(thrift.getDisplayStart() );
-        if(thrift.isSetTotalRowCount()) pojo.setTotalRowCount(thrift.getTotalRowCount());
-        if(thrift.isSetSortColumnNumber()) pojo.setSortColumnNumber(thrift.getSortColumnNumber());
-        if(thrift.isSetRowsPerPage()) pojo.setRowsPerPage(thrift.getRowsPerPage());
-        return pojo;
+        return org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter.fromThrift(thrift);
     }
 
     // ---- Configurations: ConfigContainer ----

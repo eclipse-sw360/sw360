@@ -129,8 +129,8 @@ public class PackageServiceRestClient implements PackageClient {
                 .uri(uriBuilder -> uriBuilder
                         .path(BASE + "/page")
                         .queryParam("ascending", pageData.getAscending())
-                        .queryParam("displayStart", pageData.getDisplayStart())
-                        .queryParam("rowsPerPage", pageData.getRowsPerPage())
+                        .queryParam("displayStart", pageData.displayStartOrZero())
+                        .queryParam("rowsPerPage", pageData.rowsPerPageOrZero())
                         .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
                         .build())
                 .retrieve()

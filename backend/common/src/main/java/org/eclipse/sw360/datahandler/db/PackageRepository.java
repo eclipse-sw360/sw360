@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
@@ -143,7 +143,7 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
 
         try {
              log.debug("getPackagesWithPagination: using Mango query with index '{}', sort={}, page={}, size={}",
-                     PACKAGE_BY_ALL_IDX, sortSelector, pageData.getDisplayStart(), pageData.getRowsPerPage());
+                     PACKAGE_BY_ALL_IDX, sortSelector, pageData.displayStartOrZero(), pageData.rowsPerPageOrZero());
              packages = getConnector().getQueryResultPaginated(queryBuilder, Package.class, pageData, sortSelector, PACKAGE_BY_ALL_IDX);
              log.debug("getPackagesWithPagination: Mango query returned {} packages, totalCount={}",
                      packages.size(), pageData.getTotalRowCount());
@@ -156,7 +156,7 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
 
     private static Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
         String direction = ascending ? "asc" : "desc";
-        return switch (pageData.getSortColumnNumber()) {
+        return switch (pageData.sortColumnNumberOrZero()) {
             case -1 -> Collections.singletonMap(Package._Fields.CREATED_ON.getFieldName(), direction);
             case 3 -> Collections.singletonMap(Package._Fields.LICENSE_IDS.getFieldName(), direction);
             case 4 -> Collections.singletonMap(Package._Fields.PACKAGE_MANAGER.getFieldName(), direction);

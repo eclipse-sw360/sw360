@@ -30,7 +30,7 @@ import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.PackageSearchFilterRequest;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -139,7 +139,7 @@ public class SW360PackageService {
             return Collections.emptyMap();
         }
         return Collections.singletonMap(
-                ThriftConverter.toThriftPaginationData(result.getPaginationData()),
+                result.getPaginationData(),
                 toThriftPackages(result.getData()));
     }
 

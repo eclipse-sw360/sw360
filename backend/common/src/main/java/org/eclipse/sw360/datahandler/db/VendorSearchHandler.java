@@ -16,7 +16,7 @@ import com.google.gson.Gson;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -134,7 +134,7 @@ public class VendorSearchHandler {
      * @return Sort column name. Defaults to fullname_sort
      */
     private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (VendorSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case VendorSortColumn.BY_SHORTNAME -> "shortname_sort";
             case VendorSortColumn.BY_FULLNAME -> "fullname_sort";
             case VendorSortColumn.BY_SCORE -> null;

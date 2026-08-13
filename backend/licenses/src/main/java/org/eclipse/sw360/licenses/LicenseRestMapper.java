@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.sw360.common.utils.converter.common.CustomPropertiesConverter;
-import org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
@@ -38,12 +37,12 @@ final class LicenseRestMapper {
 
     private LicenseRestMapper() {}
 
-    static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPagination(PaginationData pojo) {
-        return PaginationDataConverter.toThrift(pojo);
+    static PaginationData toThriftPagination(PaginationData pojo) {
+        return pojo;
     }
 
-    static PaginationData fromThriftPagination(org.eclipse.sw360.datahandler.thrift.PaginationData thrift) {
-        return PaginationDataConverter.fromThrift(thrift);
+    static PaginationData fromThriftPagination(PaginationData pageData) {
+        return pageData;
     }
 
     static org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel toThriftObligationLevel(ObligationLevel pojo) {
@@ -181,11 +180,11 @@ final class LicenseRestMapper {
     }
 
     static Map<PaginationData, List<Obligation>> fromThriftPaginatedObligations(
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>> thriftMap) {
+            Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>> thriftMap) {
         if (thriftMap == null || thriftMap.isEmpty()) {
             return Map.of();
         }
-        Map.Entry<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>> entry =
+        Map.Entry<org.eclipse.sw360.datahandler.services.common.PaginationData, List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>> entry =
                 thriftMap.entrySet().iterator().next();
         return Map.of(fromThriftPagination(entry.getKey()), fromThriftObligations(entry.getValue()));
     }

@@ -26,7 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
@@ -242,8 +242,8 @@ public class DatabaseRepositoryCloudantClient<T> {
     public List<T> queryViewPaginated(
             String viewName, String key, PaginationData pageData, boolean isReduced
     ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int offset = pageData.displayStartOrZero();
         final boolean ascending = pageData.isAscending();
 
         PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
@@ -264,8 +264,8 @@ public class DatabaseRepositoryCloudantClient<T> {
     public List<T> queryViewPaginated(
             String viewName, String startKey, String endKey, PaginationData pageData, boolean isReduced
     ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int offset = pageData.displayStartOrZero();
         final boolean ascending = pageData.isAscending();
 
         PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
@@ -293,8 +293,8 @@ public class DatabaseRepositoryCloudantClient<T> {
     public List<T> queryViewPaginated(
             String queryName, Object[] startKeys, Object[] endKeys, PaginationData pageData, boolean isReduced
     ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int offset = pageData.displayStartOrZero();
         final boolean ascending = pageData.isAscending();
 
         PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName)
@@ -333,8 +333,8 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public List<T> queryViewPaginated(String viewName, PaginationData pageData, boolean isReduced) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int offset = pageData.displayStartOrZero();
         final boolean ascending = pageData.isAscending();
 
         PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, viewName)
@@ -426,8 +426,8 @@ public class DatabaseRepositoryCloudantClient<T> {
     public Set<String> queryForIdsPaginated(
             String queryName, String startKey, String endKey, PaginationData pageData, boolean isReduced
     ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int offset = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int offset = pageData.displayStartOrZero();
         final boolean ascending = pageData.isAscending();
 
         PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName)

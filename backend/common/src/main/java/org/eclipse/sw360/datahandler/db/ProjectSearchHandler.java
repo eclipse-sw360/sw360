@@ -16,7 +16,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -185,7 +185,7 @@ public class ProjectSearchHandler {
      * @return Sort column name. Defaults to name_sort
      */
     private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (ProjectSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ProjectSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ProjectSortColumn.BY_CREATEDON -> "createdOn";
 //            case ProjectSortColumn.BY_VENDOR -> "vendor_sort";
 //            case ProjectSortColumn.BY_MAINLICENSE -> "license_sort";

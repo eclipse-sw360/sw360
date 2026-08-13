@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
@@ -445,7 +445,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
-        final ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.getSortColumnNumber());
+        final ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.sortColumnNumberOrZero());
         final Map<String, String> sortSelector = getSortSelector(pageData);
         List<Project> projects = new ArrayList<>();
         Map<PaginationData, List<Project>> result = Maps.newHashMap();
@@ -719,7 +719,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         final boolean ascending = pageData.isAscending();
-        return switch (ProjectSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ProjectSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ProjectSortColumn.BY_DESCRIPTION ->
                     Collections.singletonMap("description", ascending ? "asc" : "desc");
             case ProjectSortColumn.BY_RESPONSIBLE ->

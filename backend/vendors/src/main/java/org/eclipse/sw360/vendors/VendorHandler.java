@@ -79,8 +79,8 @@ public class VendorHandler {
 
     public Map<PaginationData, List<Vendor>> getAllVendorListPaginated(PaginationData pageData) {
         try {
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult =
-                    vendorDatabaseHandler.getAllVendors(ThriftConverter.toThriftPaginationData(pageData));
+            Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult =
+                    vendorDatabaseHandler.getAllVendors(pageData);
             return convertPaginatedResult(thriftResult);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
@@ -97,8 +97,8 @@ public class VendorHandler {
     }
 
     public Map<PaginationData, List<Vendor>> searchVendors(String searchText, PaginationData pageData) {
-        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult =
-                vendorSearchHandler.search(searchText, ThriftConverter.toThriftPaginationData(pageData));
+        Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult =
+                vendorSearchHandler.search(searchText, pageData);
         return convertPaginatedResult(thriftResult);
     }
 
@@ -165,13 +165,12 @@ public class VendorHandler {
     }
 
     private static Map<PaginationData, List<Vendor>> convertPaginatedResult(
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult) {
-        Map.Entry<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> entry =
+            Map<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> thriftResult) {
+        Map.Entry<PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> entry =
                 thriftResult.entrySet().iterator().next();
-        PaginationData paginationData = ThriftConverter.fromThriftPaginationData(entry.getKey());
         List<Vendor> vendors = entry.getValue().stream()
                 .map(ThriftConverter::fromThriftVendor)
                 .collect(Collectors.toList());
-        return Map.of(paginationData, vendors);
+        return Map.of(entry.getKey(), vendors);
     }
 }

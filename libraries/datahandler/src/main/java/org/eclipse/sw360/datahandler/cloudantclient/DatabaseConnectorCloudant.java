@@ -31,7 +31,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.Contract;
@@ -792,8 +792,8 @@ public class DatabaseConnectorCloudant {
             PostFindOptions.Builder qb, Class<T> type, PaginationData pageData,
             Map<String, String> sortSelector, String countIndexName, boolean sortCountQuery
     ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int skip = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int skip = pageData.displayStartOrZero();
 
         long rowQueryLimit = Math.max(rowsPerPage, LUCENE_SEARCH_LIMIT);
 

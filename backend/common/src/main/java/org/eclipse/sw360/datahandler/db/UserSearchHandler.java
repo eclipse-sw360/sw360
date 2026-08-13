@@ -14,7 +14,7 @@ import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -142,7 +142,7 @@ public class UserSearchHandler {
      * @return Sort column name. Defaults to givenname_sort
      */
     private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (UserSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (UserSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case UserSortColumn.BY_LASTNAME -> "lastname_sort";
             case UserSortColumn.BY_EMAIL -> "email_sort";
             case UserSortColumn.BY_STATUS -> "deactivated";

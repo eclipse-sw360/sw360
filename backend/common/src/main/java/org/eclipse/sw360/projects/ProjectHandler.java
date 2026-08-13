@@ -99,7 +99,7 @@ public class ProjectHandler implements ProjectService.Iface {
     @Override
     public Map<PaginationData, List<Project>> refineSearchPageable(String text,
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData paginationData) throws TException {
-        return searchHandler.search(text, subQueryRestrictions, user, paginationData);
+        return withPojoPagination(paginationData, p -> searchHandler.search(text, subQueryRestrictions, user, p));
     }
 
     @Override
@@ -121,7 +121,7 @@ public class ProjectHandler implements ProjectService.Iface {
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummaryWithPagination(User user,
             PaginationData pageData) throws TException {
         assertUser(user);
-        return handler.getAccessibleProjectsSummary(user, pageData);
+        return withPojoPagination(pageData, p -> handler.getAccessibleProjectsSummary(user, p));
     }
 
     @Override
@@ -145,7 +145,7 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotEmpty(name);
         assertUser(user);
 
-        return handler.searchProjectByNamePrefixPaginated(user, name, pageData);
+        return withPojoPagination(pageData, p -> handler.searchProjectByNamePrefixPaginated(user, name, p));
     }
 
     @Override
@@ -154,7 +154,7 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotEmpty(name);
         assertUser(user);
 
-        return handler.searchProjectByExactNamePaginated(user, name, pageData);
+        return withPojoPagination(pageData, p -> handler.searchProjectByExactNamePaginated(user, name, p));
     }
 
     @Override
@@ -162,7 +162,7 @@ public class ProjectHandler implements ProjectService.Iface {
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
         assertUser(user);
 
-        return handler.searchAccessibleProjectByExactValues(subQueryRestrictions, user, pageData);
+        return withPojoPagination(pageData, p -> handler.searchAccessibleProjectByExactValues(subQueryRestrictions, user, p));
     }
 
     @Override
@@ -693,4 +693,29 @@ public class ProjectHandler implements ProjectService.Iface {
             throws SW360Exception {
         return handler.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User);
     }
+
+    @FunctionalInterface
+    private interface PojoPaginationCall<T> {
+        Map<org.eclipse.sw360.datahandler.services.common.PaginationData, List<T>> call(
+                org.eclipse.sw360.datahandler.services.common.PaginationData pageData) throws TException;
+    }
+
+    private static <T> Map<PaginationData, List<T>> withPojoPagination(
+            PaginationData thriftPage, PojoPaginationCall<T> call) {
+        try {
+            org.eclipse.sw360.datahandler.services.common.PaginationData pojo =
+                    org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter.fromThrift(thriftPage);
+            Map<org.eclipse.sw360.datahandler.services.common.PaginationData, List<T>> result = call.call(pojo);
+            if (result == null || result.isEmpty()) {
+                return java.util.Collections.singletonMap(thriftPage, java.util.List.of());
+            }
+            Map.Entry<org.eclipse.sw360.datahandler.services.common.PaginationData, List<T>> entry =
+                    result.entrySet().iterator().next();
+            org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter.copyTotalsToThrift(entry.getKey(), thriftPage);
+            return java.util.Collections.singletonMap(thriftPage, entry.getValue());
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
