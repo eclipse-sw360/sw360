@@ -456,7 +456,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             tags = {"Releases"}
     )
     @GetMapping(value = RELEASES_URL + "/usedBy" + "/{id}")
-    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
+    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(
+            @PathVariable("id") String id,
+            @RequestParam(value = "includeRestrictedCount", defaultValue = "true") boolean includeRestrictedCount)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
         Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
@@ -473,9 +475,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             resources.add(EntityModel.of(embeddedComponent));
         });
 
-        RestrictedResource restrictedResource = new RestrictedResource();
-        restrictedResource.setProjects(releaseService.countProjectsByReleaseId(id) - sw360Projects.size());
-        resources.add(EntityModel.of(restrictedResource));
+        if (includeRestrictedCount) {
+            RestrictedResource restrictedResource = new RestrictedResource();
+            restrictedResource.setProjects(releaseService.countProjectsByReleaseId(id) - sw360Projects.size());
+            resources.add(EntityModel.of(restrictedResource));
+        }
 
         CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
         HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
