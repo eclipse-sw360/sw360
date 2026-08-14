@@ -14,8 +14,7 @@
 ## API Token generation
 rest.write.access.usergroup=USER
 rest.admin.access.usergroup=ADMIN
-rest.apitoken.read.validity.days=90
-rest.apitoken.write.validity.days=30
+rest.apitoken.max.validity.days=90
 rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
 
 # where the Thrift should connect
