@@ -109,6 +109,8 @@ public class SW360ConfigsDatabaseHandler {
                 .put(UI_ENABLE_SECURITY_VULNERABILITY_MONITORING, getOrDefault(configContainer, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING, "false"))
                 .put(UI_OPERATING_SYSTEMS, getOrDefault(configContainer, UI_OPERATING_SYSTEMS, "[\"Android\",\"BSD\",\"iOS\",\"Linux\",\"Mac OS X\",\"QNX\",\"Microsoft Windows\",\"Windows Phone\",\"IBM z/OS\"]"))
                 .put(UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP, getOrDefault(configContainer, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP, "[\"DEPT1\",\"DEPT2\",\"DEPT3\"]"))
+                .put(UI_REST_APITOKEN_GENERATOR_ENABLE, getOrDefault(configContainer, UI_REST_APITOKEN_GENERATOR_ENABLE, "true"))
+                .put(UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED, getOrDefault(configContainer, UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED, "true"))
                 .put(UI_PROGRAMMING_LANGUAGES, getOrDefault(configContainer, UI_PROGRAMMING_LANGUAGES, "[\"ActionScript\",\"AppleScript\",\"Asp\",\"Bash\",\"BASIC\",\"C\",\"C++\",\"C#\",\"Cocoa\",\"Clojure\",\"COBOL\",\"ColdFusion\",\"D\",\"Delphi\",\"Erlang\",\"Fortran\",\"Go\",\"Groovy\",\"Haskell\",\"JSP\",\"Java\",\"JavaScript\",\"Objective-C\",\"Ocaml\",\"Lisp\",\"Perl\",\"PHP\",\"Python\",\"Ruby\",\"SQL\",\"SVG\",\"Scala\",\"SmallTalk\",\"Scheme\",\"Tcl\",\"XML\",\"Node.js\",\"JSON\"]"))
                 .put(UI_PROJECT_EXTERNALKEYS, getOrDefault(configContainer, UI_PROJECT_EXTERNALKEYS, "[\"internal.id\"]"))
                 .put(UI_PROJECT_EXTERNALURLS, getOrDefault(configContainer, UI_PROJECT_EXTERNALURLS, "[\"wiki\",\"issue-tracker\"]"))
@@ -205,7 +207,9 @@ public class SW360ConfigsDatabaseHandler {
                  UI_CLEARING_TEAM_UNKNOWN_ENABLED,
                  UI_CUSTOM_WELCOME_PAGE_GUIDELINE,
                  UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON,
-                 UI_ENABLE_SECURITY_VULNERABILITY_MONITORING
+                 UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
+                 UI_REST_APITOKEN_GENERATOR_ENABLE,
+                 UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED
                     -> isBooleanValue(configValue);
 
             // Validate string value
