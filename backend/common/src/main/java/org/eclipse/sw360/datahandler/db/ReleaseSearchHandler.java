@@ -48,7 +48,7 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
 
     private static final List<IndexField> RELEASE_FIELDS = List.of(
             IndexField.standard("name"),
-            IndexField.standard("version"),
+            IndexField.standard("version", 1, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
             IndexField.simple("componentId", "keyword"),
             IndexField.simple("clearingState", "keyword"),
             IndexField.simple("mainlineState", "keyword"),
