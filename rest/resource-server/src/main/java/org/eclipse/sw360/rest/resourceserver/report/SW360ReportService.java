@@ -213,7 +213,10 @@ public class SW360ReportService {
                 ByteBuffer buff = getProjectReportBuffer(user, projectId, reportBean);
                 String projectPath = writeToTempFile(buff, user);
                 String downloadUrl = frontendUrl + "/reports/download?module=projects"
-                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&projectId=" + projectId + "&token="
+                    + "&extendedByReleases=" + reportBean.isWithLinkedReleases()
+                    + "&projectId=" + projectId
+                    + "&format=" + toFormatParam(reportBean.getFormat())
+                    + "&token="
                         + URLEncoder.encode(projectPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", user.getEmail(), emailURL);
@@ -241,10 +244,12 @@ public class SW360ReportService {
     public void getUploadedComponentPath(User sw360User, SW360ReportBean reportBean) {
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                ByteBuffer buff = getComponentBuffer(sw360User, reportBean.isWithLinkedReleases());
+                ByteBuffer buff = getComponentBuffer(sw360User, reportBean.isWithLinkedReleases(), reportBean.getFormat());
                 String componentPath = writeToTempFile(buff, sw360User);
                 String downloadUrl = frontendUrl + "/reports/download?module=components"
-                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&token="
+                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases()
+                        + "&format=" + toFormatParam(reportBean.getFormat())
+                        + "&token="
                         + URLEncoder.encode(componentPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", sw360User.getEmail(), emailURL);
@@ -261,8 +266,8 @@ public class SW360ReportService {
         asyncThread.start();
     }
 
-    public ByteBuffer getComponentBuffer(User sw360User, boolean withLinkedReleases) throws TException {
-        return componentclient.getComponentReportDataStream(sw360User, withLinkedReleases);
+    public ByteBuffer getComponentBuffer(User sw360User, boolean withLinkedReleases, ReportFormat format) throws TException {
+        return componentclient.getComponentReportBuffer(sw360User, withLinkedReleases, format);
     }
 
     public ByteBuffer getLicenseBuffer() throws TException {
@@ -576,6 +581,16 @@ public class SW360ReportService {
             }
         }
         return documentName;
+    }
+
+    @Contract(pure = true)
+    private @NonNull String toFormatParam(@NonNull ReportFormat format) {
+        return switch (format) {
+            case CSV -> CSV_FILE_EXTENSION;
+            case JSON -> JSON_FILE_EXTENSION;
+            case XML -> XML_FILE_EXTENSION;
+            default -> EXCEL_FILE_EXTENSION;
+        };
     }
 
     @NonNull
