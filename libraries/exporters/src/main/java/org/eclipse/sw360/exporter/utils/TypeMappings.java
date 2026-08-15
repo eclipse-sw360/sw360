@@ -16,9 +16,11 @@ import com.google.common.collect.*;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.thrift.CustomProperties;
+import org.eclipse.sw360.datahandler.services.common.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.licenses.*;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.exporter.LicenseImportExportGateway;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.commons.csv.CSVRecord;
@@ -160,7 +162,7 @@ public class TypeMappings {
     public static Map<Integer, Obligation> updateTodoMapWithCustomPropertiesAndWriteToDatabase(LicenseImportExportGateway licenseClient, Map<Integer, Obligation> obligMap, Map<Integer, ConvertRecord.PropertyWithValue> customPropertiesMap, Map<Integer, Set<Integer>> obligPropertiesMap, User user) throws TException {
         for(Integer obligId : obligPropertiesMap.keySet()){
             Obligation oblig = obligMap.get(obligId);
-            if(! oblig.isSetCustomPropertyToValue()){
+            if(oblig.getCustomPropertyToValue() == null){
                 oblig.setCustomPropertyToValue(new HashMap<>());
             }
             for(Integer propertyWithValueId : obligPropertiesMap.get(obligId)){

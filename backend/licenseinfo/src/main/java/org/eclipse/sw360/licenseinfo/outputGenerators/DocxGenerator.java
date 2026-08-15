@@ -32,6 +32,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
+import org.eclipse.sw360.common.utils.converter.licenses.ObligationConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.users.UsersClients;
@@ -314,7 +316,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         fillSpecialOSSRisksTable(document, project, obligationResults);
         fillDevelopmentDetailsTable(document, project, user, projectLicenseInfoResults);
         fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
-        List<Obligation> obligations = licenseDatabaseHandler().getObligations();
+        List<Obligation> obligations = licenseDatabaseHandler().getObligations().stream()
+                .map(ObligationConverter::toThrift)
+                .collect(Collectors.toList());
         fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
                 ObligationLevel.ORGANISATION_OBLIGATION, COMMON_RULES_TABLE_INDEX, NO_ORGANISATION_OBLIGATIONS);
         fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
@@ -986,7 +990,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private static List<License> getLicenses() throws TException {
-        return licenseDatabaseHandler().getLicenses();
+        return licenseDatabaseHandler().getLicenses().stream()
+                .map(LicenseConverter::toThrift)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private void fillLicenseList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults,

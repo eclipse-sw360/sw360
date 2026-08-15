@@ -29,6 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 
 import java.io.IOException;
@@ -175,8 +176,13 @@ public class ThriftExchange {
     public String addLicense(License license, User user) {
         List<License> licenses = null;
         try {
-            licenses = licenseDatabaseHandler().addOrOverwriteLicenses(Collections.singletonList(license), user, false);
-        } catch (TException e) {
+            licenses = licenseDatabaseHandler()
+                    .addOrOverwriteLicenses(
+                            Collections.singletonList(LicenseConverter.fromThrift(license)), user, false)
+                    .stream()
+                    .map(LicenseConverter::toThrift)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
             LOGGER.error("Could not add License for user with email=[" + user.getEmail() + "]:" + e);
         }
         if (licenses != null && licenses.get(0) != null) {
@@ -245,9 +251,10 @@ public class ThriftExchange {
             return Optional.of(licenseDatabaseHandler()
                     .getLicenses()
                     .stream()
+                    .map(LicenseConverter::toThrift)
                     .filter(filter)
                     .collect(Collectors.toList()));
-        } catch (TException e) {
+        } catch (Exception e) {
             LOGGER.error("Could not fetch License list for " + selector + ": " + e);
             return Optional.empty();
         }

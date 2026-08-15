@@ -13,7 +13,6 @@ import java.util.*;
 
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -175,8 +174,9 @@ public class PermissionUtils {
 
     @SuppressWarnings("unchecked")
     public static <T> DocumentPermissions<T> makePermission(T document, User user) {
-        if (document instanceof License) {
-            return (DocumentPermissions<T>) new LicensePermissions((License) document, user);
+        if (document instanceof org.eclipse.sw360.datahandler.services.licenses.License) {
+            return (DocumentPermissions<T>) new LicensePermissions(
+                    (org.eclipse.sw360.datahandler.services.licenses.License) document, user);
         } else if (document instanceof Component) {
             return (DocumentPermissions<T>) new ComponentPermissions((Component) document, user);
         } else if (document instanceof Release) {

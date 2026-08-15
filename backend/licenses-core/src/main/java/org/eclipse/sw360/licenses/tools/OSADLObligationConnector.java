@@ -23,9 +23,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.json.JSONObject;
 import org.springframework.web.client.HttpClientErrorException;
@@ -69,7 +69,7 @@ public class OSADLObligationConnector extends ObligationConnector {
             obligation.setObligationType(ObligationType.OBLIGATION);
             obligation.setDevelopment(false);
             obligation.setDistribution(false);
-            obligation.addToWhitelist(user.getDepartment());
+            obligation.setWhitelist(new java.util.HashSet<>(Collections.singleton(user.getDepartment())));
             obligation.setExternalIds(Collections.singletonMap(EXTERNAL_ID_OSADL, licenseId));
             return Mono.just(obligation);
         }).onErrorResume(HttpClientErrorException.class, e -> {

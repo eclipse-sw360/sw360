@@ -22,7 +22,7 @@ import java.util.Map;
 public class LicenseObligationList {
     private String id;
     private String revision;
-    private String type;
+    private String type = "licenseObligationList";
     @JsonProperty(required = true)
     private String licenseId;
     private Map<String, Obligation> linkedObligations;

@@ -18,9 +18,9 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationSortColumn;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationSortColumn;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
@@ -100,22 +100,15 @@ public class ObligationSearchHandler {
             Map<String, Set<String>> textFilter = new HashMap<>();
 
             String queryString = prepareWildcardQuery(searchText);
-            textFilter.put(
-                    Obligation._Fields.TITLE.getFieldName(),
-                    Collections.singleton(queryString));
-            textFilter.put(
-                    Obligation._Fields.TEXT.getFieldName(),
-                    Collections.singleton(queryString));
+            textFilter.put("title", Collections.singleton(queryString));
+            textFilter.put("text", Collections.singleton(queryString));
 
             restrictions.put("OR", textFilter);
         }
 
         if (obligationLevel != null) {
             Map<String, Set<String>> levelFilter = new HashMap<>();
-            levelFilter.put(
-                    Obligation._Fields.OBLIGATION_LEVEL.getFieldName(),
-                    Collections.singleton(obligationLevel.toString())
-            );
+            levelFilter.put("obligationLevel", Collections.singleton(obligationLevel.toString()));
 
             restrictions.put("AND", levelFilter);
         }

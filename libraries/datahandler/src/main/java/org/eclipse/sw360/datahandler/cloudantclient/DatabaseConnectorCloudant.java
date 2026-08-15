@@ -676,7 +676,7 @@ public class DatabaseConnectorCloudant {
     }
 
     public <T> boolean remove(T doc) {
-        return this.remove(this.getDocumentFromPojo(doc).getId());
+        return this.deleteById(this.getDocumentFromPojo(doc).getId());
     }
 
     public boolean putDesignDocument(DesignDocument designDocument, String ddoc) {

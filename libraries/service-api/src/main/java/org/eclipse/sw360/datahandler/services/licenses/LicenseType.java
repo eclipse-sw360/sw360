@@ -20,7 +20,7 @@ import lombok.experimental.Accessors;
 public class LicenseType {
     private String id;
     private String revision;
-    private String type;
+    private String type = "licenseType";
     @JsonProperty(required = true)
     private Integer licenseTypeId;
     @JsonProperty(required = true)

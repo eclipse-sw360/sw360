@@ -37,6 +37,7 @@ import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
@@ -699,9 +700,10 @@ public class ModerationDatabaseHandler {
 
     public RequestStatus createRequest(License license, User user) {
         License dblicense;
-        try{
-            dblicense = licenseDatabaseHandler.getLicenseForOrganisation(license.getId(), user.getDepartment());
-        } catch (SW360Exception e) {
+        try {
+            dblicense = LicenseConverter.toThrift(
+                    licenseDatabaseHandler.getLicenseForOrganisation(license.getId(), user.getDepartment()));
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             log.error("Could not get original license from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
