@@ -125,8 +125,8 @@ public class SearchUtils {
             if (doc.version && typeof(doc.version) == 'string') {
               var vParts = doc.version.toLowerCase().split(/[^a-z0-9]+/);
               for (var vi = 0; vi < vParts.length; vi++) {
-                if (vParts[vi].length >= 2) {
-                  emitEdgeNGrams('version_ngram', vParts[vi], 2, %d);
+                if (vParts[vi].length >= 1) {
+                  emitEdgeNGrams('version_ngram', vParts[vi], 1, %d);
                 }
               }
             }
