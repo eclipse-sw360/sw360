@@ -10,9 +10,8 @@
 package org.eclipse.sw360.datahandler.db;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_PACKAGE;
 
 import java.net.MalformedURLException;
 import java.util.AbstractMap;
@@ -26,46 +25,40 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.Duration;
-import org.eclipse.sw360.datahandler.common.SW360Assert;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.packages.Package;
+import org.eclipse.sw360.datahandler.services.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-
-import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.ibm.cloud.cloudant.v1.model.DocumentResult;
-import com.github.packageurl.MalformedPackageURLException;
-import com.github.packageurl.PackageURL;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
+import com.github.packageurl.MalformedPackageURLException;
+import com.github.packageurl.PackageURL;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
+
 /**
- * Class for accessing the CouchDB for Packages.
- *
- * @author: abdul.kapti@siemens-healthineers.com
+ * Class for accessing the CouchDB for Packages (service-api POJO storage).
  */
 public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private final AttachmentConnector attachmentConnector;
-    private final DatabaseConnectorCloudant db;
     private final PackageRepository packageRepository;
     private final ProjectRepository projectRepository;
     private final ComponentDatabaseHandler componentDatabaseHandler;
@@ -73,21 +66,16 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(CycloneDxBOMImporter.class);
 
-    private static final ImmutableList<Package._Fields> listOfStringFieldsInPackageToTrim = ImmutableList.of(
-            Package._Fields.NAME, Package._Fields.VERSION, Package._Fields.VCS, Package._Fields.DESCRIPTION,
-            Package._Fields.HOMEPAGE_URL, Package._Fields.PURL, Package._Fields.HASH);
-
     public PackageDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, String changeLogsDbName,
-            AttachmentDatabaseHandler attachmentDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
+            AttachmentDatabaseHandler attachmentDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler)
+            throws MalformedURLException {
 
         super(attachmentDatabaseHandler);
-        db = new DatabaseConnectorCloudant(client, dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
 
-        // Create the repositories
         packageRepository = new PackageRepository(db);
         projectRepository = new ProjectRepository(db);
 
-        // Create the attachment connector
         attachmentConnector = new AttachmentConnector(client, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
 
         this.componentDatabaseHandler = componentDatabaseHandler;
@@ -98,26 +86,33 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName)
             throws MalformedURLException {
 
-        this(client, dbName, attachmentDbName, changeLogsDbName, new AttachmentDatabaseHandler(client, dbName, attachmentDbName),
+        this(client, dbName, attachmentDbName, changeLogsDbName,
+                new AttachmentDatabaseHandler(client, dbName, attachmentDbName),
                 new ComponentDatabaseHandler(client, dbName, changeLogsDbName, attachmentDbName));
     }
 
-    public Package getPackageById(String id) throws SW360Exception {
+    public Package getPackageById(String id) {
         Package pkg = packageRepository.get(id);
-        assertNotNull(pkg, "Invalid Package Id");
+        if (pkg == null) {
+            throw new SW360Exception("Invalid Package Id");
+        }
         return pkg;
     }
 
-    public List<Package> getPackageByIds(Set<String> ids) throws SW360Exception {
+    public List<Package> getPackageByIds(Set<String> ids) {
         List<Package> packages = packageRepository.get(ids);
-        SW360Assert.assertEquals(ids.size(), CommonUtils.nullToEmptyList(packages).size(), "At least one package id was invalid!" );
+        if (ids.size() != CommonUtils.nullToEmptyList(packages).size()) {
+            throw new SW360Exception("At least one package id was invalid!");
+        }
         return packages;
     }
 
-    public List<Package> getPackageWithReleaseByPackageIds(Set<String> ids) throws SW360Exception {
+    public List<Package> getPackageWithReleaseByPackageIds(Set<String> ids) {
         List<Package> packages = packageRepository.get(ids);
-        Set<String> releaseIds = packages.stream().filter(pkg -> CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId()))
-                .map(Package::getReleaseId).collect(Collectors.toSet());
+        Set<String> releaseIds = packages.stream()
+                .filter(pkg -> CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId()))
+                .map(Package::getReleaseId)
+                .collect(Collectors.toSet());
         if (CommonUtils.isNotEmpty(releaseIds)) {
             List<Release> releases = componentDatabaseHandler.getReleasesByIds(releaseIds);
             Map<String, Release> releaseIdToReleaseMap = releases.stream()
@@ -125,7 +120,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldVal, newVal) -> newVal));
             packages.forEach(pkg -> {
                 if (CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId())) {
-                    pkg.setRelease(releaseIdToReleaseMap.get(pkg.getReleaseId()));
+                    pkg.setRelease(ReleaseConverter.fromThrift(releaseIdToReleaseMap.get(pkg.getReleaseId())));
                 }
             });
         }
@@ -133,9 +128,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Set<Package> getPackagesByReleaseId(String id) {
-        Set<Package> packages = Sets.newHashSet();
-        packages.addAll(packageRepository.getPackagesByReleaseId(id));
-        return packages;
+        return Sets.newHashSet(packageRepository.getPackagesByReleaseId(id));
     }
 
     public Set<Package> getPackagesByReleaseIds(Set<String> ids) {
@@ -157,7 +150,8 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return searchHandler.searchPackages(searchText);
     }
 
-    public List<Package> searchPackagesWithFilter(String searchText, PackageSearchHandler searchHandler, Map<String,Set<String>> subQueryRestrictions) {
+    public List<Package> searchPackagesWithFilter(String searchText, PackageSearchHandler searchHandler,
+            Map<String, Set<String>> subQueryRestrictions) {
         return searchHandler.searchPackagesWithRestrictions(searchText, subQueryRestrictions);
     }
 
@@ -171,12 +165,27 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return packages.stream().filter(orphanReleaseFilter).collect(Collectors.toList());
     }
 
-    private void preparePackage(Package pkg) throws SW360Exception {
-        // Prepare package for database
-        ThriftValidate.preparePackage(pkg);
+    private void preparePackage(Package pkg) {
+        if (CommonUtils.isNullEmptyOrWhitespace(pkg.getName())) {
+            throw new SW360Exception("package name cannot be empty!");
+        }
+        if (CommonUtils.isNullEmptyOrWhitespace(pkg.getVersion())) {
+            throw new SW360Exception("package version cannot be empty!");
+        }
+        if (CommonUtils.isNullEmptyOrWhitespace(pkg.getPurl())) {
+            throw new SW360Exception("package purl cannot be empty!");
+        }
+        if (pkg.getPackageManager() == null) {
+            throw new SW360Exception("package manager cannot be empty!");
+        }
+        if (pkg.getPackageType() == null) {
+            throw new SW360Exception("package type cannot be empty!");
+        }
+        pkg.setRelease(null);
+        pkg.setType(TYPE_PACKAGE);
     }
 
-    public AddDocumentRequestSummary addPackage(Package pkg, User user) throws SW360Exception {
+    public AddDocumentRequestSummary addPackage(Package pkg, User user) {
         removeLeadingTrailingWhitespace(pkg);
         String name = pkg.getName();
         String version = pkg.getVersion();
@@ -185,40 +194,42 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
         }
 
-        if (CommonUtils.isNullEmptyOrWhitespace(ThriftEnumUtils.enumToString(pkg.getPackageType())))  {
-            log.error(String.format("Invalid Package Type for package: '%s'", SW360Utils.printName(pkg)));
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge Type!");
+        if (pkg.getPackageType() == null) {
+            log.error("Invalid Package Type for package: '{}'", printName(pkg));
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage("Invalid Pacakge Type!");
         }
 
         try {
             PackageURL purl = new PackageURL(pkg.getPurl());
             pkg.setPackageManager(PackageManager.valueOf(purl.getType().toUpperCase()));
         } catch (MalformedPackageURLException e) {
-            log.error(String.format("Invalid PURL for package: '%s'", SW360Utils.printName(pkg)), e);
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge URL!");
+            log.error(String.format("Invalid PURL for package: '%s'", printName(pkg)), e);
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage("Invalid Pacakge URL!");
         } catch (IllegalArgumentException e) {
-            log.error(String.format("Invalid Package Manager for package: '%s'", SW360Utils.printName(pkg)), e);
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge Manager!");
+            log.error(String.format("Invalid Package Manager for package: '%s'", printName(pkg)), e);
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage("Invalid Pacakge Manager!");
         }
 
-        // Prepare package for database
         preparePackage(pkg);
         List<Package> duplicatePackagesByPurl = getPackageByPurl(pkg.getPurl());
 
         if (!duplicatePackagesByPurl.isEmpty()) {
             final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
-                    .setMessage(SW360Constants.DUPLICATE_PACKAGE_BY_PURL);
-            if(duplicatePackagesByPurl.size() == 1){
+                    .setMessage(org.eclipse.sw360.datahandler.common.SW360Constants.DUPLICATE_PACKAGE_BY_PURL);
+            if (duplicatePackagesByPurl.size() == 1) {
                 addDocumentRequestSummary.setId(duplicatePackagesByPurl.get(0).getId());
             }
             return addDocumentRequestSummary;
-        }else{
+        } else {
             List<Package> duplicatePackages = getPackageByNameAndVersion(name, version);
-            if(!duplicatePackages.isEmpty()){
+            if (!duplicatePackages.isEmpty()) {
                 final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                         .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
-                if(duplicatePackages.size() == 1) {
+                if (duplicatePackages.size() == 1) {
                     addDocumentRequestSummary.setId(duplicatePackages.get(0).getId());
                 }
                 return addDocumentRequestSummary;
@@ -230,35 +241,36 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         AddDocumentRequestSummary summary = new AddDocumentRequestSummary()
                 .setRequestStatus(AddDocumentRequestStatus.FAILURE);
 
-        // Ensure that release exists
         if (CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId())) {
             try {
                 Release release = componentDatabaseHandler.getRelease(pkg.getReleaseId(), user);
-                // create new package
                 boolean updateStatus = packageRepository.add(pkg);
-                // Update the underlying release
                 if (updateStatus) {
                     release.addToPackageIds(pkg.getId());
                     componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
                     summary.setMessage("Package successfully created with linked release");
                 } else {
-                    log.error(String.format("Failed to add package: %s ", SW360Utils.printName(pkg)));
-                    return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage("Failed to add package!");
+                    log.error("Failed to add package: {} ", printName(pkg));
+                    return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE)
+                            .setMessage("Failed to add package!");
                 }
-            } catch (SW360Exception e) {
-                log.error(String.format("Invalid release id %s while adding package %s ", pkg.getReleaseId(), SW360Utils.printName(pkg)), e);
-                return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Release Id");
+            } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+                log.error(String.format("Invalid release id %s while adding package %s ", pkg.getReleaseId(),
+                        printName(pkg)), e);
+                return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                        .setMessage("Invalid Release Id");
             }
         } else {
-            // create new orphan package (without linked releases)
             packageRepository.add(pkg);
-            summary.setMessage(String.format("An Orphan Package with id: <%s> successfully created (without linked release)", pkg.getId()));
+            summary.setMessage(String.format(
+                    "An Orphan Package with id: <%s> successfully created (without linked release)", pkg.getId()));
         }
-        databaseHandlerUtil.addChangeLogs(pkg, null, user.getEmail(), Operation.CREATE, attachmentConnector, Lists.newArrayList(), null, null);
+        databaseHandlerUtil.addChangeLogs(PackageConverter.toThrift(pkg), null, user.getEmail(), Operation.CREATE,
+                attachmentConnector, Lists.newArrayList(), null, null);
         return summary.setId(pkg.getId()).setRequestStatus(AddDocumentRequestStatus.SUCCESS);
     }
 
-    public RequestStatus updatePackage(Package updatedPkg, User user) throws SW360Exception {
+    public RequestStatus updatePackage(Package updatedPkg, User user) {
         removeLeadingTrailingWhitespace(updatedPkg);
         String packageId = updatedPkg.getId();
         String name = updatedPkg.getName();
@@ -267,19 +279,21 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.NAMINGERROR;
         }
 
-        if (!SW360Utils.isWriteAccessUser(updatedPkg.getCreatedBy(), user, SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER))) {
-            log.error(String.format("User %s does not have write access to package: %s ", user.getEmail(), packageId));
+        if (!SW360Utils.isWriteAccessUser(updatedPkg.getCreatedBy(), user,
+                SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER))) {
+            log.error("User {} does not have write access to package: {} ", user.getEmail(), packageId);
             return RequestStatus.ACCESS_DENIED;
         }
 
-        if (CommonUtils.isNullEmptyOrWhitespace(ThriftEnumUtils.enumToString(updatedPkg.getPackageType())))  {
-            log.error(String.format("Invalid Package Type for package: '%s'", packageId));
+        if (updatedPkg.getPackageType() == null) {
+            log.error("Invalid Package Type for package: '{}'", packageId);
             return RequestStatus.INVALID_INPUT;
         }
 
-        if (CommonUtils.isNotNullEmptyOrWhitespace(updatedPkg.getReleaseId()) &&
-                DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(updatedPkg.getReleaseId()), packageRepository)) {
-            log.error(String.format("Invalid linked release id %s for package: %s ", updatedPkg.getReleaseId(), packageId));
+        if (CommonUtils.isNotNullEmptyOrWhitespace(updatedPkg.getReleaseId())
+                && DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(updatedPkg.getReleaseId()),
+                        packageRepository)) {
+            log.error("Invalid linked release id {} for package: {} ", updatedPkg.getReleaseId(), packageId);
             return RequestStatus.INVALID_INPUT;
         }
 
@@ -294,12 +308,10 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.INVALID_INPUT;
         }
 
-        // Prepare package for database
         preparePackage(updatedPkg);
-        // Get actual document for members that should not change
         Package actualPkg = packageRepository.get(packageId);
         if (actualPkg == null) {
-            throw fail(404, String.format("Could not fetch package from database! id = %s", packageId));
+            throw new SW360Exception(String.format("Could not fetch package from database! id = %s", packageId), 404);
         }
 
         if (changeWouldResultInDuplicate(actualPkg, updatedPkg)) {
@@ -307,80 +319,82 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         copyImmutableFields(updatedPkg, actualPkg);
-        updateModifiedFields(updatedPkg, user.getEmail());
+        updatedPkg.setModifiedBy(user.getEmail());
+        updatedPkg.setModifiedOn(SW360Utils.getCreatedOn());
 
         String actualReleaseId = CommonUtils.nullToEmptyString(actualPkg.getReleaseId());
         String newReleaseId = CommonUtils.nullToEmptyString(updatedPkg.getReleaseId());
-        // update linked release if there is a change in linked release.
         if (!newReleaseId.equals(actualReleaseId)) {
-            // Ensure that release exists
             try {
-                // once we are sure that release exists, update the package
                 DocumentResult resp = packageRepository.updateWithResponse(updatedPkg);
                 if (CommonUtils.isNotNullEmptyOrWhitespace(actualReleaseId)) {
                     Release actualRelease = componentDatabaseHandler.getRelease(actualReleaseId, user);
                     Set<String> packageIds = CommonUtils.nullToEmptySet(actualRelease.getPackageIds());
-                    // Update the previously linked release, if it contains package id
                     if (resp.isOk()) {
                         if (packageIds.contains(packageId)) {
                             packageIds.remove(packageId);
                             actualRelease.setPackageIds(packageIds);
-                            componentDatabaseHandler.updateRelease(actualRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+                            componentDatabaseHandler.updateRelease(actualRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
+                                    true);
                         } else {
-                            log.info(String.format("Linked pacakgeId: %s is not present in release: %s", packageId, actualReleaseId));
+                            log.info("Linked pacakgeId: {} is not present in release: {}", packageId, actualReleaseId);
                         }
                     } else {
-                        log.error(String.format("Failed to update package: %s with id: %s", SW360Utils.printName(updatedPkg), packageId));
+                        log.error("Failed to update package: {} with id: {}", printName(updatedPkg), packageId);
                         return RequestStatus.FAILURE;
                     }
                 }
                 if (CommonUtils.isNotNullEmptyOrWhitespace(newReleaseId)) {
                     Release newRelease = componentDatabaseHandler.getRelease(newReleaseId, user);
                     Set<String> packageIds = CommonUtils.nullToEmptySet(newRelease.getPackageIds());
-                    // Update the newly linked release, if it does not contain package id
                     if (resp.isOk()) {
                         if (!packageIds.contains(packageId)) {
                             newRelease.addToPackageIds(packageId);
-                            componentDatabaseHandler.updateRelease(newRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+                            componentDatabaseHandler.updateRelease(newRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
+                                    true);
                         } else {
-                            log.info(String.format("Linked pacakgeId: %s is already present in release: %s", packageId, newReleaseId));
+                            log.info("Linked pacakgeId: {} is already present in release: {}", packageId, newReleaseId);
                         }
                     } else {
-                        log.error(String.format("Failed to update package: %s with id: %s", SW360Utils.printName(updatedPkg), packageId));
+                        log.error("Failed to update package: {} with id: {}", printName(updatedPkg), packageId);
                         return RequestStatus.FAILURE;
                     }
                 }
 
-            } catch (SW360Exception e) {
-                log.error(String.format("Invalid release id %s while adding package %s ", newReleaseId, SW360Utils.printName(updatedPkg)), e);
+            } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+                log.error(String.format("Invalid release id %s while adding package %s ", newReleaseId,
+                        printName(updatedPkg)), e);
                 return RequestStatus.INVALID_INPUT;
             }
         } else {
-            // update orphan package (without linked releases)
             packageRepository.update(updatedPkg);
         }
-        databaseHandlerUtil.addChangeLogs(updatedPkg, actualPkg, user.getEmail(), Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
+        databaseHandlerUtil.addChangeLogs(PackageConverter.toThrift(updatedPkg), PackageConverter.toThrift(actualPkg),
+                user.getEmail(), Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
-    public RequestStatus deletePackage(String id, User user) throws SW360Exception {
+    public RequestStatus deletePackage(String id, User user) {
         Package pkg = packageRepository.get(id);
-        assertNotNull(pkg);
+        if (pkg == null) {
+            throw new SW360Exception("Invalid null input!");
+        }
 
         if (checkIfInUse(id)) {
             return RequestStatus.IN_USE;
         }
 
-        if (!SW360Utils.isWriteAccessUser(pkg.getCreatedBy(), user, SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER))) {
-            log.error(String.format("User %s does not have write access to package: %s ", user.getEmail(), pkg.getId()));
+        if (!SW360Utils.isWriteAccessUser(pkg.getCreatedBy(), user,
+                SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER))) {
+            log.error("User {} does not have write access to package: {} ", user.getEmail(), pkg.getId());
             return RequestStatus.ACCESS_DENIED;
         }
 
         RequestStatus status = cleanupPackageDependentFieldsInRelease(pkg, user);
         if (RequestStatus.SUCCESS.equals(status)) {
             packageRepository.remove(pkg);
-            databaseHandlerUtil.addChangeLogs(null, pkg, user.getEmail(), Operation.DELETE, attachmentConnector,
-                    Lists.newArrayList(), null, null);
+            databaseHandlerUtil.addChangeLogs(null, PackageConverter.toThrift(pkg), user.getEmail(), Operation.DELETE,
+                    attachmentConnector, Lists.newArrayList(), null, null);
             return status;
         }
         return status;
@@ -390,15 +404,20 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return projectRepository.getCountByPackageId(packageId) > 0;
     }
 
-    private RequestStatus cleanupPackageDependentFieldsInRelease(Package pkg, User user) throws SW360Exception {
+    private RequestStatus cleanupPackageDependentFieldsInRelease(Package pkg, User user) {
         String releaseId = pkg.getReleaseId();
         if (CommonUtils.isNotNullEmptyOrWhitespace(releaseId)) {
-            Release release = componentDatabaseHandler.getRelease(releaseId, user);
-            Set<String> packageIds = release.getPackageIds();
-            if (CommonUtils.isNotEmpty(packageIds) && packageIds.contains(pkg.getId())) {
-                packageIds.remove(pkg.getId());
-                release.setPackageIds(packageIds);
-                return componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+            try {
+                Release release = componentDatabaseHandler.getRelease(releaseId, user);
+                Set<String> packageIds = release.getPackageIds();
+                if (CommonUtils.isNotEmpty(packageIds) && packageIds.contains(pkg.getId())) {
+                    packageIds.remove(pkg.getId());
+                    release.setPackageIds(packageIds);
+                    return toPojo(componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
+                            true));
+                }
+            } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+                throw new SW360Exception(e.getWhy() != null ? e.getWhy() : e.getMessage(), e);
             }
         }
         return RequestStatus.SUCCESS;
@@ -440,16 +459,50 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void copyImmutableFields(Package destination, Package source) {
-        ThriftUtils.copyField(source, destination, Package._Fields.CREATED_ON);
-        ThriftUtils.copyField(source, destination, Package._Fields.CREATED_BY);
+        destination.setCreatedOn(source.getCreatedOn());
+        destination.setCreatedBy(source.getCreatedBy());
     }
 
     private void removeLeadingTrailingWhitespace(Package pkg) {
-        DatabaseHandlerUtil.trimStringFields(pkg, listOfStringFieldsInPackageToTrim);
+        if (pkg.getName() != null) {
+            pkg.setName(pkg.getName().trim());
+        }
+        if (pkg.getVersion() != null) {
+            pkg.setVersion(pkg.getVersion().trim());
+        }
+        if (pkg.getVcs() != null) {
+            pkg.setVcs(pkg.getVcs().trim());
+        }
+        if (pkg.getDescription() != null) {
+            pkg.setDescription(pkg.getDescription().trim());
+        }
+        if (pkg.getHomepageUrl() != null) {
+            pkg.setHomepageUrl(pkg.getHomepageUrl().trim());
+        }
+        if (pkg.getPurl() != null) {
+            pkg.setPurl(pkg.getPurl().trim());
+        }
+        if (pkg.getHash() != null) {
+            pkg.setHash(pkg.getHash().trim());
+        }
         pkg.setLicenseIds(DatabaseHandlerUtil.trimSetOfString(pkg.getLicenseIds()));
     }
 
     public Map<PaginationData, List<Package>> getPackagesWithPagination(PaginationData pageData) {
-          return packageRepository.getPackagesWithPagination(pageData);
+        return packageRepository.getPackagesWithPagination(pageData);
+    }
+
+    private static String printName(Package pkg) {
+        if (pkg == null || CommonUtils.isNullEmptyOrWhitespace(pkg.getName())) {
+            return "New Package";
+        }
+        return SW360Utils.getVersionedName(pkg.getName(), pkg.getVersion());
+    }
+
+    private static RequestStatus toPojo(org.eclipse.sw360.datahandler.thrift.RequestStatus thrift) {
+        if (thrift == null) {
+            return null;
+        }
+        return RequestStatus.valueOf(thrift.name());
     }
 }

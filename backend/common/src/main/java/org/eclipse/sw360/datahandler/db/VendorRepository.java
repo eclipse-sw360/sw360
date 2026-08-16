@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,23 +18,25 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.vendors.VendorSortColumn;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-
-import java.util.Set;
-import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
 import org.jetbrains.annotations.NotNull;
 
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+
 /**
- * CRUD access for the Vendor class
- *
+ * CRUD access for the Vendor class (service-api POJO storage).
  */
 public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
@@ -67,10 +68,10 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         createPartialTypeIndex(
                 VENDORS_BY_ALL_IDX, "vendorsByType", SW360Constants.TYPE_VENDOR,
                 new String[]{
-                        Vendor._Fields.TYPE.getFieldName(),
-                        Vendor._Fields.FULLNAME.getFieldName(),
-                        Vendor._Fields.SHORTNAME.getFieldName(),
-                        Vendor._Fields.URL.getFieldName(),
+                        "type",
+                        "fullname",
+                        "shortname",
+                        "url",
                 }, db
         );
     }
@@ -79,24 +80,44 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         return new ArrayList<>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
     }
 
+    /**
+     * Attach thrift Vendor onto still-thrift parent documents (components/projects/releases).
+     */
     public void fillVendor(Component component) {
         if (component.isSetDefaultVendorId()) {
             final String vendorId = component.getDefaultVendorId();
             if (!isNullOrEmpty(vendorId)) {
-                final Vendor vendor = get(vendorId);
-                if (vendor != null)
+                final org.eclipse.sw360.datahandler.thrift.vendors.Vendor vendor = toThrift(get(vendorId));
+                if (vendor != null) {
                     component.setDefaultVendor(vendor);
+                }
             }
         }
     }
 
+    public void fillVendor(org.eclipse.sw360.datahandler.services.projects.Project project) {
+        final String vendorId = project.getVendorId();
+        if (!isNullOrEmpty(vendorId)) {
+            final Vendor vendor = get(vendorId);
+            if (vendor != null) {
+                project.setVendor(vendor);
+            }
+            project.setVendorId(null);
+        }
+    }
+
+    /**
+     * Thrift-side companion for {@link #fillVendor(org.eclipse.sw360.datahandler.services.projects.Project)}
+     * used by handlers that still hold a thrift Project. Reads the POJO vendor, converts, and attaches.
+     */
     public void fillVendor(Project project) {
         if (project.isSetVendorId()) {
             final String vendorId = project.getVendorId();
             if (!isNullOrEmpty(vendorId)) {
-                final Vendor vendor = get(vendorId);
-                if (vendor != null)
+                final org.eclipse.sw360.datahandler.thrift.vendors.Vendor vendor = toThrift(get(vendorId));
+                if (vendor != null) {
                     project.setVendor(vendor);
+                }
             }
             project.unsetVendorId();
         }
@@ -106,17 +127,50 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         fillVendor(release, null);
     }
 
-    public void fillVendor(Release release, Map<String, Vendor> vendorCache) {
+    public void fillVendor(Release release, Map<String, org.eclipse.sw360.datahandler.thrift.vendors.Vendor> vendorCache) {
         if (release.isSetVendorId()) {
             final String vendorId = release.getVendorId();
             if (!isNullOrEmpty(vendorId)) {
-                final Vendor vendor = vendorCache == null ? get(vendorId) : vendorCache.computeIfAbsent(vendorId, this::get);
+                final org.eclipse.sw360.datahandler.thrift.vendors.Vendor vendor;
+                if (vendorCache == null) {
+                    vendor = toThrift(get(vendorId));
+                } else {
+                    vendor = vendorCache.computeIfAbsent(vendorId, id -> toThrift(get(id)));
+                }
                 if (vendor != null) {
                     release.setVendor(vendor);
                 }
             }
             release.unsetVendorId();
         }
+    }
+
+    public Map<String, org.eclipse.sw360.datahandler.thrift.vendors.Vendor> getAllAsThriftIdMap() {
+        return getAll().stream()
+                .map(VendorConverter::toThrift)
+                .filter(v -> v != null && v.getId() != null)
+                .collect(Collectors.toMap(org.eclipse.sw360.datahandler.thrift.vendors.Vendor::getId, v -> v,
+                        (a, b) -> a));
+    }
+
+    public List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> getAllAsThrift() {
+        return getAll().stream().map(VendorConverter::toThrift).collect(Collectors.toList());
+    }
+
+    public org.eclipse.sw360.datahandler.thrift.vendors.Vendor getAsThrift(String id) {
+        return toThrift(get(id));
+    }
+
+    public Map<String, org.eclipse.sw360.datahandler.thrift.vendors.Vendor> getAsThriftIdMap(Set<String> ids) {
+        return get(ids).stream()
+                .map(VendorConverter::toThrift)
+                .filter(v -> v != null && v.getId() != null)
+                .collect(Collectors.toMap(org.eclipse.sw360.datahandler.thrift.vendors.Vendor::getId, v -> v,
+                        (a, b) -> a));
+    }
+
+    private static org.eclipse.sw360.datahandler.thrift.vendors.Vendor toThrift(Vendor pojo) {
+        return VendorConverter.toThrift(pojo);
     }
 
     public Set<String> getVendorByLowercaseShortnamePrefix(String shortnamePrefix) {
@@ -133,7 +187,7 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
 
         if (searchText != null && !searchText.isBlank()
-                && VendorSortColumn.findByValue(pageData.getSortColumnNumber()) == VendorSortColumn.BY_SCORE) {
+                && VendorSortColumn.findByValue(pageData.sortColumnNumberOrZero()) == VendorSortColumn.BY_SCORE) {
             return searchVendorsByNamePrefix(searchText, pageData);
         }
 
@@ -170,11 +224,11 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
         int totalCount = vendors.size();
         pageData.setTotalRowCount(totalCount);
-        int fromIndex = pageData.getDisplayStart();
+        int fromIndex = pageData.displayStartOrZero();
         if (fromIndex >= totalCount) {
             return Collections.singletonMap(pageData, Collections.emptyList());
         }
-        int toIndex = Math.min(fromIndex + pageData.getRowsPerPage(), totalCount);
+        int toIndex = Math.min(fromIndex + pageData.rowsPerPageOrZero(), totalCount);
         return Collections.singletonMap(pageData, vendors.subList(fromIndex, toIndex));
     }
 
@@ -184,15 +238,14 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
 
         String viewName = getViewFromPagination(pageData);
-        log.debug("Using view: {} for pagination sort column {}", viewName , pageData.sortColumnNumber);
+        log.debug("Using view: {} for pagination sort column {}", viewName, pageData.sortColumnNumberOrZero());
         List<Vendor> vendors = queryViewPaginated(viewName, pageData, false);
 
         return Collections.singletonMap(pageData, vendors);
     }
 
-
     private static @NotNull String getViewFromPagination(PaginationData pageData) {
-        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (VendorSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case VendorSortColumn.BY_FULLNAME -> "vendorbyfullname";
             case VendorSortColumn.BY_SHORTNAME -> "vendorbyshortname";
             // BY_SCORE: Nouveau handles ranking; "all" view used only for total count fallback
@@ -200,15 +253,4 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
             case null, default -> "all";
         };
     }
-
-    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
-        return switch (VendorSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case VendorSortColumn.BY_FULLNAME -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
-            case VendorSortColumn.BY_SHORTNAME -> Collections.singletonMap("shortname", ascending ? "asc" : "desc");
-            case null, default -> Collections.singletonMap("fullname", ascending ? "asc" : "desc");
-        };
-    }
-
-
-
 }

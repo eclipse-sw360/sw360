@@ -12,7 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import com.google.common.collect.Sets;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;

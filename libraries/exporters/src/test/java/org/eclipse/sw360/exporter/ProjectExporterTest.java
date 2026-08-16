@@ -37,7 +37,7 @@ public class ProjectExporterTest {
     @Test
     public void testEveryRenderedProjectFieldHasAHeader() throws Exception {
         ProjectExporter exporter = new ProjectExporter(componentClient,
-                projectClient, user, Collections.emptyList(), false);
+                projectClient::getProjectsById, user, Collections.emptyList(), false);
         Assert.assertEquals(ProjectExporter.HEADERS.size(), ProjectExporter.PROJECT_RENDERED_FIELDS.size());
     }
 }

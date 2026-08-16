@@ -35,20 +35,42 @@ import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
+import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
+import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
+import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStateSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.services.packages.Package;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectData;
+import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectType;
+import org.eclipse.sw360.datahandler.services.projects.ProjectWithReleaseRelationTuple;
+import org.eclipse.sw360.datahandler.services.common.DocumentState;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.ProjectPackageRelationship;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -82,12 +104,10 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.projects.ProjectHandler;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import java.nio.ByteBuffer;
 
@@ -142,16 +162,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // cleared project that is displayed as not yet cleared - but it won't be okay
     // to see a uncleared project that is displayed as cleared but isn't anymore)
     private static final java.time.Duration ALL_PROJECTS_ID_MAP_CACHE_LIFETIME = java.time.Duration.ofMinutes(2);
-    private static final ImmutableList<Project._Fields> listOfStringFieldsInProjToTrim = ImmutableList.of(
-            Project._Fields.NAME, Project._Fields.DESCRIPTION, Project._Fields.VERSION, Project._Fields.DOMAIN,
-            Project._Fields.BUSINESS_UNIT, Project._Fields.TAG, Project._Fields.PROJECT_RESPONSIBLE,
-            Project._Fields.LEAD_ARCHITECT, Project._Fields.PROJECT_OWNER, Project._Fields.OWNER_ACCOUNTING_UNIT,
-            Project._Fields.OWNER_GROUP, Project._Fields.OWNER_COUNTRY, Project._Fields.PREEVALUATION_DEADLINE,
-            Project._Fields.SYSTEM_TEST_START, Project._Fields.SYSTEM_TEST_END, Project._Fields.DELIVERY_START,
-            Project._Fields.CLEARING_SUMMARY, Project._Fields.SPECIAL_RISKS_OSS, Project._Fields.GENERAL_RISKS3RD_PARTY,
-            Project._Fields.SPECIAL_RISKS3RD_PARTY, Project._Fields.DELIVERY_CHANNELS,
-            Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS, Project._Fields.OBLIGATIONS_TEXT,
-            Project._Fields.LICENSE_INFO_HEADER_TEXT);
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
@@ -321,8 +331,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ////////////////////////////
 
     public void addSelectLogs(Project project, User user) {
-
-        DatabaseHandlerUtil.addSelectLogs(project, user.getEmail(), attachmentConnector);
+        DatabaseHandlerUtil.addSelectLogs(ProjectConverter.toThrift(project), user.getEmail(), attachmentConnector);
     }
 
     public Project getProjectById(String id, User user) throws SW360Exception {
@@ -349,15 +358,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String userEmail = user.getEmail();
         List<Project> myProjectsFull = repository.getMyProjectsFull(userEmail);
         if (userRoles != null && !userRoles.isEmpty()) {
-            Boolean creator = userRoles.get(Project._Fields.CREATED_BY.toString());
-            Boolean moderator = userRoles.get(Project._Fields.MODERATORS.toString());
-            Boolean contributor = userRoles.get(Project._Fields.CONTRIBUTORS.toString());
-            Boolean projectOwner = userRoles.get(Project._Fields.PROJECT_OWNER.toString());
-            Boolean leadArchitect = userRoles.get(Project._Fields.LEAD_ARCHITECT.toString());
-            Boolean projectResponsible = userRoles.get(Project._Fields.PROJECT_RESPONSIBLE.toString());
-            Boolean securityResponsible = userRoles.get(Project._Fields.SECURITY_RESPONSIBLES.toString());
+            Boolean creator = userRoles.get("createdBy");
+            Boolean moderator = userRoles.get("moderators");
+            Boolean contributor = userRoles.get("contributors");
+            Boolean projectOwner = userRoles.get("projectOwner");
+            Boolean leadArchitect = userRoles.get("leadArchitect");
+            Boolean projectResponsible = userRoles.get("projectResponsible");
+            Boolean securityResponsible = userRoles.get("securityResponsibles");
 
-            myProjectsFull = myProjectsFull.stream().filter(ProjectPermissions.isVisible(user))
+            myProjectsFull = myProjectsFull.stream().filter(p -> ProjectPermissions.isVisible(user).test(p))
                     .filter(project -> {
                         if (creator != null && creator && project.getCreatedBy().equals(userEmail)) {
                             return true;
@@ -413,15 +422,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         // Save creating user
-        project.createdBy = user.getEmail();
-        project.createdOn = getCreatedOn();
-        if (CommonUtils.isNullEmptyOrWhitespace(project.businessUnit)) {
-            project.businessUnit = getBUFromOrganisation(user.getDepartment());
+        project.setCreatedBy(user.getEmail());
+        project.setCreatedOn(getCreatedOn());
+        if (CommonUtils.isNullEmptyOrWhitespace(project.getBusinessUnit())) {
+            project.setBusinessUnit(getBUFromOrganisation(user.getDepartment()));
         }
 
         setRequestedDateAndTrimComment(project, null, user);
         setRequestedDateAndTrimCommentForPackages(project, null, user);
-        project.unsetVendor();
+        project.setVendor(null);
         // Add project to database and return ID
         repository.add(project);
 
@@ -429,7 +438,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             saveAttachmentUsages(project);
         }
 
-        dbHandlerUtil.addChangeLogs(project, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(),
+        dbHandlerUtil.addChangeLogs(ProjectConverter.toThrift(project), null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(),
                 null, null);
         sendMailNotificationsForNewProject(project, user.getEmail());
         return new AddDocumentRequestSummary().setId(project.getId()).setRequestStatus(AddDocumentRequestStatus.SUCCESS);
@@ -461,8 +470,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(project);
         assertNotNull(actual);
 
-        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
-                project.getAttachments(), user.getEmail(), project.getId());
+        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, toThriftAttachments(actual.getAttachments()),
+                toThriftAttachments(project.getAttachments()), user.getEmail(), project.getId());
         if (changeWouldResultInDuplicate(actual, project)) {
             return RequestStatus.DUPLICATE;
         } else if (duplicateAttachmentExist(project)) {
@@ -480,10 +489,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             copyImmutableFields(project,actual);
             setRequestedDateAndTrimComment(project, actual, user);
             setRequestedDateAndTrimCommentForPackages(project, actual, user);
-            project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
+            project.setAttachments(fromThriftAttachments(getAllAttachmentsToKeep(Source.projectId(actual.getId()), toThriftAttachments(actual.getAttachments()), toThriftAttachments(project.getAttachments()))));
             setReleaseRelations(project, user, actual);
             updateProjectDependentLinkedFields(project, actual);
-            project.unsetVendor();
+            project.setVendor(null);
             updateModifiedFields(project, user.getEmail());
 
             if (SW360Utils.readConfig(INHERIT_ATTACHMENT_USAGES, false)) {
@@ -500,18 +509,18 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
             Set<Attachment> attachmentsAfter = project.getAttachments();
             Set<Attachment> attachmentsBefore = actual.getAttachments();
-            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
+            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(toThriftAttachments(attachmentsBefore), toThriftAttachments(attachmentsAfter),
                     referenceDocLogList, user.getEmail(), project.getId(), Operation.PROJECT_UPDATE,
                     attachmentConnector, false);
 
             //clean up attachments in database
-            attachmentConnector.deleteAttachmentDifference(actual.getAttachments(), project.getAttachments());
+            attachmentConnector.deleteAttachmentDifference(toThriftAttachments(actual.getAttachments()), toThriftAttachments(project.getAttachments()));
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getClearingRequestId())) {
                 updateProjectDependentFieldsInClearingRequest(project, actual, user);
             }
             sendMailNotificationsForProjectUpdate(project, actual, user);
-            dbHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(ProjectConverter.toThrift(project), ProjectConverter.toThrift(actual), user.getEmail(), Operation.UPDATE, attachmentConnector,
                     referenceDocLogList, null, null);
             return RequestStatus.SUCCESS;
         } else {
@@ -671,24 +680,24 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private boolean isDependenciesExists(Project project, User user) {
         boolean isValidDependentIds = true;
-        if (project.isSetReleaseIdToUsage()) {
+        if (project.getReleaseIdToUsage() != null) {
             Set<String> releaseIds = project.getReleaseIdToUsage().keySet();
             isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(releaseIds, releaseRepository);
         }
 
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
-            if (project.isSetReleaseRelationNetwork()) {
-                Set<String> releaseIds = SW360Utils.getReleaseIdsLinkedWithProject(project);
+            if (project.getReleaseRelationNetwork() != null) {
+                Set<String> releaseIds = SW360Utils.getReleaseIdsLinkedWithProject(ProjectConverter.toThrift(project));
                 isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(releaseIds, releaseRepository);
             }
         }
 
-        if (isValidDependentIds && project.isSetLinkedProjects()) {
+        if (isValidDependentIds && project.getLinkedProjects() != null) {
             Set<String> projectIds = project.getLinkedProjects().keySet();
             isValidDependentIds =  DatabaseHandlerUtil.isAllIdInSetExists(projectIds, repository) && verifyLinkedProjectsAreAccessible(projectIds, user);
         }
 
-        if (isValidDependentIds && project.isSetLinkedObligationId()) {
+        if (isValidDependentIds && project.getLinkedObligationId() != null) {
             String obligationId = project.getLinkedObligationId();
             isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(obligationId), obligationRepository);
         }
@@ -698,7 +707,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     vendorRepository);
         }
 
-        if (isValidDependentIds && project.isSetPackageIds()) {
+        if (isValidDependentIds && project.getPackageIds() != null) {
             Set<String> pacakgeIds = project.getPackageIds().keySet();
             isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(pacakgeIds, packageRepository);
         }
@@ -793,10 +802,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
         repository.update(project);
-        project.unsetLinkedObligationId();
+        project.setLinkedObligationId(null);
         dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
-        dbHandlerUtil.addChangeLogs(getProjectById(obligation.getProjectId(), user), project, user.getEmail(),
+        dbHandlerUtil.addChangeLogs(ProjectConverter.toThrift(getProjectById(obligation.getProjectId(), user)), ProjectConverter.toThrift(project), user.getEmail(),
                 Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, Operation.OBLIGATION_ADD);
 
         return RequestStatus.SUCCESS;
@@ -833,11 +842,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final boolean isMainLineStateEnabledForUser = SW360Utils.readConfig(MAINLINE_STATE_ENABLED_FOR_USER, false);
         boolean isMainlineStateDisabled = !(isMainLineStateEnabledForUser
                 || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user))
-                && updated.getReleaseIdToUsageSize() > 0;
+                && (updated.getReleaseIdToUsage() == null ? 0 : updated.getReleaseIdToUsage().size()) > 0;
 
         Map<String, ProjectReleaseRelationship> updatedReleaseIdToUsage = updated.getReleaseIdToUsage();
 
-        if ((null == current || current.getReleaseIdToUsageSize() == 0) && isMainlineStateDisabled) {
+        if ((null == current || current.getReleaseIdToUsage() == null || current.getReleaseIdToUsage().isEmpty()) && isMainlineStateDisabled) {
             updatedReleaseIdToUsage.forEach((k, v) -> v.setMainlineState(MainlineState.OPEN));
         } else if (isMainlineStateDisabled) {
             Map<String, ProjectReleaseRelationship> currentReleaseIdToUsage = current.getReleaseIdToUsage();
@@ -868,15 +877,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean duplicateAttachmentExist(Project project) {
-        if(project.attachments != null && !project.attachments.isEmpty()) {
-            return AttachmentConnector.isDuplicateAttachment(project.attachments);
+        if (project.getAttachments() != null && !project.getAttachments().isEmpty()) {
+            return AttachmentConnector.isDuplicateAttachment(toThriftAttachments(project.getAttachments()));
         }
         return false;
     }
 
     private boolean updateProjectAllowed(Project project, User user) {
-        if (project.clearingState != null && project.clearingState.equals(ProjectClearingState.CLOSED)
-                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) && !SW360Utils.isUserAllowedToEditClosedProject(project, user)) {
+        if (project.getClearingState() != null && project.getClearingState().equals(ProjectClearingState.CLOSED)
+                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) && !SW360Utils.isUserAllowedToEditClosedProject(ProjectConverter.toThrift(project), user)) {
             return false;
         }
         return true;
@@ -932,7 +941,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         Set<String> linkedPacakgeIds = Sets.difference(updatedPackageIds, currentPackageIds);
         Set<String> unlinkedPacakgeIds = Sets.difference(currentPackageIds, updatedPackageIds);
-        final ProjectReleaseRelationship releaseRelation = new ProjectReleaseRelationship(ReleaseRelationship.UNKNOWN, MainlineState.OPEN);
+        final ProjectReleaseRelationship releaseRelation = new ProjectReleaseRelationship()
+                .setReleaseRelation(org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.UNKNOWN)
+                .setMainlineState(MainlineState.OPEN);
         if (CommonUtils.isNotEmpty(linkedPacakgeIds)) {
             try {
                 List<Package> addedPackages = packageDatabaseHandler.getPackageByIds(linkedPacakgeIds);
@@ -958,7 +969,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 } else {
                     return true;
                 }
-            } catch (TException e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error(String.format("Error fetching newly added linked package info of project: %s", updatedProject.getId()), e.getCause());
                 throw new SW360Exception(e.getMessage());
             }
@@ -987,7 +998,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         targetMap.remove(entry.getKey());
                     }
                 }
-            } catch (TException e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error(String.format("Error fetching removed linked package info of project: %s", updatedProject.getId()), e.getCause());
                 throw new SW360Exception(e.getMessage());
             }
@@ -1003,12 +1014,18 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void prepareProject(Project project) throws SW360Exception {
-        // Prepare project for database
-        ThriftValidate.prepareProject(project);
+        if (CommonUtils.isNullEmptyOrWhitespace(project.getName())) {
+            throw fail("project name cannot be empty");
+        }
+        project.setType(SW360Constants.TYPE_PROJECT);
+        if (project.getClearingState() == null) {
+            project.setClearingState(ProjectClearingState.OPEN);
+        }
+        project.setPermissions(null);
+        project.setReleaseClearingStateSummary(null);
 
-        //add sha1 to attachments if necessary
-        if(project.isSetAttachments()) {
-            attachmentConnector.setSha1ForAttachments(project.getAttachments());
+        if (project.getAttachments() != null) {
+            attachmentConnector.setSha1ForAttachments(toThriftAttachments(project.getAttachments()));
         }
     }
 
@@ -1016,7 +1033,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         try {
             Project project = getProjectById(projectAdditions.getId(), user);
-            project = moderator.updateProjectFromModerationRequest(project, projectAdditions, projectDeletions);
+            org.eclipse.sw360.datahandler.thrift.projects.Project thriftProject =
+                    moderator.updateProjectFromModerationRequest(
+                            ProjectConverter.toThrift(project),
+                            ProjectConverter.toThrift(projectAdditions),
+                            ProjectConverter.toThrift(projectDeletions));
+            project = ProjectConverter.fromThrift(thriftProject);
             return updateProject(project, user);
         } catch (SW360Exception e) {
             log.error("Could not get original project when updating from moderation request.");
@@ -1026,8 +1048,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void copyImmutableFields(Project destination, Project source) {
-        ThriftUtils.copyField(source, destination, Project._Fields.CREATED_ON);
-        ThriftUtils.copyField(source, destination, Project._Fields.CREATED_BY);
+        destination.setCreatedOn(source.getCreatedOn());
+        destination.setCreatedBy(source.getCreatedBy());
     }
 
     ///////////////////////////////
@@ -1048,7 +1070,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Remove the project if the user is allowed to do it by himself
         if (makePermission(project, user).isActionAllowed(RequestedAction.DELETE) || forceDelete) {
             removeProjectAndCleanUp(project, user);
-            dbHandlerUtil.addChangeLogs(null, project, user.getEmail(), Operation.DELETE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(null, ProjectConverter.toThrift(project), user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
             return RequestStatus.SUCCESS;
         } else {
@@ -1074,10 +1096,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void removeProjectAndCleanUp(Project project, User user) throws SW360Exception {
-        attachmentConnector.deleteAttachments(project.getAttachments());
+        attachmentConnector.deleteAttachments(toThriftAttachments(project.getAttachments()));
         attachmentDatabaseHandler.deleteUsagesBy(Source.projectId(project.getId()));
         repository.remove(project);
-        if (project.isSetLinkedObligationId()) {
+        if (project.getLinkedObligationId() != null) {
             obligationRepository.remove(project.getLinkedObligationId());
         }
         moderator.notifyModeratorOnDelete(project.getId());
@@ -1109,7 +1131,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Deque<String> visitedIds = new ArrayDeque<>();
 
         Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
-        fakeRelations.put(project.isSetId() ? project.getId() : DUMMY_NEW_PROJECT_ID, new ProjectProjectRelationship(ProjectRelationship.UNKNOWN));
+        fakeRelations.put(project.getId() != null ? project.getId() : DUMMY_NEW_PROJECT_ID,
+                new ProjectProjectRelationship()
+                        .setProjectRelationship(ProjectRelationship.UNKNOWN)
+                        .setEnableSvm(true));
         List<ProjectLink> out = iterateProjectRelationShips(fakeRelations, null, visitedIds, deep ? -1 : 2, user);
         return out;
     }
@@ -1154,8 +1179,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 project = null;
             }
             if (project != null) {
-                projectLink = new ProjectLink(id, project.name);
-                if (project.isSetReleaseIdToUsage() && (maxDepth < 0 || visitedIds.size() < maxDepth)){ // ProjectLink on the last level does not get children added
+                projectLink = new ProjectLink(id, project.getName());
+                if (project.getReleaseIdToUsage() != null && (maxDepth < 0 || visitedIds.size() < maxDepth)){ // ProjectLink on the last level does not get children added
                     List<ReleaseLink> linkedReleases = componentDatabaseHandler.getLinkedReleasesWithAccessibility(project, visitedIds, user);
                     fillMainlineStates(linkedReleases, project.getReleaseIdToUsage());
                     projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
@@ -1164,14 +1189,21 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 projectLink
                         .setNodeId(generateNodeId(id))
                         .setParentNodeId(parentNodeId)
-                        .setRelation(projectProjectRelationship.getProjectRelationship())
-                        .setEnableSvm(projectProjectRelationship.isEnableSvm())
+                        .setRelation(EnumConverter.toThrift(projectProjectRelationship.getProjectRelationship(),
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.class))
+                        // thrift ProjectProjectRelationship defaulted enableSvm=true when unset
+                        .setEnableSvm(!Boolean.FALSE.equals(projectProjectRelationship.getEnableSvm()))
                         .setVersion(project.getVersion())
-                        .setState(project.getState())
-                        .setProjectType(project.getProjectType())
-                        .setClearingState(project.getClearingState())
+                        // thrift Project defaulted state=ACTIVE when unset
+                        .setState(EnumConverter.toThrift(
+                                project.getState() != null ? project.getState() : ProjectState.ACTIVE,
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectState.class))
+                        .setProjectType(EnumConverter.toThrift(project.getProjectType(),
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectType.class))
+                        .setClearingState(EnumConverter.toThrift(project.getClearingState(),
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState.class))
                         .setTreeLevel(visitedIds.size() - 1);
-                if (project.isSetLinkedProjects()) {
+                if (project.getLinkedProjects() != null) {
                     List<ProjectLink> subprojectLinks = iterateProjectRelationShips(project.getLinkedProjects(),
                             projectLink.getNodeId(), visitedIds, maxDepth, user);
                     projectLink.setSubprojects(subprojectLinks);
@@ -1186,7 +1218,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private void fillMainlineStates(List<ReleaseLink> linkedReleases, Map<String, ProjectReleaseRelationship> releaseIdToUsage) {
         for (ReleaseLink releaseLink : linkedReleases) {
-            releaseLink.setMainlineState(releaseIdToUsage.get(releaseLink.getId()).getMainlineState());
+            releaseLink.setMainlineState(EnumConverter.toThrift(
+                    releaseIdToUsage.get(releaseLink.getId()).getMainlineState(),
+                    org.eclipse.sw360.datahandler.thrift.MainlineState.class));
         }
     }
 
@@ -1215,7 +1249,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Visibility actualVisbility = project.getVisbility();
         DocumentState documentState;
         if (moderationRequestsForDocumentId.isEmpty()) {
-            documentState = CommonUtils.getOriginalDocumentState();
+            documentState = DocumentStateConverter.fromThrift(CommonUtils.getOriginalDocumentState());
         } else {
             final String email = user.getEmail();
             Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
@@ -1223,22 +1257,28 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
                 ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
-                project = moderator.updateProjectFromModerationRequest(project,
-                        moderationRequest.getProjectAdditions(),
-                        moderationRequest.getProjectDeletions());
+                org.eclipse.sw360.datahandler.thrift.projects.Project thriftProject =
+                        moderator.updateProjectFromModerationRequest(
+                                ProjectConverter.toThrift(project),
+                                moderationRequest.getProjectAdditions(),
+                                moderationRequest.getProjectDeletions());
+                project = ProjectConverter.fromThrift(thriftProject);
 
                 if (moderationRequest.getProjectAdditions() != null && moderationRequest.getProjectDeletions() != null
                         && moderationRequest.getProjectAdditions().getVisbility() == moderationRequest
                                 .getProjectDeletions().getVisbility()) {
                     project.setVisbility(actualVisbility);
                 }
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
+                documentState = DocumentStateConverter.fromThrift(
+                        CommonUtils.getModeratedDocumentState(moderationRequestOptional.get()));
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
-                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
+                documentState = new DocumentState()
+                        .setOriginalDocument(true)
+                        .setModerationState(org.eclipse.sw360.datahandler.services.common.ModerationState.valueOf(
+                                moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
-        project.setPermissions(makePermission(project, user).getPermissionMap());
+        makePermission(project, user).fillPermissions();
         project.setDocumentState(documentState);
         return project;
     }
@@ -1279,7 +1319,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         ListMultimap<String, String> projectIdentifierToReleaseId = ArrayListMultimap.create();
 
         for (Project project : repository.getAll()) {
-            projectIdentifierToReleaseId.put(SW360Utils.printName(project), project.getId());
+            projectIdentifierToReleaseId.put(printName(project), project.getId());
         }
 
         return CommonUtils.getIdentifierToListOfDuplicates(projectIdentifierToReleaseId);
@@ -1294,7 +1334,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             link.setId(SW360Constants.PROJECT_VULNERABILITY_RATING_ID_PREFIX + link.getProjectId());
             try {
                 pvrRepository.add(link);
-            } catch (SW360Exception e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error("Unable to update project vulnerability rating.", e);
                 return RequestStatus.FAILURE;
             }
@@ -1317,9 +1357,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             for (Project project : projects) {
                 final Set<String> releaseIds = extractReleaseIds.apply(project);
                 List<Release> releases = releaseIds.stream().map(releasesById::get).collect(Collectors.toList());
-                final ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer.computeReleaseClearingStateSummary(releases, project
+                final org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer.computeReleaseClearingStateSummary(releases, project
                         .getClearingTeam());
-                project.setReleaseClearingStateSummary(releaseClearingStateSummary);
+                project.setReleaseClearingStateSummary(ReleaseClearingStateSummaryConverter.fromThrift(releaseClearingStateSummary));
             }
         }
         return projects;
@@ -1351,7 +1391,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             for (ProjectWithReleaseRelationTuple projectWithReleaseRelation : releaseIdsToProject.get(release.getId())) {
                 projectNames.add(printName(projectWithReleaseRelation.getProject()));
-                mainlineStates.add(ThriftEnumUtils.enumToString(projectWithReleaseRelation.getRelation().getMainlineState()));
+                mainlineStates.add(enumToString(projectWithReleaseRelation.getRelation().getMainlineState()));
                 if (projectNames.size() > 3) {
                     projectNames.add("...");
                     mainlineStates.add("...");
@@ -1382,7 +1422,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             for (ProjectWithReleaseRelationTuple projectWithReleaseRelation : releaseIdsToProject.get(release.getId())) {
                 projectNames.add(printName(projectWithReleaseRelation.getProject()));
-                mainlineStates.add(ThriftEnumUtils.enumToString(projectWithReleaseRelation.getRelation().getMainlineState()));
+                mainlineStates.add(enumToString(projectWithReleaseRelation.getRelation().getMainlineState()));
                 if (projectNames.size() > 3) {
                     projectNames.add("...");
                     mainlineStates.add("...");
@@ -1419,7 +1459,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (nothingTodo(project, visitedProjectIds)) return;
 
         nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
-            releaseIdToProjects.put(releaseId, new ProjectWithReleaseRelationTuple(project, relation));
+            releaseIdToProjects.put(releaseId, new ProjectWithReleaseRelationTuple().setProject(project).setRelation(relation));
         });
 
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
@@ -1460,10 +1500,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<Release> releasesForClearingStateSummary = componentDatabaseHandler
                     .getReleasesForClearingStateSummary(releaseIdsOfProjectTree);
             // compute the summaries
-            final ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer
+            final org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer
                     .computeReleaseClearingStateSummary(releasesForClearingStateSummary, project.getClearingTeam());
 
-            project.setReleaseClearingStateSummary(releaseClearingStateSummary);
+            project.setReleaseClearingStateSummary(ReleaseClearingStateSummaryConverter.fromThrift(releaseClearingStateSummary));
         });
 
         return projects;
@@ -1476,10 +1516,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 allProjectsIdMap, user, null);
         List<Release> releasesForClearingStateSummary = componentDatabaseHandler
                 .getReleasesForClearingStateSummary(releaseIdsOfProjectTree);
-        final ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer
+        final org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer
                 .computeReleaseClearingStateSummary(releasesForClearingStateSummary, project.getClearingTeam());
 
-        project.setReleaseClearingStateSummary(releaseClearingStateSummary);
+        project.setReleaseClearingStateSummary(ReleaseClearingStateSummaryConverter.fromThrift(releaseClearingStateSummary));
         return project;
     }
 
@@ -1520,10 +1560,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // traverse linked projects with relation type other than "REFERRED" and
         // "DUPLICATE" and add the result to this result
-        if (project.isSetLinkedProjects()) {
+        if (project.getLinkedProjects() != null) {
             project.getLinkedProjects().entrySet().stream().forEach(e -> {
-                if (!ProjectRelationship.REFERRED.equals(e.getValue())
-                        && !ProjectRelationship.DUPLICATE.equals(e.getValue())) {
+                if (!ProjectRelationship.REFERRED.equals(e.getValue().getProjectRelationship())
+                        && !ProjectRelationship.DUPLICATE.equals(e.getValue().getProjectRelationship())) {
                     Project childProject = allProjectsIdMap.get(e.getKey());
                     if (childProject != null) {
                         // since we fetched all project up front we did not yet check any permission -
@@ -1540,7 +1580,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         // add own releases to result if they are not just "REFERRED"
-        if (project.isSetReleaseIdToUsage()) {
+        if (project.getReleaseIdToUsage() != null) {
             project.getReleaseIdToUsage().entrySet().stream().forEach(e -> {
                 if (!ReleaseRelationship.REFERRED.equals(e.getValue().getReleaseRelation())) {
                     releaseIds.add(e.getKey());
@@ -1675,16 +1715,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String userDetails = getUserDetails(user);
         int totalCount, approvedCount;
         totalCount = approvedCount = 0;
-        if (project.isSetReleaseClearingStateSummary()) {
+        if (project.getReleaseClearingStateSummary() != null) {
             ReleaseClearingStateSummary clearingSummary = project.getReleaseClearingStateSummary();
-            approvedCount = clearingSummary.getApproved();
-            totalCount = SW360Utils.getTotalReleaseCount(clearingSummary);
+            approvedCount = clearingSummary.getApproved() == null ? 0 : clearingSummary.getApproved();
+            totalCount = getTotalReleaseCount(clearingSummary);
         }
         releases = CommonUtils.nullToEmptyCollection(getDirectlyLinkedReleasesInNewState(releases));
         StringBuilder commentText = new StringBuilder(extractReleaseNameForClearingEmail(releases));
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW, MailConstants.SUBJECT_FOR_NEW_CLEARING_REQUEST, getRecipients(clearingRequest),
-                userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
-                String.valueOf(project.getLinkedProjectsSize()), String.valueOf(project.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), printName(project),
+                String.valueOf((project.getLinkedProjects() == null ? 0 : project.getLinkedProjects().size())), String.valueOf((project.getReleaseIdToUsage() == null ? 0 : project.getReleaseIdToUsage().size())), String.valueOf(totalCount),
                 String.valueOf(approvedCount), clearingRequest.getRequestedClearingDate(), nonOssCompCount, commentText.toString());
         if (releases.size() > 0) {
             commentText = new StringBuilder("Linked release(s) with clearing state new:").append(System.lineSeparator()).append(commentText);
@@ -1698,7 +1738,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         List<Release> releases = getDirectlyLinkedReleasesInNewState(project);
         String userDetails = getUserDetails(user);
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.UPDATED, MailConstants.SUBJECT_FOR_UPDATED_CLEARING_REQUEST, getRecipients(clearingRequest),
-                userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
+                userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), printName(project),
                 CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()), clearingRequest.getRequestedClearingDate(),
                 CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()), extractReleaseNameForClearingEmail(releases));
     }
@@ -1709,16 +1749,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String userDetails = getUserDetails(user);
         int totalCount, approvedCount;
         totalCount = approvedCount = 0;
-        if (updated.isSetReleaseClearingStateSummary()) {
+        if (updated.getReleaseClearingStateSummary() != null) {
             ReleaseClearingStateSummary clearingSummary = updated.getReleaseClearingStateSummary();
-            approvedCount = clearingSummary.getApproved();
-            totalCount = SW360Utils.getTotalReleaseCount(clearingSummary);
+            approvedCount = clearingSummary.getApproved() == null ? 0 : clearingSummary.getApproved();
+            totalCount = getTotalReleaseCount(clearingSummary);
         }
         releases = getDirectlyLinkedReleasesInNewState(releases);
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.PROJECT_UPDATED, MailConstants.SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST,
-                getRecipients(clearingRequest), userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
+                getRecipients(clearingRequest), userDetails, printName(updated), updated.getClearingRequestId(),
                 releaseChangesHtml, // HTML-formatted release changes
-                String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(updated.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                String.valueOf((updated.getLinkedProjects() == null ? 0 : updated.getLinkedProjects().size())), String.valueOf((updated.getReleaseIdToUsage() == null ? 0 : updated.getReleaseIdToUsage().size())), String.valueOf(totalCount),
                 String.valueOf(approvedCount), CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()),
                 clearingRequest.getRequestedClearingDate(), CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()),
                 nonOssCompCount, extractReleaseNameForClearingEmail(releases));
@@ -1727,44 +1767,44 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void sendMailForClosedOrRejectedCR(Project project, ClearingRequest clearingRequest, User user, boolean isApproved) {
         mailUtil.sendClearingMail(isApproved ? ClearingRequestEmailTemplate.CLOSED : ClearingRequestEmailTemplate.REJECTED,
                 isApproved ? MailConstants.SUBJECT_FOR_CLOSED_CLEARING_REQUEST : MailConstants.SUBJECT_FOR_REJECTED_CLEARING_REQUEST,
-                getRecipients(clearingRequest), project.getClearingRequestId(), SW360Utils.printName(project), isApproved ? "closed" : "rejected");
+                getRecipients(clearingRequest), project.getClearingRequestId(), printName(project), isApproved ? "closed" : "rejected");
     }
 
     private void sendMailNotificationsForNewProject(Project project, String user) {
         mailUtil.sendMail(project.getProjectResponsible(),
                 MailConstants.SUBJECT_FOR_NEW_PROJECT,
                 MailConstants.TEXT_FOR_NEW_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.PROJECT_RESPONSIBLE.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "projectResponsible",
                 project.getName(), project.getVersion());
         mailUtil.sendMail(project.getProjectOwner(),
                 MailConstants.SUBJECT_FOR_NEW_PROJECT,
                 MailConstants.TEXT_FOR_NEW_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.PROJECT_OWNER.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "projectOwner",
                 project.getName(), project.getVersion());
         mailUtil.sendMail(project.getLeadArchitect(),
                 MailConstants.SUBJECT_FOR_NEW_PROJECT,
                 MailConstants.TEXT_FOR_NEW_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.LEAD_ARCHITECT.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "leadArchitect",
                 project.getName(), project.getVersion());
         mailUtil.sendMail(project.getModerators(), user,
                 MailConstants.SUBJECT_FOR_NEW_PROJECT,
                 MailConstants.TEXT_FOR_NEW_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.MODERATORS.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "moderators",
                 project.getName(), project.getVersion());
         mailUtil.sendMail(project.getContributors(), user,
                 MailConstants.SUBJECT_FOR_NEW_PROJECT,
                 MailConstants.TEXT_FOR_NEW_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.CONTRIBUTORS.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "contributors",
                 project.getName(), project.getVersion());
         mailUtil.sendMail(project.getSecurityResponsibles(), user,
                 MailConstants.SUBJECT_FOR_NEW_PROJECT,
                 MailConstants.TEXT_FOR_NEW_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.SECURITY_RESPONSIBLES.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "securityResponsibles",
                 project.getName(), project.getVersion());
         mailUtil.sendMail(SW360Utils.unionValues(project.getRoles()), user,
                 MailConstants.SUBJECT_FOR_NEW_PROJECT,
                 MailConstants.TEXT_FOR_NEW_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.ROLES.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "roles",
                 project.getName(), project.getVersion());
     }
 
@@ -1782,37 +1822,37 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         mailUtil.sendMail(newProject.getProjectResponsible(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.PROJECT_RESPONSIBLE.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "projectResponsible",
                 projectName, projectVersion, modifiedBy, changesSummary);
         mailUtil.sendMail(newProject.getProjectOwner(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.PROJECT_OWNER.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "projectOwner",
                 projectName, projectVersion, modifiedBy, changesSummary);
         mailUtil.sendMail(newProject.getLeadArchitect(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.LEAD_ARCHITECT.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "leadArchitect",
                 projectName, projectVersion, modifiedBy, changesSummary);
         mailUtil.sendMail(newProject.getModerators(), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.MODERATORS.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "moderators",
                 projectName, projectVersion, modifiedBy, changesSummary);
         mailUtil.sendMail(newProject.getContributors(), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.CONTRIBUTORS.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "contributors",
                 projectName, projectVersion, modifiedBy, changesSummary);
         mailUtil.sendMail(newProject.getSecurityResponsibles(), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.SECURITY_RESPONSIBLES.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "securityResponsibles",
                 projectName, projectVersion, modifiedBy, changesSummary);
         mailUtil.sendMail(SW360Utils.unionValues(newProject.getRoles()), user.getEmail(),
                 MailConstants.SUBJECT_FOR_UPDATE_PROJECT,
                 MailConstants.TEXT_FOR_UPDATE_PROJECT,
-                SW360Constants.NOTIFICATION_CLASS_PROJECT, Project._Fields.ROLES.toString(),
+                SW360Constants.NOTIFICATION_CLASS_PROJECT, "roles",
                 projectName, projectVersion, modifiedBy, changesSummary);
     }
 
@@ -1913,7 +1953,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         return projects.stream()
-                .map(SW360Utils::printName)
+                .map(ProjectDatabaseHandler::printName)
                 .collect(Collectors.joining(", "));
     }
 
@@ -1938,7 +1978,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         for (Project p : projects) {
             Set<String> linkedProjectIds = nullToEmptyMap(p.getLinkedProjects()).entrySet().stream().filter(entry -> {
                 ProjectProjectRelationship projectProjectRelationship = entry.getValue();
-                return projectProjectRelationship != null && projectProjectRelationship.isEnableSvm();
+                return projectProjectRelationship != null && Boolean.TRUE.equals(projectProjectRelationship.getEnableSvm());
             }).map(entry -> entry.getKey()).collect(Collectors.toSet());
             JsonObject json = new JsonObject();
             json.addProperty("application_id", p.getId());
@@ -1947,10 +1987,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             json.addProperty("business_unit", p.getBusinessUnit());
             json.add("user_gids", stringCollectionToJsonArray(nullToEmptySet(p.getSecurityResponsibles())));
             json.add("children_application_ids",
-                    p.isConsiderReleasesFromExternalList() ? new JsonArray()
+                    Boolean.TRUE.equals(p.getConsiderReleasesFromExternalList()) ? new JsonArray()
                             : stringCollectionToJsonArray(linkedProjectIds));
             json.add("components",
-                    p.isConsiderReleasesFromExternalList() ? new JsonArray()
+                    Boolean.TRUE.equals(p.getConsiderReleasesFromExternalList()) ? new JsonArray()
                             : serializeReleasesToJson(nullToEmptyMap(p.getReleaseIdToUsage()).keySet().stream()
                                     .map(releaseMap::get).filter(Objects::nonNull).collect(Collectors.toList()),
                                     componentMap));
@@ -2082,7 +2122,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .filter(s -> PLAUSIBLE_GID_REGEXP.matcher(s).matches())
                     .collect(Collectors.toSet());
             if (emails.size() != gids.size()){
-                log.warn("SVMML: couldn't find gids for some of the emails from project " + SW360Utils.printName(p) + " " + p.getId());
+                log.warn("SVMML: couldn't find gids for some of the emails from project " + printName(p) + " " + p.getId());
             }
             p.setSecurityResponsibles(gids);
 
@@ -2092,7 +2132,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // from parent projects and only the propagated secreps will get the notifications.
             // At the same time, only projects that had enableSVM from the start or subprojects of such projects
             // will be sent to SVM.
-            if (!p.isEnableSvm()){
+            if (!Boolean.TRUE.equals(p.getEnableSvm())){
                 p.setSecurityResponsibles(Collections.emptySet());
                 p.setEnableSvm(true);
             }
@@ -2101,7 +2141,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // create copies for propagating responsibles to
         // propagating directly to originals will cause unnecessary propagation when the iteration comes to
         // the subprojects
-        List<Project> projectCopies = projects.stream().map(Project::new).collect(Collectors.toList());
+        List<Project> projectCopies = projects.stream()
+                .map(p -> ProjectConverter.fromThrift(ProjectConverter.toThrift(p)))
+                .collect(Collectors.toList());
         Map<String, Project> projectsById = ThriftUtils.getIdMap(projectCopies);
 
         // propagate security responsibles' gids to subprojects
@@ -2110,7 +2152,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Set<String> responsibles = nullToEmptySet(p.getSecurityResponsibles());
             Set<String> linkedProjectIds = nullToEmptyMap(p.getLinkedProjects()).entrySet().stream().filter(entry -> {
                 ProjectProjectRelationship projectProjectRelationship = entry.getValue();
-                return projectProjectRelationship != null && projectProjectRelationship.isEnableSvm();
+                return projectProjectRelationship != null && Boolean.TRUE.equals(projectProjectRelationship.getEnableSvm());
             }).map(entry -> entry.getKey()).collect(Collectors.toSet());
             if (!responsibles.isEmpty() && !linkedProjectIds.isEmpty()) {
                 propagateSecurityResponsiblesToLinkedProjects(responsibles, linkedProjectIds, projectsById, new HashSet<>());
@@ -2121,8 +2163,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return projects
                 .stream()
                 .map(p -> projectsById.get(p.getId()))
-                .filter(p -> p.isSetSecurityResponsibles() && !p.getSecurityResponsibles().isEmpty())
-                .filter(Project::isEnableSvm)
+                .filter(p -> p.getSecurityResponsibles() != null && !p.getSecurityResponsibles().isEmpty())
+                .filter(p -> Boolean.TRUE.equals(p.getEnableSvm()))
                 .collect(Collectors.toList());
     }
 
@@ -2230,23 +2272,87 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void removeLeadingTrailingWhitespace(Project project) {
-        DatabaseHandlerUtil.trimStringFields(project, listOfStringFieldsInProjToTrim);
+        if (project.getName() != null) {
+            project.setName(project.getName().trim());
+        }
+        if (project.getDescription() != null) {
+            project.setDescription(project.getDescription().trim());
+        }
+        if (project.getVersion() != null) {
+            project.setVersion(project.getVersion().trim());
+        }
+        if (project.getDomain() != null) {
+            project.setDomain(project.getDomain().trim());
+        }
+        if (project.getBusinessUnit() != null) {
+            project.setBusinessUnit(project.getBusinessUnit().trim());
+        }
+        if (project.getTag() != null) {
+            project.setTag(DatabaseHandlerUtil.trimProjectTag(project.getTag()));
+        }
+        if (project.getProjectResponsible() != null) {
+            project.setProjectResponsible(project.getProjectResponsible().trim());
+        }
+        if (project.getLeadArchitect() != null) {
+            project.setLeadArchitect(project.getLeadArchitect().trim());
+        }
+        if (project.getProjectOwner() != null) {
+            project.setProjectOwner(project.getProjectOwner().trim());
+        }
+        if (project.getOwnerAccountingUnit() != null) {
+            project.setOwnerAccountingUnit(project.getOwnerAccountingUnit().trim());
+        }
+        if (project.getOwnerGroup() != null) {
+            project.setOwnerGroup(project.getOwnerGroup().trim());
+        }
+        if (project.getOwnerCountry() != null) {
+            project.setOwnerCountry(project.getOwnerCountry().trim());
+        }
+        if (project.getPreevaluationDeadline() != null) {
+            project.setPreevaluationDeadline(project.getPreevaluationDeadline().trim());
+        }
+        if (project.getSystemTestStart() != null) {
+            project.setSystemTestStart(project.getSystemTestStart().trim());
+        }
+        if (project.getSystemTestEnd() != null) {
+            project.setSystemTestEnd(project.getSystemTestEnd().trim());
+        }
+        if (project.getDeliveryStart() != null) {
+            project.setDeliveryStart(project.getDeliveryStart().trim());
+        }
+        if (project.getClearingSummary() != null) {
+            project.setClearingSummary(project.getClearingSummary().trim());
+        }
+        if (project.getSpecialRisksOSS() != null) {
+            project.setSpecialRisksOSS(project.getSpecialRisksOSS().trim());
+        }
+        if (project.getGeneralRisks3rdParty() != null) {
+            project.setGeneralRisks3rdParty(project.getGeneralRisks3rdParty().trim());
+        }
+        if (project.getSpecialRisks3rdParty() != null) {
+            project.setSpecialRisks3rdParty(project.getSpecialRisks3rdParty().trim());
+        }
+        if (project.getDeliveryChannels() != null) {
+            project.setDeliveryChannels(project.getDeliveryChannels().trim());
+        }
+        if (project.getRemarksAdditionalRequirements() != null) {
+            project.setRemarksAdditionalRequirements(project.getRemarksAdditionalRequirements().trim());
+        }
+        if (project.getObligationsText() != null) {
+            project.setObligationsText(project.getObligationsText().trim());
+        }
+        if (project.getLicenseInfoHeaderText() != null) {
+            project.setLicenseInfoHeaderText(project.getLicenseInfoHeaderText().trim());
+        }
 
-        project.setAttachments(DatabaseHandlerUtil.trimSetOfAttachement(project.getAttachments()));
-
+        project.setAttachments(fromThriftAttachments(
+                DatabaseHandlerUtil.trimSetOfAttachement(toThriftAttachments(project.getAttachments()))));
         project.setContributors(DatabaseHandlerUtil.trimSetOfString(project.getContributors()));
-
         project.setSecurityResponsibles(DatabaseHandlerUtil.trimSetOfString(project.getSecurityResponsibles()));
-
         project.setModerators(DatabaseHandlerUtil.trimSetOfString(project.getModerators()));
-
         project.setExternalIds(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(project.getExternalIds()));
-
         project.setAdditionalData(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(project.getAdditionalData()));
-
         project.setRoles(DatabaseHandlerUtil.trimMapOfStringKeySetValue(project.getRoles()));
-
-        project.setTag(DatabaseHandlerUtil.trimProjectTag(project.getTag()));
     }
 
     public List<Map<String, String>> getClearingStateInformationForListView(String projectId, User user, boolean isInaccessibleLinkMasked)
@@ -2254,7 +2360,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project projectById = getProjectById(projectId, user);
         List<Map<String, String>> clearingStatusList = new ArrayList<Map<String, String>>();
         LinkedHashMap<String, String> projectOrigin = new LinkedHashMap<>();
-        projectOrigin.put(projectId, SW360Utils.printName(projectById));
+        projectOrigin.put(projectId, printName(projectById));
         LinkedHashMap<String, String> releaseOrigin = new LinkedHashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = projectById.getLinkedProjects();
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = projectById.getReleaseIdToUsage();
@@ -2275,11 +2381,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         linkedProjects.entrySet().stream().forEach(lp -> wrapTException(() -> {
             String projId = lp.getKey();
-            String relation = ThriftEnumUtils.enumToString(lp.getValue().getProjectRelationship());
+            String relation = enumToString(lp.getValue().getProjectRelationship());
             if (projectOrigin.containsKey(projId))
                 return;
             Project linkedProjectById = getProjectById(projId, user);
-            projectOrigin.put(projId, SW360Utils.printName(linkedProjectById));
+            projectOrigin.put(projId, printName(linkedProjectById));
             Map<String, String> row = createProjectCSRow(relation, linkedProjectById, clearingStatusList);
             Map<String, ProjectProjectRelationship> subprojects = linkedProjectById.getLinkedProjects();
             Map<String, ProjectReleaseRelationship> linkedReleases = linkedProjectById.getReleaseIdToUsage();
@@ -2304,8 +2410,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) {
 
         linkedReleases.entrySet().stream().forEach(rl -> wrapTException(() -> {
-            String relation = ThriftEnumUtils.enumToString(rl.getValue().getReleaseRelation());
-            String projectMailLineState = ThriftEnumUtils.enumToString(rl.getValue().getMainlineState());
+            String relation = enumToString(rl.getValue().getReleaseRelation());
+            String projectMailLineState = enumToString(rl.getValue().getMainlineState());
             String comment = rl.getValue().getComment();
             String releaseId = rl.getKey();
             if (releaseOrigin.containsKey(releaseId))
@@ -2372,12 +2478,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String projectId = prj.getId();
         Map<String, String> row = new HashMap<>();
         row.put("id", projectId);
-        row.put("name", SW360Utils.printName(prj));
-        row.put("type", ThriftEnumUtils.enumToString(prj.getProjectType()));
+        row.put("name", printName(prj));
+        row.put("type", enumToString(prj.getProjectType()));
         row.put("relation", relation);
         row.put("isRelease", "false");
-        row.put("clearingState", ThriftEnumUtils.enumToString(prj.getClearingState()));
-        row.put("projectState", ThriftEnumUtils.enumToString(prj.getState()));
+        row.put("clearingState", enumToString(prj.getClearingState()));
+        row.put("projectState", enumToString(prj.getState()));
         row.put("isAccessible", "true");
         clearingStatusList.add(row);
         return row;
@@ -2449,21 +2555,30 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }else {
                 projectList =  getAccessibleProjectsSummary(user);
             }
-            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
-            InputStream stream = exporter.makeExcelExport(projectList);
+            List<org.eclipse.sw360.datahandler.thrift.projects.Project> thriftProjects =
+                    toThriftProjects(projectList);
+            ProjectExporter exporter = getProjectExporterObject(thriftProjects, user, extendedByReleases);
+            InputStream stream = exporter.makeExcelExport(thriftProjects);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
           }catch (IOException e) {
             throw new SW360Exception(e.getMessage());
        }
      }
 
-    private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
+    private ProjectExporter getProjectExporterObject(
+            List<org.eclipse.sw360.datahandler.thrift.projects.Project> documents, User user, boolean extendedByReleases)
+            throws SW360Exception {
         try {
-            return new ProjectExporter(new ComponentHandler(),
-                    new ProjectHandler(), user, documents, extendedByReleases);
+            return new ProjectExporter(new ComponentHandler(), this::loadThriftProjectsById, user, documents,
+                    extendedByReleases);
         } catch (IOException e) {
             throw new SW360Exception("Error creating handlers: " + e.getMessage());
         }
+    }
+
+    private List<org.eclipse.sw360.datahandler.thrift.projects.Project> loadThriftProjectsById(List<String> ids,
+            User user) {
+        return toThriftProjects(getProjectsById(ids, user));
     }
 
     public String getReportInEmail(User user,
@@ -2475,8 +2590,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }else {
                 projectList = getAccessibleProjectsSummary(user);
             }
-            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
-            return exporter.makeExcelExportForProject(projectList, user);
+            List<org.eclipse.sw360.datahandler.thrift.projects.Project> thriftProjects =
+                    toThriftProjects(projectList);
+            ProjectExporter exporter = getProjectExporterObject(thriftProjects, user, extendedByReleases);
+            return exporter.makeExcelExportForProject(thriftProjects, user);
           }catch (IOException | TException e) {
              throw new SW360Exception(e.getMessage());
        }
@@ -2496,8 +2613,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
      public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
         try {
-            ProjectExporter exporter = new ProjectExporter(new ComponentHandler(),
-                    new ProjectHandler(), user, extendedByReleases);
+            ProjectExporter exporter = new ProjectExporter(new ComponentHandler(), this::loadThriftProjectsById, user,
+                    extendedByReleases);
             InputStream stream = exporter.downloadExcelSheet(token);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
         } catch (IOException e) {
@@ -2568,7 +2685,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project projectById = getProjectById(projectId, user);
         List<Map<String, String>> clearingStatusList = new ArrayList<>();
         LinkedHashMap<String, String> projectOrigin = new LinkedHashMap<>();
-        projectOrigin.put(projectId, SW360Utils.printName(projectById));
+        projectOrigin.put(projectId, printName(projectById));
         LinkedHashMap<String, String> releaseOrigin = new LinkedHashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = projectById.getLinkedProjects();
         String releaseNetwork = projectById.getReleaseRelationNetwork();
@@ -2602,8 +2719,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final List<Callable<Void>> callables = new ArrayList<>();
         listReleaseLinkJson.forEach(rl -> {
             Callable<Void> callableTask = () -> {
-                String relation = ThriftEnumUtils.enumToString(ReleaseRelationship.valueOf(rl.getReleaseRelationship()));
-                String projectMailLineState = ThriftEnumUtils.enumToString(MainlineState.valueOf(rl.getMainlineState()));
+                String relation = enumToString(org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.valueOf(rl.getReleaseRelationship()));
+                String projectMailLineState = enumToString(MainlineState.valueOf(rl.getMainlineState()));
                 String comment = rl.getComment();
                 String releaseId = rl.getReleaseId();
                 LinkedHashMap<String, String> cpReleaseOrigin = new LinkedHashMap<>(releaseOrigin);
@@ -2643,11 +2760,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         linkedProjects.entrySet().stream().forEach(lp -> wrapSW360Exception(() -> {
             String projId = lp.getKey();
-            String relation = ThriftEnumUtils.enumToString(lp.getValue().getProjectRelationship());
+            String relation = enumToString(lp.getValue().getProjectRelationship());
             if (projectOrigin.containsKey(projId))
                 return;
             Project linkedProjectById = getProjectById(projId, user);
-            projectOrigin.put(projId, SW360Utils.printName(linkedProjectById));
+            projectOrigin.put(projId, printName(linkedProjectById));
             Map<String, String> row = createProjectCSRow(relation, linkedProjectById, clearingStatusList);
             Map<String, ProjectProjectRelationship> subprojects = linkedProjectById.getLinkedProjects();
 
@@ -2690,7 +2807,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 project = null;
             }
             if (project != null) {
-                projectLink = new ProjectLink(id, project.name);
+                projectLink = new ProjectLink(id, project.getName());
                 if (withRelease) {
                     if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0 && (maxDepth < 0 || visitedIds.size() < maxDepth)) {
                         String releaseNetwork = project.getReleaseRelationNetwork();
@@ -2720,14 +2837,19 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 projectLink
                         .setNodeId(generateNodeId(id))
                         .setParentNodeId(parentNodeId)
-                        .setRelation(projectProjectRelationship.getProjectRelationship())
-                        .setEnableSvm(projectProjectRelationship.isEnableSvm())
+                        .setRelation(EnumConverter.toThrift(projectProjectRelationship.getProjectRelationship(),
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.class))
+                        .setEnableSvm(!Boolean.FALSE.equals(projectProjectRelationship.getEnableSvm()))
                         .setVersion(project.getVersion())
-                        .setState(project.getState())
-                        .setProjectType(project.getProjectType())
-                        .setClearingState(project.getClearingState())
+                        .setState(EnumConverter.toThrift(
+                                project.getState() != null ? project.getState() : ProjectState.ACTIVE,
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectState.class))
+                        .setProjectType(EnumConverter.toThrift(project.getProjectType(),
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectType.class))
+                        .setClearingState(EnumConverter.toThrift(project.getClearingState(),
+                                org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState.class))
                         .setTreeLevel(visitedIds.size() - 1);
-                if (project.isSetLinkedProjects()) {
+                if (project.getLinkedProjects() != null) {
                     List<ProjectLink> subprojectLinks =
                             (withAllReleases == WITH_ROOT_RELEASES_ONLY)
                                     ? iterateProjectRelationShips(project.getLinkedProjects(),
@@ -2776,7 +2898,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Deque<String> visitedIds = new ArrayDeque<>();
 
         Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
-        fakeRelations.put(project.isSetId() ? project.getId() : DUMMY_NEW_PROJECT_ID, new ProjectProjectRelationship(ProjectRelationship.UNKNOWN));
+        fakeRelations.put(project.getId() != null ? project.getId() : DUMMY_NEW_PROJECT_ID,
+                new ProjectProjectRelationship()
+                        .setProjectRelationship(ProjectRelationship.UNKNOWN)
+                        .setEnableSvm(true));
         List<ProjectLink> out = iterateProjectRelationShips(fakeRelations, null, visitedIds, deep ? -1 : 2, user, false);
         return out;
     }
@@ -2785,7 +2910,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Deque<String> visitedIds = new ArrayDeque<>();
 
         Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
-        fakeRelations.put(project.isSetId() ? project.getId() : DUMMY_NEW_PROJECT_ID, new ProjectProjectRelationship(ProjectRelationship.UNKNOWN));
+        fakeRelations.put(project.getId() != null ? project.getId() : DUMMY_NEW_PROJECT_ID,
+                new ProjectProjectRelationship()
+                        .setProjectRelationship(ProjectRelationship.UNKNOWN)
+                        .setEnableSvm(true));
         return iterateProjectRelationShipsWithAllReleases(fakeRelations, null, visitedIds, deep ? -1 : 2, user);
     }
 
@@ -2846,8 +2974,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         releaseLink.setVendor((isAccessible && releaseById.getVendor() != null) ? releaseById.getVendor().getFullname() : "");
 
         if (isAccessible) {
-            releaseLink.setReleaseRelationship(ReleaseRelationship.valueOf(releaseNode.getReleaseRelationship()));
-            releaseLink.setMainlineState(MainlineState.valueOf(releaseNode.getMainlineState()));
+            releaseLink.setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.valueOf(releaseNode.getReleaseRelationship()));
+            releaseLink.setMainlineState(org.eclipse.sw360.datahandler.thrift.MainlineState.valueOf(releaseNode.getMainlineState()));
             releaseLink.setComment(releaseNode.getComment());
             releaseLink.setClearingState(releaseById.getClearingState());
             releaseLink.setLicenseIds(releaseById.getMainLicenseIds());
@@ -2928,4 +3056,54 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         );
         return detailReleaseNode;
     }
+
+    private void updateModifiedFields(Project project, String userEmail) {
+        project.setModifiedBy(userEmail);
+        project.setModifiedOn(SW360Utils.getCreatedOn());
+    }
+
+    private static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
+        if (clearingSummary == null) {
+            return 0;
+        }
+        return nullToZero(clearingSummary.getNewRelease())
+                + nullToZero(clearingSummary.getReportAvailable())
+                + nullToZero(clearingSummary.getUnderClearing())
+                + nullToZero(clearingSummary.getSentToClearingTool())
+                + nullToZero(clearingSummary.getApproved());
+    }
+
+    private static int nullToZero(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    private static String enumToString(Enum<?> value) {
+        return value == null ? "" : value.name();
+    }
+
+    private static String printName(Project project) {
+        if (project == null || CommonUtils.isNullEmptyOrWhitespace(project.getName())) {
+            return "New Project";
+        }
+        return SW360Utils.getVersionedName(project.getName(), project.getVersion());
+    }
+
+    private static Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> toThriftAttachments(
+            Set<Attachment> attachments) {
+        return ThriftCollectionConverter.mapSet(attachments, AttachmentConverter::toThrift);
+    }
+
+    private static Set<Attachment> fromThriftAttachments(
+            Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> attachments) {
+        return ThriftCollectionConverter.mapSet(attachments, AttachmentConverter::fromThrift);
+    }
+
+    private static List<org.eclipse.sw360.datahandler.thrift.projects.Project> toThriftProjects(
+            List<Project> projects) {
+        if (projects == null) {
+            return Collections.emptyList();
+        }
+        return projects.stream().map(ProjectConverter::toThrift).collect(Collectors.toList());
+    }
+
 }

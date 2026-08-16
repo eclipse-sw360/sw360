@@ -40,9 +40,8 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.projects.ProjectHandler;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.services.packages.Package;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -80,7 +79,7 @@ public class CycloneDxBOMExporter {
     public RequestSummary exportSbom(String projectId, String bomType, Boolean includeSubProjReleases, User user) {
         final RequestSummary summary = new RequestSummary(RequestStatus.SUCCESS);
         try {
-            Project project = projectDatabaseHandler.getProjectById(projectId, user);
+            Project project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projectId, user));
             Bom bom = new Bom();
             Set<String> linkedReleaseIds = Sets.newHashSet(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()));
             Set<String> linkedPackageIds = Sets.newHashSet(CommonUtils.getNullToEmptyKeyset(project.getPackageIds()));
@@ -92,8 +91,9 @@ public class CycloneDxBOMExporter {
             }
 
             if (includeSubProjReleases && project.getLinkedProjectsSize() > 0) {
-                ProjectService.Iface client = new ProjectHandler();
-                Map<String, Set<String>> idsMap = SW360Utils.getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, Sets.newHashSet(), Sets.newHashSet(), Sets.newHashSet(), client, user);
+                Map<String, Set<String>> idsMap = SW360Utils.getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project,
+                        Sets.newHashSet(), Sets.newHashSet(), Sets.newHashSet(), (id, u) -> ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(id, u)),
+                        user);
                 linkedReleaseIds.addAll(idsMap.get(SW360Constants.RELEASE_IDS));
                 linkedPackageIds.addAll(idsMap.get(SW360Constants.PACKAGE_IDS));
             }
@@ -284,7 +284,8 @@ public class CycloneDxBOMExporter {
                 comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
             }
             if (null != pckg.getPackageType()) {
-                comp.setType(getCdxComponentType(pckg.getPackageType()));
+                comp.setType(getCdxComponentType(org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType
+                        .valueOf(pckg.getPackageType().name())));
             }
             comp.setDescription(pckg.getDescription());
             List<ExternalReference> extRefs = Lists.newArrayList();

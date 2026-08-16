@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter;
 import org.eclipse.sw360.common.utils.converter.common.RemoveModeratorRequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
@@ -27,7 +26,7 @@ import org.eclipse.sw360.datahandler.moderation.ModerationClient;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -131,7 +130,7 @@ public class Sw360ModerationRequestService {
         PaginationData pageData = pageableToPaginationData(pageable);
         return new ArrayList<>(moderationClient()
                 .getRequestsByModeratorWithPaginationNoFilter(
-                        UserConverter.fromThrift(sw360User), PaginationDataConverter.fromThrift(pageData))
+                        UserConverter.fromThrift(sw360User), pageData)
                 .stream()
                 .map(ModerationRequestConverter::toThrift)
                 .toList());
@@ -149,7 +148,7 @@ public class Sw360ModerationRequestService {
     public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
         return new ArrayList<>(moderationClient()
-                .searchModerationRequestsByExactValues(filterMap, PaginationDataConverter.fromThrift(pageData))
+                .searchModerationRequestsByExactValues(filterMap, pageData)
                 .stream()
                 .map(ModerationRequestConverter::toThrift)
                 .toList());
@@ -170,7 +169,7 @@ public class Sw360ModerationRequestService {
         var userPojo = UserConverter.fromThrift(sw360User);
 
         List<ModerationRequest> moderationList = new ArrayList<>(client
-                .getRequestsByRequestingUserWithPagination(userPojo, PaginationDataConverter.fromThrift(pageData))
+                .getRequestsByRequestingUserWithPagination(userPojo, pageData)
                 .stream()
                 .map(ModerationRequestConverter::toThrift)
                 .toList());
@@ -244,14 +243,14 @@ public class Sw360ModerationRequestService {
         PaginationData pageData = pageableToPaginationData(pageable);
         ModerationClient client = moderationClient();
         var userPojo = UserConverter.fromThrift(sw360user);
-        var pageDataPojo = PaginationDataConverter.fromThrift(pageData);
+        var pageDataPojo = pageData;
 
         PaginatedResult<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> page =
                 allDetails
                         ? client.getRequestsByModeratorWithPaginationAllDetails(userPojo, pageDataPojo, open)
                         : client.getRequestsByModeratorWithPagination(userPojo, pageDataPojo, open);
 
-        PaginationData paginationData = PaginationDataConverter.toThrift(page.getPaginationData());
+        PaginationData paginationData = page.getPaginationData();
         if (paginationData == null) {
             paginationData = pageData;
         }
@@ -555,7 +554,7 @@ public class Sw360ModerationRequestService {
     public List<ModerationRequest> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
         return new ArrayList<>(moderationClient()
-                .refineSearch(null, filterMap, PaginationDataConverter.fromThrift(pageData))
+                .refineSearch(null, filterMap, pageData)
                 .stream()
                 .map(ModerationRequestConverter::toThrift)
                 .toList());

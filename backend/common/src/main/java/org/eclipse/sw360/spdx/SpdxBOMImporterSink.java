@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabase
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -153,8 +154,8 @@ public class SpdxBOMImporterSink {
                     .map(a -> a.setCreatedBy(user.getEmail()))
                     .collect(Collectors.toSet()));
         }
-        final AddDocumentRequestSummary addDocumentRequestSummary = projectDatabaseHandler.addProject(project,
-                user);
+        final AddDocumentRequestSummary addDocumentRequestSummary = projectDatabaseHandler.addProject(
+                ProjectConverter.fromThrift(project), user);
 
         final String projectId = addDocumentRequestSummary.getId();
         if (projectId == null || projectId.isEmpty()) {

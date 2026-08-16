@@ -23,7 +23,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.NaturalVersionComparator;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -55,7 +55,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Package._Fields, Comparator<Package>> packageMap = generatePackageMap();
     private static final Map<ReleaseLink._Fields, Comparator<ReleaseLink>> releaseLinkMap = generateReleaseLinkMap();
     private static final Map<String, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
-    private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
+    private static final Map<String, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
     private static final Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vDtoMap = generateVulDtoMap();
     private static final Map<Vulnerability._Fields, Comparator<Vulnerability>> vMap = generateVulMap();
     private static final Map<VulnerabilitySummary._Fields, Comparator<VulnerabilitySummary>> vSumm = generateVulSumm();
@@ -193,10 +193,12 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(searchResultMap);
     }
 
-    private static Map<ChangeLogs._Fields, Comparator<ChangeLogs>> generateChangeLogMap() {
-        Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = new HashMap<>();
-        changeLogMap.put(ChangeLogs._Fields.CHANGE_TIMESTAMP, Comparator.comparing(ChangeLogs::getChangeTimestamp, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        changeLogMap.put(ChangeLogs._Fields.USER_EDITED, Comparator.comparing(ChangeLogs::getUserEdited, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+    private static Map<String, Comparator<ChangeLogs>> generateChangeLogMap() {
+        Map<String, Comparator<ChangeLogs>> changeLogMap = new HashMap<>();
+        changeLogMap.put("changeTimestamp", Comparator.comparing(ChangeLogs::getChangeTimestamp, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        changeLogMap.put("CHANGE_TIMESTAMP", changeLogMap.get("changeTimestamp"));
+        changeLogMap.put("userEdited", Comparator.comparing(ChangeLogs::getUserEdited, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        changeLogMap.put("USER_EDITED", changeLogMap.get("userEdited"));
         return Collections.unmodifiableMap(changeLogMap);
     }
 
@@ -364,14 +366,13 @@ public class ResourceComparatorGenerator<T> {
             case SW360Constants.TYPE_SEARCHRESULT:
                 return (Comparator<T>) searchResultComparator(properties);
             case SW360Constants.TYPE_CHANGELOG:
-                List<ChangeLogs._Fields> changeLogs = new ArrayList<>();
-                for(String property : properties) {
-                    ChangeLogs._Fields field = ChangeLogs._Fields.findByName(property);
-                    if (field != null) {
-                        changeLogs.add(field);
+                List<String> changeLogFields = new ArrayList<>();
+                for (String property : properties) {
+                    if (changeLogMap.containsKey(property)) {
+                        changeLogFields.add(property);
                     }
                 }
-                return generateChangeLogComparatorWithFields(type, changeLogs);
+                return generateChangeLogComparatorWithFields(type, changeLogFields);
             case SW360Constants.TYPE_VULNERABILITYDTO:
                 List<VulnerabilityDTO._Fields> vulDtos = new ArrayList<>();
                 for(String property : properties) {
@@ -555,7 +556,7 @@ public class ResourceComparatorGenerator<T> {
         }
     }
 
-    public Comparator<T> generateChangeLogComparatorWithFields(String type, List<ChangeLogs._Fields> fields) throws ResourceClassNotFoundException {
+    public Comparator<T> generateChangeLogComparatorWithFields(String type, List<String> fields) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_CHANGELOG:
                 return (Comparator<T>)changeLogComparator(fields);
@@ -750,9 +751,9 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
-    private Comparator<ChangeLogs> changeLogComparator(List<ChangeLogs._Fields> fields) {
+    private Comparator<ChangeLogs> changeLogComparator(List<String> fields) {
         Comparator<ChangeLogs> comparator = Comparator.comparing(x -> true);
-        for (ChangeLogs._Fields field:fields) {
+        for (String field:fields) {
             Comparator<ChangeLogs> fieldComparator = changeLogMap.get(field);
             if(fieldComparator != null) {
                 comparator = comparator.thenComparing(fieldComparator);
@@ -871,7 +872,7 @@ public class ResourceComparatorGenerator<T> {
     }
 
     private Comparator<ChangeLogs> defaultChangeLogComparator() {
-        return changeLogMap.get(ChangeLogs._Fields.CHANGE_TIMESTAMP);
+        return changeLogMap.get("changeTimestamp");
     }
 
     private Comparator<VulnerabilityDTO> defaultVulDtoComparator() {

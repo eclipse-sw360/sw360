@@ -13,8 +13,6 @@ import java.util.*;
 
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -56,6 +54,15 @@ public class PermissionUtils {
 
     public static boolean isAdmin(User user) {
         return isInGroup(user, UserGroup.SW360_ADMIN) || isInGroup(user, UserGroup.ADMIN);
+    }
+
+    public static boolean isAdmin(org.eclipse.sw360.datahandler.services.users.User user) {
+        if (user == null || user.getUserGroup() == null) {
+            return false;
+        }
+        org.eclipse.sw360.datahandler.services.users.UserGroup group = user.getUserGroup();
+        return group == org.eclipse.sw360.datahandler.services.users.UserGroup.SW360_ADMIN
+                || group == org.eclipse.sw360.datahandler.services.users.UserGroup.ADMIN;
     }
 
     public static boolean isAdminBySecondaryRoles(Set<UserGroup> roles) {
@@ -166,18 +173,27 @@ public class PermissionUtils {
 
     @SuppressWarnings("unchecked")
     public static <T> DocumentPermissions<T> makePermission(T document, User user) {
-        if (document instanceof License) {
-            return (DocumentPermissions<T>) new LicensePermissions((License) document, user);
+        if (document instanceof org.eclipse.sw360.datahandler.services.licenses.License) {
+            return (DocumentPermissions<T>) new LicensePermissions(
+                    (org.eclipse.sw360.datahandler.services.licenses.License) document, user);
         } else if (document instanceof Component) {
             return (DocumentPermissions<T>) new ComponentPermissions((Component) document, user);
         } else if (document instanceof Release) {
             return (DocumentPermissions<T>) new ReleasePermissions((Release) document, user);
-        } else if (document instanceof Project) {
-            return (DocumentPermissions<T>) new ProjectPermissions((Project) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
+            return (DocumentPermissions<T>) new ProjectPermissions(
+                    (org.eclipse.sw360.datahandler.services.projects.Project) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.thrift.projects.Project) {
+            // Dual-stack: resource-server still passes thrift Project documents.
+            return (DocumentPermissions<T>) new ProjectPermissions(
+                    org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge
+                            .toPojoProject((org.eclipse.sw360.datahandler.thrift.projects.Project) document),
+                    user);
         } else if (document instanceof Vendor) {
             return (DocumentPermissions<T>) new VendorPermissions((Vendor) document, user);
-        } else if (document instanceof User) {
-            return (DocumentPermissions<T>) new UserPermissions((User) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.services.users.User) {
+            return (DocumentPermissions<T>) new UserPermissions(
+                    (org.eclipse.sw360.datahandler.services.users.User) document, user);
         } else if (document instanceof Vulnerability) {
             return (DocumentPermissions<T>) new VulnerabilityPermissions((Vulnerability) document, user);
         } else if (document instanceof SPDXDocument) {
@@ -191,7 +207,36 @@ public class PermissionUtils {
         }
     }
 
-    public static boolean checkEditablePermission(ProjectClearingState state, User user, Map<String, Object> reqBodyMap, Project sw360Project) {
+    /**
+     * POJO-actor overload. Prefer this when the caller already holds a service-api User.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> DocumentPermissions<T> makePermission(T document,
+            org.eclipse.sw360.datahandler.services.users.User user) {
+        if (document instanceof org.eclipse.sw360.datahandler.services.users.User) {
+            return (DocumentPermissions<T>) new UserPermissions(
+                    (org.eclipse.sw360.datahandler.services.users.User) document, user);
+        }
+        return makePermission(document, bridgeThriftActor(user));
+    }
+
+    private static User bridgeThriftActor(org.eclipse.sw360.datahandler.services.users.User pojo) {
+        if (pojo == null) {
+            return null;
+        }
+        User thrift = new User();
+        thrift.setEmail(pojo.getEmail());
+        if (pojo.getUserGroup() != null) {
+            thrift.setUserGroup(UserGroup.valueOf(pojo.getUserGroup().name()));
+        }
+        if (pojo.getDepartment() != null) {
+            thrift.setDepartment(pojo.getDepartment());
+        }
+        return thrift;
+    }
+
+    public static boolean checkEditablePermission(ProjectClearingState state, User user, Map<String, Object> reqBodyMap,
+            org.eclipse.sw360.datahandler.services.projects.Project sw360Project) {
         if (state == null) {
             state = ProjectClearingState.OPEN;
         }

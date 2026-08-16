@@ -15,7 +15,7 @@ import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -356,7 +356,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     private static @Nonnull String getViewFromPagination(PaginationData pageData) {
-        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ComponentSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ComponentSortColumn.BY_CREATEDON -> "byCreatedOn";
             case ComponentSortColumn.BY_VENDOR -> "byvendor";
             case ComponentSortColumn.BY_NAME -> "byname";
@@ -369,7 +369,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
-        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ComponentSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ComponentSortColumn.BY_VENDOR ->
                     Collections.singletonMap("vendorNames", ascending ? "asc" : "desc");
             case ComponentSortColumn.BY_TYPE ->

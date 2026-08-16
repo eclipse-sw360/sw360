@@ -11,7 +11,6 @@ package org.eclipse.sw360.components.summary;
 
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -51,7 +50,7 @@ public class ComponentSummary extends DocumentSummary<Component> {
         } else if (type == SummaryType.DETAILED_EXPORT_SUMMARY) {
             List<Release> releases = releaseRepository.getReleasesFromComponentId(document.getId());
 
-            final Map<String, Vendor> vendorsById = ThriftUtils.getIdMap(vendorRepository.getAll());
+            final Map<String, Vendor> vendorsById = vendorRepository.getAllAsThriftIdMap();
 
             for (Release release : releases) {
                 if (!release.isSetVendor() && release.isSetVendorId()) {

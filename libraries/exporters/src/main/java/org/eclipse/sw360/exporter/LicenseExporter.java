@@ -10,8 +10,8 @@
  */
 package org.eclipse.sw360.exporter;
 
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.utils.ConvertRecord;
 import org.eclipse.sw360.exporter.utils.SubTable;

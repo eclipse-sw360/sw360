@@ -33,13 +33,15 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.users.UsersClients;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -231,7 +233,8 @@ public class ModerationDatabaseHandler {
         if (CommonUtils.isNullEmptyOrWhitespace(clearingRequest.getProjectId())) {
             return clearingRequest;
         }
-        Project project = projectDatabaseHandler.getProjectById(clearingRequest.getProjectId(), user);
+        org.eclipse.sw360.datahandler.services.projects.Project project =
+                projectDatabaseHandler.getProjectById(clearingRequest.getProjectId(), user);
         if (!(clearingRequest.getClearingTeam().equals(user.getEmail())
                 || clearingRequest.getRequestingUser().equals(user.getEmail())
                 || makePermission(project, user).isActionAllowed(RequestedAction.WRITE))) {
@@ -625,7 +628,7 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(Project project, User user, Boolean isDeleteRequest) {
         Project dbproject;
         try {
-            dbproject = projectDatabaseHandler.getProjectById(project.getId(), user);
+            dbproject = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(project.getId(), user));
         } catch (SW360Exception e) {
             log.error("Could not get original project from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
@@ -699,9 +702,10 @@ public class ModerationDatabaseHandler {
 
     public RequestStatus createRequest(License license, User user) {
         License dblicense;
-        try{
-            dblicense = licenseDatabaseHandler.getLicenseForOrganisation(license.getId(), user.getDepartment());
-        } catch (SW360Exception e) {
+        try {
+            dblicense = LicenseConverter.toThrift(
+                    licenseDatabaseHandler.getLicenseForOrganisation(license.getId(), user.getDepartment()));
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             log.error("Could not get original license from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
@@ -1028,7 +1032,7 @@ public class ModerationDatabaseHandler {
     }
 
     private void sendMailForNewCommentInCR(ClearingRequest cr, Comment comment, User user) throws SW360Exception {
-        Project project = projectDatabaseHandler.getProjectById(cr.getProjectId(), user);
+        Project project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(cr.getProjectId(), user));
         Map<String, String> recipients = Maps.newHashMap();
         recipients.put(ClearingRequest._Fields.REQUESTING_USER.toString(), cr.getRequestingUser());
         recipients.put(ClearingRequest._Fields.CLEARING_TEAM.toString(), cr.getClearingTeam());

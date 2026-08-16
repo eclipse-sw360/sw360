@@ -312,8 +312,16 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         Component relComponent = new Component("droelf");
         compDBHandler.addComponent(relComponent, "me");
         assertNotNull(relComponent.getId());
-        Vendor vendor = new Vendor("doe","doelf","http://doelf.com");
-        vendorRepository.add(vendor);
+        org.eclipse.sw360.datahandler.services.vendors.Vendor pojoVendor =
+                new org.eclipse.sw360.datahandler.services.vendors.Vendor()
+                        .setShortname("doe")
+                        .setFullname("doelf")
+                        .setUrl("http://doelf.com")
+                        .setType("vendor");
+        vendorRepository.add(pojoVendor);
+        Vendor vendor = new Vendor("doe", "doelf", "http://doelf.com");
+        vendor.setId(pojoVendor.getId());
+        vendor.setRevision(pojoVendor.getRevision());
         Release release = new Release("droelf", "1.0", relComponent.getId());
         release.setVendorId(vendor.getId());
         release.setVendor(vendor);
@@ -344,8 +352,16 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         Component relComponent = new Component("droe");
         compDBHandler.addComponent(relComponent, "me");
         assertNotNull(relComponent.getId());
-        Vendor vendor = new Vendor("doe","doelf","http://doelf.com");
-        vendorRepository.add(vendor);
+        org.eclipse.sw360.datahandler.services.vendors.Vendor pojoVendor =
+                new org.eclipse.sw360.datahandler.services.vendors.Vendor()
+                        .setShortname("doe")
+                        .setFullname("doelf")
+                        .setUrl("http://doelf.com")
+                        .setType("vendor");
+        vendorRepository.add(pojoVendor);
+        Vendor vendor = new Vendor("doe", "doelf", "http://doelf.com");
+        vendor.setId(pojoVendor.getId());
+        vendor.setRevision(pojoVendor.getRevision());
         Release release = new Release("droelf", "1", relComponent.getId());
         VMResult matchResult = releaseHandler.findMatchByRelease(release.getId());
         assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);

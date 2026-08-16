@@ -15,6 +15,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.*;
@@ -28,7 +31,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.Contract;
@@ -66,6 +69,13 @@ public class DatabaseConnectorCloudant {
     private final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
     private static final Set<String> entitiesWithNonMatchingStructType = Set
             .of("moderation", "attachment", "usedreleaserelation");
+
+    /**
+     * Written onto every non-thrift (service-api POJO) document save so reads can
+     * tell thrift-era docs from POJO-rewritten docs even when payloads look alike.
+     */
+    public static final String SW360_STORAGE_FIELD = "sw360Storage";
+    public static final String SW360_STORAGE_POJO = "pojo";
 
     private final String dbName;
     private final DatabaseInstanceCloudant instance;
@@ -613,7 +623,7 @@ public class DatabaseConnectorCloudant {
         return success;
     }
 
-    public <T> boolean add(T doc) throws SW360Exception {
+    public <T> boolean add(T doc) {
         Document document = this.getDocumentFromPojo(doc);
         if (document.getId() != null && this.contains(document.getId())) {
             // Cannot add same document again. Must update.
@@ -623,7 +633,8 @@ public class DatabaseConnectorCloudant {
         DocumentResult resp;
         if (doc instanceof AttachmentContent content) {
             if (content.getFilename() == null) {
-                throw new SW360Exception("Attachment filename cannot be null.");
+                throw new org.eclipse.sw360.datahandler.services.common.SW360Exception(
+                        "Attachment filename cannot be null.");
             }
             PostDocumentOptions postDocOption = new PostDocumentOptions.Builder()
                     .db(this.dbName)
@@ -645,7 +656,12 @@ public class DatabaseConnectorCloudant {
             InputStream in = new ByteArrayInputStream(content.getFilename()
                     .getBytes(StandardCharsets.UTF_8));
             createAttachment(createResp.getId(), content.getFilename(), in, content.getContentType());
-            Document updatedDoc = this.getDocument(createResp.getId());
+            Document updatedDoc;
+            try {
+                updatedDoc = this.getDocument(createResp.getId());
+            } catch (SW360Exception e) {
+                throw new org.eclipse.sw360.datahandler.services.common.SW360Exception(e.getWhy(), e);
+            }
             updateIdAndRev(doc, updatedDoc.getId(), updatedDoc.getRev());
             return true;
         }
@@ -660,7 +676,7 @@ public class DatabaseConnectorCloudant {
     }
 
     public <T> boolean remove(T doc) {
-        return this.remove(this.getDocumentFromPojo(doc).getId());
+        return this.deleteById(this.getDocumentFromPojo(doc).getId());
     }
 
     public boolean putDesignDocument(DesignDocument designDocument, String ddoc) {
@@ -776,8 +792,8 @@ public class DatabaseConnectorCloudant {
             PostFindOptions.Builder qb, Class<T> type, PaginationData pageData,
             Map<String, String> sortSelector, String countIndexName, boolean sortCountQuery
     ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int skip = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int skip = pageData.displayStartOrZero();
 
         long rowQueryLimit = Math.max(rowsPerPage, LUCENE_SEARCH_LIMIT);
 
@@ -897,6 +913,14 @@ public class DatabaseConnectorCloudant {
             }
             map.remove("_rev");
         }
+        // Lazy POJO writes must not re-introduce thrift storage meta into CouchDB.
+        if (!TBase.class.isAssignableFrom(document.getClass())) {
+            map.remove("issetBitfield");
+            map.remove("__isset_bitfield");
+            // Stamp so future reads can distinguish POJO-rewritten docs from thrift-era
+            // docs even when field sets are identical (ConfigContainer, etc.).
+            map.put(SW360_STORAGE_FIELD, SW360_STORAGE_POJO);
+        }
         doc.setProperties(map);
         return doc;
     }
@@ -911,6 +935,9 @@ public class DatabaseConnectorCloudant {
                 ObjectMapper objectMapper = new ObjectMapper();
                 doc = objectMapper.readValue(document.toString(), type);
             } else {
+                if (!TBase.class.isAssignableFrom(type)) {
+                    logPojoStorageShape(document, type);
+                }
                 doc = this.instance.getGson().fromJson(document.toString(), type);
             }
             updateIdAndRev(doc, document.getId(), document.getRev());
@@ -920,6 +947,66 @@ public class DatabaseConnectorCloudant {
         return doc;
     }
 
+    /**
+     * Classify CouchDB JSON before mapping into a service-api POJO.
+     * <ul>
+     *   <li>{@code THRIFT} — has thrift meta ({@code setField_}, {@code issetBitfield}, …)</li>
+     *   <li>{@code POJO} — stamped by a previous POJO write ({@code sw360Storage=pojo})</li>
+     *   <li>{@code LEGACY} — no thrift meta and no stamp (thrift-era / never POJO-saved;
+     *       includes ConfigContainer docs that already look “clean”)</li>
+     * </ul>
+     */
+    private void logPojoStorageShape(Document document, Class<?> type) {
+        String shape = classifyStorageShape(document);
+        log.info("CouchDB read into POJO {}: id={} storageShape={}",
+                type.getSimpleName(), document.getId(), shape);
+    }
+
+    static String classifyStorageShape(Document document) {
+        if (document == null) {
+            return "UNKNOWN";
+        }
+        JsonObject root;
+        try {
+            root = JsonParser.parseString(document.toString()).getAsJsonObject();
+        } catch (RuntimeException e) {
+            return "UNKNOWN";
+        }
+        if (containsThriftMeta(root)) {
+            return "THRIFT";
+        }
+        JsonElement stamp = root.get(SW360_STORAGE_FIELD);
+        if (stamp != null && stamp.isJsonPrimitive()
+                && SW360_STORAGE_POJO.equals(stamp.getAsString())) {
+            return "POJO";
+        }
+        return "LEGACY";
+    }
+
+    private static boolean containsThriftMeta(JsonElement element) {
+        if (element == null || element.isJsonNull()) {
+            return false;
+        }
+        if (element.isJsonObject()) {
+            JsonObject obj = element.getAsJsonObject();
+            if (obj.has("setField_") || obj.has("issetBitfield") || obj.has("__isset_bitfield")) {
+                return true;
+            }
+            for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
+                if (containsThriftMeta(e.getValue())) {
+                    return true;
+                }
+            }
+        } else if (element.isJsonArray()) {
+            for (JsonElement child : element.getAsJsonArray()) {
+                if (containsThriftMeta(child)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private <T> void updateIdAndRev(@NotNull T doc, String docId, String docRev) {
         if (TBase.class.isAssignableFrom(doc.getClass())) {
             TBase tbase = (TBase) doc;
@@ -927,7 +1014,11 @@ public class DatabaseConnectorCloudant {
             TFieldIdEnum rev = tbase.fieldForId(2);
             tbase.setFieldValue(id, docId);
             tbase.setFieldValue(rev, docRev);
-        }  else if (isInstanceOfOAuthClientEntity(doc)) {
+        } else if (!tryInvokeSetter(doc, "setId", docId)) {
+            log.debug("No setId(String) on type {}", doc.getClass().getName());
+        }
+
+        if (isInstanceOfOAuthClientEntity(doc)) {
             Class<?> clazz = doc.getClass();
             try {
                 Method setIdMethod = clazz.getMethod("setId", String.class);
@@ -938,6 +1029,25 @@ public class DatabaseConnectorCloudant {
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 log.error(e.getMessage());
             }
+            return;
+        }
+
+        // Generic POJO support (e.g. service-api models): prefer setRevision, fallback to setRev.
+        if (!tryInvokeSetter(doc, "setRevision", docRev)) {
+            tryInvokeSetter(doc, "setRev", docRev);
+        }
+    }
+
+    private <T> boolean tryInvokeSetter(@NotNull T target, String setterName, String value) {
+        try {
+            Method method = target.getClass().getMethod(setterName, String.class);
+            method.invoke(target, value);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            log.error("Failed to invoke {} on {}", setterName, target.getClass().getName(), e);
+            return false;
         }
     }
 

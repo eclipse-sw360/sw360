@@ -441,12 +441,22 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static Map<String, Set<String>> getLinkedReleaseIdsOfAllSubProjectsAsFlatList(Project project, Set<String> projectIds, Set<String> releaseIds, Set<String> packageIds, ProjectService.Iface client, User user) {
+    /**
+     * Functional interface abstracting how a project is loaded by id. Introduced so
+     * this utility does not force callers to depend on the {@code ProjectService.Iface}
+     * thrift contract (removed as part of the Project thrift→POJO migration).
+     */
+    @FunctionalInterface
+    public interface ProjectByIdResolver {
+        Project getProjectById(String id, User user) throws TException;
+    }
+
+    public static Map<String, Set<String>> getLinkedReleaseIdsOfAllSubProjectsAsFlatList(Project project, Set<String> projectIds, Set<String> releaseIds, Set<String> packageIds, ProjectByIdResolver resolver, User user) {
         for (String projId : CommonUtils.getNullToEmptyKeyset(project.getLinkedProjects())) {
             if (!projectIds.contains(projId)) {
                 try {
                     projectIds.add(projId);
-                    project = client.getProjectById(projId, user);
+                    project = resolver.getProjectById(projId, user);
                     if (project.getReleaseIdToUsageSize() > 0) {
                         releaseIds.addAll(project.getReleaseIdToUsage().keySet());
                     }
@@ -454,7 +464,7 @@ public class SW360Utils {
                         packageIds.addAll(project.getPackageIds().keySet());
                     }
                     if (project.getLinkedProjectsSize() > 0) {
-                        getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, projectIds, releaseIds, packageIds, client, user);
+                        getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, projectIds, releaseIds, packageIds, resolver, user);
                     }
                 } catch (TException e) {
                     log.error("Could not get linked projects while exporting SBOM: ", e);

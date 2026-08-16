@@ -33,20 +33,24 @@ import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.permissions.DocumentPermissions;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -314,7 +318,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // todo: move filling out of department to ReleaseRepository/ReleaseSummary???
         Set<String> userIds = releases.stream().map(Release::getCreatedBy).collect(Collectors.toSet());
-        Map<String, User> usersByEmail = ThriftUtils.getIdMap(userRepository.get(userIds));
+        Map<String, User> usersByEmail = ThriftUtils.getIdMap(
+                userRepository.get(userIds).stream().map(UserConverter::toThrift).collect(Collectors.toList()));
         releases.forEach(release -> release.setCreatorDepartment(Optional
                 .ofNullable(release.getCreatedBy())
                 .map(usersByEmail::get)
@@ -741,7 +746,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Vendor getVendor(String vendorId) {
-        return vendorRepository.get(vendorId);
+        return vendorRepository.getAsThrift(vendorId);
     }
 
     ///////////////////////////////
@@ -1368,10 +1373,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // check if attachments are updated
             if (!Objects.equals(originalAttachmentId, updatedAttachmentId)) {
                 // fetch all the projects associated with this release and collect the Clearing request Ids
-                final Set<Project> usingProjects = projectRepository.searchByReleaseId(release.getId());
+                final Set<org.eclipse.sw360.datahandler.services.projects.Project> usingProjects =
+                        projectRepository.searchByReleaseId(release.getId());
                 final Set<String> crIds = CommonUtils.nullToEmptySet(usingProjects).stream()
                         .filter(proj -> CommonUtils.isNotNullEmptyOrWhitespace(proj.getClearingRequestId()))
-                        .map(Project::getClearingRequestId).collect(Collectors.toSet());
+                        .map(org.eclipse.sw360.datahandler.services.projects.Project::getClearingRequestId)
+                        .collect(Collectors.toSet());
                 if (crIds.size() > 0) {
                     Set<String> added = Sets.difference(updatedAttachmentId, originalAttachmentId);
                     Set<String> removed = Sets.difference(originalAttachmentId, updatedAttachmentId);
@@ -1681,7 +1688,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 } else {
                     return addedCount != orphanCount;
                 }
-            } catch (TException e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error(String.format("An error occurred while updating linked packages of release: %s", releaseId), e.getCause());
                 return true;
             }
@@ -1699,8 +1706,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     String relId = pkg.getReleaseId();
                     // update the package, if it contains linked release Id
                     if (CommonUtils.isNotNullEmptyOrWhitespace(relId) && releaseId.equals(relId)) {
-                        pkg.unsetReleaseId();
-                        RequestStatus status = getPackageDatabaseHandler().updatePackage(pkg, user);
+                        pkg.setReleaseId(null);
+                        org.eclipse.sw360.datahandler.services.common.RequestStatus status =
+                                getPackageDatabaseHandler().updatePackage(pkg, user);
                         log.info(String.format("Unlinked package <%s> from release <%s>, Unlinking status: <%s>", pkg.getId(), releaseId, status.name()));
                     }
                 }
@@ -1712,7 +1720,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     // update only orphan packages
                     if (CommonUtils.isNullEmptyOrWhitespace(relId)) {
                         pkg.setReleaseId(releaseId);
-                        RequestStatus status = getPackageDatabaseHandler().updatePackage(pkg, user);
+                        org.eclipse.sw360.datahandler.services.common.RequestStatus status =
+                                getPackageDatabaseHandler().updatePackage(pkg, user);
                         log.info(String.format("Linked package <%s> to release <%s>, Linking status: <%s>", pkg.getId(), releaseId, status.name()));
                     } else if (!relId.equals(releaseId)) {
                         log.warn(String.format("Linked-ReleasId <%s> in Package <%s>, and Linked-PackageId <%s> in Release <%s> association is incorrect",
@@ -1720,7 +1729,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     }
                 }
             }
-        } catch (TException e) {
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             log.error(String.format("An error occurred while updating linked packages of release: %s", releaseId), e.getCause());
             throw new SW360Exception(e.getMessage());
         }
@@ -1978,20 +1987,25 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         ProjectDatabaseHandler projectDbHandler = getProjectDatabaseHandlerForVuln();
 
         final String userEmail = sessionUser.getEmail();
-        Set<Project> projects = projectRepository.searchByReleaseId(mergeSourceId);
-        for(Project project : projects) {
+        Set<org.eclipse.sw360.datahandler.services.projects.Project> pojoProjects =
+                projectRepository.searchByReleaseId(mergeSourceId);
+        for (org.eclipse.sw360.datahandler.services.projects.Project project : pojoProjects) {
             // retrieve full document, other method only retrieves summary
             project = projectDbHandler.getProjectByIdIgnoringVisibility(project.getId());
-            Project projectBefore=project.deepCopy();
-            ProjectReleaseRelationship relationship = project.getReleaseIdToUsage().remove(mergeSourceId);
+            org.eclipse.sw360.datahandler.services.projects.Project projectBefore =
+                    ProjectConverter.fromThrift(ProjectConverter.toThrift(project));
+            org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship relationship =
+                    project.getReleaseIdToUsage().remove(mergeSourceId);
             // if the target release is also linked, keep this one, do not overwrite
-            if(!project.getReleaseIdToUsage().containsKey(mergeTargetId)) {
-                project.putToReleaseIdToUsage(mergeTargetId, relationship);
+            if (!project.getReleaseIdToUsage().containsKey(mergeTargetId)) {
+                project.getReleaseIdToUsage().put(mergeTargetId, relationship);
             }
-            updateModifiedFields(project, userEmail);
+            project.setModifiedBy(userEmail);
+            project.setModifiedOn(SW360Utils.getCreatedOn());
             projectDbHandler.updateProject(project, sessionUser, true);
 
-            dbHandlerUtil.addChangeLogs(project, projectBefore, userEmail, Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(ProjectConverter.toThrift(project), ProjectConverter.toThrift(projectBefore),
+                    userEmail, Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
     }
@@ -2087,12 +2101,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Set<Package> packages = getPackageDatabaseHandler().getPackagesByReleaseId(mergeSourceId);
         Release mergeTarget = releaseRepository.get(mergeTargetId);
         for (Package pkg : packages) {
-            Package packageBefore = pkg.deepCopy();
+            org.eclipse.sw360.datahandler.thrift.packages.Package packageBefore = PackageConverter.toThrift(pkg);
             pkg.setReleaseId(mergeTargetId);
             getPackageDatabaseHandler().updatePackage(pkg, sessionUser);
             mergeTarget.addToPackageIds(pkg.getId());
-            dbHandlerUtil.addChangeLogs(pkg, packageBefore, sessionUser.getEmail(), Operation.UPDATE,
-                    attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
+            dbHandlerUtil.addChangeLogs(PackageConverter.toThrift(pkg), packageBefore, sessionUser.getEmail(),
+                    Operation.UPDATE, attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
         // Update the merge target release with the migrated package IDs
         if (!packages.isEmpty()) {
@@ -2176,7 +2190,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 return true;
             }
 
-            final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseIds);
+            final Set<org.eclipse.sw360.datahandler.services.projects.Project> usingProjects =
+                    projectRepository.searchByReleaseId(releaseIds);
             return !CommonUtils.isNullOrEmptyCollection(usingProjects);
         }
         return false;
@@ -2188,7 +2203,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (!CommonUtils.isNullOrEmptyCollection(usingComponents))
             return true;
 
-        final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseId);
+        final Set<org.eclipse.sw360.datahandler.services.projects.Project> usingProjects =
+                projectRepository.searchByReleaseId(releaseId);
         return !CommonUtils.isNullOrEmptyCollection(usingProjects);
     }
 
@@ -2250,11 +2266,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // HELPER SERVICES //
     /////////////////////
 
-    List<ReleaseLink> getLinkedReleases(Project project, Deque<String> visitedIds) {
+    List<ReleaseLink> getLinkedReleases(org.eclipse.sw360.datahandler.services.projects.Project project, Deque<String> visitedIds) {
         return getLinkedReleases(project.getReleaseIdToUsage(), visitedIds);
     }
 
-    List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, Deque<String> visitedIds, User user) {
+    List<ReleaseLink> getLinkedReleasesWithAccessibility(org.eclipse.sw360.datahandler.services.projects.Project project, Deque<String> visitedIds, User user) {
         List<ReleaseLink> releaseLinkList = getLinkedReleases(project.getReleaseIdToUsage(), visitedIds);
         if (!CommonUtils.isNullOrEmptyCollection(releaseLinkList)) {
             for (ReleaseLink releaseLink : releaseLinkList) {
@@ -2309,7 +2325,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<Vendor> getAllVendors() {
-        return vendorRepository.getAll();
+        return vendorRepository.getAllAsThrift();
     }
 
     public Map<String, Release> getAllReleasesIdMap() {
@@ -2376,11 +2392,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
 
     private void fillValueFieldInReleaseLink(ReleaseLink releaseLink, Object relation) {
-        if (relation instanceof ProjectReleaseRelationship) {
+        if (relation instanceof org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship pojoRel) {
+            releaseLink.setReleaseRelationship(org.eclipse.sw360.common.utils.converter.common.EnumConverter.toThrift(
+                    pojoRel.getReleaseRelation(), ReleaseRelationship.class));
+            releaseLink.setMainlineState(org.eclipse.sw360.common.utils.converter.common.EnumConverter.toThrift(
+                    pojoRel.getMainlineState(), MainlineState.class));
+            releaseLink.setComment(pojoRel.getComment());
+        } else if (relation instanceof ProjectReleaseRelationship) {
             ProjectReleaseRelationship rel = (ProjectReleaseRelationship) relation;
             releaseLink.setReleaseRelationship(rel.getReleaseRelation());
             releaseLink.setMainlineState(rel.getMainlineState());
             releaseLink.setComment(rel.getComment());
+        } else if (relation instanceof org.eclipse.sw360.datahandler.services.common.ReleaseRelationship pojoReleaseRelation) {
+            releaseLink.setReleaseRelationship(org.eclipse.sw360.common.utils.converter.common.EnumConverter.toThrift(
+                    pojoReleaseRelation, ReleaseRelationship.class));
         } else if (relation instanceof ReleaseRelationship) {
             releaseLink.setReleaseRelationship((ReleaseRelationship) relation);
         } else {

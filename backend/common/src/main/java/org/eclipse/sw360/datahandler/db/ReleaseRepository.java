@@ -22,7 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 
 import java.util.*;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
@@ -368,7 +368,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
      * equality selector and the ORDER BY clause without a "no_usable_index" error.
      */
     private static @NotNull String getComponentReleaseIndexName(PaginationData pageData) {
-        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ReleaseSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ReleaseSortColumn.BY_VERSION       -> RELEASE_BY_COMPONENT_VERSION_IDX;
             case ReleaseSortColumn.BY_CLEARING_STATE -> RELEASE_BY_COMPONENT_CLEARING_STATE_IDX;
             case ReleaseSortColumn.BY_MAINLINE_STATE -> RELEASE_BY_COMPONENT_MAINLINE_STATE_IDX;
@@ -377,7 +377,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     }
 
     private static @NotNull String getViewFromPagination(PaginationData pageData) {
-        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ReleaseSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ReleaseSortColumn.BY_NAME -> "byname";
             case ReleaseSortColumn.BY_VERSION -> "releaseByVersion";
             case ReleaseSortColumn.BY_SCORE -> "all";
@@ -388,7 +388,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     private static @NotNull Map<String, String> getComponentReleaseSortSelector(PaginationData pageData) {
         boolean ascending = pageData.isAscending();
-        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ReleaseSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ReleaseSortColumn.BY_VERSION ->
                     Collections.singletonMap(Release._Fields.VERSION.getFieldName(), ascending ? "asc" : "desc");
             case ReleaseSortColumn.BY_CLEARING_STATE ->
@@ -465,11 +465,11 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     }
 
     public Map<PaginationData, List<Release>> getAccessibleReleasesWithPagination(User user, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
         Map<PaginationData, List<Release>> result = Maps.newHashMap();
         List<Release> releases = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
+        final int sortColumnNo = pageData.sortColumnNumberOrZero();
 
         PostViewOptions.Builder query;
         switch (sortColumnNo) {
@@ -506,7 +506,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         if (rowsPerPage == -1) {
             request = query.descending(!ascending).includeDocs(true).build();
         } else {
-            request = query.limit(rowsPerPage).skip(pageData.getDisplayStart())
+            request = query.limit(rowsPerPage).skip(pageData.displayStartOrZero())
                     .descending(!ascending).includeDocs(true).build();
         }
 
@@ -526,7 +526,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         boolean ascending = pageData.isAscending();
-        return switch (ReleaseSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ReleaseSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ReleaseSortColumn.BY_NAME ->
                     Collections.singletonMap(Release._Fields.NAME.getFieldName(), ascending ? "asc" : "desc");
             case ReleaseSortColumn.BY_VERSION ->

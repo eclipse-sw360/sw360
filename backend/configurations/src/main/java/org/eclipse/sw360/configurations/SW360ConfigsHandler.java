@@ -16,8 +16,7 @@ import org.eclipse.sw360.datahandler.db.SW360ConfigsDatabaseHandler;
 import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.common.utils.ThriftConverter;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -36,12 +35,7 @@ public class SW360ConfigsHandler {
     }
 
     public RequestStatus updateSW360Configs(Map<String, String> updatedConfigs, User user) {
-        try {
-            return ThriftConverter.fromThriftRequestStatus(
-                    sw360ConfigsDatabaseHandler.updateSW360Configs(updatedConfigs, user));
-        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
-            throw ThriftConverter.fromThriftException(e);
-        }
+        return sw360ConfigsDatabaseHandler.updateSW360Configs(updatedConfigs, user);
     }
 
     public Map<String, String> getSW360Configs() {
@@ -53,17 +47,11 @@ public class SW360ConfigsHandler {
     }
 
     public Map<String, String> getConfigForContainer(ConfigFor configFor) {
-        return sw360ConfigsDatabaseHandler.getConfigForContainer(ThriftConverter.toThriftConfigFor(configFor));
+        return sw360ConfigsDatabaseHandler.getConfigForContainer(configFor);
     }
 
     public RequestStatus updateSW360ConfigForContainer(
             ConfigFor configFor, Map<String, String> updatedConfigs, User user) {
-        try {
-            return ThriftConverter.fromThriftRequestStatus(
-                    sw360ConfigsDatabaseHandler.updateSW360ConfigForContainer(
-                            ThriftConverter.toThriftConfigFor(configFor), updatedConfigs, user));
-        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
-            throw ThriftConverter.fromThriftException(e);
-        }
+        return sw360ConfigsDatabaseHandler.updateSW360ConfigForContainer(configFor, updatedConfigs, user);
     }
 }

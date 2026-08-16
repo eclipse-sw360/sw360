@@ -13,16 +13,21 @@ package org.eclipse.sw360.licenses;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
+import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ObligationSearchHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.licenses.*;
-import org.eclipse.sw360.datahandler.thrift.CustomProperties;
+import org.eclipse.sw360.datahandler.services.common.CustomProperties;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationElement;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
@@ -42,6 +47,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -72,285 +78,332 @@ public class LicenseHandler implements LicenseImportExportGateway {
     // SUMMARY GETTERS //
     /////////////////////
 
-
-    /**
-     * Get an list of id/identifier/fullname for all licenses. The other fields will be set to null.
-     */
-    public List<License> getLicenseSummary() throws TException {
+    public List<License> getLicenseSummary() {
         return handler.getLicenseSummary();
     }
 
-    /**
-     * Get an list of license details for Excel export.
-     */
-    public List<License> getLicenseSummaryForExport() throws TException {
+    public List<License> getLicenseSummaryForExport() {
         return handler.getLicenseSummaryForExport();
     }
 
-    public ByteBuffer downloadExcel(String token) throws TException {
+    public ByteBuffer downloadExcel(String token) {
         return handler.downloadExcel(token);
     }
 
-    public ByteBuffer getLicenseReportDataStream() throws TException {
+    public ByteBuffer getLicenseReportDataStream() {
         return handler.getLicenseReportDataStream();
     }
 
-    public List<License> getDetailedLicenseSummaryForExport(String organisation) throws TException {
+    public List<License> getDetailedLicenseSummaryForExport(String organisation) {
         return handler.getDetailedLicenseSummaryForExport(organisation);
     }
 
-    public List<License> getDetailedLicenseSummary(String organisation, List<String> identifiers) throws TException {
+    public List<License> getDetailedLicenseSummary(String organisation, List<String> identifiers) {
         return handler.getDetailedLicenseSummaryForExport(organisation, identifiers);
     }
 
-    public RequestStatus addLicenseType(LicenseType licenseType, User user) throws TException {
-        assertNotNull(licenseType);
-
-        return handler.addLicenseType(licenseType, user);
+    public RequestStatus addLicenseType(LicenseType licenseType, User user) {
+        try {
+            assertNotNull(licenseType);
+            return handler.addLicenseType(licenseType, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) throws TException {
+    public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) {
         return handler.addLicenseTypes(licenseTypes, user);
     }
 
-    public List<License> addLicenses(List<License> licenses, User user) throws TException {
+    public List<License> addLicenses(List<License> licenses, User user) {
         return handler.addOrOverwriteLicenses(licenses, user, false);
     }
 
-    public List<License> addOrOverwriteLicenses(List<License> licenses, User user) throws TException {
+    public List<License> addOrOverwriteLicenses(List<License> licenses, User user) {
         return handler.addOrOverwriteLicenses(licenses, user, true);
     }
 
-    public List<Obligation> addListOfObligations(List<Obligation> ListOfObligations, User user) throws TException {
-        return handler.addListOfObligations(ListOfObligations, user);
-
+    public List<Obligation> addListOfObligations(List<Obligation> listOfObligations, User user) {
+        return handler.addListOfObligations(listOfObligations, user);
     }
 
-    public List<LicenseType> getLicenseTypes() throws TException {
+    public List<LicenseType> getLicenseTypes() {
         return handler.getLicenseTypes();
     }
 
-    public List<License> getLicenses() throws TException {
+    public List<License> getLicenses() {
         return handler.getLicenses();
     }
 
-    public List<Obligation> getObligations() throws TException {
+    public List<Obligation> getObligations() {
         return handler.getObligations();
     }
 
-    public List<ObligationNode> getObligationNodes() throws TException {
+    public List<ObligationNode> getObligationNodes() {
         return handler.getObligationNodes();
     }
 
-    public List<ObligationElement> getObligationElements() throws TException {
+    public List<ObligationElement> getObligationElements() {
         return handler.getObligationElements();
     }
 
-    public List<LicenseType> getLicenseTypesByIds(List<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getLicenseTypesByIds(ids);
+    public List<LicenseType> getLicenseTypesByIds(List<String> ids) {
+        try {
+            assertNotEmpty(ids);
+            return handler.getLicenseTypesByIds(ids);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public List<Obligation> getObligationsByIds(List<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getObligationsByIds(ids);
+    public List<Obligation> getObligationsByIds(List<String> ids) {
+        try {
+            assertNotEmpty(ids);
+            return handler.getObligationsByIds(ids);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public List<Obligation> getObligationsByLicenseId(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getObligationsByLicenseId(id);
+    public List<Obligation> getObligationsByLicenseId(String id) {
+        try {
+            assertNotEmpty(id);
+            return handler.getObligationsByLicenseId(id);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
-
-
 
     ////////////////////////////
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
 
-    /**
-     * Get a single license by providing its ID, with obligations filtered for the given organisation
-     */
-    public License getByID(String id, String organisation) throws SW360Exception {
-        assertNotEmpty(id);
-        assertNotEmpty(organisation);
-
-        return handler.getLicenseForOrganisation(id, organisation);
+    public License getByID(String id, String organisation) {
+        try {
+            assertNotEmpty(id);
+            assertNotEmpty(organisation);
+            return handler.getLicenseForOrganisation(id, organisation);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public License getByIDWithOwnModerationRequests(String id, String organisation, User user) throws TException {
-        assertNotEmpty(id);
-        assertNotEmpty(organisation);
-        assertUser(user);
-
-        return handler.getLicenseForOrganisationWithOwnModerationRequests(id, organisation, user);
+    public License getByIDWithOwnModerationRequests(String id, String organisation, User user) {
+        try {
+            assertNotEmpty(id);
+            assertNotEmpty(organisation);
+            assertUser(user);
+            return handler.getLicenseForOrganisationWithOwnModerationRequests(id, organisation, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public List<License> getByIds(Set<String> ids, String organisation) throws TException {
-        assertNotNull(ids);
-        assertNotEmpty(organisation);
-
-        return handler.getLicenses(ids, organisation);
+    public List<License> getByIds(Set<String> ids, String organisation) {
+        try {
+            assertNotNull(ids);
+            assertNotEmpty(organisation);
+            return handler.getLicenses(ids, organisation);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public LicenseType getLicenseTypeById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getLicenseTypeById(id);
+    public LicenseType getLicenseTypeById(String id) {
+        try {
+            assertNotEmpty(id);
+            return handler.getLicenseTypeById(id);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public Obligation getObligationsById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getObligationsById(id);
+    public Obligation getObligationsById(String id) {
+        try {
+            assertNotEmpty(id);
+            return handler.getObligationsById(id);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public ObligationNode getObligationNodeById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getObligationNodeById(id);
+    public ObligationNode getObligationNodeById(String id) {
+        try {
+            assertNotEmpty(id);
+            return handler.getObligationNodeById(id);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public ObligationElement getObligationElementById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getObligationElementById(id);
+    public ObligationElement getObligationElementById(String id) {
+        try {
+            assertNotEmpty(id);
+            return handler.getObligationElementById(id);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
     ////////////////////
     // BUSINESS LOGIC //
     ////////////////////
 
-    /**
-     * Add a new obligation object
-     */
-    public String addObligations(Obligation obligs, User user) throws TException {
-        assertNotNull(obligs);
-        assertIdUnset(obligs.getId());
-
-        return handler.addObligations(obligs, user);
+    public String addObligations(Obligation obligs, User user) {
+        try {
+            assertNotNull(obligs);
+            assertIdUnset(obligs.getId());
+            return handler.addObligations(obligs, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    /**
-     * Add a new obligation element object
-     */
-    public String addObligationElements(ObligationElement obligationElement, User user) throws TException {
-        assertNotNull(obligationElement);
-        assertIdUnset(obligationElement.getId());
-
-        return handler.addObligationElements(obligationElement, user);
+    public String addObligationElements(ObligationElement obligationElement, User user) {
+        try {
+            assertNotNull(obligationElement);
+            assertIdUnset(obligationElement.getId());
+            return handler.addObligationElements(obligationElement, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    /**
-     * Add a new obligation node object
-     */
-    public String addObligationNodes(ObligationNode obligationNode, User user) throws TException {
-        assertNotNull(obligationNode);
-        assertIdUnset(obligationNode.getId());
-
-        return handler.addObligationNodes(obligationNode, user);
+    public String addObligationNodes(ObligationNode obligationNode, User user) {
+        try {
+            assertNotNull(obligationNode);
+            assertIdUnset(obligationNode.getId());
+            return handler.addObligationNodes(obligationNode, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    /**
-     * Add an existing oblig to a license
-     */
-    public RequestStatus addObligationsToLicense(Set<Obligation> obligs, License license, User user) throws TException {
-       assertNotNull(license);
-       return  handler.addObligationsToLicense(obligs, license, user);
+    public RequestStatus addObligationsToLicense(Set<Obligation> obligs, License license, User user) {
+        try {
+            assertNotNull(license);
+            return handler.addObligationsToLicense(obligs, license, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public RequestStatus updateLicense(License license, User user, User requestingUser) throws TException {
+    public RequestStatus updateLicense(License license, User user, User requestingUser) {
         return handler.updateLicense(license, user, requestingUser);
     }
 
     public RequestStatus updateLicenseFromModerationRequest(License licenseAdditions,
                                                             License licenseDeletions,
                                                             User user,
-                                                            User requestingUser){
+                                                            User requestingUser) {
         return handler.updateLicenseFromAdditionsAndDeletions(licenseAdditions,
                 licenseDeletions, user, requestingUser);
     }
 
-    public RequestStatus updateWhitelist(String licenceId, Set<String> whitelist, User user) throws TException {
-        assertNotEmpty(licenceId);
-        assertUser(user);
-
-        return handler.updateWhitelist(licenceId, whitelist, user);
+    public RequestStatus updateWhitelist(String licenceId, Set<String> whitelist, User user) {
+        try {
+            assertNotEmpty(licenceId);
+            assertUser(user);
+            return handler.updateWhitelist(licenceId, whitelist, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public RequestStatus deleteLicense(String id, User user) throws TException {
-        assertId(id);
-        assertUser(user);
-
-        return handler.deleteLicense(id, user);
+    public RequestStatus deleteLicense(String id, User user) {
+        try {
+            assertId(id);
+            assertUser(user);
+            return handler.deleteLicense(id, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
+    @Override
     public List<CustomProperties> getCustomProperties(String documentType) {
         return handler.getCustomProperties(documentType);
     }
 
-    public RequestStatus updateCustomProperties(CustomProperties customProperties, User user){
-        if(! PermissionUtils.isAdmin(user)){
+    @Override
+    public RequestStatus updateCustomProperties(CustomProperties customProperties, User user) {
+        if (!PermissionUtils.isAdmin(user)) {
             return RequestStatus.FAILURE;
         }
         return handler.addOrUpdateCustomProperties(customProperties);
     }
 
     public RequestSummary deleteAllLicenseInformation(User user) {
-        if(! PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
             return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
         return handler.deleteAllLicenseInformation();
     }
 
-    public RequestSummary importAllSpdxLicenses(User user) throws TException {
-        if(! PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+    public RequestSummary importAllSpdxLicenses(User user) {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
             return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
         return handler.importAllSpdxLicenses(user);
     }
 
-    public RequestSummary importAllOSADLLicenses(User user) throws TException {
+    public RequestSummary importAllOSADLLicenses(User user) {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
             return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
         return handler.importAllOSADLLicenses(user);
     }
 
-    public RequestStatus deleteObligations(String id, User user) throws TException {
-        assertId(id);
-        assertUser(user);
-        return handler.deleteObligations(id, user);
+    public RequestStatus deleteObligations(String id, User user) {
+        try {
+            assertId(id);
+            assertUser(user);
+            return handler.deleteObligations(id, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public RequestStatus deleteLicenseType(String id, User user) throws TException {
-        assertId(id);
-        assertUser(user);
-        return handler.deleteLicenseType(id, user);
+    public RequestStatus deleteLicenseType(String id, User user) {
+        try {
+            assertId(id);
+            assertUser(user);
+            return handler.deleteLicenseType(id, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public int checkLicenseTypeInUse(String id) throws TException {
-        assertId(id);
-        return handler.checkLicenseTypeInUse(id);
+    public int checkLicenseTypeInUse(String id) {
+        try {
+            assertId(id);
+            return handler.checkLicenseTypeInUse(id);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw ThriftConverter.fromThriftException(e);
+        }
     }
 
-    public String addNodes(String jsonString, User user) throws TException {
+    public String addNodes(String jsonString, User user) {
         return handler.addNodes(jsonString, user);
     }
 
-    public String buildObligationText(String nodes, String level) throws TException {
+    public String buildObligationText(String nodes, String level) {
         return handler.buildObligationText(nodes, Integer.parseInt(level));
     }
 
-    public List<ObligationElement> searchObligationElement(String text) throws TException {
+    public List<ObligationElement> searchObligationElement(String text) {
         return searchHandler.search(text);
     }
 
-    public String convertTextToNode(Obligation obligation, User user) throws TException {
-        String node= handler.convertTextToNodes(obligation,user);
-        return node;
+    public String convertTextToNode(Obligation obligation, User user) {
+        return handler.convertTextToNodes(obligation, user);
     }
 
-    public Obligation getWithTextNodes(Obligation obligation, User user) throws TException {
+    public Obligation getWithTextNodes(Obligation obligation, User user) {
         return handler.getWithTextNodes(obligation, user);
     }
 
-    public String updateObligation(Obligation oblig, User user) throws TException {
+    public String updateObligation(Obligation oblig, User user) {
         return handler.updateObligation(oblig, user);
     }
 
@@ -379,7 +432,7 @@ public class LicenseHandler implements LicenseImportExportGateway {
             Map.Entry<PaginationData, List<Obligation>> entry = result.entrySet().iterator().next();
             List<Obligation> filtered = entry.getValue().stream()
                     .filter(o -> obligationLevel.equals(o.getObligationLevel()))
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
             PaginationData pd = entry.getKey();
             pd.setTotalRowCount(filtered.size());
             return java.util.Collections.singletonMap(pd, filtered);
@@ -388,24 +441,32 @@ public class LicenseHandler implements LicenseImportExportGateway {
     }
 
     public void importArchive(User user, Map<String, InputStream> inputMap,
-            boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws TException {
-        LicsImporter importer = new LicsImporter(this, overwriteIfExternalIdMatches,
-                overwriteIfIdMatchesEvenWithoutExternalIdMatch);
-        importer.importLics(user, inputMap);
+            boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) {
+        try {
+            LicsImporter importer = new LicsImporter(this, overwriteIfExternalIdMatches,
+                    overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+            importer.importLics(user, inputMap);
+        } catch (TException e) {
+            throw new org.eclipse.sw360.datahandler.services.common.SW360Exception(e.getMessage(), e);
+        }
     }
 
-    public byte[] exportArchive() throws TException, IOException {
-        LicsExporter exporter = new LicsExporter(this);
-        Map<String, InputStream> fileNameToStreams = exporter.getFilenameToCSVStreams();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
-            for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
-                try (InputStream in = entry.getValue()) {
-                    ZipTools.addToZip(zipOutputStream, entry.getKey(), in);
+    public byte[] exportArchive() throws IOException {
+        try {
+            LicsExporter exporter = new LicsExporter(this);
+            Map<String, InputStream> fileNameToStreams = exporter.getFilenameToCSVStreams();
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+                for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
+                    try (InputStream in = entry.getValue()) {
+                        ZipTools.addToZip(zipOutputStream, entry.getKey(), in);
+                    }
                 }
+                zipOutputStream.finish();
             }
-            zipOutputStream.finish();
+            return byteArrayOutputStream.toByteArray();
+        } catch (TException e) {
+            throw new org.eclipse.sw360.datahandler.services.common.SW360Exception(e.getMessage(), e);
         }
-        return byteArrayOutputStream.toByteArray();
     }
 }

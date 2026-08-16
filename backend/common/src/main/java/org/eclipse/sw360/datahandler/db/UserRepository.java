@@ -16,8 +16,9 @@ import org.eclipse.sw360.components.summary.UserSummary;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserSortColumn;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
@@ -26,7 +27,6 @@ import com.ibm.cloud.cloudant.v1.model.ViewResultRow;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -146,11 +146,11 @@ public class UserRepository extends SummaryAwareRepository<User> {
                 "bySecondaryDepartmentsAndRoles", new String[] {"secondaryDepartmentsAndRoles"}, databaseConnector);
 
         createIndex(USER_BY_ALL_IDX, "usersByAll", new String[] {
-                User._Fields.GIVENNAME.getFieldName(),
-                User._Fields.LASTNAME.getFieldName(),
-                User._Fields.DEPARTMENT.getFieldName(),
-                User._Fields.EMAIL.getFieldName(),
-                User._Fields.USER_GROUP.getFieldName(),
+                "givenname",
+                "lastname",
+                "department",
+                "email",
+                "userGroup",
         }, databaseConnector);
     }
 
@@ -243,7 +243,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
     }
 
     private Map<PaginationData, List<User>> queryViewWithPagination(PaginationData pageData) {
-        final UserSortColumn sortBy = UserSortColumn.findByValue(pageData.getSortColumnNumber());
+        final UserSortColumn sortBy = UserSortColumn.findByValue(pageData.sortColumnNumberOrZero());
         final Map<String, String> sortSelector = getSortSelector(pageData);
         List<User> users = Lists.newArrayList();
         Map<PaginationData, List<User>> result = Maps.newHashMap();
@@ -288,7 +288,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         boolean ascending = pageData.isAscending();
-        return switch (UserSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (UserSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case UserSortColumn.BY_LASTNAME ->
                     Collections.singletonMap("lastname", ascending ? "asc" : "desc");
             case UserSortColumn.BY_EMAIL ->
