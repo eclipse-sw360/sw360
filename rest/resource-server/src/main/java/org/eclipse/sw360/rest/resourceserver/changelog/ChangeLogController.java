@@ -40,7 +40,6 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -74,8 +73,9 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
     private static final Logger log = LogManager.getLogger(ChangeLogController.class);
 
     public static final String CHANGE_LOG_URL = "/changelog";
-    @Autowired
-    private Sw360ChangeLogService sw360ChangeLogService;
+
+    @NonNull
+    private final Sw360ChangeLogService sw360ChangeLogService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
