@@ -176,7 +176,11 @@ public class DatabaseHandlerUtil {
     private static <T, R> Object[] getCyclicLinkPresenceAndLastElementInCycle(T obj, R handler, User user,
             Map<String, String> linkedPath) throws TException {
         Map linkedElementsMap = null;
-        if (obj instanceof Project) {
+        if (obj instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
+            org.eclipse.sw360.datahandler.services.projects.Project proj =
+                    (org.eclipse.sw360.datahandler.services.projects.Project) obj;
+            linkedElementsMap = proj.getLinkedProjects();
+        } else if (obj instanceof Project) {
             Project proj = (Project) obj;
             linkedElementsMap = proj.getLinkedProjects();
         } else if (obj instanceof Release) {
@@ -194,8 +198,11 @@ public class DatabaseHandlerUtil {
                 String inaccessibleElementLabel = "";
                 if (handler instanceof ProjectDatabaseHandler) {
                     ProjectDatabaseHandler projDBHandler = (ProjectDatabaseHandler) handler;
-                    Project project = projDBHandler.getProjectById(linkedElementId, user);
-                    elementFullName = SW360Utils.printName(project);
+                    org.eclipse.sw360.datahandler.services.projects.Project project =
+                            projDBHandler.getProjectById(linkedElementId, user);
+                    elementFullName = project == null || CommonUtils.isNullEmptyOrWhitespace(project.getName())
+                            ? "New Project"
+                            : SW360Utils.getVersionedName(project.getName(), project.getVersion());
                     linkedElement = (T) project;
                     isAccessibleElement = true;
                 } else if (handler instanceof ComponentDatabaseHandler) {
@@ -231,7 +238,14 @@ public class DatabaseHandlerUtil {
         Map<String, String> linkedPath = new LinkedHashMap<>();
         String firstElementFullName = null;
         String id = null;
-        if (obj instanceof Project) {
+        if (obj instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
+            org.eclipse.sw360.datahandler.services.projects.Project proj =
+                    (org.eclipse.sw360.datahandler.services.projects.Project) obj;
+            firstElementFullName = proj == null || CommonUtils.isNullEmptyOrWhitespace(proj.getName())
+                    ? "New Project"
+                    : SW360Utils.getVersionedName(proj.getName(), proj.getVersion());
+            id = proj.getId();
+        } else if (obj instanceof Project) {
             Project proj = (Project) obj;
             firstElementFullName = SW360Utils.printName(proj);
             id = proj.getId();

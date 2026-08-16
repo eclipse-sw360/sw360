@@ -26,7 +26,8 @@ import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -168,7 +169,7 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
         Project project = new Project().setId("P1").setName("Project").setCreatedBy(email1);
-        project.putToExternalIds(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged");
+        project.setExternalIds(new HashMap<>(ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged")));
         projectHandler.addProject(project, user1);
 
         when(svmConnector.fetchComponentMappings())
@@ -573,7 +574,8 @@ public class ComponentDatabaseHandlerTest {
             handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
         } else {
             Project project = new Project().setReleaseIdToUsage(
-                    ImmutableMap.of("DelR", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+                    ImmutableMap.of("DelR", new ProjectReleaseRelationship().setReleaseRelation(
+                            org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.CONTAINED))
             ).setName("Project").setCreatedBy(email1);
             projectHandler.addProject(project, user1);
         }
@@ -1069,7 +1071,8 @@ public class ComponentDatabaseHandlerTest {
             handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
         } else {
             Project project = new Project().setReleaseIdToUsage(
-                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(
+                            org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.CONTAINED))
             ).setName("Project").setCreatedBy(email1);
             projectHandler.addProject(project, user1);
         }
@@ -1106,7 +1109,8 @@ public class ComponentDatabaseHandlerTest {
             handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
         } else {
             Project project = new Project().setReleaseIdToUsage(
-                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(
+                            org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.CONTAINED))
             ).setName("Project").setCreatedBy(email1);
             projectHandler.addProject(project, user1);
         }

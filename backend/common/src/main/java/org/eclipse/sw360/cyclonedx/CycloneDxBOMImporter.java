@@ -62,6 +62,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.components.RepositoryType;
 import org.eclipse.sw360.datahandler.services.packages.Package;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -247,7 +248,7 @@ public class CycloneDxBOMImporter {
                             invalidPackages.addAll(Arrays.asList(packages.split("\\|\\|")));
                             packages = "";
                         }
-                        Project project = projectDatabaseHandler.getProjectById(projId, user);
+                        Project project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projId, user));
                         Map<String, ProjectPackageRelationship> linkedPackages =  CommonUtils.isNullOrEmptyMap(project.getPackageIds()) ? new HashMap<>() : project.getPackageIds();
                         for (org.cyclonedx.model.Component comp : components) {
                             if (CommonUtils.isNullOrEmptyCollection(comp.getExternalReferences())
@@ -304,7 +305,7 @@ public class CycloneDxBOMImporter {
                             }
                         }
 
-                        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user);
+                        RequestStatus updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user);
                         if (RequestStatus.SUCCESS.equals(updateStatus)) {
                             log.info("linking packages to project successfull: " + projId);
                         }
@@ -332,14 +333,14 @@ public class CycloneDxBOMImporter {
                 String jsonMessage = requestSummary.getMessage();
                 messageMap = GSON.fromJson(jsonMessage, Map.class);
                 String projId = messageMap.get("projectId");
-                Project project = projectDatabaseHandler.getProjectById(projId, user);
+                Project project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projId, user));
                 try {
                     // link SBOM attachment to Project
                     if (attachmentContent != null) {
                         Attachment attachment = makeAttachmentFromContent(attachmentContent);
                         project.addToAttachments(attachment);
                     }
-                    RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
+                    RequestStatus updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("SBOM attachment linked to project successfully: " + project.getId());
                     } else {
@@ -358,9 +359,9 @@ public class CycloneDxBOMImporter {
                     StringBuilder comment = new StringBuilder("Auto Generated: CycloneDX SBOM import result for: '").append(attachmentContent.getFilename()).append("'");
                     attachment.setCreatedComment(comment.toString());
                     attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(importResultAttachmentContent.getId()));
-                    project = projectDatabaseHandler.getProjectById(projId, user);
+                    project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projId, user));
                     project.addToAttachments(attachment);
-                    updateStatus = projectDatabaseHandler.updateProject(project, user, true);
+                    updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("SBOM Import status attachment linked to project successfully: " + project.getId());
                     } else {
@@ -402,7 +403,7 @@ public class CycloneDxBOMImporter {
 
         try {
             if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
-                project = projectDatabaseHandler.getProjectById(projectId, user);
+                project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projectId, user));
                 Project sBomProject = createProject(compMetadata);
                 if (!(sBomProject.getName().equalsIgnoreCase(project.getName()) && sBomProject.getVersion().equalsIgnoreCase(project.getVersion()))) {
                     log.warn("cannot import SBOM with different metadata information than the current project!");
@@ -414,12 +415,12 @@ public class CycloneDxBOMImporter {
                 log.info("reusing existing project: " + projectId);
             } else {
                 project = createProject(compMetadata);
-                projectAddSummary = projectDatabaseHandler.addProject(project, user);
+                projectAddSummary = projectDatabaseHandler.addProject(ProjectConverter.fromThrift(project), user);
                 addStatus = projectAddSummary.getRequestStatus();
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(projectAddSummary.getId())) {
                     if (AddDocumentRequestStatus.SUCCESS.equals(addStatus)) {
-                        project = projectDatabaseHandler.getProjectById(projectAddSummary.getId(), user);
+                        project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projectAddSummary.getId(), user));
                         log.info("project created successfully: " + projectAddSummary.getId());
                     } else if (AddDocumentRequestStatus.DUPLICATE.equals(addStatus)) {
                         log.warn("cannot import SBOM for an existing project from Project List / Home page - " + projectAddSummary.getId());
@@ -451,7 +452,7 @@ public class CycloneDxBOMImporter {
         } else {
             messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);
         }
-        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
+        RequestStatus updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user, true);
         if (RequestStatus.SUCCESS.equals(updateStatus)) {
             log.info("project updated successfully: " + project.getId());
         } else {

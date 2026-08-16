@@ -20,12 +20,12 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
 import org.junit.Before;
@@ -35,10 +35,12 @@ import org.mockito.Mockito;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.SW360Utils.getProjectIds;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -60,10 +62,10 @@ public class ProjectHandlerTest {
     public void setUp() throws Exception {
         List<Project> projects = new ArrayList<>();
 
-        projects.add(new Project().setId("P1").setName("Project1").setBusinessUnit("AB CD EF").setCreatedBy("user1").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
-        projects.add(new Project().setId("P2").setName("Project2").setBusinessUnit("AB CD FE").setCreatedBy("user2").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
-        projects.get(1).addToContributors("user1");
-        projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
+        projects.add(new Project().setId("P1").setType("project").setName("Project1").setBusinessUnit("AB CD EF").setCreatedBy("user1").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
+        projects.add(new Project().setId("P2").setType("project").setName("Project2").setBusinessUnit("AB CD FE").setCreatedBy("user2").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
+        projects.get(1).setContributors(new HashSet<>(Set.of("user1")));
+        projects.add(new Project().setId("P3").setType("project").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setReleaseIdToUsage(Collections.emptyMap()).setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
 
         // Create the database
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
@@ -231,12 +233,12 @@ public class ProjectHandlerTest {
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");
 
-        Mockito.doReturn(RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project2, user1);
+        Mockito.doReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project2, user1);
 
-        RequestStatus status = handler.updateProject(project2, user1);
+        org.eclipse.sw360.datahandler.thrift.RequestStatus status = handler.updateProject(project2, user1);
 
         // Now contributors can also change the project
-        assertEquals(RequestStatus.SUCCESS, status);
+        assertEquals(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS, status);
 //        assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
 //        assertEquals("Project2", handler.getProjectById("P2", user1).getName());
 
@@ -311,7 +313,7 @@ public class ProjectHandlerTest {
     public void testDontDeleteUsedProject1_1() throws Exception {
 
         final Project p1 = handler.getProjectById("P1", user1);
-        p1.setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)));
+        p1.setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED)));
         handler.updateProject(p1,user1);
 
         RequestStatus status = handler.deleteProject("P2", user2);
@@ -369,7 +371,8 @@ public class ProjectHandlerTest {
     @Test
     public void testSearchByName() throws Exception {
         List<Project> projects = handler.searchByName("Project1", user1);
-        assertThat(getProjectIds(projects), containsInAnyOrder("P1"));
+        Set<String> projectIds = projects.stream().map(Project::getId).collect(Collectors.toSet());
+        assertThat(projectIds, containsInAnyOrder("P1"));
     }
 
 

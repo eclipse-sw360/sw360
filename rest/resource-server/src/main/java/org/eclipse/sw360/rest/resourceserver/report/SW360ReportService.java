@@ -150,11 +150,11 @@ public class SW360ReportService {
                 projects = getFilteredProjects(user, reportBean);
                 if ("xlsx".equals(fmt)) {
                     // Build xlsx from the filtered project list via ProjectExporter
-                    ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+                    ProjectExporter exporter = new ProjectExporter(componentclient, projectclient::getProjectsById, user, projects, extendedByReleases);
                     return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(projects)));
                 }
             }
-            ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+            ProjectExporter exporter = new ProjectExporter(componentclient, projectclient::getProjectsById, user, projects, extendedByReleases);
             List<Map<String, String>> records = exporter.makeRecords(projects);
             List<String> headers = extendedByReleases ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
             return convertToFormat(records, headers, fmt);

@@ -15,7 +15,6 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
@@ -34,15 +33,24 @@ import static org.eclipse.sw360.exporter.ProjectExporter.PROJECT_RENDERED_FIELDS
 
 public class ProjectHelper implements ExporterHelper<Project> {
 
+    /**
+     * Loads thrift {@link Project} documents by id. Replaces {@code ProjectService.Iface}
+     * so callers that have migrated to POJO handlers can still feed the exporter.
+     */
+    @FunctionalInterface
+    public interface ProjectByIdsLoader {
+        List<Project> getProjectsById(List<String> ids, User user) throws TException;
+    }
+
     private static final String RELEASE_NOT_AVAILABLE = "Release not available";
-    private final ProjectService.Iface projectClient;
+    private final ProjectByIdsLoader projectLoader;
     private final User user;
     private boolean extendedByReleases;
     private ReleaseHelper releaseHelper;
     private Map<String, Project> preloadedLinkedProjects;
 
-    public ProjectHelper(ProjectService.Iface projectClient, User user, boolean extendedByReleases, ReleaseHelper releaseHelper) {
-        this.projectClient = projectClient;
+    public ProjectHelper(ProjectByIdsLoader projectLoader, User user, boolean extendedByReleases, ReleaseHelper releaseHelper) {
+        this.projectLoader = projectLoader;
         this.user = user;
         this.extendedByReleases = extendedByReleases;
         this.releaseHelper = releaseHelper;
@@ -154,7 +162,7 @@ public class ProjectHelper implements ExporterHelper<Project> {
         }
         List<Project> projects;
         try {
-            projects = projectClient.getProjectsById(new ArrayList<>(ids), user);
+            projects = projectLoader.getProjectsById(new ArrayList<>(ids), user);
         } catch (TException e) {
             throw new SW360Exception("Error fetching linked projects");
         }

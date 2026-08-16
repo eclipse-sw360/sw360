@@ -13,14 +13,25 @@ package org.eclipse.sw360.datahandler.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
-import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectWithReleaseRelationTuple;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import org.junit.*;
@@ -65,33 +76,35 @@ public class ProjectDatabaseHandlerTest {
 
         List<Project> projects = new ArrayList<>();
 
-        Project p1 = new Project().setId("P1").setName("Project1").setBusinessUnit("AB CD EF").setCreatedBy("user1").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
+        Project p1 = new Project().setId("P1").setType("project").setName("Project1").setBusinessUnit("AB CD EF").setCreatedBy("user1").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
                 .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r3", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r4", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r5", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r6", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
+                        .put("r1", newDefaultProjectReleaseRelationship())
+                        .put("r2", newDefaultProjectReleaseRelationship())
+                        .put("r3", newDefaultProjectReleaseRelationship())
+                        .put("r4", newDefaultProjectReleaseRelationship())
+                        .put("r5", newDefaultProjectReleaseRelationship())
+                        .put("r6", newDefaultProjectReleaseRelationship())
                         .build());
         projects.add(p1);
-        Project p2 = new Project().setId("P2").setName("Project2").setBusinessUnit("AB CD FE").setCreatedBy("user2").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
+        Project p2 = new Project().setId("P2").setType("project").setName("Project2").setBusinessUnit("AB CD FE").setCreatedBy("user2").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
                 .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r3", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
+                        .put("r1", newDefaultProjectReleaseRelationship())
+                        .put("r2", newDefaultProjectReleaseRelationship())
+                        .put("r3", newDefaultProjectReleaseRelationship())
                         .build());
 
         projects.add(p2);
-        projects.get(1).addToContributors("user1");
-        projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
-        Project p4 = new Project().setId("P4").setName("Project4").setBusinessUnit("AB CD EF").setCreatedBy("user1")
+        projects.get(1).setContributors(new HashSet<>(Set.of("user1")));
+        projects.add(new Project().setId("P3").setType("project").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
+        Project p4 = new Project().setId("P4").setType("project").setName("Project4").setBusinessUnit("AB CD EF").setCreatedBy("user1")
                 .setVisbility(Visibility.PRIVATE)
                 .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
+                        .put("r1", newDefaultProjectReleaseRelationship())
+                        .put("r2", newDefaultProjectReleaseRelationship())
                         .build())
-                .setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P5", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build())
+                .setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder()
+                        .put("P5", new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED))
+                        .build())
                 .setReleaseRelationNetwork(
                      """
                          [
@@ -117,7 +130,7 @@ public class ProjectDatabaseHandlerTest {
                      """
                 );
         projects.add(p4);
-        projects.add(new Project().setId("P5").setName("Project5").setBusinessUnit("AB CD EF").setCreatedBy("user1").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
+        projects.add(new Project().setId("P5").setType("project").setName("Project5").setBusinessUnit("AB CD EF").setCreatedBy("user1").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
 
         List<Release> releases = new ArrayList<>();
         releases.add(new Release().setId("r1").setComponentId("c1"));
@@ -320,28 +333,28 @@ public class ProjectDatabaseHandlerTest {
     public void testGetDuplicateProjects() throws Exception {
         String originalProjectId = "P1";
         final Project tmp = handler.getProjectById(originalProjectId, user1);
-        tmp.unsetId();
-        tmp.unsetRevision();
+        tmp.setId(null);
+        tmp.setRevision(null);
         String newProjectId = handler.addProject(tmp, user1).getId();
 
         final Map<String, List<String>> duplicateProjects = handler.getDuplicateProjects();
 
         Assert.assertEquals(1, duplicateProjects.size());
-        Assert.assertTrue(containsInAnyOrder(newProjectId,originalProjectId).matches(duplicateProjects.get(printName(tmp))));
+        Assert.assertTrue(containsInAnyOrder(newProjectId,originalProjectId).matches(duplicateProjects.get(printName(ProjectConverter.toThrift(tmp)))));
     }
 
     public void testAddProjectWithDuplicateFails() throws Exception {
         // given:
         String originalProjectId = "P1";
         final Project tmp = handler.getProjectById(originalProjectId, user1);
-        tmp.unsetId();
-        tmp.unsetRevision();
+        tmp.setId(null);
+        tmp.setRevision(null);
 
         // when:
         AddDocumentRequestSummary addProjectResult = handler.addProject(tmp, user1);
 
         // then:
-        Assert.assertEquals(RequestStatus.DUPLICATE, addProjectResult.getRequestStatus());
+        Assert.assertEquals(AddDocumentRequestStatus.DUPLICATE, addProjectResult.getRequestStatus());
         Assert.assertNull(addProjectResult.getId());
     }
 
@@ -350,8 +363,8 @@ public class ProjectDatabaseHandlerTest {
         String originalProjectId = "P1";
         String duplicateProjectId = "P2";
         final Project tmp = handler.getProjectById(originalProjectId, user1);
-        tmp.unsetId();
-        tmp.unsetRevision();
+        tmp.setId(null);
+        tmp.setRevision(null);
         tmp.setId(duplicateProjectId);
 
         // when:
@@ -373,9 +386,9 @@ public class ProjectDatabaseHandlerTest {
     public void testSanityCheckSucceeds() throws Exception {
         Project project = handler.getProjectById("P1", user1);
         project.setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                .put("r3", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
+                .put("r1", newDefaultProjectReleaseRelationship())
+                .put("r2", newDefaultProjectReleaseRelationship())
+                .put("r3", newDefaultProjectReleaseRelationship())
                 .build());
 
         RequestStatus status = handler.updateProject(project, user1);
@@ -397,7 +410,9 @@ public class ProjectDatabaseHandlerTest {
     @Test
     public void testReleaseIdToProjects() throws Exception {
         Project p1 = handler.getProjectById("P1", user1);
-        p1.setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build());
+        p1.setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder()
+                .put("P2", new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED))
+                .build());
         handler.updateProject(p1, user1);
         Project p2 = handler.getProjectById("P2", user2);
 
@@ -428,8 +443,8 @@ public class ProjectDatabaseHandlerTest {
     @Test
     public void testGetLinkedProjectsOfProjectForClonedProject() throws Exception {
         Project p = handler.getProjectById("P4", user1);
-        Project clone = p.deepCopy();
-        clone.unsetRevision();
+        Project clone = ProjectConverter.fromThrift(ProjectConverter.toThrift(p));
+        clone.setRevision(null);
 
         List<ProjectLink> projectLinks = handler.getLinkedProjects(clone, false, user1);
         Assert.assertEquals(1, projectLinks.size());
@@ -438,10 +453,12 @@ public class ProjectDatabaseHandlerTest {
     }
 
     private ProjectWithReleaseRelationTuple createTuple(Project p) {
-        return new ProjectWithReleaseRelationTuple(p, newDefaultProjectReleaseRelationship());
+        return new ProjectWithReleaseRelationTuple().setProject(p).setRelation(newDefaultProjectReleaseRelationship());
     }
 
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {
-        return new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE);
+        return new ProjectReleaseRelationship()
+                .setReleaseRelation(ReleaseRelationship.CONTAINED)
+                .setMainlineState(MainlineState.MAINLINE);
     }
 }

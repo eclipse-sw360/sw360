@@ -108,7 +108,10 @@ public class ScheduleHandler {
             case ServiceNames.SVMMATCH_SERVICE ->
                     wrapForScheduler(() -> VMComponentsClients.get().triggerReverseMatch(), serviceName);
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
-                    wrapForScheduler(() -> new ProjectHandler().exportForMonitoringList(), serviceName);
+                    wrapForScheduler(
+                            () -> org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter.toThrift(
+                                    new ProjectHandler().exportForMonitoringList()),
+                            serviceName);
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
                     wrapForScheduler(() -> new ComponentHandler().updateReleasesWithSvmTrackingFeedback(), serviceName);
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
@@ -153,7 +156,9 @@ public class ScheduleHandler {
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
                     AttachmentClients.get().deleteOldAttachmentFromFileSystem();
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
-                    callDownstreamService(() -> new ProjectHandler().exportForMonitoringList());
+                    callDownstreamService(
+                            () -> org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter.toThrift(
+                                    new ProjectHandler().exportForMonitoringList()));
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
                     callDownstreamService(() -> new ComponentHandler().updateReleasesWithSvmTrackingFeedback());
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->

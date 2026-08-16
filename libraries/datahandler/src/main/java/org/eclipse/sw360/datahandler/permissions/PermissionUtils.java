@@ -13,7 +13,6 @@ import java.util.*;
 
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -181,8 +180,15 @@ public class PermissionUtils {
             return (DocumentPermissions<T>) new ComponentPermissions((Component) document, user);
         } else if (document instanceof Release) {
             return (DocumentPermissions<T>) new ReleasePermissions((Release) document, user);
-        } else if (document instanceof Project) {
-            return (DocumentPermissions<T>) new ProjectPermissions((Project) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
+            return (DocumentPermissions<T>) new ProjectPermissions(
+                    (org.eclipse.sw360.datahandler.services.projects.Project) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.thrift.projects.Project) {
+            // Dual-stack: resource-server still passes thrift Project documents.
+            return (DocumentPermissions<T>) new ProjectPermissions(
+                    org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge
+                            .toPojoProject((org.eclipse.sw360.datahandler.thrift.projects.Project) document),
+                    user);
         } else if (document instanceof Vendor) {
             return (DocumentPermissions<T>) new VendorPermissions((Vendor) document, user);
         } else if (document instanceof org.eclipse.sw360.datahandler.services.users.User) {
@@ -229,7 +235,8 @@ public class PermissionUtils {
         return thrift;
     }
 
-    public static boolean checkEditablePermission(ProjectClearingState state, User user, Map<String, Object> reqBodyMap, Project sw360Project) {
+    public static boolean checkEditablePermission(ProjectClearingState state, User user, Map<String, Object> reqBodyMap,
+            org.eclipse.sw360.datahandler.services.projects.Project sw360Project) {
         if (state == null) {
             state = ProjectClearingState.OPEN;
         }

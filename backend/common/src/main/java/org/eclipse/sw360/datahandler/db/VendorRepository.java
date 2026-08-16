@@ -95,6 +95,21 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
     }
 
+    public void fillVendor(org.eclipse.sw360.datahandler.services.projects.Project project) {
+        final String vendorId = project.getVendorId();
+        if (!isNullOrEmpty(vendorId)) {
+            final Vendor vendor = get(vendorId);
+            if (vendor != null) {
+                project.setVendor(vendor);
+            }
+            project.setVendorId(null);
+        }
+    }
+
+    /**
+     * Thrift-side companion for {@link #fillVendor(org.eclipse.sw360.datahandler.services.projects.Project)}
+     * used by handlers that still hold a thrift Project. Reads the POJO vendor, converts, and attaches.
+     */
     public void fillVendor(Project project) {
         if (project.isSetVendorId()) {
             final String vendorId = project.getVendorId();

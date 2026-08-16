@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.archival.bundle;
 
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -93,7 +94,7 @@ public class Sw360EntityProvider implements EntityProvider {
      * keepAlive=true when other live Projects still reference it.
      */
     public List<CollectedEntity> collectProjectBundle(String projectId) throws Exception {
-        Project project = projectHandler().getProjectByIdIgnoringVisibility(projectId);
+        Project project = ProjectConverter.toThrift(projectHandler().getProjectByIdIgnoringVisibility(projectId));
         if (project == null) {
             throw new SW360Exception("Project " + projectId + " not found");
         }
@@ -110,7 +111,7 @@ public class Sw360EntityProvider implements EntityProvider {
     }
 
     private CollectedEntity collectProject(String projectId) throws Exception {
-        Project project = projectHandler().getProjectByIdIgnoringVisibility(projectId);
+        Project project = ProjectConverter.toThrift(projectHandler().getProjectByIdIgnoringVisibility(projectId));
         if (project == null) {
             throw new SW360Exception("Project " + projectId + " not found");
         }
@@ -203,7 +204,7 @@ public class Sw360EntityProvider implements EntityProvider {
     }
 
     private List<ArchivePreview.Entry> previewProject(String projectId) throws Exception {
-        Project project = projectHandler().getProjectByIdIgnoringVisibility(projectId);
+        Project project = ProjectConverter.toThrift(projectHandler().getProjectByIdIgnoringVisibility(projectId));
         if (project == null) throw new SW360Exception("Project " + projectId + " not found");
 
         List<ArchivePreview.Entry> out = new ArrayList<>();

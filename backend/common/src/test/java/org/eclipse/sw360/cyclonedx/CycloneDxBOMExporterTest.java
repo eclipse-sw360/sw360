@@ -14,14 +14,14 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.Before;
@@ -71,17 +71,15 @@ public class CycloneDxBOMExporterTest {
     }
 
     private Project buildProject(String releaseId) {
-        Project project = new Project();
-        project.setId(PROJECT_ID);
-        project.setName("My Product");
-        project.setVersion("1.0");
-        project.setReleaseIdToUsage(Collections.singletonMap(
-                releaseId,
-                new ProjectReleaseRelationship(
-                        ReleaseRelationship.CONTAINED,
-                        MainlineState.MAINLINE)
-        ));
-        return project;
+        return new Project()
+                .setId(PROJECT_ID)
+                .setName("My Product")
+                .setVersion("1.0")
+                .setReleaseIdToUsage(Collections.singletonMap(
+                        releaseId,
+                        new ProjectReleaseRelationship()
+                                .setReleaseRelation(ReleaseRelationship.CONTAINED)
+                                .setMainlineState(MainlineState.MAINLINE)));
     }
 
     private MockedStatic<SW360Utils> allowExport() {
@@ -193,10 +191,10 @@ public class CycloneDxBOMExporterTest {
 
     @Test
     public void testExportSbom_withNoLinkedReleases_shouldReturnFailedSanityCheck() throws Exception {
-        Project project = new Project();
-        project.setId(PROJECT_ID);
-        project.setName("Empty Project");
-        project.setReleaseIdToUsage(Collections.emptyMap());
+        Project project = new Project()
+                .setId(PROJECT_ID)
+                .setName("Empty Project")
+                .setReleaseIdToUsage(Collections.emptyMap());
 
         when(projectDatabaseHandler.getProjectById(eq(PROJECT_ID), any(User.class))).thenReturn(project);
 
