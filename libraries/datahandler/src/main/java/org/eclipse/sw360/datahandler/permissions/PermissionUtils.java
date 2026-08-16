@@ -185,8 +185,9 @@ public class PermissionUtils {
             return (DocumentPermissions<T>) new ProjectPermissions((Project) document, user);
         } else if (document instanceof Vendor) {
             return (DocumentPermissions<T>) new VendorPermissions((Vendor) document, user);
-        } else if (document instanceof User) {
-            return (DocumentPermissions<T>) new UserPermissions((User) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.services.users.User) {
+            return (DocumentPermissions<T>) new UserPermissions(
+                    (org.eclipse.sw360.datahandler.services.users.User) document, user);
         } else if (document instanceof Vulnerability) {
             return (DocumentPermissions<T>) new VulnerabilityPermissions((Vulnerability) document, user);
         } else if (document instanceof SPDXDocument) {
@@ -198,6 +199,34 @@ public class PermissionUtils {
         } else {
             throw new IllegalArgumentException("Invalid input type!");
         }
+    }
+
+    /**
+     * POJO-actor overload. Prefer this when the caller already holds a service-api User.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> DocumentPermissions<T> makePermission(T document,
+            org.eclipse.sw360.datahandler.services.users.User user) {
+        if (document instanceof org.eclipse.sw360.datahandler.services.users.User) {
+            return (DocumentPermissions<T>) new UserPermissions(
+                    (org.eclipse.sw360.datahandler.services.users.User) document, user);
+        }
+        return makePermission(document, bridgeThriftActor(user));
+    }
+
+    private static User bridgeThriftActor(org.eclipse.sw360.datahandler.services.users.User pojo) {
+        if (pojo == null) {
+            return null;
+        }
+        User thrift = new User();
+        thrift.setEmail(pojo.getEmail());
+        if (pojo.getUserGroup() != null) {
+            thrift.setUserGroup(UserGroup.valueOf(pojo.getUserGroup().name()));
+        }
+        if (pojo.getDepartment() != null) {
+            thrift.setDepartment(pojo.getDepartment());
+        }
+        return thrift;
     }
 
     public static boolean checkEditablePermission(ProjectClearingState state, User user, Map<String, Object> reqBodyMap, Project sw360Project) {

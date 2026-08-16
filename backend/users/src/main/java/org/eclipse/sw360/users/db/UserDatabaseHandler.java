@@ -17,18 +17,22 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
-import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.users.DepartmentConfigDTO;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
 
@@ -38,8 +42,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 /**
  * Class for accessing the CouchDB database
@@ -82,12 +84,19 @@ public class UserDatabaseHandler {
         return db.get(User.class, id);
     }
 
-    private void prepareUser(User user) throws SW360Exception {
-        // Prepare component for database
-        ThriftValidate.prepareUser(user);
+    private void prepareUser(User user) {
+        if (user == null) {
+            throw new SW360Exception("Invalid null input!", 404);
+        }
+        if (CommonUtils.isNullEmptyOrWhitespace(user.getEmail())) {
+            throw new SW360Exception("Invalid empty input!");
+        }
+        user.setType(SW360Constants.TYPE_USER);
+        // transient field — never persist moderation comments with the user document
+        user.setCommentMadeDuringModerationRequest(null);
     }
 
-    public AddDocumentRequestSummary addUser(User user) throws SW360Exception {
+    public AddDocumentRequestSummary addUser(User user) {
         prepareUser(user);
         AddDocumentRequestSummary addDocReqSummarry = new AddDocumentRequestSummary();
         if (CommonUtils.isNullEmptyOrWhitespace(user.getGivenname())) {
@@ -107,7 +116,7 @@ public class UserDatabaseHandler {
         return addDocReqSummarry.setId(user.getId()).setRequestStatus(AddDocumentRequestStatus.SUCCESS);
     }
 
-    public RequestStatus updateUser(User user) throws SW360Exception {
+    public RequestStatus updateUser(User user) {
         prepareUser(user);
         db.update(user);
 
@@ -115,7 +124,7 @@ public class UserDatabaseHandler {
     }
 
     public RequestStatus deleteUser(User user, User adminUser) {
-        if (makePermission(user, adminUser).isActionAllowed(RequestedAction.DELETE)) {
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, adminUser)) {
             repository.remove(user);
             return RequestStatus.SUCCESS;
         }
@@ -154,7 +163,7 @@ public class UserDatabaseHandler {
         return userSearchHandler.search(text, subQueryRestrictions, pageData);
     }
 
-    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
+    public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) {
         return repository.searchUsersByExactValues(subQueryRestrictions, pageData);
     }
 

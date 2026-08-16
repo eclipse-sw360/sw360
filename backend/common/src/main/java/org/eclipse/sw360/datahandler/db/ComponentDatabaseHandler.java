@@ -48,6 +48,7 @@ import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConv
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
@@ -316,7 +317,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // todo: move filling out of department to ReleaseRepository/ReleaseSummary???
         Set<String> userIds = releases.stream().map(Release::getCreatedBy).collect(Collectors.toSet());
-        Map<String, User> usersByEmail = ThriftUtils.getIdMap(userRepository.get(userIds));
+        Map<String, User> usersByEmail = ThriftUtils.getIdMap(
+                userRepository.get(userIds).stream().map(UserConverter::toThrift).collect(Collectors.toList()));
         releases.forEach(release -> release.setCreatorDepartment(Optional
                 .ofNullable(release.getCreatedBy())
                 .map(usersByEmail::get)

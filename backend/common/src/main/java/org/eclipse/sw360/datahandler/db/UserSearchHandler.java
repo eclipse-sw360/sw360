@@ -15,8 +15,8 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserSortColumn;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserSortColumn;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
@@ -125,9 +125,9 @@ public class UserSearchHandler {
     public Map<PaginationData, List<User>> searchByNameOrEmail(String searchText, @Nonnull PaginationData pageData) {
         Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
-            subQueryRestrictions.put(User._Fields.GIVENNAME.getFieldName(), Collections.singleton(searchText));
-            subQueryRestrictions.put(User._Fields.LASTNAME.getFieldName(), Collections.singleton(searchText));
-            subQueryRestrictions.put(User._Fields.EMAIL.getFieldName(), Collections.singleton(searchText));
+            subQueryRestrictions.put("givenname", Collections.singleton(searchText));
+            subQueryRestrictions.put("lastname", Collections.singleton(searchText));
+            subQueryRestrictions.put("email", Collections.singleton(searchText));
         }
         String sortColumn = getSortColumnName(pageData);
         return connector.searchViewWithRestrictionsWithOr(User.class,
