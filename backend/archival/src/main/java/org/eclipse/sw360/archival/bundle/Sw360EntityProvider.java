@@ -57,7 +57,6 @@ public class Sw360EntityProvider implements EntityProvider {
             Duration.durationOf(5, TimeUnit.MINUTES);
 
     private final boolean includeAttachments;
-    private final boolean includeChangelogs;
     private final User user;
 
     private ComponentDatabaseHandler componentHandler;
@@ -65,17 +64,13 @@ public class Sw360EntityProvider implements EntityProvider {
     private PackageDatabaseHandler packageHandler;
     private AttachmentConnector attachmentConnector;
 
-    public Sw360EntityProvider(boolean includeAttachments, boolean includeChangelogs, User user) {
+    public Sw360EntityProvider(boolean includeAttachments, User user) {
         this.includeAttachments = includeAttachments;
-        this.includeChangelogs = includeChangelogs;
         this.user = user;
     }
 
     @Override
     public boolean includeAttachments() { return includeAttachments; }
-
-    @Override
-    public boolean includeChangelogs() { return includeChangelogs; }
 
     @Override
     public CollectedEntity collect(ArchivalEntityType type, String entityId) throws Exception {
@@ -103,7 +98,8 @@ public class Sw360EntityProvider implements EntityProvider {
 
         if (project.getReleaseIdToUsage() != null) {
             for (String releaseId : project.getReleaseIdToUsage().keySet()) {
-                bundle.add(collectRelease(releaseId, isReleaseSharedWithOtherProjects(releaseId, projectId)));
+                // A project delete never removes releases, so they stay live -> keepAlive.
+                bundle.add(collectRelease(releaseId, true));
             }
         }
         return bundle;
@@ -202,7 +198,12 @@ public class Sw360EntityProvider implements EntityProvider {
         };
     }
 
+    /**
+     * Preview for a PROJECT archive: only the project is ARCHIVE. Everything it
+     * references (releases, their components, packages) stays live -> KEEP_ALIVE.
+     */
     private List<ArchivePreview.Entry> previewProject(String projectId) throws Exception {
+        User user = resolveUser();
         Project project = projectHandler().getProjectByIdIgnoringVisibility(projectId);
         if (project == null) throw new SW360Exception("Project " + projectId + " not found");
 
@@ -210,9 +211,40 @@ public class Sw360EntityProvider implements EntityProvider {
         out.add(entry(project.getId(), project.getName(), ArchivalEntityType.PROJECT,
                 ArchivePreview.Action.ARCHIVE, "Project will be archived and removed"));
 
+        // Releases plus the components that own them (deduplicated).
+        Set<String> seenComponentIds = new HashSet<>();
+        List<ArchivePreview.Entry> componentRows = new ArrayList<>();
         if (project.getReleaseIdToUsage() != null) {
             for (String releaseId : project.getReleaseIdToUsage().keySet()) {
-                out.add(previewRelease(releaseId, isReleaseSharedWithOtherProjects(releaseId, projectId)));
+                Release release = componentHandler().getRelease(releaseId, user);
+                String relName = release != null
+                        ? (release.getName() + " " + nullToEmpty(release.getVersion())).trim() : releaseId;
+                String relReason = isReleaseSharedWithOtherProjects(releaseId, projectId)
+                        ? "Also referenced by another live project — stays in the database"
+                        : "Referenced by the project; belongs to a component and stays in the database";
+                out.add(entry(releaseId, relName, ArchivalEntityType.RELEASE,
+                        ArchivePreview.Action.KEEP_ALIVE, relReason));
+
+                if (release != null && release.getComponentId() != null
+                        && seenComponentIds.add(release.getComponentId())) {
+                    Component component = componentHandler().getComponent(release.getComponentId(), user);
+                    String compName = component != null ? component.getName() : release.getComponentId();
+                    componentRows.add(entry(release.getComponentId(), compName, ArchivalEntityType.COMPONENT,
+                            ArchivePreview.Action.KEEP_ALIVE,
+                            "Owns a linked release — catalog entry stays in the database"));
+                }
+            }
+        }
+        out.addAll(componentRows);
+
+        // Linked packages (also never removed by a project delete).
+        if (project.getPackageIds() != null) {
+            for (String packageId : project.getPackageIds().keySet()) {
+                Package pkg = packageHandler().getPackageById(packageId);
+                String pkgName = pkg != null
+                        ? (pkg.getName() + " " + nullToEmpty(pkg.getVersion())).trim() : packageId;
+                out.add(entry(packageId, pkgName, ArchivalEntityType.PACKAGE, ArchivePreview.Action.KEEP_ALIVE,
+                        "Linked to the project — stays in the database (only the project is removed)"));
             }
         }
         return out;
@@ -227,9 +259,12 @@ public class Sw360EntityProvider implements EntityProvider {
         out.add(entry(component.getId(), component.getName(), ArchivalEntityType.COMPONENT,
                 ArchivePreview.Action.ARCHIVE, "Component will be archived and removed"));
 
+        Set<String> ownReleaseIds = component.getReleaseIds() == null
+                ? Set.of()
+                : new HashSet<>(component.getReleaseIds());
         if (component.getReleaseIds() != null) {
             for (String releaseId : component.getReleaseIds()) {
-                out.add(previewRelease(releaseId, isReleaseSharedWithLiveProjects(releaseId)));
+                out.add(previewRelease(releaseId, isReleaseSharedForComponentArchive(releaseId, ownReleaseIds)));
             }
         }
         return out;
@@ -244,7 +279,7 @@ public class Sw360EntityProvider implements EntityProvider {
         String name = release != null ? release.getName() + " " + nullToEmpty(release.getVersion()) : releaseId;
         if (shared) {
             return entry(releaseId, name.trim(), ArchivalEntityType.RELEASE,
-                    ArchivePreview.Action.KEEP_ALIVE, "Still referenced by another live project — kept alive");
+                    ArchivePreview.Action.KEEP_ALIVE, "Still referenced by another live project or release — kept alive");
         }
         return entry(releaseId, name.trim(), ArchivalEntityType.RELEASE,
                 ArchivePreview.Action.ARCHIVE, "Not referenced elsewhere");
@@ -256,6 +291,10 @@ public class Sw360EntityProvider implements EntityProvider {
         if (packageHasLiveParentRelease(packageId)) {
             return List.of(entry(packageId, name.trim(), ArchivalEntityType.PACKAGE,
                     ArchivePreview.Action.BLOCKED, "Parent release is still live — archive the release first"));
+        }
+        if (packageIsSharedWithLiveProjects(packageId)) {
+            return List.of(entry(packageId, name.trim(), ArchivalEntityType.PACKAGE,
+                    ArchivePreview.Action.BLOCKED, "Still used by another live project — cannot archive"));
         }
         return List.of(entry(packageId, name.trim(), ArchivalEntityType.PACKAGE,
                 ArchivePreview.Action.ARCHIVE, "Orphan package — safe to archive"));
@@ -293,9 +332,12 @@ public class Sw360EntityProvider implements EntityProvider {
         List<CollectedEntity> bundle = new ArrayList<>();
         bundle.add(collectedFromComponent(component));
 
+        Set<String> ownReleaseIds = component.getReleaseIds() == null
+                ? Set.of()
+                : new HashSet<>(component.getReleaseIds());
         if (component.getReleaseIds() != null) {
             for (String releaseId : component.getReleaseIds()) {
-                bundle.add(collectRelease(releaseId, isReleaseSharedWithLiveProjects(releaseId)));
+                bundle.add(collectRelease(releaseId, isReleaseSharedForComponentArchive(releaseId, ownReleaseIds)));
             }
         }
         return bundle;
@@ -339,6 +381,26 @@ public class Sw360EntityProvider implements EntityProvider {
     private boolean isReleaseSharedWithLiveProjects(String releaseId) throws Exception {
         User user = resolveUser();
         return !projectHandler().searchByReleaseId(releaseId, user).isEmpty();
+    }
+
+    /** True if another live Release (outside those archived together) references this one. */
+    private boolean isReleaseReferencedByOtherLiveReleases(String releaseId, Set<String> archivedTogether)
+            throws Exception {
+        return componentHandler().getReferencingReleases(releaseId).stream()
+                .anyMatch(r -> r.getId() != null && !archivedTogether.contains(r.getId()));
+    }
+
+    /** Component-archive keep-alive: keep a release used by a live project or a live release. */
+    private boolean isReleaseSharedForComponentArchive(String releaseId, Set<String> componentReleaseIds)
+            throws Exception {
+        return isReleaseSharedWithLiveProjects(releaseId)
+                || isReleaseReferencedByOtherLiveReleases(releaseId, componentReleaseIds);
+    }
+
+    /** True if any live Project references the Package (used to refuse a shared package archive). */
+    public boolean packageIsSharedWithLiveProjects(String packageId) throws Exception {
+        User user = resolveUser();
+        return !projectHandler().searchByPackageId(packageId, user).isEmpty();
     }
 
     /**

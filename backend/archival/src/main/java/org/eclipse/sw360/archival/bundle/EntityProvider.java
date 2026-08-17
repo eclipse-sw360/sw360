@@ -21,7 +21,5 @@ public interface EntityProvider {
 
     boolean includeAttachments();
 
-    boolean includeChangelogs();
-
     CollectedEntity collect(ArchivalEntityType type, String entityId) throws Exception;
 }

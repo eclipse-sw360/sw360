@@ -31,9 +31,6 @@ public final class InMemoryEntityProvider implements EntityProvider {
     public boolean includeAttachments() { return true; }
 
     @Override
-    public boolean includeChangelogs() { return true; }
-
-    @Override
     public CollectedEntity collect(ArchivalEntityType type, String entityId) {
         CollectedEntity hit = byId.get(key(type, entityId));
         if (hit == null) {

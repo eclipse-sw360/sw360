@@ -31,7 +31,4 @@ public class ArchiveRequest {
 
     @JsonProperty("includeAttachments")
     private boolean includeAttachments = true;
-
-    @JsonProperty("includeChangelogs")
-    private boolean includeChangelogs = true;
 }

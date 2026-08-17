@@ -71,7 +71,7 @@ public class ArchivalHandler {
     public ArchiveResult archive(ArchiveRequest req, User user, OutputStream sink)
             throws SW360Exception, IOException {
         return archive(req, user, sink,
-                new Sw360EntityProvider(req.isIncludeAttachments(), req.isIncludeChangelogs(), user));
+                new Sw360EntityProvider(req.isIncludeAttachments(), user));
     }
 
     public ArchiveResult archive(ArchiveRequest req,
@@ -100,17 +100,22 @@ public class ArchivalHandler {
             throw new SW360Exception("preview request has no entity IDs");
         }
         Sw360EntityProvider provider =
-                new Sw360EntityProvider(req.isIncludeAttachments(), req.isIncludeChangelogs(), user);
+                new Sw360EntityProvider(req.isIncludeAttachments(), user);
 
-        List<ArchivePreview.Entry> entries = new ArrayList<>();
+        // Collapse shared dependencies (same entity produced once per selected entity)
+        // by type+id, keeping the first occurrence, so each is listed and counted once.
+        Map<String, ArchivePreview.Entry> unique = new java.util.LinkedHashMap<>();
         for (String entityId : req.getEntityIds()) {
             try {
-                entries.addAll(provider.preview(req.getEntityType(), entityId));
+                for (ArchivePreview.Entry e : provider.preview(req.getEntityType(), entityId)) {
+                    unique.putIfAbsent(e.getEntityType() + "-" + e.getEntityId(), e);
+                }
             } catch (Exception e) {
                 log.error("preview failed for {} {}", req.getEntityType(), entityId, e);
                 throw new SW360Exception("preview failed for " + entityId + ": " + describe(e));
             }
         }
+        List<ArchivePreview.Entry> entries = new ArrayList<>(unique.values());
 
         ArchivePreview preview = new ArchivePreview();
         preview.setEntries(entries);
@@ -339,6 +344,10 @@ public class ArchivalHandler {
             try {
                 if (sw360Provider.packageHasLiveParentRelease(packageId)) {
                     markFailed(saved, "parent Release is still live; archive the Release first");
+                    continue;
+                }
+                if (sw360Provider.packageIsSharedWithLiveProjects(packageId)) {
+                    markFailed(saved, "package is still used by another live project");
                     continue;
                 }
                 collected.add(sw360Provider.collect(ArchivalEntityType.PACKAGE, packageId));
