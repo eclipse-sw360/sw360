@@ -51,12 +51,12 @@ public class SW360PackageService {
             pkg.setCreatedBy(sw360User.getEmail());
             return pkg;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE
-                && documentRequestSummary.getMessage().equals(SW360Constants.DUPLICATE_PACKAGE_BY_PURL) ) {
+                && SW360Constants.DUPLICATE_PACKAGE_BY_PURL.equals(documentRequestSummary.getMessage()) ) {
             throw new DataIntegrityViolationException("sw360 package with same purl '" + pkg.getPurl() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 package with same name and version '" + pkg.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new BadRequestClientException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException(documentRequestSummary.getMessage());
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
             throw new BadRequestClientException("Package name field cannot be empty or contain only whitespace character");
         }
@@ -68,7 +68,14 @@ public class SW360PackageService {
         rch.checkForCyclicOrInvalidDependencies(sw360PackageClient, pkg, sw360User);
 
         RequestStatus requestStatus;
-        requestStatus = sw360PackageClient.updatePackage(pkg, sw360User);
+        try {
+            requestStatus = sw360PackageClient.updatePackage(pkg, sw360User);
+        } catch (SW360Exception e) {
+            if (e.getErrorCode() == 400) {
+                throw new BadRequestClientException(e.getWhy());
+            }
+            throw e;
+        }
 
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Invalid Purl or linked release id.");
