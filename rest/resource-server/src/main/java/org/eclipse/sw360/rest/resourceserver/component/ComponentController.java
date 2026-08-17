@@ -195,16 +195,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             filterMap.put(Component._Fields.NAME.getFieldName(), values);
         }
 
-        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !filterMap.isEmpty()) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !CommonUtils.isNullOrEmptyMap(filterMap)) {
             throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
         }
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             paginatedComponents = componentService.searchFilteredComponents(searchText, sw360User, pageable);
-        } else if (luceneSearch) {
+        } else if (luceneSearch && !CommonUtils.isNullOrEmptyMap(filterMap)) {
             paginatedComponents = componentService.refineSearch(filterMap, sw360User, pageable);
         } else {
-            if (filterMap.isEmpty()) {
+            if (CommonUtils.isNullOrEmptyMap(filterMap)) {
                 paginatedComponents = componentService.getRecentComponentsSummaryWithPagination(sw360User, pageable);
             } else {
                 paginatedComponents = componentService.searchComponentByExactValues(filterMap, sw360User, pageable);

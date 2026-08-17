@@ -88,7 +88,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
-@Tag(name = "ModerationRequests", description = "Operations related to moderation requests on SW360 server.\n" +
+@Tag(name = "Moderation Requests", description = "Operations related to moderation requests on SW360 server.\n" +
         "Endpoints with pagination can use column names: [`score`, " +
         "`documentName`, `documentType`, `componentType`, `moderationState`, `requestingUser`, " +
         "`requestDate` or `requestingUserDepartment`].")
