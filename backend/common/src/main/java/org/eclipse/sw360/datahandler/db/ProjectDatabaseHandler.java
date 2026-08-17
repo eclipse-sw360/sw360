@@ -1612,6 +1612,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return recipients;
     }
 
+    private Map<String, String> getRecipients(ClearingRequest cr, User reviewer) {
+        Map<String, String> recipients = getRecipients(cr);
+        if (reviewer != null && CommonUtils.isNotNullEmptyOrWhitespace(reviewer.getEmail())) {
+            recipients.put("reviewer", reviewer.getEmail());
+        }
+        return recipients;
+    }
+
     private String getUserDetails(User user) {
         return new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString();
     }
@@ -1704,7 +1712,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void sendMailForUpdatedCR(Project project, String projectUrl, ClearingRequest clearingRequest, User user) {
         List<Release> releases = getDirectlyLinkedReleasesInNewState(project);
         String userDetails = getUserDetails(user);
-        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.UPDATED, MailConstants.SUBJECT_FOR_UPDATED_CLEARING_REQUEST, getRecipients(clearingRequest),
+        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.UPDATED, MailConstants.SUBJECT_FOR_UPDATED_CLEARING_REQUEST, getRecipients(clearingRequest, user), true,
                 userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
                 CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()), clearingRequest.getRequestedClearingDate(),
                 CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()), extractReleaseNameForClearingEmail(releases));
@@ -1723,7 +1731,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         releases = getDirectlyLinkedReleasesInNewState(releases);
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.PROJECT_UPDATED, MailConstants.SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST,
-                getRecipients(clearingRequest), userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
+            getRecipients(clearingRequest, user), true, userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
                 releaseChangesHtml, // HTML-formatted release changes
                 String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(updated.getReleaseIdToUsageSize()), String.valueOf(totalCount),
                 String.valueOf(approvedCount), CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()),
@@ -1734,7 +1742,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void sendMailForClosedOrRejectedCR(Project project, ClearingRequest clearingRequest, User user, boolean isApproved) {
         mailUtil.sendClearingMail(isApproved ? ClearingRequestEmailTemplate.CLOSED : ClearingRequestEmailTemplate.REJECTED,
                 isApproved ? MailConstants.SUBJECT_FOR_CLOSED_CLEARING_REQUEST : MailConstants.SUBJECT_FOR_REJECTED_CLEARING_REQUEST,
-                getRecipients(clearingRequest), project.getClearingRequestId(), SW360Utils.printName(project), isApproved ? "closed" : "rejected");
+            getRecipients(clearingRequest, user), true, project.getClearingRequestId(), SW360Utils.printName(project), isApproved ? "closed" : "rejected");
     }
 
     private void sendMailNotificationsForNewProject(Project project, String user) {

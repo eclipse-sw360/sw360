@@ -13,7 +13,10 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -188,17 +191,40 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @RequestParam(value = "projectId", required = false) String projectId,
             @Parameter(description = "Status of the clearing request (comma-separated for multiple values, e.g., 'NEW,ACCEPTED,IN_PROGRESS')")
             @RequestParam(value = "status", required = false) Set<ClearingRequestState> status,
+            @Parameter(description = "Priority of the clearing request (comma-separated for multiple values, e.g., 'LOW,HIGH')")
+            @RequestParam(value = "priority", required = false) Set<ClearingRequestPriority> priority,
+            @Parameter(description = "Type of the clearing request. Possible values are: DEEP, HIGH")
+            @RequestParam(value = "clearingType", required = false) String clearingType,
             @Parameter(description = "Requesting user email to filter")
             @RequestParam(value = "createdBy", required = false) String createdBy,
+            @Parameter(description = "BA-BL / group of the project the clearing request belongs to. "
+                    + "Matched exactly against the project business unit. "
+                    + "The selectable values are available from /api/projects/groups.")
+            @RequestParam(value = "group", required = false) String group,
             @Parameter(description = "Date clearing request was created on (timestamp).")
             @RequestParam(value = "createdOn", required = false) String createdOn,
+            @Parameter(description = "Date field to apply the date range filter on. Defaults to 'createdOn' when a range is given.",
+                    schema = @Schema(allowableValues = {"createdOn", "requestedClearingDate", "agreedClearingDate", "modifiedOn", "closedOn"}))
+            @RequestParam(value = "dateField", required = false) String dateField,
+            @Parameter(description = "Inclusive start of the date range in ISO format (yyyy-MM-dd). Cannot be combined with 'days'.",
+                    example = "2026-08-01")
+            @RequestParam(value = "fromDate", required = false) String fromDate,
+            @Parameter(description = "Inclusive end of the date range in ISO format (yyyy-MM-dd). Cannot be combined with 'days'.",
+                    example = "2026-08-31")
+            @RequestParam(value = "toDate", required = false) String toDate,
+            @Parameter(description = "Relative date range in days: 0 = today, negative = the last N days up to today, "
+                    + "positive = today up to the next N days. Cannot be combined with 'fromDate'/'toDate'. "
+                    + "Positive values are only valid for 'requestedClearingDate' and 'agreedClearingDate'.",
+                    example = "-30")
+            @RequestParam(value = "days", required = false) Integer days,
             HttpServletRequest request
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
 
         Map<PaginationData, List<ClearingRequest>> paginatedClearingRequests = null;
-        Map<String, Set<String>> filterMap = getFilterMapForClearingRequests(projectId, status, createdBy, createdOn);
+        Map<String, Set<String>> filterMap = getFilterMapForClearingRequests(projectId, status, priority, clearingType,
+                createdBy, group, createdOn, dateField, fromDate, toDate, days);
 
         try {
             if (filterMap.isEmpty()) {
@@ -227,9 +253,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             HttpStatus status1 = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(resources, status1);
 
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             throw e;
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
@@ -237,7 +261,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     }
 
     private Map<String, Set<String>> getFilterMapForClearingRequests(
-            String projectId, Set<ClearingRequestState> status, String createdBy, String createdOn) {
+            String projectId, Set<ClearingRequestState> status, Set<ClearingRequestPriority> priority, String clearingType,
+            String createdBy, String group, String createdOn, String dateField, String fromDate, String toDate, Integer days) {
         Map<String, Set<String>> filterMap = new HashMap<>();
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
@@ -249,14 +274,170 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                     .collect(Collectors.toSet());
             filterMap.put(ClearingRequest._Fields.CLEARING_STATE.getFieldName(), statusValues);
         }
+        if (priority != null && !priority.isEmpty()) {
+            Set<String> priorityValues = priority.stream()
+                    .map(ClearingRequestPriority::toString)
+                    .collect(Collectors.toSet());
+            filterMap.put(ClearingRequest._Fields.PRIORITY.getFieldName(), priorityValues);
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(clearingType)) {
+            String normalizedClearingType = clearingType.trim().toUpperCase();
+            try {
+                ClearingRequestType.valueOf(normalizedClearingType);
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestClientException(
+                        "Invalid value for clearingType: " + clearingType + ". Allowed values are " + Arrays.toString(ClearingRequestType.values()));
+            }
+            filterMap.put(ClearingRequest._Fields.CLEARING_TYPE.getFieldName(), Collections.singleton(normalizedClearingType));
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
             filterMap.put(ClearingRequest._Fields.REQUESTING_USER.getFieldName(), Collections.singleton(createdBy));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(group)) {
+            filterMap.put(ClearingRequest._Fields.PROJECT_BU.getFieldName(), Collections.singleton(group.trim()));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(createdOn)) {
             filterMap.put(ClearingRequest._Fields.TIMESTAMP.getFieldName(), Collections.singleton(createdOn));
         }
 
+        addDateRangeFilter(filterMap, dateField, fromDate, toDate, days);
         return filterMap;
+    }
+
+    /**
+     * Date fields of a {@link ClearingRequest} that can be filtered on by a date range,
+     * mapping the API parameter value to the underlying document field.
+     */
+    private enum ClearingRequestDateField {
+        CREATED_ON("createdOn", ClearingRequest._Fields.TIMESTAMP, false, false),
+        REQUESTED_CLEARING_DATE("requestedClearingDate", ClearingRequest._Fields.REQUESTED_CLEARING_DATE, true, true),
+        AGREED_CLEARING_DATE("agreedClearingDate", ClearingRequest._Fields.AGREED_CLEARING_DATE, true, true),
+        MODIFIED_ON("modifiedOn", ClearingRequest._Fields.MODIFIED_ON, false, false),
+        CLOSED_ON("closedOn", ClearingRequest._Fields.TIMESTAMP_OF_DECISION, false, false);
+
+        private final String parameterValue;
+        private final ClearingRequest._Fields field;
+
+        /** Whether the field is persisted as an ISO {@code yyyy-MM-dd} string rather than epoch millis. */
+        private final boolean isoDateString;
+
+        /** Whether the field may legitimately hold a date in the future. */
+        private final boolean futureAllowed;
+
+        ClearingRequestDateField(String parameterValue, ClearingRequest._Fields field,
+                                 boolean isoDateString, boolean futureAllowed) {
+            this.parameterValue = parameterValue;
+            this.field = field;
+            this.isoDateString = isoDateString;
+            this.futureAllowed = futureAllowed;
+        }
+
+        private static ClearingRequestDateField from(String value) {
+            return Arrays.stream(values())
+                    .filter(f -> f.parameterValue.equalsIgnoreCase(value.trim()))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestClientException("Invalid value for dateField: " + value
+                            + ". Allowed values are " + allowedValues() + "."));
+        }
+
+        private static String allowedValues() {
+            return Arrays.stream(values()).map(f -> f.parameterValue).collect(Collectors.joining(", "));
+        }
+    }
+
+    /**
+     * Validates the date range parameters and, if a range was requested, writes the resolved
+     * inclusive bounds into the filter map using the sentinel keys understood by
+     * {@code ClearingRequestRepository}.
+     * @param filterMap Filter map to populate
+     * @param dateFieldParam Date field to filter on, defaults to {@code createdOn}
+     * @param fromDate Inclusive lower bound as ISO {@code yyyy-MM-dd}, may be null
+     * @param toDate Inclusive upper bound as ISO {@code yyyy-MM-dd}, may be null
+     * @param days Relative range in days, may be null. Mutually exclusive with fromDate/toDate
+     */
+    private void addDateRangeFilter(Map<String, Set<String>> filterMap, String dateFieldParam,
+                                    String fromDate, String toDate, Integer days) {
+        boolean hasExplicitRange = CommonUtils.isNotNullEmptyOrWhitespace(fromDate)
+                || CommonUtils.isNotNullEmptyOrWhitespace(toDate);
+        if (days != null && hasExplicitRange) {
+            throw new BadRequestClientException(
+                    "The 'days' parameter cannot be combined with 'fromDate' or 'toDate'.");
+        }
+        if (days == null && !hasExplicitRange) {
+            // dateField without a range is a no-op, nothing to filter on.
+            return;
+        }
+
+        ClearingRequestDateField dateField = CommonUtils.isNotNullEmptyOrWhitespace(dateFieldParam)
+                ? ClearingRequestDateField.from(dateFieldParam)
+                : ClearingRequestDateField.CREATED_ON;
+
+        LocalDate today = LocalDate.now();
+        LocalDate from;
+        LocalDate to;
+        if (days != null) {
+            if (days > 0 && !dateField.futureAllowed) {
+                throw new BadRequestClientException("A future date range is not allowed for dateField '"
+                        + dateField.parameterValue + "'. Use a value of 'days' that is less than or equal to 0.");
+            }
+            from = days < 0 ? today.plusDays(days) : today;
+            to = days > 0 ? today.plusDays(days) : today;
+        } else {
+            from = parseIsoDate(fromDate, "fromDate");
+            to = parseIsoDate(toDate, "toDate");
+            if (from != null && to != null && from.isAfter(to)) {
+                throw new BadRequestClientException("'fromDate' must not be after 'toDate'.");
+            }
+            if (!dateField.futureAllowed && ((from != null && from.isAfter(today)) || (to != null && to.isAfter(today)))) {
+                throw new BadRequestClientException("A future date range is not allowed for dateField '"
+                        + dateField.parameterValue + "'.");
+            }
+        }
+
+        filterMap.put(SW360Constants.CLEARING_REQUEST_DATE_FIELD_KEY,
+                Collections.singleton(dateField.field.getFieldName()));
+        if (from != null) {
+            filterMap.put(SW360Constants.CLEARING_REQUEST_DATE_FROM_KEY,
+                    Collections.singleton(formatLowerBound(from, dateField)));
+        }
+        if (to != null) {
+            filterMap.put(SW360Constants.CLEARING_REQUEST_DATE_TO_KEY,
+                    Collections.singleton(formatUpperBound(to, dateField)));
+        }
+    }
+
+    private LocalDate parseIsoDate(String value, String parameterName) {
+        if (!CommonUtils.isNotNullEmptyOrWhitespace(value)) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim(), DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (DateTimeParseException e) {
+            throw new BadRequestClientException(
+                    "Invalid value for " + parameterName + ": " + value + ". Expected format is yyyy-MM-dd.");
+        }
+    }
+
+    /**
+     * Renders the inclusive lower bound: the ISO date itself for string fields,
+     * or the epoch millis at the very start of that day for timestamp fields.
+     */
+    private String formatLowerBound(LocalDate date, ClearingRequestDateField dateField) {
+        if (dateField.isoDateString) {
+            return date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        }
+        return String.valueOf(date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    }
+
+    /**
+     * Renders the inclusive upper bound: the ISO date itself for string fields,
+     * or the epoch millis at the very end of that day for timestamp fields.
+     */
+    private String formatUpperBound(LocalDate date, ClearingRequestDateField dateField) {
+        if (dateField.isoDateString) {
+            return date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        }
+        return String.valueOf(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1);
     }
 
     @Operation(
