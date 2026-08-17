@@ -39,7 +39,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and Test
+    name: SW360 Build and Test
     runs-on: ubuntu-24.04
 
     services:
@@ -279,3 +279,20 @@ jobs:
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Check the pipeline logs for details on any failures." >> $GITHUB_STEP_SUMMARY
+
+  required-check:
+    name: Build and Test
+    needs: [build]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check build result
+        run: |
+          result="${{ needs.build.result }}"
+          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
+            echo "✅ Required check passed (build result: $result)"
+            exit 0
+          else
+            echo "❌ Required check failed (build result: $result)"
+            exit 1
+          fi
