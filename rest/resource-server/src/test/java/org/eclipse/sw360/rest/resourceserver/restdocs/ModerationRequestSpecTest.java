@@ -172,14 +172,23 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(moderationRequest.getDocumentId()), any())).willReturn(releaseAdditions);
         given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmailOrExternalId(testUserId)).willReturn(user);
-        given(this.moderationRequestServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn((long) moderationRequests.size());
         given(this.moderationRequestServiceMock.getModerationRequestById(eq(moderationRequest.getId()))).willReturn(moderationRequest);
         given(this.moderationRequestServiceMock.getRequestsByState(any(), any(), eq(false), anyBoolean())).willReturn(requestsByState);
         given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
         given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
         given(this.moderationRequestServiceMock.getRequestsByRequestingUser(any(), any())).willReturn(requestsByState);
-                given(this.moderationRequestServiceMock.searchModerationRequestsByExactValues(anyMap(), any())).willReturn(new ArrayList<>(moderationRequests));
-                given(this.moderationRequestServiceMock.refineSearch(anyMap(), any())).willReturn(new ArrayList<>(moderationRequests));
+                given(this.moderationRequestServiceMock.searchModerationRequestsByExactValues(anyMap(), any(), any())).willReturn(
+                        Collections.singletonMap(
+                                new PaginationData().setRowsPerPage(moderationRequests.size()).setDisplayStart(0).setTotalRowCount(moderationRequests.size()),
+                                new ArrayList<>(moderationRequests)
+                        )
+                );
+                given(this.moderationRequestServiceMock.refineSearch(anyMap(), any(), any())).willReturn(
+                        Collections.singletonMap(
+                                new PaginationData().setRowsPerPage(moderationRequests.size()).setDisplayStart(0).setTotalRowCount(moderationRequests.size()),
+                                new ArrayList<>(moderationRequests)
+                        )
+                );
     }
 
     @Test

@@ -73,9 +73,6 @@ import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -175,6 +172,14 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable, null, null);
         return sw360ProjectClient.searchAccessibleProjectByExactValues(filterMap, sw360User, pageData);
+    }
+
+    public Map<PaginationData, List<Project>> searchFilteredProjects(
+            String searchText, User sw360User, Pageable pageable
+    ) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        PaginationData pageData = pageableToPaginationData(pageable, ProjectSortColumn.BY_NAME, true);
+        return sw360ProjectClient.searchFilteredProjects(searchText, sw360User, pageData);
     }
 
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
@@ -1301,39 +1306,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable,
                 // Can be sorted on name and createdOn, but using different default value for score sorting
-                ProjectSortColumn.BY_TYPE, true);
-        return sw360ProjectClient.refineSearchPageable(null, filterMap, sw360User, pageData);
-    }
-
-    /**
-     * Returns all projects matching the given filters for export.
-     *
-     * @param filterMap    field-name → accepted values
-     * @param sw360User    the authenticated user
-     * @param luceneSearch {@code true} for Lucene wildcard search, {@code false} for exact match
-     * @return flat list of all matching projects
-     */
-    public List<Project> getFilteredProjectsForExport(
-            Map<String, Set<String>> filterMap, User sw360User, boolean luceneSearch
-    ) throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-
-        if (filterMap.isEmpty()) {
-            return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
-        }
-
-        if (luceneSearch) {
-            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
-                Set<String> wildcardNames = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Project._Fields.NAME.getFieldName(), wildcardNames);
-            }
-            return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
-        }
-
-        return fetchAllPages((page) -> searchAccessibleProjectByExactValues(filterMap, sw360User,
-                PageRequest.of(page, DatabaseSettings.LUCENE_SEARCH_LIMIT)));
+                ProjectSortColumn.BY_NAME, true);
+        return sw360ProjectClient.refineSearchPageable(filterMap, sw360User, pageData);
     }
 
     /**
@@ -2022,30 +1996,28 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public List<Release> getFilteredReleases(Set<String> releaseIds, User sw360User, List<ClearingState> clearingState, List<ComponentType> componentType, Sw360ReleaseService releaseService) throws TException {
-        List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
-            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-            return sw360Release;
-        }))
+        ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
+        List<Release> releases = componentClient.getAccessibleReleasesById(releaseIds, sw360User);
+        releaseService.setComponentDependentFieldsInRelease(releases, sw360User);
+        return releases.stream()
         .filter(Objects::nonNull)
         .filter(release -> {
         // Filter by componentType if provided
         if (componentType != null && !componentType.isEmpty()) {
-            ComponentType releaseType = release.getComponentType();
-            if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
-                return false;
+                ComponentType releaseType = release.getComponentType();
+                if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
+                    return false;
+                }
             }
-        }
-        // Filter by clearingState if provided
-        if (clearingState != null && !clearingState.isEmpty()) {
-            ClearingState releaseState = release.getClearingState();
-            if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {
-                return false;
+            // Filter by clearingState if provided
+            if (clearingState != null && !clearingState.isEmpty()) {
+                ClearingState releaseState = release.getClearingState();
+                if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {
+                    return false;
+                }
             }
-        }
-        return true;
+            return true;
         }).collect(Collectors.toList());
-        return releases;
     }
 
     /**

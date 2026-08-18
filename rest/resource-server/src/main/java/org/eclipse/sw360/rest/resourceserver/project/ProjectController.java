@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +47,6 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -177,6 +177,10 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Projects", description = "Operations related to Projects on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`createdOn`, `name`, `vendor`, `license`, `type`, `description`, " +
+        "`projectResponsible` or `state`].")
 public class ProjectController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final String CREATED_BY = "createdBy";
     private static final String ATTACHMENT_TYPE = "attachmentType";
@@ -283,6 +287,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "Filter by attachment author email (createdBy field of attachments)")
             @RequestParam(value = "attachmentAuthor", required = false) String attachmentAuthor,
+            @Parameter(description = "A generic filter which searches [id, name, description, tag and projectResponsible]." +
+                    " Note that is field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "List project by lucene search, default true")
             @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
@@ -292,26 +299,17 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<PaginationData, List<Project>> paginatedProjects = null;
 
         Map<String, Set<String>> filterMap = RestControllerHelper.getFilterMapForProject(
-                tag, projectType, group, version, projectResponsible, projectState, projectClearingState, additionalData, attachmentAuthor);
-        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            Set<String> values = Collections.singleton(name);
-            filterMap.put(Project._Fields.NAME.getFieldName(), values);
+                name, tag, projectType, group, version, projectResponsible,
+                projectState, projectClearingState, additionalData, attachmentAuthor
+        );
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !filterMap.isEmpty()) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
         }
 
-        if (luceneSearch && !filterMap.isEmpty()) {
-            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
-                Set<String> values = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Project._Fields.NAME.getFieldName(), values);
-            }
-            if (filterMap.containsKey(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY)) {
-                Set<String> values = filterMap.get(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, values);
-            }
-
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedProjects = projectService.searchFilteredProjects(searchText, sw360User, pageable);
+        } else if (luceneSearch && !filterMap.isEmpty()) {
             paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (filterMap.isEmpty()) {
@@ -331,11 +329,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         PaginationResult<Project> paginationResult;
         if (!CommonUtils.isNullOrEmptyMap(paginatedProjects)) {
-            sw360Projects.addAll(paginatedProjects.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
+                    request, pageable, paginatedProjects);
         } else {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     sw360Projects, SW360Constants.TYPE_PROJECT);
@@ -4227,13 +4222,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
         Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
 
+        // Check if all request body keys are present in the stored obligation map.
+        // If any key is missing, reload obligations from the admin section.
         boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
-                .stream()
-                .filter(entry -> {
-                    ObligationStatusInfo statusInfo = requestBodyObligationStatusInfo.get(entry);
-                    return statusInfo.getObligationLevel() == null;
-                })
-                .collect(Collectors.toSet())
                 .stream()
                 .allMatch(obligationStatusMap::containsKey);
 

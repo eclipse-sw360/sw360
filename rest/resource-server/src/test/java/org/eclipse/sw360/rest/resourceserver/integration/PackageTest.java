@@ -11,8 +11,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -55,13 +55,9 @@ public class PackageTest extends TestIntegrationBase {
 
     private Package package1, package2, package3;
     private Set<String> licenseIds;
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     public void before() throws TException {
-        // Setup object mapper
-        objectMapper = new ObjectMapper();
-
         // Setup user mock
         User user = TestHelper.getTestUser();
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
@@ -155,6 +151,12 @@ public class PackageTest extends TestIntegrationBase {
         given(this.packageServiceMock.searchPackageByVersion(any())).willReturn(List.of(package1));
         given(this.packageServiceMock.searchPackageByPurl(any())).willReturn(List.of(package1));
         given(this.packageServiceMock.getTotalPackagesCounts()).willReturn(packageList.size());
+        given(this.packageServiceMock.refineSearch(any(), any(), any())).willReturn(
+                Map.of(
+                        new PaginationData().setRowsPerPage(packageList.size()).setDisplayStart(0).setTotalRowCount(packageList.size()),
+                        packageList
+                )
+        );
     }
 
     // ========== PACKAGE CRUD TESTS ==========
@@ -374,7 +376,7 @@ public class PackageTest extends TestIntegrationBase {
     public void should_handle_exception_in_get_packages() throws IOException, TException {
         // Mock service to throw exception
         doThrow(new RuntimeException("Failed to get packages"))
-                .when(packageServiceMock).getPackagesForUser();
+                .when(packageServiceMock).refineSearch(any(), any(), any());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =

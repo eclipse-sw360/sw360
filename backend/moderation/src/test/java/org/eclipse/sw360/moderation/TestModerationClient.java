@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.moderation;
 
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -22,6 +23,7 @@ import org.apache.thrift.transport.THttpClient;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Small client for testing a service
@@ -35,8 +37,13 @@ public class TestModerationClient {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         ModerationService.Iface client = new ModerationService.Client(protocol);
 
-        List<ModerationRequest> requestsByModerator = client.getRequestsByModerator(new User().setId("58245y9845").setEmail("cedric.bodet@tngtech.com").setDepartment("BB"));
+        Map<PaginationData, List<ModerationRequest>> requestsByModerator = client.searchModerationRequestsByExactValues(
+                Map.of(),
+                new PaginationData(),
+                new User().setId("58245y9845").setEmail("cedric.bodet@tngtech.com").setDepartment("BB")
+        );
 
-        log.info("Fetched {} moderation requests from moderation service", requestsByModerator.size());
+        log.info("Fetched {} moderation requests from moderation service",
+                requestsByModerator.keySet().iterator().next().getTotalRowCount());
     }
 }

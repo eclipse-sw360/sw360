@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
@@ -30,7 +31,6 @@ import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -72,6 +72,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Vendor", description = "Operations related to Vendors on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`fullname` or `shortname`].")
 public class VendorController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String VENDORS_URL = "/vendors";
 
@@ -111,11 +114,8 @@ public class VendorController implements RepresentationModelProcessor<Repository
 
         PaginationResult<Vendor> paginationResult;
         if (paginatedVendors != null) {
-            sw360Vendors.addAll(paginatedVendors.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedVendors.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, sw360Vendors, SW360Constants.TYPE_VENDOR, totalCount);
+                    request, pageable, paginatedVendors);
         } else {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     sw360Vendors, SW360Constants.TYPE_VENDOR);

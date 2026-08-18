@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,6 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -67,6 +67,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Obligations", description = "Operations related to Obligations on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`title`, `text` or `obligationLevel`].")
 public class ObligationController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final Logger log = LogManager.getLogger(ObligationController.class);
 
@@ -108,11 +111,8 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
 
         PaginationResult<Obligation> paginationResult;
         if (paginatedObligations != null && !paginatedObligations.isEmpty()) {
-            obligations.addAll(paginatedObligations.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedObligations.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, obligations, SW360Constants.TYPE_OBLIGATION, totalCount);
+                    request, pageable, paginatedObligations);
         } else {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     obligations, SW360Constants.TYPE_OBLIGATION);
