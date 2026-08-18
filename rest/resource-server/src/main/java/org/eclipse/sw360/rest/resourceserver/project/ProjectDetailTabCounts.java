@@ -39,13 +39,17 @@ public class ProjectDetailTabCounts {
     @Schema(description = "Count of releases with ECC status OPEN")
     private final int eccOpenCount;
 
+    @Schema(description = "Count of obligations derived from README_OSS attachments linked to the project's releases")
+    private final int readmeOssObligationCount;
+
     public ProjectDetailTabCounts(int vulnerabilityCount, int vulnerabilityRatedCount, int obligationCount,
-            int obligationNonOpenCount, int eccClassifiedCount, int eccOpenCount) {
+            int obligationNonOpenCount, int eccClassifiedCount, int eccOpenCount, int readmeOssObligationCount) {
         this.vulnerabilityCount = vulnerabilityCount;
         this.vulnerabilityRatedCount = vulnerabilityRatedCount;
         this.obligationCount = obligationCount;
         this.obligationNonOpenCount = obligationNonOpenCount;
         this.eccClassifiedCount = eccClassifiedCount;
         this.eccOpenCount = eccOpenCount;
+        this.readmeOssObligationCount = readmeOssObligationCount;
     }
 }
