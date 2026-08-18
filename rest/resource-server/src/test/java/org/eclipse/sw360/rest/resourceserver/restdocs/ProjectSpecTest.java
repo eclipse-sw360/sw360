@@ -2459,7 +2459,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("obligationCount").description("Count of obligations linked to the project"),
                                 fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN"),
                                 fieldWithPath("eccClassifiedCount").description("Count of releases with a classified ECC status"),
-                                fieldWithPath("eccOpenCount").description("Count of releases with ECC status OPEN")
+                                fieldWithPath("eccOpenCount").description("Count of releases with ECC status OPEN"),
+                                fieldWithPath("readmeOssObligationCount").description("Count of obligations derived from README_OSS attachments linked to the project's releases")
                         )));
     }
 

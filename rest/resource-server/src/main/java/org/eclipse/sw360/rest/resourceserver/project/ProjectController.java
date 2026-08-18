@@ -3279,11 +3279,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     .count();
         }
 
+        int readmeOssObligationCount = getObligationsFromReadmeOSSCount(obligationStatusMap);
+
         Sw360ProjectService.ProjectEccCounts eccCounts = projectService.getProjectEccCounts(id, sw360User);
 
         return new ResponseEntity<>(new ProjectDetailTabCounts(vulnerabilityCount, vulnerabilityRatedCount,
                 obligationCount, obligationNonOpenCount,
-                eccCounts.classifiedCount(), eccCounts.openCount()), HttpStatus.OK);
+                eccCounts.classifiedCount(), eccCounts.openCount(), readmeOssObligationCount), HttpStatus.OK);
     }
 
     /**
@@ -3298,6 +3300,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return ObligationLevel.LICENSE_OBLIGATION.equals(statusInfo.getObligationLevel());
         }
         return statusInfo.isSetLicenseIds() && !statusInfo.getLicenseIds().isEmpty();
+    }
+
+    /**
+     * Counts README_OSS-sourced obligations (i.e. those with a null {@code obligationLevel}).
+     *
+     * @param obligationStatusMap the obligation status map computed for the project
+     * @return count of README_OSS obligations; {@code 0} if the map is empty
+     */
+    private int getObligationsFromReadmeOSSCount(Map<String, ObligationStatusInfo> obligationStatusMap) {
+        if (CommonUtils.isNotEmpty(obligationStatusMap.keySet())) {
+            return Math.toIntExact(
+                    obligationStatusMap.values().stream()
+                            .filter(obligation -> obligation.getObligationLevel() == null)
+                            .count());
+        }
+        return 0;
     }
 
     @Operation(
