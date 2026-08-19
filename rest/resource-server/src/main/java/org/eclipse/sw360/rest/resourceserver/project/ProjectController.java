@@ -93,6 +93,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -3910,12 +3911,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Update License Obligations ",
-            description = "Pass a map of obligations in request body.",
+            description = "Pass a map of obligations in request body. Only users with CLEARING_ADMIN or SW360_ADMIN role can perform this operation.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "License obligation updated successfully"),
-        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project, or does not have CLEARING_ADMIN/SW360_ADMIN role",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
         @ApiResponse(responseCode = "409", description = "Conflict - cannot update license obligation due to data integrity violation",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
@@ -3928,6 +3929,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)
+                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, sw360User)) {
+            throw new AccessDeniedException("Only users with CLEARING_ADMIN or SW360_ADMIN role are allowed to update license obligations.");
+        }
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
         try {
             obligationStatusMap = processLicenseObligations(id, sw360User, requestBodyObligationStatusInfo);
@@ -4083,12 +4088,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
                 NOTE: obligationLevel cannot have `license` as parameter value, license obligations are updated
                 in the case obligationLevel=all, otherwise they are ignored.
+
+                Only users with CLEARING_ADMIN or SW360_ADMIN role can perform this operation.
                 """,
             tags = {"Projects"}
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Obligation updated successfully"),
-        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project, or does not have CLEARING_ADMIN/SW360_ADMIN role",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
         @ApiResponse(responseCode = "409", description = "Conflict - cannot update obligation due to data integrity violation",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
@@ -4132,10 +4139,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 example = "all")
             @RequestParam(value = "obligationLevel", required = true) String oblLevel
     ) {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)
+                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, sw360User)) {
+            throw new AccessDeniedException("Only users with CLEARING_ADMIN or SW360_ADMIN role are allowed to update obligations.");
+        }
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
         try {
-            final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            restControllerHelper.throwIfSecurityUser(sw360User);
             if ("all".equals(oblLevel)) {
                 Map<String, ObligationStatusInfo> filteredMap = requestBodyObligationStatusInfo.entrySet()
                         .stream()
