@@ -1789,6 +1789,29 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            summary = "Get ADS information for a release.",
+            description = "Parse the ADS JSON attachment of a release and return structured comparison details.",
+            tags = {"Releases"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "ADS information returned successfully"),
+            @ApiResponse(responseCode = "404", description = "ADS attachment not found")
+    })
+    @GetMapping(value = RELEASES_URL + "/{id}/adsInformation")
+    public ResponseEntity<ReleaseAdsInformation> getAdsInformation(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String id,
+            @Parameter(description = "The ADS attachment content id.")
+            @RequestParam(value = "attachmentId", required = false) String attachmentId
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(id, user);
+        ReleaseAdsInformation adsInformation = releaseService.getAdsInformationForRelease(
+                release, attachmentId, user, attachmentService);
+        return ResponseEntity.ok(adsInformation);
+    }
+
+    @Operation(
             summary = "Check cyclic hierarchy of a release with other releases.",
             description = "Check cyclic hierarchy of a release with other releases.",
             tags = {"Releases"},

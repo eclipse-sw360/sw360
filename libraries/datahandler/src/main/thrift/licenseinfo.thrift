@@ -81,6 +81,34 @@ struct LicenseInfoParsingResult {
     35: optional string attachmentContentId,
 }
 
+struct AdsReleaseReference {
+    1: optional string releaseId,
+    2: optional string releaseName,
+    3: optional string version,
+    4: optional i32 changedFilesCount,
+}
+
+struct AdsClearingAssessment {
+    1: optional bool clearingRequired,
+    2: optional bool clxAutoUpdateRequired,
+    3: optional i32 licenseChangesCount,
+    4: optional i32 copyrightChangesCount,
+    5: optional i32 deletedFilesCount,
+    6: optional i32 renamedFilesCount,
+}
+
+struct AdsInformation {
+    1: optional string attachmentContentId,
+    2: optional string attachmentFilename,
+    3: optional AdsReleaseReference candidateRelease,
+    4: optional AdsReleaseReference baseRelease,
+    5: optional AdsClearingAssessment clearingAssessment,
+    6: optional list<map<string, string>> licenseChanges,
+    7: optional list<map<string, string>> copyrightChanges,
+    8: optional list<map<string, string>> deletedFiles,
+    9: optional list<map<string, string>> renamedFiles,
+}
+
 enum ObligationInfoRequestStatus {
     SUCCESS = 0,
     NO_APPLICABLE_SOURCE = 1,
@@ -179,4 +207,9 @@ service LicenseInfoService {
      * Evaluate CLI attachments
      */
     map<string, map<string, string>> evaluateAttachments(1: string releaseId, 2: User user);
+
+    /**
+     * Parse the ADS JSON attachment of one release and return structured comparison details.
+     */
+    AdsInformation getAdsInformationForAttachment(1: Release release, 2: string attachmentContentId, 3: User user);
 }
