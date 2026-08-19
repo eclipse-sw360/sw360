@@ -58,6 +58,9 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.exporter.ComponentExporter;
+import org.eclipse.sw360.exporter.CSVExport;
+import org.eclipse.sw360.exporter.JsonExport;
+import org.eclipse.sw360.exporter.XmlExport;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
@@ -67,6 +70,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -3281,14 +3285,45 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    public ByteBuffer getComponentReportDataStream(User user, boolean extendedByReleases) throws TException{
+    public ByteBuffer getComponentReportDataStream(User user, boolean extendedByReleases) throws TException {
+        return getComponentReportBuffer(user, extendedByReleases, ReportFormat.EXCEL);
+    }
+
+    public ByteBuffer getComponentReportBuffer(User user, boolean extendedByReleases, ReportFormat format) throws TException {
         try {
             List<Component> componentlist = getRecentComponentsSummary(-1, user);
-            ComponentExporter exporter = getComponentExporterObject(componentlist, user, extendedByReleases);
-            return exporter.toByteBuffer(componentlist);
+            return createFormattedReport(componentlist, user, extendedByReleases, format);
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private @Nullable ByteBuffer createFormattedReport(
+            List<Component> components, User user, boolean extendedByReleases, ReportFormat fmt
+    ) throws IOException, SW360Exception {
+        ComponentExporter exporter = getComponentExporterObject(components, user, extendedByReleases);
+        if (ReportFormat.EXCEL.equals(fmt)) {
+            return exporter.toByteBuffer(components);
+        }
+        List<Map<String, String>> records = exporter.makeRecords(components);
+        List<String> headers = extendedByReleases ? ComponentExporter.HEADERS_EXTENDED_BY_RELEASES : ComponentExporter.HEADERS;
+        return switch (fmt) {
+            case ReportFormat.CSV -> {
+                List<List<String>> rows = new ArrayList<>();
+                for (Map<String, String> record : records) {
+                    List<String> row = new ArrayList<>();
+                    for (String header : headers) {
+                        row.add(record.getOrDefault(header, ""));
+                    }
+                    rows.add(row);
+                }
+                Iterable<Iterable<String>> iterableRows = rows.stream().map(row -> (Iterable<String>) row).collect(Collectors.toList());
+                yield CSVExport.toByteBuffer(headers, iterableRows);
+            }
+            case ReportFormat.JSON -> JsonExport.toByteBuffer(records);
+            case ReportFormat.XML -> XmlExport.toByteBuffer(records);
+            default -> null;
+        };
     }
 
     public List<Release> getReleaseByIds(List<String> ids) {
