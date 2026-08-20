@@ -561,8 +561,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 || verifyLinkedPackages(Collections.emptySet(), CommonUtils.nullToEmptySet(release.getPackageIds()), "") ) {
             return new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
-        } else if(!validSourceCodeDownloadUrl(release)){
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_SOURCE_CODE_URL);
         }
 
         // Block nested release linking if disabled by configuration
@@ -1217,9 +1215,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else if (!isDependenciesExistsInRelease(release)
                 || verifyLinkedPackages(CommonUtils.nullToEmptySet(actual.getPackageIds()), CommonUtils.nullToEmptySet(release.getPackageIds()), release.getId())) {
             return RequestStatus.INVALID_INPUT;
-        }else if(!validSourceCodeDownloadUrl(release)){
-            return RequestStatus.INVALID_SOURCE_CODE_URL;
-        }else {
+        } else {
             DocumentPermissions<Release> permissions = makePermission(actual, user);
             boolean hasChangesInEccFields = hasChangesInEccFields(release, actual);
 
