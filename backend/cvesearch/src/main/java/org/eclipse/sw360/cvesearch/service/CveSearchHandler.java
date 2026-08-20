@@ -140,8 +140,53 @@ public class CveSearchHandler implements CveSearchService.Iface {
         return vulnerabilityUpdateStatus.getRequestStatus();
     }
 
+    /**
+     * Searches for Common Platform Enumeration (CPE) identifiers based on the specified vendor, product, and version.
+     * This method utilizes the CVE search service to identify CPEs associated with the given inputs.
+     *
+     * @param vendor   The name of the vendor. This parameter cannot be null and should be properly trimmed and not empty.
+     * @param product  The name of the product. This parameter cannot be null and should be properly trimmed and not empty.
+     * @param version  The version of the product. This parameter cannot be null but can be empty or "*", which results in no version-specific filtering.
+     * @return A set of CPE strings that match the provided criteria. If no matches are found or if required parameters are invalid, an empty set is returned.
+     * @throws TException If an error occurs while communicating with the CVE search service, or if an unexpected error occurs during processing.
+     */
     @Override
     public Set<String> findCpes(String vendor, String product, String version) throws TException {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        if(vendor == null || product == null || version == null) {
+            return Collections.emptySet();
+        }
+        vendor = vendor.trim();
+        product = product.trim();
+        version = version.trim().toLowerCase();
+        if(vendor.isEmpty() || product.isEmpty()) {
+            return Collections.emptySet();
+        }
+       try {
+           List<CveSearchData> cveSearchDataList = cveSearchWrapper.search(vendor, product);
+           String finalVersion = version;
+           var cpeStream = cveSearchDataList.stream()
+                   .map(CveSearchData::getVulnerable_configuration)
+                   .filter(Objects::nonNull)
+                   .flatMap(m -> m.keySet().stream());
+           if(finalVersion.isEmpty() || finalVersion.equals("*")) {
+               return cpeStream.collect(Collectors.toSet());
+           }
+           return cpeStream.filter(cpe -> finalVersion.equals(getVersionFromCpe(cpe)))
+                   .collect(Collectors.toSet());
+
+       } catch (IOException e) {
+           throw new TException("CVE search failed: " + e.getMessage(), e);
+       }
+    }
+
+    private String getVersionFromCpe(String cpe) {
+        if(cpe == null || cpe.isEmpty()) {
+            return "";
+        }
+        String[] split = cpe.split(":");
+        if(split.length <= 5) {
+            return "";
+        }
+        return split[5].toLowerCase();
     }
 }
