@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.VendorSortColumn;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
@@ -113,16 +114,17 @@ public class Sw360VendorService {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
             Vendor existingVendor = sw360VendorClient.getByID(id);
-            if (existingVendor != null) {
-                if (vendor.getShortname() != null) {
-                    existingVendor.setShortname(vendor.getShortname());
-                }
-                if (vendor.getFullname() != null) {
-                    existingVendor.setFullname(vendor.getFullname());
-                }
-                if (vendor.getUrl() != null) {
-                    existingVendor.setUrl(vendor.getUrl());
-                }
+            if (existingVendor == null) {
+                throw new ResourceNotFoundException("Vendor not found with ID: " + id);
+            }
+            if (vendor.getShortname() != null) {
+                existingVendor.setShortname(vendor.getShortname());
+            }
+            if (vendor.getFullname() != null) {
+                existingVendor.setFullname(vendor.getFullname());
+            }
+            if (vendor.getUrl() != null) {
+                existingVendor.setUrl(vendor.getUrl());
             }
             RequestStatus requestStatus = sw360VendorClient.updateVendor(existingVendor, sw360User);
             return requestStatus;
@@ -165,7 +167,7 @@ public class Sw360VendorService {
         }
     }
 
-    private VendorService.Iface getThriftVendorClient() throws TTransportException {
+    VendorService.Iface getThriftVendorClient() throws TTransportException {
         return ThriftClients.makeVendorClient();
     }
 
