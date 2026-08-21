@@ -34,6 +34,8 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
+  JAVA_VERSION: '21'
+  JAVA_DISTRO: 'temurin'
 
 permissions:
   contents: read
@@ -58,9 +60,9 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
-          java-version: '21'
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
           cache: 'maven'
-          distribution: 'temurin'
 
       - name: Get revision from pom.xml
         id: pom_version

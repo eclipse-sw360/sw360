@@ -19,22 +19,22 @@
   <packaging>pom</packaging>
   <name>Eclipse SW360</name>
   <description>Eclipse SW360 compliance management application</description>
-  <url>https://eclipse.org/sw360</url>
+  <url>https://eclipse.dev/sw360</url>
   <licenses>
     <license>
-      <name>Eclipse Public License 2.0</name>
-      <url>https://www.eclipse.org/legal/epl-2.0/</url>
+      <name>EPL-2.0</name>
+      <url>https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.txt</url>
     </license>
   </licenses>
   <organization>
     <name>Eclipse SW360</name>
-    <url>https://eclipse.org/sw360</url>
+    <url>https://eclipse.dev/sw360</url>
   </organization>
   <developers>
     <developer>
       <name>SW360 Team</name>
       <organization>SW360</organization>
-      <organizationUrl>https://eclipse.org/sw360</organizationUrl>
+      <organizationUrl>https://eclipse.dev/sw360</organizationUrl>
     </developer>
   </developers>
   <scm>
@@ -52,7 +52,7 @@
   <distributionManagement>
     <repository>
       <id>artifact-repository</id>
-      <url>https://github.com/eclipse/sw360</url>
+      <url>https://github.com/eclipse-sw360/sw360</url>
     </repository>
   </distributionManagement>
   <properties>
@@ -72,6 +72,7 @@
     <!-- Plugin version properties -->
     <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
     <checkstyle.version>13.9.0</checkstyle.version>
+    <cyclonedx-maven-plugin.version>2.9.2</cyclonedx-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
     <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
@@ -1042,6 +1043,22 @@
             <endWithNewline/>
           </java>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <version>${cyclonedx-maven-plugin.version}</version>
+        <configuration>
+          <projectType>application</projectType>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>none</phase>
+            <goals>
+              <goal>makeAggregateBom</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
