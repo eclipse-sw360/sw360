@@ -984,8 +984,14 @@ public class DatabaseHandlerUtil {
                         ATTACHMENT_ID + attachmentId);
                 Path outputFile = Paths.get(fileName);
                 Path outputFilePath = outputDir.resolve(outputFile);
+                if (!outputFilePath.normalize().startsWith(outputDir.normalize())) {
+                    log.error("Path traversal detected in attachment filename - aborting write. "
+                            + "Resolved path: " + outputFilePath);
+                    throw new IllegalArgumentException(
+                            "Attachment filename contains path traversal sequence: " + fileName);
+                }
                 log.info("Preparing to store attachment in file system" + outputFilePath);
-                if (!Files.exists(outputFile)) {
+                if (!Files.exists(outputFilePath)) {
                     Set<PosixFilePermission> perms = PosixFilePermissions
                             .fromString(ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION);
                     FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(perms);
