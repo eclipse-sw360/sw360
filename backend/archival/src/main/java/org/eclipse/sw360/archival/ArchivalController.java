@@ -13,6 +13,7 @@ import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.archival.ArchivalEntityType;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -96,6 +98,14 @@ public class ArchivalController {
     @GetMapping("/records")
     public List<ArchivalRecord> listRecords() {
         return handler.getAll();
+    }
+
+    /** Suggests previously archived entities matching a name (for the create forms). */
+    @GetMapping("/records/search")
+    public List<ArchivalRecord> searchRecords(
+            @RequestParam("name") String name,
+            @RequestParam(value = "type", required = false) ArchivalEntityType type) {
+        return handler.searchArchived(name, type);
     }
 
     @GetMapping("/records/{id}")
