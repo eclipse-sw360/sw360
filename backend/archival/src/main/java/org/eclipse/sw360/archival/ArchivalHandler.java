@@ -436,6 +436,18 @@ public class ArchivalHandler {
         return db.getAll();
     }
 
+    public List<ArchivalRecord> searchArchived(String nameQuery, ArchivalEntityType type) {
+        String q = nameQuery == null ? "" : nameQuery.trim().toLowerCase();
+        if (q.isEmpty()) {
+            return List.of();
+        }
+        return db.getAll().stream()
+                .filter(r -> r.getStatus() == ArchivalStatus.ARCHIVED)
+                .filter(r -> type == null || r.getEntityType() == type)
+                .filter(r -> r.getEntityName() != null && r.getEntityName().toLowerCase().contains(q))
+                .toList();
+    }
+
     public boolean delete(String id) {
         return db.delete(id);
     }
