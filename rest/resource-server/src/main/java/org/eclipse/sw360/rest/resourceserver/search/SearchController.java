@@ -64,8 +64,8 @@ public class SearchController implements RepresentationModelProcessor<Repository
 
     public static final String SEARCH_URL = "/search";
 
-    @Autowired
-    private Sw360SearchService sw360SearchService;
+
+    private final Sw360SearchService sw360SearchService;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;

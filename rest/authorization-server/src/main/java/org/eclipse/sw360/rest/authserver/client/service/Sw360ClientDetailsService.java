@@ -49,8 +49,11 @@ public class Sw360ClientDetailsService implements RegisteredClientRepository {
     @Value("${security.refreshtoken.validity:360}")
     private Integer defaultRefreshTokenValiditySeconds;
 
-    @Autowired
-    private OAuthClientRepository clientRepo;
+    private final OAuthClientRepository clientRepo;
+
+    Sw360ClientDetailsService(OAuthClientRepository oAuthClientRepository) {
+        this.clientRepo = oAuthClientRepository;
+    }
 
     @Override
     public RegisteredClient findByClientId(@Nonnull String clientId) {
