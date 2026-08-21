@@ -6,6 +6,25 @@ the first project location:
 
 https://github.com/eclipse-sw360/sw360/releases
 
+## sw360-20.0.1
+This is a minor release on top of SW360 version 20.0.0. This patch provides more
+strict file upload checks.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Corrections
+* `166169c7a` fix(backend): harden attachment filesystem path handling
+
 ## sw360-20.0.0
 We are proud to announce the release of SW360 version 20.0.0. This major release
 brings significant architectural changes, security enhancements, and performance
