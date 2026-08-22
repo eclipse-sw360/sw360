@@ -3558,7 +3558,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            description = "Get license obligation data of project tab.",
+            description = "Get license obligation data of project tab. Look out for an optional **warnings** field (list of strings) in the response: it appears when a release has multiple CLI files, indicating the first CLI was selected automatically.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -3639,10 +3639,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("processedLicenses", processedLicenses);
             responseBody.put("obligationStatusMap", obligationStatusMap);
+            List<String> multipleCLIWarnings = projectService.getReleasesWithMultipleCLIWarnings(id, releases);
+            if (!multipleCLIWarnings.isEmpty()) {
+                responseBody.put("warnings", multipleCLIWarnings);
+            }
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         } else {
             obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap,
-                    releaseIdToAcceptedCLI, releases, sw360User);
+                    releaseIdToAcceptedCLI, releases, sw360User, id);
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
                 if(statusInfo.getStatus() == null){
@@ -3656,13 +3660,17 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
+            List<String> multipleCLIWarnings = projectService.getReleasesWithMultipleCLIWarnings(id, releases);
+            if (!multipleCLIWarnings.isEmpty()) {
+                responseBody.put("warnings", multipleCLIWarnings);
+            }
             HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
             return new ResponseEntity<>(halObligation, HttpStatus.OK);
         }
     }
 
     @Operation(
-            description = "Get obligation data of project tab.",
+            description = "Get obligation data of project tab. Look out for an optional **warnings** field (list of strings) in the response: it appears when a release has multiple CLI files, indicating the first CLI was selected automatically.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -3708,7 +3716,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (oblLevel.equalsIgnoreCase("License")) {
             filterData = filterObligationsByLevel(obligationStatusMap, null);
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(filterData));
-            oblData = projectService.setLicenseInfoWithObligations(filterData, releaseIdToAcceptedCLI, releases, sw360User);
+            oblData = projectService.setLicenseInfoWithObligations(filterData, releaseIdToAcceptedCLI, releases, sw360User, id);
 
             for (Map.Entry<String, ObligationStatusInfo> entry : oblData.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
@@ -3736,6 +3744,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
 
         Map<String, Object> responseBody = createPaginationMetadata(pageable, oblData);
+        List<String> multipleCLIWarnings = projectService.getReleasesWithMultipleCLIWarnings(id, releases);
+        if (!multipleCLIWarnings.isEmpty()) {
+            responseBody.put("warnings", multipleCLIWarnings);
+        }
         HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
         return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
@@ -3887,7 +3899,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         } else {
-            obligationStatusMapFromReport = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User);
+            obligationStatusMapFromReport = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User, id);
         }
 
         if (licenseObligation.size() == 0) {
@@ -4033,7 +4045,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 existingObligationStatusMap,
                 releaseIdToAcceptedCLI,
                 releases,
-                sw360User
+                sw360User,
+                sw360Project.getId()
         );
 
 
@@ -4943,4 +4956,5 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .forEach(responseGroups::add);
         return new ArrayList<>(responseGroups);
     }
+
 }
