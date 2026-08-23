@@ -1241,4 +1241,26 @@ public class ComponentDatabaseHandlerTest {
         changed.getEccInformation().setEccStatus(ECCStatus.APPROVED).setAssessorDepartment("XYZ").setAssessorContactPerson("");
         assertFalse(handler.hasChangesInEccFields(changed, original));
     }
+
+    @Test
+    public void testMergeComponents_selfMerge_returnsFailure() throws Exception {
+        RequestStatus status = handler.mergeComponents("C1", "C1", new Component(), user1);
+
+        assertEquals(RequestStatus.FAILURE, status);
+
+        Component stillExists = handler.getComponent("C1", user1);
+        assertNotNull(stillExists);
+        assertEquals("component1", stillExists.getName());
+    }
+
+    @Test
+    public void testMergeReleases_selfMerge_returnsFailure() throws Exception {
+        RequestStatus status = handler.mergeReleases("R1A", "R1A", new Release(), user1);
+
+        assertEquals(RequestStatus.FAILURE, status);
+
+        Release stillExists = handler.getRelease("R1A", user1);
+        assertNotNull(stillExists);
+        assertEquals("component1", stillExists.getName());
+    }
 }
