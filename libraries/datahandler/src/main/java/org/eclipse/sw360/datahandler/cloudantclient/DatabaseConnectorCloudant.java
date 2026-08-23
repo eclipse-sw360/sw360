@@ -15,9 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.*;
@@ -69,13 +66,6 @@ public class DatabaseConnectorCloudant {
     private final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
     private static final Set<String> entitiesWithNonMatchingStructType = Set
             .of("moderation", "attachment", "usedreleaserelation");
-
-    /**
-     * Written onto every non-thrift (service-api POJO) document save so reads can
-     * tell thrift-era docs from POJO-rewritten docs even when payloads look alike.
-     */
-    public static final String SW360_STORAGE_FIELD = "sw360Storage";
-    public static final String SW360_STORAGE_POJO = "pojo";
 
     private final String dbName;
     private final DatabaseInstanceCloudant instance;
@@ -913,14 +903,6 @@ public class DatabaseConnectorCloudant {
             }
             map.remove("_rev");
         }
-        // Lazy POJO writes must not re-introduce thrift storage meta into CouchDB.
-        if (!TBase.class.isAssignableFrom(document.getClass())) {
-            map.remove("issetBitfield");
-            map.remove("__isset_bitfield");
-            // Stamp so future reads can distinguish POJO-rewritten docs from thrift-era
-            // docs even when field sets are identical (ConfigContainer, etc.).
-            map.put(SW360_STORAGE_FIELD, SW360_STORAGE_POJO);
-        }
         doc.setProperties(map);
         return doc;
     }
@@ -935,9 +917,6 @@ public class DatabaseConnectorCloudant {
                 ObjectMapper objectMapper = new ObjectMapper();
                 doc = objectMapper.readValue(document.toString(), type);
             } else {
-                if (!TBase.class.isAssignableFrom(type)) {
-                    logPojoStorageShape(document, type);
-                }
                 doc = this.instance.getGson().fromJson(document.toString(), type);
             }
             updateIdAndRev(doc, document.getId(), document.getRev());
@@ -945,66 +924,6 @@ public class DatabaseConnectorCloudant {
             log.error(e.getMessage());
         }
         return doc;
-    }
-
-    /**
-     * Classify CouchDB JSON before mapping into a service-api POJO.
-     * <ul>
-     *   <li>{@code THRIFT} — has thrift meta ({@code setField_}, {@code issetBitfield}, …)</li>
-     *   <li>{@code POJO} — stamped by a previous POJO write ({@code sw360Storage=pojo})</li>
-     *   <li>{@code LEGACY} — no thrift meta and no stamp (thrift-era / never POJO-saved;
-     *       includes ConfigContainer docs that already look “clean”)</li>
-     * </ul>
-     */
-    private void logPojoStorageShape(Document document, Class<?> type) {
-        String shape = classifyStorageShape(document);
-        log.info("CouchDB read into POJO {}: id={} storageShape={}",
-                type.getSimpleName(), document.getId(), shape);
-    }
-
-    static String classifyStorageShape(Document document) {
-        if (document == null) {
-            return "UNKNOWN";
-        }
-        JsonObject root;
-        try {
-            root = JsonParser.parseString(document.toString()).getAsJsonObject();
-        } catch (RuntimeException e) {
-            return "UNKNOWN";
-        }
-        if (containsThriftMeta(root)) {
-            return "THRIFT";
-        }
-        JsonElement stamp = root.get(SW360_STORAGE_FIELD);
-        if (stamp != null && stamp.isJsonPrimitive()
-                && SW360_STORAGE_POJO.equals(stamp.getAsString())) {
-            return "POJO";
-        }
-        return "LEGACY";
-    }
-
-    private static boolean containsThriftMeta(JsonElement element) {
-        if (element == null || element.isJsonNull()) {
-            return false;
-        }
-        if (element.isJsonObject()) {
-            JsonObject obj = element.getAsJsonObject();
-            if (obj.has("setField_") || obj.has("issetBitfield") || obj.has("__isset_bitfield")) {
-                return true;
-            }
-            for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
-                if (containsThriftMeta(e.getValue())) {
-                    return true;
-                }
-            }
-        } else if (element.isJsonArray()) {
-            for (JsonElement child : element.getAsJsonArray()) {
-                if (containsThriftMeta(child)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     private <T> void updateIdAndRev(@NotNull T doc, String docId, String docRev) {

@@ -279,7 +279,12 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.NAMINGERROR;
         }
 
-        if (!SW360Utils.isWriteAccessUser(updatedPkg.getCreatedBy(), user,
+        Package actualPkg = packageRepository.get(packageId);
+        if (actualPkg == null) {
+            throw new SW360Exception(String.format("Could not fetch package from database! id = %s", packageId), 404);
+        }
+
+        if (!SW360Utils.isWriteAccessUser(actualPkg.getCreatedBy(), user,
                 SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER))) {
             log.error("User {} does not have write access to package: {} ", user.getEmail(), packageId);
             return RequestStatus.ACCESS_DENIED;
@@ -309,10 +314,6 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         preparePackage(updatedPkg);
-        Package actualPkg = packageRepository.get(packageId);
-        if (actualPkg == null) {
-            throw new SW360Exception(String.format("Could not fetch package from database! id = %s", packageId), 404);
-        }
 
         if (changeWouldResultInDuplicate(actualPkg, updatedPkg)) {
             return RequestStatus.DUPLICATE;
