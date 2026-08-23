@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
@@ -96,7 +97,7 @@ public class FossologyConfig {
      * Enhanced RestTemplate configuration for v2 API
      */
     @Bean
-    public RestTemplate restTemplate() {
+    public RestTemplate restTemplate(ObjectMapper objectMapper) {
         RestTemplate restTemplate = new RestTemplate();
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
@@ -104,6 +105,9 @@ public class FossologyConfig {
         requestFactory.setReadTimeout(300000);   // 5 minutes for large file
 
         restTemplate.setRequestFactory(requestFactory);
+
+        MappingJackson2HttpMessageConverter jackson2Converter = new MappingJackson2HttpMessageConverter(objectMapper);
+        restTemplate.getMessageConverters().add(0, jackson2Converter);
 
         log.info("RestTemplate configured for FOSSology v2 API with enhanced timeouts");
         return restTemplate;

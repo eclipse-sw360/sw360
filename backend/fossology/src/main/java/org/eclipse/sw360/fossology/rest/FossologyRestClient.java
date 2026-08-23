@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -99,6 +100,13 @@ public class FossologyRestClient {
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         restTemplate.setRequestFactory(requestFactory);
+        if (objectMapper != null) {
+            boolean hasJackson2Converter = restTemplate.getMessageConverters().stream()
+                    .anyMatch(c -> c instanceof MappingJackson2HttpMessageConverter);
+            if (!hasJackson2Converter) {
+                restTemplate.getMessageConverters().add(0, new MappingJackson2HttpMessageConverter(objectMapper));
+            }
+        }
         this.restTemplate = restTemplate;
     }
 
