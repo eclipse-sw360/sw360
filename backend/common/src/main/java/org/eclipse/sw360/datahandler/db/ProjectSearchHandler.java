@@ -10,9 +10,8 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
@@ -20,11 +19,9 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,122 +29,145 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
-import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_PROJECT_RELEASE_RELATION_NETWORK;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
-public class ProjectSearchHandler {
+public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    // -------------------------------------------------------------------------
+    //  Field spec declarations
+    // -------------------------------------------------------------------------
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("projects",
-            new NouveauIndexFunction(
-                "function(doc) {" +
-                OBJ_ARRAY_TO_STRING_INDEX +
-                "    if(!doc.type || doc.type != 'project') return;" +
-                "    var businessUnit = '" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "';" +
-                "    if(doc.businessUnit !== undefined && doc.businessUnit != null && doc.businessUnit.length > 0) {" +
-                "      businessUnit = doc.businessUnit;" +
-                "    }" +
-                "    index('text', 'businessUnit', businessUnit, {'store': true});" +
-                "    if(doc.projectType !== undefined && doc.projectType != null && doc.projectType.length >0) {" +
-                "      index('text', 'projectType', doc.projectType, {'store': true});" +
-                "      index('string', 'projectType_sort', doc.projectType);" +
-                "    }" +
-                "    if(doc.projectResponsible !== undefined && doc.projectResponsible != null && doc.projectResponsible.length >0) {" +
-                "      index('text', 'projectResponsible', doc.projectResponsible, {'store': true});" +
-                "      index('string', 'projectResponsible_sort', doc.projectResponsible);" +
-                "    }" +
-                "    if(doc.name !== undefined && doc.name != null && doc.name.length >0) {" +
-                "      index('text', 'name', doc.name, {'store': true});" +
-                "      index('string', 'name_sort', doc.name);" +
-                "    }" +
-                "    if(doc.description !== undefined && doc.description != null && doc.description.length >0) {" +
-                "      index('text', 'description', doc.description, {'store': true});" +
-                "      index('string', 'description_sort', doc.description);" +
-                "    }" +
-                "    if(doc.version !== undefined && doc.version != null && doc.version.length >0) {" +
-                "      index('string', 'version', doc.version, {'store': true});" +
-                "    }" +
-                "    if(doc.state !== undefined && doc.state != null && doc.state.length >0) {" +
-                "      index('text', 'state', doc.state, {'store': true});" +
-                "      index('string', 'state_sort', doc.state);" +
-                "    }" +
-                "    if(doc.clearingState) {" +
-                "      index('text', 'clearingState', doc.clearingState, {'store': true});" +
-                "    }" +
-                "    var tag = '" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "';" +
-                "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length > 0) {" +
-                "      tag = doc.tag;" +
-                "    }" +
-                "    index('text', 'tag', tag, {'store': true});" +
-                "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
-                "    if(doc.releaseRelationNetwork !== undefined && doc.releaseRelationNetwork != null && doc.releaseRelationNetwork.length > 0) {" +
-                "      index('text', 'releaseRelationNetwork', doc.releaseRelationNetwork, {'store': true});" +
-                "    }" +
-                "    if(doc.createdOn && doc.createdOn.length) {"+
-                "      var dt = new Date(doc.createdOn);"+
-                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
-                "      index('double', 'createdOn', Number(formattedDt), {'store': true});"+
-                "    }" +
-                "    if(doc.attachments && doc.attachments.length > 0) {" +
-                "      for(var i in doc.attachments) {" +
-                "        if(doc.attachments[i].createdBy) {" +
-                "          index('text', 'attachmentCreatedBy', doc.attachments[i].createdBy, {'store': true});" +
-                "        }" +
-                "      }" +
-                "    }" +
-                "}")
-                    .setFieldAnalyzer(
-                            Map.of("version", "keyword")
-                    )
+    /**
+     * Fields common to all projects, grouped by index category.
+     *
+     * <ul>
+     *   <li><b>emptyAware</b>: {@code businessUnit} (ngram 2–10), {@code tag} (ngram 2–10) -
+     *       documents with no value are indexed under
+     *       {@link SW360Constants#PROJECT_SEARCH_EMPTY_TOKEN} so "no value" filter queries work.</li>
+     *   <li><b>standard</b>: {@code name}, {@code version} - full prefix-search support.</li>
+     *   <li><b>simple</b>: {@code projectType}, {@code projectResponsible} (email analyzer),
+     *       {@code description}, {@code state} (keyword), {@code clearingState} (keyword).</li>
+     *   <li><b>date</b>: {@code createdOn} - stored as sortable yyyyMMdd double.</li>
+     * </ul>
+     */
+    private static final List<IndexField> PROJECT_FIELDS = List.of(
+            IndexField.emptyAware("businessUnit", 2, 10),
+            IndexField.emptyAware("tag", 2, 10),
+            IndexField.standard("name"),
+            IndexField.standard("version"),
+            IndexField.simple("description"),
+            IndexField.simple("projectType"),
+            IndexField.simple("projectResponsible", "email"),
+            IndexField.simple("state", "keyword"),
+            IndexField.simple("clearingState", "keyword"),
+            IndexField.date("createdOn")
     );
 
+    /**
+     * Handler-specific JS: index {@code additionalData} as a concatenated text blob and
+     * index the creator email of every attachment.
+     */
+    private static final String PROJECT_CUSTOM_JS =
+            "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
+            "    if(doc.attachments && doc.attachments.length > 0) {" +
+            "      for(var i in doc.attachments) {" +
+            "        if(doc.attachments[i].createdBy) {" +
+            "          index('text', 'attachmentCreatedBy', doc.attachments[i].createdBy);" +
+            "        }" +
+            "      }" +
+            "    }" +
+            INDEX_PROJECT_RELEASE_RELATION_NETWORK +
+            INDEX_ID_FIELD;
+
+    /**
+     * Analyzer overrides that are not auto-generated from {@link #PROJECT_FIELDS}.
+     * <ul>
+     *   <li>{@code attachmentCreatedBy} -> {@code email} (custom JS field)</li>
+     *   <li>{@code additionalData_sort} -> {@code keyword} (created by {@code arrayToStringIndex})</li>
+     * </ul>
+     */
+    private static final Map<String, String> PROJECT_CUSTOM_ANALYZERS = Map.of(
+            "attachmentCreatedBy", "email",
+            "additionalData_sort", "keyword",
+            "releaseRelationNetwork", "keyword",
+            "id", "keyword"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Design document
+    // -------------------------------------------------------------------------
+
+    private static final BuiltIndexDefinition PROJECT_INDEX_DEFINITION = buildIndexFunction(
+            "project",
+            SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN,
+            PROJECT_FIELDS,
+            PROJECT_CUSTOM_JS,
+            PROJECT_CUSTOM_ANALYZERS,
+            "standard"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Constructor
+    // -------------------------------------------------------------------------
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
+    private static final List<Project._Fields> QUICK_FILTER_FIELDS = List.of(
+            Project._Fields.ID,
+            Project._Fields.NAME,
+            Project._Fields.DESCRIPTION,
+            Project._Fields.TAG,
+            Project._Fields.PROJECT_RESPONSIBLE
+    );
+
     public ProjectSearchHandler(Cloudant client, String dbName) throws IOException {
+        super(Project.class, "projects", PROJECT_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-        connector.addDesignDoc(searchView);
+        setup(connector, db);
     }
 
-    public Map<PaginationData, List<Project>> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
-        String sortColumn = getSortColumnName(pageData);
-        Map<PaginationData, List<Project>> resultProjectList = connector
-                .searchViewWithRestrictionsWithAnd(Project.class,
-                        luceneSearchView.getIndexName(), text, subQueryRestrictions,
-                        pageData, sortColumn, pageData.isAscending());
+    // -------------------------------------------------------------------------
+    //  Public search API
+    // -------------------------------------------------------------------------
 
+    public Map<PaginationData, List<Project>> search(
+            final Map<String, Set<String>> subQueryRestrictions,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
+        Map<PaginationData, List<Project>> resultProjectList = baseSearch(connector, subQueryRestrictions, pageData);
         PaginationData respPageData = resultProjectList.keySet().iterator().next();
         List<Project> projectList = resultProjectList.values().iterator().next();
 
-        projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+        if (user != null) {
+            projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+        }
 
         return Collections.singletonMap(respPageData, projectList);
     }
 
-    public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user) {
-        return connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView.getIndexName(), text,
-                subQueryRestrictions, user);
-    }
+    public Map<PaginationData, List<Project>> searchFilteredProjects(
+            final String searchText,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
+        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
+        for (Project._Fields field : QUICK_FILTER_FIELDS) {
+            subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
+        }
+        Map<PaginationData, List<Project>> resultProjectList = baseSearchWithOr(connector, subQueryRestrictions, pageData);
+        PaginationData respPageData = resultProjectList.keySet().iterator().next();
+        List<Project> projectList = resultProjectList.values().iterator().next();
 
-    public List<Project> search(String searchText) {
-        return connector.searchView(Project.class, luceneSearchView.getIndexName(),
-                prepareWildcardQuery(searchText));
-    }
+        if (user != null) {
+            projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
+        }
 
-    public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
-                text, subQueryRestrictions);
+        return Collections.singletonMap(respPageData, projectList);
     }
 
     public Set<Project> searchByReleaseId(String id, User user) {
@@ -155,49 +175,31 @@ public class ProjectSearchHandler {
     }
 
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) {
-        Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(ids);
-        List<Project> projectsByReleaseIds;
-        if (user != null) {
-            projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView.getIndexName(),
-                    null, filterMap, user);
-        } else {
-            projectsByReleaseIds = connector.searchViewWithRestrictionsWithAnd(Project.class, luceneSearchView.getIndexName(),
-                    null, filterMap);
-        }
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<String, Set<String>> filterMap = Map.of(
+                Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), ids
+        );
+        Map<PaginationData, List<Project>> result = search(filterMap, user, pageData);
+        List<Project> projectsByReleaseIds = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
         return new HashSet<>(projectsByReleaseIds);
     }
 
-    private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
-        Map<String, Set<String>> filterMap = new HashMap<>();
-        Set<String> values = new HashSet<>();
-        for(String releaseId : releaseIds) {
-            values.add("\"releaseId\":\"" + releaseId + "\"");
-            values.add("\"releaseId\": \"" + releaseId + "\"");
-        }
-        values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
-        return filterMap;
-    }
+    // -------------------------------------------------------------------------
+    //  Sort column mapping
+    // -------------------------------------------------------------------------
 
-    /**
-     * Convert sort column number back to sorting column name. This function makes sure to use the string column (with
-     * `_sort` suffix) for text indexes.
-     * @param pageData Pagination Data from the request.
-     * @return Sort column name. Defaults to name_sort
-     */
-    private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (ProjectSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case ProjectSortColumn.BY_CREATEDON -> "createdOn";
-//            case ProjectSortColumn.BY_VENDOR -> "vendor_sort";
-//            case ProjectSortColumn.BY_MAINLICENSE -> "license_sort";
-            case ProjectSortColumn.BY_TYPE -> "projectType_sort";
-            case ProjectSortColumn.BY_DESCRIPTION -> "description_sort";
-            case ProjectSortColumn.BY_RESPONSIBLE -> "projectResponsible_sort";
-            case ProjectSortColumn.BY_STATE -> "state_sort";
-            // null signals Nouveau to skip sorting and return results ranked by relevance score
-            case ProjectSortColumn.BY_SCORE -> null;
-            case null -> "name_sort";
-            default -> "name_sort";
+    @Override
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
+        String revDir = "-";
+        return switch (ProjectSortColumn.findByValue(sortColumnNumber)) {
+            case ProjectSortColumn.BY_NAME -> List.of("name_sort", revDir + "version_sort", revDir + "createdOn");
+            case ProjectSortColumn.BY_DESCRIPTION -> List.of("description_sort", SCORE_SORTING_FIELD, revDir + "createdOn");
+            case ProjectSortColumn.BY_RESPONSIBLE -> List.of("projectResponsible_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
+            case ProjectSortColumn.BY_STATE -> List.of("state_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
+            case ProjectSortColumn.BY_CREATEDON -> List.of("createdOn");
+            case ProjectSortColumn.BY_TYPE -> List.of("projectType_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
+            // Default sort by scoring
+            case null, default -> List.of(SCORE_SORTING_FIELD);
         };
     }
 }

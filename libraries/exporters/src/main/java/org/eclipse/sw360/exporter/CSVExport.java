@@ -13,23 +13,29 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.commons.csv.CSVPrinter;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.ByteBuffer;
 
 /**
  * @author johannes.najjar@tngtech.com
  */
 public class CSVExport {
+    /**
+     * Returns a {@link ByteBuffer} backed directly by the internal write buffer — no
+     * {@code Arrays.copyOf} is performed.
+     */
     @NotNull
-    public static ByteArrayInputStream createCSV(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
-        final ByteArrayOutputStream outB = getCSVOutputStream(csvHeaderIterable, inputIterable);
-
-        return new ByteArrayInputStream(outB.toByteArray());
+    public static ByteBuffer toByteBuffer(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
+        return getCSVOutputStream(csvHeaderIterable, inputIterable).asByteBuffer();
     }
 
     @NotNull
-    private static ByteArrayOutputStream getCSVOutputStream(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
-        final ByteArrayOutputStream outB = new ByteArrayOutputStream();
-        try(Writer out = new BufferedWriter(new OutputStreamWriter(outB));) {
+    private static ExposedByteArrayOutputStream getCSVOutputStream(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
+        final ExposedByteArrayOutputStream outB = new ExposedByteArrayOutputStream();
+        try (Writer out = new BufferedWriter(new OutputStreamWriter(outB))) {
             CSVPrinter csvPrinter = new CSVPrinter(out, CommonUtils.sw360CsvFormat);
             csvPrinter.printRecord(csvHeaderIterable);
             csvPrinter.printRecords(inputIterable);
@@ -39,8 +45,6 @@ public class CSVExport {
             outB.close();
             throw e;
         }
-
-            return outB;
-
+        return outB;
     }
 }

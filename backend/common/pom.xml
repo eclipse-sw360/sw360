@@ -14,7 +14,7 @@
     <parent>
         <artifactId>backend</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.1.0-rc-2</version>
+        <version>20.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -59,6 +59,18 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcjmail-jdk18on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
     </dependencies>
 </project>

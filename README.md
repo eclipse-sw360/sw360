@@ -1,6 +1,12 @@
 # SW360
 
 [![Website](https://img.shields.io/badge/website-SW360-blue)](https://eclipse.dev/sw360/)
+[![Eclipse Public License 2.0](https://img.shields.io/badge/license-EPL--2.0-green.svg "Eclipse Public License 2.0")](LICENSE)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/eclipse/sw360)](https://github.com/eclipse/sw360/releases/latest)
+[![Slack Channel](https://img.shields.io/badge/slack-sw360chat-blue.svg?longCache=true&logo=slack)](https://join.slack.com/t/sw360chat/shared_invite/enQtNzg5NDQxMTQyNjA5LThiMjBlNTRmOWI0ZjJhYjc0OTk3ODM4MjBmOGRhMWRmN2QzOGVmMzQwYzAzN2JkMmVkZTI1ZjRhNmJlNTY4ZGI)
+[![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](https://github.com/eclipse/sw360/blob/master/CHANGELOG.md)
+[![SW360 Build and Test](https://github.com/eclipse-sw360/sw360/workflows/SW360%20Build%20and%20Test/badge.svg)](https://github.com/eclipse-sw360/sw360/actions?query=workflow:"SW360+Build+and+Test")
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9485/badge)](https://www.bestpractices.dev/projects/9485)
 
 SW360 is a software component catalogue application designed to provide a central hub for managing software components and their metadata.
 
@@ -8,16 +14,6 @@ Visit the [official project homepage](https://eclipse.dev/sw360/) for more infor
 
 <img width="1280" alt="homeImage" src="https://github.com/user-attachments/assets/3c2e6712-97a7-4637-80b5-915cdd3af1e8" />
 <br></br>
-
-
-[![Eclipse Public License 2.0](https://img.shields.io/badge/license-EPL--2.0-green.svg "Eclipse Public License 2.0")](LICENSE)
-[![SW360 Build and Test](https://github.com/eclipse-sw360/sw360/workflows/SW360%20Build%20and%20Test/badge.svg)](https://github.com/eclipse-sw360/sw360/actions?query=workflow:"SW360+Build+and+Test")
-[![Slack Channel](https://img.shields.io/badge/slack-sw360chat-blue.svg?longCache=true&logo=slack)](https://join.slack.com/t/sw360chat/shared_invite/enQtNzg5NDQxMTQyNjA5LThiMjBlNTRmOWI0ZjJhYjc0OTk3ODM4MjBmOGRhMWRmN2QzOGVmMzQwYzAzN2JkMmVkZTI1ZjRhNmJlNTY4ZGI)
-[![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](https://github.com/eclipse/sw360/blob/master/CHANGELOG.md)
-
-
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/eclipse/sw360)](https://github.com/eclipse/sw360/releases/latest)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9485/badge)](https://www.bestpractices.dev/projects/9485)
 
 ### SW360 Portal
 
@@ -53,15 +49,19 @@ If you run in any issues with documentation or software, please be kind and repo
 
 ### Deployment
 
-It is recommended to use the Docker-based setup,
-[described here](https://github.com/eclipse/sw360/blob/main/README_DOCKER.md).
-
-If you intend to install in a bare metal machine or use in your own virtualized system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).
+It is recommended to use the Docker-based setup. But you can also perform a
+bare metal machine install install depending on your requirement. You can find
+the link for their documentation:
+* [Container setup](https://eclipse.dev/sw360/docs/deployment/containers/)
+* [Bare Metal](https://eclipse.dev/sw360/docs/deployment/baremetal/)
 
 ### Security Configuration
 
 SW360 exposes several security flags that should be reviewed before production
-deployment.
+deployment. Checkout our guide on
+[how to secure your deployment](https://eclipse.dev/sw360/docs/administrationguide/securing-sw360/)
+or overview of
+[security best practices](https://eclipse.dev/sw360/docs/deployment/deploy-secure-deployment/).
 
 #### HTTP Basic Authentication
 
@@ -116,7 +116,7 @@ Then run the current build script:
 ./third-party/thrift/install-thrift.sh
 ```
 
-#### Local Building
+### Local Building
 
 **Step 1**: Prepare source code
 
@@ -127,7 +127,7 @@ pip install pre-commit
 pre-commit install
 ```
 
-### Note on build requirements
+#### Note on build requirements
 
 Please note that even partial or module-level Maven builds require deploy-related
 properties to be set due to enforced build rules.

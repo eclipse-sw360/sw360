@@ -5,11 +5,20 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.rest.resourceserver.report;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.CSV_FILE_EXTENSION;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.EXCEL_FILE_EXTENSION;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.JSON_FILE_EXTENSION;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTENSION;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.eclipse.sw360.exporter.ExcelExporter.SLASH;
+import static org.eclipse.sw360.exporter.ExcelExporter.TMP_EXPORTEDFILES;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -51,22 +60,17 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
-import org.eclipse.sw360.exporter.CSVExport;
-import org.eclipse.sw360.exporter.JsonExport;
 import org.eclipse.sw360.exporter.LicenseInfoExporter;
-import org.eclipse.sw360.exporter.ProjectExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
-import org.eclipse.sw360.exporter.XmlExport;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
-import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.jetbrains.annotations.Contract;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -83,9 +87,6 @@ public class SW360ReportService {
     private final Sw360ProjectService projectService;
 
     @NonNull
-    private final Sw360LicenseService licenseService;
-
-    @NonNull
     private final Sw360ComponentService componentService;
 
     @NonNull
@@ -98,100 +99,14 @@ public class SW360ReportService {
     private String frontendUrl;
 
     private static final Logger log = LogManager.getLogger(SW360ReportService.class);
-    private static final Set<String> SUPPORTED_FORMATS = Set.of("xlsx", "csv", "json", "xml");
     private final LicenseInfoExporter licenseInfoExporter = new LicenseInfoExporter();
     ProjectService.Iface projectclient = ThriftClients.makeProjectClient();
     ComponentService.Iface componentclient = ThriftClients.makeComponentClient();
     LicenseService.Iface licenseClient = ThriftClients.makeLicenseClient();
     AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
 
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format) throws TException {
-        return getProjectBuffer(user, extendedByReleases, projectId, format, null);
-    }
-
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId, String format,
-                                       SW360ReportBean reportBean) throws TException {
-        String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
-        validateFormat(fmt);
-        try {
-            List<Project> projects;
-            if (projectId != null) {
-                if (!validateProject(projectId, user)) {
-                    throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
-                }
-                // For a single specific project, delegate to backend for xlsx
-                // but use ProjectExporter for other formats
-                if ("xlsx".equals(fmt)) {
-                    return projectclient.getReportDataStream(user, extendedByReleases, projectId);
-                }
-                Project project = projectclient.getProjectById(projectId, user);
-                if (project == null) {
-                    throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
-                }
-                projects = List.of(project);
-            } else {
-                // No specific projectId: export projects matching the given filters.
-                projects = getFilteredProjects(user, reportBean);
-                if ("xlsx".equals(fmt)) {
-                    // Build xlsx from the filtered project list via ProjectExporter
-                    ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
-                    return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(projects)));
-                }
-            }
-            ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
-            List<Map<String, String>> records = exporter.makeRecords(projects);
-            List<String> headers = extendedByReleases ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
-            return convertToFormat(records, headers, fmt);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (TException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TException("Failed to export projects in format " + fmt + ": " + e.getMessage(), e);
-        }
-    }
-
-    /** Retrieves all projects matching the filters in {@code reportBean} for export. */
-    private List<Project> getFilteredProjects(User user, SW360ReportBean reportBean) throws TException {
-        Map<String, Set<String>> filterMap;
-        if (reportBean == null) {
-            filterMap = new HashMap<>();
-        } else {
-            filterMap = RestControllerHelper.getFilterMapForProject(
-                    reportBean.getTag(), reportBean.getType(), reportBean.getGroup(), reportBean.getVersion(),
-                    reportBean.getProjectResponsible(), reportBean.getProjectState(), reportBean.getProjectClearingState(),
-                    reportBean.getAdditionalData(), null
-            );
-            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getName())) {
-                filterMap.put(Project._Fields.NAME.getFieldName(), CommonUtils.splitToSet(reportBean.getName()));
-            }
-        }
-        return projectService.getFilteredProjectsForExport(filterMap, user,
-                reportBean != null && reportBean.isLuceneSearch());
-    }
-
-    private ByteBuffer convertToFormat(List<Map<String, String>> records, List<String> headers, String format) throws IOException {
-        switch (format) {
-            case "csv":
-                List<List<String>> rows = new ArrayList<>();
-                for (Map<String, String> record : records) {
-                    List<String> row = new ArrayList<>();
-                    for (String header : headers) {
-                        row.add(record.getOrDefault(header, ""));
-                    }
-                    rows.add(row);
-                }
-                Iterable<Iterable<String>> iterableRows = rows.stream().map(row -> (Iterable<String>) row).collect(Collectors.toList());
-                return ByteBuffer.wrap(IOUtils.toByteArray(CSVExport.createCSV(headers, iterableRows)));
-            case "json":
-                return ByteBuffer.wrap(IOUtils.toByteArray(JsonExport.toJson(records)));
-            case "xml":
-                return ByteBuffer.wrap(IOUtils.toByteArray(XmlExport.toXml(records)));
-            default:
-                throw new BadRequestClientException("Unsupported format: " + format);
-        }
+    public ByteBuffer getProjectReportBuffer(User user, String projectId, SW360ReportBean reportBean) throws TException {
+        return projectclient.getProjectReportBuffer(user, projectId, reportBean);
     }
 
     private boolean validateProject(String projectId, User user) throws TException {
@@ -208,16 +123,14 @@ public class SW360ReportService {
     }
 
     public String getDocumentName(User user, String projectId, String module) throws TException {
-        return getDocumentName(user, projectId, module, "xlsx");
+        return getDocumentName(user, projectId, module, ReportFormat.EXCEL);
     }
 
-    public String getDocumentName(User user, String projectId, String module, String format) throws TException {
-        String fmt = (format == null) ? "xlsx" : format.trim().toLowerCase();
-        validateFormat(fmt);
-        String extension = getFileExtension(fmt);
+    public String getDocumentName(User user, String projectId, String module, ReportFormat format) throws TException {
+        String extension = getFileExtension(format);
         String documentName = String.format("projects-%s.%s", SW360Utils.getCreatedOn(), extension);
         if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
-            if (projectId != null && !projectId.equalsIgnoreCase("null")) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(projectId) && !projectId.equalsIgnoreCase("null")) {
                 Project project = projectclient.getProjectById(projectId, user);
                 documentName = String.format("project-%s-%s-%s.%s", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn(), extension);
@@ -227,7 +140,7 @@ public class SW360ReportService {
         } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
             documentName = String.format("licenses-%s.%s", SW360Utils.getCreatedOn(), extension);
         } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
-            if (projectId != null && !projectId.equalsIgnoreCase("null")) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(projectId) && !projectId.equalsIgnoreCase("null")) {
                 Project project = projectclient.getProjectById(projectId, user);
                 documentName = String.format("releases-%s-%s-%s.%s", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn(), extension);
@@ -236,24 +149,14 @@ public class SW360ReportService {
         return documentName;
     }
 
-    private void validateFormat(String format) {
-        if (!SUPPORTED_FORMATS.contains(format)) {
-            throw new IllegalArgumentException("Unsupported export format: " + format + ". Supported formats: " + SUPPORTED_FORMATS);
-        }
-    }
-
-    private String getFileExtension(String format) {
-        switch (format) {
-            case "csv":
-                return "csv";
-            case "json":
-                return "json";
-            case "xml":
-                return "xml";
-            case "xlsx":
-            default:
-                return "xlsx";
-        }
+    @Contract(pure = true)
+    private @NonNull String getFileExtension(@NonNull ReportFormat format) {
+        return switch (format) {
+            case CSV -> CSV_FILE_EXTENSION;
+            case JSON -> JSON_FILE_EXTENSION;
+            case XML -> XML_FILE_EXTENSION;
+            default -> EXCEL_FILE_EXTENSION;
+        };
     }
 
     public void getUploadedLicenseInfoPath(User user, boolean withSubProject, String base, String projectId,
@@ -263,7 +166,8 @@ public class SW360ReportService {
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String licenseInfoPath = generateLicenseInfoReport(user, projectId, reportBean);
+                ByteBuffer buff = getLicenseInfoBuffer(user, projectId, reportBean);
+                String licenseInfoPath = writeToTempFile(buff, user);
                 String downloadUrl = frontendUrl + "/reports/download?module=licenseInfo"
                         + "&withSubProject=" + withSubProject
                         + "&projectId=" + projectId
@@ -279,9 +183,7 @@ public class SW360ReportService {
                 if (!CommonUtils.isNullEmptyOrWhitespace(licenseInfoPath)) {
                     sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
                 }
-            } catch (ResourceNotFoundException exp) {
-                throw exp;
-            } catch (AccessDeniedException exp) {
+            } catch (ResourceNotFoundException | AccessDeniedException exp) {
                 throw exp;
             } catch (Exception exp) {
                 throw new TException(exp.getMessage());
@@ -289,12 +191,6 @@ public class SW360ReportService {
         });
         Thread asyncThread = new Thread(asyncRunnable);
         asyncThread.start();
-    }
-
-    private String generateLicenseInfoReport(User user, String projectId, SW360ReportBean reportBean)
-            throws TException, IOException {
-        ByteBuffer buffer = getLicenseInfoBuffer(user, projectId, reportBean);
-        return licenseInfoExporter.saveReportToFile(buffer, user);
     }
 
     public ByteBuffer getLicenseInfoReportStreamFromUrl(String token) throws TException {
@@ -305,25 +201,25 @@ public class SW360ReportService {
         }
     }
 
-    public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)
-            throws TException {
-        if (projectId!=null && !validateProject(projectId, user)) {
+    public void getUploadedProjectPath(
+            User user, SW360ReportBean reportBean, String projectId
+    ) throws TException {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectId) && !validateProject(projectId, user)) {
             throw new SW360Exception("No project record found for the project Id : " + projectId);
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId);
+                ByteBuffer buff = getProjectReportBuffer(user, projectId, reportBean);
+                String projectPath = writeToTempFile(buff, user);
                 String downloadUrl = frontendUrl + "/reports/download?module=projects"
-                        + "&extendedByReleases=" + withLinkedReleases + "&projectId=" + projectId + "&token="
+                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&projectId=" + projectId + "&token="
                         + URLEncoder.encode(projectPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", user.getEmail(), emailURL);
                 if (!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
                     sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
                 }
-            } catch (ResourceNotFoundException exp) {
-                throw exp;
-            } catch (AccessDeniedException exp) {
+            } catch (SW360Exception exp) {
                 throw exp;
             } catch (Exception exp) {
                 throw new TException(exp.getMessage());
@@ -341,21 +237,20 @@ public class SW360ReportService {
         projectclient.sendExportSpreadsheetSuccessMail(emailURL, email);
     }
 
-    public void getUploadedComponentPath(User sw360User, boolean withLinkedReleases, String base) {
+    public void getUploadedComponentPath(User sw360User, SW360ReportBean reportBean) {
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String componentPath = componentclient.getComponentReportInEmail(sw360User, withLinkedReleases);
+                ByteBuffer buff = getComponentBuffer(sw360User, reportBean.isWithLinkedReleases());
+                String componentPath = writeToTempFile(buff, sw360User);
                 String downloadUrl = frontendUrl + "/reports/download?module=components"
-                        + "&extendedByReleases=" + withLinkedReleases + "&token="
+                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&token="
                         + URLEncoder.encode(componentPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", sw360User.getEmail(), emailURL);
                 if (!CommonUtils.isNullEmptyOrWhitespace(componentPath)) {
                     sendComponentExportSpreadsheetSuccessMail(emailURL.toString(), sw360User.getEmail());
                 }
-            } catch (ResourceNotFoundException exp) {
-                throw exp;
-            } catch (AccessDeniedException exp) {
+            } catch (ResourceNotFoundException | AccessDeniedException exp) {
                 throw exp;
             } catch (Exception exp) {
                 throw new TException(exp.getMessage());
@@ -440,16 +335,16 @@ public class SW360ReportService {
                 usedAttachmentContentIds, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments, listOfSelectedRelationshipsInString);
 
         String outputGeneratorClassNameWithVariant = reportBean.getGeneratorClassName() + "::" + reportBean.getVariant();
-        String fileName = "";
+        String templateFileName = "";
         if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getTemplate())
                 && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
             Map<String, String> orgToTemplate = Arrays.stream(REPORT_FILENAME_MAPPING.split(","))
                     .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
-            fileName = orgToTemplate.get(reportBean.getTemplate());
+            templateFileName = orgToTemplate.get(reportBean.getTemplate());
         }
         final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User,
                 outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments,
-                reportBean.getExternalIds(), fileName, reportBean.isExcludeReleaseVersion());
+                reportBean.getExternalIds(), templateFileName, reportBean.isExcludeReleaseVersion());
         return licenseInfoFile.bufferForGeneratedOutput();
     }
 
@@ -515,8 +410,10 @@ public class SW360ReportService {
                                                          List<LicenseInfoParsingResult> licenseInfoParsingResult) {
         Predicate<LicenseNameWithText> filteredLicense = licenseNameWithText -> excludedLicenseIds
                 .contains(licenseNameWithText.getLicenseName());
-        Function<LicenseInfo, Stream<LicenseNameWithText>> streamLicenseNameWithTexts = licenseInfo -> licenseInfo
-                .getLicenseNamesWithTexts().stream();
+        Function<LicenseInfo, Stream<LicenseNameWithText>> streamLicenseNameWithTexts = licenseInfo ->
+                (licenseInfo != null && licenseInfo.getLicenseNamesWithTexts() != null)
+                        ? licenseInfo.getLicenseNamesWithTexts().stream()
+                        : Stream.empty();
         return licenseInfoParsingResult.stream().map(LicenseInfoParsingResult::getLicenseInfo)
                 .flatMap(streamLicenseNameWithTexts).filter(filteredLicense).collect(Collectors.toSet());
     }
@@ -630,14 +527,12 @@ public class SW360ReportService {
             releases = releaseStringMap.stream().map(ReleaseClearingStatusData::getRelease)
                     .sorted(Comparator.comparing(SW360Utils::printFullname)).collect(Collectors.toList());
             exporter = new ReleaseExporter(componentclient, releases, user, releaseStringMap);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (AccessDeniedException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             throw e;
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }
-        return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(releases)));
+        return exporter.toByteBuffer(releases);
     }
 
     public String getProjectSBOMBuffer(User user, String projectId, String bomType, boolean withSubProject) throws TException {
@@ -671,13 +566,39 @@ public class SW360ReportService {
         String documentName = "";
         if(projectId != null && !projectId.equalsIgnoreCase("null")) {
             Project project = projectclient.getProjectById(projectId, user);
-            documentName = String.format("project_%s(%s)_%s.xml", project.getName(), project.getVersion(),
+            documentName = String.format("project_%s(%s)_%s%s.xml", project.getName(), project.getVersion(),
                     SW360Utils.getCreatedOnTime(), "_SBOM");
-            if(SW360Constants.JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)){
-                documentName = String.format("project_%s(%s)_%s.json", project.getName(), project.getVersion(),
+            if(JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)){
+                documentName = String.format("project_%s(%s)_%s%s.json", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOnTime(), "_SBOM");
             }
         }
         return documentName;
+    }
+
+    @NonNull
+    private static String writeToTempFile(@NonNull ByteBuffer buffer, @NonNull User user) throws IOException {
+        String token = UUID.randomUUID().toString();
+        String filePath = TMP_EXPORTEDFILES + user.getEmail() + SLASH + "file" + SLASH;
+        String relativePath;
+        File dir = new File(filePath);
+        if (!dir.mkdirs() && !dir.exists()) {
+            log.error("Failed to create export directory: {}", dir.getAbsolutePath());
+            throw new IOException("Failed to create export directory: " + dir.getAbsolutePath());
+        }
+        File file = new File(dir.getPath() + SLASH + SW360Utils.getCreatedOn() + "_" + token);
+        if (!file.createNewFile()) {
+            log.error("Failed to create export file: {}", file.getAbsolutePath());
+            throw new IOException("Failed to create export file: " + file.getAbsolutePath());
+        }
+        relativePath = user.getEmail() + SLASH + "file" + SLASH + file.getName();
+
+        buffer.rewind();
+        try (FileChannel channel = FileChannel.open(file.toPath(), StandardOpenOption.WRITE)) {
+            while (buffer.hasRemaining()) {
+                channel.write(buffer);
+            }
+        }
+        return relativePath;
     }
 }

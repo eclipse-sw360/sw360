@@ -9,28 +9,28 @@
  */
 package org.eclipse.sw360.rest.resourceserver.packages;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -51,12 +51,12 @@ public class SW360PackageService {
             pkg.setCreatedBy(sw360User.getEmail());
             return pkg;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE
-                && documentRequestSummary.getMessage().equals(SW360Constants.DUPLICATE_PACKAGE_BY_PURL) ) {
+                && SW360Constants.DUPLICATE_PACKAGE_BY_PURL.equals(documentRequestSummary.getMessage()) ) {
             throw new DataIntegrityViolationException("sw360 package with same purl '" + pkg.getPurl() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 package with same name and version '" + pkg.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new BadRequestClientException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException(documentRequestSummary.getMessage());
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
             throw new BadRequestClientException("Package name field cannot be empty or contain only whitespace character");
         }
@@ -68,7 +68,14 @@ public class SW360PackageService {
         rch.checkForCyclicOrInvalidDependencies(sw360PackageClient, pkg, sw360User);
 
         RequestStatus requestStatus;
-        requestStatus = sw360PackageClient.updatePackage(pkg, sw360User);
+        try {
+            requestStatus = sw360PackageClient.updatePackage(pkg, sw360User);
+        } catch (SW360Exception e) {
+            if (e.getErrorCode() == 400) {
+                throw new BadRequestClientException(e.getWhy());
+            }
+            throw e;
+        }
 
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Invalid Purl or linked release id.");
@@ -87,7 +94,7 @@ public class SW360PackageService {
         return sw360PackageClient.deletePackage(packageId, sw360User);
     }
 
-    public PackageService.Iface getThriftPackageClient() throws TTransportException {
+    private PackageService.Iface getThriftPackageClient() {
         return ThriftClients.makePackageClient();
     }
 
@@ -118,22 +125,10 @@ public class SW360PackageService {
         return sw360PackageClient.getAllPackages();
     }
 
-    public List<Package> searchPackage(String field, String searchQuery, boolean isExactMatch) throws TException {
-        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
-        Set<String> values = CommonUtils.splitToSet(searchQuery);
-
-        if (field.equals("name")) {
-            if (isExactMatch) {
-                values = values.stream().map(s -> "\"" + s + "\"").map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-            }
-            else {
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-            }
-        }
-        Map<String, Set<String>> queryMap = new HashMap<>();
-
-        queryMap.put(field, values);
-        return sw360PackageClient.searchPackagesWithFilter(searchQuery, queryMap);
+    public Map<PaginationData, List<Package>> getPackagesWithPagination(Pageable pageable) throws TException {
+        PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_NAME, true);
+        return sw360PackageClient.getPackagesWithPagination(pageData);
     }
 
     public List<Package> searchPackageByName(String name) throws TException {
@@ -162,8 +157,48 @@ public class SW360PackageService {
     }
 
 
-    public List<Package> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
+    public Map<PaginationData, List<Package>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
-        return sw360PackageClient.refineSearchAccessiblePackages(null, filterMap, sw360User);
+        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_NAME, true);
+        return sw360PackageClient.refineSearchAccessiblePackages(filterMap, sw360User, pageData);
+    }
+
+    public Map<PaginationData, List<Package>> searchFilteredPackages(String searchText, User sw360User, Pageable pageable) throws TException {
+        PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        PaginationData pageData = pageableToPaginationData(pageable, PackageSortColumn.BY_NAME, true);
+        return sw360PackageClient.searchFilteredPackages(searchText, sw360User, pageData);
+    }
+
+    private static PaginationData pageableToPaginationData(
+            @NotNull Pageable pageable, PackageSortColumn defaultColumn,
+            Boolean defaultAscending
+    ) {
+        PackageSortColumn column = PackageSortColumn.BY_NAME;
+        boolean ascending = false;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "createdOn" -> PackageSortColumn.BY_CREATEDON;
+                case "name" -> PackageSortColumn.BY_NAME;
+                case "version" -> PackageSortColumn.BY_VERSION;
+                case "packageManager" -> PackageSortColumn.BY_PACKAGE_MANAGER;
+                case "score" -> PackageSortColumn.BY_SCORE;
+                default -> column;
+            };
+            ascending = order.isAscending();
+        } else {
+            if (defaultColumn != null) {
+                column = defaultColumn;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
+        }
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize())
+                .setSortColumnNumber(column.getValue())
+                .setAscending(ascending);
     }
 }

@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -119,6 +120,9 @@ import com.google.common.collect.ImmutableMap;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Releases", description = "Operations related to Releases on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`createdOn` (default), " +
+        "`name`, `version`, `clearingState`, `mainlineState` or `score`].")
 public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
     private static final int MAX_BATCH_SUMMARY_IDS = 200;
@@ -194,6 +198,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             @Parameter(description = "fetch releases that are in NEW state and have a SRC/SRS attachment")
             @RequestParam(value = "isNewClearingWithSourceAvailable", required = false) boolean isNewClearingWithSourceAvailable,
+            @Parameter(description = "A generic filter which searches [id, name, version and externalIds]." +
+                    " Note that is field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "allDetails of the release")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
             HttpServletRequest request
@@ -202,7 +209,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<PaginationData, List<Release>> paginatedReleases = null;
 
-        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) &&
+                (CommonUtils.isNotNullEmptyOrWhitespace(name) || CommonUtils.isNotNullEmptyOrWhitespace(sha1))) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedReleases = releaseService.searchFilteredReleases(searchText, sw360User, pageable);
+        } else if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
             paginatedReleases = releaseService.refineSearch(name, sw360User, pageable);
         } else {
             if (sha1 != null && !sha1.isEmpty()) {
@@ -243,10 +257,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
 
         PaginationResult<Release> paginationResult;
-        int totalCount = Math.toIntExact(paginatedReleases.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE, totalCount);
+                request, pageable, Map.of(paginatedReleases.keySet().iterator().next(), sw360Releases));
 
         List<EntityModel<Release>> releaseResources = new ArrayList<>();
         for (Release sw360Release : paginationResult.getResources()) {
@@ -555,11 +567,22 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The release object to be updated.",
                     schema = @Schema(implementation = Release.class))
             @RequestBody Map<String, Object> reqBodyMap
-    ) throws TException {
+    ) throws URISyntaxException, TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        // Normalize vendorId from a possible self-link URI to a bare ID and drop the
+        // DB-loaded vendor object so ThriftValidate.prepareRelease cannot overwrite it.
+        if (updateRelease.isSetVendorId()) {
+            URI vendorURI = new URI(updateRelease.getVendorId());
+            String path = vendorURI.getPath();
+            String vendorId = path.substring(path.lastIndexOf('/') + 1);
+            updateRelease.setVendorId(vendorId);
+            sw360Release.unsetVendor();
+        }
         attachmentService.preserveImmutableAttachmentFields(
+                updateRelease.getAttachments(), sw360Release.getAttachments(), user);
+        attachmentService.setCheckedAttachmentDataFromRequest(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
 
         // Apply the same clearing state edit rules as the frontend:
@@ -1901,8 +1924,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String releaseId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (user == null || user.getEmail() == null) {
+            throw new BadRequestClientException("User information is invalid.");
+        }
+
         Release releaseById = releaseService.getReleaseForUserById(releaseId, user);
         Set<String> subscribers = releaseById.getSubscribers();
+        if (subscribers == null) {
+            subscribers = new HashSet<>();
+        }
+
         if (subscribers.contains(user.getEmail())) {
             releaseService.unsubscribeRelease(user, releaseId);
             return new ResponseEntity<>("Release has been unsubscribed", HttpStatus.OK);

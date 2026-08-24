@@ -561,8 +561,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 || verifyLinkedPackages(Collections.emptySet(), CommonUtils.nullToEmptySet(release.getPackageIds()), "") ) {
             return new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
-        } else if(!validSourceCodeDownloadUrl(release)){
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_SOURCE_CODE_URL);
         }
 
         // Block nested release linking if disabled by configuration
@@ -1217,9 +1215,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else if (!isDependenciesExistsInRelease(release)
                 || verifyLinkedPackages(CommonUtils.nullToEmptySet(actual.getPackageIds()), CommonUtils.nullToEmptySet(release.getPackageIds()), release.getId())) {
             return RequestStatus.INVALID_INPUT;
-        }else if(!validSourceCodeDownloadUrl(release)){
-            return RequestStatus.INVALID_SOURCE_CODE_URL;
-        }else {
+        } else {
             DocumentPermissions<Release> permissions = makePermission(actual, user);
             boolean hasChangesInEccFields = hasChangesInEccFields(release, actual);
 
@@ -2378,12 +2374,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.searchReleaseByNamePaginated(name, pageData);
     }
 
-    public Map<PaginationData, List<Release>> searchAccessibleReleasesByText(ReleaseSearchHandler searchHandler, String searchText, User user, PaginationData pageData) {
-        Map<PaginationData, List<Release>> searchResult = searchHandler.search(searchText, pageData);
-        PaginationData respPageData = searchResult.keySet().iterator().next();
-        List<Release> releaseList = searchResult.values().iterator().next();
-        return Collections.singletonMap(respPageData, getAccessibleReleaseList(releaseList, user));
-    }
 
     public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, PaginationData pageData) {
         Map<PaginationData, List<Release>> searchResult = releaseRepository.getAccessibleNewReleasesWithSrc(pageData);
@@ -3271,16 +3261,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseNames;
     }
 
-    public String getComponentReportInEmail(User user,boolean extendedByReleases) throws TException {
-        try {
-            List<Component> componentlist = getRecentComponentsSummary(-1, user);
-            ComponentExporter exporter = getComponentExporterObject(componentlist,user, extendedByReleases);
-            return exporter.makeExcelExportForProject(componentlist, user);
-        }catch (IOException e) {
-            throw new SW360Exception(e.getMessage());
-        }
-    }
-
     private ComponentExporter getComponentExporterObject(List<Component> componentList ,User user,
                                                          boolean extendedByRelease) throws SW360Exception {
         return new ComponentExporter(ThriftClients.makeComponentClient(), componentList, user,extendedByRelease);
@@ -3301,9 +3281,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             List<Component> componentlist = getRecentComponentsSummary(-1, user);
             ComponentExporter exporter = getComponentExporterObject(componentlist, user, extendedByReleases);
-            InputStream stream = exporter.makeExcelExport(componentlist);
-            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-        }catch (IOException e) {
+            return exporter.toByteBuffer(componentlist);
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }

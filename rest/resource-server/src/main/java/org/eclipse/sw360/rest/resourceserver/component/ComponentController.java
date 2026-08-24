@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -100,7 +101,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -108,6 +108,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Components", description = "Operations related to Components on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`createdOn`, `name`, `vendorNames`, `mainLicenseIds` or `type`].")
 public class ComponentController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String COMPONENTS_URL = "/components";
@@ -137,7 +140,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @Operation(
             summary = "List all of the service's components.",
-            description = "List all of the service's components.",
+            description = "List all of the service's components. For `createdOn`, clients can pass either an exact date (`YYYY-MM-DD`) or a Lucene range query like `[startDate TO endDate]`.",
             tags = {"Components"}
     )
     @ApiResponses(value = {
@@ -166,13 +169,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @RequestParam(value = "mainLicenses", required = false) String mainLicenses,
             @Parameter(description = "Created by user to filter (email).")
             @RequestParam(value = "createdBy", required = false) String createdBy,
-            @Parameter(description = "Date component was created on (YYYY-MM-DD).",
-                    schema = @Schema(type = "string", format = "date"))
+            @Parameter(description = "Created date filter. Supported formats: exact (`=`) as `YYYY-MM-DD` (example: `2026-06-30`), less-than-or-equal (`<=`) as range `[1970-01-01 TO <enteredDate>]` (example: `[1970-01-01 TO 2026-06-30]`), greater-than-or-equal (`>=`) as range `[<enteredDate> TO 9999-01-01]` (example: `[2026-06-30 TO 9999-01-01]`), and between as range `[<startDate> TO <endDate>]` (example: `[2026-06-29 TO 2026-06-30]`).",
+                    schema = @Schema(type = "string", example = "2026-06-30"))
             @RequestParam(value = "createdOn", required = false) String createdOn,
             @Parameter(description = "Properties which should be present for each component in the result")
             @RequestParam(value = "fields", required = false) List<String> fields,
             @Parameter(description = "Flag to get components with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "A generic filter which searches [id, name, description and externalIds]." +
+                    " Note that is field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "Use lucenesearch to filter the components.")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
@@ -188,16 +194,17 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             Set<String> values = Collections.singleton(name);
             filterMap.put(Component._Fields.NAME.getFieldName(), values);
         }
-        if (luceneSearch) {
-            if (filterMap.containsKey(Component._Fields.NAME.getFieldName())) {
-                Set<String> values = filterMap.get(Component._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Component._Fields.NAME.getFieldName(), values);
-            }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !CommonUtils.isNullOrEmptyMap(filterMap)) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedComponents = componentService.searchFilteredComponents(searchText, sw360User, pageable);
+        } else if (luceneSearch && !CommonUtils.isNullOrEmptyMap(filterMap)) {
             paginatedComponents = componentService.refineSearch(filterMap, sw360User, pageable);
         } else {
-            if (filterMap.isEmpty()) {
+            if (CommonUtils.isNullOrEmptyMap(filterMap)) {
                 paginatedComponents = componentService.getRecentComponentsSummaryWithPagination(sw360User, pageable);
             } else {
                 paginatedComponents = componentService.searchComponentByExactValues(filterMap, sw360User, pageable);
@@ -205,11 +212,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
 
         PaginationResult<Component> paginationResult;
-        List<Component> allComponents = new ArrayList<>(paginatedComponents.values().iterator().next());
-        int totalCount = Math.toIntExact(paginatedComponents.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, allComponents, SW360Constants.TYPE_COMPONENT, totalCount);
+                request, pageable, paginatedComponents);
 
         CollectionModel<EntityModel<Component>> resources = getFilteredComponentResources(fields, allDetails, sw360User, paginationResult);
         return new ResponseEntity<>(resources, HttpStatus.OK);
@@ -369,8 +373,15 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("id") String componentId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (user == null || user.getEmail() == null) {
+            throw new BadRequestClientException("User information is invalid.");
+        }
+
         Component componentById = componentService.getComponentForUserById(componentId, user);
         Set<String> subscribers = componentById.getSubscribers();
+        if (subscribers == null) {
+            subscribers = new HashSet<>();
+        }
 
         boolean isSubscribed = subscribers.contains(user.getEmail());
 
@@ -439,9 +450,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         if (updateComponentDto.getAttachments() != null && !updateComponentDto.getAttachments().isEmpty()) {
             attachmentService.preserveImmutableAttachmentFields(
                     updateComponentDto.getAttachments(), sw360Component.getAttachments(), user);
-            updateComponentDto.getAttachments().forEach(attachment ->
-                wrapSW360Exception(() -> attachmentService.fillCheckedAttachmentData(attachment, user))
-            );
+            attachmentService.setCheckedAttachmentDataFromRequest(
+                    updateComponentDto.getAttachments(), sw360Component.getAttachments(), user);
         }
 
         sw360Component = restControllerHelper.updateComponent(sw360Component, updateComponentDto);
@@ -603,19 +613,33 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("id") String id,
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
+            @Parameter(description = "Release search text.")
+            @RequestParam(value = "searchText", required = false) String searchText,
+            @Parameter(description = "Use lucene search for releases. Default true")
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks =
-                componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
-
-        List<ReleaseLink> releaseLinks = new ArrayList<>(paginatedReleaseLinks.values().iterator().next());
-        int totalCount = Math.toIntExact(paginatedReleaseLinks.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
+        Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks;
+        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedReleaseLinks =
+                    componentService.searchReleaseLinksByComponentWithLucene(id, searchText, sw360User, pageable);
+        } else {
+            paginatedReleaseLinks = componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+                List<ReleaseLink> filtered = NouveauLuceneAwareDatabaseConnector
+                        .convertPaginatorToList(paginatedReleaseLinks).stream()
+                        .filter(r -> searchText.equalsIgnoreCase(r.getName()))
+                        .toList();
+                PaginationData pageData = paginatedReleaseLinks.keySet().iterator().next();
+                pageData.setTotalRowCount(filtered.size());
+                paginatedReleaseLinks = Collections.singletonMap(pageData, filtered);
+            }
+        }
 
         PaginationResult<ReleaseLink> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, releaseLinks, SW360Constants.TYPE_RELEASELINK, totalCount);
+                request, pageable, paginatedReleaseLinks);
 
         List<EntityModel<ReleaseLink>> resources = paginationResult.getResources().stream()
                 .map(EntityModel::of)

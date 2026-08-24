@@ -20,8 +20,7 @@
 # which matches what KeyManager and SecurityConfig expect.
 #
 # After generating, copy the file to /etc/sw360/jwt-keystore.jks on every
-# Authorization Server node (or mount the same Docker volume).  Set
-# JWT_SECRETKEY in .env.backend to the same password you pass here.
+# Authorization Server node (or mount the same Docker volume).
 #
 # Example:
 #   JWT_SECRET_KEY='my-strong-password' ./generateJwtStore.sh /etc/sw360/jwt-keystore.jks

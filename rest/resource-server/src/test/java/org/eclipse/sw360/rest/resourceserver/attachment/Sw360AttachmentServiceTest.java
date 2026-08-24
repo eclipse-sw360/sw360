@@ -19,6 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -218,5 +220,108 @@ public class Sw360AttachmentServiceTest {
         String filename7 = "_//_\\_";
         String sanitized7 = CommonUtils.sanitizeFilename(filename7);
         assertThat(sanitized7).isEqualTo(CommonUtils.DEFAULT_ATTACHMENT_FILENAME);
+    }
+    // ---- checkedBy / checkedTeam / checkedOn ownership tests ----
+    private static final String USER_B_EMAIL = "userB@sw360.org";
+    private static final String USER_B_DEPT = "DEPT_B";
+    private static User userB() {
+        return new User(USER_B_EMAIL, USER_B_DEPT);
+    }
+    private static Attachment att(String contentId, CheckStatus status, String checkedBy, String checkedTeam,
+            String checkedOn) {
+        Attachment a = new Attachment(contentId, "file-" + contentId);
+        if (status != null) {
+            a.setCheckStatus(status);
+        }
+        if (checkedBy != null) {
+            a.setCheckedBy(checkedBy);
+        }
+        if (checkedTeam != null) {
+            a.setCheckedTeam(checkedTeam);
+        }
+        if (checkedOn != null) {
+            a.setCheckedOn(checkedOn);
+        }
+        return a;
+    }
+    @Test
+    public void testCheckStatusChangedStampsAuthenticatedUserAndIgnoresClientCheckedBy() {
+        // stored: accepted by userA
+        Attachment stored = att("c1", CheckStatus.ACCEPTED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        // incoming: userB rejects it but (maliciously) still sends userA as checkedBy
+        Attachment incoming = att("c1", CheckStatus.REJECTED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        incoming.setCheckedComment("rejecting now");
+        attachmentService.setCheckedAttachmentDataFromRequest(
+                new HashSet<>(Collections.singletonList(incoming)),
+                new HashSet<>(Collections.singletonList(stored)), userB());
+        assertThat(incoming.getCheckStatus()).isEqualTo(CheckStatus.REJECTED);
+        assertThat(incoming.getCheckedBy()).isEqualTo(USER_B_EMAIL);
+        assertThat(incoming.getCheckedTeam()).isEqualTo(USER_B_DEPT);
+        assertThat(incoming.getCheckedOn()).isEqualTo(SW360Utils.getCreatedOn());
+        // client-supplied comment is honoured
+        assertThat(incoming.getCheckedComment()).isEqualTo("rejecting now");
+    }
+    @Test
+    public void testCheckStatusUnchangedPreservesOriginalChecker() {
+        // stored: accepted by userA
+        Attachment stored = att("c1", CheckStatus.ACCEPTED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        // incoming: still accepted, full-list resubmit during an unrelated edit by userB
+        Attachment incoming = att("c1", CheckStatus.ACCEPTED, "spoofed@sw360.org", "SPOOF", "2099-12-31");
+        attachmentService.setCheckedAttachmentDataFromRequest(
+                new HashSet<>(Collections.singletonList(incoming)),
+                new HashSet<>(Collections.singletonList(stored)), userB());
+        // original checker is preserved, spoofed values ignored, not rewritten to userB
+        assertThat(incoming.getCheckedBy()).isEqualTo("userA@sw360.org");
+        assertThat(incoming.getCheckedTeam()).isEqualTo("DEPT_A");
+        assertThat(incoming.getCheckedOn()).isEqualTo("2026-01-01");
+    }
+    @Test
+    public void testNewCheckedAttachmentStampsAuthenticatedUser() {
+        // no stored counterpart (newly added, pre-accepted), client spoofs checkedBy
+        Attachment incoming = att("cNew", CheckStatus.ACCEPTED, "spoofed@sw360.org", "SPOOF", "2099-12-31");
+        attachmentService.setCheckedAttachmentDataFromRequest(
+                new HashSet<>(Collections.singletonList(incoming)),
+                Collections.emptySet(), userB());
+        assertThat(incoming.getCheckedBy()).isEqualTo(USER_B_EMAIL);
+        assertThat(incoming.getCheckedTeam()).isEqualTo(USER_B_DEPT);
+        assertThat(incoming.getCheckedOn()).isEqualTo(SW360Utils.getCreatedOn());
+    }
+    @Test
+    public void testNotCheckedClearsCheckedFields() {
+        Attachment stored = att("c1", CheckStatus.ACCEPTED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        Attachment incoming = att("c1", CheckStatus.NOTCHECKED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        incoming.setCheckedComment("stale");
+        attachmentService.setCheckedAttachmentDataFromRequest(
+                new HashSet<>(Collections.singletonList(incoming)),
+                new HashSet<>(Collections.singletonList(stored)), userB());
+        assertThat(incoming.isSetCheckedBy()).isFalse();
+        assertThat(incoming.isSetCheckedTeam()).isFalse();
+        assertThat(incoming.isSetCheckedOn()).isFalse();
+        assertThat(incoming.getCheckedComment()).isEmpty();
+    }
+    @Test
+    public void testNullCheckStatusDefaultsToNotCheckedAndClears() {
+        Attachment incoming = att("c1", null, "spoofed@sw360.org", "SPOOF", "2099-12-31");
+        attachmentService.setCheckedAttachmentDataFromRequest(
+                new HashSet<>(Collections.singletonList(incoming)),
+                Collections.emptySet(), userB());
+        assertThat(incoming.getCheckStatus()).isEqualTo(CheckStatus.NOTCHECKED);
+        assertThat(incoming.isSetCheckedBy()).isFalse();
+        assertThat(incoming.isSetCheckedTeam()).isFalse();
+        assertThat(incoming.isSetCheckedOn()).isFalse();
+    }
+    @Test
+    public void testNullIncomingIsNoOp() {
+        // should simply return without throwing
+        attachmentService.setCheckedAttachmentDataFromRequest(null,
+                new HashSet<>(Collections.singletonList(att("c1", CheckStatus.ACCEPTED, "a", "b", "c"))), userB());
+    }
+    @Test
+    public void testFillCheckedAttachmentDataNeverTrustsClientCheckedBy() throws TException {
+        Attachment incoming = att("c1", CheckStatus.ACCEPTED, "spoofed@sw360.org", "SPOOF", "2099-12-31");
+        attachmentService.fillCheckedAttachmentData(incoming, userB());
+        assertThat(incoming.getCheckedBy()).isEqualTo(USER_B_EMAIL);
+        assertThat(incoming.getCheckedTeam()).isEqualTo(USER_B_DEPT);
+        assertThat(incoming.getCheckedOn()).isEqualTo(SW360Utils.getCreatedOn());
     }
 }

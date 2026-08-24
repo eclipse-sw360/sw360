@@ -29,15 +29,16 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationSortColumn;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -79,15 +80,12 @@ public class Sw360ModerationRequestService {
         return ThriftClients.makeSPDXClient();
     }
 
-    private DocumentCreationInformationService.Iface getThriftDocumentCreationInfo()  throws TTransportException {
+    private DocumentCreationInformationService.Iface getThriftDocumentCreationInfo() {
         return ThriftClients.makeSPDXDocumentInfoClient();
     }
 
-    private PackageInformationService.Iface getThriftPackageInfo()  throws TTransportException {
+    private PackageInformationService.Iface getThriftPackageInfo() {
         return ThriftClients.makeSPDXPackageInfoClient();
-    }
-    private UserService.Iface getThriftUserClient() throws TTransportException {
-        return ThriftClients.makeUserClient();
     }
 
     /**
@@ -125,19 +123,19 @@ public class Sw360ModerationRequestService {
         return moderationRequest;
     }
 
-
     /**
-     * Get paginated list of moderation requests where user is one of the
-     * moderators.
+     * Get paginated list of moderation requests based on search parameters provided by users
+     * without lucene search
      *
-     * @param sw360User Moderator
+     * @param filterMap Filter parameters
      * @param pageable  Pageable information from request
      * @return Paginated list of moderation requests.
      * @throws TException Exception in case of error.
      */
-    public List<ModerationRequest> getRequestsByModerator(User sw360User, Pageable pageable) throws TException {
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return getThriftModerationClient().getRequestsByModeratorWithPaginationNoFilter(sw360User, pageData);
+    public Map<PaginationData, List<ModerationRequest>> searchModerationRequestsByExactValues(
+            Map<String, Set<String>> filterMap, Pageable pageable, User sw360User) throws TException {
+        PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_TIMESTAMP, false);
+        return getThriftModerationClient().searchModerationRequestsByExactValues(filterMap, pageData, sw360User);
     }
 
     /**
@@ -150,7 +148,7 @@ public class Sw360ModerationRequestService {
     public Map<PaginationData, List<ModerationRequest>> getRequestsByRequestingUser(
             User sw360User, Pageable pageable
     ) throws TException {
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_TIMESTAMP, false);
         ModerationService.Iface client = getThriftModerationClient();
 
         List<ModerationRequest> moderationList = client.
@@ -164,48 +162,43 @@ public class Sw360ModerationRequestService {
     }
 
     /**
-     * Get total count of moderation requests with user as a moderator.
-     *
-     * @param sw360User Moderator
-     * @return Count of moderation requests
-     * @throws TException Throws exception in case of error
-     */
-    public long getTotalCountOfRequests(User sw360User) throws TException {
-        Map<String, Long> countInfo = getThriftModerationClient().getCountByModerationState(sw360User);
-        long totalCount = 0;
-        totalCount += countInfo.getOrDefault("OPEN", 0L);
-        totalCount += countInfo.getOrDefault("CLOSED", 0L);
-        return totalCount;
-    }
-
-    /**
-     * Get total count of moderation requests with user as a moderator and specific requesting user.
-     *
-     * @param moderator Moderator
-     * @param requestingUser Requesting user
-     * @return Count of moderation requests
-     * @throws TException Throws exception in case of error
-     */
-    public long getTotalCountByModerationStateAndRequestingUser(User moderator, User requestingUser) throws TException {
-        Map<String, Long> countInfo = getThriftModerationClient().getCountByModerationStateAndRequestingUser(moderator, requestingUser);
-        long totalCount = 0L;
-        totalCount += countInfo.getOrDefault("OPEN", 0L);
-        totalCount += countInfo.getOrDefault("CLOSED", 0L);
-        return totalCount;
-    }
-
-    /**
      * Convert Pageable from spring request to PaginationData
      *
      * @param pageable Pageable from request
      * @return Converted PaginationData
      */
-    private static @NotNull PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
-        PaginationData pageData = new PaginationData();
-        pageData.setRowsPerPage(pageable.getPageSize());
-        pageData.setDisplayStart((int) pageable.getOffset());
-        pageData.setSortColumnNumber(-1);
-        return pageData;
+    private static @NotNull PaginationData pageableToPaginationData(
+            @NotNull Pageable pageable, ModerationSortColumn defaultSort, Boolean defaultAscending
+    ) {
+        ModerationSortColumn column = ModerationSortColumn.BY_TIMESTAMP;
+        boolean ascending = true;
+
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            column = switch (property) {
+                case "documentName" -> ModerationSortColumn.BY_DOCUMENT_NAME;
+                case "documentType" -> ModerationSortColumn.BY_DOCUMENT_TYPE;
+                case "componentType" -> ModerationSortColumn.BY_COMPONENT_TYPE;
+                case "moderationState" -> ModerationSortColumn.BY_MODERATION_STATE;
+                case "requestingUser" -> ModerationSortColumn.BY_REQUESTING_USER;
+                case "requestingUserDepartment" -> ModerationSortColumn.BY_REQUESTING_USER_DEPT;
+                case "score" -> ModerationSortColumn.BY_SCORE;
+                case "requestDate" -> ModerationSortColumn.BY_TIMESTAMP;
+                default -> column;
+            };
+            ascending = order.isAscending();
+        } else {
+            if (defaultSort != null) {
+                column = defaultSort;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
+        }
+
+        return new PaginationData().setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
     }
 
     /**
@@ -221,7 +214,7 @@ public class Sw360ModerationRequestService {
      */
     public Map<PaginationData, List<ModerationRequest>> getRequestsByState(User sw360user, Pageable pageable,
                                                                            boolean open, boolean allDetails) throws TException {
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_TIMESTAMP, false);
         ModerationService.Iface client = getThriftModerationClient();
         Map<PaginationData, List<ModerationRequest>> moderationData;
         if (allDetails) {
@@ -346,25 +339,6 @@ public class Sw360ModerationRequestService {
         return new User(request.getId(), request.getModerators().toString());
     }
 
-    public User getUserByEmail(String email) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmail(email);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUserByEmailOrExternalId(org.eclipse.sw360.datahandler.thrift.users.UserService.Iface userClient,
-            String userIdentifier, String string) {
-        try {
-            UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /**
      * Set moderation state of the moderation request to REJECTED
      *
@@ -460,7 +434,7 @@ public class Sw360ModerationRequestService {
 
     public RequestStatus deleteModerationRequestInfo(@NotNull User sw360User, @NotNull String id,
 			@NotNull ModerationRequest moderationRequest)
-            throws TTransportException, TException {
+            throws TException {
         RequestStatus requestStatus = null;
         Set<String> moderators = moderationRequest.getModerators();
         String requestingUser = moderationRequest.getRequestingUser();
@@ -508,5 +482,19 @@ public class Sw360ModerationRequestService {
      */
     public RequestStatus deleteClearingRequest(String crId, User user) throws TException {
         return getThriftModerationClient().deleteClearingRequest(crId, user);
+    }
+
+    /**
+     * Return moderation requests based on search parameters
+     *
+     * @param filterMap Filters set by the user
+     * @return List<ModerationRequest> the list of moderation requests
+     * @throws TException if Thrift communication fails
+     */
+    public Map<PaginationData, List<ModerationRequest>> refineSearch(
+            Map<String, Set<String>> filterMap, Pageable pageable, User sw360User
+    ) throws TException {
+        PaginationData pageData = pageableToPaginationData(pageable, ModerationSortColumn.BY_TIMESTAMP, false);
+        return getThriftModerationClient().refineSearch(filterMap, pageData, sw360User);
     }
 }

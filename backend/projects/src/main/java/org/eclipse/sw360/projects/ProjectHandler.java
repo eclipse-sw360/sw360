@@ -22,6 +22,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -40,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -84,22 +86,25 @@ public class ProjectHandler implements ProjectService.Iface {
     /////////////////////
     // SUMMARY GETTERS //
     /////////////////////
-
     @Override
-    public List<Project> search(String text) throws TException {
-        return searchHandler.search(text);
+    public Map<PaginationData, List<Project>> refineSearchPageable(
+            Map<String, Set<String>> subQueryRestrictions, User user,
+            PaginationData paginationData
+    ) throws TException {
+        return searchHandler.search(subQueryRestrictions, user, paginationData);
     }
 
     @Override
-    public List<Project> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, User user)
-            throws TException {
-        return searchHandler.search(text, subQueryRestrictions, user);
-    }
+    public Map<PaginationData, List<Project>> searchFilteredProjects(
+            String searchText, User user, PaginationData pageData
+    ) throws TException {
+        assertUser(user);
 
-    @Override
-    public Map<PaginationData, List<Project>> refineSearchPageable(String text,
-            Map<String, Set<String>> subQueryRestrictions, User user, PaginationData paginationData) throws TException {
-        return searchHandler.search(text, subQueryRestrictions, user, paginationData);
+        if (searchText == null) {
+            searchText = "";
+        }
+
+        return searchHandler.searchFilteredProjects(searchText, user, pageData);
     }
 
     @Override
@@ -635,10 +640,20 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.getReportDataStream(user, extendedByReleases, projectId);
     }
 
+    /**
+     * Get buffer of report content based on report {@code format} and
+     * {@code reportBean} which is sent to the user.
+     * @param user       User for access check
+     * @param projectId  Project ID if a specific project is needed
+     * @param reportBean Report bean with filter and format information.
+     * @return Report content.
+     * @throws TException If anything goes wrong.
+     */
     @Override
-    public String getReportInEmail(User user, boolean extendedByReleases, String projectId)
-            throws TException {
-        return handler.getReportInEmail(user, extendedByReleases, projectId);
+    public ByteBuffer getProjectReportBuffer(User user, String projectId, SW360ReportBean reportBean) throws TException {
+        assertUser(user);
+        assertNotNull(reportBean);
+        return handler.getProjectReportBuffer(searchHandler, user, projectId, reportBean);
     }
 
     @Override
@@ -654,9 +669,10 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.getClearingStateForDependencyNetworkListView(projectId, user, true);
     }
 
-    @Override
-    public List<Project> refineSearchWithoutUser(String text, Map<String, Set<String>> subQueryRestrictions) {
-        return searchHandler.search(text, subQueryRestrictions);
+    public List<Project> refineSearchWithoutUser(Map<String, Set<String>> subQueryRestrictions) {
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Project>> result = searchHandler.search(subQueryRestrictions, null, pageData);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
     }
 
     @Override

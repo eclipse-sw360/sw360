@@ -18,13 +18,16 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -53,10 +56,8 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_IN_DAYS;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_ACCESS_USERGROUP;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_TOKEN_GENERATOR_ENABLED;
 
 @Service
 public class Sw360UserService {
@@ -154,25 +155,25 @@ public class Sw360UserService {
 
     public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.refineSearch(null, filterMap, pageData);
     }
 
     public Map<PaginationData, List<User>> getUsersWithPagination(Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.getUsersWithPagination(null, pageData);
     }
 
     public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.searchUsersByExactValues(filterMap, pageData);
     }
 
     public Map<PaginationData, List<User>> searchUsersByNameOrEmail(String searchTerm, Pageable pageable) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
         return sw360UserClient.refineSearch(searchTerm, Collections.emptyMap(), pageData);
     }
 
@@ -180,20 +181,12 @@ public class Sw360UserService {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        if (!requestBody.containsKey(EXPIRATION_DATE_PROPERTY)
-                || CommonUtils.isNullEmptyOrWhitespace(requestBody.get(EXPIRATION_DATE_PROPERTY).toString())) {
-            throw new IllegalArgumentException(EXPIRATION_DATE_PROPERTY + " is a required field.");
-        }
-        if (!(requestBody.get(EXPIRATION_DATE_PROPERTY) instanceof String)) {
-            throw new IllegalArgumentException(EXPIRATION_DATE_PROPERTY + " must be a string.");
-        }
-
         RestApiToken restApiToken = mapper.convertValue(requestBody, RestApiToken.class);
-        if (!API_WRITE_TOKEN_GENERATOR_ENABLED && restApiToken.authorities.contains(AUTHORITIES_WRITE)) {
+        if (!isApiTokenGeneratorEnabled() && restApiToken.authorities.contains(AUTHORITIES_WRITE)) {
             throw new AccessDeniedException("Token requested with '" +
                     AUTHORITIES_WRITE + "' authority, but not allowed.");
         }
-        int numberOfExpireDay = getNumberOfExpireDays(requestBody.get(EXPIRATION_DATE_PROPERTY).toString());
+        int numberOfExpireDay = getRequestedOrDefaultExpireDays(requestBody);
         if (numberOfExpireDay < 0) {
             throw new IllegalArgumentException("Token expiration days is not valid for user");
         }
@@ -206,9 +199,54 @@ public class Sw360UserService {
         return restApiToken;
     }
 
+    private SW360ConfigsService.Iface getThriftConfigsClient() {
+        return ThriftClients.makeSW360ConfigsClient();
+    }
+
+    /**
+     * Fully DB-config-driven check for whether API write-token generation is enabled.
+     * Reads {@link SW360ConfigKeys#UI_REST_APITOKEN_GENERATOR_ENABLE} from the UI_CONFIGURATION
+     * container (admin-toggleable via /api/configurations/container/UI_CONFIGURATION), instead of
+     * a static, properties-loaded flag. This ensures that toggling the setting in the Admin UI
+     * takes effect immediately without a server restart.
+     *
+     * @return {@code true} if write-token generation is enabled (or the config could not be
+     *         determined, to preserve prior default/fail-open behavior), {@code false} otherwise.
+     */
+    private boolean isApiTokenGeneratorEnabled() {
+        try {
+            Map<String, String> uiConfigs = getThriftConfigsClient().getConfigForContainer(ConfigFor.UI_CONFIGURATION);
+            String value = uiConfigs.get(SW360ConfigKeys.UI_REST_APITOKEN_GENERATOR_ENABLE);
+            return value == null || Boolean.parseBoolean(value);
+        } catch (TException e) {
+            log.warn("Could not read '{}' from SW360 configs; defaulting to enabled.",
+                    SW360ConfigKeys.UI_REST_APITOKEN_GENERATOR_ENABLE, e);
+            return true;
+        }
+    }
+
     private int getNumberOfExpireDays(String requestExpirationDate) {
         LocalDate expirationDate = LocalDate.parse(requestExpirationDate);
         return (int) ChronoUnit.DAYS.between(LocalDate.now(), expirationDate);
+    }
+
+    private int getRequestedOrDefaultExpireDays(Map<String, Object> requestBody) {
+        Object requestedExpirationDate = requestBody.get(EXPIRATION_DATE_PROPERTY);
+        if (requestedExpirationDate == null || CommonUtils.isNullEmptyOrWhitespace(requestedExpirationDate.toString())) {
+            return parseMaxValidityDays();
+        }
+        if (!(requestedExpirationDate instanceof String)) {
+            throw new IllegalArgumentException(EXPIRATION_DATE_PROPERTY + " must be a string.");
+        }
+        return getNumberOfExpireDays((String) requestedExpirationDate);
+    }
+
+    private int parseMaxValidityDays() {
+        try {
+            return Integer.parseInt(API_TOKEN_MAX_VALIDITY_IN_DAYS);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Token expiration days is not valid for user");
+        }
     }
 
     public boolean isTokenNameExisted(User user, String tokenName) {
@@ -216,15 +254,8 @@ public class Sw360UserService {
     }
 
     private boolean isValidExpireDays(RestApiToken restApiToken) {
-        String configExpireDays = restApiToken.getAuthorities().contains(AUTHORITIES_WRITE) ?
-                API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
-
-        try {
-            return restApiToken.getNumberOfDaysValid() >= 0 &&
-                    restApiToken.getNumberOfDaysValid() <= Integer.parseInt(configExpireDays);
-        } catch (NumberFormatException e) {
-            return false;
-        }
+        return restApiToken.getNumberOfDaysValid() >= 0
+                && restApiToken.getNumberOfDaysValid() <= parseMaxValidityDays();
     }
 
     private void validateRestApiToken(RestApiToken restApiToken, User sw360User) {
@@ -292,7 +323,8 @@ public class Sw360UserService {
      * @param pageable the Pageable object to convert
      * @return a PaginationData object representing the pagination information
      */
-    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
+            UserSortColumn defaultColumn, Boolean defaultAscending) {
         UserSortColumn column = UserSortColumn.BY_GIVENNAME;
         boolean ascending = true;
 
@@ -306,9 +338,16 @@ public class Sw360UserService {
                 case "department" -> UserSortColumn.BY_DEPARTMENT;
                 case "primaryRoles" -> UserSortColumn.BY_ROLE;
                 case "score" -> UserSortColumn.BY_SCORE;
-                default -> column; // Default to BY_GIVENNAME if no match
+                default -> column;
             };
             ascending = order.isAscending();
+        } else {
+            if (defaultColumn != null) {
+                column = defaultColumn;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
         }
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);
@@ -411,5 +450,15 @@ public class Sw360UserService {
                 .collect(Collectors.toCollection(HashSet::new));
         formerEmailAddresses.add(thriftUser.getEmail());
         return formerEmailAddresses;
+    }
+
+    /**
+     * Refine search with Lucene/Nouveau using filters and user context.
+     * This method is for pageable Lucene searches with access control.
+     */
+    public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, User user, Pageable pageable) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        PaginationData pageData = pageableToPaginationData(pageable, UserSortColumn.BY_GIVENNAME, true);
+        return sw360UserClient.refineSearchAccessibleUsers(filterMap, user, pageData);
     }
 }

@@ -7,21 +7,36 @@ contributions to this repository, you would need to meet the
 contribution guidelines which help to maintain a good level
 of quality for contributions.
 
+## Eclipse Development Process
+
+This Eclipse Foundation open project is governed by the Eclipse Foundation
+Development Process and operates under the terms of the Eclipse IP Policy.
+
+* https://eclipse.org/projects/dev_process
+* https://www.eclipse.org/org/documents/Eclipse_IP_Policy.pdf
+
 ## Eclipse Contributor Agreement
 
-Before we can accept your contribution, you must
+In order to be able to contribute to Eclipse Foundation projects you must
 electronically sign the Eclipse Contributor Agreement (ECA).
 
-* http://www.eclipse.org/legal/ECA.php
+* https://www.eclipse.org/legal/ECA.php
 
-Commits that are provided by non-committers must have a Signed-off-by field in
-the footer indicating that the author is aware of the terms by which the
-contribution has been provided to the project. The non-committer must
-additionally have an Eclipse Foundation account and must have a signed Eclipse
-Contributor Agreement (ECA) on file.
+The ECA provides the Eclipse Foundation with a permanent record that you agree
+that each of your contributions will comply with the commitments documented in
+the [Developer Certificate of Origin](https://www.eclipse.org/legal/DCO.php)
+(DCO). Having an ECA on file associated with the email address matching the
+"Author" field of your contribution's Git commits fulfils the DCO's requirement
+that you sign-off on your contributions.
 
 For more information, please see the Eclipse Committer Handbook:
 https://www.eclipse.org/projects/handbook/#resources-commit
+
+## Terms of Use
+
+This repository is subject to the Terms of Use of the Eclipse Foundation
+
+* https://www.eclipse.org/legal/termsofuse.php
 
 ## Basic D-o-D
 
@@ -89,43 +104,42 @@ and
 tested-by:email@domain.com
 ```
 
-
 ## Further Resources
 
-In our project wiki we have some more information
+In our project documentation and wiki we have more information:
 
-* Definition of Done and code style considerations: https://github.com/eclipse/sw360/wiki/Dev-DoD-and-Style
-* Commit message format: https://github.com/eclipse/sw360/wiki/Dev-Semantic-Commits
-
+* Definition of Done and code style considerations: https://github.com/eclipse-sw360/sw360/wiki/Dev-DoD-and-Style
+* Commit message format: https://github.com/eclipse-sw360/sw360/wiki/Dev-Semantic-Commits
+* Project Documentation: https://eclipse.dev/sw360/docs/
 
 ## License Header
 
 Please make sure any file you newly create contains a proper license header like this:
 
-````
+```
 /*
- * Copyright Your Orgnisation, 202X. Part of the SW360 Portal Project.
+ * Copyright (c) {date} {owner}[ and others]. Part of the SW360 Portal Project.
  *
- * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-````
+```
 You should, of course, adapt this header to use the specific mechanism for comments pertaining to the type of file you create, e.g. using something like
 
-````
+```
 #
-# Copyright Your Orgnisation, 202X. Part of the SW360 Portal Project.
+# Copyright (c) {date} {owner}[ and others]. Part of the SW360 Portal Project.
 #
-# This program and the accompanying materials are made
-# available under the terms of the Eclipse Public License 2.0
-# which is available at https://www.eclipse.org/legal/epl-2.0/
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License v. 2.0 which is available at
+# https://www.eclipse.org/legal/epl-2.0.
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-````
+```
 
 for configuration files.
 
@@ -134,7 +148,9 @@ for configuration files.
 For contacting the projects, please consider the following channels:
 
 * The eclipse-maintained mailing list: `sw360-dev@eclipse.org`
-* The slack channel and more coordinates can be found here: https://github.com/eclipse/sw360/wiki#getting-started
+* https://accounts.eclipse.org/mailing-list/sw360-dev
+* The slack channel and more coordinates can be found here: https://eclipse.dev/sw360/
+* Issue Tracker: https://github.com/eclipse-sw360/sw360/issues
 
 Then, you find more links useful about contributing and writing code:
 

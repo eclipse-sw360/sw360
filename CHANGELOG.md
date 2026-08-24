@@ -6,6 +6,198 @@ the first project location:
 
 https://github.com/eclipse-sw360/sw360/releases
 
+## sw360-20.1.0
+This is the next minor release 20.1.0 of SW360. It includes numerous features,
+corrections, and improvements over the previous release
+[20.0.0](https://github.com/eclipse-sw360/sw360/releases/tag/sw360-20.0.0)
+
+Highlight of the changes includes:
+* **REST API & Search Enhancements:** Added `PATCH /ecc/{releaseId}` with ECC
+  status filtering, project detail tab-count APIs, moderation-request search
+  support, Lucene score-based search, and search flags for empty BU/tags and
+  attachment-author filters on projects.
+* **Security, Auth & Access Control:** Unified Bearer authentication, added
+  configurable basic auth, expanded `@PreAuthorize` protections, introduced
+  multi-issuer JWT support with per-issuer JWK URI overrides, and improved
+  trusted-issuer/token handling across REST flows.
+* **Exports, Reports & Obligations:** Added CSV/JSON/XML project export formats,
+  improved report download/authentication behavior, enabled all-level obligation
+  updates, and fixed report and attachment-usage handling for sub-project data.
+* **Performance & Scalability:** Removed expensive query paths (including N+1
+  and full-scan patterns), added Cloudant connection pooling, and introduced
+  pooled singleton Thrift client usage for improved backend efficiency.
+* **Vulnerability, Component & Project Workflows:** Enabled vulnerability
+  verification flows for security admins, improved vulnerability payload
+  controls, added nested-release linking controls, made release state editable,
+  and fixed component/project edit and subscription edge cases.
+* **Platform, Build & CI Modernization:** Upgraded to Spring Boot 4.x and Spring
+  Security 7.x baselines, migrated tests from JUnit 4 to JUnit 6, and continued
+  broad dependency/CI/container refreshes (including Keycloak and Docker
+  workflow updates).
+* **Breaking Changes:** `80e5f495d` (`fix(auth)!: associate user with client`)
+  and `5476065c9` (`chore(script)!: revert input in migration script`) introduce
+  behavior changes that must be reviewed during upgrades.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> amritkv <er.akverma8@gmail.com>
+> Anushree Bondia <anushreebondia@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> creocodes <creo572005@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> rudra-superrr <prabhuchopra@gmail.com>
+> Shivani Reddy <shivanireddy783@gmail.com>
+> suhas-SHS <suhas.n@siemens-healthineers.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `619090976` feat(moderation): Add tests for search in moderation requests
+* `dce24eb7d` feat(search): Add search support for moderation requests
+* `e803f66e3` feat(docker): stop download progress at build
+* `8335034f6` feat(component): add config flag to enable/disable nested release linking
+* `82e649359` feat(couchdb): Cloudant connection pooling
+* `24fde1359` feat(search): lucene search by score.
+* `57fb0a5bd` feat(ci): use keycloak tag from Dockerfile
+* `d40d5ff69` feat(thrift): use connection pooling and singleton
+* `e7ba47916` feat(Project): Enable verification of the vulnerabilities for security admin
+* `8459b575f` feat(release): making release state editable.
+
+### Corrections
+* `b78a13ada` fix(Release): Allow modification of vendor in release
+* `c24fa205c` fix(component): restrict the self component in used by components.
+* `955be19e4` fix(component): handle NPE for release and component subscription.
+* `73a879ff1` fix(rest): restore deprecated 'attachment' request param for backward compatibility
+* `48516f6fa` fix(project): allow patch project with MR
+* `6d31d1f64` fix(project): handling NPE on license report.
+* `9b5207e5b` fix(Search): Search by version  in the advance search
+* `c1ec4f607` fix(Attachments): Fixed attachment update
+* `9aba43a18` fix(Project): Allowed ampersand character to save exact  as symbol
+* `00c8ee323` fix(projects): prevent NPE in releaseIdToUsage
+* `6df461de4` fix(tests): Rest test migration junit4 to junit6 cleanup
+* `8ab13d635` fix(cd): fix docker setup
+* `ff28fc25f` fix(nouveau): add lucene_version to nouveau index
+* `095fe46ed` fix(maven): add test scope to junit and mockito
+* `c1a4e2c2a` fix(KeyCloak): prevent NPE when LDAP federated user logs in
+* `bdccf7bb7` fix(vul): Add releases to vulnerabilities payload only if all details flag is enabled
+* `3838ed6b7` fix(docker): fix the API token salt docs
+* `21551abda` fix(Project): Fixed vendor selection upon edit
+* `896a3ac60` fix(docker): fix location of jwt-keystore.jks
+* `cf055eb68` fix(test): fix test cases after auth unification
+* `102881053` fix(rest): use SPDX ID as license identifier from admin obligation.
+* `0cf7142a5` fix(tests): Migrated misc remaining tests to junit6
+* `186237bd5` fix(authserver): Migrated the tests from junit4 to junit6
+* `392c36d93` fix(restdoc): Refactored imports and mockito beans to base class
+* `89ed14ab5` fix(test): Upgraded restdoc tests from junit4 to junit6
+* `56814e608` fix(svm): filter types on get(type, ids)
+* `420422fde` fix: Use component-release index for pagination count query to avoid full db scan
+* `08f6165c2` fix(test): refactored integration test exe speedup
+* `4cc9e3ba8` fix(test): Migrated integration tests from JUnit4 to JUnit6
+* `ca7876162` fix(components): fix implementation of Component
+* `cb7738acd` fix(config): remove IS_NESTED_RELEASE_ENABLED
+* `3e64217dc` fix(vuln): handle unknown component type
+* `335d9e809` fix(changelog): remove wrong response code doc
+* `36b968387` fix(project): make luceneSearch default true
+* `3699ca61b` fix(att): handle null error when no attachments are linked to a release
+* `b3399aaf6` fix(lic): create a license if not found in the clx attachment
+* `7a33efb61` fix(rest): handle null project clearing state
+* `db891c34e` fix(project): save attachmentusage returns 400.
+* `85bde957f` fix(Configuration): Combine multiple mail configuration to single and added  mail send for license info download
+* `1e796bdc5` fix(project): guard empty release IDs in project count
+
+### Infrastructure
+* `af6d549db` chore(deps): bump ossf/scorecard-action from 2.4.3 to 2.4.4
+* `ba89a2c89` chore(deps): bump docker/login-action from 4.4.0 to 4.5.0
+* `75f9a6208` chore(deps): bump github/codeql-action/analyze from 4.37.1 to 4.37.3
+* `ccdbce5be` chore(deps): bump github/codeql-action/init from 4.37.1 to 4.37.3
+* `8f6b26bfe` chore(deps): bump actions/checkout from 7.0.0 to 7.0.1
+* `f3726e26f` chore(deps): bump com.ibm.cloud:cloudant from 0.10.19 to 0.10.20
+* `a586ddd4a` chore(deps): bump ch.qos.logback:logback-classic from 1.5.37 to 1.5.38
+* `884453a57` chore(deps): bump com.puppycrawl.tools:checkstyle from 13.7.0 to 13.8.0
+* `0fa1abc4a` chore(deps): bump actions/setup-java from 5.5.0 to 5.6.0
+* `6deda0905` chore(deps): bump github/codeql-action/init from 4.36.3 to 4.37.1
+* `15f9a0d0d` chore(deps): bump actions/cache from 6.0.0 to 6.1.0
+* `14ca5605f` chore(deps): bump docker/build-push-action from 7.2.0 to 7.3.0
+* `cdb4c9715` chore(deps): bump github/codeql-action/analyze from 4.37.0 to 4.37.1
+* `e46961caa` chore(deps): bump junit.version from 6.1.1 to 6.1.2
+* `8f5d82cc0` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.18.10 to 1.18.11
+* `c32827b57` chore(deps): bump keycloak.version from 26.6.4 to 26.7.0
+* `b185c66aa` chore(deps): bump docker/login-action from 4.3.0 to 4.4.0
+* `76120d841` chore(deps): bump docker/setup-qemu-action from 4.1.0 to 4.2.0
+* `7181bfab5` chore(deps): bump github/codeql-action/analyze from 4.36.3 to 4.37.0
+* `2d66c1a61` chore(deps): bump step-security/harden-runner from 2.19.4 to 2.20.0
+* `4cdf28697` chore(deps): bump actions/setup-java from 5.4.0 to 5.5.0
+* `e789e4434` chore(deps): bump jackson.version from 2.22.0 to 2.22.1
+* `bfbe72ce8` chore(deps): bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.7.0
+* `5484cfc92` chore(deps): bump keycloak/keycloak from 26.6.4 to 26.7.0
+* `74f09bdc6` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `2dfc08c99` chore(deps): bump ch.qos.logback:logback-classic from 1.5.33 to 1.5.37
+* `127b57a04` chore(deps): bump junit.version from 6.1.0 to 6.1.1
+* `65eadce53` chore(deps): bump log4j2.version from 2.26.0 to 2.26.1
+* `b98c67d94` chore(deps): bump github/codeql-action/init from 4.36.2 to 4.36.3
+* `d475d43ba` chore(deps): bump docker/setup-buildx-action from 4.1.0 to 4.2.0
+* `3e29553a7` chore(deps): bump keycloak.version from 26.6.3 to 26.6.4
+* `8075f1fc7` chore(deps): bump github/codeql-action/analyze from 4.36.2 to 4.36.3
+* `9e9616f07` chore(deps): bump docker/login-action from 4.2.0 to 4.3.0
+* `a1d061482` chore(deps): bump docker/metadata-action from 6.1.0 to 6.2.0
+* `fff00ac23` chore(deps): bump keycloak/keycloak from 26.6.3 to 26.6.4
+* `010cedcf0` chore(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin
+* `8252c5dc5` chore(deps): bump https://github.com/pylint-dev/pylint
+* `97f52fdda` chore(deps): update maven and tomcat images
+* `ff34897f9` chore(auth): unify token conversion for rest
+* `d85138101` chore(deps): bump com.ibm.cloud:cloudant from 0.10.18 to 0.10.19
+* `99911af7c` chore(deps): bump jaxen:jaxen from 2.0.5 to 2.0.6
+* `4381300b4` chore(deps): bump org.glassfish.jaxb:jaxb-runtime from 4.0.8 to 4.0.9
+* `9c715d9cf` chore(deps): bump spring-restdocs.version from 4.0.0 to 4.0.1
+* `eeda8b2d8` chore(deps): bump com.squareup.okhttp3:okhttp-bom from 5.3.2 to 5.4.0
+* `36b8945f6` chore(deps): bump actions/cache from 5.0.5 to 6.0.0
+* `a91d97bbd` chore(deps): bump actions/setup-java from 5.3.0 to 5.4.0
+* `2285eee33` chore(deps): bump keycloak/keycloak from `5fdbf2d` to `9b03307`
+* `1b6ae76a6` chore(deps): consolidate dependencies
+* `1744d6f9f` chore(deps): bump com.puppycrawl.tools:checkstyle from 13.4.2 to 13.6.0
+* `7f981d1b9` chore(deps): bump org.apache.maven.plugins:maven-dependency-plugin
+* `3aed63efa` chore(deps): bump actions/checkout from 6.0.3 to 7.0.0
+* `1c13f2dde` chore(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin
+* `251580220` chore(deps): bump actions/setup-java from 5.2.0 to 5.3.0
+* `40e1e0c72` chore(deps): bump org.apache.maven.plugins:maven-surefire-plugin
+* `99340141f` chore(deps): bump org.jacoco:jacoco-maven-plugin from 0.8.14 to 0.8.15
+* `e5f155b27` chore(deps): bump org.springframework.security:spring-security-oauth2-authorization-server
+* `5718a27e7` chore(deps): bump spring-boot.version from 4.0.6 to 4.1.0
+* `375baea49` chore(deps): bump spring-security.version from 7.0.5 to 7.1.0
+* `2393b24c0` chore(deps): bump org.apache.maven.plugins:maven-failsafe-plugin
+* `a4de8c758` chore(deps): bump springframework.version from 7.0.7 to 7.0.8
+* `de9a80613` chore(deps): bump com.fasterxml.jackson.core:jackson-annotations
+* `823026c91` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.18.8 to 1.18.10
+* `868ab2da5` chore(deps): bump actions/checkout from 6.0.2 to 6.0.3
+* `2c9a6efe3` chore(deps): bump github/codeql-action from 4.36.0 to 4.36.2
+* `ac4090c7a` chore(deps): bump keycloak/keycloak from 26.6.2 to 26.6.3
+* `0593c6e06` chore(deps): bump jaxen:jaxen from 2.0.3 to 2.0.5
+* `fc61e020e` chore(deps): bump jackson.version from 2.21.3 to 2.22.0
+* `7df50c3cd` chore(deps): bump keycloak.version from 26.6.2 to 26.6.3
+* `73eeaa6d3` docs(swagger): add response docs for cache admin and changelog
+* `37374f156` build(deps): replace deprecated overwrite param
+* `3e69f7119` chore(deps): bump docker/login-action from 4.1.0 to 4.2.0
+* `1269fefa8` chore(action): add version comment
+* `07b800652` chore(deps): bump docker/setup-qemu-action from 4.0.0 to 4.1.0
+* `03a5655be` chore(deps): bump docker/setup-buildx-action from 4.0.0 to 4.1.0
+* `3557c169e` chore(deps): bump docker/metadata-action from 6.0.0 to 6.1.0
+* `43577f3b5` chore(deps): bump github/codeql-action from 4.35.5 to 4.36.0
+* `41fa2cd61` chore(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin
+* `5aedeaff8` chore(deps): bump keycloak/keycloak from `5afd404` to `f9ba7b2`
+* `eae95e518` chore(deps): bump ch.qos.logback:logback-classic from 1.5.32 to 1.5.33
+* `7a75c5d5d` chore(deps): bump org.ow2.asm.version from 9.10 to 9.10.1
+* `3d7bca20b` chore(deps): bump com.ibm.cloud:cloudant from 0.10.17 to 0.10.18
+* `07e4d5057` chore(deps): bump org.json:json from 20251224 to 20260522
+* `5476065c9` chore(script)!: revert input in migration script
+
 ## sw360-20.1.0-rc-2
 This is the second release candidate for SW360 in the line of the next minor
 release version 20.1.0 of SW360. The candidate includes numerous features,
