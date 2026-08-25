@@ -89,6 +89,7 @@ ENV CLOUDANT_MAX_REQUESTS_PER_HOST="-1"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
+ENV SPRING_DATA_REST_MAX_PAGE_SIZE="1000"
 # Trusted JWT issuers (Spring relaxed-binding to sw360.security.jwt.issuers[N]).
 # *_ISSUER_URI is required per slot; *_JWK_SET_URI is optional and, when set,
 # skips OpenID Connect discovery and fetches JWKS directly from that URL.
