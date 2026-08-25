@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -216,7 +217,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             paginatedReleases = releaseService.searchFilteredReleases(searchText, sw360User, pageable);
-        } else if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+        } else if (luceneSearch) {
             paginatedReleases = releaseService.refineSearch(name, sw360User, pageable);
         } else {
             if (sha1 != null && !sha1.isEmpty()) {
@@ -236,16 +237,17 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         List<Release> sw360Releases = new ArrayList<>(paginatedReleases.values().iterator().next());
 
         if (allDetails) {
-            for (Release release : sw360Releases) {
-                if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
-                    try {
-                        Vendor relVendor = vendorService.getVendorById(release.getVendorId());
-                        release.setVendor(relVendor);
-                    } catch (RuntimeException ignore) {
-                        log.error("Unable to find vendor with ID {}", release.getVendorId());
-                    }
-                }
-            }
+            sw360Releases.parallelStream()
+                    .forEach(release -> {
+                        if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
+                            try {
+                                Vendor relVendor = vendorService.getVendorById(release.getVendorId());
+                                release.setVendor(relVendor);
+                            } catch (RuntimeException ignore) {
+                                log.error("Unable to find vendor with ID {}", release.getVendorId());
+                            }
+                        }
+                    });
         }
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(sha1) || CommonUtils.isNotNullEmptyOrWhitespace(name)) {
@@ -260,18 +262,19 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         paginationResult = restControllerHelper.paginationResultFromPaginatedList(
                 request, pageable, Map.of(paginatedReleases.keySet().iterator().next(), sw360Releases));
 
-        List<EntityModel<Release>> releaseResources = new ArrayList<>();
-        for (Release sw360Release : paginationResult.getResources()) {
-            EntityModel<Release> releaseResource = null;
-            if (!allDetails) {
-                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
-                releaseResource = EntityModel.of(embeddedRelease);
-            } else {
-                releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
-            }
-
-            releaseResources.add(releaseResource);
-        }
+        List<EntityModel<Release>> releaseResources = paginationResult.getResources()
+                .parallelStream()
+                .map(sw360Release -> {
+                    EntityModel<Release> releaseResource;
+                    if (allDetails) {
+                        releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
+                    } else {
+                        Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
+                        releaseResource = EntityModel.of(embeddedRelease);
+                    }
+                    return releaseResource;
+                })
+                .toList();
 
         CollectionModel<EntityModel<Release>> resources = null;
         if (CommonUtils.isNotEmpty(releaseResources)) {
@@ -2008,23 +2011,22 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
         return halRelease;
     }
-    private HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
+
+    private @NonNull HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
         HalResource<Release> halRelease = new HalResource<>(release);
         Link componentLink = linkTo(ReleaseController.class)
                 .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
                 .withRel("component");
         halRelease.add(componentLink);
         release.setComponentId(null);
-        Set<String> packageIds = release.getPackageIds();
-
-        if (packageIds != null) {
+        if (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true) && release.getPackageIds() != null) {
             for (String id : release.getPackageIds()) {
                 Link packageLink = linkTo(ReleaseController.class)
                         .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
                 halRelease.add(packageLink);
             }
+            release.setPackageIds(null);
         }
-        release.setPackageIds(null);
         for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
             restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
         }

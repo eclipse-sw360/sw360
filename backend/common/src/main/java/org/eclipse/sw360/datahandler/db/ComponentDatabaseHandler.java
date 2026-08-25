@@ -821,10 +821,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public Map<PaginationData, List<Component>> searchComponentByExactValues(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
         Map<PaginationData, List<Component>> resultMap = componentRepository.searchComponentByExactValues(subQueryRestrictions, user, pageData);
-        List<Component> resultComponentList = resultMap.get(pageData);
-        for (Component component : resultComponentList) {
-            makePermission(component, user).fillPermissionsInOther(component);
-        }
+        List<Component> resultComponentList = resultMap.values().iterator().next()
+                .parallelStream()
+                .peek(component -> makePermission(component, user).fillPermissionsInOther(component))
+                .toList();
         return Collections.singletonMap(pageData, resultComponentList);
     }
 
@@ -2405,13 +2405,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private List<Release> getAccessibleReleaseList(List<Release> releaseList, User user) {
-        List<Release> resultList = new ArrayList<Release>();
-        for (Release release : releaseList) {
-            if (isReleaseActionAllowed(release, user, RequestedAction.READ)) {
-                resultList.add(release);
-            }
-        }
-        return resultList;
+        return releaseList.parallelStream()
+                .filter(release -> isReleaseActionAllowed(release, user, RequestedAction.READ))
+                .toList();
     }
 
     public Set<Component> searchComponentsByExternalIds(Map<String, Set<String>> externalIds) {

@@ -10,8 +10,10 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
@@ -120,13 +123,18 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             @Nullable User user,
             PaginationData pageData
     ) {
-        Map<PaginationData, List<Component>> resultComponentList = baseSearch(connector, subQueryRestrictions, pageData);
+        Map<PaginationData, List<Component>> resultComponentList;
+        if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
+            resultComponentList = connector.searchView(Component.class, getIndexName(), "*:*", pageData, getSortColumns(pageData));
+        } else {
+            resultComponentList = baseSearch(connector, subQueryRestrictions, pageData);
+        }
 
         PaginationData respPageData = resultComponentList.keySet().iterator().next();
         List<Component> componentList = resultComponentList.values().iterator().next();
 
         if (user != null) {
-            componentList = componentList.stream().filter(component ->
+            componentList = componentList.parallelStream().filter(component ->
                             makePermission(component, user).isActionAllowed(RequestedAction.READ))
                     .toList();
         }
@@ -148,7 +156,7 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
         PaginationData respPageData = resultComponentList.keySet().iterator().next();
         List<Component> componentList = resultComponentList.values().iterator().next();
 
-        componentList = componentList.stream().filter(component ->
+        componentList = componentList.parallelStream().filter(component ->
                         makePermission(component, user).isActionAllowed(RequestedAction.READ))
                 .toList();
 

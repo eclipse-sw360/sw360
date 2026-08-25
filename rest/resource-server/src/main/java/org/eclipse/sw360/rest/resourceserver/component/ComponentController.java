@@ -201,7 +201,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             paginatedComponents = componentService.searchFilteredComponents(searchText, sw360User, pageable);
-        } else if (luceneSearch && !CommonUtils.isNullOrEmptyMap(filterMap)) {
+        } else if (luceneSearch) {
             paginatedComponents = componentService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (CommonUtils.isNullOrEmptyMap(filterMap)) {
@@ -211,9 +211,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             }
         }
 
-        PaginationResult<Component> paginationResult;
-        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, paginatedComponents);
+        PaginationResult<Component> paginationResult =
+                restControllerHelper.paginationResultFromPaginatedList(
+                        request, pageable, paginatedComponents);
 
         CollectionModel<EntityModel<Component>> resources = getFilteredComponentResources(fields, allDetails, sw360User, paginationResult);
         return new ResponseEntity<>(resources, HttpStatus.OK);
@@ -241,7 +241,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             componentResources.add(embeddedComponentResource);
         };
 
-        paginationResult.getResources().forEach(consumer);
+        paginationResult.getResources().parallelStream().forEach(consumer);
 
         CollectionModel<EntityModel<Component>> resources;
         if (componentResources.isEmpty()) {
