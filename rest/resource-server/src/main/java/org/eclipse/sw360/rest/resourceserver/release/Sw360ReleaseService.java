@@ -1345,9 +1345,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<PaginationData, List<Release>> refineSearch(String searchText, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Map<String, Set<String>> filterMap = Map.of(
-                Release._Fields.NAME.getFieldName(), Collections.singleton(searchText)
-        );
+        Map<String, Set<String>> filterMap = CommonUtils.isNotNullEmptyOrWhitespace(searchText) ?
+            Map.of(Release._Fields.NAME.getFieldName(), Collections.singleton(searchText)) : Collections.emptyMap();
         PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
         return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
     }

@@ -121,13 +121,20 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
      * Paginated search with permission filtering.
      */
     public Map<PaginationData, List<Release>> searchAccessibleReleases(
-            final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
-        Map<PaginationData, List<Release>> resultReleaseList = baseSearch(connector, subQueryRestrictions, pageData);
+            final Map<String, Set<String>> subQueryRestrictions, User user,
+            PaginationData pageData
+    ) {
+        Map<PaginationData, List<Release>> resultReleaseList;
+        if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
+            resultReleaseList = connector.searchView(Release.class, getIndexName(), "*:*", pageData, getSortColumns(pageData));
+        } else {
+            resultReleaseList = baseSearch(connector, subQueryRestrictions, pageData);
+        }
 
         PaginationData respPageData = resultReleaseList.keySet().iterator().next();
         List<Release> releaseList = resultReleaseList.values().iterator().next();
 
-        releaseList = releaseList.stream().filter(release ->
+        releaseList = releaseList.parallelStream().filter(release ->
                 makePermission(release, user).isActionAllowed(RequestedAction.READ))
                 .toList();
 
@@ -149,7 +156,7 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
         PaginationData respPageData = resultReleaseList.keySet().iterator().next();
         List<Release> releaseList = resultReleaseList.values().iterator().next();
 
-        releaseList = releaseList.stream().filter(release ->
+        releaseList = releaseList.parallelStream().filter(release ->
                 makePermission(release, user).isActionAllowed(RequestedAction.READ))
                 .toList();
 
