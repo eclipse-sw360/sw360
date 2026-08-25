@@ -441,6 +441,15 @@ public class JacksonCustomizations {
             @Override
             @JsonProperty(access = Access.READ_ONLY)
             abstract public String getClearingRequestId();
+
+            // Audit fields - read-only (auto-set by backend)
+            @Override
+            @JsonProperty(access = Access.READ_ONLY)
+            abstract public String getModifiedOn();
+
+            @Override
+            @JsonProperty(access = Access.READ_ONLY)
+            abstract public String getModifiedBy();
         }
 
         static abstract class EmbeddedProjectMixin extends ProjectMixin {
