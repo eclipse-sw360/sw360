@@ -787,4 +787,9 @@ service ProjectService {
     * Get linked releases information in dependency network of a project
     */
     list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
+
+    /**
+     * Get a set of IDs of Releases attached/used in a Project
+     */
+    set<string> getReleasesIdsOfProject(1: string projectId, 2: bool transitive, 3: User user);
 }

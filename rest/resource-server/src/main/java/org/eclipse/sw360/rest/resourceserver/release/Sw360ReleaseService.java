@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
@@ -188,6 +189,15 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.getAccessibleReleasesById(releaseIds, sw360User);
     }
 
+    public List<Release> getReleasesWithPermissions(Set<String> releaseIds, User sw360User) throws TException {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            return Collections.emptyList();
+        }
+
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getReleasesWithPermissions(releaseIds, sw360User);
+    }
+
     public List<ReleaseLink> getLinkedReleaseRelations(Release release, User user) throws TException {
         List<ReleaseLink> linkedReleaseRelations = getLinkedReleaseRelationsWithAccessibility(release, user);
         linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
@@ -226,7 +236,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
-            componentIdMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
+            componentIdMap = ThriftUtils.getIdMap(components);
         } catch (TException e) {
             throw new BadRequestClientException("No Components found");
         }
