@@ -709,4 +709,11 @@ public class ProjectHandler implements ProjectService.Iface {
             throws SW360Exception {
         return handler.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User);
     }
+
+    @Override
+    public Set<String> getReleasesIdsOfProject(String projectId, boolean transitive, User user) throws TException {
+        assertNotNull(projectId);
+        assertUser(user);
+        return handler.getReleasesIdsOfProject(projectId, transitive, user);
+    }
 }

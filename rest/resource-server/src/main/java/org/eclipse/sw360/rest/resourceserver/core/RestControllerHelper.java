@@ -264,10 +264,11 @@ public class RestControllerHelper<T> {
             request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
             request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
         }
-        List<T> resources = paginationDataListMap.values().stream()
+        Map<PaginationData, List<T>> nonNullListMap = CommonUtils.nullToEmptyMap(paginationDataListMap);
+        List<T> resources = nonNullListMap.values().stream()
                 .findFirst()
                 .orElse(Collections.emptyList());
-        int totalCount = Math.toIntExact(paginationDataListMap.keySet().stream()
+        int totalCount = Math.toIntExact(nonNullListMap.keySet().stream()
                 .findFirst()
                 .map(PaginationData::getTotalRowCount)
                 .orElse(0L));
