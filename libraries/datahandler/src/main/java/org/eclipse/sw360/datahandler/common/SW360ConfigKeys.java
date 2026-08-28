@@ -100,6 +100,8 @@ public class SW360ConfigKeys {
     public static final String UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON = "ui.enable.add.license.info.to.release.button";
     // This property is used to indicate whether SVM tracking is enabled or not
     public static final String UI_ENABLE_SECURITY_VULNERABILITY_MONITORING = "ui.enable.security.vulnerability.monitoring";
+    // This property is used to enable or disable ADS information in release clearing details
+    public static final String UI_ENABLE_ADS_INFORMATION_DISPLAY = "ui.enable.ads.in.clearing.details.display";
     // This property is used to create Project Operating Systems
     public static final String UI_OPERATING_SYSTEMS = "ui.operating.systems";
     // This property is used to disable the Clearing Request feature for the projects based on project Business Unit (BU) / Group.
