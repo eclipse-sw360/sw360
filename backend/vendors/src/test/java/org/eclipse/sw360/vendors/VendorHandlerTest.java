@@ -14,6 +14,8 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.junit.After;
@@ -145,5 +147,16 @@ public class VendorHandlerTest {
         assertEquals(1, vendors.size());
         assertEquals(1, pagination.getTotalRowCount());
         assertEquals(vendorList.get(1).getShortname(), vendors.getFirst().getShortname());
+    }
+
+    @Test
+    public void testMergeVendorsSelfMerge() throws Exception {
+        Vendor vendor = vendorList.get(0);
+        User user = new User().setEmail("admin@sw360.org");
+        RequestStatus status = vendorHandler.mergeVendors(vendor.getId(), vendor.getId(), vendor, user);
+        assertEquals(RequestStatus.INVALID_INPUT, status);
+        Vendor actual = vendorHandler.getByID(vendor.getId());
+        assertNotNull(actual);
+        assertEquals(vendor.getId(), actual.getId());
     }
 }
