@@ -1,3 +1,15 @@
+/*
+ * Copyright Siemens AG, 2026.
+ * Copyright Sandip Mandal<sandipmandal02.sm@gmail.com>, 2026.
+ * Copyright Bosch Software Innovations GmbH, 2017.
+ * Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package org.eclipse.sw360.rest.resourceserver.release;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
