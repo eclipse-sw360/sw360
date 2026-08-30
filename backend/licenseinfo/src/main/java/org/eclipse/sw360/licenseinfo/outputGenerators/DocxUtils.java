@@ -179,12 +179,6 @@ public class DocxUtils {
         CTR ctr = CTR.Factory.newInstance();
         ctr.setTArray(new CTText[] { ctText });
 
-        // format the hyperlink (underline + color)
-        XWPFRun run = paragraph.createRun();
-        run.setText(hyperlinkText);
-        run.setColor("0000FF"); // Set the color to blue
-        run.setUnderline(UnderlinePatterns.SINGLE); // Set underline
-
         cLink.setRArray(new CTR[] { ctr });
     }
 
