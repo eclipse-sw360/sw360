@@ -707,10 +707,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         rel.setMainlineState(MainlineState.MAINLINE);
         rel.setVendor(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
         rel.setPackageIds(linkedPackages);
+        rel.setEccInformation(eccInformation);
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release7.getId()), any())).willReturn(release7);
+        given(this.releaseServiceMock.getReleasesWithPermissions(eq(Set.of(rel.getId())), any()))
+                .willReturn(new ArrayList<>(List.of(rel)));
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));

@@ -455,7 +455,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         //check the below condition when releaseRelation is not null
         if (releaseRelation != null && sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage().entrySet().stream()
+            Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage()
+                    .entrySet()
+                    .parallelStream()
                     .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
@@ -468,13 +470,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Release> releases = projectService.getFilteredReleases(releaseIds, sw360User, clearingState, componentType, releaseService);
 
         // Extract all release IDs from the provided list
-        Set<String> validReleaseIds = releases.stream()
+        Set<String> validReleaseIds = releases.parallelStream().unordered()
                 .map(Release::getId)
                 .collect(Collectors.toSet());
 
         // Filter the releaseIdToUsage map
         if (sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
+            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage()
+                    .entrySet()
+                    .parallelStream()
                     .filter(entry -> validReleaseIds.contains(entry.getKey()))
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
@@ -484,7 +488,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
-        List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
+        List<EntityModel<Release>> releaseList = releases.parallelStream().map(sw360Release -> wrapTException(() -> {
             final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
             if (releaseIdToUsageMap != null) {
                 ProjectReleaseRelationship relationship = releaseIdToUsageMap.get(sw360Release.getId());
@@ -1263,12 +1267,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<Release> releases = new ArrayList<>();
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        for (final String releaseId : releaseIds) {
-            Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
-            releases.add(sw360Release);
-        }
+        List<Release> releases = releaseService.getReleasesWithPermissions(releaseIds, sw360User);
 
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, releases, SW360Constants.TYPE_RELEASE);
         final List<EntityModel<Release>> releaseResources = new ArrayList<>();

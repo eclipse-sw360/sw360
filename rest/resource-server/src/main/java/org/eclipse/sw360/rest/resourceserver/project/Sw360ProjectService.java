@@ -1017,28 +1017,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Set<String> getReleaseIds(String projectId, User sw360User, boolean transitive) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        if (transitive) {
-            List<ReleaseClearingStatusData> releaseClearingStatusData = sw360ProjectClient
-                    .getReleaseClearingStatuses(projectId, sw360User);
-            return releaseClearingStatusData.stream().map(r -> r.release.getId()).collect(Collectors.toSet());
-        } else {
-            final Project project = getProjectForUserById(projectId, sw360User);
-            if (project.getReleaseIdToUsage() == null) {
-                return new HashSet<String>();
-            }
-            return project.getReleaseIdToUsage().keySet();
-        }
+        return sw360ProjectClient.getReleasesIdsOfProject(projectId, transitive, sw360User);
     }
 
     public ProjectEccCounts getProjectEccCounts(String projectId, User sw360User) throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        List<ReleaseClearingStatusData> releaseClearingStatusData = sw360ProjectClient
-                .getReleaseClearingStatuses(projectId, sw360User);
+        ComponentService.Iface releaseClient = ThriftClients.makeComponentClient();
+        final Set<String> releaseIds = getReleaseIds(projectId, sw360User, true);
+        List<Release> releases = releaseClient.getReleasesWithPermissions(releaseIds, sw360User);
 
         int eccClassifiedCount = 0;
         int eccOpenCount = 0;
-        for (ReleaseClearingStatusData clearingStatusData : CommonUtils.nullToEmptyList(releaseClearingStatusData)) {
-            Release release = clearingStatusData.release;
+        for (Release release : releases) {
             if (release == null || release.getEccInformation() == null
                     || release.getEccInformation().getEccStatus() == null) {
                 continue;
@@ -1999,25 +1988,26 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
         List<Release> releases = componentClient.getAccessibleReleasesById(releaseIds, sw360User);
         releaseService.setComponentDependentFieldsInRelease(releases, sw360User);
-        return releases.stream()
-        .filter(Objects::nonNull)
-        .filter(release -> {
-        // Filter by componentType if provided
-        if (componentType != null && !componentType.isEmpty()) {
-                ComponentType releaseType = release.getComponentType();
-                if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
-                    return false;
-                }
-            }
-            // Filter by clearingState if provided
-            if (clearingState != null && !clearingState.isEmpty()) {
-                ClearingState releaseState = release.getClearingState();
-                if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {
-                    return false;
-                }
-            }
-            return true;
-        }).collect(Collectors.toList());
+        return releases.parallelStream().unordered()
+                .filter(Objects::nonNull)
+                .filter(release -> {
+                    // Filter by componentType if provided
+                    if (CommonUtils.isNotEmpty(componentType)) {
+                        ComponentType releaseType = release.getComponentType();
+                        if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
+                            return false;
+                        }
+                    }
+                    // Filter by clearingState if provided
+                    if (CommonUtils.isNotEmpty(clearingState)) {
+                        ClearingState releaseState = release.getClearingState();
+                        if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .toList();
     }
 
     /**
