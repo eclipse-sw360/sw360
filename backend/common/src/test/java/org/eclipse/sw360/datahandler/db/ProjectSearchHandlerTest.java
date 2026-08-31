@@ -21,10 +21,12 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -65,6 +67,7 @@ class ProjectSearchHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
         for (Project p : createSeedProjects()) { db.add(p); }
+        for (Project p : createVisibilitySeedProjects()) { db.add(p); }
         searchHandler = new ProjectSearchHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
@@ -389,6 +392,224 @@ class ProjectSearchHandlerTest {
         int adminCount = items(searchHandler.searchFilteredProjects("FT_", user1, allPages())).size();
         int otherCount = items(searchHandler.searchFilteredProjects("FT_", user2, allPages())).size();
         assertTrue(otherCount <= adminCount);
+    }
+
+    // --- Visibility filter functional tests ----------------------------------
+    // Seed projects for visibility tests use the "VIS_" prefix so they are
+    // isolated from the sort/pagination tests above.
+    //
+    // Users involved:
+    //   visUser     - dept "AB CD EF" (BU "AB CD EF"), role USER
+    //   visOutsider - dept "XY ZZ AA" (BU "XY ZZ AA"), role USER  (different BU)
+    //   visOwner    - the createdBy email of some projects
+    //   visMod      - added as a moderator on some projects
+    //   visContrib  - added as a contributor on some projects
+    //   visLead     - added as a leadArchitect on some projects
+    //   visResp     - added as a projectResponsible on some projects
+    // -------------------------------------------------------------------------
+
+    private static final User visUser     = new User().setEmail("vis_user@test.com")    .setDepartment("AB CD EF").setUserGroup(UserGroup.USER);
+    private static final User visOutsider = new User().setEmail("vis_outsider@test.com").setDepartment("XY ZZ AA").setUserGroup(UserGroup.USER);
+    private static final User visClearingAdmin = new User().setEmail("vis_ca@test.com") .setDepartment("XY ZZ AA").setUserGroup(UserGroup.CLEARING_ADMIN);
+
+    private static final String VIS_OWNER   = "vis_user@test.com";      // same email as visUser
+    private static final String VIS_MOD     = "vis_mod@test.com";
+    private static final String VIS_CONTRIB = "vis_contrib@test.com";
+    private static final String VIS_LEAD    = "vis_lead@test.com";
+    private static final String VIS_RESP    = "vis_resp@test.com";
+
+    // Project IDs for visibility seed data
+    private static final String VIS_EVERYONE    = "vis-prj-everyone";
+    private static final String VIS_PRIVATE_OWN = "vis-prj-private-own";       // createdBy=visUser
+    private static final String VIS_PRIVATE_OTHER = "vis-prj-private-other";   // createdBy=someone else
+    private static final String VIS_ME_MOD_OWN    = "vis-prj-me-mod-own";      // ME_AND_MODERATORS, createdBy=visUser
+    private static final String VIS_ME_MOD_MOD    = "vis-prj-me-mod-mod";      // ME_AND_MODERATORS, visUser is moderator
+    private static final String VIS_ME_MOD_CONTRIB = "vis-prj-me-mod-contrib"; // ME_AND_MODERATORS, visUser is contributor
+    private static final String VIS_ME_MOD_LEAD    = "vis-prj-me-mod-lead";    // ME_AND_MODERATORS, visUser is leadArchitect
+    private static final String VIS_ME_MOD_RESP    = "vis-prj-me-mod-resp";    // ME_AND_MODERATORS, visUser is projectResponsible
+    private static final String VIS_ME_MOD_NONE    = "vis-prj-me-mod-none";    // ME_AND_MODERATORS, visUser is NOT a member
+    private static final String VIS_BU_SAME         = "vis-prj-bu-same";       // BU+MOD, same BU as visUser
+    private static final String VIS_BU_OTHER        = "vis-prj-bu-other";      // BU+MOD, different BU (XY ZZ AA)
+    private static final String VIS_BU_MOD_MEMBER   = "vis-prj-bu-mod-member"; // BU+MOD, different BU but visUser is moderator
+
+    private static List<Project> createVisibilitySeedProjects() {
+        List<Project> projects = new ArrayList<>();
+
+        // EVERYONE - any user should see this
+        projects.add(new Project().setId(VIS_EVERYONE).setType("project")
+                .setName("VIS_Everyone Project").setVisbility(Visibility.EVERYONE)
+                .setBusinessUnit("AB CD EF").setCreatedBy("other@test.com").setCreatedOn("2025-01-01"));
+
+        // PRIVATE - only the owner (visUser)
+        projects.add(new Project().setId(VIS_PRIVATE_OWN).setType("project")
+                .setName("VIS_Private Own").setVisbility(Visibility.PRIVATE)
+                .setBusinessUnit("AB CD EF").setCreatedBy(VIS_OWNER).setCreatedOn("2025-01-01"));
+
+        // PRIVATE - owned by someone else, nobody should see it except the owner
+        projects.add(new Project().setId(VIS_PRIVATE_OTHER).setType("project")
+                .setName("VIS_Private Other").setVisbility(Visibility.PRIVATE)
+                .setBusinessUnit("AB CD EF").setCreatedBy("private_owner@test.com").setCreatedOn("2025-01-01"));
+
+        // ME_AND_MODERATORS - visUser is the creator
+        projects.add(new Project().setId(VIS_ME_MOD_OWN).setType("project")
+                .setName("VIS_MeAndMod Own").setVisbility(Visibility.ME_AND_MODERATORS)
+                .setBusinessUnit("AB CD EF").setCreatedBy(VIS_OWNER).setCreatedOn("2025-01-01"));
+
+        // ME_AND_MODERATORS - visUser is a moderator
+        projects.add(new Project().setId(VIS_ME_MOD_MOD).setType("project")
+                .setName("VIS_MeAndMod Mod").setVisbility(Visibility.ME_AND_MODERATORS)
+                .setBusinessUnit("AB CD EF").setCreatedBy("other@test.com")
+                .setModerators(Set.of(VIS_OWNER)).setCreatedOn("2025-01-01"));
+
+        // ME_AND_MODERATORS - visUser is a contributor
+        projects.add(new Project().setId(VIS_ME_MOD_CONTRIB).setType("project")
+                .setName("VIS_MeAndMod Contrib").setVisbility(Visibility.ME_AND_MODERATORS)
+                .setBusinessUnit("AB CD EF").setCreatedBy("other@test.com")
+                .setContributors(Set.of(VIS_OWNER)).setCreatedOn("2025-01-01"));
+
+        // ME_AND_MODERATORS - visUser is the leadArchitect
+        projects.add(new Project().setId(VIS_ME_MOD_LEAD).setType("project")
+                .setName("VIS_MeAndMod Lead").setVisbility(Visibility.ME_AND_MODERATORS)
+                .setBusinessUnit("AB CD EF").setCreatedBy("other@test.com")
+                .setLeadArchitect(VIS_OWNER).setCreatedOn("2025-01-01"));
+
+        // ME_AND_MODERATORS - visUser is the projectResponsible
+        projects.add(new Project().setId(VIS_ME_MOD_RESP).setType("project")
+                .setName("VIS_MeAndMod Resp").setVisbility(Visibility.ME_AND_MODERATORS)
+                .setBusinessUnit("AB CD EF").setCreatedBy("other@test.com")
+                .setProjectResponsible(VIS_OWNER).setCreatedOn("2025-01-01"));
+
+        // ME_AND_MODERATORS - visUser has no role → should NOT be visible
+        projects.add(new Project().setId(VIS_ME_MOD_NONE).setType("project")
+                .setName("VIS_MeAndMod None").setVisbility(Visibility.ME_AND_MODERATORS)
+                .setBusinessUnit("AB CD EF").setCreatedBy("other@test.com").setCreatedOn("2025-01-01"));
+
+        // BUISNESSUNIT_AND_MODERATORS - same BU as visUser ("AB CD EF")
+        projects.add(new Project().setId(VIS_BU_SAME).setType("project")
+                .setName("VIS_BuAndMod SameBU").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
+                .setBusinessUnit("AB CD EF").setCreatedBy("other@test.com").setCreatedOn("2025-01-01"));
+
+        // BUISNESSUNIT_AND_MODERATORS - different BU ("XY ZZ AA"), visUser not a member
+        projects.add(new Project().setId(VIS_BU_OTHER).setType("project")
+                .setName("VIS_BuAndMod OtherBU").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
+                .setBusinessUnit("XY ZZ AA").setCreatedBy("other@test.com").setCreatedOn("2025-01-01"));
+
+        // BUISNESSUNIT_AND_MODERATORS - different BU but visUser is a moderator → should be visible
+        projects.add(new Project().setId(VIS_BU_MOD_MEMBER).setType("project")
+                .setName("VIS_BuAndMod Member").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
+                .setBusinessUnit("XY ZZ AA").setCreatedBy("other@test.com")
+                .setModerators(Set.of(VIS_OWNER)).setCreatedOn("2025-01-01"));
+
+        return projects;
+    }
+
+    private Set<String> visIds(User user) {
+        return items(searchHandler.search(Map.of("name", Set.of("VIS_")), user, allPages()))
+                .stream().map(Project::getId).collect(Collectors.toSet());
+    }
+
+    @Test
+    void visibility_everyone_isVisibleToAllUsers() {
+        assertTrue(visIds(visUser).contains(VIS_EVERYONE));
+        assertTrue(visIds(visOutsider).contains(VIS_EVERYONE));
+        assertTrue(visIds(visClearingAdmin).contains(VIS_EVERYONE));
+        assertTrue(visIds(null).contains(VIS_EVERYONE));
+    }
+
+    @Test
+    void visibility_private_onlyOwnerCanSee() {
+        // visUser is the owner
+        assertTrue(visIds(visUser).contains(VIS_PRIVATE_OWN));
+        // outsider cannot see it
+        assertFalse(visIds(visOutsider).contains(VIS_PRIVATE_OWN));
+        // clearing admin cannot see other's private projects
+        assertFalse(visIds(visClearingAdmin).contains(VIS_PRIVATE_OWN));
+    }
+
+    @Test
+    void visibility_private_othersProjectNotVisible() {
+        assertFalse(visIds(visUser).contains(VIS_PRIVATE_OTHER));
+        assertFalse(visIds(visOutsider).contains(VIS_PRIVATE_OTHER));
+    }
+
+    @Test
+    void visibility_meAndModerators_creatorCanSee() {
+        assertTrue(visIds(visUser).contains(VIS_ME_MOD_OWN));
+        assertFalse(visIds(visOutsider).contains(VIS_ME_MOD_OWN));
+    }
+
+    @Test
+    void visibility_meAndModerators_moderatorCanSee() {
+        assertTrue(visIds(visUser).contains(VIS_ME_MOD_MOD));
+        assertFalse(visIds(visOutsider).contains(VIS_ME_MOD_MOD));
+    }
+
+    @Test
+    void visibility_meAndModerators_contributorCanSee() {
+        assertTrue(visIds(visUser).contains(VIS_ME_MOD_CONTRIB));
+        assertFalse(visIds(visOutsider).contains(VIS_ME_MOD_CONTRIB));
+    }
+
+    @Test
+    void visibility_meAndModerators_leadArchitectCanSee() {
+        assertTrue(visIds(visUser).contains(VIS_ME_MOD_LEAD));
+        assertFalse(visIds(visOutsider).contains(VIS_ME_MOD_LEAD));
+    }
+
+    @Test
+    void visibility_meAndModerators_projectResponsibleCanSee() {
+        assertTrue(visIds(visUser).contains(VIS_ME_MOD_RESP));
+        assertFalse(visIds(visOutsider).contains(VIS_ME_MOD_RESP));
+    }
+
+    @Test
+    void visibility_meAndModerators_nonMemberCannotSee() {
+        assertFalse(visIds(visUser).contains(VIS_ME_MOD_NONE));
+        assertFalse(visIds(visOutsider).contains(VIS_ME_MOD_NONE));
+    }
+
+    @Test
+    void visibility_buAndModerators_sameBuUserCanSee() {
+        assertTrue(visIds(visUser).contains(VIS_BU_SAME));
+        assertFalse(visIds(visOutsider).contains(VIS_BU_SAME));
+    }
+
+    @Test
+    void visibility_buAndModerators_differentBuUserCannotSee() {
+        assertFalse(visIds(visUser).contains(VIS_BU_OTHER));
+    }
+
+    @Test
+    void visibility_buAndModerators_memberOverridesDifferentBu() {
+        // visUser is a moderator on VIS_BU_MOD_MEMBER even though BU differs
+        assertTrue(visIds(visUser).contains(VIS_BU_MOD_MEMBER));
+    }
+
+    @Test
+    void visibility_clearingAdmin_seesAllBuAndModeratorProjects() {
+        Set<String> ids = visIds(visClearingAdmin);
+        // Clearing admin sees all BUISNESSUNIT_AND_MODERATORS regardless of BU
+        assertTrue(ids.contains(VIS_BU_SAME));
+        assertTrue(ids.contains(VIS_BU_OTHER));
+        assertTrue(ids.contains(VIS_BU_MOD_MEMBER));
+    }
+
+    @Test
+    void visibility_clearingAdmin_cannotSeeOthersPrivateProjects() {
+        Set<String> ids = visIds(visClearingAdmin);
+        assertFalse(ids.contains(VIS_PRIVATE_OTHER));
+        assertFalse(ids.contains(VIS_PRIVATE_OWN));  // not their project
+    }
+
+    @Test
+    void visibility_nullUser_seesAll() {
+        Set<String> ids = visIds(null);
+        // null user → no filter → all VIS_ projects should be returned
+        assertTrue(ids.containsAll(Set.of(
+                VIS_EVERYONE, VIS_PRIVATE_OWN, VIS_PRIVATE_OTHER,
+                VIS_ME_MOD_OWN, VIS_ME_MOD_MOD, VIS_ME_MOD_CONTRIB,
+                VIS_ME_MOD_LEAD, VIS_ME_MOD_RESP, VIS_ME_MOD_NONE,
+                VIS_BU_SAME, VIS_BU_OTHER, VIS_BU_MOD_MEMBER)));
     }
 
     // --- Edge case tests -----------------------------------------------------

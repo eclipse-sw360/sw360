@@ -12,17 +12,21 @@ package org.eclipse.sw360.datahandler.db;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_PROJECT_RELEASE_RELATION_NETWORK;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
@@ -44,12 +49,14 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      * Fields common to all projects, grouped by index category.
      *
      * <ul>
-     *   <li><b>emptyAware</b>: {@code businessUnit} (ngram 2–10), {@code tag} (ngram 2–10) -
+     *   <li><b>emptyAware</b>: {@code businessUnit} (ngram 2-10), {@code tag} (ngram 2-10) -
      *       documents with no value are indexed under
      *       {@link SW360Constants#PROJECT_SEARCH_EMPTY_TOKEN} so "no value" filter queries work.</li>
      *   <li><b>standard</b>: {@code name}, {@code version} - full prefix-search support.</li>
      *   <li><b>simple</b>: {@code projectType}, {@code projectResponsible} (email analyzer),
-     *       {@code description}, {@code state} (keyword), {@code clearingState} (keyword).</li>
+     *       {@code description}, {@code state} (keyword), {@code clearingState} (keyword),
+     *       {@code visbility} (keyword), {@code createdBy} (email), {@code leadArchitect} (email) -
+     *       used for permission/visibility filter queries.</li>
      *   <li><b>date</b>: {@code createdOn} - stored as sortable yyyyMMdd double.</li>
      * </ul>
      */
@@ -63,12 +70,17 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             IndexField.simple("projectResponsible", "email"),
             IndexField.simple("state", "keyword"),
             IndexField.simple("clearingState", "keyword"),
+            IndexField.simple("visbility", "keyword"),
+            IndexField.simple("createdBy", "email"),
+            IndexField.simple("leadArchitect", "email"),
             IndexField.date("createdOn")
     );
 
     /**
-     * Handler-specific JS: index {@code additionalData} as a concatenated text blob and
-     * index the creator email of every attachment.
+     * Handler-specific JS: index {@code additionalData} as a concatenated text blob,
+     * index the creator email of every attachment, and index each element of the
+     * {@code moderators} and {@code contributors} arrays individually so that
+     * per-user visibility queries work correctly.
      */
     private static final String PROJECT_CUSTOM_JS =
             "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
@@ -79,6 +91,16 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             "        }" +
             "      }" +
             "    }" +
+            "    if(doc.moderators && doc.moderators.length > 0) {" +
+            "      for(var i in doc.moderators) {" +
+            "        index('text', 'moderators', doc.moderators[i]);" +
+            "      }" +
+            "    }" +
+            "    if(doc.contributors && doc.contributors.length > 0) {" +
+            "      for(var i in doc.contributors) {" +
+            "        index('text', 'contributors', doc.contributors[i]);" +
+            "      }" +
+            "    }" +
             INDEX_PROJECT_RELEASE_RELATION_NETWORK +
             INDEX_ID_FIELD;
 
@@ -87,12 +109,16 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      * <ul>
      *   <li>{@code attachmentCreatedBy} -> {@code email} (custom JS field)</li>
      *   <li>{@code additionalData_sort} -> {@code keyword} (created by {@code arrayToStringIndex})</li>
+     *   <li>{@code moderators} -> {@code email} (custom JS loop, array elements)</li>
+     *   <li>{@code contributors} -> {@code email} (custom JS loop, array elements)</li>
      * </ul>
      */
     private static final Map<String, String> PROJECT_CUSTOM_ANALYZERS = Map.of(
             "attachmentCreatedBy", "email",
             "additionalData_sort", "keyword",
             "releaseRelationNetwork", "keyword",
+            "moderators", "email",
+            "contributors", "email",
             "id", "keyword"
     );
 
@@ -139,15 +165,8 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             @Nullable User user,
             PaginationData pageData
     ) {
-        Map<PaginationData, List<Project>> resultProjectList = baseSearch(connector, subQueryRestrictions, pageData);
-        PaginationData respPageData = resultProjectList.keySet().iterator().next();
-        List<Project> projectList = resultProjectList.values().iterator().next();
-
-        if (user != null) {
-            projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
-        }
-
-        return Collections.singletonMap(respPageData, projectList);
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        return baseSearch(connector, subQueryRestrictions, visibilityQuery, pageData);
     }
 
     public Map<PaginationData, List<Project>> searchFilteredProjects(
@@ -159,15 +178,8 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
         for (Project._Fields field : QUICK_FILTER_FIELDS) {
             subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
         }
-        Map<PaginationData, List<Project>> resultProjectList = baseSearchWithOr(connector, subQueryRestrictions, pageData);
-        PaginationData respPageData = resultProjectList.keySet().iterator().next();
-        List<Project> projectList = resultProjectList.values().iterator().next();
-
-        if (user != null) {
-            projectList = projectList.stream().filter(ProjectPermissions.isVisible(user)).toList();
-        }
-
-        return Collections.singletonMap(respPageData, projectList);
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        return baseSearchWithOr(connector, subQueryRestrictions, visibilityQuery, pageData);
     }
 
     public Set<Project> searchByReleaseId(String id, User user) {
@@ -182,6 +194,98 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
         Map<PaginationData, List<Project>> result = search(filterMap, user, pageData);
         List<Project> projectsByReleaseIds = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
         return new HashSet<>(projectsByReleaseIds);
+    }
+
+    // -------------------------------------------------------------------------
+    //  Visibility / permission Lucene query
+    // -------------------------------------------------------------------------
+
+    /**
+     * Build a Lucene query string that enforces project visibility rules for the given user,
+     * mirroring the Mango selector produced by
+     * {@link ProjectRepository#getAccessibleProjectSelector}.
+     *
+     * <p>The returned string is suitable for AND-ing with any caller-supplied search query so
+     * that Nouveau applies the permission check inside the index rather than as a post-filter.
+     * This fixes pagination: every page returned will contain exactly the requested number of
+     * accessible projects (no silent gaps caused by post-filter removals).</p>
+     *
+     * <p>Check the <a href="https://eclipse.dev/sw360/docs/administrationguide/user-management-roles/#project-visibility">
+     *     Project Visibility documentation for more.
+     * </a></p>
+     *
+     * @param user The requesting user, or {@code null} (no filter applied when null).
+     * @return A Lucene query string, or {@code null} if no restriction should be applied.
+     */
+    @Nullable
+    public static String buildVisibilityLuceneQuery(@Nullable User user) {
+        if (user == null) {
+            return null;
+        }
+
+        boolean isAdmin = PermissionUtils.isAdmin(user);
+        boolean isSecurityUser = PermissionUtils.isSecurityUser(user);
+        if ((SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isAdmin) || isSecurityUser) {
+            return null;
+        }
+
+        boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
+        String email = user.getEmail();
+        String primaryBU = SW360Utils.getBUFromOrganisation(user.getDepartment());
+
+        // Collect all BUs (primary + secondary)
+        Set<String> allBUs = new HashSet<>();
+        allBUs.add(primaryBU);
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
+        if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
+            secondaryDepartmentsAndRoles.keySet().stream()
+                    .map(SW360Utils::getBUFromOrganisation)
+                    .forEach(allBUs::add);
+        }
+
+        // Clause 1: PRIVATE projects owned by the user
+        String privateClause = "(visbility:\"PRIVATE\" AND createdBy:\"" + email + "\")";
+
+        // Clause 2: visible to everyone
+        String everyoneClause = "visbility:\"EVERYONE\"";
+
+        // Clause 3: ME_AND_MODERATORS - user must be a direct member
+        String memberCheck = buildMemberCheckQuery(email);
+        String meAndModeratorClause =
+                "(visbility:\"ME_AND_MODERATORS\" AND (" + memberCheck + "))";
+
+        // Clause 4: BUISNESSUNIT_AND_MODERATORS
+        String buAndModeratorClause;
+        if (isClearingAdmin) {
+            // Clearing admins can see all BU+Moderator projects regardless of BU match
+            buAndModeratorClause = "visbility:\"BUISNESSUNIT_AND_MODERATORS\"";
+        } else {
+            List<String> buOrMemberParts = new ArrayList<>();
+            for (String bu : allBUs) {
+                buOrMemberParts.add("businessUnit_exact:\"" + bu + "\"");
+            }
+            buOrMemberParts.add(memberCheck);
+            buAndModeratorClause = "(visbility:\"BUISNESSUNIT_AND_MODERATORS\" AND ("
+                    + String.join(" OR ", buOrMemberParts) + "))";
+        }
+
+        return privateClause
+                + " OR " + everyoneClause
+                + " OR " + meAndModeratorClause
+                + " OR " + buAndModeratorClause;
+    }
+
+    /**
+     * Build an OR query that checks whether {@code email} appears in any of the
+     * project-member fields: {@code createdBy}, {@code projectResponsible},
+     * {@code leadArchitect}, {@code moderators}, {@code contributors}.
+     */
+    private static @NonNull String buildMemberCheckQuery(@NonNull String email) {
+        return "createdBy:\"" + email + "\""
+                + " OR projectResponsible:\"" + email + "\""
+                + " OR leadArchitect:\"" + email + "\""
+                + " OR moderators:\"" + email + "\""
+                + " OR contributors:\"" + email + "\"";
     }
 
     // -------------------------------------------------------------------------

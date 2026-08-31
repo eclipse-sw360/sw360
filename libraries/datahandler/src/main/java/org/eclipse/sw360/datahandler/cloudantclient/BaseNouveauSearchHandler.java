@@ -11,6 +11,7 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -572,6 +573,30 @@ public abstract class BaseNouveauSearchHandler<T> {
     }
 
     /**
+     * Perform a AND'd base search with an additional pre-built Lucene query clause AND'd into
+     * the final query. Use this overload when the caller has already constructed a query fragment
+     * (e.g. a visibility/permission filter) that must be combined with the field restrictions.
+     *
+     * @param connector            Nouveau Aware DB Connector to use.
+     * @param subQueryRestrictions Map of field names to their accepted values.
+     * @param additionalQuery      A pre-built Lucene query string AND'd with the restriction query.
+     *                             When {@code null} or empty, falls back to the plain
+     *                             {@link #baseSearch(NouveauLuceneAwareDatabaseConnector, Map, PaginationData)}.
+     * @param pageData             Pagination information.
+     * @return Paginated search results.
+     */
+    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> baseSearch(
+            NouveauLuceneAwareDatabaseConnector connector,
+            final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            @Nullable String additionalQuery,
+            PaginationData pageData
+    ) {
+        return genericBaseSearch(connector, subQueryRestrictions,
+                restrictions -> appendAdditionalQuery(buildQueryFromRestrictionsWithAnd(restrictions), additionalQuery),
+                pageData);
+    }
+
+    /**
      * Perform a OR'd base search for a given type with the provided field restrictions and pagination.
      *
      * <p>Query routing is metadata-driven from the {@link BuiltIndexDefinition} passed to
@@ -588,6 +613,46 @@ public abstract class BaseNouveauSearchHandler<T> {
             PaginationData pageData
     ) {
         return genericBaseSearch(connector, subQueryRestrictions, this::buildQueryFromRestrictionsWithOr, pageData);
+    }
+
+    /**
+     * Perform a OR'd base search with an additional pre-built Lucene query clause AND'd into
+     * the final query. Use this overload when the caller has already constructed a query fragment
+     * (e.g. a visibility/permission filter) that must be combined with the OR'd field restrictions.
+     *
+     * @param connector            Nouveau Aware DB Connector to use.
+     * @param subQueryRestrictions Map of field names to their accepted values.
+     * @param additionalQuery      A pre-built Lucene query string AND'd with the OR restriction query.
+     *                             When {@code null} or empty, falls back to the plain
+     *                             {@link #baseSearchWithOr(NouveauLuceneAwareDatabaseConnector, Map, PaginationData)}.
+     * @param pageData             Pagination information.
+     * @return Paginated search results.
+     */
+    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> baseSearchWithOr(
+            NouveauLuceneAwareDatabaseConnector connector,
+            final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            @Nullable String additionalQuery,
+            PaginationData pageData
+    ) {
+        return genericBaseSearch(connector, subQueryRestrictions,
+                restrictions -> appendAdditionalQuery(buildQueryFromRestrictionsWithOr(restrictions), additionalQuery),
+                pageData);
+    }
+
+    /**
+     * AND an extra Lucene clause onto an existing query string.
+     * If either part is absent the other is returned unchanged.
+     */
+    private static @NonNull String appendAdditionalQuery(
+            @NonNull String baseQuery, @Nullable String additionalQuery
+    ) {
+        if (CommonUtils.isNullEmptyOrWhitespace(additionalQuery)) {
+            return baseQuery;
+        }
+        if (baseQuery.isBlank()) {
+            return additionalQuery;
+        }
+        return "(" + baseQuery + ") AND (" + additionalQuery + ")";
     }
 
     /**
