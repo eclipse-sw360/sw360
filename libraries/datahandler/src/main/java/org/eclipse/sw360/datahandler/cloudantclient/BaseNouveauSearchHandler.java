@@ -696,9 +696,26 @@ public abstract class BaseNouveauSearchHandler<T> {
             final @NonNull Joiner joiner,
             PaginationData pageData
     ) {
+        return complexBaseSearch(connector, complexQueryRestrictions, joiner, null, pageData);
+    }
+
+    /**
+     * Perform a complex search with an additional pre-built Lucene query clause (e.g. visibility filter)
+     * AND'd into the final query.
+     */
+    protected final @NonNull @Unmodifiable Map<PaginationData, List<T>> complexBaseSearch(
+            @NonNull NouveauLuceneAwareDatabaseConnector connector,
+            final @NonNull Map<String, Map<String, Set<String>>> complexQueryRestrictions,
+            final @NonNull Joiner joiner,
+            @Nullable String additionalQuery,
+            PaginationData pageData
+    ) {
         List<String> sortColumns = getSortColumns(pageData);
 
-        String query = joiner.join(createComplexQuery(complexQueryRestrictions));
+        String query = appendAdditionalQuery(
+                joiner.join(createComplexQuery(complexQueryRestrictions)),
+                additionalQuery
+        );
 
         Map<PaginationData, List<T>> result = connector.searchView(
                 clazz, luceneSearchView.getIndexName(), query, pageData, sortColumns);
