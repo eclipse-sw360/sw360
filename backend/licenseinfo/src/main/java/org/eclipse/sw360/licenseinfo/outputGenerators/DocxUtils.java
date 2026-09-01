@@ -174,9 +174,14 @@ public class DocxUtils {
     public static void addHyperLink(XWPFParagraph paragraph, String hyperlinkAnchor, String hyperlinkText) {
         CTHyperlink cLink = paragraph.getCTP().addNewHyperlink();
         cLink.setAnchor(hyperlinkAnchor);
+
+        CTR ctr = CTR.Factory.newInstance();
+        CTRPr ctrPr = ctr.addNewRPr();
+        ctrPr.addNewColor().setVal("0563C1");
+        ctrPr.addNewU().setVal(STUnderline.SINGLE);
+
         CTText ctText = CTText.Factory.newInstance();
         ctText.setStringValue(hyperlinkText);
-        CTR ctr = CTR.Factory.newInstance();
         ctr.setTArray(new CTText[] { ctText });
 
         cLink.setRArray(new CTR[] { ctr });
