@@ -68,6 +68,7 @@ import org.eclipse.sw360.exporter.LicenseInfoExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.jetbrains.annotations.Contract;
@@ -544,8 +545,9 @@ public class SW360ReportService {
                 RequestSummary summary = projectclient.exportCycloneDxSbom(projectId, bomType, withSubProject, user);
                 RequestStatus status = summary.getRequestStatus();
                 if (RequestStatus.FAILED_SANITY_CHECK.equals(status)) {
-                    bomString = status.name();
-                    throw new SW360Exception(bomString);
+                    String msg = CommonUtils.isNotNullEmptyOrWhitespace(summary.getMessage()) ?
+                            summary.getMessage() : "Cannot export SBOM: The project does not contain any linked releases or packages.";
+                    throw new BadRequestClientException(msg);
                 } else if (RequestStatus.ACCESS_DENIED.equals(status)) {
                     bomString = status.name() + ", only user with role " + SW360Utils.readConfig(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER).name() + " can access.";
                     throw new AccessDeniedException(bomString);
