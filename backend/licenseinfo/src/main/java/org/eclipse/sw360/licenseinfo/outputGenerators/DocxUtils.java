@@ -174,16 +174,15 @@ public class DocxUtils {
     public static void addHyperLink(XWPFParagraph paragraph, String hyperlinkAnchor, String hyperlinkText) {
         CTHyperlink cLink = paragraph.getCTP().addNewHyperlink();
         cLink.setAnchor(hyperlinkAnchor);
+
+        CTR ctr = CTR.Factory.newInstance();
+        CTRPr ctrPr = ctr.addNewRPr();
+        ctrPr.addNewColor().setVal("0563C1");
+        ctrPr.addNewU().setVal(STUnderline.SINGLE);
+
         CTText ctText = CTText.Factory.newInstance();
         ctText.setStringValue(hyperlinkText);
-        CTR ctr = CTR.Factory.newInstance();
         ctr.setTArray(new CTText[] { ctText });
-
-        // format the hyperlink (underline + color)
-        XWPFRun run = paragraph.createRun();
-        run.setText(hyperlinkText);
-        run.setColor("0000FF"); // Set the color to blue
-        run.setUnderline(UnderlinePatterns.SINGLE); // Set underline
 
         cLink.setRArray(new CTR[] { ctr });
     }
