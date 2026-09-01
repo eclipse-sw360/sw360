@@ -192,6 +192,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.EXTERNAL_URLS, "externalUrls")
+            .put(Project._Fields.LEAD_ARCHITECT, "leadArchitect")
             .put(Project._Fields.MODERATORS, "sw360:moderators")
             .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
             .put(Project._Fields.ATTACHMENTS,"sw360:attachments").build();
