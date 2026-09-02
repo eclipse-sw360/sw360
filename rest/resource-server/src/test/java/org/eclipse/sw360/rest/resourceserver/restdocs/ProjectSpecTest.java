@@ -587,7 +587,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
-        given(this.projectServiceMock.getGroups()).willReturn(new java.util.LinkedHashSet<>(Arrays.asList("", "sw360 AR", "sw360 EX DF")));
+        given(this.projectServiceMock.getGroups()).willReturn(Arrays.asList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN, "sw360 AR", "sw360 EX DF"));
         given(this.projectServiceMock.refineSearch(any(), any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(projectListByName.size()).setDisplayStart(0).setTotalRowCount(projectListByName.size()),
@@ -2217,7 +2217,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("variant").description("All the possible values for variants are "
                                         + Arrays.asList(OutputFormatVariant.values())),
                                 parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
-                                		+ "Possible values are `<true|false>`")
+                                        + "Possible values are `<true|false>`")
                                 )));
     }
 
@@ -2536,7 +2536,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))
-                        		));
+                                ));
     }
 
     @Test

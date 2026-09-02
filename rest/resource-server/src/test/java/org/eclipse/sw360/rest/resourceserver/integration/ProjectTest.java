@@ -643,7 +643,7 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Test
     public void should_get_project_groups_with_empty_token_first() throws IOException, TException {
-        given(this.projectServiceMock.getGroups()).willReturn(new java.util.LinkedHashSet<>(Arrays.asList("", "Group A", "Group B")));
+        given(this.projectServiceMock.getGroups()).willReturn(Arrays.asList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN, "Group A", "Group B"));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =

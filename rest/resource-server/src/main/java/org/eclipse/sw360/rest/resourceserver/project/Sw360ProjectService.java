@@ -132,6 +132,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     private static final Logger log = LogManager.getLogger(Sw360ProjectService.class);
+    private static final Comparator<String> PROJECT_GROUP_COMPARATOR =
+            String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
 
     @NonNull
     private RestControllerHelper rch;
@@ -390,18 +392,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public void deleteAttachmentUsages(List<AttachmentUsage> usagesToDelete) throws TException {
         AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
         attachmentClient.deleteAttachmentUsages(usagesToDelete);
-	}
+    }
 
-	public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		attachmentClient.makeAttachmentUsages(usagesToCreate);
-	}
+    public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        attachmentClient.makeAttachmentUsages(usagesToCreate);
+    }
 
-	public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
-		return allUsagesByProjectAfterCleanUp;
-	}
+    public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
+        return allUsagesByProjectAfterCleanUp;
+    }
 
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -2067,9 +2069,23 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return count;
     }
 
-    public Set<String> getGroups() throws TException {
+    public List<String> getGroups() throws TException {
         ProjectService.Iface projectClient = getThriftProjectClient();
-        return projectClient.getGroups();
+        Set<String> groups = projectClient.getGroups();
+        if (groups == null) {
+            groups = Collections.emptySet();
+        }
+        List<String> responseGroups = new ArrayList<>(groups.size() + 1);
+        responseGroups.add(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
+        responseGroups.addAll(
+                groups.stream()
+                        .filter(Objects::nonNull)
+                        .filter(group -> !group.isEmpty())
+                        .filter(group -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(group))
+                        .sorted(PROJECT_GROUP_COMPARATOR)
+                        .toList()
+        );
+        return responseGroups;
     }
 
     // =====================================================

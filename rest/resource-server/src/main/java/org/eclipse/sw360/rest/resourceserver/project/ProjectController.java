@@ -4927,20 +4927,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     })
     @GetMapping(value = PROJECTS_URL + "/groups")
     public List<String> getAllProjectGroups() {
-        Set<String> groups;
         try {
-            groups = projectService.getGroups();
+            return projectService.getGroups();
         } catch (TException e) {
-            groups = Collections.emptySet();
+            return Collections.singletonList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
         }
-
-        LinkedHashSet<String> responseGroups = new LinkedHashSet<>();
-        responseGroups.add(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
-        groups.stream()
-                .filter(Objects::nonNull)
-                .filter(group -> !group.isEmpty())
-                .filter(group -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(group))
-                .forEach(responseGroups::add);
-        return new ArrayList<>(responseGroups);
     }
 }
