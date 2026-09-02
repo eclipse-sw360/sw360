@@ -49,6 +49,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -209,5 +210,99 @@ public class ThriftUtils {
             gson = gsonBuilder.create();
         }
         return gson;
+    }
+
+    /**
+     * Generalized method to compare two Thrift objects field by field
+     * This automatically handles ALL fields using Thrift's reflection capabilities
+     *
+     * @param obj1 First Thrift object
+     * @param obj2 Second Thrift object
+     * @param fields Array of field enums (e.g., Release._Fields.values())
+     * @return true if objects are equal (no changes), false if different
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T extends TBase<T, F>, F extends TFieldIdEnum>
+            boolean compareThriftObjects(T obj1, T obj2, F[] fields) {
+
+        if (obj1 == null && obj2 == null) {
+            return true;
+        }
+        if (obj1 == null || obj2 == null) {
+            return false;
+        }
+
+        // Iterate through all fields automatically using Thrift reflection
+        for (F field : fields) {
+            // Get field values using Thrift's getFieldValue
+            Object value1 = obj1.isSet(field) ? obj1.getFieldValue(field) : null;
+            Object value2 = obj2.isSet(field) ? obj2.getFieldValue(field) : null;
+
+            // Compare field values
+            if (!areFieldValuesEqual(value1, value2)) {
+                return false;
+            }
+        }
+
+        // All fields are equal
+        log.debug("No changes detected - all fields are equal");
+        return true;
+    }
+
+    /**
+     * Compare two field values with proper null handling and type-specific comparison
+     * Includes detailed logging to track which fields differ
+     * <p>
+     * A {@code null} value is considered equal to an empty {@link String},
+     * {@link Collection} or {@link Map}, since unset and empty Thrift fields
+     * carry the same meaning.
+     *
+     * @param value1 First value
+     * @param value2 Second value
+     * @return true if values are equal, false otherwise
+     */
+    public static boolean areFieldValuesEqual(Object value1, Object value2) {
+        // Treat unset and empty values as equal
+        if (isNullOrEmptyValue(value1) && isNullOrEmptyValue(value2)) {
+            return true;
+        }
+
+        if (value1 == null || value2 == null) {
+            return false;
+        }
+
+        // For Comparable types, use compareTo
+        if (value1 instanceof Comparable && value2 instanceof Comparable &&
+            value1.getClass().equals(value2.getClass())) {
+            try {
+                @SuppressWarnings("unchecked")
+                int comparison = ((Comparable<Object>) value1).compareTo(value2);
+                return comparison == 0;
+            } catch (ClassCastException e) {
+                // Fall back to equals if compareTo fails
+                return Objects.equals(value1, value2);
+            }
+        }
+
+        // For all other types (collections, maps, objects), use equals
+        return Objects.equals(value1, value2);
+    }
+
+    /**
+     * Checks whether the given field value is unset, i.e. either {@code null},
+     * an empty {@link String}, an empty {@link Collection} or an empty
+     * {@link Map}.
+     *
+     * @param value value to check
+     * @return true if the value carries no information
+     */
+    public static boolean isNullOrEmptyValue(Object value) {
+        return switch (value) {
+            case null -> true;
+            case String string -> string.isEmpty();
+            case Collection<?> collection -> collection.isEmpty();
+            case Map<?, ?> map -> map.isEmpty();
+            default -> false;
+        };
     }
 }
