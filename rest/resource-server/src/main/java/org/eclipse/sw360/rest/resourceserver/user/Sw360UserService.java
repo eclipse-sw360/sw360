@@ -12,6 +12,8 @@ package org.eclipse.sw360.rest.resourceserver.user;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +45,7 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
@@ -66,6 +69,29 @@ public class Sw360UserService {
     public static final String AUTHORITIES_WRITE = "WRITE";
     public static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
 
+    /**
+     * Short-lived cache for {@link #getUserByEmailOrExternalId(String)} lookups.
+     * <p>
+     * Every authenticated REST request performs a user lookup via
+     * {@code RestControllerHelper#getSw360UserFromAuthentication()}. On busy
+     * endpoints this translates into a Thrift round-trip (and two CouchDB view
+     * hits) on every single call — which shows up as a constant per-request cost
+     * even for endpoints that touch no domain data (e.g. a project with 0
+     * linked releases). User records mutate rarely, so a small in-memory
+     * TTL cache is safe and materially reduces the {@code auth} segment
+     * measured in {@code ProjectController.licenseClearing}.
+     * <p>
+     * TTL is intentionally short (60s) so admin role/department changes still
+     * propagate within a minute without a restart. Negative results are not
+     * cached.
+     */
+    private static final long USER_CACHE_TTL_SECONDS = 60L;
+    private static final long USER_CACHE_MAX_SIZE = 10_000L;
+    private static final Cache<String, User> USER_LOOKUP_CACHE = CacheBuilder.newBuilder()
+            .expireAfterWrite(Duration.ofSeconds(USER_CACHE_TTL_SECONDS))
+            .maximumSize(USER_CACHE_MAX_SIZE)
+            .build();
+
     public List<User> getAllUsers() {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
@@ -85,11 +111,38 @@ public class Sw360UserService {
     }
 
     public User getUserByEmailOrExternalId(String userIdentifier) {
+        if (CommonUtils.isNullEmptyOrWhitespace(userIdentifier)) {
+            return null;
+        }
+        User cached = USER_LOOKUP_CACHE.getIfPresent(userIdentifier);
+        if (cached != null) {
+            return cached;
+        }
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
-            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
+            User user = sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
+            if (user != null) {
+                USER_LOOKUP_CACHE.put(userIdentifier, user);
+            }
+            return user;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Invalidate cached {@link User} entries. Called whenever a user record is
+     * mutated (add/update) so callers always see fresh data after a write.
+     */
+    public static void invalidateUserLookupCache(String... identifiers) {
+        if (identifiers == null || identifiers.length == 0) {
+            USER_LOOKUP_CACHE.invalidateAll();
+            return;
+        }
+        for (String identifier : identifiers) {
+            if (!CommonUtils.isNullEmptyOrWhitespace(identifier)) {
+                USER_LOOKUP_CACHE.invalidate(identifier);
+            }
         }
     }
 
@@ -131,6 +184,7 @@ public class Sw360UserService {
             AddDocumentRequestSummary documentRequestSummary = sw360UserClient.addUser(user);
             if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
                 user.setId(documentRequestSummary.getId());
+                invalidateUserLookupCache(user.getEmail(), user.getExternalid());
                 return user;
             } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
                 throw new DataIntegrityViolationException("sw360 user with name '" + user.getEmail()
@@ -151,6 +205,7 @@ public class Sw360UserService {
     public void updateUser(User sw360User) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
         sw360UserClient.updateUser(sw360User);
+        invalidateUserLookupCache(sw360User.getEmail(), sw360User.getExternalid());
     }
 
     public Map<PaginationData, List<User>> refineSearch(Map<String, Set<String>> filterMap, Pageable pageable) throws TException {

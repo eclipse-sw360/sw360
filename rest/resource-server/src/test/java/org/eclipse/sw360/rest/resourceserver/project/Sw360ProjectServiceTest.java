@@ -12,7 +12,13 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +36,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 public class Sw360ProjectServiceTest {
 
@@ -197,6 +204,32 @@ public class Sw360ProjectServiceTest {
                 result
         );
         verify(projectClient, times(1)).getGroups();
+    }
+
+    @Test
+    public void should_use_transitive_release_ids_for_license_clearing() throws TException {
+        User user = new User().setEmail("test@sw360.org");
+        Project project = new Project().setId("project1");
+        Set<String> releaseIds = Set.of("release1", "release2");
+        Release release = new Release().setId("release1")
+                .setClearingState(ClearingState.NEW_CLEARING)
+                .setComponentType(ComponentType.OSS);
+        Sw360ReleaseService releaseService = mock(Sw360ReleaseService.class);
+        org.mockito.Mockito.doReturn(releaseIds).when(projectService).getReleaseIds("project1", user, true);
+        org.mockito.Mockito.doReturn(List.of(release)).when(projectService)
+                .getFilteredReleases(releaseIds, user,
+                        List.of(ClearingState.NEW_CLEARING), List.of(ComponentType.OSS), releaseService);
+
+        List<Release> result = projectService.getLicenseClearingReleases("project1", project, user, true,
+                List.of(ClearingState.NEW_CLEARING), List.of(ComponentType.OSS), releaseService);
+
+        assertEquals(1, result.size());
+        assertEquals("release1", result.get(0).getId());
+        assertEquals(ComponentType.OSS, result.get(0).getComponentType());
+        verify(projectService).getReleaseIds("project1", user, true);
+        verify(projectService).getFilteredReleases(releaseIds, user,
+                List.of(ClearingState.NEW_CLEARING), List.of(ComponentType.OSS), releaseService);
+        verifyNoInteractions(releaseService);
     }
 
 }

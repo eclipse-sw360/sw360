@@ -346,12 +346,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Project getProjectById(String id, User user) throws SW360Exception {
-        Project project = repository.get(id);
-        assertNotNull(project);
-
-        if(!makePermission(project, user).isActionAllowed(RequestedAction.READ)) {
-            throw fail(403, "User: %s is not allowed to view the requested project: %s", user.getEmail(), project.getId());
-        }
+        // Route through the shared projectLookupCache (2-minute TTL). This
+        // saves a CouchDB doc round-trip on repeat reads within the TTL —
+        // which is the common case for the licenseClearing endpoint that
+        // both {@code Sw360ProjectService.getProjectForUserById} and
+        // {@code getReleasesIdsOfProject} exercise back-to-back for the
+        // same project ID. Permission (READ) is re-evaluated on every call,
+        // and the cached document is returned as a deep copy so callers may
+        // safely mutate it (e.g. vendor fill, additionalData sort) without
+        // corrupting the cached instance.
+        Project project = getCachedProjectById(id, user);
         vendorRepository.fillVendor(project);
         return project;
     }
@@ -516,6 +520,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
             }
             repository.update(project);
+            projectLookupCache.invalidate(project.getId());
 
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
             Set<Attachment> attachmentsAfter = project.getAttachments();
@@ -814,6 +819,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
         repository.update(project);
+        projectLookupCache.invalidate(project.getId());
         project.unsetLinkedObligationId();
         dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
@@ -1100,6 +1106,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector.deleteAttachments(project.getAttachments());
         attachmentDatabaseHandler.deleteUsagesBy(Source.projectId(project.getId()));
         repository.remove(project);
+        projectLookupCache.invalidate(project.getId());
         if (project.isSetLinkedObligationId()) {
             obligationRepository.remove(project.getLinkedObligationId());
         }
@@ -1366,14 +1373,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public List<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(String projectId, User user) throws SW360Exception {
         Project project = getProjectById(projectId, user);
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject = releaseIdToProjects(project, user);
-        List<Release> releasesById = componentDatabaseHandler.getDetailedReleasesWithAccessibilityForExport(releaseIdsToProject.keySet(), user);
-        return buildReleaseClearingStatuses(releasesById, releaseIdsToProject, release -> {
-            Map<RequestedAction, Boolean> permissions = release.getPermissions();
-            if (permissions != null && permissions.containsKey(RequestedAction.READ)) {
-                return permissions.get(RequestedAction.READ);
-            }
-            return componentDatabaseHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
-        });
+        List<Release> releasesById = componentDatabaseHandler.getDetailedReleasesForExport(releaseIdsToProject.keySet());
+        return buildReleaseClearingStatuses(releasesById, releaseIdsToProject, user);
     }
 
     /**
@@ -1383,13 +1384,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * {@code accessibilityResolver}.
      * @param releasesById          List of releases
      * @param releaseIdsToProject   Map of release to project relation
-     * @param accessibilityResolver Release access checker, nullable.
+     * @param user                  User requesting the data; if non-null accessibility is evaluated.
      * @return List of Release Clearing Status for the Project releases.
      */
     private List<ReleaseClearingStatusData> buildReleaseClearingStatuses(
             List<Release> releasesById,
             SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject,
-            @Nullable Function<Release, Boolean> accessibilityResolver
+            @Nullable User user
     ) {
         ImmutableMap<String, Component> componentsById = ImmutableMap.copyOf(ThriftUtils.getIdMap(
                 componentDatabaseHandler.getComponentsShort(
@@ -1401,7 +1402,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return getReleaseClearingStatusStream(releasesById)
                 .map(release -> createReleaseClearingStatusData(
                         release, releaseIdsToProjectSnapshot,
-                        componentsById, accessibilityResolver))
+                        componentsById, user))
                 .toList();
     }
 
@@ -1423,14 +1424,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * @param release Current Release to process.
      * @param releaseIdsToProject Map of Release and Project relation
      * @param componentsById Map of Components, indexed by ID.
-     * @param accessibilityResolver Check access of Release if provided.
+     * @param user User requesting the data; if non-null accessibility is evaluated.
      * @return ReleaseClearingStatus data for given release.
      */
     private ReleaseClearingStatusData createReleaseClearingStatusData(
             @NonNull Release release,
             @NonNull SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject,
             Map<String, Component> componentsById,
-            @Nullable Function<Release, Boolean> accessibilityResolver
+            @Nullable User user
     ) {
         List<String> projectNames = new ArrayList<>();
         List<String> mainlineStates = new ArrayList<>();
@@ -1445,12 +1446,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         }
 
+        Component component = componentsById.get(release.getComponentId());
         ReleaseClearingStatusData releaseClearingStatusData = new ReleaseClearingStatusData(release)
                 .setProjectNames(joinStrings(projectNames))
                 .setMainlineStates(joinStrings(mainlineStates))
-                .setComponentType(componentsById.get(release.getComponentId()).getComponentType());
-        if (accessibilityResolver != null) {
-            releaseClearingStatusData.setAccessible(accessibilityResolver.apply(release));
+                .setComponentType(component != null ? component.getComponentType() : null);
+        if (user != null) {
+            boolean isReleaseAccessible = component != null
+                    && makePermission(component, user).isActionAllowed(RequestedAction.READ)
+                    && makePermission(release, user).isActionAllowed(RequestedAction.READ);
+            releaseClearingStatusData.setAccessible(isReleaseAccessible);
         }
         return releaseClearingStatusData;
     }
@@ -1492,14 +1497,74 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
         if (linkedProjects != null) {
-            for (String projectId : linkedProjects.keySet()) {
-                if (visitedProjectIds.contains(projectId)) continue;
+            Set<String> unresolvedProjectIds = linkedProjects.keySet().stream()
+                    .filter(projectId -> !visitedProjectIds.contains(projectId))
+                    .collect(Collectors.toSet());
 
-                try {
-                    Project linkedProject = getCachedProjectById(projectId, user);
+            if (!unresolvedProjectIds.isEmpty()) {
+                List<Project> fetchedLinkedProjects = repository.get(new ArrayList<>(unresolvedProjectIds), true).stream()
+                        .filter(linkedProject -> {
+                            boolean isAccessible = makePermission(linkedProject, user).isActionAllowed(RequestedAction.READ);
+                            if (!isAccessible) {
+                                log.warn("Could not get linked project with ID: {}", linkedProject.getId());
+                            }
+                            return isAccessible;
+                        })
+                        .toList();
+
+                Set<String> fetchedProjectIds = fetchedLinkedProjects.stream()
+                        .map(Project::getId)
+                        .collect(Collectors.toSet());
+                unresolvedProjectIds.stream()
+                        .filter(projectId -> !fetchedProjectIds.contains(projectId))
+                        .forEach(projectId -> log.warn("Could not get linked project with ID: {}", projectId));
+
+                for (Project linkedProject : fetchedLinkedProjects) {
                     releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
-                } catch (SW360Exception e) {
-                    log.warn("Could not get linked project with ID: {}", projectId, e);
+                }
+            }
+        }
+    }
+
+    private Set<String> collectTransitiveReleaseIds(Project project, User user) throws SW360Exception {
+        Set<String> visitedProjectIds = new HashSet<>();
+        Set<String> releaseIds = new HashSet<>();
+        collectTransitiveReleaseIds(project, user, visitedProjectIds, releaseIds);
+        return releaseIds;
+    }
+
+    private void collectTransitiveReleaseIds(Project project, User user, Set<String> visitedProjectIds,
+            Set<String> releaseIds) throws SW360Exception {
+        if (nothingTodo(project, visitedProjectIds)) return;
+
+        releaseIds.addAll(nullToEmptyMap(project.getReleaseIdToUsage()).keySet());
+
+        Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
+        if (linkedProjects != null) {
+            Set<String> unresolvedProjectIds = linkedProjects.keySet().stream()
+                    .filter(projectId -> !visitedProjectIds.contains(projectId))
+                    .collect(Collectors.toSet());
+
+            if (!unresolvedProjectIds.isEmpty()) {
+                List<Project> fetchedLinkedProjects = repository.get(new ArrayList<>(unresolvedProjectIds), true).stream()
+                        .filter(linkedProject -> {
+                            boolean isAccessible = makePermission(linkedProject, user).isActionAllowed(RequestedAction.READ);
+                            if (!isAccessible) {
+                                log.warn("Could not get linked project with ID: {}", linkedProject.getId());
+                            }
+                            return isAccessible;
+                        })
+                        .toList();
+
+                Set<String> fetchedProjectIds = fetchedLinkedProjects.stream()
+                        .map(Project::getId)
+                        .collect(Collectors.toSet());
+                unresolvedProjectIds.stream()
+                        .filter(projectId -> !fetchedProjectIds.contains(projectId))
+                        .forEach(projectId -> log.warn("Could not get linked project with ID: {}", projectId));
+
+                for (Project linkedProject : fetchedLinkedProjects) {
+                    collectTransitiveReleaseIds(linkedProject, user, visitedProjectIds, releaseIds);
                 }
             }
         }
@@ -3164,7 +3229,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (!transitive) {
             return nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
         }
-        SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject = releaseIdToProjects(project, user);
-        return releaseIdsToProject.keySet();
+        return collectTransitiveReleaseIds(project, user);
     }
 }

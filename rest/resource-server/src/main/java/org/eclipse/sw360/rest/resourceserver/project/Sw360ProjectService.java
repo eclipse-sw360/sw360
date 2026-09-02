@@ -1021,6 +1021,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.getReleasesIdsOfProject(projectId, transitive, sw360User);
     }
 
+    public List<Release> getLicenseClearingReleases(String projectId, Project project, User sw360User,
+            boolean transitive, List<ClearingState> clearingState, List<ComponentType> componentType,
+            Sw360ReleaseService releaseService) throws TException {
+        Set<String> releaseIds = transitive
+                ? getReleaseIds(projectId, sw360User, true)
+                : CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            return Collections.emptyList();
+        }
+        return getFilteredReleases(releaseIds, sw360User, clearingState, componentType, releaseService);
+    }
+
     public ProjectEccCounts getProjectEccCounts(String projectId, User sw360User) throws TException {
         ComponentService.Iface releaseClient = ThriftClients.makeComponentClient();
         final Set<String> releaseIds = getReleaseIds(projectId, sw360User, true);
@@ -1042,7 +1054,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         return new ProjectEccCounts(eccClassifiedCount, eccOpenCount);
     }
-
     public void addEmbeddedLinkedProject(Project sw360Project, User sw360User, HalResource<Project> projectResource,
             Set<String> projectIdsInBranch) throws TException {
         projectIdsInBranch.add(sw360Project.getId());
@@ -1980,20 +1991,26 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public List<Release> getFilteredReleases(Set<String> releaseIds, User sw360User, List<ClearingState> clearingState, List<ComponentType> componentType, Sw360ReleaseService releaseService) throws TException {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            return Collections.emptyList();
+        }
         ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
         List<Release> releases = componentClient.getAccessibleReleasesById(releaseIds, sw360User);
         releaseService.setComponentDependentFieldsInRelease(releases, sw360User);
-        return releases.parallelStream().unordered()
+        return filterLicenseClearingReleases(releases, clearingState, componentType);
+    }
+
+    private List<Release> filterLicenseClearingReleases(List<Release> releases,
+            List<ClearingState> clearingState, List<ComponentType> componentType) {
+        return releases.stream()
                 .filter(Objects::nonNull)
                 .filter(release -> {
-                    // Filter by componentType if provided
                     if (CommonUtils.isNotEmpty(componentType)) {
                         ComponentType releaseType = release.getComponentType();
                         if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
                             return false;
                         }
                     }
-                    // Filter by clearingState if provided
                     if (CommonUtils.isNotEmpty(clearingState)) {
                         ClearingState releaseState = release.getClearingState();
                         if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {

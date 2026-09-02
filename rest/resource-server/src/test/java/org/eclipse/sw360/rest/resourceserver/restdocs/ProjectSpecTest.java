@@ -592,6 +592,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         projectListByName.stream().toList()
                 )
         );
+        given(this.projectServiceMock.getLicenseClearingReleases(eq(project.getId()), eq(project), any(), eq(true), any(), any(), any()))
+                .willReturn(List.of(release));
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project9.getId()), any(), eq(true))).willReturn(releaseIds2);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(true))).willReturn(releaseIdsTransitive);

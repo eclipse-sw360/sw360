@@ -440,16 +440,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Clearing state of the release")
             @RequestParam(value = "clearingState", required = false) List<ClearingState> clearingState
     ) throws TException {
+        final long tStart = System.nanoTime();
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final long tAuth = System.nanoTime();
         restControllerHelper.throwIfSecurityUser(sw360User);
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        final long tProject = System.nanoTime();
 
         //check the below condition when releaseRelation is not null
         if (releaseRelation != null && sw360Project.getReleaseIdToUsage() != null) {
             Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage()
                     .entrySet()
-                    .parallelStream()
+                    .stream()
                     .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
@@ -458,19 +461,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             sw360Project.setReleaseIdToUsage(filteredReleaseIdToUsage);
         }
 
-        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        List<Release> releases = projectService.getFilteredReleases(releaseIds, sw360User, clearingState, componentType, releaseService);
+        List<Release> releases = projectService.getLicenseClearingReleases(id, sw360Project, sw360User,
+                transitive, clearingState, componentType, releaseService);
+        final long tReleases = System.nanoTime();
 
         // Extract all release IDs from the provided list
-        Set<String> validReleaseIds = releases.parallelStream().unordered()
+        Set<String> validReleaseIds = releases.stream()
                 .map(Release::getId)
                 .collect(Collectors.toSet());
 
         // Filter the releaseIdToUsage map
-        if (sw360Project.getReleaseIdToUsage() != null) {
+        if (sw360Project.getReleaseIdToUsage() != null && !sw360Project.getReleaseIdToUsage().isEmpty()) {
             Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage()
                     .entrySet()
-                    .parallelStream()
+                    .stream()
                     .filter(entry -> validReleaseIds.contains(entry.getKey()))
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
@@ -480,7 +484,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
-        List<EntityModel<Release>> releaseList = releases.parallelStream().map(sw360Release -> wrapTException(() -> {
+
+        java.util.function.Function<Release, EntityModel<Release>> toEmbeddedReleaseModel = sw360Release -> {
             final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
             if (releaseIdToUsageMap != null) {
                 ProjectReleaseRelationship relationship = releaseIdToUsageMap.get(sw360Release.getId());
@@ -488,11 +493,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     embeddedRelease.setProjectMainlineState(relationship.getMainlineState());
                 }
             }
-            final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
-            return releaseResource;
-        })).collect(Collectors.toList());
+            EntityModel<Release> em = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
+            return em;
+        };
+        List<EntityModel<Release>> releaseList = releases.parallelStream()
+                .map(toEmbeddedReleaseModel)
+                .collect(Collectors.toList());
 
         HalResource<Project> userHalResource = createHalLicenseClearing(sw360Project, releaseList);
+        final long tEnd = System.nanoTime();
+        if (log.isInfoEnabled()) {
+            log.info("licenseClearing[{}] transitive={} releases={}: auth={}ms project={}ms clearing-releases={}ms embed={}ms total={}ms",
+                    id, transitive, releases.size(),
+                    (tAuth - tStart) / 1_000_000,
+                    (tProject - tAuth) / 1_000_000,
+                    (tReleases - tProject) / 1_000_000,
+                    (tEnd - tReleases) / 1_000_000,
+                    (tEnd - tStart) / 1_000_000);
+        }
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
