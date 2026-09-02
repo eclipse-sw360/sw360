@@ -882,16 +882,23 @@ public class SW360Utils {
                         LinkedHashMap<String, ObligationStatusInfo>::new));
     }
 
-    public static boolean isUserAllowedToEditClosedProject(Project project, User user) {
-        Set<String> users = new HashSet<String>();
-        Set<String> moderators = project.getModerators();
-        users.addAll(moderators);
+    /**
+     * Based on membership, check if user is allowed to modify closed Project.
+     * @param project Project to check membership in
+     * @param user    User to check for special membership
+     * @return True if user is a special member of the project to allow
+     *         modification of closed Project.
+     */
+    public static boolean isUserAllowedToEditClosedProject(
+            @NotNull Project project,
+            @NotNull User user
+    ) {
+        Set<String> users = new HashSet<>(nullToEmptySet(project.getModerators()));
+        users.addAll(nullToEmptySet(project.getContributors()));
         users.add(project.getCreatedBy());
         users.add(project.getProjectResponsible());
-        Set<String> contributors = project.getContributors();
-        users.addAll(contributors);
         users.add(project.getLeadArchitect());
-        return PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user) || users.contains(user.getEmail());
+        return users.contains(user.getEmail());
     }
 
     public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
