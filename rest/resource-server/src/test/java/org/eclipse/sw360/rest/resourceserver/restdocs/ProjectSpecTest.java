@@ -107,8 +107,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
-        Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(any(), any(),
-                any());
 
         Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
