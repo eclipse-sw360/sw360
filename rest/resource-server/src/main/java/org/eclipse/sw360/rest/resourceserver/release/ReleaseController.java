@@ -1015,17 +1015,23 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        // Always fetch fresh release data to ensure we get the latest process status
         Release release = releaseService.getReleaseForUserById(releaseId, user);
         Map<String, Object> responseMap = new HashMap<>();
         ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
-        ReentrantLock lock = mapOfLocks.get(releaseId);
-        if (lock != null && lock.isLocked()) {
-            responseMap.put("status", RequestStatus.PROCESSING);
-        } else if (fossologyProcess != null && releaseService.isFOSSologyProcessCompleted(fossologyProcess)) {
+
+        // Check actual process completion status first, regardless of lock
+        if (fossologyProcess != null && releaseService.isFOSSologyProcessCompleted(fossologyProcess)) {
             log.info("FOSSology process for Release : " + releaseId + " is complete.");
             responseMap.put("status", RequestStatus.SUCCESS);
         } else {
-            responseMap.put("status", RequestStatus.FAILURE);
+            // Only return PROCESSING if lock is held and process is not yet completed
+            ReentrantLock lock = mapOfLocks.get(releaseId);
+            if (lock != null && lock.isLocked()) {
+                responseMap.put("status", RequestStatus.PROCESSING);
+            } else {
+                responseMap.put("status", RequestStatus.FAILURE);
+            }
         }
         responseMap.put("fossologyProcessInfo", fossologyProcess);
         return new ResponseEntity<>(responseMap, HttpStatus.OK);
