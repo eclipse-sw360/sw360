@@ -189,6 +189,35 @@ public class FutureUtilsTest {
     }
 
     @Test
+    public void testSequenceWithDuplicateValues() {
+        List<CompletableFuture<Integer>> futures = Arrays.asList(
+                CompletableFuture.completedFuture(1),
+                CompletableFuture.completedFuture(1),
+                CompletableFuture.completedFuture(2));
+
+        CompletableFuture<Collection<Integer>> sequence = FutureUtils.sequence(futures, ex -> true);
+        Collection<Integer> values = FutureUtils.block(sequence);
+
+        assertThat(values).hasSize(3);
+        assertThat(values).containsExactlyInAnyOrder(1, 1, 2);
+    }
+
+    @Test
+    public void testSequenceWithNullResult() {
+        List<CompletableFuture<Integer>> futures = Arrays.asList(
+                CompletableFuture.completedFuture(1),
+                CompletableFuture.completedFuture(null),
+                CompletableFuture.completedFuture(2));
+
+        CompletableFuture<Collection<Integer>> sequence = FutureUtils.sequence(futures, ex -> true);
+        Collection<Integer> values = FutureUtils.block(sequence);
+
+        assertThat(values).hasSize(3);
+        assertThat(values).contains(1, 2);
+        assertThat(values).containsNull();
+    }
+
+    @Test
     public void testWrapInFutureSuccess() {
         final Integer result = 42;
         Callable<Integer> action = () -> result;
