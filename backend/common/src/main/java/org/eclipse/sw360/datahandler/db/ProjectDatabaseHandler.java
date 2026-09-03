@@ -161,6 +161,33 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.SPECIAL_RISKS3RD_PARTY, Project._Fields.DELIVERY_CHANNELS,
             Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS, Project._Fields.OBLIGATIONS_TEXT,
             Project._Fields.LICENSE_INFO_HEADER_TEXT);
+
+    /**
+     * Fields a project member (without clearing admin rights) may still modify on a project
+     * with clearing state CLOSED when
+     * {@value org.eclipse.sw360.datahandler.common.SW360ConfigKeys#PROJECTS_CLOSED_UPDATE_STRICT} is enabled.
+     */
+    private static final ImmutableSet<Project._Fields> CLOSED_PROJECT_EDITABLE_FIELDS = ImmutableSet.of(
+            Project._Fields.STATE, Project._Fields.EXTERNAL_IDS, Project._Fields.ADDITIONAL_DATA);
+
+    /**
+     * Server managed or computed fields which must not be taken into account when checking
+     * whether a closed project update only modifies allowed fields.
+     */
+    private static final ImmutableSet<String> CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS = ImmutableSet.of(
+            Project._Fields.ID.getFieldName(),
+            Project._Fields.REVISION.getFieldName(),
+            Project._Fields.TYPE.getFieldName(),
+            Project._Fields.DOCUMENT_STATE.getFieldName(),
+            Project._Fields.PERMISSIONS.getFieldName(),
+            Project._Fields.RELEASE_CLEARING_STATE_SUMMARY.getFieldName(),
+            Project._Fields.CREATED_ON.getFieldName(),
+            Project._Fields.CREATED_BY.getFieldName(),
+            Project._Fields.MODIFIED_ON.getFieldName(),
+            Project._Fields.MODIFIED_BY.getFieldName(),
+            Project._Fields.VENDOR.getFieldName(),
+            Project._Fields.VENDOR_ID.getFieldName());
+
     private final LoadingCache<String, Project> projectLookupCache;
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
@@ -487,7 +514,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.DUPLICATE;
         } else if (duplicateAttachmentExist(project)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
-        } else if (!updateProjectAllowed(actual, user)) {
+        } else if (!forceUpdate && !updateProjectAllowed(actual, project, user)) {
             return RequestStatus.CLOSED_UPDATE_NOT_ALLOWED;
         } else if (!changePassesSanityCheck(project, actual)){
             return RequestStatus.FAILED_SANITY_CHECK;
@@ -531,8 +558,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 updateProjectDependentFieldsInClearingRequest(project, actual, user);
             }
             sendMailNotificationsForProjectUpdate(project, actual, user);
-            dbHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
-                    referenceDocLogList, null, null);
+            if (!Objects.equals(project.getLinkedObligationId(), actual.getLinkedObligationId())) {
+                dbHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
+                        referenceDocLogList, null, Operation.OBLIGATION_ADD);
+            } else {
+                dbHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
+                        referenceDocLogList, null, null);
+            }
             return RequestStatus.SUCCESS;
         } else {
             return moderator.updateProject(project, user);
@@ -813,18 +845,18 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         obligationRepository.add(obligation);
         Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
-        repository.update(project);
-        project.unsetLinkedObligationId();
+        updateProject(project, user);
         dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
-        dbHandlerUtil.addChangeLogs(getProjectById(obligation.getProjectId(), user), project, user.getEmail(),
-                Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, Operation.OBLIGATION_ADD);
 
         return RequestStatus.SUCCESS;
     }
 
     public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
         Project project = getProjectById(obligation.getProjectId(), user);
+        if (nonStrictClosedProjectUpdateBlocked(project, user)) {
+            return RequestStatus.CLOSED_UPDATE_NOT_ALLOWED;
+        }
         ObligationList projectObligationbefore = obligationRepository.get(obligation.getId());
         if (isWriteActionAllowedOnProject(project, user)) {
             obligationRepository.update(obligation);
@@ -895,12 +927,79 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return false;
     }
 
-    private boolean updateProjectAllowed(Project project, User user) {
-        if (project.clearingState != null && project.clearingState.equals(ProjectClearingState.CLOSED)
-                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) && !SW360Utils.isUserAllowedToEditClosedProject(project, user)) {
+    private boolean updateProjectAllowed(Project actual, Project updated, User user) {
+        return isProjectUpdateAllowed(actual, updated, user,
+                SW360Utils.readConfig(PROJECTS_CLOSED_UPDATE_STRICT, false));
+    }
+
+    /**
+     * Decides whether the given user is allowed to apply the given update to the given project.
+     * Only relevant for projects with clearing state {@link ProjectClearingState#CLOSED}.
+     *
+     * @param actual       project as currently stored in the database
+     * @param updated      project as it should be stored
+     * @param user         user requesting the update
+     * @param strictUpdate value of the {@code projects.closed.update.strict} configuration
+     * @return true if the update may be performed
+     */
+    @VisibleForTesting
+    static boolean isProjectUpdateAllowed(Project actual, Project updated, User user, boolean strictUpdate) {
+        if (!ProjectClearingState.CLOSED.equals(actual.getClearingState())) {
+            return true;
+        }
+        // Clearing admins (and SW360 admins) may always modify a closed project
+        if (PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
+            return true;
+        }
+        if (!SW360Utils.isUserAllowedToEditClosedProject(actual, user)) {
             return false;
         }
+        // If strict update not enabled, no need to check for fields
+        if (!strictUpdate) {
+            return true;
+        }
+        return onlyClosedProjectEditableFieldsChanged(actual, updated, user);
+    }
+
+    /**
+     * Verifies that the update of a closed project only touches the fields a project member
+     * (without clearing admin rights) is allowed to modify.
+     */
+    private static boolean onlyClosedProjectEditableFieldsChanged(
+            Project actual, Project updated, User user
+    ) {
+        for (Project._Fields field : Project._Fields.values()) {
+            if (CLOSED_PROJECT_EDITABLE_FIELDS.contains(field)
+                    || CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS.contains(field.getFieldName())) {
+                continue;
+            }
+            if (!ThriftUtils.areFieldValuesEqual(actual.getFieldValue(field), updated.getFieldValue(field),
+                    CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS)) {
+                log.info("User {} is not allowed to modify field '{}' of closed project {}.", user.getEmail(),
+                        field.getFieldName(), actual.getId());
+                return false;
+            }
+        }
         return true;
+    }
+
+    /**
+     * Check to see if Project is Closed and user not at-least CLEARING_ADMIN
+     * and user is not special member of Project and strict checks are enabled.
+     * This check does not check for fields like {@link isProjectUpdateAllowed}
+     * or {@link updateProjectAllowed} with backwards compatibility (will not
+     * report blocked if {@code PROJECTS_CLOSED_UPDATE_STRICT} is disabled).
+     * @param project Project to check permission in
+     * @param user    User to check permission for
+     * @return False if update is not blocked, true if blocked.
+     */
+    private static boolean nonStrictClosedProjectUpdateBlocked(
+            @NotNull Project project, @NotNull User user
+    ) {
+        return ProjectClearingState.CLOSED.equals(project.getClearingState())
+                && SW360Utils.readConfig(PROJECTS_CLOSED_UPDATE_STRICT, false)
+                && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)
+                && !SW360Utils.isUserAllowedToEditClosedProject(project, user);
     }
 
     private ObligationList deleteObligationsOfUnlinkedReleases(Project updated) {
