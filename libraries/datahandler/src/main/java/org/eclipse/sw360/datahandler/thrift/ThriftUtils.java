@@ -47,9 +47,11 @@ import com.ibm.cloud.cloudant.v1.model.Document;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -215,15 +217,35 @@ public class ThriftUtils {
     /**
      * Generalized method to compare two Thrift objects field by field
      * This automatically handles ALL fields using Thrift's reflection capabilities
-     *
+     * <p>
+     * TODO: Rework this comparison logic after Thrift removal. Once Thrift is removed
+     * from SW360 and model classes become developer-controlled POJOs, comparison logic
+     * can be implemented directly on the POJOs (overriding equals/compareTo or using
+     * dedicated comparators) rather than relying on reflection-based utility functions.
+     * </p>
      * @param obj1 First Thrift object
      * @param obj2 Second Thrift object
      * @param fields Array of field enums (e.g., Release._Fields.values())
      * @return true if objects are equal (no changes), false if different
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T extends TBase<T, F>, F extends TFieldIdEnum>
             boolean compareThriftObjects(T obj1, T obj2, F[] fields) {
+        return compareThriftObjects(obj1, obj2, fields, Collections.emptySet());
+    }
+
+    /**
+     * Generalized method to compare two Thrift objects field by field, ignoring specified field names.
+     * <p>
+     * TODO: Rework after Thrift removal when model classes become POJOs.
+     * </p>
+     * @param obj1 First Thrift object
+     * @param obj2 Second Thrift object
+     * @param fields Array of field enums
+     * @param ignoredFieldNames Set of field names to ignore during comparison
+     * @return true if objects are equal, false if different
+     */
+    public static <T extends TBase<T, F>, F extends TFieldIdEnum>
+            boolean compareThriftObjects(T obj1, T obj2, F[] fields, Set<String> ignoredFieldNames) {
 
         if (obj1 == null && obj2 == null) {
             return true;
@@ -234,12 +256,15 @@ public class ThriftUtils {
 
         // Iterate through all fields automatically using Thrift reflection
         for (F field : fields) {
+            if (ignoredFieldNames != null && ignoredFieldNames.contains(field.getFieldName())) {
+                continue;
+            }
             // Get field values using Thrift's getFieldValue
             Object value1 = obj1.isSet(field) ? obj1.getFieldValue(field) : null;
             Object value2 = obj2.isSet(field) ? obj2.getFieldValue(field) : null;
 
             // Compare field values
-            if (!areFieldValuesEqual(value1, value2)) {
+            if (!areFieldValuesEqual(value1, value2, ignoredFieldNames)) {
                 return false;
             }
         }
@@ -256,12 +281,32 @@ public class ThriftUtils {
      * A {@code null} value is considered equal to an empty {@link String},
      * {@link Collection} or {@link Map}, since unset and empty Thrift fields
      * carry the same meaning.
-     *
+     * <p>
+     * TODO: Rework this after Thrift removal. Once Thrift is removed from SW360,
+     * the classes will be POJOs controlled by us, allowing standard Java comparison/equality
+     * overrides directly on domain objects rather than complex reflective comparisons.
+     * </p>
      * @param value1 First value
      * @param value2 Second value
      * @return true if values are equal, false otherwise
      */
     public static boolean areFieldValuesEqual(Object value1, Object value2) {
+        return areFieldValuesEqual(value1, value2, Collections.emptySet());
+    }
+
+    /**
+     * Compare two field values with proper null handling, type-specific comparison,
+     * and recursive traversal for nested Thrift objects, Collections and Maps while
+     * ignoring specified field names.
+     * <p>
+     * TODO: Rework after Thrift removal when model classes become POJOs.
+     * </p>
+     * @param value1 First value
+     * @param value2 Second value
+     * @param ignoredFieldNames Set of field names to ignore when comparing Thrift structs
+     * @return true if values are equal, false otherwise
+     */
+    public static boolean areFieldValuesEqual(Object value1, Object value2, Set<String> ignoredFieldNames) {
         // Treat unset and empty values as equal
         if (isNullOrEmptyValue(value1) && isNullOrEmptyValue(value2)) {
             return true;
@@ -271,7 +316,22 @@ public class ThriftUtils {
             return false;
         }
 
-        // For Comparable types, use compareTo
+        // If both are Thrift structs, compare recursively ignoring specified fields
+        if (value1 instanceof TBase<?, ?> t1 && value2 instanceof TBase<?, ?> t2) {
+            return areTBaseEqual(t1, t2, ignoredFieldNames);
+        }
+
+        // If both are Maps, compare entry by entry recursively
+        if (value1 instanceof Map<?, ?> map1 && value2 instanceof Map<?, ?> map2) {
+            return areMapsEqual(map1, map2, ignoredFieldNames);
+        }
+
+        // If both are Collections, compare elements recursively
+        if (value1 instanceof Collection<?> col1 && value2 instanceof Collection<?> col2) {
+            return areCollectionsEqual(col1, col2, ignoredFieldNames);
+        }
+
+        // For Comparable types (enums, numbers, strings, etc.), use compareTo
         if (value1 instanceof Comparable && value2 instanceof Comparable &&
             value1.getClass().equals(value2.getClass())) {
             try {
@@ -284,8 +344,80 @@ public class ThriftUtils {
             }
         }
 
-        // For all other types (collections, maps, objects), use equals
+        // For all other types, use equals
         return Objects.equals(value1, value2);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static boolean areTBaseEqual(TBase t1, TBase t2, Set<String> ignoredFieldNames) {
+        if (!t1.getClass().equals(t2.getClass())) {
+            return false;
+        }
+        Map<? extends TFieldIdEnum, org.apache.thrift.meta_data.FieldMetaData> metaDataMap =
+                org.apache.thrift.meta_data.FieldMetaData.getStructMetaDataMap((Class<? extends TBase>) t1.getClass());
+        if (metaDataMap == null) {
+            if (t1 instanceof Comparable c1 && t2 instanceof Comparable c2) {
+                return c1.compareTo(c2) == 0;
+            }
+            return Objects.equals(t1, t2);
+        }
+        for (TFieldIdEnum field : metaDataMap.keySet()) {
+            if (ignoredFieldNames != null && ignoredFieldNames.contains(field.getFieldName())) {
+                continue;
+            }
+            Object val1 = t1.isSet(field) ? t1.getFieldValue(field) : null;
+            Object val2 = t2.isSet(field) ? t2.getFieldValue(field) : null;
+            if (!areFieldValuesEqual(val1, val2, ignoredFieldNames)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean areMapsEqual(Map<?, ?> map1, Map<?, ?> map2, Set<String> ignoredFieldNames) {
+        if (map1.size() != map2.size()) {
+            return false;
+        }
+        for (Map.Entry<?, ?> entry : map1.entrySet()) {
+            Object key = entry.getKey();
+            if (!map2.containsKey(key)) {
+                return false;
+            }
+            if (!areFieldValuesEqual(entry.getValue(), map2.get(key), ignoredFieldNames)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean areCollectionsEqual(Collection<?> col1, Collection<?> col2, Set<String> ignoredFieldNames) {
+        if (col1.size() != col2.size()) {
+            return false;
+        }
+        if (col1 instanceof List<?> list1 && col2 instanceof List<?> list2) {
+            for (int i = 0; i < list1.size(); i++) {
+                if (!areFieldValuesEqual(list1.get(i), list2.get(i), ignoredFieldNames)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        List<Object> unmatched = new java.util.ArrayList<>(col2);
+        for (Object item1 : col1) {
+            boolean found = false;
+            for (java.util.Iterator<Object> it = unmatched.iterator(); it.hasNext(); ) {
+                Object item2 = it.next();
+                if (areFieldValuesEqual(item1, item2, ignoredFieldNames)) {
+                    it.remove();
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return unmatched.isEmpty();
     }
 
     /**
