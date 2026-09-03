@@ -174,11 +174,19 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * Server managed or computed fields which must not be taken into account when checking
      * whether a closed project update only modifies allowed fields.
      */
-    private static final ImmutableSet<Project._Fields> CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS = ImmutableSet.of(
-            Project._Fields.ID, Project._Fields.REVISION, Project._Fields.TYPE, Project._Fields.DOCUMENT_STATE,
-            Project._Fields.PERMISSIONS, Project._Fields.RELEASE_CLEARING_STATE_SUMMARY, Project._Fields.CREATED_ON,
-            Project._Fields.CREATED_BY, Project._Fields.MODIFIED_ON, Project._Fields.MODIFIED_BY,
-            Project._Fields.VENDOR, Project._Fields.VENDOR_ID);
+    private static final ImmutableSet<String> CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS = ImmutableSet.of(
+            Project._Fields.ID.getFieldName(),
+            Project._Fields.REVISION.getFieldName(),
+            Project._Fields.TYPE.getFieldName(),
+            Project._Fields.DOCUMENT_STATE.getFieldName(),
+            Project._Fields.PERMISSIONS.getFieldName(),
+            Project._Fields.RELEASE_CLEARING_STATE_SUMMARY.getFieldName(),
+            Project._Fields.CREATED_ON.getFieldName(),
+            Project._Fields.CREATED_BY.getFieldName(),
+            Project._Fields.MODIFIED_ON.getFieldName(),
+            Project._Fields.MODIFIED_BY.getFieldName(),
+            Project._Fields.VENDOR.getFieldName(),
+            Project._Fields.VENDOR_ID.getFieldName());
 
     private final LoadingCache<String, Project> projectLookupCache;
     private Map<String, Project> cachedAllProjectsIdMap;
@@ -962,10 +970,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ) {
         for (Project._Fields field : Project._Fields.values()) {
             if (CLOSED_PROJECT_EDITABLE_FIELDS.contains(field)
-                    || CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS.contains(field)) {
+                    || CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS.contains(field.getFieldName())) {
                 continue;
             }
-            if (!ThriftUtils.areFieldValuesEqual(actual.getFieldValue(field), updated.getFieldValue(field))) {
+            if (!ThriftUtils.areFieldValuesEqual(actual.getFieldValue(field), updated.getFieldValue(field),
+                    CLOSED_PROJECT_UPDATE_CHECK_IGNORED_FIELDS)) {
                 log.info("User {} is not allowed to modify field '{}' of closed project {}.", user.getEmail(),
                         field.getFieldName(), actual.getId());
                 return false;

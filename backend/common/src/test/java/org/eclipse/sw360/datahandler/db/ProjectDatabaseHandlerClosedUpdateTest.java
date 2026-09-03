@@ -10,14 +10,22 @@
 
 package org.eclipse.sw360.datahandler.db;
 
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -163,5 +171,81 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated, contributor, true));
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated, leadArchitect, true));
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated, projectResponsible, true));
+    }
+
+    @Test
+    public void testNestedThriftObjectsWithIgnoredFieldsAreTreatedAsEqual() {
+        Project actual = closedProject();
+        Map<String, ProjectReleaseRelationship> actualReleases = new HashMap<>();
+        actualReleases.put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE)
+                .setCreatedBy("admin@sw360.org")
+                .setCreatedOn("2026-01-01"));
+        actual.setReleaseIdToUsage(actualReleases);
+
+        Map<String, ProjectPackageRelationship> actualPackages = new HashMap<>();
+        actualPackages.put("pkg1", new ProjectPackageRelationship()
+                .setComment("a package")
+                .setCreatedBy("admin@sw360.org")
+                .setCreatedOn("2026-01-01"));
+        actual.setPackageIds(actualPackages);
+
+        // Updated project from API does not contain createdBy / createdOn on nested relationships
+        Project updated = actual.deepCopy().setState(ProjectState.PHASE_OUT);
+        Map<String, ProjectReleaseRelationship> updatedReleases = new HashMap<>();
+        updatedReleases.put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        updated.setReleaseIdToUsage(updatedReleases);
+
+        Map<String, ProjectPackageRelationship> updatedPackages = new HashMap<>();
+        updatedPackages.put("pkg1", new ProjectPackageRelationship()
+                .setComment("a package"));
+        updated.setPackageIds(updatedPackages);
+
+        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                user(MEMBER_EMAIL, UserGroup.USER), true));
+    }
+
+    @Test
+    public void testNestedThriftObjectsWithActualFieldChangesAreDetected() {
+        Project actual = closedProject();
+        Map<String, ProjectReleaseRelationship> actualReleases = new HashMap<>();
+        actualReleases.put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE)
+                .setCreatedBy("admin@sw360.org")
+                .setCreatedOn("2026-01-01"));
+        actual.setReleaseIdToUsage(actualReleases);
+
+        // Member attempts to change releaseRelationship from CONTAINED to REFERRED on closed project
+        Project updated = actual.deepCopy();
+        Map<String, ProjectReleaseRelationship> updatedReleases = new HashMap<>();
+        updatedReleases.put("r1", new ProjectReleaseRelationship(ReleaseRelationship.REFERRED, MainlineState.MAINLINE));
+        updated.setReleaseIdToUsage(updatedReleases);
+
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                user(MEMBER_EMAIL, UserGroup.USER), true));
+    }
+
+    @Test
+    public void testNestedLinkedProjectsWithChangesAreDetected() {
+        Project actual = closedProject();
+        Map<String, ProjectProjectRelationship> actualLinked = new HashMap<>();
+        actualLinked.put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        actual.setLinkedProjects(actualLinked);
+
+        // Matching linked project allowed
+        Project updatedSame = actual.deepCopy().setState(ProjectState.PHASE_OUT);
+        Map<String, ProjectProjectRelationship> sameLinked = new HashMap<>();
+        sameLinked.put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        updatedSame.setLinkedProjects(sameLinked);
+
+        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updatedSame,
+                user(MEMBER_EMAIL, UserGroup.USER), true));
+
+        // Modified relationship blocked for member
+        Project updatedDiff = actual.deepCopy();
+        Map<String, ProjectProjectRelationship> diffLinked = new HashMap<>();
+        diffLinked.put("P2", new ProjectProjectRelationship(ProjectRelationship.REFERRED));
+        updatedDiff.setLinkedProjects(diffLinked);
+
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updatedDiff,
+                user(MEMBER_EMAIL, UserGroup.USER), true));
     }
 }
