@@ -955,6 +955,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Set<String> idsSentToModerator = new HashSet<>();
         Set<String> idsWithCyclicPath = new HashSet<>();
         Set<String> linkedProjectIds = new HashSet<>();
+        Set<String> idsNotAllowedToUpdate = new HashSet<>();
         int count = 0;
 
         try {
@@ -982,7 +983,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         continue;
                     }
 
-                    RequestStatus updatedstatus = projectService.updateProject(proj, sw360User);
+                    RequestStatus updatedstatus;
+                    try {
+                        updatedstatus = projectService.updateProject(proj, sw360User);
+                    } catch (AccessDeniedException e) {
+                        log.warn("Project {} could not be linked: {}", projId, e.getMessage());
+                        idsNotAllowedToUpdate.add(projId);
+                        continue;
+                    }
                     if (updatedstatus == RequestStatus.SUCCESS) {
                         linkedProjectIds.add(projId);
                     }
@@ -1002,6 +1010,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 responseMap.put("Message regarding project(s) having cyclic path",
                         "Cyclic linked project path: " + idsWithCyclicPath);
                 status = HttpStatus.CONFLICT;
+                count++;
+            }
+            if (!idsNotAllowedToUpdate.isEmpty()) {
+                responseMap.put("Message regarding project(s) which could not be updated",
+                        "Project ids are: " + idsNotAllowedToUpdate);
+                status = HttpStatus.FORBIDDEN;
                 count++;
             }
             if (!idsSentToModerator.isEmpty()) {
@@ -1504,6 +1518,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
+
+        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
+        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
+        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+        }
+
         List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
         Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
         Set<String> externalIdsFromRequestDto = vulnDTOs.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
@@ -1523,11 +1544,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
         ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
-        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
-        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
-        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
-            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
-        }
 
         sw360User.setCommentMadeDuringModerationRequest(comment);
         final RequestStatus requestStatus = vulnerabilityService.updateProjectVulnerabilityRating(link, sw360User);
@@ -1947,7 +1963,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Project successfully updated"),
-        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation")
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PatchMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> patchProject(
@@ -2893,6 +2911,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Update a project with dependencies network.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/network/{id}")
     public ResponseEntity<?> patchProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
@@ -3560,6 +3584,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         if (status == RequestStatus.SUCCESS) {
             return new ResponseEntity<>("Orphaned Obligation Removed Successfully", HttpStatus.OK);
+        } else if (status == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+            throw new AccessDeniedException(Sw360ProjectService.CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         throw new ResourceNotFoundException("Failed to Remove Orphaned Obligation");
     }
@@ -3948,6 +3974,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 return ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body("License Obligation Updated Successfully");
+            } else if (updateStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+                throw new AccessDeniedException(Sw360ProjectService.CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
             }
 
             throw new DataIntegrityViolationException("Cannot update License Obligation");

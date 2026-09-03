@@ -1425,86 +1425,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * @param update The updated release from the user
      * @return true if there are NO changes, false if there are changes
      */
-    private boolean hasNoChanges(Release actual, Release update) {
+    private static boolean hasNoChanges(Release actual, Release update) {
         // Normalize vendor IDs for consistent comparison
         SW360Utils.setVendorId(actual);
         SW360Utils.setVendorId(update);
 
-        return compareThriftObjects(actual, update, Release._Fields.values());
-    }
-
-    /**
-     * Generalized method to compare two Thrift objects field by field
-     * This automatically handles ALL fields using Thrift's reflection capabilities
-     *
-     * @param obj1 First Thrift object
-     * @param obj2 Second Thrift object
-     * @param fields Array of field enums (e.g., Release._Fields.values())
-     * @return true if objects are equal (no changes), false if different
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private <T extends org.apache.thrift.TBase<T, F>, F extends org.apache.thrift.TFieldIdEnum>
-            boolean compareThriftObjects(T obj1, T obj2, F[] fields) {
-
-        if (obj1 == null && obj2 == null) {
-            return true;
-        }
-        if (obj1 == null || obj2 == null) {
-            return false;
-        }
-
-        // Iterate through all fields automatically using Thrift reflection
-        for (F field : fields) {
-            // Get field values using Thrift's getFieldValue
-            Object value1 = obj1.isSet(field) ? obj1.getFieldValue(field) : null;
-            Object value2 = obj2.isSet(field) ? obj2.getFieldValue(field) : null;
-
-            // Compare field values
-            if (!areFieldValuesEqual(value1, value2, field.getFieldName())) {
-                return false;
-            }
-        }
-
-        // All fields are equal
-        log.debug("No changes detected - all fields are equal");
-        return true;
-    }
-
-    /**
-     * Compare two field values with proper null handling and type-specific comparison
-     * Includes detailed logging to track which fields differ
-     *
-     * @param value1 First value
-     * @param value2 Second value
-     * @param fieldName Name of field (for logging)
-     * @return true if values are equal, false otherwise
-     */
-    private boolean areFieldValuesEqual(Object value1, Object value2, String fieldName) {
-        // Both null = equal
-        if (value1 == null && value2 == null) {
-            return true;
-        }
-
-        // One null, one not = not equal
-        if (value1 == null || value2 == null) {
-            return false;
-        }
-
-        // For Comparable types, use compareTo
-        if (value1 instanceof Comparable && value2 instanceof Comparable &&
-            value1.getClass().equals(value2.getClass())) {
-            try {
-                @SuppressWarnings("unchecked")
-                int comparison = ((Comparable<Object>) value1).compareTo(value2);
-                return comparison == 0;
-            } catch (ClassCastException e) {
-                // Fall back to equals if compareTo fails
-                return Objects.equals(value1, value2);
-            }
-        }
-
-        // For all other types (collections, maps, objects), use equals
-        return Objects.equals(value1, value2);
+        return ThriftUtils.compareThriftObjects(actual, update, Release._Fields.values());
     }
 
     public boolean hasChangesInEccFields(Release release, Release actual) {
