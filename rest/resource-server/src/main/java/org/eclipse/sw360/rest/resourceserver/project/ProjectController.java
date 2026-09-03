@@ -83,15 +83,6 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
-import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -856,11 +847,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project.unsetAttachments();
         sw360Project.unsetClearingRequestId();
         sw360Project.setClearingState(ProjectClearingState.OPEN);
-        String linkedObligationId = sw360Project.getLinkedObligationId();
         sw360Project.unsetLinkedObligationId();
         Project createDuplicateProject = projectService.createProject(sw360Project, user);
-        sw360Project.setLinkedObligationId(linkedObligationId);
-        projectService.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, user);
 
         HalResource<Project> halResource = createHalProject(createDuplicateProject, user);
 
@@ -4808,12 +4796,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         duplicatedProject.unsetAttachments();
         duplicatedProject.unsetClearingRequestId();
         duplicatedProject.setClearingState(ProjectClearingState.OPEN);
-        String linkedObligationId = duplicatedProject.getLinkedObligationId();
         duplicatedProject.unsetLinkedObligationId();
-
         Project createdProject = projectService.createProject(duplicatedProject, sw360User);
-        createdProject.setLinkedObligationId(linkedObligationId);
-        projectService.copyLinkedObligationsForClonedProject(createdProject, duplicatedProject, sw360User);
 
         HalResource<ProjectDTO> projectDTOHalResource = createHalProjectDTO(createdProject, sw360User);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")

@@ -1348,12 +1348,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         Map<PaginationData, List<Project>> get(int page) throws TException;
     }
 
-    public void copyLinkedObligationsForClonedProject(Project createDuplicateProject, Project sw360Project, User user)
-            throws TException {
-        SW360Utils.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, getThriftProjectClient(),
-                user);
-    }
-
     private List<Project> getAllRequiredProjects(ProjectData projectData, User sw360User) throws TException {
         List<Project> listOfProjects = projectData.getFirst250Projects();
         List<String> projectIdsOfRemainingProject = projectData.getProjectIdsOfRemainingProject();
