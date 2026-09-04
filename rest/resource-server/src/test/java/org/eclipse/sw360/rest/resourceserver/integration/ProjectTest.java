@@ -897,9 +897,8 @@ public class ProjectTest extends TestIntegrationBase {
     @Test
     public void should_get_license_clearing() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
-        given(this.projectServiceMock.getReleaseIds(eq(project1.getId()), any(), anyBoolean())).willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+        given(this.projectServiceMock.getLicenseClearingReleases(eq(project1.getId()), eq(project1), any(), eq(true), any(), any(), any()))
+                .willReturn(Arrays.asList(release1, release2));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -1695,13 +1694,8 @@ public class ProjectTest extends TestIntegrationBase {
         parentProject.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases"), any())).willReturn(parentProject);
-        // Transitive fetch returns releases from sub-project
-        given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases"), any(), eq(true)))
-                .willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
-        given(this.projectServiceMock.getFilteredReleases(any(), any(), any(), any(), any()))
+        given(this.projectServiceMock.getLicenseClearingReleases(eq("parentNoReleases"), eq(parentProject), any(), eq(true), any(), any(), any()))
                 .willReturn(Arrays.asList(release1, release2));
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =

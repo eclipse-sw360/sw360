@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
@@ -232,12 +231,20 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public List<Release> setComponentDependentFieldsInRelease(List<Release> releases, User sw360User) {
+        if (CommonUtils.isNullOrEmptyCollection(releases)) {
+            return releases;
+        }
+
         Map<String, Component> componentIdMap;
 
         try {
-            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
-            componentIdMap = ThriftUtils.getIdMap(components);
+            Set<String> componentIds = releases.stream()
+                    .filter(Objects::nonNull)
+                    .map(Release::getComponentId)
+                    .filter(CommonUtils::isNotNullEmptyOrWhitespace)
+                    .collect(Collectors.toSet());
+            List<Component> components = getComponentsShort(componentIds);
+            componentIdMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
         } catch (TException e) {
             throw new BadRequestClientException("No Components found");
         }
@@ -254,6 +261,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             release.setComponentType(component.getComponentType());
         }
         return releases;
+    }
+
+    protected List<Component> getComponentsShort(Set<String> componentIds) throws TException {
+        return getThriftComponentClient().getComponentsShort(componentIds);
     }
 
     public List<Release> getReleaseSubscriptions(User sw360User) throws TException {
