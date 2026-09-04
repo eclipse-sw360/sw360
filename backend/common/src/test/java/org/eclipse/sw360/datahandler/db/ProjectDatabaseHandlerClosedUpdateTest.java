@@ -99,9 +99,9 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
                 actual.deepCopy().setState(ProjectState.PHASE_OUT), member, true));
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
-                actual.deepCopy().setExternalIds(Collections.singletonMap("internal.id", "4711")), member, true));
+                actual.deepCopy().setSecurityResponsibles(Collections.singleton(STRANGER_EMAIL)), member, true));
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
-                actual.deepCopy().setAdditionalData(Collections.singletonMap("key", "value")), member, true));
+                actual.deepCopy().setExternalIds(Collections.singletonMap("internal.id", "4711")), member, true));
     }
 
     @Test
@@ -115,6 +115,8 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
                 actual.deepCopy().setClearingState(ProjectClearingState.OPEN), member, true));
         assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
                 actual.deepCopy().setDescription("new description"), member, true));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setAdditionalData(Collections.singletonMap("key", "value")), member, true));
     }
 
     @Test
