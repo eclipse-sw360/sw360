@@ -86,4 +86,24 @@ public class ApiTokenAuthenticationFilterTest {
         verify(authenticationManager, never()).authenticate(ArgumentMatchers.any());
         verify(filterChain, times(1)).doFilter(request, response);
     }
+
+    @Test
+    public void shouldStopFilterChainWhenApiTokenAuthenticationFails() throws IOException, ServletException {
+        ApiTokenAuthenticationFilter filter = new ApiTokenAuthenticationFilter(authenticationManager, authenticationEntryPoint);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("authorization", "Token invalid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        when(authenticationManager.authenticate(ArgumentMatchers.any()))
+                .thenThrow(new org.springframework.security.authentication.AuthenticationServiceException("bad token"));
+
+        filter.doFilter(request, response, filterChain);
+
+        verify(authenticationEntryPoint, times(1)).commence(
+                ArgumentMatchers.same(request),
+                ArgumentMatchers.same(response),
+                ArgumentMatchers.any(org.springframework.security.core.AuthenticationException.class)
+        );
+        verify(filterChain, never()).doFilter(request, response);
+    }
 }

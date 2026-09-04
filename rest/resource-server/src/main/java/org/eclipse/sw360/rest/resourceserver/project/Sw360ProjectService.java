@@ -43,7 +43,6 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
@@ -132,6 +131,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     private static final Logger log = LogManager.getLogger(Sw360ProjectService.class);
+    private static final Comparator<String> PROJECT_GROUP_COMPARATOR =
+            String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
+
+    public static final String CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE =
+            "User is not allowed to modify the requested fields of a project with clearing state CLOSED.";
 
     @NonNull
     private RestControllerHelper rch;
@@ -390,18 +394,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public void deleteAttachmentUsages(List<AttachmentUsage> usagesToDelete) throws TException {
         AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
         attachmentClient.deleteAttachmentUsages(usagesToDelete);
-	}
+    }
 
-	public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		attachmentClient.makeAttachmentUsages(usagesToCreate);
-	}
+    public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        attachmentClient.makeAttachmentUsages(usagesToCreate);
+    }
 
-	public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
-		return allUsagesByProjectAfterCleanUp;
-	}
+    public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
+        return allUsagesByProjectAfterCleanUp;
+    }
 
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -940,7 +944,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
-            throw new RuntimeException("User cannot modify a closed project");
+            throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             return requestStatus;
@@ -1349,12 +1353,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         Map<PaginationData, List<Project>> get(int page) throws TException;
     }
 
-    public void copyLinkedObligationsForClonedProject(Project createDuplicateProject, Project sw360Project, User user)
-            throws TException {
-        SW360Utils.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, getThriftProjectClient(),
-                user);
-    }
-
     private List<Project> getAllRequiredProjects(ProjectData projectData, User sw360User) throws TException {
         List<Project> listOfProjects = projectData.getFirst250Projects();
         List<String> projectIdsOfRemainingProject = projectData.getProjectIdsOfRemainingProject();
@@ -1640,7 +1638,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return requestStatus;
         }
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
-            throw new RuntimeException("User cannot modify a closed project");
+            throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
@@ -2067,9 +2065,23 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return count;
     }
 
-    public Set<String> getGroups() throws TException {
+    public List<String> getGroups() throws TException {
         ProjectService.Iface projectClient = getThriftProjectClient();
-        return projectClient.getGroups();
+        Set<String> groups = projectClient.getGroups();
+        if (groups == null) {
+            groups = Collections.emptySet();
+        }
+        List<String> responseGroups = new ArrayList<>(groups.size() + 1);
+        responseGroups.add(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
+        responseGroups.addAll(
+                groups.stream()
+                        .filter(Objects::nonNull)
+                        .filter(group -> !group.isEmpty())
+                        .filter(group -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(group))
+                        .sorted(PROJECT_GROUP_COMPARATOR)
+                        .toList()
+        );
+        return responseGroups;
     }
 
     // =====================================================
