@@ -842,6 +842,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project updateProject = convertToProject(reqBodyMap);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
+        normalizeStateForDuplicatedProject(sw360Project);
         sw360Project.unsetId();
         sw360Project.unsetRevision();
         sw360Project.unsetAttachments();
@@ -4819,6 +4820,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
+        normalizeStateForDuplicatedProject(duplicatedProject);
         duplicatedProject.unsetId();
         duplicatedProject.unsetRevision();
         duplicatedProject.unsetAttachments();
@@ -4832,6 +4834,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(createdProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(projectDTOHalResource);
+    }
+
+    private void normalizeStateForDuplicatedProject(Project duplicatedProject) {
+        duplicatedProject.setState(ProjectState.ACTIVE);
+        duplicatedProject.unsetPhaseOutSince();
     }
 
     @Operation(

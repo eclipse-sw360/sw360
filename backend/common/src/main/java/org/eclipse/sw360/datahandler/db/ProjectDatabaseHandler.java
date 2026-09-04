@@ -168,7 +168,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * {@value org.eclipse.sw360.datahandler.common.SW360ConfigKeys#PROJECTS_CLOSED_UPDATE_STRICT} is enabled.
      */
     private static final ImmutableSet<Project._Fields> CLOSED_PROJECT_EDITABLE_FIELDS = ImmutableSet.of(
-            Project._Fields.STATE, Project._Fields.EXTERNAL_IDS, Project._Fields.ADDITIONAL_DATA);
+            Project._Fields.PROJECT_RESPONSIBLE, Project._Fields.PROJECT_OWNER, Project._Fields.ENABLE_SVM,
+            Project._Fields.ENABLE_VULNERABILITIES_DISPLAY, Project._Fields.SECURITY_RESPONSIBLES,
+            Project._Fields.STATE, Project._Fields.EXTERNAL_IDS, Project._Fields.PHASE_OUT_SINCE
+    );
 
     /**
      * Server managed or computed fields which must not be taken into account when checking
