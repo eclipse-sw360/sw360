@@ -16,6 +16,7 @@
               xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
               version="1.0">
   <role rolename="manager-gui"/>
-  <user username="$COUCHDB_USER" password="$COUCHDB_PASSWORD" roles="tomcat,manager-gui"/>
+  <role rolename="manager-script"/>
+  <user username="$COUCHDB_USER" password="$COUCHDB_PASSWORD" roles="tomcat,manager-gui,manager-script"/>
 
 </tomcat-users>

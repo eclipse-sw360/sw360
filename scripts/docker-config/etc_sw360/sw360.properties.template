@@ -19,6 +19,15 @@ rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
 
 # where the Thrift should connect
 backend.url=http://127.0.0.1:8080
+# Java Max limit for int
+backend.thrift.max.message.size=$BACKEND_THRIFT_MAX_MESSAGE_SIZE
+backend.thrift.max.frame.size=$BACKEND_THRIFT_MAX_FRAME_SIZE
+
+## These properties help setup the connection pool for thrift transport
+backend.thrift.max.connections.total=$BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL
+backend.thrift.max.connections.per.route=$BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE
+backend.thrift.idle.evict.seconds=$BACKEND_THRIFT_IDLE_EVICT_SECONDS
+backend.thrift.connection.ttl.seconds=$BACKEND_THRIFT_CONNECTION_TTL_SECONDS
 
 org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport
 enable.sw360.change.log=false
@@ -104,6 +113,8 @@ svm.sw360.certificate.filename=$SVM_SW360_CERTIFICATE_FILENAME
 svm.sw360.certificate.passphrase=$SVM_SW360_CERTIFICATE_PASSPHRASE
 svm.sw360.jks.password=$SVM_SW360_JKS_PASSWORD
 svm.json.log.output.location=/tmp
+svm.sw360.truststore.filename=$SVM_SW360_TRUSTSTORE_FILENAME
+svm.sw360.truststore.password=$SVM_SW360_TRUSTSTORE_PASSWORD
 
 svm.base.path=$SVM_API_BASE_PATH
 svm.api.root.path=/$SVM_API_ROOT_PATH
