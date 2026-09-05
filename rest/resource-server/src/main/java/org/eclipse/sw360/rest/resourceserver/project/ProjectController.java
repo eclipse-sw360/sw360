@@ -911,6 +911,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "202", description = "Accepted - linking requires moderation",
                 content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "409", description = "Conflict - Project already linked or cyclic dependency.",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PostMapping(value = PROJECTS_URL + "/{id}/linkProjects")
@@ -918,10 +920,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
             @Parameter(description = "Array of project IDs",
-                    examples = {
-                            @ExampleObject(name = "Array of IDs", value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
-                            @ExampleObject(name = "Map with relation", value = "{\"projectId1\":\"CONTAINED\",\"projectId2\":\"REFERRED\"}")
-                    }
+                    example = "[\"3765276512\",\"5578999\",\"3765276513\"]"
             )
             @RequestBody List<String> projectIdsInRequestBody,
             @Parameter(description = "Comment message.")
@@ -948,7 +947,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 Map<String, ProjectProjectRelationship> linkedProject = Optional.ofNullable(proj.getLinkedProjects())
                         .orElse(new HashMap<>());
 
-                if (linkedProject.keySet().contains(id)) {
+                if (linkedProject.containsKey(id)) {
                     alreadyLinkedIds.add(projId);
                     continue;
                 }
