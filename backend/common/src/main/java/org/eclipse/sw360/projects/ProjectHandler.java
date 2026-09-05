@@ -458,7 +458,7 @@ public class ProjectHandler {
 
     public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user)
             throws SW360Exception {
-        return fromThriftReleaseClearingStatusData(handler.getReleaseClearingStatuses(projectId, user));
+        return handler.getReleaseClearingStatuses(projectId, user);
     }
 
     public RequestStatus exportForMonitoringList() throws TException {
@@ -472,7 +472,7 @@ public class ProjectHandler {
 
     public List<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(String projectId, User user)
             throws SW360Exception {
-        return fromThriftReleaseClearingStatusData(handler.getReleaseClearingStatusesWithAccessibility(projectId, user));
+        return handler.getReleaseClearingStatusesWithAccessibility(projectId, user);
     }
 
     public RequestStatus removeAttachmentFromProject(String projectId, User user, String attachmentContentId)

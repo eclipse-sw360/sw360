@@ -33,13 +33,13 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
+import org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -217,7 +217,7 @@ public class CycloneDxBOMExporter {
             }
 
             // set CycloneDx component type
-            if (sw360Comp.isSetCdxComponentType()) {
+            if (sw360Comp.getCdxComponentType() != null) {
                 comp.setType(getCdxComponentType(sw360Comp.getCdxComponentType()));
             }
 
@@ -284,7 +284,7 @@ public class CycloneDxBOMExporter {
                 comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
             }
             if (null != pckg.getPackageType()) {
-                comp.setType(getCdxComponentType(org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType
+                comp.setType(getCdxComponentType(org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType
                         .valueOf(pckg.getPackageType().name())));
             }
             comp.setDescription(pckg.getDescription());

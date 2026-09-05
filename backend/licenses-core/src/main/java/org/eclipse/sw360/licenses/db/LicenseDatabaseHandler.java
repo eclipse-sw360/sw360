@@ -36,7 +36,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.licenses.*;
 import org.eclipse.sw360.datahandler.services.common.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;

@@ -11,14 +11,13 @@ package org.eclipse.sw360.components.summary;
 
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
 
 /**
  * Created by bodet on 17/02/15.
@@ -50,39 +49,83 @@ public class ComponentSummary extends DocumentSummary<Component> {
         } else if (type == SummaryType.DETAILED_EXPORT_SUMMARY) {
             List<Release> releases = releaseRepository.getReleasesFromComponentId(document.getId());
 
-            final Map<String, Vendor> vendorsById = vendorRepository.getAllAsThriftIdMap();
+            final Map<String, Vendor> vendorsById = vendorRepository.getAllIdMap();
 
             for (Release release : releases) {
-                if (!release.isSetVendor() && release.isSetVendorId()) {
-                    release.setVendor(vendorsById.get(release.getVendorId()));
+                if (release.getVendor() == null) {
+                    String vendorId = release.getVendorId();
+                    if (vendorId != null && !vendorId.isEmpty()) {
+                        release.setVendor(vendorsById.get(vendorId));
+                    }
                 }
             }
 
             return makeDetailedExportSummary(document, releases);
         } else if (type == SummaryType.HOME) {
-            copyField(document, copy, Component._Fields.ID);
-            copyField(document, copy, Component._Fields.DESCRIPTION);
+            copy.setId(document.getId());
+            copy.setDescription(document.getDescription());
         }
 
-        copyField(document, copy, Component._Fields.ID);
-        copyField(document, copy, Component._Fields.NAME);
-        copyField(document, copy, Component._Fields.VENDOR_NAMES);
-        copyField(document, copy, Component._Fields.COMPONENT_TYPE);
-        copyField(document, copy, Component._Fields.CATEGORIES);
+        copy.setId(document.getId());
+        copy.setName(document.getName());
+        copy.setVendorNames(document.getVendorNames());
+        copy.setComponentType(document.getComponentType());
+        copy.setCategories(document.getCategories());
 
         if (type == SummaryType.SUMMARY) {
-            for (Component._Fields field : Component.metaDataMap.keySet()) {
-                copyField(document, copy, field);
-            }
+            setSummaryFields(document, copy);
         }
 
         return copy;
     }
 
+    protected static void setSummaryFields(Component document, Component copy) {
+        copy.setId(document.getId());
+        copy.setRevision(document.getRevision());
+        copy.setType(document.getType());
+        copy.setName(document.getName());
+        copy.setDescription(document.getDescription());
+        copy.setAttachments(document.getAttachments());
+        copy.setCreatedOn(document.getCreatedOn());
+        copy.setComponentType(document.getComponentType());
+        copy.setCreatedBy(document.getCreatedBy());
+        copy.setSubscribers(document.getSubscribers());
+        copy.setModerators(document.getModerators());
+        copy.setComponentOwner(document.getComponentOwner());
+        copy.setOwnerAccountingUnit(document.getOwnerAccountingUnit());
+        copy.setOwnerGroup(document.getOwnerGroup());
+        copy.setOwnerCountry(document.getOwnerCountry());
+        copy.setRoles(document.getRoles());
+        copy.setVisbility(document.getVisbility());
+        copy.setBusinessUnit(document.getBusinessUnit());
+        copy.setCdxComponentType(document.getCdxComponentType());
+        copy.setExternalIds(document.getExternalIds());
+        copy.setAdditionalData(document.getAdditionalData());
+        copy.setReleases(document.getReleases());
+        copy.setReleaseIds(document.getReleaseIds());
+        copy.setMainLicenseIds(document.getMainLicenseIds());
+        copy.setDefaultVendor(document.getDefaultVendor());
+        copy.setDefaultVendorId(document.getDefaultVendorId());
+        copy.setCategories(document.getCategories());
+        copy.setLanguages(document.getLanguages());
+        copy.setSoftwarePlatforms(document.getSoftwarePlatforms());
+        copy.setOperatingSystems(document.getOperatingSystems());
+        copy.setVendorNames(document.getVendorNames());
+        copy.setHomepage(document.getHomepage());
+        copy.setMailinglist(document.getMailinglist());
+        copy.setWiki(document.getWiki());
+        copy.setBlog(document.getBlog());
+        copy.setWikipedia(document.getWikipedia());
+        copy.setOpenHub(document.getOpenHub());
+        copy.setVcs(document.getVcs());
+        copy.setDocumentState(document.getDocumentState());
+        copy.setPermissions(document.getPermissions());
+        copy.setModifiedBy(document.getModifiedBy());
+        copy.setModifiedOn(document.getModifiedOn());
+    }
+
     private Component makeDetailedExportSummary(Component document, List<Release> releases) {
-
         document.setReleases(releases);
-
         return document;
     }
 
@@ -94,34 +137,31 @@ public class ComponentSummary extends DocumentSummary<Component> {
 
         Component copy = new Component();
 
-        copyField(document, copy, Component._Fields.ID);
-        copyField(document, copy, Component._Fields.NAME);
-        copyField(document, copy, Component._Fields.LANGUAGES);
-        copyField(document, copy, Component._Fields.OPERATING_SYSTEMS);
-        copyField(document, copy, Component._Fields.SOFTWARE_PLATFORMS);
-        copyField(document, copy, Component._Fields.CREATED_BY);
-        copyField(document, copy, Component._Fields.CREATED_ON);
-        copyField(document, copy, Component._Fields.VENDOR_NAMES);
-        copyField(document, copy, Component._Fields.MAIN_LICENSE_IDS);
-        copyField(document, copy, Component._Fields.COMPONENT_TYPE);
-        copyField(document, copy, Component._Fields.DEFAULT_VENDOR_ID);
-        copyField(document, copy, Component._Fields.VCS);
-        copyField(document, copy, Component._Fields.HOMEPAGE);
-        copyField(document, copy, Component._Fields.EXTERNAL_IDS);
+        copy.setId(document.getId());
+        copy.setName(document.getName());
+        copy.setLanguages(document.getLanguages());
+        copy.setOperatingSystems(document.getOperatingSystems());
+        copy.setSoftwarePlatforms(document.getSoftwarePlatforms());
+        copy.setCreatedBy(document.getCreatedBy());
+        copy.setCreatedOn(document.getCreatedOn());
+        copy.setVendorNames(document.getVendorNames());
+        copy.setMainLicenseIds(document.getMainLicenseIds());
+        copy.setComponentType(document.getComponentType());
+        copy.setDefaultVendorId(document.getDefaultVendorId());
+        copy.setVcs(document.getVcs());
+        copy.setHomepage(document.getHomepage());
+        copy.setExternalIds(document.getExternalIds());
 
-
-
+        List<Release> exportReleases = new ArrayList<>();
         for (Release release : releases) {
             Release exportRelease = new Release();
-            copyField(release, exportRelease, Release._Fields.NAME);
-            copyField(release, exportRelease, Release._Fields.VERSION);
+            exportRelease.setName(release.getName());
+            exportRelease.setVersion(release.getVersion());
             exportRelease.setComponentId("");
-            copy.addToReleases(exportRelease);
+            exportReleases.add(exportRelease);
         }
+        copy.setReleases(exportReleases);
 
         return copy;
-
     }
-
-
 }

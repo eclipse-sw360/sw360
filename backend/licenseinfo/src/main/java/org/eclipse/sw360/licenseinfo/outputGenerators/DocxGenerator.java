@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -590,7 +591,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             }
             if (r.getLanguagesSize() == 0 && r.getOperatingSystemsSize() == 0 && r.getSoftwarePlatformsSize() == 0) {
                 try {
-                    ComponentService.Iface componentClient = new ComponentHandler();
+                    ComponentService.Iface componentClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
                     Release fullRelease = componentClient.getReleaseById(r.getId(), user);
                     if (fullRelease != null) {
                         r = fullRelease;

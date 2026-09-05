@@ -20,6 +20,8 @@ import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -108,8 +110,10 @@ public class CycloneDxBOMExporterTest {
         Project project = buildProject(RELEASE_ID);
 
         when(projectDatabaseHandler.getProjectById(eq(PROJECT_ID), any(User.class))).thenReturn(project);
-        when(componentDatabaseHandler.getReleasesByIds(anySet())).thenReturn(Collections.singletonList(release));
-        when(componentDatabaseHandler.getComponentsByIds(anySet())).thenReturn(Collections.singletonList(component));
+        when(componentDatabaseHandler.getReleasesByIds(anySet())).thenReturn(
+                Collections.singletonList(ReleaseConverter.fromThrift(release)));
+        when(componentDatabaseHandler.getComponentsByIds(anySet())).thenReturn(
+                Collections.singletonList(ComponentConverter.fromThrift(component)));
 
         try (MockedStatic<SW360Utils> sw360UtilsMock = allowExport()) {
             RequestSummary result = cycloneDxBOMExporter.exportSbom(PROJECT_ID, "json", false, user);
@@ -142,8 +146,10 @@ public class CycloneDxBOMExporterTest {
         Project project = buildProject(RELEASE_ID);
 
         when(projectDatabaseHandler.getProjectById(eq(PROJECT_ID), any(User.class))).thenReturn(project);
-        when(componentDatabaseHandler.getReleasesByIds(anySet())).thenReturn(Collections.singletonList(release));
-        when(componentDatabaseHandler.getComponentsByIds(anySet())).thenReturn(Collections.singletonList(component));
+        when(componentDatabaseHandler.getReleasesByIds(anySet())).thenReturn(
+                Collections.singletonList(ReleaseConverter.fromThrift(release)));
+        when(componentDatabaseHandler.getComponentsByIds(anySet())).thenReturn(
+                Collections.singletonList(ComponentConverter.fromThrift(component)));
 
         try (MockedStatic<SW360Utils> sw360UtilsMock = allowExport()) {
             RequestSummary result = cycloneDxBOMExporter.exportSbom(PROJECT_ID, "json", false, user);
@@ -174,8 +180,10 @@ public class CycloneDxBOMExporterTest {
         Project project = buildProject(RELEASE_ID);
 
         when(projectDatabaseHandler.getProjectById(eq(PROJECT_ID), any(User.class))).thenReturn(project);
-        when(componentDatabaseHandler.getReleasesByIds(anySet())).thenReturn(Collections.singletonList(linkedRelease));
-        when(componentDatabaseHandler.getComponentsByIds(anySet())).thenReturn(Collections.singletonList(component));
+        when(componentDatabaseHandler.getReleasesByIds(anySet())).thenReturn(
+                Collections.singletonList(ReleaseConverter.fromThrift(linkedRelease)));
+        when(componentDatabaseHandler.getComponentsByIds(anySet())).thenReturn(
+                Collections.singletonList(ComponentConverter.fromThrift(component)));
 
         try (MockedStatic<SW360Utils> sw360UtilsMock = allowExport()) {
             RequestSummary result = cycloneDxBOMExporter.exportSbom(PROJECT_ID, "json", false, user);

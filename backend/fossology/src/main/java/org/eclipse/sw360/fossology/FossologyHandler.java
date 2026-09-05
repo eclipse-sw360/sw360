@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
@@ -136,7 +137,7 @@ public class FossologyHandler {
 
     ComponentService.Iface getComponentClient() throws TException {
         try {
-            return new ComponentHandler();
+            return new ComponentHandlerThriftAdapter(new ComponentHandler());
         } catch (IOException e) {
             throw new TException("Error creating ComponentHandler: " + e.getMessage(), e);
         }

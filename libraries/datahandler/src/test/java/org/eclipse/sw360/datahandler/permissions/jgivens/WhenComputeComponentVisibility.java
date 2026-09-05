@@ -12,7 +12,7 @@ package org.eclipse.sw360.datahandler.permissions.jgivens;
 
 import org.eclipse.sw360.datahandler.TEnumToString;
 import org.eclipse.sw360.datahandler.permissions.ComponentPermissions;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 

@@ -21,13 +21,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.services.vendors.VendorSortColumn;
+import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -145,28 +145,47 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
     }
 
-    public Map<String, org.eclipse.sw360.datahandler.thrift.vendors.Vendor> getAllAsThriftIdMap() {
+
+    public void fillVendor(org.eclipse.sw360.datahandler.services.components.Component component) {
+        final String vendorId = component.getDefaultVendorId();
+        if (!isNullOrEmpty(vendorId)) {
+            final Vendor vendor = get(vendorId);
+            if (vendor != null) {
+                component.setDefaultVendor(vendor);
+            }
+        }
+    }
+
+    public void fillVendor(org.eclipse.sw360.datahandler.services.components.Release release) {
+        fillVendor(release, (Map<String, Vendor>) null);
+    }
+
+    public void fillVendor(org.eclipse.sw360.datahandler.services.components.Release release, Map<String, Vendor> vendorCache) {
+        final String vendorId = release.getVendorId();
+        if (!isNullOrEmpty(vendorId)) {
+            final Vendor vendor;
+            if (vendorCache == null) {
+                vendor = get(vendorId);
+            } else {
+                vendor = vendorCache.computeIfAbsent(vendorId, this::get);
+            }
+            if (vendor != null) {
+                release.setVendor(vendor);
+            }
+            release.setVendorId(null);
+        }
+    }
+
+    public Map<String, Vendor> getAllIdMap() {
         return getAll().stream()
-                .map(VendorConverter::toThrift)
                 .filter(v -> v != null && v.getId() != null)
-                .collect(Collectors.toMap(org.eclipse.sw360.datahandler.thrift.vendors.Vendor::getId, v -> v,
-                        (a, b) -> a));
+                .collect(Collectors.toMap(Vendor::getId, v -> v, (a, b) -> a));
     }
 
-    public List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> getAllAsThrift() {
-        return getAll().stream().map(VendorConverter::toThrift).collect(Collectors.toList());
-    }
-
-    public org.eclipse.sw360.datahandler.thrift.vendors.Vendor getAsThrift(String id) {
-        return toThrift(get(id));
-    }
-
-    public Map<String, org.eclipse.sw360.datahandler.thrift.vendors.Vendor> getAsThriftIdMap(Set<String> ids) {
+    public Map<String, Vendor> getIdMap(Set<String> ids) {
         return get(ids).stream()
-                .map(VendorConverter::toThrift)
                 .filter(v -> v != null && v.getId() != null)
-                .collect(Collectors.toMap(org.eclipse.sw360.datahandler.thrift.vendors.Vendor::getId, v -> v,
-                        (a, b) -> a));
+                .collect(Collectors.toMap(Vendor::getId, v -> v, (a, b) -> a));
     }
 
     private static org.eclipse.sw360.datahandler.thrift.vendors.Vendor toThrift(Vendor pojo) {

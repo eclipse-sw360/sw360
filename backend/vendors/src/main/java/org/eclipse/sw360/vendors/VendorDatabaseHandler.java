@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
@@ -217,7 +218,7 @@ public class VendorDatabaseHandler {
     private RequestSummary updateComponents(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
         ComponentService.Iface componentsClient;
         try {
-            componentsClient = new ComponentHandler();
+            componentsClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
         } catch (IOException e) {
             throw new org.eclipse.sw360.datahandler.thrift.SW360Exception(
                     "Error creating ComponentHandler: " + e.getMessage());
@@ -232,7 +233,7 @@ public class VendorDatabaseHandler {
     private RequestSummary updateReleases(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
         ComponentService.Iface componentsClient;
         try {
-            componentsClient = new ComponentHandler();
+            componentsClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
         } catch (IOException e) {
             throw new org.eclipse.sw360.datahandler.thrift.SW360Exception(
                     "Error creating ComponentHandler: " + e.getMessage());

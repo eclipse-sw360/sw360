@@ -14,8 +14,9 @@ import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.ReleaseFields;
+import org.eclipse.sw360.datahandler.services.components.ReleaseSortColumn;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
@@ -77,7 +78,7 @@ public class ReleaseSearchHandler {
         Map<PaginationData, List<Release>> resultReleaseList = connector
                 .searchViewWithRestrictionsWithAnd(Release.class,
                         luceneSearchView.getIndexName(), null,
-                        Map.of(Release._Fields.NAME.getFieldName(),
+                        Map.of(ReleaseFields.NAME,
                                 Collections.singleton(prepareWildcardQuery(searchText))
                         ),
                         pageData, sortColumn, pageData.isAscending());

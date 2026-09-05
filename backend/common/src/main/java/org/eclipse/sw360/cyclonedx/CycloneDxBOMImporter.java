@@ -43,24 +43,24 @@ import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.Repository;
-import org.eclipse.sw360.datahandler.thrift.components.RepositoryType;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.ComponentType;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Repository;
+import org.eclipse.sw360.datahandler.services.components.RepositoryType;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -219,7 +219,7 @@ public class CycloneDxBOMImporter {
                 } else if (componentsCount > vcsCount) {
                     requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, nonPkgManagedComponents, projectId, attachmentContent, doNotReplacePackageAndRelease);
 
-                    if (requestSummary.requestStatus.equals(RequestStatus.SUCCESS)) {
+                    if (RequestStatus.SUCCESS.equals(requestSummary.getRequestStatus())) {
 
                         String jsonMessage = requestSummary.getMessage();
                         messageMap = GSON.fromJson(jsonMessage, Map.class);
@@ -282,7 +282,8 @@ public class CycloneDxBOMImporter {
                                             Package dupPkg = packageDatabaseHandler.getPackageById(pkgAddSummary.getId());
                                             if (CommonUtils.isNotNullEmptyOrWhitespace(dupPkg.getReleaseId())) {
                                                 if (!CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).containsKey(dupPkg.getReleaseId())) {
-                                                    project.putToReleaseIdToUsage(dupPkg.getReleaseId(), getDefaultRelation());
+                                                    project.putToReleaseIdToUsage(dupPkg.getReleaseId(),
+                                                            getDefaultRelation());
                                                     relReuseCount++;
                                                 }
                                             }
@@ -1047,24 +1048,24 @@ public class CycloneDxBOMImporter {
 
     // Create Release for Package
     private Release createRelease(String version, Component component, Set<String> licenses) {
-        Release release = new Release(component.getName(), CommonUtils.nullToEmptyString(version).trim(), component.getId());
+        Release release = new Release()
+                .setName(component.getName())
+                .setVersion(CommonUtils.nullToEmptyString(version).trim())
+                .setComponentId(component.getId());
         release.setCreatorDepartment(user.getDepartment());
-        if (release.isSetMainLicenseIds()) {
-            release.getMainLicenseIds().addAll(licenses);
-        } else {
-            release.setMainLicenseIds(licenses);
-        }
+        // defensive copy: the caller's set is reused across releases
+        release.setMainLicenseIds(new HashSet<>(CommonUtils.nullToEmptySet(licenses)));
         return release;
     }
 
     private Release createRelease(org.cyclonedx.model.Component componentFromBom, Component component, Set<String> licenses) {
-        Release release = new Release(component.getName(), CommonUtils.nullToEmptyString(componentFromBom.getVersion()).trim(), component.getId());
+        Release release = new Release()
+                .setName(component.getName())
+                .setVersion(CommonUtils.nullToEmptyString(componentFromBom.getVersion()).trim())
+                .setComponentId(component.getId());
         release.setCreatorDepartment(user.getDepartment());
-        if (release.isSetMainLicenseIds()) {
-            release.getMainLicenseIds().addAll(licenses);
-        } else {
-            release.setMainLicenseIds(licenses);
-        }
+        // defensive copy: the caller's set is reused across releases
+        release.setMainLicenseIds(new HashSet<>(CommonUtils.nullToEmptySet(licenses)));
         if (CommonUtils.isNotNullEmptyOrWhitespace(componentFromBom.getCpe())) {
             release.setCpeid(componentFromBom.getCpe());
         }
@@ -1083,7 +1084,7 @@ public class CycloneDxBOMImporter {
         for (ExternalReference extRef : CommonUtils.nullToEmptyList(componentFromBom.getExternalReferences())) {
             if (Type.VCS.equals(extRef.getType())) {
                 String repoUrl = CommonUtils.nullToEmptyString(StringUtils.removeEnd(extRef.getUrl(), DOT_GIT));
-                Repository repo = new Repository(repoUrl);
+                Repository repo = new Repository().setUrl(repoUrl);
                 if (repoUrl.toLowerCase().contains("github")) {
                     repo.setRepositorytype(RepositoryType.GIT);
                 } else if (repoUrl.toLowerCase().contains("svn")) {
@@ -1095,8 +1096,14 @@ public class CycloneDxBOMImporter {
         return release;
     }
 
+    /**
+     * Every caller stores this on a still-thrift {@code Project}, so build it as thrift directly
+     * rather than converting a POJO at each of the five call sites.
+     */
     private static ProjectReleaseRelationship getDefaultRelation() {
-        return new ProjectReleaseRelationship(ReleaseRelationship.UNKNOWN, MainlineState.OPEN);
+        return new ProjectReleaseRelationship(
+                ReleaseRelationship.UNKNOWN,
+                MainlineState.OPEN);
     }
 
     private String getPackageName(PackageURL packageURL, org.cyclonedx.model.Component comp, String delimiter) {
@@ -1183,7 +1190,7 @@ public class CycloneDxBOMImporter {
         List<Property> properties = CommonUtils.nullToEmptyList(comp.getProperties());
         return (!properties.isEmpty() && properties.stream().anyMatch(prop -> SW360Utils.readConfig(NON_PKG_MANAGED_COMPS_PROP, "").equals(prop.getName()) && "true".equalsIgnoreCase(prop.getValue())));
     }
-    public  ProjectPackageRelationship createPackageNode(Project project, User user, String comment) {
+    public ProjectPackageRelationship createPackageNode(Project project, User user, String comment) {
         ProjectPackageRelationship projectPackageRelationship = new ProjectPackageRelationship();
         projectPackageRelationship.setCreatedBy(user.getEmail());
         projectPackageRelationship.setCreatedOn(SW360Utils.getCreatedOn());

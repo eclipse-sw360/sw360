@@ -39,7 +39,9 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -194,7 +196,7 @@ public class LicenseInfoHandler {
     }
 
     public Map<String, Map<String, String>> evaluateAttachments(String releaseId, User user) throws TException {
-        Release release = componentDatabaseHandler.getRelease(releaseId, user);
+        Release release = ReleaseConverter.toThrift(componentDatabaseHandler.getRelease(releaseId, user));
         Map<Attachment, LicenseInfoParsingResult> parsedResults = new HashMap<Attachment, LicenseInfoParsingResult>();
         Map<Attachment, ObligationParsingResult> parsedObligations = new HashMap<>();
         Map<String, Map<String, String>> result = new HashMap<String, Map<String, String>>();
@@ -243,7 +245,7 @@ public class LicenseInfoHandler {
                     att.setSuperAttachmentFilename(valueMap.get("superFilename"));
                 }
             });
-            componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            componentDatabaseHandler.updateRelease(ReleaseConverter.fromThrift(release), user, ThriftUtils.IMMUTABLE_OF_RELEASE);
         }
         return commonObsoleteMap;
     }
@@ -859,7 +861,7 @@ public class LicenseInfoHandler {
         Map<Release, Map<String, Boolean>> result = Maps.newHashMap();
         try {
             releaseIdsToAttachmentIds.forEach((relId, attIds) -> wrapTException(
-                    () -> result.put(componentDatabaseHandler.getRelease(relId, user), attIds)));
+                    () -> result.put(ReleaseConverter.toThrift(componentDatabaseHandler.getRelease(relId, user)), attIds)));
         } catch (WrappedTException exception) {
             throw exception.getCause();
         }
@@ -968,7 +970,7 @@ public class LicenseInfoHandler {
     private List<LicenseInfoParsingResult> assignComponentToLicenseInfoParsingResults(List<LicenseInfoParsingResult> parsingResults, Release release, User user) throws TException {
         final ComponentService.Iface componentClient;
         try {
-            componentClient = new ComponentHandler();
+            componentClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
         } catch (IOException e) {
             throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
         }

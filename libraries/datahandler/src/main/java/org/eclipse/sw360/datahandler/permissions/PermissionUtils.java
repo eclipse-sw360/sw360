@@ -11,8 +11,6 @@ package org.eclipse.sw360.datahandler.permissions;
 
 import java.util.*;
 
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -176,10 +174,24 @@ public class PermissionUtils {
         if (document instanceof org.eclipse.sw360.datahandler.services.licenses.License) {
             return (DocumentPermissions<T>) new LicensePermissions(
                     (org.eclipse.sw360.datahandler.services.licenses.License) document, user);
-        } else if (document instanceof Component) {
-            return (DocumentPermissions<T>) new ComponentPermissions((Component) document, user);
-        } else if (document instanceof Release) {
-            return (DocumentPermissions<T>) new ReleasePermissions((Release) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.services.components.Component) {
+            return (DocumentPermissions<T>) new ComponentPermissions(
+                    (org.eclipse.sw360.datahandler.services.components.Component) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.thrift.components.Component) {
+            // Dual-stack: resource-server still passes thrift Component documents.
+            return (DocumentPermissions<T>) new ComponentPermissions(
+                    org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge
+                            .toPojoComponent((org.eclipse.sw360.datahandler.thrift.components.Component) document),
+                    user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.services.components.Release) {
+            return (DocumentPermissions<T>) new ReleasePermissions(
+                    (org.eclipse.sw360.datahandler.services.components.Release) document, user);
+        } else if (document instanceof org.eclipse.sw360.datahandler.thrift.components.Release) {
+            // Dual-stack: resource-server still passes thrift Release documents.
+            return (DocumentPermissions<T>) new ReleasePermissions(
+                    org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge
+                            .toPojoRelease((org.eclipse.sw360.datahandler.thrift.components.Release) document),
+                    user);
         } else if (document instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
             return (DocumentPermissions<T>) new ProjectPermissions(
                     (org.eclipse.sw360.datahandler.services.projects.Project) document, user);

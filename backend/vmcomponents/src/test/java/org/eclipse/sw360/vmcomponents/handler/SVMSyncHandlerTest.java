@@ -15,6 +15,8 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -100,6 +102,16 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbNameAtt);
     }
 
+    private String addThriftComponent(Component component) throws SW360Exception {
+        component.setId(compDBHandler.addComponent(ComponentConverter.fromThrift(component), "me").getId());
+        return component.getId();
+    }
+
+    private String addThriftRelease(Release release) throws SW360Exception {
+        release.setId(compDBHandler.addRelease(ReleaseConverter.fromThrift(release), user).getId());
+        return release.getId();
+    }
+
 //    @Test
     public void create5000Matches() throws SW360Exception, MalformedURLException {
         VMDatabaseHandler handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
@@ -111,10 +123,10 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         component.setCpe("droelf");
         handler.add(component);
         Component relComponent = new Component("droelf");
-        compDBHandler.addComponent(relComponent, "me");
+        addThriftComponent(relComponent);
         Release release = new Release("droelf", "1.0", relComponent.getId());
         release.setCpeid("droelf");
-        compDBHandler.addRelease(release, user);
+        addThriftRelease(release);
 
         VMMatchState[] states = {VMMatchState.ACCEPTED, VMMatchState.DECLINED, VMMatchState.MATCHING_LEVEL_1, VMMatchState.MATCHING_LEVEL_2, VMMatchState.MATCHING_LEVEL_3};
         HashSet<VMMatchType> types = new HashSet<>();
@@ -255,10 +267,10 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         Component relComponent = new Component("droelf");
-        compDBHandler.addComponent(relComponent, "me");
+        addThriftComponent(relComponent);
         assertNotNull(relComponent.getId());
         Release release = new Release("droelf", "1.0", relComponent.getId());
-        compDBHandler.addRelease(release, user);
+        addThriftRelease(release);
         assertNotNull(release.getId());
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
         assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
@@ -266,7 +278,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
 
         release = new Release("oelf", "2.0", relComponent.getId());
         release.setCpeid("cpe");
-        compDBHandler.addRelease(release, user);
+        addThriftRelease(release);
         assertNotNull(release.getId());
 
         List<VMMatch> matches = handler.getAll(VMMatch.class);
@@ -310,7 +322,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         Component relComponent = new Component("droelf");
-        compDBHandler.addComponent(relComponent, "me");
+        addThriftComponent(relComponent);
         assertNotNull(relComponent.getId());
         org.eclipse.sw360.datahandler.services.vendors.Vendor pojoVendor =
                 new org.eclipse.sw360.datahandler.services.vendors.Vendor()
@@ -325,7 +337,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         Release release = new Release("droelf", "1.0", relComponent.getId());
         release.setVendorId(vendor.getId());
         release.setVendor(vendor);
-        compDBHandler.addRelease(release, user);
+        addThriftRelease(release);
         assertNotNull(release.getId());
         List<VMMatch> matches = handler.getAll(VMMatch.class);
         assertEquals(0, matches.size());
@@ -350,7 +362,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     @Test
     public void testFindMatchByReleaseText() throws Exception {
         Component relComponent = new Component("droe");
-        compDBHandler.addComponent(relComponent, "me");
+        addThriftComponent(relComponent);
         assertNotNull(relComponent.getId());
         org.eclipse.sw360.datahandler.services.vendors.Vendor pojoVendor =
                 new org.eclipse.sw360.datahandler.services.vendors.Vendor()
@@ -369,7 +381,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
 
         release.setVendorId(vendor.getId());
         release.setVendor(vendor);
-        compDBHandler.addRelease(release, user);
+        addThriftRelease(release);
         assertNotNull(release.getId());
 
         VMComponent component = new VMComponent(SW360Utils.getCreatedOnTime(), "droe");

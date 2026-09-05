@@ -37,6 +37,8 @@ import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
@@ -506,7 +508,7 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(Component component, User user, Boolean isDeleteRequest) {
         Component dbcomponent;
         try {
-            dbcomponent = componentDatabaseHandler.getComponent(component.getId(), user);
+            dbcomponent = ComponentConverter.toThrift(componentDatabaseHandler.getComponent(component.getId(), user));
         } catch (SW360Exception e) {
             log.error("Could not get original component from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
@@ -544,7 +546,7 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(Release release, User user, Boolean isDeleteRequest, Function<Release, Set<String>> moderatorsProvider) {
         Release dbrelease;
         try {
-            dbrelease = componentDatabaseHandler.getRelease(release.getId(), user);
+            dbrelease = ReleaseConverter.toThrift(componentDatabaseHandler.getRelease(release.getId(), user));
         } catch (SW360Exception e) {
             log.error("Could not get original release from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
@@ -563,7 +565,8 @@ public class ModerationDatabaseHandler {
         ModerationRequestGenerator generator = new ReleaseModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, release, dbrelease);
         try {
-            Component parentComponent = componentDatabaseHandler.getComponent(release.getComponentId(), user);
+            Component parentComponent = ComponentConverter.toThrift(
+                    componentDatabaseHandler.getComponent(release.getComponentId(), user));
             request.setComponentType(parentComponent.getComponentType());
         } catch (SW360Exception e) {
             log.error("Could not retrieve parent component type of release with ID=" + release.getId());

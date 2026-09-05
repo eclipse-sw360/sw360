@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.archival.bundle;
 
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
@@ -142,7 +144,7 @@ public class Sw360EntityProvider implements EntityProvider {
 
     private CollectedEntity collectRelease(String releaseId, boolean keepAlive) throws Exception {
         User user = resolveUser();
-        Release release = componentHandler().getRelease(releaseId, user);
+        Release release = ReleaseConverter.toThrift(componentHandler().getRelease(releaseId, user));
         if (release == null) {
             throw new SW360Exception("Release " + releaseId + " not found");
         }
@@ -221,7 +223,7 @@ public class Sw360EntityProvider implements EntityProvider {
 
     private List<ArchivePreview.Entry> previewComponent(String componentId) throws Exception {
         User user = resolveUser();
-        Component component = componentHandler().getComponent(componentId, user);
+        Component component = ComponentConverter.toThrift(componentHandler().getComponent(componentId, user));
         if (component == null) throw new SW360Exception("Component " + componentId + " not found");
 
         List<ArchivePreview.Entry> out = new ArrayList<>();
@@ -241,7 +243,7 @@ public class Sw360EntityProvider implements EntityProvider {
     }
 
     private ArchivePreview.Entry previewRelease(String releaseId, boolean shared) throws Exception {
-        Release release = componentHandler().getRelease(releaseId, resolveUser());
+        Release release = ReleaseConverter.toThrift(componentHandler().getRelease(releaseId, resolveUser()));
         String name = release != null ? release.getName() + " " + nullToEmpty(release.getVersion()) : releaseId;
         if (shared) {
             return entry(releaseId, name.trim(), ArchivalEntityType.RELEASE,
@@ -286,7 +288,7 @@ public class Sw360EntityProvider implements EntityProvider {
      */
     public List<CollectedEntity> collectComponentBundle(String componentId) throws Exception {
         User user = resolveUser();
-        Component component = componentHandler().getComponent(componentId, user);
+        Component component = ComponentConverter.toThrift(componentHandler().getComponent(componentId, user));
         if (component == null) {
             throw new SW360Exception("Component " + componentId + " not found");
         }
@@ -304,7 +306,7 @@ public class Sw360EntityProvider implements EntityProvider {
 
     private CollectedEntity collectComponentOnly(String componentId) throws Exception {
         User user = resolveUser();
-        Component component = componentHandler().getComponent(componentId, user);
+        Component component = ComponentConverter.toThrift(componentHandler().getComponent(componentId, user));
         if (component == null) {
             throw new SW360Exception("Component " + componentId + " not found");
         }
@@ -355,7 +357,8 @@ public class Sw360EntityProvider implements EntityProvider {
     public RequestStatus deleteComponentRespectingSharedReleases(String componentId,
                                                                  Set<String> sharedReleaseIds) throws Exception {
         User user = resolveUser();
-        Component component = componentHandler().getComponent(componentId, user);
+        org.eclipse.sw360.datahandler.services.components.Component component =
+                componentHandler().getComponent(componentId, user);
         if (component == null) return RequestStatus.FAILURE;
 
         Set<String> allReleaseIds = component.getReleaseIds() == null
@@ -364,11 +367,10 @@ public class Sw360EntityProvider implements EntityProvider {
 
         // Unlink shared Releases so Component delete doesn't cascade into them.
         if (!sharedReleaseIds.isEmpty()) {
-            Component patched = componentHandler().getComponent(componentId, user);
-            Set<String> keep = new HashSet<>(patched.getReleaseIds());
+            Set<String> keep = new HashSet<>(allReleaseIds);
             keep.removeAll(sharedReleaseIds);
-            patched.setReleaseIds(keep);
-            componentHandler().updateComponent(patched, user, true);
+            component.setReleaseIds(keep);
+            componentHandler().updateComponent(component, user, true);
         }
 
         // Delete non-shared Releases individually first (belt and suspenders — the
@@ -419,7 +421,7 @@ public class Sw360EntityProvider implements EntityProvider {
         if (parentReleaseId == null || parentReleaseId.isBlank()) return false;
         try {
             User user = resolveUser();
-            Release release = componentHandler().getRelease(parentReleaseId, user);
+            Release release = ReleaseConverter.toThrift(componentHandler().getRelease(parentReleaseId, user));
             return release != null;
         } catch (SW360Exception notFound) {
             return false;

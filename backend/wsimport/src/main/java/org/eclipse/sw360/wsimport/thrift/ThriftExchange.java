@@ -26,6 +26,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
@@ -129,11 +131,13 @@ public class ThriftExchange {
     public String addComponent(Component component, User user) {
         String componentId = null;
         try {
-            AddDocumentRequestSummary summary = componentHandler().addComponent(component, user);
-            if (AddDocumentRequestStatus.SUCCESS.equals(summary.getRequestStatus())) {
+            org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary summary =
+                    componentHandler().addComponent(ComponentConverter.fromThrift(component), user);
+            if (org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus.SUCCESS
+                    .equals(summary.getRequestStatus())) {
                 componentId = summary.getId();
             } else {
-                logFailedAddDocument(summary.getRequestStatus(), "component");
+                logFailedAddDocumentPojo(summary.getRequestStatus(), "component");
             }
         } catch (TException e) {
             LOGGER.error("Could not add Component for user with email=[" + user.getEmail() + "]:" + e);
@@ -151,11 +155,13 @@ public class ThriftExchange {
     public String addRelease(Release release, User user) {
         String releaseId = null;
         try {
-            AddDocumentRequestSummary summary = componentHandler().addRelease(release, user);
-            if (AddDocumentRequestStatus.SUCCESS.equals(summary.getRequestStatus())) {
+            org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary summary =
+                    componentHandler().addRelease(ReleaseConverter.fromThrift(release), user);
+            if (org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus.SUCCESS
+                    .equals(summary.getRequestStatus())) {
                 releaseId = summary.getId();
             } else {
-                logFailedAddDocument(summary.getRequestStatus(), "release");
+                logFailedAddDocumentPojo(summary.getRequestStatus(), "release");
             }
         } catch (TException e) {
             LOGGER.error("Could not add Release for user with email=[" + user.getEmail() + "]:" + e);
@@ -192,7 +198,9 @@ public class ThriftExchange {
     public Optional<List<Release>> searchReleaseByNameAndVersion(String name, String version) {
         List<Release> releases = null;
         try {
-            releases = componentHandler().searchReleaseByNamePrefix(name);
+            releases = componentHandler().searchReleaseByNamePrefix(name).stream()
+                    .map(ReleaseConverter::toThrift)
+                    .collect(Collectors.toList());
         } catch (TException e) {
             LOGGER.error("Could not fetch Release list for name=[" + name + "], version=[" + version + "]:" + e);
         }
@@ -208,7 +216,9 @@ public class ThriftExchange {
 
     public Optional<List<Component>> searchComponentByName(String name) {
         try {
-            return Optional.of(componentHandler().searchComponentForExport(name, true));
+            return Optional.of(componentHandler().searchComponentForExport(name, true).stream()
+                    .map(ComponentConverter::toThrift)
+                    .collect(Collectors.toList()));
         } catch (TException e) {
             LOGGER.error("Could not fetch Component list for name=[" + name + "]:" + e);
             return Optional.empty();

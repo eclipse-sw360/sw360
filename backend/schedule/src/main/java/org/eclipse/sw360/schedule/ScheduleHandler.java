@@ -12,6 +12,7 @@ package org.eclipse.sw360.schedule;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
@@ -19,7 +20,6 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatusWithBoolean;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.components.ComponentHandler;
@@ -109,17 +109,19 @@ public class ScheduleHandler {
                     wrapForScheduler(() -> VMComponentsClients.get().triggerReverseMatch(), serviceName);
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
                     wrapForScheduler(
-                            () -> org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter.toThrift(
+                            () -> RequestStatusConverter.toThrift(
                                     new ProjectHandler().exportForMonitoringList()),
                             serviceName);
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
-                    wrapForScheduler(() -> new ComponentHandler().updateReleasesWithSvmTrackingFeedback(), serviceName);
+                    wrapForScheduler(() -> RequestStatusConverter.toThrift(
+                            new ComponentHandler().updateReleasesWithSvmTrackingFeedback()), serviceName);
             case ServiceNames.DELETE_ATTACHMENT_SERVICE ->
                     wrapForScheduler(() -> AttachmentClients.get().deleteOldAttachmentFromFileSystem(), serviceName);
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
                     wrapForScheduler(UsersClients.defaultClient()::importDepartmentSchedule, serviceName);
             case ServiceNames.SRC_UPLOAD_SERVICE ->
-                    wrapForScheduler(() -> new ComponentHandler().uploadSourceCodeAttachmentToReleases(), serviceName);
+                    wrapForScheduler(() -> RequestStatusConverter.toThrift(
+                            new ComponentHandler().uploadSourceCodeAttachmentToReleases()), serviceName);
             default -> {
                 log.error("Could not schedule service: {}. Reason: service is not registered.", serviceName);
                 yield false;
@@ -157,14 +159,16 @@ public class ScheduleHandler {
                     AttachmentClients.get().deleteOldAttachmentFromFileSystem();
             case ServiceNames.SVM_LIST_UPDATE_SERVICE ->
                     callDownstreamService(
-                            () -> org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter.toThrift(
+                            () -> RequestStatusConverter.toThrift(
                                     new ProjectHandler().exportForMonitoringList()));
             case ServiceNames.SVM_TRACKING_FEEDBACK_SERVICE ->
-                    callDownstreamService(() -> new ComponentHandler().updateReleasesWithSvmTrackingFeedback());
+                    callDownstreamService(() -> RequestStatusConverter.toThrift(
+                            new ComponentHandler().updateReleasesWithSvmTrackingFeedback()));
             case ServiceNames.IMPORT_DEPARTMENT_SERVICE ->
                     UsersClients.defaultClient().importDepartmentSchedule();
             case ServiceNames.SRC_UPLOAD_SERVICE ->
-                    callDownstreamService(() -> new ComponentHandler().uploadSourceCodeAttachmentToReleases());
+                    callDownstreamService(() -> RequestStatusConverter.toThrift(
+                            new ComponentHandler().uploadSourceCodeAttachmentToReleases()));
             default -> {
                 log.error("Could not trigger service: {}. Reason: service is not registered.", serviceName);
                 yield RequestStatus.FAILURE;

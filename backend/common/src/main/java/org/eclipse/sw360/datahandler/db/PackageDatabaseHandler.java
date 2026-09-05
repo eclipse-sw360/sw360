@@ -16,6 +16,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_PACKAGE;
 import java.net.MalformedURLException;
 import java.util.AbstractMap;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -42,7 +43,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.services.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
@@ -120,7 +121,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldVal, newVal) -> newVal));
             packages.forEach(pkg -> {
                 if (CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId())) {
-                    pkg.setRelease(ReleaseConverter.fromThrift(releaseIdToReleaseMap.get(pkg.getReleaseId())));
+                    pkg.setRelease(releaseIdToReleaseMap.get(pkg.getReleaseId()));
                 }
             });
         }
@@ -246,7 +247,10 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 Release release = componentDatabaseHandler.getRelease(pkg.getReleaseId(), user);
                 boolean updateStatus = packageRepository.add(pkg);
                 if (updateStatus) {
-                    release.addToPackageIds(pkg.getId());
+                    // nullToEmptySet returns an immutable set, so copy before adding
+                    Set<String> packageIds = new HashSet<>(CommonUtils.nullToEmptySet(release.getPackageIds()));
+                    packageIds.add(pkg.getId());
+                    release.setPackageIds(packageIds);
                     componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
                     summary.setMessage("Package successfully created with linked release");
                 } else {
@@ -347,10 +351,12 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
                 if (CommonUtils.isNotNullEmptyOrWhitespace(newReleaseId)) {
                     Release newRelease = componentDatabaseHandler.getRelease(newReleaseId, user);
-                    Set<String> packageIds = CommonUtils.nullToEmptySet(newRelease.getPackageIds());
+                    // nullToEmptySet returns an immutable set, so copy before adding
+                    Set<String> packageIds = new HashSet<>(CommonUtils.nullToEmptySet(newRelease.getPackageIds()));
                     if (resp.isOk()) {
                         if (!packageIds.contains(packageId)) {
-                            newRelease.addToPackageIds(packageId);
+                            packageIds.add(packageId);
+                            newRelease.setPackageIds(packageIds);
                             componentDatabaseHandler.updateRelease(newRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
                                     true);
                         } else {
@@ -412,9 +418,10 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 Release release = componentDatabaseHandler.getRelease(releaseId, user);
                 Set<String> packageIds = release.getPackageIds();
                 if (CommonUtils.isNotEmpty(packageIds) && packageIds.contains(pkg.getId())) {
+                    packageIds = new HashSet<>(packageIds);
                     packageIds.remove(pkg.getId());
                     release.setPackageIds(packageIds);
-                    return toPojo(componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
+                    return RequestStatusConverter.fromThrift(componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
                             true));
                 }
             } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {

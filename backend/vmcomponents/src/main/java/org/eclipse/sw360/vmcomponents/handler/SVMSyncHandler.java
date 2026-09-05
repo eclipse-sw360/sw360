@@ -13,6 +13,8 @@ import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -516,7 +518,7 @@ public class SVMSyncHandler<T extends TBase> {
             }
             Release release;
             try {
-                release = compDB.getRelease(releaseId, null);
+                release = ReleaseConverter.toThrift(compDB.getRelease(releaseId, null));
             } catch (SW360Exception e) {
                 String message = "Failed to get release " + releaseId;
                 log.error(message, e);
@@ -616,7 +618,7 @@ public class SVMSyncHandler<T extends TBase> {
                         Component component = null;
                         if (release != null && !StringUtils.isEmpty(release.getComponentId())) {
                             try {
-                                component = compDB.getComponent(release.getComponentId(), null);
+                                component = ComponentConverter.toThrift(compDB.getComponent(release.getComponentId(), null));
                             } catch (SW360Exception e) {
                                 // no exception logging necessary because the component will later be shown as "NOT FOUND"
                             }
@@ -628,7 +630,7 @@ public class SVMSyncHandler<T extends TBase> {
     private Release loadRelease(VMMatch match) {
         Release release = null;
         try {
-            release = compDB.getRelease(match.getReleaseId(), null, VMProcessHandler.getVendorCache());
+            release = ReleaseConverter.toThrift(compDB.getRelease(match.getReleaseId(), null, VMProcessHandler.getVendorCache()));
         } catch (SW360Exception e) {
             // no exception logging necessary because the release will later be shown as "NOT FOUND"
         }

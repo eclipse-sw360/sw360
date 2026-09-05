@@ -95,6 +95,7 @@ import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -207,9 +208,9 @@ public class DatabaseHandlerUtil {
                     isAccessibleElement = true;
                 } else if (handler instanceof ComponentDatabaseHandler) {
                     ComponentDatabaseHandler compDBHandler = (ComponentDatabaseHandler) handler;
-                    Release release = compDBHandler.getRelease(linkedElementId, user);
-                    elementFullName = SW360Utils.printName(release);
-                    linkedElement = (T) release;
+                    org.eclipse.sw360.datahandler.services.components.Release release = compDBHandler.getRelease(linkedElementId, user);
+                    elementFullName = SW360Utils.printName(ReleaseConverter.toThrift(release));
+                    linkedElement = (T) ReleaseConverter.toThrift(release);
                     isAccessibleElement = compDBHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
                     if (!isAccessibleElement) {
                         inaccessibleElementLabel = SW360Utils.INACCESSIBLE_RELEASE;
