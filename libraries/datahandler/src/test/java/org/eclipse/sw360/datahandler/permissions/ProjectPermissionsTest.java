@@ -13,7 +13,7 @@ import com.google.common.collect.ImmutableList;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenHighestAllowedAction;
 import org.eclipse.sw360.datahandler.permissions.jgivens.WhenComputePermissions;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import com.tngtech.java.junit.dataprovider.DataProvider;

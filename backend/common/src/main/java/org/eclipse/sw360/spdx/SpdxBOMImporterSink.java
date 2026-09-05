@@ -28,6 +28,10 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabase
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -62,8 +66,8 @@ public class SpdxBOMImporterSink {
         } else {
             log.error("Could not get the user department. component name=" +  component.getName());
         }
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addComponent(component,
-                user.getEmail());
+        final AddDocumentRequestSummary addDocumentRequestSummary = AddDocumentRequestSummaryConverter.toThrift(
+                componentDatabaseHandler.addComponent(ComponentConverter.fromThrift(component), user.getEmail()));
 
         final String componentId = addDocumentRequestSummary.getId();
         if (componentId == null || componentId.isEmpty()) {
@@ -74,8 +78,8 @@ public class SpdxBOMImporterSink {
 
     public Response addRelease(Release release) throws SW360Exception {
         log.debug("create Release { name='" + release.getName() + "', version='" + release.getVersion() + "' }");
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addRelease(release,
-                user);
+        final AddDocumentRequestSummary addDocumentRequestSummary = AddDocumentRequestSummaryConverter.toThrift(
+                componentDatabaseHandler.addRelease(ReleaseConverter.fromThrift(release), user));
 
         final String releaseId = addDocumentRequestSummary.getId();
         if (releaseId == null || releaseId.isEmpty()) {
@@ -153,8 +157,8 @@ public class SpdxBOMImporterSink {
                     .map(a -> a.setCreatedBy(user.getEmail()))
                     .collect(Collectors.toSet()));
         }
-        final AddDocumentRequestSummary addDocumentRequestSummary = projectDatabaseHandler.addProject(project,
-                user);
+        final AddDocumentRequestSummary addDocumentRequestSummary = projectDatabaseHandler.addProject(
+                ProjectConverter.fromThrift(project), user);
 
         final String projectId = addDocumentRequestSummary.getId();
         if (projectId == null || projectId.isEmpty()) {
@@ -164,30 +168,32 @@ public class SpdxBOMImporterSink {
     }
 
     public Release getRelease(String id) throws SW360Exception {
-        return componentDatabaseHandler.getRelease(id, user);
+        return ReleaseConverter.toThrift(componentDatabaseHandler.getRelease(id, user));
     }
 
     public Component searchComponent(String name)throws SW360Exception {
-        List<Component> components = componentDatabaseHandler.searchComponentByNameForExport(name.toLowerCase(), false);
+        List<org.eclipse.sw360.datahandler.services.components.Component> components =
+                componentDatabaseHandler.searchComponentByNameForExport(name.toLowerCase(), false);
         if (components.isEmpty())
             return null;
         else {
-            for (Component component : components) {
+            for (org.eclipse.sw360.datahandler.services.components.Component component : components) {
                 if (component.getName().equals(name))
-                    return component;
+                    return ComponentConverter.toThrift(component);
             }
         }
         return null;
     }
 
     public Release searchRelease(String name)throws SW360Exception {
-        List<Release> releases = componentDatabaseHandler.searchReleaseByNamePrefix(name);
+        List<org.eclipse.sw360.datahandler.services.components.Release> releases =
+                componentDatabaseHandler.searchReleaseByNamePrefix(name);
         if (releases.isEmpty())
             return null;
         else {
-            for (Release release : releases) {
+            for (org.eclipse.sw360.datahandler.services.components.Release release : releases) {
                 if (release.getName().equals(name))
-                    return release;
+                    return ReleaseConverter.toThrift(release);
             }
         }
         return null;

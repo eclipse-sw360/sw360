@@ -16,16 +16,19 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNodeType;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationResultState;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 
@@ -317,7 +320,7 @@ public class BulkDeleteUtil {
                             List<String> referencingReleaseIdList = referencingReleaseIdsMap.get(componentReleaseId);
                             for (String referencingReleaseId : referencingReleaseIdList) {
                                 Release referencingRelease = workReleaseMap.get(referencingReleaseId);
-                                referencingRelease.putToReleaseIdToRelationship(componentReleaseId, ReleaseRelationship.CONTAINED);
+                                putReleaseRelationship(referencingRelease, componentReleaseId, ReleaseRelationship.CONTAINED);
                                 if (!isPreview) {
                                     releaseRepository.update(referencingRelease);
                                 }
@@ -354,7 +357,9 @@ public class BulkDeleteUtil {
                     //restore component link
                     Release deletedRelease = workReleaseMap.get(deletedReleaseId);
                     Component component = workComponentMap.get(deletedRelease.getComponentId());
-                    component.addToReleaseIds(deletedReleaseId);
+                    Set<String> releaseIds = new HashSet<>(CommonUtils.nullToEmptySet(component.getReleaseIds()));
+                    releaseIds.add(deletedReleaseId);
+                    component.setReleaseIds(releaseIds);
                     if (!isPreview) {
                         componentRepository.update(component);
                     }
@@ -362,7 +367,7 @@ public class BulkDeleteUtil {
                     List<String> referencingReleaseIdList = referencingReleaseIdsMap.get(deletedReleaseId);
                     for (String referencingReleaseId : referencingReleaseIdList) {
                         Release referencingRelease = workReleaseMap.get(referencingReleaseId);
-                        referencingRelease.putToReleaseIdToRelationship(deletedReleaseId, ReleaseRelationship.CONTAINED);
+                        putReleaseRelationship(referencingRelease, deletedReleaseId, ReleaseRelationship.CONTAINED);
                         if (!isPreview) {
                             releaseRepository.update(referencingRelease);
                         }
@@ -402,7 +407,7 @@ public class BulkDeleteUtil {
             List<Component> bulkComponentList = new ArrayList<Component>();
             for (Component deletedComponent : deletedComponentList) {
                 try {
-                    attachmentConnector.deleteAttachments(deletedComponent.getAttachments());
+                    attachmentConnector.deleteAttachments(toThriftAttachments(deletedComponent.getAttachments()));
                     attachmentDatabaseHandler.deleteUsagesBy(Source.componentId(deletedComponent.getId()));
                     bulkComponentList.add(deletedComponent);
                 } catch (Exception ex) {
@@ -460,14 +465,14 @@ public class BulkDeleteUtil {
                 if (!workReleaseMap.containsKey(linkedReleaseId)) {
                     //deleted
                     Release oldRelease = allLinkedReleaseMap.get(linkedReleaseId);
-                    dbHandlerUtil.addChangeLogs(null, oldRelease, user.getEmail(), Operation.DELETE, attachmentConnector,
+                    dbHandlerUtil.addChangeLogs(null, ReleaseConverter.toThrift(oldRelease), user.getEmail(), Operation.DELETE, attachmentConnector,
                             Lists.newArrayList(), null, null);
                 } else {
                     Release oldRelease = allLinkedReleaseMap.get(linkedReleaseId);
                     Release newRelease = workReleaseMap.get(linkedReleaseId);
                     if (!oldRelease.equals(newRelease)) {
                         //update
-                        dbHandlerUtil.addChangeLogs(newRelease, oldRelease, user.getEmail(), Operation.UPDATE, attachmentConnector,
+                        dbHandlerUtil.addChangeLogs(ReleaseConverter.toThrift(newRelease), ReleaseConverter.toThrift(oldRelease), user.getEmail(), Operation.UPDATE, attachmentConnector,
                                 Lists.newArrayList(), null, null);
                     }
                 }
@@ -477,14 +482,14 @@ public class BulkDeleteUtil {
                 if (!workComponentMap.containsKey(componentId)) {
                     //deleted
                     Component oldComponent = allComponentMap.get(componentId);
-                    dbHandlerUtil.addChangeLogs(null, oldComponent, user.getEmail(), Operation.DELETE, attachmentConnector,
+                    dbHandlerUtil.addChangeLogs(null, ComponentConverter.toThrift(oldComponent), user.getEmail(), Operation.DELETE, attachmentConnector,
                             Lists.newArrayList(), null, null);
                 } else {
                     Component oldComponent = allComponentMap.get(componentId);
                     Component newComponent = workComponentMap.get(componentId);
                     if (!oldComponent.equals(newComponent)) {
                         //update
-                        dbHandlerUtil.addChangeLogs(newComponent, oldComponent, user.getEmail(), Operation.UPDATE, attachmentConnector,
+                        dbHandlerUtil.addChangeLogs(ComponentConverter.toThrift(newComponent), ComponentConverter.toThrift(oldComponent), user.getEmail(), Operation.UPDATE, attachmentConnector,
                                 Lists.newArrayList(), null, null);
                     }
                 }
@@ -522,8 +527,24 @@ public class BulkDeleteUtil {
     }
 
     public void deleteReleaseAttachments(Release release) throws SW360Exception {
-        attachmentConnector.deleteAttachments(release.getAttachments());
+        attachmentConnector.deleteAttachments(toThriftAttachments(release.getAttachments()));
         attachmentDatabaseHandler.deleteUsagesBy(Source.releaseId(release.getId()));
+    }
+
+    private static Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> toThriftAttachments(
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments) {
+        return CommonUtils.nullToEmptySet(attachments).stream()
+                .map(AttachmentConverter::toThrift)
+                .collect(Collectors.toSet());
+    }
+
+    /** Mirrors thrift's {@code putToReleaseIdToRelationship}, which lazily created the map. */
+    private static void putReleaseRelationship(Release release, String releaseId,
+            ReleaseRelationship relationship) {
+        if (release.getReleaseIdToRelationship() == null) {
+            release.setReleaseIdToRelationship(new HashMap<>());
+        }
+        release.getReleaseIdToRelationship().put(releaseId, relationship);
     }
 
     public Map<String, BulkOperationResultState> deleteBulkRelease(List<Release> releaseList) {
@@ -619,10 +640,10 @@ public class BulkDeleteUtil {
         Release release = releaseRepository.get(releaseId);
         assertNotNull(release, "Could not find release to update getAllLinkedReleaseMap!");
         outMap.put(release.getId(), release);
-        if (CommonUtils.isNullOrEmptyMap(release.releaseIdToRelationship)) {
+        if (CommonUtils.isNullOrEmptyMap(release.getReleaseIdToRelationship())) {
             return;
         }
-        for (String linkedReleaseId : release.releaseIdToRelationship.keySet()) {
+        for (String linkedReleaseId : release.getReleaseIdToRelationship().keySet()) {
             getAllLinkedReleaseMap(linkedReleaseId, outMap);
         }
     }
@@ -631,7 +652,7 @@ public class BulkDeleteUtil {
         Map<String, Release> resultMap = new HashMap<String, Release>();
         for (Map.Entry<String, Release> entry : releaseMap.entrySet()) {
             String releaseId = entry.getKey();
-            Release release = entry.getValue().deepCopy();
+            Release release = ReleaseConverter.fromThrift(ReleaseConverter.toThrift(entry.getValue()));
             resultMap.put(releaseId, release);
         }
         return resultMap;
@@ -641,7 +662,7 @@ public class BulkDeleteUtil {
         Map<String, Component> resultMap = new HashMap<String, Component>();
         for (Map.Entry<String, Component> entry : componentMap.entrySet()) {
             String componentId = entry.getKey();
-            Component component = entry.getValue().deepCopy();
+            Component component = ComponentConverter.fromThrift(ComponentConverter.toThrift(entry.getValue()));
             resultMap.put(componentId, component);
         }
         return resultMap;
@@ -705,7 +726,7 @@ public class BulkDeleteUtil {
     public Set<String> getLeafReleaseIds(Map<String, Release> releaseMap) {
         Set<String> resultList = new HashSet<String>();
         for (Release release : releaseMap.values()) {
-            if (CommonUtils.isNullOrEmptyMap(release.releaseIdToRelationship)) {
+            if (CommonUtils.isNullOrEmptyMap(release.getReleaseIdToRelationship())) {
                 resultList.add(release.getId());
             }
         }

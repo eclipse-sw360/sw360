@@ -77,8 +77,8 @@ public class ChangeLogsServiceRestClient implements ChangeLogsClient {
                 .uri(uriBuilder -> uriBuilder
                         .path(BASE + "/doc/" + docId + "/page")
                         .queryParam("ascending", pageData.getAscending())
-                        .queryParam("displayStart", pageData.getDisplayStart())
-                        .queryParam("rowsPerPage", pageData.getRowsPerPage())
+                        .queryParam("displayStart", pageData.displayStartOrZero())
+                        .queryParam("rowsPerPage", pageData.rowsPerPageOrZero())
                         .queryParam("sortColumnNumber", pageData.getSortColumnNumber())
                         .build())
                 .headers(h -> addUser(h, user))

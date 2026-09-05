@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.services.common.CustomProperties;
@@ -25,13 +24,13 @@ import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.licenses.License;
 import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationNode;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.utils.ZipTools;
@@ -60,35 +59,35 @@ public class LicenseController {
     }
 
     @GetMapping("/summary")
-    public List<License> getLicenseSummary() throws TException {
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.getLicenseSummary());
+    public List<License> getLicenseSummary() {
+        return licenseHandler.getLicenseSummary();
     }
 
     @GetMapping("/summary/export")
-    public List<License> getLicenseSummaryForExport() throws TException {
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.getLicenseSummaryForExport());
+    public List<License> getLicenseSummaryForExport() {
+        return licenseHandler.getLicenseSummaryForExport();
     }
 
     @GetMapping(value = "/download-excel", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public byte[] downloadExcel(@RequestParam String token) throws TException {
+    public byte[] downloadExcel(@RequestParam String token) {
         return toByteArray(licenseHandler.downloadExcel(token));
     }
 
     @GetMapping(value = "/report-stream", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public byte[] getLicenseReportDataStream() throws TException {
+    public byte[] getLicenseReportDataStream() {
         return toByteArray(licenseHandler.getLicenseReportDataStream());
     }
 
     @GetMapping("/detailed-summary/export")
-    public List<License> getDetailedLicenseSummaryForExport(@RequestParam String organisation) throws TException {
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.getDetailedLicenseSummaryForExport(organisation));
+    public List<License> getDetailedLicenseSummaryForExport(@RequestParam String organisation) {
+        return licenseHandler.getDetailedLicenseSummaryForExport(organisation);
     }
 
     @PostMapping("/detailed-summary")
     public List<License> getDetailedLicenseSummary(
             @RequestParam String organisation,
-            @RequestBody List<String> identifiers) throws TException {
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.getDetailedLicenseSummary(organisation, identifiers));
+            @RequestBody List<String> identifiers) {
+        return licenseHandler.getDetailedLicenseSummary(organisation, identifiers);
     }
 
     @PostMapping("/types")
@@ -96,10 +95,9 @@ public class LicenseController {
             @RequestBody LicenseType licenseType,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.addLicenseType(
-                LicenseRestMapper.toThriftLicenseType(licenseType), user));
+        return licenseHandler.addLicenseType(licenseType, user);
     }
 
     @PostMapping("/types/bulk")
@@ -107,10 +105,9 @@ public class LicenseController {
             @RequestBody List<LicenseType> licenseTypes,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftLicenseTypes(licenseHandler.addLicenseTypes(
-                LicenseRestMapper.toThriftLicenseTypes(licenseTypes), user));
+        return licenseHandler.addLicenseTypes(licenseTypes, user);
     }
 
     @PostMapping("/bulk")
@@ -118,10 +115,9 @@ public class LicenseController {
             @RequestBody List<License> licenses,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.addLicenses(
-                LicenseRestMapper.toThriftLicenses(licenses), user));
+        return licenseHandler.addLicenses(licenses, user);
     }
 
     @PostMapping("/bulk/overwrite")
@@ -129,10 +125,9 @@ public class LicenseController {
             @RequestBody List<License> licenses,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.addOrOverwriteLicenses(
-                LicenseRestMapper.toThriftLicenses(licenses), user));
+        return licenseHandler.addOrOverwriteLicenses(licenses, user);
     }
 
     @PostMapping("/obligations/bulk")
@@ -140,57 +135,56 @@ public class LicenseController {
             @RequestBody List<Obligation> obligations,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftObligations(licenseHandler.addListOfObligations(
-                LicenseRestMapper.toThriftObligations(obligations), user));
+        return licenseHandler.addListOfObligations(obligations, user);
     }
 
     @GetMapping("/types")
-    public List<LicenseType> getLicenseTypes() throws TException {
-        return LicenseRestMapper.fromThriftLicenseTypes(licenseHandler.getLicenseTypes());
+    public List<LicenseType> getLicenseTypes() {
+        return licenseHandler.getLicenseTypes();
     }
 
     @GetMapping
-    public List<License> getLicenses() throws TException {
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.getLicenses());
+    public List<License> getLicenses() {
+        return licenseHandler.getLicenses();
     }
 
     @GetMapping("/obligations")
-    public List<Obligation> getObligations() throws TException {
-        return LicenseRestMapper.fromThriftObligations(licenseHandler.getObligations());
+    public List<Obligation> getObligations() {
+        return licenseHandler.getObligations();
     }
 
     @GetMapping("/obligation-nodes")
-    public List<ObligationNode> getObligationNodes() throws TException {
-        return LicenseRestMapper.fromThriftObligationNodes(licenseHandler.getObligationNodes());
+    public List<ObligationNode> getObligationNodes() {
+        return licenseHandler.getObligationNodes();
     }
 
     @GetMapping("/obligation-elements")
-    public List<ObligationElement> getObligationElements() throws TException {
-        return LicenseRestMapper.fromThriftObligationElements(licenseHandler.getObligationElements());
+    public List<ObligationElement> getObligationElements() {
+        return licenseHandler.getObligationElements();
     }
 
     @PostMapping("/types/by-ids")
-    public List<LicenseType> getLicenseTypesByIds(@RequestBody List<String> ids) throws TException {
-        return LicenseRestMapper.fromThriftLicenseTypes(licenseHandler.getLicenseTypesByIds(ids));
+    public List<LicenseType> getLicenseTypesByIds(@RequestBody List<String> ids) {
+        return licenseHandler.getLicenseTypesByIds(ids);
     }
 
     @PostMapping("/obligations/by-ids")
-    public List<Obligation> getObligationsByIds(@RequestBody List<String> ids) throws TException {
-        return LicenseRestMapper.fromThriftObligations(licenseHandler.getObligationsByIds(ids));
+    public List<Obligation> getObligationsByIds(@RequestBody List<String> ids) {
+        return licenseHandler.getObligationsByIds(ids);
     }
 
     @GetMapping("/obligations/by-license/{id}")
-    public List<Obligation> getObligationsByLicenseId(@PathVariable String id) throws TException {
-        return LicenseRestMapper.fromThriftObligations(licenseHandler.getObligationsByLicenseId(id));
+    public List<Obligation> getObligationsByLicenseId(@PathVariable String id) {
+        return licenseHandler.getObligationsByLicenseId(id);
     }
 
     @GetMapping("/{id}")
     public License getById(
             @PathVariable String id,
-            @RequestParam String organisation) throws SW360Exception {
-        return LicenseRestMapper.fromThriftLicense(licenseHandler.getByID(id, organisation));
+            @RequestParam String organisation) {
+        return licenseHandler.getByID(id, organisation);
     }
 
     @GetMapping("/{id}/with-moderation")
@@ -199,36 +193,36 @@ public class LicenseController {
             @RequestParam String organisation,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftLicense(licenseHandler.getByIDWithOwnModerationRequests(id, organisation, user));
+        return licenseHandler.getByIDWithOwnModerationRequests(id, organisation, user);
     }
 
     @PostMapping("/by-ids")
     public List<License> getByIds(
             @RequestBody Set<String> ids,
-            @RequestParam String organisation) throws TException {
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.getByIds(ids, organisation));
+            @RequestParam String organisation) {
+        return licenseHandler.getByIds(ids, organisation);
     }
 
     @GetMapping("/types/{id}")
-    public LicenseType getLicenseTypeById(@PathVariable String id) throws TException {
-        return LicenseRestMapper.fromThriftLicenseType(licenseHandler.getLicenseTypeById(id));
+    public LicenseType getLicenseTypeById(@PathVariable String id) {
+        return licenseHandler.getLicenseTypeById(id);
     }
 
     @GetMapping("/obligations/{id}")
-    public Obligation getObligationsById(@PathVariable String id) throws TException {
-        return LicenseRestMapper.fromThriftObligation(licenseHandler.getObligationsById(id));
+    public Obligation getObligationsById(@PathVariable String id) {
+        return licenseHandler.getObligationsById(id);
     }
 
     @GetMapping("/obligation-nodes/{id}")
-    public ObligationNode getObligationNodeById(@PathVariable String id) throws TException {
-        return LicenseRestMapper.fromThriftObligationNode(licenseHandler.getObligationNodeById(id));
+    public ObligationNode getObligationNodeById(@PathVariable String id) {
+        return licenseHandler.getObligationNodeById(id);
     }
 
     @GetMapping("/obligation-elements/{id}")
-    public ObligationElement getObligationElementById(@PathVariable String id) throws TException {
-        return LicenseRestMapper.fromThriftObligationElement(licenseHandler.getObligationElementById(id));
+    public ObligationElement getObligationElementById(@PathVariable String id) {
+        return licenseHandler.getObligationElementById(id);
     }
 
     @PostMapping("/obligations")
@@ -236,9 +230,9 @@ public class LicenseController {
             @RequestBody Obligation obligation,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return licenseHandler.addObligations(LicenseRestMapper.toThriftObligation(obligation), user);
+        return licenseHandler.addObligations(obligation, user);
     }
 
     @PostMapping("/obligation-elements")
@@ -246,9 +240,9 @@ public class LicenseController {
             @RequestBody ObligationElement obligationElement,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return licenseHandler.addObligationElements(LicenseRestMapper.toThriftObligationElement(obligationElement), user);
+        return licenseHandler.addObligationElements(obligationElement, user);
     }
 
     @PostMapping("/obligation-nodes")
@@ -256,9 +250,9 @@ public class LicenseController {
             @RequestBody ObligationNode obligationNode,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return licenseHandler.addObligationNodes(LicenseRestMapper.toThriftObligationNode(obligationNode), user);
+        return licenseHandler.addObligationNodes(obligationNode, user);
     }
 
     @PostMapping("/obligations/to-license")
@@ -266,12 +260,9 @@ public class LicenseController {
             @RequestBody AddObligationsToLicenseRequest request,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.addObligationsToLicense(
-                LicenseRestMapper.toThriftObligationSet(request.getObligations()),
-                LicenseRestMapper.toThriftLicense(request.getLicense()),
-                user));
+        return licenseHandler.addObligationsToLicense(request.getObligations(), request.getLicense(), user);
     }
 
     @PutMapping
@@ -282,11 +273,10 @@ public class LicenseController {
             @RequestHeader(value = "X-User-Group", required = false) String userGroup,
             @RequestHeader("X-Requesting-User-Email") String requestingEmail,
             @RequestHeader(value = "X-Requesting-User-Department", required = false) String requestingDepartment,
-            @RequestHeader(value = "X-Requesting-User-Group", required = false) String requestingUserGroup) throws TException {
+            @RequestHeader(value = "X-Requesting-User-Group", required = false) String requestingUserGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
         User requestingUser = UserUtils.buildUser(requestingEmail, requestingDepartment, requestingUserGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.updateLicense(
-                LicenseRestMapper.toThriftLicense(license), user, requestingUser));
+        return licenseHandler.updateLicense(license, user, requestingUser);
     }
 
     @PutMapping("/from-moderation")
@@ -300,11 +290,8 @@ public class LicenseController {
             @RequestHeader(value = "X-Requesting-User-Group", required = false) String requestingUserGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
         User requestingUser = UserUtils.buildUser(requestingEmail, requestingDepartment, requestingUserGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.updateLicenseFromModerationRequest(
-                LicenseRestMapper.toThriftLicense(request.getAdditions()),
-                LicenseRestMapper.toThriftLicense(request.getDeletions()),
-                user,
-                requestingUser));
+        return licenseHandler.updateLicenseFromModerationRequest(
+                request.getAdditions(), request.getDeletions(), user, requestingUser);
     }
 
     @PutMapping("/{id}/whitelist")
@@ -313,9 +300,9 @@ public class LicenseController {
             @RequestBody Set<String> whitelist,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.updateWhitelist(id, whitelist, user));
+        return licenseHandler.updateWhitelist(id, whitelist, user);
     }
 
     @DeleteMapping("/{id}")
@@ -323,14 +310,14 @@ public class LicenseController {
             @PathVariable String id,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.deleteLicense(id, user));
+        return licenseHandler.deleteLicense(id, user);
     }
 
     @GetMapping("/custom-properties")
     public List<CustomProperties> getCustomProperties(@RequestParam String documentType) {
-        return LicenseRestMapper.fromThriftCustomPropertiesList(licenseHandler.getCustomProperties(documentType));
+        return licenseHandler.getCustomProperties(documentType);
     }
 
     @PutMapping("/custom-properties")
@@ -340,8 +327,7 @@ public class LicenseController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.updateCustomProperties(
-                LicenseRestMapper.toThriftCustomProperties(customProperties), user));
+        return licenseHandler.updateCustomProperties(customProperties, user);
     }
 
     @DeleteMapping("/all")
@@ -350,25 +336,25 @@ public class LicenseController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestSummary(licenseHandler.deleteAllLicenseInformation(user));
+        return licenseHandler.deleteAllLicenseInformation(user);
     }
 
     @PostMapping("/import-spdx")
     public RequestSummary importAllSpdxLicenses(
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestSummary(licenseHandler.importAllSpdxLicenses(user));
+        return licenseHandler.importAllSpdxLicenses(user);
     }
 
     @PostMapping("/import-osadl")
     public RequestSummary importAllOSADLLicenses(
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestSummary(licenseHandler.importAllOSADLLicenses(user));
+        return licenseHandler.importAllOSADLLicenses(user);
     }
 
     @DeleteMapping("/obligations/{id}")
@@ -376,9 +362,9 @@ public class LicenseController {
             @PathVariable String id,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.deleteObligations(id, user));
+        return licenseHandler.deleteObligations(id, user);
     }
 
     @DeleteMapping("/types/{id}")
@@ -386,13 +372,13 @@ public class LicenseController {
             @PathVariable String id,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftRequestStatus(licenseHandler.deleteLicenseType(id, user));
+        return licenseHandler.deleteLicenseType(id, user);
     }
 
     @GetMapping("/types/{id}/in-use")
-    public int checkLicenseTypeInUse(@PathVariable String id) throws TException {
+    public int checkLicenseTypeInUse(@PathVariable String id) {
         return licenseHandler.checkLicenseTypeInUse(id);
     }
 
@@ -401,7 +387,7 @@ public class LicenseController {
             @RequestBody String jsonString,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
         return licenseHandler.addNodes(jsonString, user);
     }
@@ -409,13 +395,13 @@ public class LicenseController {
     @PostMapping("/obligation-nodes/build-text")
     public String buildObligationText(
             @RequestParam String nodes,
-            @RequestParam String level) throws TException {
+            @RequestParam String level) {
         return licenseHandler.buildObligationText(nodes, level);
     }
 
     @GetMapping("/obligation-elements/search")
-    public List<ObligationElement> searchObligationElement(@RequestParam String text) throws TException {
-        return LicenseRestMapper.fromThriftObligationElements(licenseHandler.searchObligationElement(text));
+    public List<ObligationElement> searchObligationElement(@RequestParam String text) {
+        return licenseHandler.searchObligationElement(text);
     }
 
     @PostMapping("/obligations/convert-text")
@@ -423,9 +409,9 @@ public class LicenseController {
             @RequestBody Obligation obligation,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return licenseHandler.convertTextToNode(LicenseRestMapper.toThriftObligation(obligation), user);
+        return licenseHandler.convertTextToNode(obligation, user);
     }
 
     @PostMapping("/obligations/with-text-nodes")
@@ -433,10 +419,9 @@ public class LicenseController {
             @RequestBody Obligation obligation,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return LicenseRestMapper.fromThriftObligation(licenseHandler.getWithTextNodes(
-                LicenseRestMapper.toThriftObligation(obligation), user));
+        return licenseHandler.getWithTextNodes(obligation, user);
     }
 
     @PutMapping("/obligations")
@@ -444,19 +429,19 @@ public class LicenseController {
             @RequestBody Obligation obligation,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return licenseHandler.updateObligation(LicenseRestMapper.toThriftObligation(obligation), user);
+        return licenseHandler.updateObligation(obligation, user);
     }
 
     @GetMapping("/types/search")
     public List<LicenseType> searchByLicenseType(@RequestParam String licenseType) {
-        return LicenseRestMapper.fromThriftLicenseTypes(licenseHandler.searchByLicenseType(licenseType));
+        return licenseHandler.searchByLicenseType(licenseType);
     }
 
     @GetMapping("/search")
     public List<License> searchLicense(@RequestParam(required = false) String searchText) {
-        return LicenseRestMapper.fromThriftLicenses(licenseHandler.searchLicense(searchText));
+        return licenseHandler.searchLicense(searchText);
     }
 
     @GetMapping("/obligations/search/paginated")
@@ -464,12 +449,9 @@ public class LicenseController {
             @RequestParam(required = false) String searchText,
             @RequestParam(required = false) ObligationLevel obligationLevel,
             @ModelAttribute PaginationData pageData) {
-        Map<PaginationData, List<Obligation>> result = LicenseRestMapper.fromThriftPaginatedObligations(
-                licenseHandler.searchObligationTextPaginated(
-                        searchText,
-                        LicenseRestMapper.toThriftObligationLevel(obligationLevel),
-                        LicenseRestMapper.toThriftPagination(pageData)));
-        if (result.isEmpty()) {
+        Map<PaginationData, List<Obligation>> result = licenseHandler.searchObligationTextPaginated(
+                searchText, obligationLevel, pageData);
+        if (result == null || result.isEmpty()) {
             return new PaginatedResult<>(pageData, List.of());
         }
         Map.Entry<PaginationData, List<Obligation>> entry = result.entrySet().iterator().next();
@@ -483,13 +465,13 @@ public class LicenseController {
             @RequestParam(defaultValue = "false") boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException, IOException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws IOException {
         User user = UserUtils.buildUser(email, department, userGroup);
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
-            throw new SW360Exception("Unable to upload license file. User is not admin.").setErrorCode(403);
+            throw new SW360Exception("Unable to upload license file. User is not admin.", 403);
         }
         if (file == null || file.isEmpty()) {
-            throw new SW360Exception("Unable to upload license file. File is null or empty.").setErrorCode(400);
+            throw new SW360Exception("Unable to upload license file. File is null or empty.", 400);
         }
         final HashMap<String, InputStream> inputMap = new HashMap<>();
         try (InputStream inputStream = file.getInputStream()) {
@@ -508,10 +490,10 @@ public class LicenseController {
     public byte[] exportArchive(
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException, IOException {
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws IOException {
         User user = UserUtils.buildUser(email, department, userGroup);
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
-            throw new SW360Exception("Unable to download archive license. User is not admin.").setErrorCode(403);
+            throw new SW360Exception("Unable to download archive license. User is not admin.", 403);
         }
         return licenseHandler.exportArchive();
     }

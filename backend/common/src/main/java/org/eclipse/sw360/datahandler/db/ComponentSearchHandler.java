@@ -15,9 +15,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -133,7 +133,7 @@ public class ComponentSearchHandler {
      * @return Sort column name. Defaults to createdOn
      */
     private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ComponentSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ComponentSortColumn.BY_NAME -> "name_sort";
             case ComponentSortColumn.BY_VENDOR -> "vendorNames_sort";
             case ComponentSortColumn.BY_MAINLICENSE -> "mainLicenseIds_sort";

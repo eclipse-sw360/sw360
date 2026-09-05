@@ -25,9 +25,23 @@ import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+// single-type imports win over the thrift.* on-demand import below: the handler now
+// returns the service-api status types, while the moderator stubs stay thrift.
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
+import org.eclipse.sw360.datahandler.services.components.EccInformation;
+import org.eclipse.sw360.datahandler.services.components.ClearingState;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.components.ECCStatus;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
@@ -39,14 +53,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.junit.Assume.assumeTrue;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.getComponentIds;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.getReleaseIds;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.printFullname;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.ensureEccInformationIsSet;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -105,20 +117,17 @@ public class ComponentDatabaseHandlerTest {
 
         components = new ArrayList<>();
         Component component1 = new Component().setId("C1").setName("component1").setDescription("d1").setCreatedBy(email1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2017-07-20");
-        component1.addToReleaseIds("R1A");
-        component1.addToReleaseIds("R1B");
-        component1.addToCategories(category);
+        component1.setReleaseIds(new HashSet<>(Arrays.asList("R1A", "R1B")));
+        component1.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component1);
         Component component2 = new Component().setId("C2").setName("component2").setDescription("d2").setCreatedBy(email2).setMainLicenseIds(new HashSet<>(Arrays.asList("lic2"))).setCreatedOn("2017-07-21");
-        component2.addToReleaseIds("R2A");
-        component2.addToReleaseIds("R2B");
-        component2.addToReleaseIds("R2C");
-        component2.addToCategories(category);
+        component2.setReleaseIds(new HashSet<>(Arrays.asList("R2A", "R2B", "R2C")));
+        component2.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component2);
         Component component3 = new Component().setId("C3").setName("component3").setDescription("d3").setCreatedBy(email1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic3"))).setCreatedOn("2017-07-22");
-        component3.addToSubscribers(email1);
-        component3.addToLanguages("E");
-        component3.addToCategories(category);
+        component3.setSubscribers(new HashSet<>(Collections.singleton(email1)));
+        component3.setLanguages(new HashSet<>(Collections.singleton("E")));
+        component3.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component3);
 
         releases = new ArrayList<>();
@@ -126,13 +135,13 @@ public class ComponentDatabaseHandlerTest {
         releases.add(release1a);
         Release release1b = new Release().setId("R1B").setComponentId("C1").setName("component1").setVersion("releaseB").setCreatedBy(email2).setVendorId("V2");
         release1b.setEccInformation(new EccInformation().setAl("AL"));
-        release1b.addToSubscribers(email1);
+        release1b.setSubscribers(new HashSet<>(Collections.singleton(email1)));
         releases.add(release1b);
         Release release2a = new Release().setId("R2A").setComponentId("C2").setName("component2").setVersion("releaseA").setCreatedBy(email1).setVendorId("V3");
         releases.add(release2a);
         Release release2b = new Release().setId("R2B").setComponentId("C2").setName("component2").setVersion("releaseB").setCreatedBy(email2).setVendorId("V1");
         releases.add(release2b);
-        release2b.addToSubscribers(email2);
+        release2b.setSubscribers(new HashSet<>(Collections.singleton(email2)));
         Release release2c = new Release().setId("R2C").setComponentId("C2").setName("component2").setVersion("releaseC").setCreatedBy(email1).setVendorId("V2");
         releases.add(release2c);
 
@@ -146,13 +155,15 @@ public class ComponentDatabaseHandlerTest {
             databaseConnector.add(vendor);
         }
         for (Component component : components) {
+            component.setType(SW360Constants.TYPE_COMPONENT);
             databaseConnector.add(component);
         }
         for (Release release : releases) {
+            release.setType(SW360Constants.TYPE_RELEASE);
             databaseConnector.add(release);
         }
 
-        componentMap= ThriftUtils.getIdMap(components);
+        componentMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
 
         // Prepare the handler
         handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
@@ -168,7 +179,7 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
         Project project = new Project().setId("P1").setName("Project").setCreatedBy(email1);
-        project.putToExternalIds(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged");
+        project.setExternalIds(new HashMap<>(ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged")));
         projectHandler.addProject(project, user1);
 
         when(svmConnector.fetchComponentMappings())
@@ -189,7 +200,7 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testGetComponentByReleaseId() throws Exception {
         Component component = new Component().setId("Linking").setName("Linking").setDescription("d1").setCreatedBy(email1);
-        component.addToCategories(category);
+        component.setCategories(new HashSet<>(Collections.singleton(category)));
         final HashMap<String, ReleaseRelationship> releaseLink = new HashMap<>();
 
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
@@ -210,14 +221,14 @@ public class ComponentDatabaseHandlerTest {
             usingComponents = handler.getUsingComponents(ImmutableSet.of("LinkingRelease"));
         }
 
-        assertTrue(containsInAnyOrder("Linking").matches(getComponentIds(usingComponents)));
+        assertTrue(containsInAnyOrder("Linking").matches(componentIds(usingComponents)));
     }
 
 
     @Test
     public void testGetComponentByReleaseIds() throws Exception {
         Component component = new Component().setId("Linking").setName("Linking").setDescription("d1").setCreatedBy(email1);
-        component.addToCategories(category);
+        component.setCategories(new HashSet<>(Collections.singleton(category)));
         final HashMap<String, ReleaseRelationship> releaseLink = new HashMap<>();
 
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
@@ -238,7 +249,7 @@ public class ComponentDatabaseHandlerTest {
             usingComponents = handler.getUsingComponents(ImmutableSet.of("LinkingRelease"));
         }
 
-        assertTrue(containsInAnyOrder("Linking").matches(getComponentIds(usingComponents)));
+        assertTrue(containsInAnyOrder("Linking").matches(componentIds(usingComponents)));
     }
 
     @Test
@@ -260,25 +271,10 @@ public class ComponentDatabaseHandlerTest {
         assertEquals("C1", component.getId());
         assertEquals("component1", component.getName());
 
-        for (Component._Fields field : Component._Fields.values()) {
-            boolean isSet = component.isSet(field);
-            switch (field) {
-                // Fields that are defined
-                case ID:
-                case NAME:
-                case MAIN_LICENSE_IDS:
-                case PERMISSIONS:
-                    assertTrue(field.getFieldName(), isSet);
-                    break;
-                // Fields that may or may not be defined
-                case CATEGORIES:
-                case TYPE:
-                    break;
-                // Fields that are not defined
-                default:
-                    break;
-            }
-        }
+        assertNotNull(component.getId());
+        assertNotNull(component.getName());
+        assertNotNull(component.getMainLicenseIds());
+        assertNotNull(component.getPermissions());
     }
 
 
@@ -298,14 +294,14 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testGetRecentComponents() throws Exception {
         List<Component> recentComponents = handler.getRecentComponentsSummary(5, user1);
-        Set<String> componentIds = getComponentIds(recentComponents);
+        Set<String> componentIds = componentIds(recentComponents);
         assertTrue(containsInAnyOrder("C3", "C2", "C1").matches(componentIds));
     }
 
     @Test
     public void testGetRecentComponents2() throws Exception {
         List<Component> recentComponents = handler.getRecentComponentsSummary(2, user1);
-        Set<String> componentIds = getComponentIds(recentComponents);
+        Set<String> componentIds = componentIds(recentComponents);
         assertEquals(2, recentComponents.size());
         assertTrue(containsInAnyOrder("C3", "C2").matches(componentIds));
     }
@@ -313,7 +309,7 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testGetRecentReleases() throws Exception {
         List<Release> recentReleases = handler.getRecentReleases();
-        Iterable<String> relaseIds = getReleaseIds(recentReleases);
+        Iterable<String> relaseIds = collectReleaseIds(recentReleases);
 
         assertTrue(containsInAnyOrder("R1A", "R1B", "R2A", "R2B", "R2C").matches(relaseIds));
     }
@@ -325,29 +321,29 @@ public class ComponentDatabaseHandlerTest {
         List<Release> v2 = handler.getReleasesFromVendorId("V2", user1);
         List<Release> v3 = handler.getReleasesFromVendorId("V3", user1);
 
-        assertTrue(containsInAnyOrder("R1A", "R2B").matches(getReleaseIds(v1)));
-        assertTrue(containsInAnyOrder("R1B", "R2C").matches(getReleaseIds(v2)));
-        assertTrue(containsInAnyOrder("R2A").matches(getReleaseIds(v3)));
+        assertTrue(containsInAnyOrder("R1A", "R2B").matches(collectReleaseIds(v1)));
+        assertTrue(containsInAnyOrder("R1B", "R2C").matches(collectReleaseIds(v2)));
+        assertTrue(containsInAnyOrder("R2A").matches(collectReleaseIds(v3)));
 
     }
 
     @Test
     public void testSearchReleaseByNamePrefix() throws Exception {
         List<Release> releases = handler.searchReleaseByNamePrefix("component1");
-        assertTrue(containsInAnyOrder("R1A", "R1B").matches(getReleaseIds(releases)));
+        assertTrue(containsInAnyOrder("R1A", "R1B").matches(collectReleaseIds(releases)));
     }
 
     @Test
     public void testSearchReleaseByNamePrefix2() throws Exception {
         List<Release> releases = handler.searchReleaseByNamePrefix("compo");
-        assertTrue(containsInAnyOrder("R1A", "R1B", "R2A", "R2B", "R2C").matches(getReleaseIds(releases)));
+        assertTrue(containsInAnyOrder("R1A", "R1B", "R2A", "R2B", "R2C").matches(collectReleaseIds(releases)));
     }
 
     @Test
     public void testGetSummaryForExport() throws Exception {
         List<Component> summaryForExport = handler.getSummaryForExport();
         // C4 should NOT be in the results
-        assertTrue(containsInAnyOrder("C1", "C2", "C3").matches(getComponentIds(summaryForExport)));
+        assertTrue(containsInAnyOrder("C1", "C2", "C3").matches(componentIds(summaryForExport)));
     }
 
     @Test
@@ -355,13 +351,13 @@ public class ComponentDatabaseHandlerTest {
         List<Component> user1components = handler.getSubscribedComponents(email1);
         List<Component> user2components = handler.getSubscribedComponents(email2);
 
-        assertTrue(contains("C3").matches(getComponentIds(user1components)));
+        assertTrue(contains("C3").matches(componentIds(user1components)));
         assertTrue(user2components.isEmpty());
 
         handler.subscribeComponent("C1", user2);
 
         List<Component> user2components2 = handler.getSubscribedComponents(email2);
-        assertTrue(contains("C1").matches(getComponentIds(user2components2)));
+        assertTrue(contains("C1").matches(componentIds(user2components2)));
 
         handler.unsubscribeComponent("C1", user2);
         List<Component> user2components3 = handler.getSubscribedComponents(email2);
@@ -375,11 +371,11 @@ public class ComponentDatabaseHandlerTest {
         handler.subscribeRelease("R1A", user2);
         List<Release> user2releases = handler.getSubscribedReleases(email2);
 
-        assertTrue(contains("R1B").matches(getReleaseIds(user1releases)));
-        assertTrue(contains("R1A", "R2B").matches(getReleaseIds(user2releases)));
+        assertTrue(contains("R1B").matches(collectReleaseIds(user1releases)));
+        assertTrue(contains("R1A", "R2B").matches(collectReleaseIds(user2releases)));
 
         handler.unsubscribeRelease("R1A", user2);
-        assertTrue(contains("R2B").matches(getReleaseIds(handler.getSubscribedReleases(email2))));
+        assertTrue(contains("R2B").matches(collectReleaseIds(handler.getSubscribedReleases(email2))));
 
     }
 
@@ -396,21 +392,21 @@ public class ComponentDatabaseHandlerTest {
                                                        "R2A", ReleaseRelationship.REFERRED
             ));
 
-        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
 
         final Release r1B = handler.getRelease("R1B", user2);
         r1B.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.REFERRED));
-        handler.updateRelease(r1B,user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1B,user2, ReleaseImmutableField.DEFAULT);
 
         final Release r2A = handler.getRelease("R2A", user1);
         r2A.setReleaseIdToRelationship(ImmutableMap.of("R2B", ReleaseRelationship.CONTAINED));
-        handler.updateRelease(r2A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r2A, user1, ReleaseImmutableField.DEFAULT);
 
         final Release r2B = handler.getRelease("R2B", user2);
         r2B.setReleaseIdToRelationship(ImmutableMap.of("R1B", ReleaseRelationship.CONTAINED,
                 "R1A", ReleaseRelationship.REFERRED));
 
-        handler.updateRelease(r2B, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r2B, user2, ReleaseImmutableField.DEFAULT);
 
         // we wrap the potentially infinite loop in an executor
         final ExecutorService service = Executors.newSingleThreadExecutor();
@@ -423,9 +419,9 @@ public class ComponentDatabaseHandlerTest {
         final List<ReleaseLink> linkedReleases = completionFuture.get();
 
         ReleaseLink releaseLinkR1A = createReleaseLinkTo(r1A)
-                .setReleaseRelationship(ReleaseRelationship.REFERRED)
+                .setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED)
                 .setNodeId("R1A")
-                .setClearingState(ClearingState.NEW_CLEARING);
+                .setClearingState(org.eclipse.sw360.datahandler.thrift.components.ClearingState.NEW_CLEARING);
 
         stripRandomPartsOfNodeIds(linkedReleases);
 
@@ -436,14 +432,18 @@ public class ComponentDatabaseHandlerTest {
         linkedReleases.forEach(rl -> rl.setNodeId(rl.getNodeId().split("_")[0]));
     }
 
-    @NotNull
     private ReleaseLink createReleaseLinkTo(Release release) {
-        release.setVendor(vendors.get(release.getVendorId()));
+        org.eclipse.sw360.datahandler.services.vendors.Vendor vendor =
+                VendorConverter.fromThrift(vendors.get(release.getVendorId()));
+        release.setVendor(vendor);
+        Component component = componentMap.get(release.getComponentId());
+        String fullname = SW360Utils.getReleaseFullname(
+                vendor.getShortname(), release.getName(), release.getVersion());
         return new ReleaseLink(release.getId(),
-                vendors.get(release.getVendorId()).getShortname(),
-                componentMap.get(release.getComponentId()).getName(),
+                vendor.getShortname(),
+                component.getName(),
                 release.getVersion(),
-                printFullname(release), !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
+                fullname, !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
     }
 
     @Test
@@ -459,14 +459,14 @@ public class ComponentDatabaseHandlerTest {
                 "R2A", ReleaseRelationship.REFERRED
         ));
 
-        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
 
         final Release r1B = handler.getRelease("R1B", user2);
         r1B.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-        handler.updateRelease(r1B,user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1B,user2, ReleaseImmutableField.DEFAULT);
 
         final Release r2A = handler.getRelease("R2A", user1);
-        handler.updateRelease(r2A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r2A, user1, ReleaseImmutableField.DEFAULT);
 
         // we wrap the potentially infinite loop in an executor
         final ExecutorService service = Executors.newSingleThreadExecutor();
@@ -479,9 +479,9 @@ public class ComponentDatabaseHandlerTest {
         final List<ReleaseLink> linkedReleases = completionFuture.get();
 
         ReleaseLink releaseLinkR1A = createReleaseLinkTo(r1A)
-                .setReleaseRelationship(ReleaseRelationship.REFERRED)
+                .setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED)
                 .setNodeId("R1A")
-                .setClearingState(ClearingState.NEW_CLEARING);
+                .setClearingState(org.eclipse.sw360.datahandler.thrift.components.ClearingState.NEW_CLEARING);
 
         stripRandomPartsOfNodeIds(linkedReleases);
         assertTrue(contains(releaseLinkR1A).matches(linkedReleases));
@@ -489,17 +489,17 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testGetReleases() throws Exception {
-        Set<String> releaseIds = getReleaseIds(this.releases);
+        Set<String> releaseIds = collectReleaseIds(this.releases);
         List<Release> releases = handler.getReleases(releaseIds);
 
-        assertEquals(releaseIds, getReleaseIds(releases));
+        assertEquals(releaseIds, collectReleaseIds(releases));
     }
 
     @Test
     public void testGetReleasesWithPermissions() throws Exception {
-        Set<String> releaseIds = getReleaseIds(this.releases);
-        List<Release> releases = handler.getReleasesWithPermissions(releaseIds, user1);
-        assertEquals(releaseIds, getReleaseIds(releases));
+        Set<String> expectedReleaseIds = collectReleaseIds(this.releases);
+        List<Release> releases = handler.getReleasesWithPermissions(expectedReleaseIds, user1);
+        assertEquals(expectedReleaseIds, collectReleaseIds(releases));
 
         Release releaseA = null;
         Release releaseB = null;
@@ -539,7 +539,7 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testDeleteComponentWithUnusedRelease() throws Exception {
         Component component = new Component().setId("Del").setName("delete").setDescription("d1").setCreatedBy(email1);
-        component.addToCategories(category);
+        component.setCategories(new HashSet<>(Collections.singleton(category)));
         Release release = new Release().setId("DelR").setComponentId("Del").setName("delete Release").setVersion("1.0").setCreatedBy(email1).setVendorId("V1").setClearingState(ClearingState.NEW_CLEARING);
 
         handler.addComponent(component, email1);
@@ -560,7 +560,7 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testDontDeleteComponentWithReleaseInUse() throws Exception {
         Component component = new Component().setId("Del").setName("delete").setDescription("d1").setCreatedBy(email1);
-        component.addToCategories(category);
+        component.setCategories(new HashSet<>(Collections.singleton(category)));
         Release release = new Release().setId("DelR").setComponentId("Del").setName("delete Release").setVersion("1.0").setCreatedBy(email1).setVendorId("V1").setClearingState(ClearingState.NEW_CLEARING);
 
         handler.addComponent(component, email1);
@@ -570,10 +570,11 @@ public class ComponentDatabaseHandlerTest {
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             final Release r1A = handler.getRelease("R1A", user1);
             r1A.setReleaseIdToRelationship(ImmutableMap.of("DelR", ReleaseRelationship.CONTAINED));
-            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
         } else {
             Project project = new Project().setReleaseIdToUsage(
-                    ImmutableMap.of("DelR", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+                    ImmutableMap.of("DelR", new ProjectReleaseRelationship().setReleaseRelation(
+                            org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.CONTAINED))
             ).setName("Project").setCreatedBy(email1);
             projectHandler.addProject(project, user1);
         }
@@ -627,8 +628,8 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(email1, actual.getCreatedBy());
 
         // Check releases
-        assertEquals(2, actual.getReleasesSize());
-        assertEquals(0, actual.getReleaseIdsSize());
+        assertEquals(2, actual.getReleases() == null ? 0 : actual.getReleases().size());
+        assertEquals(0, actual.getReleaseIds() == null ? 0 : actual.getReleaseIds().size());
 
         assertTrue(releasesContain(actual.getReleases(), "R1A"));
         assertTrue(releasesContain(actual.getReleases(), "R1B"));
@@ -649,16 +650,16 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(email2, actual.getCreatedBy());
 
         // Check releases
-        assertEquals(1, actual.getSubscribersSize());
+        assertEquals(1, actual.getSubscribers() == null ? 0 : actual.getSubscribers().size());
         assertTrue(actual.getSubscribers().contains(email1));
     }
 
     @Test
     public void testAddComponent() throws Exception {
         Component expected = new Component().setName("NEW_CLEARING");
-        expected.addToCategories(category);
+        expected.setCategories(new HashSet<>(Collections.singleton(category)));
         Release release = new Release().setName("REL").setVersion("VER");
-        expected.addToReleases(release);
+        expected.setReleases(Collections.singletonList(release));
 
         String id = handler.addComponent(expected, "new@mail.com").getId();
         assertNotNull(id);
@@ -667,7 +668,7 @@ public class ComponentDatabaseHandlerTest {
         // Check that object was added correctly
         assertEquals(expected.getName(), actual.getName());
         assertEquals("new@mail.com", actual.getCreatedBy());
-        assertEquals(0, actual.getReleasesSize()); // Releases are not included!
+        assertEquals(0, actual.getReleases() == null ? 0 : actual.getReleases().size()); // Releases are not included!
 
     }
 
@@ -696,7 +697,7 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = new Component().setId(componentId).setName("component4").setDescription("d4").setCreatedBy(email1);
-            component.addToCategories(category);
+            component.setCategories(new HashSet<>(Collections.singleton(category)));
             handler.addComponent(component, email1);
         }
 
@@ -745,15 +746,15 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = new Component().setId(componentId).setName("component4").setDescription("d4").setCreatedBy(email1);
-            component.addToCategories(category);
+            component.setCategories(new HashSet<>(Collections.singleton(category)));
             handler.addComponent(component, email1);
         }
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertNull("Check that languages are not initialized", component.languages);
-            assertNull("Check that operating systems are not initialized", component.operatingSystems);
-            assertNull("Check that vendor names are not initialized", component.vendorNames);
+            assertNull("Check that languages are not initialized", component.getLanguages());
+            assertNull("Check that operating systems are not initialized", component.getOperatingSystems());
+            assertNull("Check that vendor names are not initialized", component.getVendorNames());
         }
 
         Set<String> os = new HashSet<>();
@@ -772,9 +773,9 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertTrue(containsInAnyOrder("C", "C++").matches(component.languages));
-            assertTrue(containsInAnyOrder("Linux Ubuntu", "Linux Mint").matches(component.operatingSystems));
-            assertTrue(containsInAnyOrder(vendors.get("V1").getShortname()).matches(component.vendorNames));
+            assertTrue(containsInAnyOrder("C", "C++").matches(component.getLanguages()));
+            assertTrue(containsInAnyOrder("Linux Ubuntu", "Linux Mint").matches(component.getOperatingSystems()));
+            assertTrue(containsInAnyOrder(vendors.get("V1").getShortname()).matches(component.getVendorNames()));
         }
         Set<String> os2 = new HashSet<>();
         os2.add("Linux Debian");
@@ -792,27 +793,27 @@ public class ComponentDatabaseHandlerTest {
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertTrue(containsInAnyOrder("C", "C++", "C#").matches(component.languages));
-            assertTrue(containsInAnyOrder("Linux Ubuntu", "Linux Mint", "Linux Debian").matches(component.operatingSystems));
-            assertTrue(containsInAnyOrder(vendors.get("V1").getShortname(), vendors.get("V2").getShortname()).matches(component.vendorNames));
+            assertTrue(containsInAnyOrder("C", "C++", "C#").matches(component.getLanguages()));
+            assertTrue(containsInAnyOrder("Linux Ubuntu", "Linux Mint", "Linux Debian").matches(component.getOperatingSystems()));
+            assertTrue(containsInAnyOrder(vendors.get("V1").getShortname(), vendors.get("V2").getShortname()).matches(component.getVendorNames()));
         }
 
         handler.deleteRelease(id, user1);
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertTrue(containsInAnyOrder("C++", "C#").matches(component.languages));
-            assertTrue(containsInAnyOrder("Linux Mint", "Linux Debian").matches(component.operatingSystems));
-            assertTrue(containsInAnyOrder(vendors.get("V2").getShortname()).matches(component.vendorNames));
+            assertTrue(containsInAnyOrder("C++", "C#").matches(component.getLanguages()));
+            assertTrue(containsInAnyOrder("Linux Mint", "Linux Debian").matches(component.getOperatingSystems()));
+            assertTrue(containsInAnyOrder(vendors.get("V2").getShortname()).matches(component.getVendorNames()));
         }
 
         handler.deleteRelease(id2, user1);
 
         {
             Component component = handler.getComponent(componentId, user1);
-            assertTrue(component.languages.isEmpty());
-            assertTrue(component.operatingSystems.isEmpty());
-            assertTrue(component.vendorNames.isEmpty());
+            assertTrue(component.getLanguages().isEmpty());
+            assertTrue(component.getOperatingSystems().isEmpty());
+            assertTrue(component.getVendorNames().isEmpty());
         }
     }
 
@@ -820,7 +821,7 @@ public class ComponentDatabaseHandlerTest {
     public void testUpdateComponent() throws Exception {
         // Make some changes in the component
         Component expected = components.get(0);
-        expected.unsetReleases();
+        expected.setReleases(null);
         expected.setName("UPDATE");
 
         RequestStatus status = handler.updateComponent(expected, user1);
@@ -834,8 +835,8 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(email1, actual.getCreatedBy());
 
         // Check releases
-        assertEquals(2, actual.getReleasesSize());
-        assertEquals(0, actual.getReleaseIdsSize());
+        assertEquals(2, actual.getReleases() == null ? 0 : actual.getReleases().size());
+        assertEquals(0, actual.getReleaseIds() == null ? 0 : actual.getReleaseIds().size());
 
         assertTrue(releasesContain(actual.getReleases(), "R1A"));
         assertTrue(releasesContain(actual.getReleases(), "R1B"));
@@ -861,8 +862,8 @@ public class ComponentDatabaseHandlerTest {
     public void testUpdateInconsistentComponent() throws Exception {
         // Make some changes in the component
         Component expected = components.get(0);
-        expected.unsetReleases();
-        expected.unsetReleaseIds();
+        expected.setReleases(null);
+        expected.setReleaseIds(null);
 
         List<Release> tmpReleases = new ArrayList<>();
         tmpReleases.add(releases.get(0));
@@ -883,8 +884,8 @@ public class ComponentDatabaseHandlerTest {
         //Other asserts have been dealt with in testUpdateComponent
 
         // Check releases
-        assertEquals(2, actual.getReleasesSize());
-        assertEquals(0, actual.getReleaseIdsSize());
+        assertEquals(2, actual.getReleases() == null ? 0 : actual.getReleases().size());
+        assertEquals(0, actual.getReleaseIds() == null ? 0 : actual.getReleaseIds().size());
     }
 
 
@@ -895,7 +896,7 @@ public class ComponentDatabaseHandlerTest {
         String expected = component.getName();
         component.setName("UPDATE");
 
-        when(moderator.updateComponent(component, user2)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        when(moderator.updateComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateComponent(component, user2);
         Component actual = handler.getComponent("C1", user1);
 
@@ -903,7 +904,7 @@ public class ComponentDatabaseHandlerTest {
 
         assertEquals(component.getId(), actual.getId());
         assertEquals(expected, actual.getName());
-        verify(moderator).updateComponent(component, user2);
+        verify(moderator).updateComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2));
     }
 
     @Test
@@ -916,7 +917,7 @@ public class ComponentDatabaseHandlerTest {
         String expected = "UPDATE";
         component.setName(expected);
 
-        lenient().when(moderator.updateComponent(component, user2)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(moderator.updateComponent(ComponentConverter.toThrift(component), user2)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateComponent(component, user2, true);
         Component actual = handler.getComponent("C1", user1);
 
@@ -924,7 +925,7 @@ public class ComponentDatabaseHandlerTest {
 
         assertEquals(component.getId(), actual.getId());
         assertEquals(expected, actual.getName());
-        verify(moderator, never()).updateComponent(component, user2);
+        verify(moderator, never()).updateComponent(ComponentConverter.toThrift(component), user2);
     }
 
     @Test
@@ -932,7 +933,7 @@ public class ComponentDatabaseHandlerTest {
         Release expected = releases.get(1);
         expected.setName("UPDATED");
 
-        RequestStatus status = handler.updateRelease(expected, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        RequestStatus status = handler.updateRelease(expected, user2, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
@@ -944,7 +945,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(email2, actual.getCreatedBy());
 
         // Check releases
-        assertEquals(1, actual.getSubscribersSize());
+        assertEquals(1, actual.getSubscribers() == null ? 0 : actual.getSubscribers().size());
         assertTrue(actual.getSubscribers().contains(email1));
     }
 
@@ -955,7 +956,7 @@ public class ComponentDatabaseHandlerTest {
         release.setVersion("releaseB");
 
         // when:
-        RequestStatus status = handler.updateRelease(release, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        RequestStatus status = handler.updateRelease(release, user2, ReleaseImmutableField.DEFAULT);
 
         // then:
         assertEquals(RequestStatus.DUPLICATE, status);
@@ -967,13 +968,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = release.getName();
         release.setName("UPDATED");
 
-        when(releaseModerator.updateRelease(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        when(releaseModerator.updateRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         assertEquals(expected, actual.getName());
-        verify(releaseModerator).updateRelease(release, user1);
+        verify(releaseModerator).updateRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
     }
 
     @Test
@@ -985,13 +986,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = "UPDATED";
         release.setName(expected);
 
-        lenient().when(releaseModerator.updateRelease(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+        lenient().when(releaseModerator.updateRelease(ReleaseConverter.toThrift(release), user1)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT, true);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
         assertEquals(expected, actual.getName());
-        verify(releaseModerator, never()).updateRelease(release, user1);
+        verify(releaseModerator, never()).updateRelease(ReleaseConverter.toThrift(release), user1);
     }
 
     @Test
@@ -1000,13 +1001,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = release.getEccInformation().getAl();
         release.getEccInformation().setAl("UPDATED");
 
-        when(releaseModerator.updateReleaseEccInfo(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        when(releaseModerator.updateReleaseEccInfo(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         assertEquals(expected, actual.getEccInformation().getAl());
-        verify(releaseModerator).updateReleaseEccInfo(release, user1);
+        verify(releaseModerator).updateReleaseEccInfo(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
     }
 
     @Test
@@ -1018,13 +1019,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = "UPDATED";
         release.getEccInformation().setAl(expected);
 
-        lenient().when(releaseModerator.updateReleaseEccInfo(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+        lenient().when(releaseModerator.updateReleaseEccInfo(ReleaseConverter.toThrift(release), user1)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT, true);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
         assertEquals(expected, actual.getEccInformation().getAl());
-        verify(releaseModerator, never()).updateReleaseEccInfo(release, user1);
+        verify(releaseModerator, never()).updateReleaseEccInfo(ReleaseConverter.toThrift(release), user1);
     }
 
     @Test
@@ -1038,13 +1039,13 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testDeleteComponentNotModerator() throws Exception {
-        when(moderator.deleteComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        when(moderator.deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteComponent("C3", user2);
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         List<Component> componentSummary = handler.getComponentSummary(user1);
         assertEquals(3, componentSummary.size());
         assertTrue("Component NOT deleted", componentsContain(componentSummary, "C1"));
-        verify(moderator).deleteComponent(any(Component.class), eq(user2));
+        verify(moderator).deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2));
     }
 
     @Test
@@ -1052,13 +1053,13 @@ public class ComponentDatabaseHandlerTest {
         if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
-        lenient().when(moderator.deleteComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(moderator.deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteComponent("C3", user2, true);
         assertEquals(RequestStatus.SUCCESS, status);
         List<Component> componentSummary = handler.getComponentSummary(user1);
         assertEquals(2, componentSummary.size());
         assertFalse("Component deleted", componentsContain(componentSummary, "C3"));
-        verify(moderator, never()).deleteComponent(any(Component.class), eq(user2));
+        verify(moderator, never()).deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2));
     }
 
     @Test
@@ -1066,10 +1067,11 @@ public class ComponentDatabaseHandlerTest {
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             final Release r1A = handler.getRelease("R1A", user1);
             r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
         } else {
             Project project = new Project().setReleaseIdToUsage(
-                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(
+                            org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.CONTAINED))
             ).setName("Project").setCreatedBy(email1);
             projectHandler.addProject(project, user1);
         }
@@ -1093,7 +1095,7 @@ public class ComponentDatabaseHandlerTest {
 
         // Check deletion in component
         Component component = handler.getComponent("C1", user1);
-        assertEquals(1, component.getReleasesSize());
+        assertEquals(1, component.getReleases() == null ? 0 : component.getReleases().size());
         assertFalse("Release deleted", releasesContain(component.getReleases(), "R1B"));
     }
 
@@ -1103,10 +1105,11 @@ public class ComponentDatabaseHandlerTest {
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             final Release r1A = handler.getRelease("R1A", user1);
             r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
         } else {
             Project project = new Project().setReleaseIdToUsage(
-                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED))
+                    ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(
+                            org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.CONTAINED))
             ).setName("Project").setCreatedBy(email1);
             projectHandler.addProject(project, user1);
         }
@@ -1120,13 +1123,13 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testDeleteReleaseNotModerator() throws Exception {
-        when(releaseModerator.deleteRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        when(releaseModerator.deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteRelease("R1B", user1);
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         List<Release> releaseSummary = handler.getReleaseSummary();
         assertEquals(5, releaseSummary.size());
         assertTrue("Component NOT deleted", releasesContain(releaseSummary, "R1B"));
-        verify(releaseModerator).deleteRelease(any(Release.class), eq(user1));
+        verify(releaseModerator).deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
     }
 
     @Test
@@ -1134,13 +1137,22 @@ public class ComponentDatabaseHandlerTest {
         if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
-        lenient().when(releaseModerator.deleteRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(releaseModerator.deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteRelease("R1B", user1, true);
         assertEquals(RequestStatus.SUCCESS, status);
         List<Release> releaseSummary = handler.getReleaseSummary();
         assertEquals(4, releaseSummary.size());
         assertFalse("Release deleted", releasesContain(releaseSummary, "R1B"));
-        verify(releaseModerator, never()).deleteRelease(any(Release.class), eq(user1));
+        verify(releaseModerator, never()).deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
+    }
+
+
+    private static Set<String> componentIds(Collection<Component> components) {
+        return components.stream().map(Component::getId).collect(Collectors.toSet());
+    }
+
+    private static Set<String> collectReleaseIds(Collection<Release> releases) {
+        return releases.stream().map(Release::getId).collect(Collectors.toSet());
     }
 
     private static boolean componentsContain(Collection<Component> components, @NotNull String id) {
@@ -1172,8 +1184,8 @@ public class ComponentDatabaseHandlerTest {
     public void testDuplicateComponentNotAdded() throws Exception {
         String originalComponentId = "C3";
         final Component tmp = handler.getComponent(originalComponentId, user1);
-        tmp.unsetId();
-        tmp.unsetRevision();
+        tmp.setId(null);
+        tmp.setRevision(null);
         handler.addComponent(tmp, email1).getId();
 
         final Map<String, List<String>> duplicateComponents = handler.getDuplicateComponents();
@@ -1187,8 +1199,8 @@ public class ComponentDatabaseHandlerTest {
 
         String originalReleaseId = "R1A";
         final Release tmp = handler.getRelease(originalReleaseId, user1);
-        tmp.unsetId();
-        tmp.unsetRevision();
+        tmp.setId(null);
+        tmp.setRevision(null);
         AddDocumentRequestSummary summary = handler.addRelease(tmp, user1);
 
         final Map<String, List<String>> duplicateReleases = handler.getDuplicateReleases();
@@ -1202,8 +1214,8 @@ public class ComponentDatabaseHandlerTest {
 
         String originalReleaseId = "R1A";
         final Release tmp = handler.getRelease(originalReleaseId, user1);
-        tmp.unsetId();
-        tmp.unsetRevision();
+        tmp.setId(null);
+        tmp.setRevision(null);
         tmp.setName(tmp.getName().substring(0, 4));
         String newReleaseId = handler.addRelease(tmp, user1).getId();
 
@@ -1215,27 +1227,18 @@ public class ComponentDatabaseHandlerTest {
         Release original = handler.getRelease("R1A", user1);
         original.getEccInformation().setEccStatus(ECCStatus.APPROVED).setAssessorDepartment("XYZ").setAssessorContactPerson("asessor@example.com");
         assertFalse(handler.hasChangesInEccFields(original, original));
-        ComponentDatabaseHandler.ECC_FIELDS.forEach(
-                f -> {
-                    Release changed;
-                    try {
-                        changed = ensureEccInformationIsSet(handler.getRelease("R1A", user1));
-                    } catch (SW360Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    switch(f) {
-                        case ECC_STATUS:
-                            changed.getEccInformation().setFieldValue(f, ECCStatus.IN_PROGRESS);
-                            break;
-                        case CONTAINS_CRYPTOGRAPHY:
-                            changed.getEccInformation().setFieldValue(f, Boolean.TRUE);
-                            break;
-                        default:
-                            changed.getEccInformation().setFieldValue(f, "string value");
-                    }
-                    assertTrue("Field " + f + " did not trigger ecc change flag", handler.hasChangesInEccFields(changed, original));
-                }
-        );
+
+        Release changedStatus = handler.getRelease("R1A", user1);
+        changedStatus.getEccInformation().setEccStatus(ECCStatus.IN_PROGRESS);
+        assertTrue(handler.hasChangesInEccFields(changedStatus, original));
+
+        Release changedCrypto = handler.getRelease("R1A", user1);
+        changedCrypto.getEccInformation().setContainsCryptography(true);
+        assertTrue(handler.hasChangesInEccFields(changedCrypto, original));
+
+        Release changedAl = handler.getRelease("R1A", user1);
+        changedAl.getEccInformation().setAl("string value");
+        assertTrue(handler.hasChangesInEccFields(changedAl, original));
 
         Release changed = handler.getRelease("R1A", user1);
         changed.getEccInformation().setEccStatus(ECCStatus.APPROVED).setAssessorDepartment("XYZ").setAssessorContactPerson("");

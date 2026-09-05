@@ -11,19 +11,24 @@ package org.eclipse.sw360.components;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.ComponentType;
+import org.eclipse.sw360.datahandler.services.components.ExternalTool;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcessStep;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.HashSet;
+
 import static org.eclipse.sw360.datahandler.TestUtils.*;
-import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.DESCRIPTION;
-import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.ID;
-import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -56,27 +61,30 @@ public class ComponentHandlerTest {
     @Test
     public void testGetByUploadId() throws Exception {
 
-        Component originalComponent = new Component("name").setDescription("a desc").setComponentType(ComponentType.OSS);
-        originalComponent.addToCategories("Library");
+        Component originalComponent = new Component().setName("name").setDescription("a desc")
+                .setComponentType(ComponentType.OSS);
+        originalComponent.setCategories(new HashSet<>(Collections.singleton("Library")));
         String componentId = componentHandler.addComponent(originalComponent, adminUser).getId();
 
-        Release release = new Release("name", "version", componentId);
+        Release release = new Release().setName("name").setVersion("version").setComponentId(componentId);
         ExternalToolProcess etp = new ExternalToolProcess();
         etp.setExternalTool(ExternalTool.FOSSOLOGY);
-        release.addToExternalToolProcesses(etp);
+        release.setExternalToolProcesses(new HashSet<>(Collections.singletonList(etp)));
         ExternalToolProcessStep etps = new ExternalToolProcessStep();
         // do not use FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD so that test fails when
         // it gets refactored and no one thinks of adjusting the view definition in
         // ComponentRepository
         etps.setStepName("01_upload");
         etps.setProcessStepIdInTool("12345");
-        etp.addToProcessSteps(etps);
+        etp.setProcessSteps(Collections.singletonList(etps));
         String releaseId = componentHandler.addRelease(release, adminUser).getId();
 
         Component component = componentHandler.getComponentForReportFromFossologyUploadId("12345");
 
         assertThat(component, is(not(nullValue())));
-        assertThat(component, is(equalTo(originalComponent, restrictedToFields(ID, NAME, DESCRIPTION))));
+        assertThat(component.getId(), is(originalComponent.getId()));
+        assertThat(component.getName(), is(originalComponent.getName()));
+        assertThat(component.getDescription(), is(originalComponent.getDescription()));
 
         assertThat(componentHandler.getReleaseById(releaseId, adminUser), is(not(nullValue())));
         assertThat(componentHandler.getComponentById(componentId, adminUser), is(not(nullValue())));

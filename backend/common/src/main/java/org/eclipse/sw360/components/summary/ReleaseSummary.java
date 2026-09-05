@@ -12,17 +12,12 @@ package org.eclipse.sw360.components.summary;
 import com.google.common.base.Strings;
 
 import org.eclipse.sw360.datahandler.db.VendorRepository;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.Release._Fields;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.exporter.ReleaseExporter;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
 
 /**
  * Created by bodet on 17/02/15.
@@ -34,7 +29,6 @@ public class ReleaseSummary extends DocumentSummary<Release> {
     private final VendorRepository vendorRepository;
 
     public ReleaseSummary() {
-        // Create summary without database connection
         this(null);
     }
 
@@ -53,7 +47,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
                 .filter(Objects::nonNull)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
-        Map<String, Vendor> vendorById = ThriftUtils.getIdMap(vendorRepository.get(vendorIds));
+        Map<String, Vendor> vendorById = vendorRepository.getIdMap(vendorIds);
 
         List<Release> documents = new ArrayList<>(fullDocuments.size());
         for (Release fullDocument : fullDocuments) {
@@ -64,7 +58,6 @@ public class ReleaseSummary extends DocumentSummary<Release> {
         return documents;
     }
 
-
     @Override
     protected Release summary(SummaryType type, Release document) {
         return summary(type, document, vendorRepository::get);
@@ -72,55 +65,91 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
     protected Release summary(SummaryType type, Release document, Function<String, Vendor> vendorProvider) {
         Release copy = new Release();
-        if(type == SummaryType.DETAILED_EXPORT_SUMMARY){
-           setDetailedExportSummaryFields(document, copy);
+        if (type == SummaryType.DETAILED_EXPORT_SUMMARY) {
+            setDetailedExportSummaryFields(document, copy);
         } else {
-            setShortSummaryFields(document,copy);
+            setShortSummaryFields(document, copy);
             if (type != SummaryType.SHORT) {
-               setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(document, copy);
+                setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(document, copy);
             }
         }
-        if (document.isSetVendorId()) {
-            final String vendorId = document.getVendorId();
-            if (!Strings.isNullOrEmpty(vendorId)) {
-                Vendor vendor = vendorProvider.apply(vendorId);
-                copy.setVendor(vendor);
-            }
+        if (!Strings.isNullOrEmpty(document.getVendorId())) {
+            Vendor vendor = vendorProvider.apply(document.getVendorId());
+            copy.setVendor(vendor);
         }
         return copy;
     }
 
+    /**
+     * Explicit copy of all Release fields except revision, documentState,
+     * permissions, and vendorId (semantic equivalent of ReleaseExporter.RELEASE_RENDERED_FIELDS).
+     */
     private void setDetailedExportSummaryFields(Release document, Release copy) {
-        for (_Fields renderedField : ReleaseExporter.RELEASE_RENDERED_FIELDS) {
-            copyField(document, copy, renderedField);
-        }
+        copy.setId(document.getId());
+        copy.setType(document.getType());
+        copy.setCpeid(document.getCpeid());
+        copy.setName(document.getName());
+        copy.setVersion(document.getVersion());
+        copy.setComponentId(document.getComponentId());
+        copy.setReleaseDate(document.getReleaseDate());
+        copy.setComponentType(document.getComponentType());
+        copy.setExternalIds(document.getExternalIds());
+        copy.setAdditionalData(document.getAdditionalData());
+        copy.setSourceCodeDownloadurl(document.getSourceCodeDownloadurl());
+        copy.setBinaryDownloadurl(document.getBinaryDownloadurl());
+        copy.setAttachments(document.getAttachments());
+        copy.setCreatedOn(document.getCreatedOn());
+        copy.setRepository(document.getRepository());
+        copy.setMainlineState(document.getMainlineState());
+        copy.setClearingState(document.getClearingState());
+        copy.setExternalToolProcesses(document.getExternalToolProcesses());
+        copy.setCreatedBy(document.getCreatedBy());
+        copy.setCreatorDepartment(document.getCreatorDepartment());
+        copy.setProjectMainlineState(document.getProjectMainlineState());
+        copy.setContributors(document.getContributors());
+        copy.setModerators(document.getModerators());
+        copy.setSubscribers(document.getSubscribers());
+        copy.setRoles(document.getRoles());
+        copy.setMainLicenseIds(document.getMainLicenseIds());
+        copy.setOtherLicenseIds(document.getOtherLicenseIds());
+        copy.setVendor(document.getVendor());
+        copy.setClearingInformation(document.getClearingInformation());
+        copy.setLanguages(document.getLanguages());
+        copy.setOperatingSystems(document.getOperatingSystems());
+        copy.setCotsDetails(document.getCotsDetails());
+        copy.setEccInformation(document.getEccInformation());
+        copy.setSoftwarePlatforms(document.getSoftwarePlatforms());
+        copy.setReleaseIdToRelationship(document.getReleaseIdToRelationship());
+        copy.setPackageIds(document.getPackageIds());
+        copy.setSpdxId(document.getSpdxId());
+        copy.setModifiedBy(document.getModifiedBy());
+        copy.setModifiedOn(document.getModifiedOn());
     }
 
     private void setShortSummaryFields(Release document, Release copy) {
-        copyField(document, copy, _Fields.ID);
-        copyField(document, copy, _Fields.REVISION);
-        copyField(document, copy, _Fields.NAME);
-        copyField(document, copy, _Fields.VERSION);
-        copyField(document, copy, _Fields.COMPONENT_ID);
-        copyField(document, copy, _Fields.EXTERNAL_TOOL_PROCESSES);
-        copyField(document, copy, _Fields.CLEARING_STATE);
-        copyField(document, copy, _Fields.MAINLINE_STATE);
-        copyField(document, copy, _Fields.CPEID);
-        copyField(document, copy, _Fields.RELEASE_DATE);
-        copyField(document, copy, _Fields.SOURCE_CODE_DOWNLOADURL);
-        copyField(document, copy, _Fields.BINARY_DOWNLOADURL);
-        copyField(document, copy, _Fields.PACKAGE_IDS);
+        copy.setId(document.getId());
+        copy.setRevision(document.getRevision());
+        copy.setName(document.getName());
+        copy.setVersion(document.getVersion());
+        copy.setComponentId(document.getComponentId());
+        copy.setExternalToolProcesses(document.getExternalToolProcesses());
+        copy.setClearingState(document.getClearingState());
+        copy.setMainlineState(document.getMainlineState());
+        copy.setCpeid(document.getCpeid());
+        copy.setReleaseDate(document.getReleaseDate());
+        copy.setSourceCodeDownloadurl(document.getSourceCodeDownloadurl());
+        copy.setBinaryDownloadurl(document.getBinaryDownloadurl());
+        copy.setPackageIds(document.getPackageIds());
     }
 
-    private void setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(Release document, Release copy){
-        copyField(document, copy, _Fields.CREATED_BY);
-        copyField(document, copy, _Fields.MAINLINE_STATE);
-        copyField(document, copy, _Fields.CLEARING_STATE);
-        copyField(document, copy, _Fields.LANGUAGES);
-        copyField(document, copy, _Fields.OPERATING_SYSTEMS);
-        copyField(document, copy, _Fields.ATTACHMENTS);
-        copyField(document, copy, _Fields.MAIN_LICENSE_IDS);
-        copyField(document, copy, _Fields.ECC_INFORMATION);
+    private void setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(Release document, Release copy) {
+        copy.setCreatedBy(document.getCreatedBy());
+        copy.setMainlineState(document.getMainlineState());
+        copy.setClearingState(document.getClearingState());
+        copy.setLanguages(document.getLanguages());
+        copy.setOperatingSystems(document.getOperatingSystems());
+        copy.setAttachments(document.getAttachments());
+        copy.setMainLicenseIds(document.getMainLicenseIds());
+        copy.setEccInformation(document.getEccInformation());
     }
-
 }

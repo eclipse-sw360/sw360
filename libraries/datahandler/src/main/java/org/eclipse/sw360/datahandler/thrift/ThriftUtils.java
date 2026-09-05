@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.common.CustomThriftDeserializer;
 import org.eclipse.sw360.datahandler.common.CustomThriftSerializer;
 import org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -77,7 +76,6 @@ public class ThriftUtils {
             .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
             .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class) // Vulnerability Service
             .add(VMPriority.class, VMAction.class, VMComponent.class, VMProcessReporting.class, VMMatch.class) // Vulnerability Monitoring service
-            .add(ChangeLogs.class) // Changelog Service
             .add(SPDXDocument.class ) // SPDX Document service
             .add(DocumentCreationInformation.class ) // Document Creation Information service
             .add(PackageInformation.class ) // Package Information service

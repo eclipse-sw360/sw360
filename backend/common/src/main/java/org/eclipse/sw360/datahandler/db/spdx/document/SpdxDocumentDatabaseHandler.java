@@ -30,8 +30,9 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.*;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.datahandler.services.changelogs.*;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
@@ -279,10 +280,10 @@ public class SpdxDocumentDatabaseHandler {
         if (isNotNullEmptyOrWhitespace(releaseId)) {
             Release release = releaseRepository.get(releaseId);
             assertNotNull(release, "Could not remove SPDX Document ID in Release!");
-            Release oldRelease = release.deepCopy();
-            release.unsetSpdxId();
+            Release oldRelease = ReleaseConverter.fromThrift(ReleaseConverter.toThrift(release));
+            release.setSpdxId(null);
             releaseRepository.update(release);
-            dbHandlerUtil.addChangeLogs(release, oldRelease, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), spdx.getId(), Operation.SPDX_DOCUMENT_DELETE);
+            dbHandlerUtil.addChangeLogs(ReleaseConverter.toThrift(release), ReleaseConverter.toThrift(oldRelease), user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), spdx.getId(), Operation.SPDX_DOCUMENT_DELETE);
         }
         return RequestStatus.SUCCESS;
     }

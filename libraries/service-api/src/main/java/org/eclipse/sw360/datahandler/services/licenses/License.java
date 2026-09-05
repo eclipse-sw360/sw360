@@ -11,6 +11,7 @@ package org.eclipse.sw360.datahandler.services.licenses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.eclipse.sw360.datahandler.services.common.DocumentState;
@@ -27,7 +28,7 @@ import java.util.Set;
 public class License {
     private String id;
     private String revision;
-    private String type;
+    private String type = "license";
     private String shortname;
     @JsonProperty(required = true)
     private String fullname;
@@ -38,7 +39,11 @@ public class License {
     private Map<String, String> externalIds;
     private Map<String, String> additionalData;
     private String reviewdate;
+    /** CouchDB thrift legacy key; keep SerializedName for lazy-migrate reads/writes. */
+    @SerializedName("OSIApproved")
     private Quadratic osiApproved;
+    /** CouchDB thrift legacy key; keep SerializedName for lazy-migrate reads/writes. */
+    @SerializedName("FSFLibre")
     private Quadratic fsfLibre;
     private List<Obligation> obligations;
     private Set<String> obligationDatabaseIds;

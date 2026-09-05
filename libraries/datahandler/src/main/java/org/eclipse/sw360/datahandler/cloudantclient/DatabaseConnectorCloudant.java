@@ -28,7 +28,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.Contract;
@@ -613,7 +613,7 @@ public class DatabaseConnectorCloudant {
         return success;
     }
 
-    public <T> boolean add(T doc) throws SW360Exception {
+    public <T> boolean add(T doc) {
         Document document = this.getDocumentFromPojo(doc);
         if (document.getId() != null && this.contains(document.getId())) {
             // Cannot add same document again. Must update.
@@ -623,7 +623,8 @@ public class DatabaseConnectorCloudant {
         DocumentResult resp;
         if (doc instanceof AttachmentContent content) {
             if (content.getFilename() == null) {
-                throw new SW360Exception("Attachment filename cannot be null.");
+                throw new org.eclipse.sw360.datahandler.services.common.SW360Exception(
+                        "Attachment filename cannot be null.");
             }
             PostDocumentOptions postDocOption = new PostDocumentOptions.Builder()
                     .db(this.dbName)
@@ -645,7 +646,12 @@ public class DatabaseConnectorCloudant {
             InputStream in = new ByteArrayInputStream(content.getFilename()
                     .getBytes(StandardCharsets.UTF_8));
             createAttachment(createResp.getId(), content.getFilename(), in, content.getContentType());
-            Document updatedDoc = this.getDocument(createResp.getId());
+            Document updatedDoc;
+            try {
+                updatedDoc = this.getDocument(createResp.getId());
+            } catch (SW360Exception e) {
+                throw new org.eclipse.sw360.datahandler.services.common.SW360Exception(e.getWhy(), e);
+            }
             updateIdAndRev(doc, updatedDoc.getId(), updatedDoc.getRev());
             return true;
         }
@@ -660,7 +666,7 @@ public class DatabaseConnectorCloudant {
     }
 
     public <T> boolean remove(T doc) {
-        return this.remove(this.getDocumentFromPojo(doc).getId());
+        return this.deleteById(this.getDocumentFromPojo(doc).getId());
     }
 
     public boolean putDesignDocument(DesignDocument designDocument, String ddoc) {
@@ -776,8 +782,8 @@ public class DatabaseConnectorCloudant {
             PostFindOptions.Builder qb, Class<T> type, PaginationData pageData,
             Map<String, String> sortSelector, String countIndexName, boolean sortCountQuery
     ) {
-        final int rowsPerPage = pageData.getRowsPerPage();
-        final int skip = pageData.getDisplayStart();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
+        final int skip = pageData.displayStartOrZero();
 
         long rowQueryLimit = Math.max(rowsPerPage, LUCENE_SEARCH_LIMIT);
 
@@ -927,7 +933,11 @@ public class DatabaseConnectorCloudant {
             TFieldIdEnum rev = tbase.fieldForId(2);
             tbase.setFieldValue(id, docId);
             tbase.setFieldValue(rev, docRev);
-        }  else if (isInstanceOfOAuthClientEntity(doc)) {
+        } else if (!tryInvokeSetter(doc, "setId", docId)) {
+            log.debug("No setId(String) on type {}", doc.getClass().getName());
+        }
+
+        if (isInstanceOfOAuthClientEntity(doc)) {
             Class<?> clazz = doc.getClass();
             try {
                 Method setIdMethod = clazz.getMethod("setId", String.class);
@@ -938,6 +948,25 @@ public class DatabaseConnectorCloudant {
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 log.error(e.getMessage());
             }
+            return;
+        }
+
+        // Generic POJO support (e.g. service-api models): prefer setRevision, fallback to setRev.
+        if (!tryInvokeSetter(doc, "setRevision", docRev)) {
+            tryInvokeSetter(doc, "setRev", docRev);
+        }
+    }
+
+    private <T> boolean tryInvokeSetter(@NotNull T target, String setterName, String value) {
+        try {
+            Method method = target.getClass().getMethod(setterName, String.class);
+            method.invoke(target, value);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            log.error("Failed to invoke {} on {}", setterName, target.getClass().getName(), e);
+            return false;
         }
     }
 

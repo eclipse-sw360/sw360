@@ -9,26 +9,24 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
@@ -49,22 +47,28 @@ public class ChangeLogsDatabaseHandler {
     public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) {
         List<ChangeLogs> changeLogsByDocId = changeLogsRepository.getChangeLogsByDocId(docId);
         changeLogsByDocId.addAll(changeLogsRepository.getChangeLogsByParentDocId(docId));
-        changeLogsByDocId = changeLogsByDocId.stream().filter(Objects::nonNull).filter(changeLog -> isNotEmptyChangeLog(changeLog))
+        changeLogsByDocId = changeLogsByDocId.stream().filter(Objects::nonNull).filter(this::isNotEmptyChangeLog)
                 .collect(Collectors.toList());
         Collections.sort(changeLogsByDocId, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
-        changeLogsByDocId.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
+        changeLogsByDocId.forEach(cl -> {
+            if (cl.getChangeTimestamp() != null) {
+                cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]);
+            }
+        });
         return changeLogsByDocId;
     }
 
-    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(User user, String docId, PaginationData pageData) {
-        Map<PaginationData, List<ChangeLogs>> result = changeLogsRepository.getChangeLogsByDocumentIdPaginated(docId, pageData);
+    public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(User user, String docId,
+            PaginationData pageData) {
+        Map<PaginationData, List<ChangeLogs>> result =
+                changeLogsRepository.getChangeLogsByDocumentIdPaginated(docId, pageData);
 
         Map.Entry<PaginationData, List<ChangeLogs>> entry = result.entrySet().iterator().next();
         List<ChangeLogs> filteredLogs = entry.getValue().stream()
                 .filter(Objects::nonNull)
                 .filter(this::isNotEmptyChangeLog)
                 .peek(c -> {
-                    if (c.isSetChangeTimestamp()) {
+                    if (c.getChangeTimestamp() != null) {
                         c.setChangeTimestamp(c.getChangeTimestamp().split(" ", 2)[0]);
                     }
                 })
@@ -73,17 +77,21 @@ public class ChangeLogsDatabaseHandler {
         return Collections.singletonMap(entry.getKey(), filteredLogs);
     }
 
-    public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
+    public ChangeLogs getChangeLogsById(String id) {
         ChangeLogs changeLogs = changeLogsRepository.get(id);
-        assertNotNull(changeLogs);
+        if (changeLogs == null) {
+            throw new SW360Exception("Cannot find change log: " + id);
+        }
         removeNullToEmptyChanges(changeLogs);
-        changeLogs.setChangeTimestamp(changeLogs.changeTimestamp.split(" ")[0]);
+        if (changeLogs.getChangeTimestamp() != null) {
+            changeLogs.setChangeTimestamp(changeLogs.getChangeTimestamp().split(" ")[0]);
+        }
         return changeLogs;
     }
 
     public RequestStatus deleteChangeLogsByDocumentId(String docId, User user) {
         try {
-            for (ChangeLogs changeLog: getChangeLogsByDocumentId(user, docId)) {
+            for (ChangeLogs changeLog : getChangeLogsByDocumentId(user, docId)) {
                 changeLogsRepository.remove(changeLog);
             }
             return RequestStatus.SUCCESS;

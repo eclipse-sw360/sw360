@@ -10,27 +10,30 @@
 package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 
-import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.*;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 
 /**
- * CRUD access for the Package class
- *
- * @author abdul.kapti@siemens-healthineers.com
+ * CRUD access for the Package class (service-api POJO storage).
  */
-
 public class PackageRepository extends DatabaseRepositoryCloudantClient<Package> {
 
     private static final String PACKAGE_BY_ALL_IDX = "PackageByAllIdx";
@@ -66,13 +69,13 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
         initStandardDesignDocument(views, db);
 
         createPartialTypeIndex(PACKAGE_BY_ALL_IDX, "pkgByAll", "package", new String[] {
-                Package._Fields.NAME.getFieldName(),
-                Package._Fields.VERSION.getFieldName(),
-                Package._Fields.PURL.getFieldName(),
-                Package._Fields.CREATED_ON.getFieldName(),
-                Package._Fields.CREATED_BY.getFieldName(),
-                Package._Fields.LICENSE_IDS.getFieldName(),
-                Package._Fields.PACKAGE_MANAGER.getFieldName(),
+                "name",
+                "version",
+                "purl",
+                "createdOn",
+                "createdBy",
+                "licenseIds",
+                "packageManager",
         }, db);
     }
 
@@ -111,24 +114,20 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
     public List<Package> searchByNameAndVersion(String name, String version, boolean caseInsenstive) {
         List<Package> packagesMatchingName;
         if (caseInsenstive) {
-            packagesMatchingName = new ArrayList<Package>(queryView("byNameLowerCase", name.toLowerCase()));
+            packagesMatchingName = new ArrayList<>(queryView("byNameLowerCase", name.toLowerCase()));
         } else {
-            packagesMatchingName = new ArrayList<Package>(queryView("byName", name));
+            packagesMatchingName = new ArrayList<>(queryView("byName", name));
         }
-        List<Package> releasesMatchingNameAndVersion = packagesMatchingName.stream()
+        return packagesMatchingName.stream()
                 .filter(r -> isNullOrEmpty(version) ? isNullOrEmpty(r.getVersion()) : version.equalsIgnoreCase(r.getVersion()))
                 .collect(Collectors.toList());
-        return releasesMatchingNameAndVersion;
     }
 
     public List<Package> searchByPurl(String purl, boolean caseInsenstive) {
-        List<Package> packagesMatchingPurl;
-        if(caseInsenstive){
-            packagesMatchingPurl = new ArrayList<Package>(queryView("byPurlLowercase", purl.toLowerCase()));
-        }else{
-            packagesMatchingPurl = new ArrayList<Package>(queryView("byPurl", purl));
+        if (caseInsenstive) {
+            return new ArrayList<>(queryView("byPurlLowercase", purl.toLowerCase()));
         }
-        return packagesMatchingPurl;
+        return new ArrayList<>(queryView("byPurl", purl));
     }
 
     public Map<PaginationData, List<Package>> getPackagesWithPagination(PaginationData pageData) {
@@ -136,17 +135,18 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
         List<Package> packages = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
         final Map<String, String> sortSelector = getSortSelector(pageData, ascending);
-        final Map<String, Object> selector = eq(Package._Fields.TYPE.getFieldName(), "package");
+        final Map<String, Object> selector = eq("type", "package");
         PostFindOptions.Builder queryBuilder = getConnector().getQueryBuilder()
                 .selector(selector)
                 .useIndex(Collections.singletonList(PACKAGE_BY_ALL_IDX));
 
         try {
-             log.debug("getPackagesWithPagination: using Mango query with index '{}', sort={}, page={}, size={}",
-                     PACKAGE_BY_ALL_IDX, sortSelector, pageData.getDisplayStart(), pageData.getRowsPerPage());
-             packages = getConnector().getQueryResultPaginated(queryBuilder, Package.class, pageData, sortSelector, PACKAGE_BY_ALL_IDX);
-             log.debug("getPackagesWithPagination: Mango query returned {} packages, totalCount={}",
-                     packages.size(), pageData.getTotalRowCount());
+            log.debug("getPackagesWithPagination: using Mango query with index '{}', sort={}, page={}, size={}",
+                    PACKAGE_BY_ALL_IDX, sortSelector, pageData.displayStartOrZero(), pageData.rowsPerPageOrZero());
+            packages = getConnector().getQueryResultPaginated(queryBuilder, Package.class, pageData, sortSelector,
+                    PACKAGE_BY_ALL_IDX);
+            log.debug("getPackagesWithPagination: Mango query returned {} packages, totalCount={}",
+                    packages.size(), pageData.getTotalRowCount());
         } catch (Exception e) {
             log.error("Error getting packages from repository: ", e);
         }
@@ -156,18 +156,27 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
 
     private static Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
         String direction = ascending ? "asc" : "desc";
-        return switch (pageData.getSortColumnNumber()) {
-            case -1 -> Collections.singletonMap(Package._Fields.CREATED_ON.getFieldName(), direction);
-            case 3 -> Collections.singletonMap(Package._Fields.LICENSE_IDS.getFieldName(), direction);
-            case 4 -> Collections.singletonMap(Package._Fields.PACKAGE_MANAGER.getFieldName(), direction);
-            case 0 -> Collections.singletonMap(Package._Fields.NAME.getFieldName(), direction);
-            default -> Collections.singletonMap(Package._Fields.NAME.getFieldName(), direction);
+        return switch (pageData.sortColumnNumberOrZero()) {
+            case -1 -> Collections.singletonMap("createdOn", direction);
+            case 3 -> Collections.singletonMap("licenseIds", direction);
+            case 4 -> Collections.singletonMap("packageManager", direction);
+            case 0 -> Collections.singletonMap("name", direction);
+            default -> Collections.singletonMap("name", direction);
         };
     }
+
     public List<Package> getPackagesByReleaseIds(Set<String> ids) {
         if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
         }
         return queryByIds("byReleaseId", ids);
+    }
+
+    public org.eclipse.sw360.datahandler.thrift.packages.Package getAsThrift(String id) {
+        return PackageConverter.toThrift(get(id));
+    }
+
+    public List<org.eclipse.sw360.datahandler.thrift.packages.Package> getAllAsThrift() {
+        return getAll().stream().map(PackageConverter::toThrift).collect(Collectors.toList());
     }
 }

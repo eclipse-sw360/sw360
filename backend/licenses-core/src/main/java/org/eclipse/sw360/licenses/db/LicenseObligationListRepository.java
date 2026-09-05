@@ -15,14 +15,14 @@ import java.util.Optional;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseObligationList;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 /**
  * CRUD access for the LicenseObligationList class
  *
- * 
+ *
  */
 public class LicenseObligationListRepository extends DatabaseRepositoryCloudantClient<LicenseObligationList> {
 

@@ -36,7 +36,7 @@ public final class TestUserConverters {
      * to the POJO equivalent used by {@code Sw360UserService}.
      */
     public static Map<PaginationData, List<User>> toPojoMap(
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData,
+            Map<org.eclipse.sw360.datahandler.services.common.PaginationData,
                     List<org.eclipse.sw360.datahandler.thrift.users.User>> thriftMap) {
         if (thriftMap == null) {
             return Map.of();
@@ -52,7 +52,7 @@ public final class TestUserConverters {
     }
 
     private static PaginationData toPojoPaginationData(
-            org.eclipse.sw360.datahandler.thrift.PaginationData thrift) {
+            org.eclipse.sw360.datahandler.services.common.PaginationData thrift) {
         if (thrift == null) {
             return new PaginationData();
         }

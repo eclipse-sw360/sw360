@@ -9,10 +9,7 @@
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
-import static org.eclipse.sw360.datahandler.thrift.licenses.LicenseType._Fields;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
 
 /**
  *
@@ -23,14 +20,13 @@ public class LicenseTypeSummary extends DocumentSummary<LicenseType> {
 
     @Override
     protected LicenseType summary(SummaryType type, LicenseType document) {
-        // Copy required details
         LicenseType copy = new LicenseType();
 
         switch (type) {
             case EXPORT_SUMMARY:
-                copyField(document, copy, _Fields.LICENSE_TYPE);
-                copyField(document, copy, _Fields.LICENSE_TYPE_ID);
-                copyField(document, copy, _Fields.ID);
+                copy.setLicenseType(document.getLicenseType());
+                copy.setLicenseTypeId(document.getLicenseTypeId());
+                copy.setId(document.getId());
                 break;
             default:
         }

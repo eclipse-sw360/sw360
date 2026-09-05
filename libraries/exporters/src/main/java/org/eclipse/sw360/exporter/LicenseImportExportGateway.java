@@ -12,11 +12,11 @@ package org.eclipse.sw360.exporter;
 import java.util.List;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.CustomProperties;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.common.CustomProperties;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 /**

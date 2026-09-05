@@ -15,9 +15,10 @@ import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.ComponentFields;
+import org.eclipse.sw360.datahandler.services.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
@@ -196,16 +197,16 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         initStandardDesignDocument(views, db);
 
         createIndex(COMPONENT_BY_ALL_IDX, "compByAll", new String[] {
-                Component._Fields.NAME.getFieldName(),
-                Component._Fields.CATEGORIES.getFieldName(),
-                Component._Fields.COMPONENT_TYPE.getFieldName(),
-                Component._Fields.LANGUAGES.getFieldName(),
-                Component._Fields.SOFTWARE_PLATFORMS.getFieldName(),
-                Component._Fields.OPERATING_SYSTEMS.getFieldName(),
-                Component._Fields.VENDOR_NAMES.getFieldName(),
-                Component._Fields.MAIN_LICENSE_IDS.getFieldName(),
-                Component._Fields.CREATED_BY.getFieldName(),
-                Component._Fields.CREATED_ON.getFieldName()
+                ComponentFields.NAME,
+                ComponentFields.CATEGORIES,
+                ComponentFields.COMPONENT_TYPE,
+                ComponentFields.LANGUAGES,
+                ComponentFields.SOFTWARE_PLATFORMS,
+                ComponentFields.OPERATING_SYSTEMS,
+                ComponentFields.VENDOR_NAMES,
+                ComponentFields.MAIN_LICENSE_IDS,
+                ComponentFields.CREATED_BY,
+                ComponentFields.CREATED_ON
         }, db);
     }
 
@@ -336,7 +337,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             Map<String,Set<String>> subQueryRestrictions, User user, @NotNull PaginationData pageData
     ) {
         final boolean ascending = pageData.isAscending();
-        final Map<String, Object> typeSelector = eq("type", "component");
+        final Map<String, Object> typeSelector = eq(ComponentFields.TYPE, "component");
         final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
         final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
 
@@ -356,7 +357,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     private static @Nonnull String getViewFromPagination(PaginationData pageData) {
-        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ComponentSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ComponentSortColumn.BY_CREATEDON -> "byCreatedOn";
             case ComponentSortColumn.BY_VENDOR -> "byvendor";
             case ComponentSortColumn.BY_NAME -> "byname";
@@ -369,15 +370,15 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData, boolean ascending) {
-        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ComponentSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ComponentSortColumn.BY_VENDOR ->
-                    Collections.singletonMap("vendorNames", ascending ? "asc" : "desc");
+                    Collections.singletonMap(ComponentFields.VENDOR_NAMES, ascending ? "asc" : "desc");
             case ComponentSortColumn.BY_TYPE ->
-                    Collections.singletonMap("componentType", ascending ? "asc" : "desc");
+                    Collections.singletonMap(ComponentFields.COMPONENT_TYPE, ascending ? "asc" : "desc");
             case ComponentSortColumn.BY_MAINLICENSE ->
-                    Collections.singletonMap("mainLicenseIds", ascending ? "asc" : "desc");
+                    Collections.singletonMap(ComponentFields.MAIN_LICENSE_IDS, ascending ? "asc" : "desc");
             case null, default ->
-                    Collections.singletonMap("name", ascending ? "asc" : "desc"); // Default sort by name
+                    Collections.singletonMap(ComponentFields.NAME, ascending ? "asc" : "desc"); // Default sort by name
         };
     }
 
@@ -389,17 +390,17 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         List<Map<String, Object>> andConditions = new ArrayList<>();
         for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                if (Component._Fields.CATEGORIES.getFieldName().equals(entry.getKey()) ||
-                        Component._Fields.LANGUAGES.getFieldName().equals(entry.getKey()) ||
-                        Component._Fields.SOFTWARE_PLATFORMS.getFieldName().equals(entry.getKey()) ||
-                        Component._Fields.OPERATING_SYSTEMS.getFieldName().equals(entry.getKey()) ||
-                        Component._Fields.VENDOR_NAMES.getFieldName().equals(entry.getKey()) ||
-                        Component._Fields.MAIN_LICENSE_IDS.getFieldName().equals(entry.getKey())
+                if (ComponentFields.CATEGORIES.equals(entry.getKey()) ||
+                        ComponentFields.LANGUAGES.equals(entry.getKey()) ||
+                        ComponentFields.SOFTWARE_PLATFORMS.equals(entry.getKey()) ||
+                        ComponentFields.OPERATING_SYSTEMS.equals(entry.getKey()) ||
+                        ComponentFields.VENDOR_NAMES.equals(entry.getKey()) ||
+                        ComponentFields.MAIN_LICENSE_IDS.equals(entry.getKey())
                 ) {
                     andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
                 } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
                     String value = entry.getValue().stream().findFirst().get();
-                    if (Component._Fields.NAME.getFieldName().equals(entry.getKey())) {
+                    if (ComponentFields.NAME.equals(entry.getKey())) {
                         andConditions.add(eqIgnoreCase(entry.getKey(), value));
                     } else {
                         andConditions.add(eq(entry.getKey(), value));
