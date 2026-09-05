@@ -32,6 +32,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class EndpointsFilter extends OncePerRequestFilter {
 
     private static final Set<String> WRITE_METHODS = Set.of("POST", "PATCH", "PUT", "DELETE");
+    /**
+     * Endpoints which may look like write but aren't, thus allow security user
+     * to use them.
+     */
+    private static final Set<String> SECURITY_USER_EXEMPT_ENDPOINTS = Set.of(
+            "/api/releases/batch-summary"
+    );
 
     private final Map<Pattern, Set<String>> endpointHttpMethods;
     private final RestControllerHelper<?> restControllerHelper;
@@ -46,9 +53,14 @@ public class EndpointsFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        if (isAllowedSecurityUserReadSummaryRequest(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         Optional<Entry<Pattern, Set<String>>> matchedEndpoint = findMatchingEndpoint(request.getRequestURI());
         if (matchedEndpoint.isEmpty()) {
-            if (isWriteMethod(request.getMethod()) && PermissionUtils.isSecurityUser(restControllerHelper.getSw360UserFromAuthentication())) {
+            if (isSecurityUserWriteBlocked(request)) {
                 sendServiceUnavailable(response);
                 return;
             }
@@ -64,6 +76,20 @@ public class EndpointsFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isSecurityUserWriteBlocked(@NonNull HttpServletRequest request) {
+        return isWriteMethod(request.getMethod())
+                && PermissionUtils.isSecurityUser(restControllerHelper.getSw360UserFromAuthentication())
+                && !isAllowedSecurityUserReadSummaryRequest(request);
+    }
+
+    private boolean isAllowedSecurityUserReadSummaryRequest(@NonNull HttpServletRequest request) {
+        if (!request.getMethod().equalsIgnoreCase("POST")) {
+            return false;
+        }
+        String requestUri = request.getRequestURI();
+        return SECURITY_USER_EXEMPT_ENDPOINTS.stream().anyMatch(requestUri::endsWith);
     }
 
     private boolean isWriteMethod(String method) {
