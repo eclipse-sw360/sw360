@@ -2008,6 +2008,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 .toList();
     }
 
+    public List<Release> getReleasesForLicenseClearing(
+            String projectId, User user, boolean transitive,
+            List<ClearingState> clearingStates,
+            List<ComponentType> componentTypes,
+            ReleaseRelationship releaseRelationship
+    ) throws TException {
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        return projectClient.getReleasesForLicenseClearing(projectId, user,
+                transitive, clearingStates, componentTypes, releaseRelationship);
+    }
+
     /**
      * Converts a Pageable object to a PaginationData object.
      *
