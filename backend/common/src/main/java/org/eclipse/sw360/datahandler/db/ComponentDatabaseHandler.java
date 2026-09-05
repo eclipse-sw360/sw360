@@ -2171,10 +2171,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         switch (action) {
             case READ:
                 boolean isComponentAccessible = false;
-                String componentId = release.getComponentId();
-                if (CommonUtils.isNotNullEmptyOrWhitespace(componentId)) {
-                    Component component = componentRepository.get(componentId);
-                    isComponentAccessible = makePermission(component, user).isActionAllowed(RequestedAction.READ);
+                if (SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false)) {
+                    String componentId = release.getComponentId();
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(componentId)) {
+                        Component component = componentRepository.get(componentId);
+                        isComponentAccessible = makePermission(component, user).isActionAllowed(RequestedAction.READ);
+                    }
+                } else {
+                    isComponentAccessible = true;
                 }
                 isAllowed = isComponentAccessible && makePermission(release, user).isActionAllowed(RequestedAction.READ);
                 break;
