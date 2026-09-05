@@ -787,6 +787,11 @@ public class ComponentHandler implements ComponentService.Iface {
 	}
 
     @Override
+    public ByteBuffer getComponentReportBuffer(User user, boolean extendedByReleases, ReportFormat format) throws TException {
+        return handler.getComponentReportBuffer(user, extendedByReleases, format);
+    }
+
+    @Override
     public boolean isReleaseActionAllowed(Release release, User user, RequestedAction action) {
         return handler.isReleaseActionAllowed(release, user, action);
     }
