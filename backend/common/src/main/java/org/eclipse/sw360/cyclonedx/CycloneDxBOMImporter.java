@@ -41,6 +41,8 @@ import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandlerMetadataOperati
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
+import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
+import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -502,7 +504,8 @@ public class CycloneDxBOMImporter {
             String relName = "";
             AddDocumentRequestSummary compAddSummary;
             try {
-                compAddSummary = componentDatabaseHandler.addComponent(comp, user.getEmail());
+                compAddSummary = AddDocumentRequestSummaryConverter.toThrift(
+                        componentDatabaseHandler.addComponent(comp, user.getEmail()));
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
                     comp.setId(compAddSummary.getId());
@@ -534,7 +537,8 @@ public class CycloneDxBOMImporter {
                 relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
 
                 try {
-                    AddDocumentRequestSummary relAddSummary = componentDatabaseHandler.addRelease(release, user);
+                    AddDocumentRequestSummary relAddSummary = AddDocumentRequestSummaryConverter.toThrift(
+                            componentDatabaseHandler.addRelease(release, user));
                     if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                         release.setId(relAddSummary.getId());
                         if (AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
@@ -580,7 +584,8 @@ public class CycloneDxBOMImporter {
                     }
                 }
                 comp.setDescription(description.toString());
-                RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
+                RequestStatus updateStatus = RequestStatusConverter.toThrift(
+                            componentDatabaseHandler.updateComponent(comp, user, true));
                 if (RequestStatus.SUCCESS.equals(updateStatus)) {
                     log.info("updating component successfull: " + comp.getName());
                 } else {
@@ -647,7 +652,8 @@ public class CycloneDxBOMImporter {
                     comp.setName(getComponentNameFromVCS(entry.getKey(), true));
                 }
 
-                compAddSummary = componentDatabaseHandler.addComponent(comp, user.getEmail());
+                compAddSummary = AddDocumentRequestSummaryConverter.toThrift(
+                        componentDatabaseHandler.addComponent(comp, user.getEmail()));
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
                     comp.setId(compAddSummary.getId());
@@ -676,7 +682,8 @@ public class CycloneDxBOMImporter {
                     String relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
 
                     try {
-                        AddDocumentRequestSummary relAddSummary = componentDatabaseHandler.addRelease(release, user);
+                        AddDocumentRequestSummary relAddSummary = AddDocumentRequestSummaryConverter.toThrift(
+                            componentDatabaseHandler.addRelease(release, user));
 
                         if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                             release.setId(relAddSummary.getId());
@@ -720,7 +727,8 @@ public class CycloneDxBOMImporter {
                         }
                     }
 
-                    RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
+                    RequestStatus updateStatus = RequestStatusConverter.toThrift(
+                            componentDatabaseHandler.updateComponent(comp, user, true));
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
                     } else {
@@ -794,7 +802,8 @@ public class CycloneDxBOMImporter {
                 Component comp = createComponent(bomComp);
                 AddDocumentRequestSummary compAddSummary;
                 try {
-                    compAddSummary = componentDatabaseHandler.addComponent(comp, user.getEmail());
+                    compAddSummary = AddDocumentRequestSummaryConverter.toThrift(
+                        componentDatabaseHandler.addComponent(comp, user.getEmail()));
 
                     if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
                         comp.setId(compAddSummary.getId());
@@ -816,7 +825,8 @@ public class CycloneDxBOMImporter {
 
                     String relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
                     try {
-                        AddDocumentRequestSummary relAddSummary = componentDatabaseHandler.addRelease(release, user);
+                        AddDocumentRequestSummary relAddSummary = AddDocumentRequestSummaryConverter.toThrift(
+                            componentDatabaseHandler.addRelease(release, user));
                         if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                             release.setId(relAddSummary.getId());
                             if (AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
@@ -847,7 +857,8 @@ public class CycloneDxBOMImporter {
                     } else {
                         comp.setMainLicenseIds(licenses);
                     }
-                    RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
+                    RequestStatus updateStatus = RequestStatusConverter.toThrift(
+                            componentDatabaseHandler.updateComponent(comp, user, true));
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
                     } else {

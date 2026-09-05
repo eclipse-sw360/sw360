@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -42,8 +41,8 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.services.packages.PackageManager;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
@@ -251,7 +250,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Set<String> packageIds = new HashSet<>(CommonUtils.nullToEmptySet(release.getPackageIds()));
                     packageIds.add(pkg.getId());
                     release.setPackageIds(packageIds);
-                    componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+                    componentDatabaseHandler.updateRelease(release, user, ReleaseImmutableField.DEFAULT, true);
                     summary.setMessage("Package successfully created with linked release");
                 } else {
                     log.error("Failed to add package: {} ", printName(pkg));
@@ -339,7 +338,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         if (packageIds.contains(packageId)) {
                             packageIds.remove(packageId);
                             actualRelease.setPackageIds(packageIds);
-                            componentDatabaseHandler.updateRelease(actualRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
+                            componentDatabaseHandler.updateRelease(actualRelease, user, ReleaseImmutableField.DEFAULT,
                                     true);
                         } else {
                             log.info("Linked pacakgeId: {} is not present in release: {}", packageId, actualReleaseId);
@@ -357,7 +356,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         if (!packageIds.contains(packageId)) {
                             packageIds.add(packageId);
                             newRelease.setPackageIds(packageIds);
-                            componentDatabaseHandler.updateRelease(newRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
+                            componentDatabaseHandler.updateRelease(newRelease, user, ReleaseImmutableField.DEFAULT,
                                     true);
                         } else {
                             log.info("Linked pacakgeId: {} is already present in release: {}", packageId, newReleaseId);
@@ -421,8 +420,8 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     packageIds = new HashSet<>(packageIds);
                     packageIds.remove(pkg.getId());
                     release.setPackageIds(packageIds);
-                    return RequestStatusConverter.fromThrift(componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE,
-                            true));
+                    return componentDatabaseHandler.updateRelease(release, user,
+                            ReleaseImmutableField.DEFAULT, true);
                 }
             } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
                 throw new SW360Exception(e.getWhy() != null ? e.getWhy() : e.getMessage(), e);
@@ -507,10 +506,4 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return SW360Utils.getVersionedName(pkg.getName(), pkg.getVersion());
     }
 
-    private static RequestStatus toPojo(org.eclipse.sw360.datahandler.thrift.RequestStatus thrift) {
-        if (thrift == null) {
-            return null;
-        }
-        return RequestStatus.valueOf(thrift.name());
-    }
 }

@@ -27,6 +27,10 @@ import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.Release;
+// single-type imports win over the thrift.* on-demand import below: the handler now
+// returns the service-api status types, while the moderator stubs stay thrift.
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.services.components.EccInformation;
 import org.eclipse.sw360.datahandler.services.components.ClearingState;
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
@@ -388,21 +392,21 @@ public class ComponentDatabaseHandlerTest {
                                                        "R2A", ReleaseRelationship.REFERRED
             ));
 
-        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
 
         final Release r1B = handler.getRelease("R1B", user2);
         r1B.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.REFERRED));
-        handler.updateRelease(r1B,user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1B,user2, ReleaseImmutableField.DEFAULT);
 
         final Release r2A = handler.getRelease("R2A", user1);
         r2A.setReleaseIdToRelationship(ImmutableMap.of("R2B", ReleaseRelationship.CONTAINED));
-        handler.updateRelease(r2A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r2A, user1, ReleaseImmutableField.DEFAULT);
 
         final Release r2B = handler.getRelease("R2B", user2);
         r2B.setReleaseIdToRelationship(ImmutableMap.of("R1B", ReleaseRelationship.CONTAINED,
                 "R1A", ReleaseRelationship.REFERRED));
 
-        handler.updateRelease(r2B, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r2B, user2, ReleaseImmutableField.DEFAULT);
 
         // we wrap the potentially infinite loop in an executor
         final ExecutorService service = Executors.newSingleThreadExecutor();
@@ -455,14 +459,14 @@ public class ComponentDatabaseHandlerTest {
                 "R2A", ReleaseRelationship.REFERRED
         ));
 
-        handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
 
         final Release r1B = handler.getRelease("R1B", user2);
         r1B.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-        handler.updateRelease(r1B,user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r1B,user2, ReleaseImmutableField.DEFAULT);
 
         final Release r2A = handler.getRelease("R2A", user1);
-        handler.updateRelease(r2A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        handler.updateRelease(r2A, user1, ReleaseImmutableField.DEFAULT);
 
         // we wrap the potentially infinite loop in an executor
         final ExecutorService service = Executors.newSingleThreadExecutor();
@@ -566,7 +570,7 @@ public class ComponentDatabaseHandlerTest {
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             final Release r1A = handler.getRelease("R1A", user1);
             r1A.setReleaseIdToRelationship(ImmutableMap.of("DelR", ReleaseRelationship.CONTAINED));
-            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
         } else {
             Project project = new Project().setReleaseIdToUsage(
                     ImmutableMap.of("DelR", new ProjectReleaseRelationship().setReleaseRelation(
@@ -929,7 +933,7 @@ public class ComponentDatabaseHandlerTest {
         Release expected = releases.get(1);
         expected.setName("UPDATED");
 
-        RequestStatus status = handler.updateRelease(expected, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        RequestStatus status = handler.updateRelease(expected, user2, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
@@ -952,7 +956,7 @@ public class ComponentDatabaseHandlerTest {
         release.setVersion("releaseB");
 
         // when:
-        RequestStatus status = handler.updateRelease(release, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        RequestStatus status = handler.updateRelease(release, user2, ReleaseImmutableField.DEFAULT);
 
         // then:
         assertEquals(RequestStatus.DUPLICATE, status);
@@ -965,7 +969,7 @@ public class ComponentDatabaseHandlerTest {
         release.setName("UPDATED");
 
         when(releaseModerator.updateRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
@@ -983,7 +987,7 @@ public class ComponentDatabaseHandlerTest {
         release.setName(expected);
 
         lenient().when(releaseModerator.updateRelease(ReleaseConverter.toThrift(release), user1)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT, true);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
@@ -998,7 +1002,7 @@ public class ComponentDatabaseHandlerTest {
         release.getEccInformation().setAl("UPDATED");
 
         when(releaseModerator.updateReleaseEccInfo(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
@@ -1016,7 +1020,7 @@ public class ComponentDatabaseHandlerTest {
         release.getEccInformation().setAl(expected);
 
         lenient().when(releaseModerator.updateReleaseEccInfo(ReleaseConverter.toThrift(release), user1)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
-        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+        RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT, true);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
@@ -1063,7 +1067,7 @@ public class ComponentDatabaseHandlerTest {
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             final Release r1A = handler.getRelease("R1A", user1);
             r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
         } else {
             Project project = new Project().setReleaseIdToUsage(
                     ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(
@@ -1101,7 +1105,7 @@ public class ComponentDatabaseHandlerTest {
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             final Release r1A = handler.getRelease("R1A", user1);
             r1A.setReleaseIdToRelationship(ImmutableMap.of("R2A", ReleaseRelationship.CONTAINED));
-            handler.updateRelease(r1A, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            handler.updateRelease(r1A, user1, ReleaseImmutableField.DEFAULT);
         } else {
             Project project = new Project().setReleaseIdToUsage(
                     ImmutableMap.of("R2A", new ProjectReleaseRelationship().setReleaseRelation(

@@ -2510,7 +2510,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     Map<String, Object> attachmentMap = (Map<String, Object>) attach;
                     AttachmentType type = AttachmentType.valueOf((String) attachmentMap.get(ATTACHMENT_TYPE));
                     attachmentMap.replace(ATTACHMENT_TYPE, attachmentMap.get(ATTACHMENT_TYPE),
-                            ThriftEnumUtils.MAP_ATTACHMENT_TYPE_SHORT_STRING.get(type));
+                            ThriftEnumUtils.enumToShortString(type));
                 }
             }
             final ImmutableSet<String> fieldsToKeep = ImmutableSet.of("name", "version", "componentType", "clearingState", ATTACHMENTS);

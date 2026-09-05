@@ -18,6 +18,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -27,7 +28,6 @@ import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
@@ -245,7 +245,7 @@ public class LicenseInfoHandler {
                     att.setSuperAttachmentFilename(valueMap.get("superFilename"));
                 }
             });
-            componentDatabaseHandler.updateRelease(ReleaseConverter.fromThrift(release), user, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            componentDatabaseHandler.updateRelease(ReleaseConverter.fromThrift(release), user, ReleaseImmutableField.DEFAULT);
         }
         return commonObsoleteMap;
     }

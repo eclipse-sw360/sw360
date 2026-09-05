@@ -33,6 +33,10 @@ import org.eclipse.sw360.datahandler.permissions.DocumentPermissions;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -49,6 +53,7 @@ import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.ComponentType;
 import org.eclipse.sw360.datahandler.services.components.ClearingState;
 import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.services.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.services.components.EccInformation;
 import org.eclipse.sw360.datahandler.services.components.ECCStatus;
@@ -68,6 +73,8 @@ import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
 import org.eclipse.sw360.datahandler.services.common.DocumentState;
 import org.eclipse.sw360.datahandler.services.common.ModerationState;
+import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
+import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.services.packages.Package;
@@ -867,7 +874,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             dbHandlerUtil.addChangeLogs(ComponentConverter.toThrift(component), ComponentConverter.toThrift(actual), user.getEmail(), Operation.UPDATE, attachmentConnector,
                     referenceDocLogList, null, null);
         } else {
-            return moderator.updateComponent(ComponentConverter.toThrift(component), user);
+            return RequestStatusConverter.fromThrift(
+                    moderator.updateComponent(ComponentConverter.toThrift(component), user));
         }
         return RequestStatus.SUCCESS;
 
@@ -1026,7 +1034,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestSummary updateComponents(Set<Component> components, User user) throws SW360Exception {
-        return RepositoryUtils.doBulk(prepareComponents(components), user, componentRepository);
+        return RequestSummaryConverter.fromThrift(
+                RepositoryUtils.doBulk(prepareComponents(components), user, componentRepository));
     }
 
 
@@ -1292,11 +1301,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         sendMailNotificationsForComponentUpdate(component, user.getEmail());
     }
 
-    public RequestStatus updateRelease(Release release, User user, Iterable<org.eclipse.sw360.datahandler.thrift.components.Release._Fields> immutableFields) throws SW360Exception {
+    public RequestStatus updateRelease(Release release, User user, Set<ReleaseImmutableField> immutableFields) throws SW360Exception {
         return updateRelease(release, user, immutableFields, false);
     }
 
-    public RequestStatus updateRelease(Release release, User user, Iterable<org.eclipse.sw360.datahandler.thrift.components.Release._Fields> immutableFields, boolean forceUpdate) throws SW360Exception {
+    public RequestStatus updateRelease(Release release, User user, Set<ReleaseImmutableField> immutableFields, boolean forceUpdate) throws SW360Exception {
         removeLeadingTrailingWhitespace(release);
         String name = release.getName();
         String version = release.getVersion();
@@ -1403,9 +1412,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 crUpdateThread.start();
             } else {
                 if (hasChangesInEccFields) {
-                    return releaseModerator.updateReleaseEccInfo(ReleaseConverter.toThrift(release), user);
+                    return RequestStatusConverter.fromThrift(
+                            releaseModerator.updateReleaseEccInfo(ReleaseConverter.toThrift(release), user));
                 } else {
-                    return releaseModerator.updateRelease(ReleaseConverter.toThrift(release), user);
+                    return RequestStatusConverter.fromThrift(
+                            releaseModerator.updateRelease(ReleaseConverter.toThrift(release), user));
                 }
             }
 
@@ -1787,7 +1798,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestSummary updateReleasesDirectly(Set<Release> releases, User user) throws SW360Exception {
-        return RepositoryUtils.doBulk(prepareReleases(releases), user, releaseRepository);
+        return RequestSummaryConverter.fromThrift(
+                RepositoryUtils.doBulk(prepareReleases(releases), user, releaseRepository));
     }
 
     public RequestStatus updateReleaseFromAdditionsAndDeletions(Release releaseAdditions, Release releaseDeletions, User user) {
@@ -1798,7 +1810,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ReleaseConverter.toThrift(release),
                     ReleaseConverter.toThrift(releaseAdditions),
                     ReleaseConverter.toThrift(releaseDeletions)));
-            return updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            return updateRelease(release, user, ReleaseImmutableField.DEFAULT);
         } catch (SW360Exception e) {
             log.error("Could not get original release when updating from moderation request.");
             return RequestStatus.FAILURE;
@@ -2337,7 +2349,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Lists.newArrayList(), null, null);
             return RequestStatus.SUCCESS;
         } else {
-            return moderator.deleteComponent(ComponentConverter.toThrift(component), user);
+            return RequestStatusConverter.fromThrift(
+                    moderator.deleteComponent(ComponentConverter.toThrift(component), user));
         }
     }
 
@@ -2414,7 +2427,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     attachmentConnector, Lists.newArrayList(), release.getId(), Operation.RELEASE_DELETE);
             return RequestStatus.SUCCESS;
         } else {
-            return releaseModerator.deleteRelease(ReleaseConverter.toThrift(release), user);
+            return RequestStatusConverter.fromThrift(
+                    releaseModerator.deleteRelease(ReleaseConverter.toThrift(release), user));
         }
     }
 
@@ -3346,7 +3360,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user);
+                return RequestSummaryConverter.fromThrift(
+                        spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user));
             }
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3794,21 +3809,19 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     /**
-     * Restores the fields that must never be overwritten by a client payload. POJO equivalent of
-     * {@code copyFields(actual, release, immutableFields)}; the caller still names the fields with
-     * the {@code ThriftUtils.IMMUTABLE_OF_RELEASE*} constants so the public signature stays
-     * unchanged.
+     * Restores the fields that must never be overwritten by a client payload.
+     *
+     * @see ReleaseImmutableField#DEFAULT
+     * @see ReleaseImmutableField#FOR_FOSSOLOGY
      */
     private static void copyImmutableFields(Release release, Release actual,
-            Iterable<org.eclipse.sw360.datahandler.thrift.components.Release._Fields> immutableFields) {
-        for (org.eclipse.sw360.datahandler.thrift.components.Release._Fields field : immutableFields) {
+            Set<ReleaseImmutableField> immutableFields) {
+        for (ReleaseImmutableField field : immutableFields) {
             switch (field) {
                 case CREATED_BY -> copyIfSet(actual.getCreatedBy(), release::setCreatedBy);
                 case CREATED_ON -> copyIfSet(actual.getCreatedOn(), release::setCreatedOn);
                 case EXTERNAL_TOOL_PROCESSES ->
                         copyIfSet(actual.getExternalToolProcesses(), release::setExternalToolProcesses);
-                default -> throw new IllegalArgumentException(
-                        "Immutable release field not mapped to the service-api Release: " + field);
             }
         }
     }
