@@ -837,6 +837,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new BadRequestClientException(
                     "Field name or version should be present in request body to create duplicate of a project");
         }
+        restControllerHelper.validateNoBackendManagedProjectFields(reqBodyMap, mapOfProjectFieldsToRequestBody);
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
         Project updateProject = convertToProject(reqBodyMap);
@@ -4802,6 +4803,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new BadRequestClientException(
                     "Field name or version should be present in request body to create duplicate of a project");
         }
+        restControllerHelper.validateNoBackendManagedProjectFields(reqBodyMap, mapOfProjectFieldsToRequestBody);
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project duplicatedProject = projectService.getProjectForUserById(id, sw360User);
         Project projectFromRequest = convertToProject(reqBodyMap);

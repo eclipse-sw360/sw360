@@ -179,6 +179,11 @@ public class RestControllerHelper<T> {
             Project._Fields.CREATED_ON,
             Project._Fields.CREATED_BY
     );
+    private static final Set<Project._Fields> BACKEND_MANAGED_PROJECT_FIELDS = EnumSet.of(
+            Project._Fields.ID,
+            Project._Fields.MODIFIED_ON,
+            Project._Fields.MODIFIED_BY
+    );
     private static final Set<Component._Fields> IMMUTABLE_COMPONENT_FIELDS = EnumSet.of(
             Component._Fields.ID,
             Component._Fields.TYPE,
@@ -736,6 +741,41 @@ public class RestControllerHelper<T> {
                 .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
         halProject.add(projectLink);
         halResource.addEmbeddedResource(isSingleProject ? "sw360:project" : "sw360:projects", halProject);
+    }
+
+    /**
+     * Rejects the request when the payload attempts to set fields that are managed
+     * exclusively by the backend (e.g. {@code id}, {@code createdBy}, {@code modifiedOn}).
+     * These fields are auto-populated on create/update or driven by internal workflows
+     * (moderation, clearing request, obligation linking) and must not be supplied by
+     * the client via UI or REST API request body.
+     *
+     * @param reqBodyMap                    the raw request body map received from the client
+     * @param mapOfProjectFieldsToRequestBody mapping of Thrift fields to alternate JSON
+     *                                        keys used in the SW360 REST API
+     * @throws BadRequestClientException if any backend-managed field is present in the body
+     */
+    public void validateNoBackendManagedProjectFields(Map<String, Object> reqBodyMap,
+            ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
+        if (reqBodyMap == null || reqBodyMap.isEmpty()) {
+            return;
+        }
+        List<String> rejectedFields = new ArrayList<>();
+        for (Project._Fields field : BACKEND_MANAGED_PROJECT_FIELDS) {
+            String reqBodyKey = field.getFieldName();
+            if (mapOfProjectFieldsToRequestBody != null
+                    && mapOfProjectFieldsToRequestBody.containsKey(field)) {
+                reqBodyKey = mapOfProjectFieldsToRequestBody.get(field);
+            }
+            if (reqBodyMap.containsKey(reqBodyKey)) {
+                rejectedFields.add(reqBodyKey);
+            }
+        }
+        if (!rejectedFields.isEmpty()) {
+            throw new BadRequestClientException(
+                    "The following fields are set automatically by the backend and "
+                            + "cannot be provided in the request body: " + rejectedFields);
+        }
     }
 
     public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
