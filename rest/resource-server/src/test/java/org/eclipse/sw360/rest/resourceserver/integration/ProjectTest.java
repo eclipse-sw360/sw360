@@ -1146,7 +1146,7 @@ public class ProjectTest extends TestIntegrationBase {
         computedFulfilled.setLicenseIds(new HashSet<>(Arrays.asList("MIT")));
         computedObligations.put("computed-1", computedOpen);
         computedObligations.put("computed-2", computedFulfilled);
-        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any()))
+        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any(), any(), any()))
                 .willReturn(computedObligations);
 
         HttpHeaders headers = getHeaders(port);
@@ -1281,7 +1281,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_license_obligations() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.projectServiceMock.getObligationData(any(), any())).willReturn(new ObligationList());
-        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any())).willReturn(new HashMap<>());
+        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any(), any(), any())).willReturn(new HashMap<>());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -1330,7 +1330,7 @@ public class ProjectTest extends TestIntegrationBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
 
         // Mock setLicenseInfoWithObligations
-        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any())).willReturn(new HashMap<>());
+        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any(), any(), any())).willReturn(new HashMap<>());
 
         // Mock addLinkedObligations
         given(this.projectServiceMock.addLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
