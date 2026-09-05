@@ -218,6 +218,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public Release setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
         String componentId = releaseById.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+            log.error("ComponentId missing for Release: {}", releaseById.getId());
             throw new BadRequestClientException("ComponentId must be present");
         }
         Component componentById = null;
@@ -225,6 +226,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
         } catch (TException e) {
+            log.error("ComponentId '{}' not found for Release '{}'", componentId, releaseById.getId());
             throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
         releaseById.setComponentType(componentById.getComponentType());
@@ -239,15 +241,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
             componentIdMap = ThriftUtils.getIdMap(components);
         } catch (TException e) {
-            throw new BadRequestClientException("No Components found");
+            throw new BadRequestClientException("No Components found", e);
         }
 
         for (Release release : releases) {
             String componentId = release.getComponentId();
             if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+                log.error("ComponentId missing for Release: {}", release.getId());
                 throw new BadRequestClientException("ComponentId must be present");
             }
             if (!componentIdMap.containsKey(componentId)) {
+                log.error("ComponentId '{}' not found for Release '{}'", componentId, release.getId());
             	throw new BadRequestClientException("No Component found with Id - " + componentId);
             }
             Component component = componentIdMap.get(componentId);
@@ -1121,7 +1125,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                     log.info("Release : " + releaseId + " .Report download is disabled, skipping report generation step.");
                     // Trigger one final process call to ensure handler marks status as DONE
                     fossologyProcessLocal = fossologyProcess(releaseId, user, uploadDescription);
-                    log.info("Release : " + releaseId + " .Final process status after scan completion: {}", 
+                    log.info("Release : " + releaseId + " .Final process status after scan completion: {}",
                             fossologyProcessLocal.getProcessStatus());
                 }
             }
