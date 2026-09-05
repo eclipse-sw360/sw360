@@ -47,7 +47,6 @@ import java.util.Map;
  * for all READ-only users on <em>all</em> endpoints — not just admin endpoints.</p>
  */
 @BasePathAwareController
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
@@ -62,6 +61,11 @@ public class CacheAdminController implements RepresentationModelProcessor<Reposi
 
     @NonNull
     private final ApiResponseCacheManager cacheManager;
+
+    CacheAdminController(RestControllerHelper restControllerHelper, ApiResponseCacheManager apiResponseCacheManager) {
+        this.cacheManager = apiResponseCacheManager;
+        this.restControllerHelper = restControllerHelper;
+    }
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {

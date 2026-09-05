@@ -70,7 +70,7 @@ public class FossologyHandler implements FossologyService.Iface {
 
     boolean reportStep = false;
 
-    @Autowired
+
     public FossologyHandler(
             FossologyRestConfig fossologyRestConfig,
             FossologyRestClient fossologyRestClient, AttachmentConnector attachmentConnector) {
